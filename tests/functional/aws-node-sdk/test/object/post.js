@@ -141,43 +141,76 @@ describe('AWS S3 POST Object with Policy', function () {
                 return done(err);
             }
 
-            // Delete the bucket and its contents
-            const deleteBucket = () => {
-                s3.deleteBucket({ Bucket: bucketName }, (err) => {
-                    if (err && err.code !== 'NoSuchBucket') {
-                        return done(err);
+            // Function to delete a single bucket and its contents
+            const deleteSingleBucket = (bucket, callback) => {
+                const deleteBucket = () => {
+                    s3.deleteBucket({ Bucket: bucket }, (err) => {
+                        if (err && err.code !== 'NoSuchBucket') {
+                            return callback(err);
+                        }
+                        callback();
+                    });
+                };
+
+                s3.listObjects({ Bucket: bucket }, (err, data) => {
+                    if (err && err.code === 'NoSuchBucket') {
+                        return callback(); // Ignore the error if the bucket does not exist
+                    } else if (err) {
+                        return callback(err);
                     }
-                    done();
+
+                    if (data.Contents.length === 0) {
+                        // Bucket is already empty
+                        return deleteBucket();
+                    }
+
+                    // Delete all objects in the bucket, including objects locked with governance
+                    const objects = data.Contents.map(item => ({ Key: item.Key }));
+                    const deleteParams = {
+                        Bucket: bucket,
+                        Delete: { Objects: objects },
+                        BypassGovernanceRetention: true // Bypass governance mode
+                    };
+                    s3.deleteObjects(deleteParams, (err) => {
+                        if (err) {
+                            return callback(err);
+                        }
+                        deleteBucket();
+                    });
                 });
             };
 
-            // List objects in the bucket
-            s3.listObjects({ Bucket: bucketName }, (err, data) => {
-                if (err && err.code === 'NoSuchBucket') {
-                    return done(); // Ignore the error if the bucket does not exist
-                } else if (err) {
+            // List all buckets
+            s3.listBuckets((err, data) => {
+                if (err) {
                     return done(err);
                 }
 
-                if (data.Contents.length === 0) {
-                    // Bucket is already empty
-                    return deleteBucket();
-                }
+                // Filter buckets that start with the specified prefix
+                const bucketsToDelete = data.Buckets.filter(bucket => bucket.Name.startsWith(bucketName));
 
-                // Delete all objects in the bucket
-                const objects = data.Contents.map(item => ({ Key: item.Key }));
-                s3.deleteObjects({
-                    Bucket: bucketName,
-                    Delete: { Objects: objects }
-                }, (err) => {
+                // Delete each bucket and its contents
+                let completed = 0;
+                const total = bucketsToDelete.length;
+                const checkDone = (err) => {
                     if (err) {
                         return done(err);
                     }
-                    deleteBucket();
-                });
+                    completed += 1;
+                    if (completed === total) {
+                        done();
+                    }
+                };
+
+                if (total === 0) {
+                    done();
+                } else {
+                    bucketsToDelete.forEach(bucket => deleteSingleBucket(bucket.Name, checkDone));
+                }
             });
         });
     });
+
 
     it('should successfully upload an object to S3 using a POST form', done => {
         const fields = calculateFields(ak, sk);
@@ -1058,6 +1091,362 @@ describe('AWS S3 POST Object with Policy', function () {
         });
     });
 
+    it('should successfully upload object with valid SSE parameters and verify it', done => {
+        const fields = calculateFields(ak, sk, [{ 'x-amz-server-side-encryption': 'AES256' }]);
+        const formData = new FormData();
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
+
+        formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            axios.post(url, formData, {
+                headers: {
+                    ...formData.getHeaders(),
+                    'Content-Length': length,
+                },
+            })
+                .then(response => {
+                    assert.equal(response.status, 204);
+
+                    // Get the object's SSE configuration
+                    s3.headObject({ Bucket: bucketName, Key: filename }, (err, data) => {
+                        if (err) {
+                            return done(err);
+                        }
+
+                        assert.equal(data.ServerSideEncryption, 'AES256');
+
+                        done();
+                    });
+                })
+                .catch(err => {
+                    done(err);
+                });
+        });
+    });
+
+    it('should return error if posting object with invalid SSE parameters', done => {
+        const fields = calculateFields(ak, sk, [{ 'x-amz-server-side-encryption': 'INVALID' }]);
+        const formData = new FormData();
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
+
+        formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            axios.post(url, formData, {
+                headers: {
+                    ...formData.getHeaders(),
+                    'Content-Length': length,
+                },
+            })
+                .then(() => {
+                    done(new Error('Expected error but got success response'));
+                })
+                .catch(err => {
+                    assert.equal(err.response.status, 400); // Assuming 400 Bad Request for invalid SSE parameters
+                    done();
+                });
+        });
+    });
+
+
+
+
+
+
+    /** Tests with different bucket setup, failing right now because of policy...  for unknown reasons **/
+
+
+    it('should successfully upload object with valid object lock parameters and verify it', done => {
+        const retentionDate = new Date();
+        retentionDate.setDate(retentionDate.getDate() + 1); // Set retention date one day in the future
+        bucketName = `${bucketName}-object-lock`;
+        // Create the bucket with Object Lock enabled
+        const createBucketParams = {
+            Bucket: bucketName,
+            ObjectLockEnabledForBucket: true,
+        };
+
+        s3.createBucket(createBucketParams, (err) => {
+            if (err) {
+                return done(err);
+            }
+
+            // Enable Object Lock configuration
+
+
+            const fields = calculateFields(ak, sk, [
+                { 'x-amz-object-lock-mode': 'GOVERNANCE' },
+                { 'x-amz-object-lock-retain-until-date': retentionDate.toISOString() }
+            ]);
+
+            const formData = new FormData();
+
+            fields.forEach(field => {
+                formData.append(field.name, field.value);
+            });
+
+            formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
+
+            formData.getLength((err, length) => {
+                if (err) {
+                    return done(err);
+                }
+
+                axios.post(url, formData, {
+                    headers: {
+                        ...formData.getHeaders(),
+                        'Content-Length': length,
+                    },
+                })
+                    .then(response => {
+                        assert.equal(response.status, 204);
+
+                        // Get the object's lock configuration
+                        s3.headObject({ Bucket: bucketName, Key: filename }, (err, data) => {
+                            if (err) {
+                                return done(err);
+                            }
+
+                            assert.equal(data.ObjectLockMode, 'GOVERNANCE');
+                            assert.equal(new Date(data.ObjectLockRetainUntilDate).toISOString(), retentionDate.toISOString());
+
+                            done();
+                        });
+                    })
+                    .catch(err => {
+                        console.log(err.response.data)
+                        done(err);
+                    });
+            });
+        });
+    });
+
+
+    it('should successfully upload object with valid object lock parameters and verify it', done => {
+        const retentionDate = new Date();
+        retentionDate.setDate(retentionDate.getDate() + 1); // Set retention date one day in the future
+        const fields = calculateFields(ak, sk, [
+            { 'x-amz-object-lock-mode': 'GOVERNANCE' },
+            { 'x-amz-object-lock-retain-until-date': retentionDate.toISOString() },
+        ]);
+        const formData = new FormData();
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
+
+        formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            axios.post(url, formData, {
+                headers: {
+                    ...formData.getHeaders(),
+                    'Content-Length': length,
+                },
+            })
+                .then(response => {
+                    assert.equal(response.status, 204);
+
+                    // Get the object's lock configuration
+                    s3.headObject({ Bucket: bucketName, Key: filename }, (err, data) => {
+                        if (err) {
+                            return done(err);
+                        }
+
+                        assert.equal(data.ObjectLockMode, 'GOVERNANCE');
+                        assert.equal(new Date(data.ObjectLockRetainUntilDate).toISOString(), retentionDate.toISOString());
+
+                        done();
+                    });
+                })
+                .catch(err => {
+                    console.log(err.response.data)
+                    done(err);
+                });
+        });
+    });
+
+    it('should successfully upload an object with bucket versioning enabled and verify version ID', done => {
+        bucketName = `${bucketName}-versioning`;
+
+        // Create the bucket
+        s3.createBucket({ Bucket: bucketName }, (err) => {
+            if (err) {
+                return done(err);
+            }
+
+            // Enable versioning on the bucket
+            const versioningParams = {
+                Bucket: bucketName,
+                VersioningConfiguration: {
+                    Status: 'Enabled',
+                },
+            };
+
+            s3.putBucketVersioning(versioningParams, (err) => {
+                if (err) {
+                    return done(err);
+                }
+
+                const fields = calculateFields(ak, sk, [{ bucket: bucketName }]);
+                const formData = new FormData();
+
+                fields.forEach(field => {
+                    formData.append(field.name, field.value);
+                });
+
+                formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
+
+                formData.getLength((err, length) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    axios.post(url, formData, {
+                        headers: {
+                            ...formData.getHeaders(),
+                            'Content-Length': length,
+                        },
+                    })
+                        .then(response => {
+                            assert.equal(response.status, 204);
+
+                            // Verify version ID is present in the response
+                            const versionId = response.headers['x-amz-version-id'];
+                            assert.ok(versionId, 'Version ID should be present in the response headers');
+
+                            // Verify the object versioning
+                            s3.getObject({ Bucket: bucketName, Key: filename, VersionId: versionId }, (err, data) => {
+                                if (err) {
+                                    return done(err);
+                                }
+
+                                assert.equal(data.VersionId, versionId);
+
+                                done();
+                            });
+                        })
+                        .catch(err => {
+                            console.log(err);
+                            done(err);
+                        });
+                });
+            });
+        });
+    });
+
+    it('should successfully upload an object with a specified ACL and verify it', done => {
+
+        // Create the bucket
+        s3.createBucket({ Bucket: bucketName }, (err) => {
+            if (err) {
+                return done(err);
+            }
+
+            const aclValue = 'public-read'; // Example ACL value
+            const fields = calculateFields([{ 'acl': aclValue }]);
+            const formData = new FormData();
+
+            fields.forEach(field => {
+                formData.append(field.name, field.value);
+            });
+
+            formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
+
+            formData.getLength((err, length) => {
+                if (err) {
+                    return done(err);
+                }
+
+                axios.post(url, formData, {
+                    headers: {
+                        ...formData.getHeaders(),
+                        'Content-Length': length,
+                    },
+                })
+                    .then(response => {
+                        assert.equal(response.status, 204);
+
+                        // Get the object's ACL
+                        s3.getObjectAcl({ Bucket: bucketName, Key: filename }, (err, data) => {
+                            if (err) {
+                                return done(err);
+                            }
+
+                            const grants = data.Grants;
+                            const publicReadGrant = grants.find(grant =>
+                                grant.Permission === 'READ' && grant.Grantee.URI === 'http://acs.amazonaws.com/groups/global/AllUsers'
+                            );
+
+                            assert.ok(publicReadGrant, 'Expected public-read ACL grant not found');
+
+                            done();
+                        });
+                    })
+                    .catch(err => {
+                        done(err);
+                    });
+            });
+        });
+    });
+
+    it('should return an error when uploading an object with an invalid ACL', done => {
+        // Create the bucket
+        s3.createBucket({ Bucket: bucketName }, (err) => {
+            if (err) {
+                return done(err);
+            }
+
+            const invalidAclValue = 'invalid-acl'; // Example invalid ACL value
+            const fields = calculateFields([{ 'acl': invalidAclValue }]);
+            const formData = new FormData();
+
+            fields.forEach(field => {
+                formData.append(field.name, field.value);
+            });
+
+            formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
+
+            formData.getLength((err, length) => {
+                if (err) {
+                    return done(err);
+                }
+
+                axios.post(url, formData, {
+                    headers: {
+                        ...formData.getHeaders(),
+                        'Content-Length': length,
+                    },
+                })
+                    .then(() => {
+                        done(new Error('Expected error but got success response'));
+                    })
+                    .catch(err => {
+                        assert.equal(err.response.status, 400); // Assuming 400 Bad Request for invalid ACL
+                        done();
+                    });
+            });
+        });
+    });
 
 
 
@@ -1081,55 +1470,6 @@ describe('AWS S3 POST Object with Policy', function () {
 
 
 
-    // Test needs bucket with ACLs enabled
-    // it('should upload an object with a specified ACL and verify it', done => {
-    //     const aclValue = 'public-read'; // Example ACL value
-    //     const fields = calculateFields(ak, sk, [{ 'acl': aclValue }]);
-
-    //     const formData = new FormData();
-
-    //     fields.forEach(field => {
-    //         formData.append(field.name, field.value);
-    //     });
-
-    //     formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
-
-    //     formData.getLength((err, length) => {
-    //         if (err) {
-    //             return done(err);
-    //         }
-
-    //         axios.post(url, formData, {
-    //             headers: {
-    //                 ...formData.getHeaders(),
-    //                 'Content-Length': length,
-    //             },
-    //         })
-    //             .then(response => {
-    //                 assert.equal(response.status, 204);
-
-
-    //                 // Get the object's ACL
-    //                 s3.getObjectAcl({ Bucket: bucketName, Key: filename }, (err, data) => {
-    //                     if (err) {
-    //                         return done(err);
-    //                     }
-
-    //                     const grants = data.Grants;
-    //                     const publicReadGrant = grants.find(grant =>
-    //                         grant.Permission === 'READ' && grant.Grantee.URI === 'http://acs.amazonaws.com/groups/global/AllUsers'
-    //                     );
-
-    //                     assert.ok(publicReadGrant, 'Expected public-read ACL grant not found');
-
-    //                     done();
-    //                 });
-    //             })
-    //             .catch(err => {
-    //                 done(err);
-    //             });
-    //     });
-    // });
 
     // it('should be able to post an empty Tag set', done => {
     //     const fields = calculateFields([{ 'x-amz-tagging': '' }]);
