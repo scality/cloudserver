@@ -96,6 +96,60 @@ describe('prepareRequestContexts', () => {
         assert.strictEqual(results[1].getAction(), expectedAction2);
     });
 
+    it('should return s3:GetObject for headObject', () => {
+        const apiMethod = 'objectHead';
+        const request = makeRequest({
+        });
+        const results = prepareRequestContexts(apiMethod, request, sourceBucket,
+            sourceObject, sourceVersionId);
+
+        assert.strictEqual(results.length, 1);
+        assert.strictEqual(results[0].getAction(), 's3:GetObject');
+    });
+
+    it('should return s3:GetObject and s3:GetObjectVersion for headObject', () => {
+        const apiMethod = 'objectHead';
+        const request = makeRequest({
+            'x-amz-version-id': '0987654323456789',
+        });
+        const results = prepareRequestContexts(apiMethod, request, sourceBucket,
+            sourceObject, sourceVersionId);
+
+        assert.strictEqual(results.length, 2);
+        assert.strictEqual(results[0].getAction(), 's3:GetObject');
+        assert.strictEqual(results[1].getAction(), 's3:GetObjectVersion');
+    });
+
+    it('should return s3:GetObject and scality:GetObjectArchiveInfo for headObject ' +
+    'with x-amz-scal-archive-info header', () => {
+        const apiMethod = 'objectHead';
+        const request = makeRequest({
+            'x-amz-scal-archive-info': 'true',
+        });
+        const results = prepareRequestContexts(apiMethod, request, sourceBucket,
+            sourceObject, sourceVersionId);
+
+        assert.strictEqual(results.length, 2);
+        assert.strictEqual(results[0].getAction(), 's3:GetObject');
+        assert.strictEqual(results[1].getAction(), 'scality:GetObjectArchiveInfo');
+    });
+
+    it('should return s3:GetObject, s3:GetObjectVersion and scality:GetObjectArchiveInfo ' +
+    ' for headObject with x-amz-scal-archive-info header', () => {
+        const apiMethod = 'objectHead';
+        const request = makeRequest({
+            'x-amz-version-id': '0987654323456789',
+            'x-amz-scal-archive-info': 'true',
+        });
+        const results = prepareRequestContexts(apiMethod, request, sourceBucket,
+            sourceObject, sourceVersionId);
+
+        assert.strictEqual(results.length, 3);
+        assert.strictEqual(results[0].getAction(), 's3:GetObject');
+        assert.strictEqual(results[1].getAction(), 's3:GetObjectVersion');
+        assert.strictEqual(results[2].getAction(), 'scality:GetObjectArchiveInfo');
+    });
+
     ['initiateMultipartUpload', 'objectPutPart', 'completeMultipartUpload'].forEach(apiMethod => {
         it(`should return s3:PutObjectVersion request context action for ${apiMethod} method ` +
         'with x-scal-s3-version-id header', () => {

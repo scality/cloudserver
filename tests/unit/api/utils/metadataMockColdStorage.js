@@ -105,7 +105,9 @@ function putObjectMock(bucketName, objectName, fields, cb) {
  */
 function getArchiveArchivedMD() {
     return {
-        archive: new ObjectMDArchive({}).getValue(),
+        archive: new ObjectMDArchive(
+            { foo: 0, bar: 'stuff' }, // opaque, can be anything...
+        ).getValue(),
     };
 }
 
@@ -115,7 +117,11 @@ function getArchiveArchivedMD() {
  */
 function getArchiveOngoingRequestMD() {
     return {
-        archive: new ObjectMDArchive({}, new Date(Date.now() - 60), 5).getValue(),
+        archive: new ObjectMDArchive(
+            { foo: 0, bar: 'stuff' }, // opaque, can be anything...
+            new Date(Date.now() - 60),
+            5).getValue(),
+        'x-amz-restore': new ObjectMDAmzRestore(true, new Date(Date.now() + 60 * 60 * 24)),
     };
 }
 
@@ -126,6 +132,7 @@ function getArchiveOngoingRequestMD() {
 function getTransitionInProgressMD() {
     return {
         'x-amz-scal-transition-in-progress': true,
+        'x-amz-scal-transition-time': new Date(Date.now() - 60),
     };
 }
 
@@ -136,7 +143,7 @@ function getTransitionInProgressMD() {
 function getArchiveRestoredMD() {
     return {
         archive: new ObjectMDArchive(
-            {},
+            { foo: 0, bar: 'stuff' }, // opaque, can be anything...
             new Date(Date.now() - 60000),
             5,
             new Date(Date.now() - 10000),
@@ -152,7 +159,7 @@ function getArchiveRestoredMD() {
 function getArchiveExpiredMD() {
     return {
         archive: new ObjectMDArchive(
-            {},
+            { foo: 0, bar: 'stuff' }, // opaque, can be anything...
             new Date(Date.now() - 30000),
             5,
             new Date(Date.now() - 20000),
