@@ -150,6 +150,9 @@ jobs:
           provenance: false
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.sha }}
+          labels: |
+            git.repository=${{ github.repository }}
+            git.commit-sha=${{ github.sha }}
           cache-from: type=gha,scope=cloudserver
           cache-to: type=gha,mode=max,scope=cloudserver
       - name: Build and push pykmip image
@@ -159,6 +162,9 @@ jobs:
           context: .github/pykmip
           tags: |
             ghcr.io/${{ github.repository }}/pykmip:${{ github.sha }}
+          labels: |
+            git.repository=${{ github.repository }}
+            git.commit-sha=${{ github.sha }}
           cache-from: type=gha,scope=pykmip
           cache-to: type=gha,mode=max,scope=pykmip
       - name: Build and push MongoDB
