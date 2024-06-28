@@ -1,10 +1,10 @@
 'use strict'; // eslint-disable-line strict
 
-/**
- * Catch uncaught exceptions and add timestamp to aid debugging
- */
-process.on('uncaughtException', err => {
-    process.stderr.write(`${new Date().toISOString()}: Uncaught exception: \n${err.stack}`);
-});
+require('werelogs').stderrUtils.catchAndTimestampStderr(
+    undefined,
+    // Do not exit as workers have their own listener that will exit
+    // But primary don't have another listener
+    require('cluster').isPrimary ? 1 : null,
+);
 
 require('./lib/server.js')();
