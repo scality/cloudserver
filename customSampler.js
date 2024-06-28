@@ -21,7 +21,7 @@ class HealthcheckExcludingSampler {
 
 function createSampler(samplingRatio, excludeHealthcheck) {
     return new ParentBasedSampler({
-        root: new TraceIdRatioBasedSampler(samplingRatio),
+        root: new HealthcheckExcludingSampler(new TraceIdRatioBasedSampler(samplingRatio), excludeHealthcheck),
     });
 }
 

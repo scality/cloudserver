@@ -20,7 +20,7 @@ const resource = new Resource({
 
 const collectorHost = process.env.OTEL_COLLECTOR_HOST || 'localhost';
 const collectorPort = process.env.OTEL_COLLECTOR_PORT || 4318;
-const samplingRatio = parseFloat(process.env.OTEL_SAMPLING_RATIO) || 1.0;
+const samplingRatio = parseFloat(process.env.OTEL_SAMPLING_RATIO) || 0.05;
 const excludeHealthcheck = process.env.OTEL_EXCLUDE_HEALTHCHECK || 'true';
 
 // OTLP Trace Exporter configuration
@@ -44,7 +44,7 @@ const sdk = new opentelemetry.NodeSDK({
     resource,
     metricReader,
     // sampler: new TraceIdRatioBasedSampler(samplingRatio),
-    sampler: createSampler(samplingRatio, excludeHealthcheck === 'true'),
+    sampler: createSampler(samplingRatio, excludeHealthcheck),
     instrumentations: [
         getNodeAutoInstrumentations({
             '@opentelemetry/instrumentation-fs': {
