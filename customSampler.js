@@ -8,7 +8,7 @@ class HealthcheckExcludingSampler {
 
     shouldSample(context, traceId, spanName, spanKind, attributes, links) {
         const url = attributes['http.url'] || '';
-        if (this._excludeHealthcheck && url.includes('healthcheck')) {
+        if (this._excludeHealthcheck && (url.includes('healthcheck') || url.includes('metrics'))) {
             return { decision: SamplingDecision.NOT_RECORD };
         }
         return this._sampler.shouldSample(context, traceId, spanName, spanKind, attributes, links);
