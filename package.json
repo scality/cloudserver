@@ -30,7 +30,7 @@
     "@opentelemetry/sdk-trace-base": "^1.25.0",
     "@opentelemetry/sdk-trace-web": "^1.25.0",
     "@opentelemetry/semantic-conventions": "^1.25.0",
-    "arsenal": "git+https://github.com/scality/Arsenal#76c4c2b2bb6b444dbbe50514a89ad6a3d0a25c73",
+    "arsenal": "git+https://github.com/scality/Arsenal#44efcd625c09cf40b5aa2736600e2b8733b64289",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
