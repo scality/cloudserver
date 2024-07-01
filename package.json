@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
+    "@fastify/busboy": "^2.1.1",
     "@hapi/joi": "^17.1.0",
     "arsenal": "git+https://github.com/scality/arsenal#1016c270856ffae3071cba0237cee079888d3085",
     "async": "~2.5.0",
