@@ -512,5 +512,207 @@ describe('POST object', () => {
             });
         });
     });
+
+    it('should handle error when signature is invalid', done => {
+        const { url, bucketName } = testContext;
+        const fields = calculateFields(ak, sk, bucketName);
+        fields.push({ name: 'X-Amz-Signature', value: 'invalid-signature' });
+        const formData = new FormData();
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
+
+        formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            axios.post(url, formData, {
+                headers: {
+                    ...formData.getHeaders(),
+                    'Content-Length': length,
+                },
+            })
+                .then(() => {
+                    done(new Error('Expected error but got success response'));
+                })
+                .catch(err => {
+                    assert.equal(err.response.status, 403);
+                    done();
+                });
+        });
+    });
+
+    it('should return an error when signature includes invalid data', done => {
+        const { url, bucketName } = testContext;
+        let fields = calculateFields(ak, sk, bucketName);
+        const laterThanNow = new Date(new Date().getTime() + 60000);
+        const shortFormattedDate = formatDate(laterThanNow);
+
+        const signingKey = getSignatureKey(sk, shortFormattedDate, 'ap-east-1', 's3');
+        const signature = crypto.createHmac('sha256', signingKey).update(fields.find(field =>
+            field.name === 'Policy').value).digest('hex');
+
+        // Modify the signature to be invalid
+        fields = fields.map(field => {
+            if (field.name === 'X-Amz-Signature') {
+                return { name: 'X-Amz-Signature', value: signature };
+            }
+            return field;
+        });
+
+        const formData = new FormData();
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
+
+        formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            axios.post(url, formData, {
+                headers: {
+                    ...formData.getHeaders(),
+                    'Content-Length': length,
+                },
+            })
+                .then(() => {
+                    done(new Error('Request should not succeed with an invalid signature'));
+                })
+                .catch(err => {
+                    assert.ok(err.response, 'Error should be returned by axios');
+
+                    // Parse the XML error response
+                    xml2js.parseString(err.response.data, (parseErr, result) => {
+                        if (parseErr) {
+                            return done(parseErr);
+                        }
+
+                        const error = result.Error;
+                        assert.equal(
+                            error.Code[0],
+                            'SignatureDoesNotMatch',
+                            'Expected SignatureDoesNotMatch error code'
+                        );
+                        done();
+                    });
+                });
+        });
+    });
+
+    it('should return an error for invalid keys', done => {
+        const { url, bucketName } = testContext;
+        const invalidAccessKeyId = 'INVALIDACCESSKEY';
+        const invalidSecretAccessKey = 'INVALIDSECRETKEY';
+        let fields = calculateFields(invalidAccessKeyId, invalidSecretAccessKey, bucketName);
+
+        // Modify the signature to be invalid
+        fields = fields.map(field => {
+            if (field.name === 'X-Amz-Signature') {
+                return { name: 'X-Amz-Signature', value: 'invalid-signature' };
+            }
+            return field;
+        });
+
+        const formData = new FormData();
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
+
+        formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            axios.post(url, formData, {
+                headers: {
+                    ...formData.getHeaders(),
+                    'Content-Length': length,
+                },
+            })
+                .then(() => {
+                    done(new Error('Request should not succeed with an invalid keys'));
+                })
+                .catch(err => {
+                    assert.ok(err.response, 'Error should be returned by axios');
+
+                    // Parse the XML error response
+                    xml2js.parseString(err.response.data, (parseErr, result) => {
+                        if (parseErr) {
+                            return done(parseErr);
+                        }
+
+                        const error = result.Error;
+                        assert.equal(error.Code[0], 'InvalidAccessKeyId', 'Expected InvalidAccessKeyId error code');
+                        done();
+                    });
+                });
+        });
+    });
+
+    it('should return an error for invalid credential', done => {
+        const { url, bucketName } = testContext;
+        let fields = calculateFields(ak, sk, bucketName);
+        const laterThanNow = new Date(new Date().getTime() + 60000);
+        const shortFormattedDate = formatDate(laterThanNow);
+
+        const credential = `${ak}/${shortFormattedDate}/ap-east-1/s3/aws4_request`;
+
+        // Modify the signature to be invalid
+        fields = fields.map(field => {
+            if (field.name === 'X-Amz-Credential') {
+                return { name: 'X-Amz-Credential', value: credential };
+            }
+            return field;
+        });
+
+        const formData = new FormData();
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
+
+        formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            axios.post(url, formData, {
+                headers: {
+                    ...formData.getHeaders(),
+                    'Content-Length': length,
+                },
+            })
+                .then(() => {
+                    done(new Error('Request should not succeed with an invalid credential'));
+                })
+                .catch(err => {
+                    assert.ok(err.response, 'Error should be returned by axios');
+
+                    // Parse the XML error response
+                    xml2js.parseString(err.response.data, (parseErr, result) => {
+                        if (parseErr) {
+                            return done(parseErr);
+                        }
+
+                        const error = result.Error;
+                        assert.equal(error.Code[0], 'InvalidArgument', 'Expected InvalidArgument error code');
+                        done();
+                    });
+                });
+        });
+    });
 });
 
