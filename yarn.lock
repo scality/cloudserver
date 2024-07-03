@@ -5991,6 +5991,13 @@ werelogs@scality/werelogs#8.1.4:
     fast-safe-stringify "^2.1.1"
     safe-json-stringify "^1.2.0"
 
+werelogs@scality/werelogs#8.1.5:
+  version "8.1.5"
+  resolved "https://codeload.github.com/scality/werelogs/tar.gz/4131abec824a336eeb68b531e6c91f2748a0644a"
+  dependencies:
+    fast-safe-stringify "^2.1.1"
+    safe-json-stringify "^1.2.0"
+
 whatwg-mimetype@^2.3.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/whatwg-mimetype/-/whatwg-mimetype-2.3.0.tgz#3d4b1e0312d2079879f826aff18dbeeca5960fbf"
