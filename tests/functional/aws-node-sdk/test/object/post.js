@@ -548,7 +548,8 @@ describe('POST object', () => {
 
                         const error = result.Error;
                         assert.equal(error.Code[0], 'SignatureDoesNotMatch');
-                        assert.equal(error.Message[0], 'The request signature we calculated does not match the signature you provided.');
+                        assert.equal(error.Message[0],
+                            'The request signature we calculated does not match the signature you provided.');
                         return done();
                     });
                 });
@@ -581,25 +582,23 @@ describe('POST object', () => {
 
         formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
 
-        formData.getLength((err, length) => {
+        return formData.getLength((err, length) => {
             if (err) {
                 return done(err);
             }
 
-            axios.post(url, formData, {
+            return axios.post(url, formData, {
                 headers: {
                     ...formData.getHeaders(),
                     'Content-Length': length,
                 },
             })
-                .then(() => {
-                    done(new Error('Request should not succeed with an invalid signature'));
-                })
+                .then(() => done(new Error('Request should not succeed with an invalid signature')))
                 .catch(err => {
                     assert.ok(err.response, 'Error should be returned by axios');
 
                     // Parse the XML error response
-                    xml2js.parseString(err.response.data, (parseErr, result) => {
+                    return xml2js.parseString(err.response.data, (parseErr, result) => {
                         if (parseErr) {
                             return done(parseErr);
                         }
@@ -610,7 +609,7 @@ describe('POST object', () => {
                             'SignatureDoesNotMatch',
                             'Expected SignatureDoesNotMatch error code'
                         );
-                        done();
+                        return done();
                     });
                 });
         });
@@ -643,27 +642,25 @@ describe('POST object', () => {
                 return done(err);
             }
 
-            axios.post(url, formData, {
+            return axios.post(url, formData, {
                 headers: {
                     ...formData.getHeaders(),
                     'Content-Length': length,
                 },
             })
-                .then(() => {
-                    done(new Error('Request should not succeed with an invalid keys'));
-                })
+                .then(() => done(new Error('Request should not succeed with an invalid keys')))
                 .catch(err => {
                     assert.ok(err.response, 'Error should be returned by axios');
 
                     // Parse the XML error response
-                    xml2js.parseString(err.response.data, (parseErr, result) => {
+                    return xml2js.parseString(err.response.data, (parseErr, result) => {
                         if (parseErr) {
                             return done(parseErr);
                         }
 
                         const error = result.Error;
                         assert.equal(error.Code[0], 'InvalidAccessKeyId', 'Expected InvalidAccessKeyId error code');
-                        done();
+                        return done();
                     });
                 });
         });
@@ -698,27 +695,25 @@ describe('POST object', () => {
                 return done(err);
             }
 
-            axios.post(url, formData, {
+            return axios.post(url, formData, {
                 headers: {
                     ...formData.getHeaders(),
                     'Content-Length': length,
                 },
             })
-                .then(() => {
-                    done(new Error('Request should not succeed with an invalid credential'));
-                })
+                .then(() => done(new Error('Request should not succeed with an invalid credential')))
                 .catch(err => {
                     assert.ok(err.response, 'Error should be returned by axios');
 
                     // Parse the XML error response
-                    xml2js.parseString(err.response.data, (parseErr, result) => {
+                    return xml2js.parseString(err.response.data, (parseErr, result) => {
                         if (parseErr) {
                             return done(parseErr);
                         }
 
                         const error = result.Error;
                         assert.equal(error.Code[0], 'InvalidArgument', 'Expected InvalidArgument error code');
-                        done();
+                        return done();
                     });
                 });
         });
