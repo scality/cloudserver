@@ -60,7 +60,8 @@ const calculateFields = (ak, sk, bucketName, additionalConditions) => {
         });
     }
     const policy = {
-        expiration: new Date(new Date().getTime() + 60000).toISOString(),
+        // 15 minutes from now
+        expiration: new Date(new Date().getTime() + 15 * 60 * 1000).toISOString(),
         conditions: conditionsFields,
     };
     const policyBase64 = Buffer.from(JSON.stringify(policy)).toString('base64');
@@ -515,6 +516,7 @@ describe('POST object', () => {
 
     it('should handle error when signature is invalid', done => {
         const { url, bucketName } = testContext;
+
         const fields = calculateFields(ak, sk, bucketName);
         fields.push({ name: 'X-Amz-Signature', value: 'invalid-signature' });
         const formData = new FormData();
@@ -530,18 +532,25 @@ describe('POST object', () => {
                 return done(err);
             }
 
-            axios.post(url, formData, {
+            return axios.post(url, formData, {
                 headers: {
                     ...formData.getHeaders(),
                     'Content-Length': length,
                 },
             })
-                .then(() => {
-                    done(new Error('Expected error but got success response'));
-                })
+                .then(() => done(new Error('Expected error but got success response')))
                 .catch(err => {
                     assert.equal(err.response.status, 403);
-                    done();
+                    return xml2js.parseString(err.response.data, (err, result) => {
+                        if (err) {
+                            return done(err);
+                        }
+
+                        const error = result.Error;
+                        assert.equal(error.Code[0], 'SignatureDoesNotMatch');
+                        assert.equal(error.Message[0], 'The request signature we calculated does not match the signature you provided.');
+                        return done();
+                    });
                 });
         });
     });
@@ -666,7 +675,7 @@ describe('POST object', () => {
         const laterThanNow = new Date(new Date().getTime() + 60000);
         const shortFormattedDate = formatDate(laterThanNow);
 
-        const credential = `${ak}/${shortFormattedDate}/ap-east-1/s3/aws4_request`;
+        const credential = `${ak}/${shortFormattedDate}/eu-west-1/blabla/aws4_request`;
 
         // Modify the signature to be invalid
         fields = fields.map(field => {
