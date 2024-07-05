@@ -60,7 +60,8 @@ const calculateFields = (ak, sk, bucketName, additionalConditions) => {
         });
     }
     const policy = {
-        expiration: new Date(new Date().getTime() + 60000).toISOString(),
+        // 15 minutes from now
+        expiration: new Date(new Date().getTime() + 15 * 60 * 1000).toISOString(),
         conditions: conditionsFields,
     };
     const policyBase64 = Buffer.from(JSON.stringify(policy)).toString('base64');
@@ -510,6 +511,211 @@ describe('POST object', () => {
                         done(err);
                     });
             });
+        });
+    });
+
+    it('should handle error when signature is invalid', done => {
+        const { url, bucketName } = testContext;
+
+        const fields = calculateFields(ak, sk, bucketName);
+        fields.push({ name: 'X-Amz-Signature', value: 'invalid-signature' });
+        const formData = new FormData();
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
+
+        formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            return axios.post(url, formData, {
+                headers: {
+                    ...formData.getHeaders(),
+                    'Content-Length': length,
+                },
+            })
+                .then(() => done(new Error('Expected error but got success response')))
+                .catch(err => {
+                    assert.equal(err.response.status, 403);
+                    return xml2js.parseString(err.response.data, (err, result) => {
+                        if (err) {
+                            return done(err);
+                        }
+
+                        const error = result.Error;
+                        assert.equal(error.Code[0], 'SignatureDoesNotMatch');
+                        assert.equal(error.Message[0],
+                            'The request signature we calculated does not match the signature you provided.');
+                        return done();
+                    });
+                });
+        });
+    });
+
+    it('should return an error when signature includes invalid data', done => {
+        const { url, bucketName } = testContext;
+        let fields = calculateFields(ak, sk, bucketName);
+        const laterThanNow = new Date(new Date().getTime() + 60000);
+        const shortFormattedDate = formatDate(laterThanNow);
+
+        const signingKey = getSignatureKey(sk, shortFormattedDate, 'ap-east-1', 's3');
+        const signature = crypto.createHmac('sha256', signingKey).update(fields.find(field =>
+            field.name === 'Policy').value).digest('hex');
+
+        // Modify the signature to be invalid
+        fields = fields.map(field => {
+            if (field.name === 'X-Amz-Signature') {
+                return { name: 'X-Amz-Signature', value: signature };
+            }
+            return field;
+        });
+
+        const formData = new FormData();
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
+
+        return formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            return axios.post(url, formData, {
+                headers: {
+                    ...formData.getHeaders(),
+                    'Content-Length': length,
+                },
+            })
+                .then(() => done(new Error('Request should not succeed with an invalid signature')))
+                .catch(err => {
+                    assert.ok(err.response, 'Error should be returned by axios');
+
+                    // Parse the XML error response
+                    return xml2js.parseString(err.response.data, (parseErr, result) => {
+                        if (parseErr) {
+                            return done(parseErr);
+                        }
+
+                        const error = result.Error;
+                        assert.equal(
+                            error.Code[0],
+                            'SignatureDoesNotMatch',
+                            'Expected SignatureDoesNotMatch error code'
+                        );
+                        return done();
+                    });
+                });
+        });
+    });
+
+    it('should return an error for invalid keys', done => {
+        const { url, bucketName } = testContext;
+        const invalidAccessKeyId = 'INVALIDACCESSKEY';
+        const invalidSecretAccessKey = 'INVALIDSECRETKEY';
+        let fields = calculateFields(invalidAccessKeyId, invalidSecretAccessKey, bucketName);
+
+        // Modify the signature to be invalid
+        fields = fields.map(field => {
+            if (field.name === 'X-Amz-Signature') {
+                return { name: 'X-Amz-Signature', value: 'invalid-signature' };
+            }
+            return field;
+        });
+
+        const formData = new FormData();
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
+
+        formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            return axios.post(url, formData, {
+                headers: {
+                    ...formData.getHeaders(),
+                    'Content-Length': length,
+                },
+            })
+                .then(() => done(new Error('Request should not succeed with an invalid keys')))
+                .catch(err => {
+                    assert.ok(err.response, 'Error should be returned by axios');
+
+                    // Parse the XML error response
+                    return xml2js.parseString(err.response.data, (parseErr, result) => {
+                        if (parseErr) {
+                            return done(parseErr);
+                        }
+
+                        const error = result.Error;
+                        assert.equal(error.Code[0], 'InvalidAccessKeyId', 'Expected InvalidAccessKeyId error code');
+                        return done();
+                    });
+                });
+        });
+    });
+
+    it('should return an error for invalid credential', done => {
+        const { url, bucketName } = testContext;
+        let fields = calculateFields(ak, sk, bucketName);
+        const laterThanNow = new Date(new Date().getTime() + 60000);
+        const shortFormattedDate = formatDate(laterThanNow);
+
+        const credential = `${ak}/${shortFormattedDate}/eu-west-1/blabla/aws4_request`;
+
+        // Modify the signature to be invalid
+        fields = fields.map(field => {
+            if (field.name === 'X-Amz-Credential') {
+                return { name: 'X-Amz-Credential', value: credential };
+            }
+            return field;
+        });
+
+        const formData = new FormData();
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fs.createReadStream(path.join(__dirname, 'test-file.txt')));
+
+        formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            return axios.post(url, formData, {
+                headers: {
+                    ...formData.getHeaders(),
+                    'Content-Length': length,
+                },
+            })
+                .then(() => done(new Error('Request should not succeed with an invalid credential')))
+                .catch(err => {
+                    assert.ok(err.response, 'Error should be returned by axios');
+
+                    // Parse the XML error response
+                    return xml2js.parseString(err.response.data, (parseErr, result) => {
+                        if (parseErr) {
+                            return done(parseErr);
+                        }
+
+                        const error = result.Error;
+                        assert.equal(error.Code[0], 'InvalidArgument', 'Expected InvalidArgument error code');
+                        return done();
+                    });
+                });
         });
     });
 });
