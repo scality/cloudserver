@@ -6,14 +6,17 @@ const versionIdUtils = versioning.VersionID;
 
 const { makeRequest, makeBackbeatRequest } = require('../../utils/makeRequest');
 const BucketUtility = require('../../../aws-node-sdk/lib/utility/bucket-util');
+const { getCredentials } = require('../../../aws-node-sdk/test/support/credentials');
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 const describeSkipIfAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
 const isNullVersionCompatMode = process.env.ENABLE_NULL_VERSION_COMPAT_MODE === 'true';
 
+const { accessKeyId, secretAccessKey } = getCredentials();
+
 const backbeatAuthCredentials = {
-    accessKey: 'accessKey1',
-    secretKey: 'verySecretKey1',
+    accessKey: accessKeyId,
+    secretKey: secretAccessKey,
 };
 
 const TEST_BUCKET = 'backbeatbucket';

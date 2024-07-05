@@ -3,13 +3,16 @@ const http = require('http');
 
 const { makeRequest } = require('../../utils/makeRequest');
 const MetadataMock = require('../../utils/MetadataMock');
+const { getCredentials } = require('../../../aws-node-sdk/test/support/credentials');
 
 const ipAddress = process.env.IP ? process.env.IP : 'localhost';
 const metadataMock = new MetadataMock();
 
+const { accessKeyId, secretAccessKey } = getCredentials();
+
 const metadataAuthCredentials = {
-    accessKey: 'accessKey1',
-    secretKey: 'verySecretKey1',
+    accessKey: accessKeyId,
+    secretKey: secretAccessKey,
 };
 
 function makeMetadataRequest(params, callback) {

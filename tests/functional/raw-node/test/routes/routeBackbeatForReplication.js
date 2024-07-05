@@ -5,12 +5,15 @@ const { ObjectMD } = models;
 
 const { makeBackbeatRequest } = require('../../utils/makeRequest');
 const BucketUtility = require('../../../aws-node-sdk/lib/utility/bucket-util');
+const { getCredentials } = require('../../../aws-node-sdk/test/support/credentials');
 
 const describeSkipIfAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
 
+const { accessKeyId, secretAccessKey } = getCredentials();
+
 const backbeatAuthCredentials = {
-    accessKey: 'accessKey1',
-    secretKey: 'verySecretKey1',
+    accessKey: accessKeyId,
+    secretKey: secretAccessKey,
 };
 
 const testData = 'testkey data';
