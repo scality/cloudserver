@@ -386,6 +386,7 @@ describe('objectHead API', () => {
                     assert.strictEqual(res['x-amz-scal-archive-info'], undefined);
                     assert.strictEqual(res['x-amz-scal-restore-requested-at'], undefined);
                     assert.strictEqual(res['x-amz-scal-restore-requested-days'], undefined);
+                    assert.strictEqual(res['x-amz-scal-owner-id'], undefined);
                     done();
                 });
             });
@@ -416,13 +417,13 @@ describe('objectHead API', () => {
                     assert.strictEqual(res['x-amz-scal-restore-requested-at'], undefined);
                     assert.strictEqual(res['x-amz-scal-restore-completed-at'], undefined);
                     assert.strictEqual(res['x-amz-scal-restore-will-expire-at'], undefined);
+                    assert.strictEqual(res['x-amz-scal-owner-id'], undefined);
                     done();
                 });
             });
         });
     });
 
-    // add GetRequest with flag for different kind of objects
     it('should report when transition in progress', done => {
         const testGetRequest = {
             bucketName,
@@ -439,6 +440,7 @@ describe('objectHead API', () => {
                     assert.strictEqual(res['x-amz-scal-transition-in-progress'], undefined);
                     assert.strictEqual(res['x-amz-scal-transition-time'], undefined);
                     assert.strictEqual(res['x-amz-scal-archive-info'], undefined);
+                    assert.strictEqual(res['x-amz-scal-owner-id'], undefined);
                     done(err);
                 });
             });
@@ -464,6 +466,7 @@ describe('objectHead API', () => {
                     assert.strictEqual(res['x-amz-scal-transition-time'],
                         new Date(objectCustomMDFields['x-amz-scal-transition-time']).toUTCString());
                     assert.strictEqual(res['x-amz-scal-archive-info'], undefined);
+                    assert.strictEqual(res['x-amz-scal-owner-id'], mdColdHelper.defaultOwnerId);
                     done(err);
                 });
             });
@@ -488,6 +491,7 @@ describe('objectHead API', () => {
                     assert.strictEqual(res['x-amz-scal-transition-in-progress'], undefined);
                     assert.strictEqual(res['x-amz-scal-archive-info'], '{"foo":0,"bar":"stuff"}');
                     assert.strictEqual(res['x-amz-storage-class'], mdColdHelper.defaultLocation);
+                    assert.strictEqual(res['x-amz-scal-owner-id'], mdColdHelper.defaultOwnerId);
                     done(err);
                 });
             });
@@ -516,6 +520,7 @@ describe('objectHead API', () => {
                     assert.strictEqual(res['x-amz-scal-restore-requested-days'],
                         objectCustomMDFields.archive.restoreRequestedDays);
                     assert.strictEqual(res['x-amz-storage-class'], mdColdHelper.defaultLocation);
+                    assert.strictEqual(res['x-amz-scal-owner-id'], mdColdHelper.defaultOwnerId);
                     done(err);
                 });
             });
@@ -548,6 +553,7 @@ describe('objectHead API', () => {
                     assert.strictEqual(res['x-amz-scal-restore-will-expire-at'],
                         new Date(objectCustomMDFields.archive.restoreWillExpireAt).toUTCString());
                     assert.strictEqual(res['x-amz-storage-class'], mdColdHelper.defaultLocation);
+                    assert.strictEqual(res['x-amz-scal-owner-id'], mdColdHelper.defaultOwnerId);
                     done(err);
                 });
             });

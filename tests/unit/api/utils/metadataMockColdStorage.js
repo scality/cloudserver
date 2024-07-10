@@ -7,10 +7,11 @@ const ObjectMDArchive = require('arsenal').models.ObjectMDArchive;
 const BucketInfo = require('arsenal').models.BucketInfo;
 
 const defaultLocation = 'location-dmf-v1';
+const defaultOwnerId = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
 
 const baseMd = {
     'owner-display-name': 'accessKey1displayName',
-    'owner-id': '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
+    'owner-id': defaultOwnerId,
     'content-length': 11,
     'content-md5': 'be747eb4b75517bf6b3cf7c5fbb62f3a',
     'content-language': '',
@@ -178,4 +179,5 @@ module.exports = {
     getTransitionInProgressMD,
     putBucketMock,
     defaultLocation,
+    defaultOwnerId,
 };
