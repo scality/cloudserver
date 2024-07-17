@@ -21,7 +21,7 @@
   "dependencies": {
     "@fastify/busboy": "^2.1.1",
     "@hapi/joi": "^17.1.0",
-    "arsenal": "git+https://github.com/scality/arsenal#5cd2814b4a128c44ecb3e4ed464610a47adda5d5",
+    "arsenal": "git+https://github.com/scality/arsenal#e109d2dcfffd083bf35c0e3db2715484ffab8efd",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
