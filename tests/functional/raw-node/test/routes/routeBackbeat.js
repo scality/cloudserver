@@ -66,6 +66,11 @@ const testMd = {
     },
 };
 
+// S3_TESTVAL_OWNERCANONICALID variable is used by Integration that runs E2E tests with real Vault account.
+if (process.env.S3_TESTVAL_OWNERCANONICALID) {
+    testMd['owner-id'] = process.env.S3_TESTVAL_OWNERCANONICALID;
+}
+
 function checkObjectData(s3, objectKey, dataValue, done) {
     s3.getObject({
         Bucket: TEST_BUCKET,
@@ -1939,13 +1944,14 @@ describeSkipIfAWS('backbeat routes', () => {
                 '403 Forbidden if the account does not match the ' +
                 'backbeat user',
                 done => {
-                    makeBackbeatRequest({
+                    const { accessKeyId: accessKeyLisa, secretAccessKey: secretAccessKeyLisa } = getCredentials('lisa');
+                    return makeBackbeatRequest({
                         method: test.method, bucket: TEST_BUCKET,
                         objectKey: TEST_KEY, resourceType: test.resourceType,
                         queryObj,
                         authCredentials: {
-                            accessKey: 'accessKey2',
-                            secretKey: 'verySecretKey2',
+                            accessKey: accessKeyLisa,
+                            secretKey: secretAccessKeyLisa,
                         },
                     },
                     err => {
