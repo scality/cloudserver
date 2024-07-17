@@ -852,6 +852,51 @@ describe('POST object', () => {
         });
     });
 
+    it('should return an error if a query parameter is present in the URL', done => {
+        const { url } = testContext;
+        const queryParam = '?invalidParam=true';
+        const invalidUrl = `${url}${queryParam}`;
+        const fields = calculateFields(ak, sk);
+
+        const formData = new FormData();
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fileBuffer, filename);
+
+        return formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            return axios.post(invalidUrl, formData, {
+                headers: {
+                    ...formData.getHeaders(),
+                    'Content-Length': length,
+                },
+            })
+                .then(() => {
+                    done(new Error('Request should not succeed with an invalid query parameter'));
+                })
+                .catch(err => {
+                    assert.ok(err.response, 'Error should be returned by axios');
+
+                    xml2js.parseString(err.response.data, (err, result) => {
+                        if (err) {
+                            return done(err);
+                        }
+
+                        const error = result.Error;
+                        assert.equal(error.Code[0], 'InvalidArgument');
+                        assert.equal(error.Message[0], 'Query String Parameters not allowed on POST requests.');
+                        return done();
+                    });
+                });
+        });
+    });
+
     it('should successfully upload an object with bucket versioning enabled and verify version ID', done => {
         const { url } = testContext;
 
