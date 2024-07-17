@@ -197,9 +197,6 @@ describe('POST object', () => {
             formData.append(field.name, field.value);
         });
 
-        const fileContent = 'This is a test file';
-        const fileBuffer = Buffer.from(fileContent);
-
         formData.append('file', fileBuffer, { filename });
 
         formData.getLength((err, length) => {
@@ -674,7 +671,7 @@ describe('POST object', () => {
                         }
 
                         const error = result.Error;
-                        assert.equal(error.Code[0], 'KeyTooLongError');
+                        assert.equal(error.Code[0], 'KeyTooLong');
                         assert.equal(error.Message[0],
                             'Your key is too long.');
                         return done();
