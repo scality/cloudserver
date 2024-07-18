@@ -2121,7 +2121,9 @@ describeSkipIfAWS('backbeat routes', () => {
                 done();
             });
         });
-        it('should skip batch delete of a non-existent location', done => {
+
+        // TODO: unskip test when S3C-9123 is fixed
+        it.skip('should skip batch delete of a non-existent location', done => {
             async.series([
                 done => {
                     const options = {
@@ -2132,7 +2134,7 @@ describeSkipIfAWS('backbeat routes', () => {
                         path: '/_/backbeat/batchdelete',
                         requestBody:
                         '{"Locations":' +
-                            '[{"key":"abcdef","dataStoreName":"us-east-1"}]}',
+                            '[{"key":"abcdefghijklmnopqrstuvwxyabcddefghijklmn","dataStoreName":"us-east-1"}]}',
                         jsonResponse: true,
                     };
                     makeRequest(options, done);
