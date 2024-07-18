@@ -928,6 +928,53 @@ describe('POST object', () => {
         });
     });
 
+    it('should return 405 Method Not Allowed if objectKey is present with a non-matching query parameter', done => {
+        const { url } = testContext;
+        const objectKey = 'someObjectKey';
+        const queryParam = '?nonMatchingParam=true';
+        const invalidUrl = `${url}/${objectKey}${queryParam}`;
+        const fields = calculateFields(ak, sk);
+
+        const formData = new FormData();
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fileBuffer, filename);
+
+        return formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            return axios.post(invalidUrl, formData, {
+                headers: {
+                    ...formData.getHeaders(),
+                    'Content-Length': length,
+                },
+            })
+                .then(() => {
+                    done(new Error('Request should not succeed with a non-matching query parameter'));
+                })
+                .catch(err => {
+                    assert.ok(err.response, 'Error should be returned by axios');
+
+                    xml2js.parseString(err.response.data, (err, result) => {
+                        if (err) {
+                            return done(err);
+                        }
+
+                        const error = result.Error;
+                        assert.equal(error.Code[0], 'MethodNotAllowed');
+                        assert.equal(error.Message[0], 'The specified method is not allowed against this resource.');
+                        return done();
+                    });
+                });
+        });
+    });
+
+
     it('should successfully upload an object with bucket versioning enabled and verify version ID', done => {
         const { url } = testContext;
 
