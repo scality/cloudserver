@@ -187,6 +187,41 @@ describe('POST object', () => {
         });
     });
 
+    it('should handle url invalid characters in keys', done => {
+        const { url } = testContext;
+        const fields = calculateFields(ak, sk, [{ key: 'key with spaces' }]);
+        const formData = new FormData();
+        const encodedKey = 'key%20with%20spaces'; // Expected URL-encoded key
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fileBuffer, { filename });
+
+        formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            return axios.post(url, formData, {
+                headers: {
+                    ...formData.getHeaders(),
+                    'Content-Length': length,
+                },
+            })
+                .then(response => {
+                    assert.equal(response.status, 204);
+                    assert.equal(response.headers.location, `/${bucketName}/${encodedKey}`);
+                    assert.equal(response.headers.bucket, bucketName);
+                    done();
+                })
+                .catch(err => {
+                    done(err);
+                });
+        });
+    });
+
     it('should handle error when bucket does not exist', done => {
         const fakeBucketName = generateBucketName();
         const tempUrl = `${config.endpoint}/${fakeBucketName}`;
