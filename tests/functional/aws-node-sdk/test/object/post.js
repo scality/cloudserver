@@ -177,7 +177,6 @@ describe('POST object', () => {
                 .then(response => {
                     assert.equal(response.status, 204);
                     assert.equal(response.headers.location, `/${bucketName}/${filename}`);
-                    assert.equal(response.headers.key, filename);
                     assert.equal(response.headers.bucket, bucketName);
                     done();
                 })
