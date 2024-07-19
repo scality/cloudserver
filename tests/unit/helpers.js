@@ -378,7 +378,6 @@ const versioningTestUtils = {
         const params = {
             bucketName,
             formData: {
-                bucket: bucketName,
                 key: keyName,
             },
             fileEventData: {},
