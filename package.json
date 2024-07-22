@@ -21,7 +21,7 @@
   "dependencies": {
     "@fastify/busboy": "^2.1.1",
     "@hapi/joi": "^17.1.0",
-    "arsenal": "git+https://github.com/scality/arsenal#9e824e2ce7bf62e2070f679b2c2334cf7a1b7c5f",
+    "arsenal": "git+https://github.com/scality/arsenal#4ef5748c028619edff10d6d38b21df43c8d63d88",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
@@ -61,6 +61,9 @@
   },
   "scripts": {
     "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/",
+    "ft_post": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/object/post.js",
+    "ft_post_aws": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/object/post-copy.js",
+    "ft_post_unit": "CI=true S3BACKEND=mem mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --recursive tests/unit/api/callPostMethod.js",
     "ft_awssdk_aws": "cd tests/functional/aws-node-sdk && AWS_ON_AIR=true mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/",
     "ft_awssdk_buckets": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/bucket",
     "ft_awssdk_objects_misc": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/legacy test/object test/service test/support",
