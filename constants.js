@@ -215,6 +215,7 @@ const constants = {
         'initiateMultipartUpload',
         'objectPutPart',
         'completeMultipartUpload',
+        'objectPost',
     ],
 };
 

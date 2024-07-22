@@ -374,6 +374,18 @@ const versioningTestUtils = {
         };
         return new DummyRequest(params, body);
     },
+    createPostObjectRequest: (bucketName, keyName, body) => {
+        const params = {
+            bucketName,
+            formData: {
+                key: keyName,
+            },
+            fileEventData: {},
+            headers: {},
+            url: '/',
+        };
+        return new DummyRequest(params, body);
+    },
     createBucketPutVersioningReq: (bucketName, status) => {
         const request = {
             bucketName,
