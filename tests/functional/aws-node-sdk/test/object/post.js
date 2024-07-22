@@ -1,10 +1,12 @@
+// const AWS = require('aws-sdk');
 
 const xml2js = require('xml2js');
 const axios = require('axios');
 const crypto = require('crypto');
 const FormData = require('form-data');
 const assert = require('assert');
-
+const http = require('http');
+const { URL } = require('url');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const getConfig = require('../support/config');
 
@@ -117,7 +119,7 @@ describe('POST object', () => {
         bucketName = generateBucketName();
         const url = `${config.endpoint}/${bucketName}`;
         testContext.bucketName = bucketName;
-        testContext.url = url;
+        testContext.url = new URL(url);
 
         const fileContent = 'This is a test file';
         fileBuffer = Buffer.from(fileContent);
@@ -151,7 +153,6 @@ describe('POST object', () => {
             });
     });
 
-
     it('should successfully upload an object using a POST form', done => {
         const { url } = testContext;
         const fields = calculateFields(ak, sk);
@@ -168,20 +169,35 @@ describe('POST object', () => {
                 return done(err);
             }
 
-            return axios.post(url, formData, {
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
                 headers: {
                     ...formData.getHeaders(),
                     'Content-Length': length,
                 },
-            })
-                .then(response => {
-                    assert.equal(response.status, 204);
-                    assert.equal(response.headers.location, `/${bucketName}/${filename}`);
+            };
+
+            const req = http.request(options);
+
+            req.on('response', res => {
+                try {
+                    assert.equal(res.statusCode, 204);
+                    assert.equal(res.headers.location, `/${bucketName}/${filename}`);
                     done();
-                })
-                .catch(err => {
+                } catch (err) {
                     done(err);
-                });
+                }
+            });
+
+            req.on('error', err => {
+                done(err);
+            });
+
+            formData.pipe(req);
+            return undefined;
         });
     });
 
@@ -202,20 +218,35 @@ describe('POST object', () => {
                 return done(err);
             }
 
-            return axios.post(url, formData, {
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
                 headers: {
                     ...formData.getHeaders(),
                     'Content-Length': length,
                 },
-            })
-                .then(response => {
-                    assert.equal(response.status, 204);
-                    assert.equal(response.headers.location, `/${bucketName}/${encodedKey}`);
+            };
+
+            const req = http.request(options);
+
+            req.on('response', res => {
+                try {
+                    assert.equal(res.statusCode, 204);
+                    assert.equal(res.headers.location, `/${bucketName}/${encodedKey}`);
                     done();
-                })
-                .catch(err => {
+                } catch (err) {
                     done(err);
-                });
+                }
+            });
+
+            req.on('error', err => {
+                done(err);
+            });
+
+            formData.pipe(req);
+            return undefined;
         });
     });
 
@@ -236,22 +267,35 @@ describe('POST object', () => {
                 return done(err);
             }
 
-            return axios.post(tempUrl, formData, {
+            const parsedUrl = new URL(tempUrl);
+
+            const options = {
+                method: 'POST',
+                hostname: parsedUrl.hostname,
+                port: parsedUrl.port,
+                path: parsedUrl.pathname + parsedUrl.search,
                 headers: {
                     ...formData.getHeaders(),
                     'Content-Length': length,
                 },
-            })
-                .then(() => {
-                    done(new Error('Expected error but got success response'));
-                })
-                .catch(err => {
-                    assert.equal(err.response.status, 404);
+            };
+
+            const req = http.request(options);
+
+            req.on('response', res => {
+                if (res.statusCode === 404) {
                     done();
-                });
+                } else {
+                    done(new Error('Expected error but got success response'));
+                }
+            });
+
+            req.on('error', done);
+
+            formData.pipe(req);
+            return undefined;
         });
     });
-
 
     it('should successfully upload a larger file to S3 using a POST form', done => {
         const { url } = testContext;
@@ -273,29 +317,46 @@ describe('POST object', () => {
                 return done(err);
             }
 
-            return axios.post(url, formData, {
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
                 headers: {
                     ...formData.getHeaders(),
                     'Content-Length': length,
                 },
-            })
-                .then(response => {
-                    assert.equal(response.status, 204);
+            };
+
+            const req = http.request(options);
+
+            req.on('response', res => {
+                if (res.statusCode === 204) {
                     s3.listObjectsV2({ Bucket: bucketName }, (err, data) => {
                         if (err) {
                             return done(err);
                         }
 
                         const uploadedFile = data.Contents.find(item => item.Key === largeFileName);
-                        assert(uploadedFile, 'Uploaded file should exist in the bucket');
-                        assert.equal(uploadedFile.Size, Buffer.byteLength(largeFileContent), 'File size should match');
-
-                        return done();
+                        try {
+                            assert(uploadedFile, 'Uploaded file should exist in the bucket');
+                            assert.equal(uploadedFile.Size,
+                                Buffer.byteLength(largeFileContent), 'File size should match');
+                            done();
+                        } catch (err) {
+                            done(err);
+                        }
+                        return undefined;
                     });
-                })
-                .catch(err => {
-                    done(err);
-                });
+                } else {
+                    done(new Error(`Expected status 204 but got ${res.statusCode}`));
+                }
+            });
+
+            req.on('error', done);
+
+            formData.pipe(req);
+            return undefined;
         });
     });
 
@@ -308,24 +369,30 @@ describe('POST object', () => {
             formData.append(field.name, field.value);
         });
 
-        const emptyFileBuffer = Buffer.from(''); // Create a buffer for an empty file
+        const emptyFileBuffer = Buffer.from('');
 
-        formData.append('file', emptyFileBuffer, filename);
+        formData.append('file', emptyFileBuffer, { filename });
 
         formData.getLength((err, length) => {
             if (err) {
                 return done(err);
             }
 
-            return axios.post(url, formData, {
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
                 headers: {
                     ...formData.getHeaders(),
                     'Content-Length': length,
                 },
-            })
-                .then(response => {
-                    assert.equal(response.status, 204);
+            };
 
+            const req = http.request(options);
+
+            req.on('response', res => {
+                if (res.statusCode === 204) {
                     // Check if the object exists using listObjects
                     s3.listObjectsV2({ Bucket: bucketName, Prefix: filename }, (err, data) => {
                         if (err) {
@@ -335,22 +402,34 @@ describe('POST object', () => {
                         const fileExists = data.Contents.some(item => item.Key === filename);
                         const file = data.Contents.find(item => item.Key === filename);
 
-                        assert(fileExists, 'File should exist in S3');
-                        assert.equal(file.Size, 0, 'File size should be 0');
+                        try {
+                            assert(fileExists, 'File should exist in S3');
+                            assert.equal(file.Size, 0, 'File size should be 0');
 
-                        // Clean up: delete the empty file from S3
-                        return s3.deleteObject({ Bucket: bucketName, Key: filename }, err => {
-                            if (err) {
-                                return done(err);
-                            }
+                            // Clean up: delete the empty file from S3
+                            s3.deleteObject({ Bucket: bucketName, Key: filename }, err => {
+                                if (err) {
+                                    return done(err);
+                                }
 
-                            return done();
-                        });
+                                return done();
+                            });
+                        } catch (err) {
+                            return done(err);
+                        }
+                        return undefined;
                     });
-                })
-                .catch(err => {
-                    done(err);
-                });
+                } else {
+                    done(new Error(`Expected status 204 but got ${res.statusCode}`));
+                }
+            });
+
+            req.on('error', err => {
+                done(err);
+            });
+
+            formData.pipe(req);
+            return undefined;
         });
     });
 
@@ -368,28 +447,55 @@ describe('POST object', () => {
                 return done(err);
             }
 
-            return axios.post(url, formData, {
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
                 headers: {
                     ...formData.getHeaders(),
                     'Content-Length': length,
                 },
-            })
-                .then(() => {
+            };
+
+            const req = http.request(options);
+
+            req.on('response', res => {
+                if (res.statusCode !== 400) {
                     done(new Error('Expected error but got success response'));
-                })
-                .catch(err => {
-                    assert.equal(err.response.status, 400);
-                    xml2js.parseString(err.response.data, (parseErr, result) => {
+                    return;
+                }
+
+                let responseData = '';
+                res.on('data', chunk => {
+                    responseData += chunk;
+                });
+
+                res.on('end', () => {
+                    xml2js.parseString(responseData, (parseErr, result) => {
                         if (parseErr) {
                             return done(parseErr);
                         }
 
-                        const error = result.Error;
-                        assert.equal(error.Code[0], 'InvalidArgument');
-                        assert.equal(error.Message[0], 'POST requires exactly one file upload per request.');
-                        return done();
+                        try {
+                            const error = result.Error;
+                            assert.equal(error.Code[0], 'InvalidArgument');
+                            assert.equal(error.Message[0], 'POST requires exactly one file upload per request.');
+                            done();
+                        } catch (err) {
+                            done(err);
+                        }
+                        return undefined;
                     });
                 });
+            });
+
+            req.on('error', err => {
+                done(err);
+            });
+
+            formData.pipe(req);
+            return undefined;
         });
     });
 
@@ -411,31 +517,57 @@ describe('POST object', () => {
                 return done(err);
             }
 
-            return axios.post(url, formData, {
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
                 headers: {
                     ...formData.getHeaders(),
                     'Content-Length': length,
                 },
-            })
-                .then(() => {
+            };
+
+            const req = http.request(options);
+
+            // Handle the response
+            req.on('response', res => {
+                if (res.statusCode !== 400) {
                     done(new Error('Expected error but got success response'));
-                })
-                .catch(err => {
-                    assert.equal(err.response.status, 400);
-                    xml2js.parseString(err.response.data, (parseErr, result) => {
+                    return;
+                }
+
+                let responseData = '';
+                res.on('data', chunk => {
+                    responseData += chunk;
+                });
+
+                res.on('end', () => {
+                    xml2js.parseString(responseData, (parseErr, result) => {
                         if (parseErr) {
                             return done(parseErr);
                         }
 
-                        const error = result.Error;
-                        assert.equal(error.Code[0], 'InvalidArgument');
-                        assert.equal(error.Message[0], 'POST requires exactly one file upload per request.');
-                        return done();
+                        try {
+                            const error = result.Error;
+                            assert.equal(error.Code[0], 'InvalidArgument');
+                            assert.equal(error.Message[0], 'POST requires exactly one file upload per request.');
+                            return done();
+                        } catch (err) {
+                            return done(err);
+                        }
                     });
                 });
+            });
+
+            req.on('error', err => {
+                done(err);
+            });
+
+            formData.pipe(req);
+            return undefined;
         });
     });
-
 
     it('should handle error when key is missing', done => {
         const { url } = testContext;
@@ -459,39 +591,63 @@ describe('POST object', () => {
                 return done(err);
             }
 
-            return axios.post(url, formData, {
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
                 headers: {
                     ...formData.getHeaders(),
                     'Content-Length': length,
                 },
-            })
-                .then(() => {
-                    done(new Error('Request should not succeed without key field'));
-                })
-                .catch(err => {
-                    assert.ok(err.response, 'Error should be returned by axios');
+            };
 
-                    xml2js.parseString(err.response.data, (parseErr, result) => {
+            const req = http.request(options);
+
+            req.on('response', res => {
+                if (res.statusCode !== 400) {
+                    done(new Error('Request should not succeed without key field'));
+                    return;
+                }
+
+                let responseData = '';
+                res.on('data', chunk => {
+                    responseData += chunk;
+                });
+
+                res.on('end', () => {
+                    xml2js.parseString(responseData, (parseErr, result) => {
                         if (parseErr) {
                             return done(parseErr);
                         }
 
-                        const error = result.Error;
-                        assert.equal(error.Code[0], 'InvalidArgument');
-                        assert.equal(error.Message[0],
-                            "Bucket POST must contain a field named 'key'.  "
-                            + 'If it is specified, please check the order of the fields.');
-                        return done();
+                        try {
+                            const error = result.Error;
+                            assert.equal(error.Code[0], 'InvalidArgument');
+                            assert.equal(error.Message[0],
+                                "Bucket POST must contain a field named 'key'.  "
+                                + 'If it is specified, please check the order of the fields.');
+                            return done();
+                        } catch (err) {
+                            return done(err);
+                        }
                     });
                 });
+            });
+
+            req.on('error', err => {
+                done(err);
+            });
+
+            formData.pipe(req);
+            return undefined;
         });
     });
 
     it('should handle error when content-type is incorrect', done => {
         const { url } = testContext;
         // Prep fields then remove the key field
-        let fields = calculateFields(ak, sk);
-        fields = fields.filter(e => e.name !== 'key');
+        const fields = calculateFields(ak, sk);
 
         const formData = new FormData();
 
@@ -499,7 +655,7 @@ describe('POST object', () => {
             formData.append(field.name, field.value);
         });
 
-        formData.append('file', fileBuffer, filename);
+        formData.append('file', fileBuffer, { filename });
 
         formData.getLength((err, length) => {
             if (err) {
@@ -509,37 +665,207 @@ describe('POST object', () => {
             const headers = {
                 ...formData.getHeaders(),
                 'Content-Length': length,
+                'Content-Type': 'application/json', // Incorrect content type
             };
-            headers['content-type'] = 'application/json';
-            return axios.post(url, formData, {
-                headers,
-            })
-                .then(() => {
-                    done(new Error('Request should not succeed wrong content-type'));
-                })
-                .catch(err => {
-                    assert.ok(err.response, 'Error should be returned by axios');
 
-                    xml2js.parseString(err.response.data, (err, result) => {
-                        if (err) {
-                            return done(err);
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
+                headers,
+            };
+
+            const req = http.request(options);
+
+            req.on('response', res => {
+                if (res.statusCode !== 412) { // 412 Precondition Failed
+                    done(new Error('Request should not succeed with wrong content-type'));
+                    return;
+                }
+
+                let responseData = '';
+                res.on('data', chunk => {
+                    responseData += chunk;
+                });
+
+                res.on('end', () => {
+                    xml2js.parseString(responseData, (parseErr, result) => {
+                        if (parseErr) {
+                            return done(parseErr);
                         }
 
-                        const error = result.Error;
-                        assert.equal(error.Code[0], 'PreconditionFailed');
-                        assert.equal(error.Message[0],
-                            'Bucket POST must be of the enclosure-type multipart/form-data');
-                        return done();
+                        try {
+                            const error = result.Error;
+                            assert.equal(error.Code[0], 'PreconditionFailed');
+                            assert.equal(error.Message[0],
+                                'Bucket POST must be of the enclosure-type multipart/form-data');
+                            return done();
+                        } catch (err) {
+                            return done(err);
+                        }
                     });
                 });
+            });
+
+            req.on('error', err => {
+                done(err);
+            });
+
+            formData.pipe(req);
+            return undefined;
+        });
+    });
+
+    it('should handle error when content-type is "abc multipart/form-data"', done => {
+        const { url } = testContext;
+        // Prep fields then remove the key field
+        const fields = calculateFields(ak, sk);
+
+        const formData = new FormData();
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fileBuffer, { filename });
+
+        formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            const headers = {
+                ...formData.getHeaders(),
+                'Content-Length': length,
+                'Content-Type': 'abc multipart/form-data', // Incorrect content type
+            };
+
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
+                headers,
+            };
+
+            const req = http.request(options);
+
+            req.on('response', res => {
+                if (res.statusCode !== 412) { // 412 Precondition Failed
+                    done(new Error('Request should not succeed with wrong content-type'));
+                    return;
+                }
+
+                let responseData = '';
+                res.on('data', chunk => {
+                    responseData += chunk;
+                });
+
+                res.on('end', () => {
+                    xml2js.parseString(responseData, (parseErr, result) => {
+                        if (parseErr) {
+                            return done(parseErr);
+                        }
+
+                        try {
+                            const error = result.Error;
+                            assert.equal(error.Code[0], 'PreconditionFailed');
+                            assert.equal(error.Message[0],
+                                'Bucket POST must be of the enclosure-type multipart/form-data');
+                            return done();
+                        } catch (err) {
+                            return done(err);
+                        }
+                    });
+                });
+            });
+
+            req.on('error', err => {
+                done(err);
+            });
+
+            formData.pipe(req);
+            return undefined;
+        });
+    });
+
+    it('should handle error when content-type is "multipart/form-data abc"', done => {
+        const { url } = testContext;
+        // Prep fields then remove the key field
+        const fields = calculateFields(ak, sk);
+
+        const formData = new FormData();
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fileBuffer, { filename });
+
+        formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            const headers = {
+                ...formData.getHeaders(),
+                'Content-Length': length,
+                'Content-Type': 'multipart/form-data abc', // Incorrect content type
+            };
+
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
+                headers,
+            };
+
+            const req = http.request(options);
+
+            req.on('response', res => {
+                if (res.statusCode !== 412) { // 412 Precondition Failed
+                    done(new Error('Request should not succeed with wrong content-type'));
+                    return;
+                }
+
+                let responseData = '';
+                res.on('data', chunk => {
+                    responseData += chunk;
+                });
+
+                res.on('end', () => {
+                    xml2js.parseString(responseData, (parseErr, result) => {
+                        if (parseErr) {
+                            return done(parseErr);
+                        }
+
+                        try {
+                            const error = result.Error;
+                            assert.equal(error.Code[0], 'PreconditionFailed');
+                            assert.equal(error.Message[0],
+                                'Bucket POST must be of the enclosure-type multipart/form-data');
+                            return done();
+                        } catch (err) {
+                            return done(err);
+                        }
+                    });
+                });
+            });
+
+            req.on('error', err => {
+                done(err);
+            });
+
+            formData.pipe(req);
+            return undefined;
         });
     });
 
     it('should handle error when content-type is missing', done => {
         const { url } = testContext;
-        // Prep fields then remove the key field
-        let fields = calculateFields(ak, sk);
-        fields = fields.filter(e => e.name !== 'key');
+        const fields = calculateFields(ak, sk);
 
         const formData = new FormData();
 
@@ -547,7 +873,7 @@ describe('POST object', () => {
             formData.append(field.name, field.value);
         });
 
-        formData.append('file', fileBuffer, filename);
+        formData.append('file', fileBuffer, { filename });
 
         formData.getLength((err, length) => {
             if (err) {
@@ -558,28 +884,52 @@ describe('POST object', () => {
                 ...formData.getHeaders(),
                 'Content-Length': length,
             };
-            delete headers['content-type'];
-            return axios.post(url, formData, {
-                headers,
-            })
-                .then(() => {
-                    done(new Error('Request should not succeed without correct content-type'));
-                })
-                .catch(err => {
-                    assert.ok(err.response, 'Error should be returned by axios');
+            delete headers['content-type']; // Ensure content-type is missing
 
-                    xml2js.parseString(err.response.data, (err, result) => {
-                        if (err) {
-                            return done(err);
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
+                headers,
+            };
+
+            const req = http.request(options);
+
+            req.on('response', res => {
+                if (res.statusCode !== 412) {
+                    done(new Error('Request should not succeed without correct content-type'));
+                    return;
+                }
+
+                let responseData = '';
+                res.on('data', chunk => {
+                    responseData += chunk;
+                });
+
+                res.on('end', () => {
+                    xml2js.parseString(responseData, (parseErr, result) => {
+                        if (parseErr) {
+                            return done(parseErr);
                         }
 
-                        const error = result.Error;
-                        assert.equal(error.Code[0], 'PreconditionFailed');
-                        assert.equal(error.Message[0],
-                            'Bucket POST must be of the enclosure-type multipart/form-data');
-                        return done();
+                        try {
+                            const error = result.Error;
+                            assert.equal(error.Code[0], 'PreconditionFailed');
+                            assert.equal(error.Message[0],
+                                'Bucket POST must be of the enclosure-type multipart/form-data');
+                            return done();
+                        } catch (err) {
+                            return done(err);
+                        }
                     });
                 });
+            });
+
+            req.on('error', done);
+
+            formData.pipe(req);
+            return undefined;
         });
     });
 
@@ -594,34 +944,48 @@ describe('POST object', () => {
             formData.append(field.name, field.value);
         });
 
-        formData.append('file', fileBuffer, filename);
+        formData.append('file', fileBuffer, { filename });
 
         formData.getLength((err, length) => {
             if (err) {
                 return done(err);
             }
 
-            return axios.post(url, formData, {
-                headers: {
-                    ...formData.getHeaders(),
-                    'Content-Length': length,
-                },
-            })
-                .then(response => {
-                    assert.equal(response.status, 204);
+            const headers = {
+                ...formData.getHeaders(),
+                'Content-Length': length,
+            };
+
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
+                headers,
+            };
+
+            const req = http.request(options);
+
+            req.on('response', res => {
+                if (res.statusCode === 204) {
                     done();
-                })
-                .catch(err => {
-                    done(err);
-                });
+                } else {
+                    done(new Error(`Expected status 204 but got ${res.statusCode}`));
+                }
+            });
+
+            req.on('error', err => {
+                done(err);
+            });
+
+            formData.pipe(req);
+            return undefined;
         });
     });
 
     it('should fail to upload an object with key length of 0', done => {
         const { url } = testContext;
-        const fields = calculateFields(ak, sk, [
-            { key: '' },
-        ]);
+        const fields = calculateFields(ak, sk, [{ key: '' }]);
 
         const formData = new FormData();
 
@@ -629,45 +993,70 @@ describe('POST object', () => {
             formData.append(field.name, field.value);
         });
 
-        formData.append('file', fileBuffer, filename);
+        formData.append('file', fileBuffer, { filename });
 
         formData.getLength((err, length) => {
             if (err) {
                 return done(err);
             }
 
-            // Use an incorrect content length (e.g., actual length - 20)
+            const headers = {
+                ...formData.getHeaders(),
+                'Content-Length': length,
+            };
 
-            return axios.post(url, formData, {
-                headers: {
-                    ...formData.getHeaders(),
-                    'Content-Length': length,
-                },
-            })
-                .then(() => done(new Error('Request should have failed but succeeded')))
-                .catch(err => {
-                    // Expecting an error response from the API
-                    assert.equal(err.response.status, 400);
-                    xml2js.parseString(err.response.data, (err, result) => {
-                        if (err) {
-                            return done(err);
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
+                headers,
+            };
+
+            const req = http.request(options);
+
+            // Handle the response
+            req.on('response', res => {
+                if (res.statusCode !== 400) {
+                    done(new Error('Request should have failed but succeeded'));
+                    return;
+                }
+
+                let responseData = '';
+                res.on('data', chunk => {
+                    responseData += chunk;
+                });
+
+                res.on('end', () => {
+                    xml2js.parseString(responseData, (parseErr, result) => {
+                        if (parseErr) {
+                            return done(parseErr);
                         }
 
-                        const error = result.Error;
-                        assert.equal(error.Code[0], 'InvalidArgument');
-                        assert.equal(error.Message[0],
-                            'User key must have a length greater than 0.');
-                        return done();
+                        try {
+                            const error = result.Error;
+                            assert.equal(error.Code[0], 'InvalidArgument');
+                            assert.equal(error.Message[0], 'User key must have a length greater than 0.');
+                            return done();
+                        } catch (err) {
+                            return done(err);
+                        }
                     });
                 });
+            });
+
+            req.on('error', err => {
+                done(err);
+            });
+
+            formData.pipe(req);
+            return undefined;
         });
     });
 
     it('should fail to upload an object with key longer than 1024 bytes', done => {
         const { url } = testContext;
-        const fields = calculateFields(ak, sk, [
-            { key: 'a'.repeat(1025) },
-        ]);
+        const fields = calculateFields(ak, sk, [{ key: 'a'.repeat(1025) }]);
 
         const formData = new FormData();
 
@@ -675,40 +1064,66 @@ describe('POST object', () => {
             formData.append(field.name, field.value);
         });
 
-        formData.append('file', fileBuffer, filename);
+        formData.append('file', fileBuffer, { filename });
 
         formData.getLength((err, length) => {
             if (err) {
                 return done(err);
             }
 
-            // Use an incorrect content length (e.g., actual length - 20)
+            const headers = {
+                ...formData.getHeaders(),
+                'Content-Length': length,
+            };
 
-            return axios.post(url, formData, {
-                headers: {
-                    ...formData.getHeaders(),
-                    'Content-Length': length,
-                },
-            })
-                .then(() => {
-                    // The request should fail, so we shouldn't get here
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
+                headers,
+            };
+
+            const req = http.request(options);
+
+            // Handle the response
+            req.on('response', res => {
+                if (res.statusCode !== 400) {
                     done(new Error('Request should have failed but succeeded'));
-                })
-                .catch(err => {
-                    // Expecting an error response from the API
-                    assert.equal(err.response.status, 400);
-                    xml2js.parseString(err.response.data, (err, result) => {
-                        if (err) {
-                            return done(err);
+                    return;
+                }
+
+                let responseData = '';
+                res.on('data', chunk => {
+                    responseData += chunk;
+                });
+
+                res.on('end', () => {
+                    xml2js.parseString(responseData, (parseErr, result) => {
+                        if (parseErr) {
+                            return done(parseErr);
                         }
 
-                        const error = result.Error;
-                        assert.equal(error.Code[0], 'KeyTooLong');
-                        assert.equal(error.Message[0],
-                            'Your key is too long.');
-                        return done();
+                        try {
+                            const error = result.Error;
+                            assert.equal(error.Code[0], 'KeyTooLong');
+                            assert.equal(error.Message[0], 'Your key is too long.');
+                            return done();
+                        } catch (err) {
+                            return done(err);
+                        }
                     });
                 });
+            });
+
+            // Handle any errors during the request
+            req.on('error', err => {
+                done(err);
+            });
+
+            // Stream the form data into the request
+            formData.pipe(req);
+            return undefined;
         });
     });
 
@@ -724,30 +1139,48 @@ describe('POST object', () => {
             formData.append(field.name, value);
         });
 
-        formData.append('file', fileBuffer, filename);
+        formData.append('file', fileBuffer, { filename });
 
         formData.getLength((err, length) => {
             if (err) return done(err);
 
-            return axios.post(url, formData, {
-                headers: {
-                    ...formData.getHeaders(),
-                    'Content-Length': length,
-                },
-            })
-                .then(response => {
-                    assert.equal(response.status, 204);
-                    const expectedKey = keyTemplate.replace('${filename}', filename);
+            const headers = {
+                ...formData.getHeaders(),
+                'Content-Length': length,
+            };
 
-                    const listParams = { Bucket: bucketName, Prefix: expectedKey };
-                    return s3.listObjects(listParams, (err, data) => {
-                        if (err) return done(err);
-                        const objectExists = data.Contents.some(item => item.Key === expectedKey);
-                        assert(objectExists, 'Object was not uploaded with the expected key');
-                        return done();
-                    });
-                })
-                .catch(done);
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
+                headers,
+            };
+
+            const req = http.request(options);
+
+            // Handle the response
+            req.on('response', res => {
+                if (res.statusCode !== 204) {
+                    done(new Error(`Expected status 204 but got ${res.statusCode}`));
+                    return;
+                }
+
+                const expectedKey = keyTemplate.replace('${filename}', filename);
+
+                const listParams = { Bucket: bucketName, Prefix: expectedKey };
+                s3.listObjects(listParams, (err, data) => {
+                    if (err) return done(err);
+                    const objectExists = data.Contents.some(item => item.Key === expectedKey);
+                    assert(objectExists, 'Object was not uploaded with the expected key');
+                    return done();
+                });
+            });
+
+            req.on('error', done);
+
+            formData.pipe(req);
+            return undefined;
         });
     });
 
@@ -761,7 +1194,7 @@ describe('POST object', () => {
             formData.append(field.name, field.value);
         });
 
-        formData.append('file', fileBuffer, filename);
+        formData.append('file', fileBuffer, { filename });
 
         // Generate the form data with a valid boundary
         const validBoundary = formData.getBoundary();
@@ -778,25 +1211,93 @@ describe('POST object', () => {
             Buffer.from(`\r\n--${invalidBoundary}--\r\n`),
         ]);
 
-        // Create an axios instance with invalid headers
-        axios.post(url, payload, {
-            headers: {
-                'Content-Type': `multipart/form-data; boundary=${validBoundary}`,
-                'Content-Length': payload.length,
-            },
-        })
-            .then(() => {
-                // The request should fail, so we shouldn't get here
+        const headers = {
+            'Content-Type': `multipart/form-data; boundary=${validBoundary}`,
+            'Content-Length': payload.length,
+        };
+
+        const options = {
+            method: 'POST',
+            hostname: url.hostname,
+            port: url.port,
+            path: url.pathname + url.search,
+            headers,
+        };
+
+        const req = http.request(options);
+
+        req.on('response', res => {
+            if (res.statusCode !== 400) {
                 done(new Error('Request should have failed but succeeded'));
-            })
-            .catch(err => {
-                // Expecting an error response from the API
-                assert.equal(err.response.status, 400);
-                done();
-            });
+                return;
+            }
+
+            assert.equal(res.statusCode, 400);
+            done();
+        });
+
+        req.on('error', err => {
+            done(err);
+        });
+
+        req.write(payload);
+        req.end();
     });
 
-    it('should fail to upload an object with an too small content length header', done => {
+    it('should fail to upload an object with a too small content length header', done => {
+        const { url } = testContext;
+        const fields = calculateFields(ak, sk);
+
+        const formData = new FormData();
+
+        fields.forEach(field => {
+            formData.append(field.name, field.value);
+        });
+
+        formData.append('file', fileBuffer, { filename });
+
+        formData.getLength((err, length) => {
+            if (err) {
+                return done(err);
+            }
+
+            // Use an incorrect content length (e.g., actual length - 20)
+            const incorrectLength = length - 20;
+
+            const headers = {
+                ...formData.getHeaders(),
+                'Content-Length': incorrectLength,
+            };
+
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
+                headers,
+            };
+
+            const req = http.request(options);
+
+            // Handle the response
+            req.on('response', res => {
+                if (res.statusCode !== 400) {
+                    return done(new Error('Request should have failed but succeeded'));
+                }
+
+                return done();
+            });
+
+            // Handle any errors during the request
+            req.on('error', done);
+
+            // Stream the form data into the request
+            formData.pipe(req);
+            return undefined;
+        });
+    });
+
+    it.skip('should fail to upload an object with a too big content length header', done => {
         const { url } = testContext;
         const fields = calculateFields(ak, sk);
 
@@ -814,7 +1315,7 @@ describe('POST object', () => {
             }
 
             // Use an incorrect content length (e.g., actual length - 20)
-            const incorrectLength = length - 20;
+            const incorrectLength = length + 2000;
 
             return axios.post(url, formData, {
                 headers: {
@@ -847,44 +1348,71 @@ describe('POST object', () => {
             formData.append(field.name, field.value);
         });
 
-        formData.append('file', fileBuffer, filename);
+        formData.append('file', fileBuffer, { filename });
 
-        return formData.getLength((err, length) => {
+        formData.getLength((err, length) => {
             if (err) {
                 return done(err);
             }
 
-            return axios.post(url, formData, {
-                headers: {
-                    ...formData.getHeaders(),
-                    'Content-Length': length,
-                },
-            })
-                .then(() => {
-                    done(new Error('Request should not succeed with form data exceeding 20KB'));
-                })
-                .catch(err => {
-                    assert.ok(err.response, 'Error should be returned by axios');
+            const headers = {
+                ...formData.getHeaders(),
+                'Content-Length': length,
+            };
 
-                    xml2js.parseString(err.response.data, (err, result) => {
-                        if (err) {
-                            return done(err);
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port,
+                path: url.pathname + url.search,
+                headers,
+            };
+
+            const req = http.request(options);
+
+            // Handle the response
+            req.on('response', res => {
+                if (res.statusCode !== 400) {
+                    return done(new Error('Request should not succeed with form data exceeding 20KB'));
+                }
+
+                let responseData = '';
+                res.on('data', chunk => {
+                    responseData += chunk;
+                });
+
+                res.on('end', () => {
+                    xml2js.parseString(responseData, (parseErr, result) => {
+                        if (parseErr) {
+                            return done(parseErr);
                         }
 
-                        const error = result.Error;
-                        assert.equal(error.Code[0], 'MaxPostPreDataLengthExceeded');
-                        assert.equal(error.Message[0],
-                            'Your POST request fields preceeding the upload file was too large.');
-                        return done();
+                        try {
+                            const error = result.Error;
+                            assert.equal(error.Code[0], 'MaxPostPreDataLengthExceeded');
+                            assert.equal(error.Message[0],
+                                'Your POST request fields preceeding the upload file was too large.');
+                            return done();
+                        } catch (err) {
+                            return done(err);
+                        }
                     });
                 });
+                return undefined;
+            });
+
+            req.on('error', done);
+
+            formData.pipe(req);
+
+            return undefined;
         });
     });
 
     it('should return an error if a query parameter is present in the URL', done => {
         const { url } = testContext;
         const queryParam = '?invalidParam=true';
-        const invalidUrl = `${url}${queryParam}`;
+        const invalidUrl = new URL(url.toString() + queryParam);
         const fields = calculateFields(ak, sk);
 
         const formData = new FormData();
@@ -893,36 +1421,62 @@ describe('POST object', () => {
             formData.append(field.name, field.value);
         });
 
-        formData.append('file', fileBuffer, filename);
+        formData.append('file', fileBuffer, { filename });
 
-        return formData.getLength((err, length) => {
+        formData.getLength((err, length) => {
             if (err) {
                 return done(err);
             }
 
-            return axios.post(invalidUrl, formData, {
-                headers: {
-                    ...formData.getHeaders(),
-                    'Content-Length': length,
-                },
-            })
-                .then(() => {
-                    done(new Error('Request should not succeed with an invalid query parameter'));
-                })
-                .catch(err => {
-                    assert.ok(err.response, 'Error should be returned by axios');
+            const headers = {
+                ...formData.getHeaders(),
+                'Content-Length': length,
+            };
 
-                    xml2js.parseString(err.response.data, (err, result) => {
-                        if (err) {
-                            return done(err);
+            const options = {
+                method: 'POST',
+                hostname: invalidUrl.hostname,
+                port: invalidUrl.port,
+                path: invalidUrl.pathname + invalidUrl.search,
+                headers,
+            };
+
+            const req = http.request(options);
+
+            // Handle the response
+            req.on('response', res => {
+                if (res.statusCode !== 400) {
+                    return done(new Error('Request should not succeed with an invalid query parameter'));
+                }
+
+                let responseData = '';
+                res.on('data', chunk => {
+                    responseData += chunk;
+                });
+
+                res.on('end', () => {
+                    xml2js.parseString(responseData, (parseErr, result) => {
+                        if (parseErr) {
+                            return done(parseErr);
                         }
 
-                        const error = result.Error;
-                        assert.equal(error.Code[0], 'InvalidArgument');
-                        assert.equal(error.Message[0], 'Query String Parameters not allowed on POST requests.');
-                        return done();
+                        try {
+                            const error = result.Error;
+                            assert.equal(error.Code[0], 'InvalidArgument');
+                            assert.equal(error.Message[0], 'Query String Parameters not allowed on POST requests.');
+                            return done();
+                        } catch (err) {
+                            return done(err);
+                        }
                     });
                 });
+                return undefined;
+            });
+
+            req.on('error', done);
+
+            formData.pipe(req);
+            return undefined;
         });
     });
 
@@ -930,7 +1484,7 @@ describe('POST object', () => {
         const { url } = testContext;
         const objectKey = 'someObjectKey';
         const queryParam = '?nonMatchingParam=true';
-        const invalidUrl = `${url}/${objectKey}${queryParam}`;
+        const invalidUrl = new URL(`${url}/${objectKey}${queryParam}`);
         const fields = calculateFields(ak, sk);
 
         const formData = new FormData();
@@ -939,39 +1493,65 @@ describe('POST object', () => {
             formData.append(field.name, field.value);
         });
 
-        formData.append('file', fileBuffer, filename);
+        formData.append('file', fileBuffer, { filename });
 
-        return formData.getLength((err, length) => {
+        formData.getLength((err, length) => {
             if (err) {
                 return done(err);
             }
 
-            return axios.post(invalidUrl, formData, {
-                headers: {
-                    ...formData.getHeaders(),
-                    'Content-Length': length,
-                },
-            })
-                .then(() => {
-                    done(new Error('Request should not succeed with a non-matching query parameter'));
-                })
-                .catch(err => {
-                    assert.ok(err.response, 'Error should be returned by axios');
+            const headers = {
+                ...formData.getHeaders(),
+                'Content-Length': length,
+            };
 
-                    xml2js.parseString(err.response.data, (err, result) => {
-                        if (err) {
-                            return done(err);
+            const options = {
+                method: 'POST',
+                hostname: invalidUrl.hostname,
+                port: invalidUrl.port,
+                path: invalidUrl.pathname + invalidUrl.search,
+                headers,
+            };
+
+            const req = http.request(options);
+
+            // Handle the response
+            req.on('response', res => {
+                if (res.statusCode !== 405) {
+                    return done(new Error('Request should not succeed with a non-matching query parameter'));
+                }
+
+                let responseData = '';
+                res.on('data', chunk => {
+                    responseData += chunk;
+                });
+
+                res.on('end', () => {
+                    xml2js.parseString(responseData, (parseErr, result) => {
+                        if (parseErr) {
+                            return done(parseErr);
                         }
 
-                        const error = result.Error;
-                        assert.equal(error.Code[0], 'MethodNotAllowed');
-                        assert.equal(error.Message[0], 'The specified method is not allowed against this resource.');
-                        return done();
+                        try {
+                            const error = result.Error;
+                            assert.equal(error.Code[0], 'MethodNotAllowed');
+                            assert.equal(error.Message[0],
+                                'The specified method is not allowed against this resource.');
+                            return done();
+                        } catch (err) {
+                            return done(err);
+                        }
                     });
                 });
+                return undefined;
+            });
+
+            req.on('error', done);
+
+            formData.pipe(req);
+            return undefined;
         });
     });
-
 
     it('should successfully upload an object with bucket versioning enabled and verify version ID', done => {
         const { url } = testContext;
@@ -996,31 +1576,45 @@ describe('POST object', () => {
                 formData.append(field.name, field.value);
             });
 
-            formData.append('file', fileBuffer, filename);
+            formData.append('file', fileBuffer, { filename });
 
-            return formData.getLength((err, length) => {
+            formData.getLength((err, length) => {
                 if (err) {
                     return done(err);
                 }
 
-                return axios.post(url, formData, {
-                    headers: {
-                        ...formData.getHeaders(),
-                        'Content-Length': length,
-                    },
-                })
-                    .then(response => {
-                        assert.equal(response.status, 204);
+                const headers = {
+                    ...formData.getHeaders(),
+                    'Content-Length': length,
+                };
 
-                        // Verify version ID is present in the response
-                        const versionId = response.headers['x-amz-version-id'];
-                        assert.ok(versionId, 'Version ID should be present in the response headers');
-                        done();
-                    })
-                    .catch(err => {
-                        done(err);
-                    });
+                const options = {
+                    method: 'POST',
+                    hostname: url.hostname,
+                    port: url.port,
+                    path: url.pathname + url.search,
+                    headers,
+                };
+
+                const req = http.request(options);
+
+                req.on('response', res => {
+                    if (res.statusCode !== 204) {
+                        return done(new Error(`Expected status 204 but got ${res.statusCode}`));
+                    }
+
+                    // Verify version ID is present in the response headers
+                    const versionId = res.headers['x-amz-version-id'];
+                    assert.ok(versionId, 'Version ID should be present in the response headers');
+                    return done();
+                });
+
+                req.on('error', done);
+
+                formData.pipe(req);
+                return undefined;
             });
+            return undefined;
         });
     });
 });
