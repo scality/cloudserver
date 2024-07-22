@@ -185,7 +185,7 @@ describe('POST object', () => {
             req.on('response', res => {
                 try {
                     assert.equal(res.statusCode, 204);
-                    assert.equal(res.headers.location, `/${bucketName}/${filename}`);
+                    assert.equal(res.headers.location, `${url.hostname}:${url.port}/${bucketName}/${filename}`);
                     done();
                 } catch (err) {
                     done(err);
@@ -234,7 +234,7 @@ describe('POST object', () => {
             req.on('response', res => {
                 try {
                     assert.equal(res.statusCode, 204);
-                    assert.equal(res.headers.location, `/${bucketName}/${encodedKey}`);
+                    assert.equal(res.headers.location, `${url.hostname}:${url.port}/${bucketName}/${encodedKey}`);
                     done();
                 } catch (err) {
                     done(err);
