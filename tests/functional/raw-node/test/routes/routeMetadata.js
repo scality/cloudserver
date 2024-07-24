@@ -3,13 +3,17 @@ const http = require('http');
 
 const { makeRequest } = require('../../utils/makeRequest');
 const MetadataMock = require('../../utils/MetadataMock');
-
-const ipAddress = process.env.IP ? process.env.IP : 'localhost';
+const { getCredentials } = require('../../../aws-node-sdk/test/support/credentials');
+const BucketUtility = require('../../../aws-node-sdk/lib/utility/bucket-util');
 const metadataMock = new MetadataMock();
 
+const ipAddress = process.env.IP ? process.env.IP : 'localhost';
+
+const { accessKeyId, secretAccessKey } = getCredentials();
+
 const metadataAuthCredentials = {
-    accessKey: 'accessKey1',
-    secretKey: 'verySecretKey1',
+    accessKey: accessKeyId,
+    secretKey: secretAccessKey,
 };
 
 function makeMetadataRequest(params, callback) {
@@ -29,15 +33,39 @@ function makeMetadataRequest(params, callback) {
     makeRequest(options, callback);
 }
 
-describe('metadata routes with metadata mock backend', () => {
-    let httpServer;
+describe('metadata routes with metadata', () => {
+    const bucketUtil = new BucketUtility(
+        'default', { signatureVersion: 'v4' });
+    const s3 = bucketUtil.s3;
 
-    before(done => {
-        httpServer = http.createServer(
-            (req, res) => metadataMock.onRequest(req, res)).listen(9000, done);
-    });
+    const bucket1 = 'bucket1';
+    const bucket2 = 'bucket2';
+    const keyName = 'testobject1';
 
-    after(() => httpServer.close());
+    // E2E tests use S3C metadata, whereas functional tests use mocked metadata.
+    if (process.env.S3_END_TO_END) {
+        before(done => s3.createBucket({ Bucket: bucket1 }).promise()
+            .then(() => s3.putObject({ Bucket: bucket1, Key: keyName, Body: '' }).promise())
+            .then(() => s3.createBucket({ Bucket: bucket2 }).promise())
+            .then(() => done(), err => done(err))
+        );
+
+        after(done => bucketUtil.empty(bucket1)
+            .then(() => s3.deleteBucket({ Bucket: bucket1 }).promise())
+            .then(() => bucketUtil.empty(bucket2))
+            .then(() => s3.deleteBucket({ Bucket: bucket2 }).promise())
+            .then(() => done(), err => done(err))
+        );
+    } else {
+        let httpServer;
+
+        before(done => {
+            httpServer = http.createServer(
+                (req, res) => metadataMock.onRequest(req, res)).listen(9000, done);
+        });
+
+        after(() => httpServer.close());
+    }
 
     it('should retrieve list of buckets', done => {
         makeMetadataRequest({
@@ -48,7 +76,13 @@ describe('metadata routes with metadata mock backend', () => {
             assert.ifError(err);
             assert.strictEqual(res.statusCode, 200);
             assert(res.body);
-            assert.strictEqual(res.body, '["bucket1","bucket2"]');
+            const expectedArray = [bucket1, 'users..bucket', bucket2];
+            const responseArray = JSON.parse(res.body);
+
+            expectedArray.sort();
+            responseArray.sort();
+
+            assert.deepStrictEqual(responseArray, expectedArray);
             return done();
         });
     });
@@ -57,7 +91,7 @@ describe('metadata routes with metadata mock backend', () => {
         makeMetadataRequest({
             method: 'GET',
             authCredentials: metadataAuthCredentials,
-            path: '/_/metadata/default/bucket/bucket1',
+            path: `/_/metadata/default/bucket/${bucket1}`,
             queryObj: { listingType: 'Delimiter' },
         }, (err, res) => {
             assert.ifError(err);
@@ -72,7 +106,7 @@ describe('metadata routes with metadata mock backend', () => {
         makeMetadataRequest({
             method: 'GET',
             authCredentials: metadataAuthCredentials,
-            path: '/_/metadata/default/attributes/bucket1',
+            path: `/_/metadata/default/attributes/${bucket1}`,
         }, (err, res) => {
             assert.ifError(err);
             assert.strictEqual(res.statusCode, 200);
@@ -85,13 +119,13 @@ describe('metadata routes with metadata mock backend', () => {
         makeMetadataRequest({
             method: 'GET',
             authCredentials: metadataAuthCredentials,
-            path: '/_/metadata/default/bucket/bucket1/testobject1',
+            path: `/_/metadata/default/bucket/${bucket1}/${keyName}`,
         }, (err, res) => {
             assert.ifError(err);
             assert(res.body);
             assert.strictEqual(res.statusCode, 200);
             const body = JSON.parse(res.body);
-            assert.strictEqual(body.metadata, 'dogsAreGood');
+            assert(body['owner-id']);
             return done();
         });
     });
