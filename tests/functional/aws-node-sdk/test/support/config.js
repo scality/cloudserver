@@ -1,7 +1,7 @@
 const https = require('https');
 const AWS = require('aws-sdk');
 
-const memCredentials = require('../../lib/json/mem_credentials.json');
+const { getCredentials } = require('./credentials');
 const { getAwsCredentials } = require('./awsConfig');
 const conf = require('../../../../../lib/Config').config;
 
@@ -29,16 +29,8 @@ const DEFAULT_MEM_OPTIONS = {
 };
 const DEFAULT_AWS_OPTIONS = {};
 
-if (!memCredentials || Object.is(memCredentials, {})) {
-    throw new Error('Credential info is missing in mem_credentials.json');
-}
-
 function _getMemCredentials(profile) {
-    const credentials = memCredentials[profile] || memCredentials.default;
-
-    const accessKeyId = credentials.accessKey;
-    const secretAccessKey = credentials.secretKey;
-
+    const { accessKeyId, secretAccessKey } = getCredentials(profile);
     return new AWS.Credentials(accessKeyId, secretAccessKey);
 }
 

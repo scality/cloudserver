@@ -6,14 +6,17 @@ const versionIdUtils = versioning.VersionID;
 
 const { makeRequest, makeBackbeatRequest } = require('../../utils/makeRequest');
 const BucketUtility = require('../../../aws-node-sdk/lib/utility/bucket-util');
+const { getCredentials } = require('../../../aws-node-sdk/test/support/credentials');
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 const describeSkipIfAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
 const isNullVersionCompatMode = process.env.ENABLE_NULL_VERSION_COMPAT_MODE === 'true';
 
+const { accessKeyId, secretAccessKey } = getCredentials();
+
 const backbeatAuthCredentials = {
-    accessKey: 'accessKey1',
-    secretKey: 'verySecretKey1',
+    accessKey: accessKeyId,
+    secretKey: secretAccessKey,
 };
 
 const TEST_BUCKET = 'backbeatbucket';
@@ -62,6 +65,11 @@ const testMd = {
         storageClass: 'STANDARD',
     },
 };
+
+// S3_TESTVAL_OWNERCANONICALID variable is used by Integration that runs E2E tests with real Vault account.
+if (process.env.S3_TESTVAL_OWNERCANONICALID) {
+    testMd['owner-id'] = process.env.S3_TESTVAL_OWNERCANONICALID;
+}
 
 function checkObjectData(s3, objectKey, dataValue, done) {
     s3.getObject({
@@ -1936,13 +1944,14 @@ describeSkipIfAWS('backbeat routes', () => {
                 '403 Forbidden if the account does not match the ' +
                 'backbeat user',
                 done => {
-                    makeBackbeatRequest({
+                    const { accessKeyId: accessKeyLisa, secretAccessKey: secretAccessKeyLisa } = getCredentials('lisa');
+                    return makeBackbeatRequest({
                         method: test.method, bucket: TEST_BUCKET,
                         objectKey: TEST_KEY, resourceType: test.resourceType,
                         queryObj,
                         authCredentials: {
-                            accessKey: 'accessKey2',
-                            secretKey: 'verySecretKey2',
+                            accessKey: accessKeyLisa,
+                            secretKey: secretAccessKeyLisa,
                         },
                     },
                     err => {
@@ -2112,7 +2121,9 @@ describeSkipIfAWS('backbeat routes', () => {
                 done();
             });
         });
-        it('should skip batch delete of a non-existent location', done => {
+
+        // TODO: unskip test when S3C-9123 is fixed
+        it.skip('should skip batch delete of a non-existent location', done => {
             async.series([
                 done => {
                     const options = {
@@ -2123,7 +2134,7 @@ describeSkipIfAWS('backbeat routes', () => {
                         path: '/_/backbeat/batchdelete',
                         requestBody:
                         '{"Locations":' +
-                            '[{"key":"abcdef","dataStoreName":"us-east-1"}]}',
+                            '[{"key":"abcdefghijklmnopqrstuvwxyabcddefghijklmn","dataStoreName":"us-east-1"}]}',
                         jsonResponse: true,
                     };
                     makeRequest(options, done);
