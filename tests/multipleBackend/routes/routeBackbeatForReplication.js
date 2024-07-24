@@ -5,10 +5,13 @@ const { ObjectMD } = models;
 
 const { makeBackbeatRequest } = require('../../functional/raw-node/utils/makeRequest');
 const BucketUtility = require('../../functional/aws-node-sdk/lib/utility/bucket-util');
+const { getCredentials } = require('../../functional/aws-node-sdk/test/support/credentials');
+
+const { accessKeyId, secretAccessKey } = getCredentials();
 
 const backbeatAuthCredentials = {
-    accessKey: 'accessKey1',
-    secretKey: 'verySecretKey1',
+    accessKey: accessKeyId,
+    secretKey: secretAccessKey,
 };
 
 const testData = 'testkey data';
