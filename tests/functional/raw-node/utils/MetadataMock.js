@@ -208,7 +208,7 @@ class MetadataMock {
             }));
         }
         if (/\/_\/raft_sessions\/[1-8]\/bucket/.test(req.url)) {
-            const value = ['bucket1', 'bucket2'];
+            const value = ['bucket1', 'bucket2', 'users..bucket'];
             res.writeHead(200, { 'content-type': 'application/json' });
             return res.end(JSON.stringify(value));
         } else if (/\/default\/attributes\/[a-z0-9]/.test(req.url)) {
@@ -228,7 +228,8 @@ class MetadataMock {
             return res.end(JSON.stringify(objectList));
         } else if (/\/default\/bucket\/.*\/.*?/.test(req.url)) {
             return res.end(JSON.stringify({
-                metadata: 'dogsAreGood',
+                'owner-id': '123',
+                'metadata': 'dogsAreGood',
             }));
         } else if (mockLogURLRegex.test(req.url)) {
             return res.end(JSON.stringify(mockLogs));

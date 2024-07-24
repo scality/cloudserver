@@ -19,6 +19,7 @@ const {
 } = require('../../functional/aws-node-sdk/test/multipleBackend/utils');
 const { getRealAwsConfig } =
       require('../../functional/aws-node-sdk/test/support/awsConfig');
+const { getCredentials } = require('../../functional/aws-node-sdk/test/support/credentials');
 const { config } = require('../../../lib/Config');
 
 const awsConfig = getRealAwsConfig(awsLocation);
@@ -29,11 +30,12 @@ const containerName = getAzureContainerName(azureLocation);
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 
-const backbeatAuthCredentials = {
-    accessKey: 'accessKey1',
-    secretKey: 'verySecretKey1',
-};
+const { accessKeyId, secretAccessKey } = getCredentials();
 
+const backbeatAuthCredentials = {
+    accessKey: accessKeyId,
+    secretKey: secretAccessKey,
+};
 const TEST_BUCKET = 'backbeatbucket';
 const TEST_ENCRYPTED_BUCKET = 'backbeatbucket-encrypted';
 const TEST_KEY = 'fookey';
