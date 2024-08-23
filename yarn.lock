@@ -1040,9 +1040,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#8.1.134":
-  version "8.1.134"
-  resolved "git+https://github.com/scality/arsenal#d9bbd6cf3e10a87c3b8b48e9304a5dd820f3eb50"
+"arsenal@git+https://github.com/scality/arsenal#8.1.135":
+  version "8.1.135"
+  resolved "git+https://github.com/scality/arsenal#b5b126a3ce3defa235c3f1946fb60adb0cf4a1a0"
   dependencies:
     "@azure/identity" "^3.1.1"
     "@azure/storage-blob" "^12.12.0"
@@ -6213,9 +6213,9 @@ vaultclient@scality/vaultclient#8.2.8:
     werelogs "git+https://github.com/scality/werelogs#8.1.0"
     xml2js "0.4.19"
 
-vaultclient@scality/vaultclient#8.3.20:
-  version "8.3.20"
-  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/06f0eab4d8084fc94b98a261246c44382d3d9c23"
+vaultclient@scality/vaultclient#8.4.0:
+  version "8.4.0"
+  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/e48e3aede67335becd85e78a928d84ca04ec02c6"
   dependencies:
     "@aws-crypto/sha256-universal" "^2.0.1"
     "@smithy/signature-v4" "^2.1.1"
