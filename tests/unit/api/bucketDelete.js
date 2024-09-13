@@ -3,9 +3,13 @@ const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
 const { errors } = require('arsenal');
+const sinon = require('sinon');
 
+const inMemory = require('../../../lib/kms/in_memory/backend').backend;
 const bucketDelete = require('../../../lib/api/bucketDelete');
 const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutEncryption = require('../../../lib/api/bucketPutEncryption');
+const { templateSSEConfig, templateRequest } = require('../utils/bucketEncryption');
 const constants = require('../../../constants');
 const initiateMultipartUpload
     = require('../../../lib/api/initiateMultipartUpload');
@@ -15,6 +19,7 @@ const objectPut = require('../../../lib/api/objectPut');
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
+
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -173,6 +178,97 @@ describe('bucketDelete API', () => {
         bucketDelete(publicAuthInfo, testRequest, log, err => {
             assert.deepStrictEqual(err, errors.AccessDenied);
             done();
+        });
+    });
+
+    describe('with encryption', () => {
+        let destroyBucketKeySpy;
+
+        beforeEach(() => {
+            destroyBucketKeySpy = sinon.spy(inMemory, 'destroyBucketKey');
+        });
+
+        afterEach(() => {
+            sinon.restore();
+        });
+
+        it('should delete the bucket-level encryption key if AES256 algorithm', done => {
+            bucketPut(authInfo, testRequest, log, () => {
+                const post = templateSSEConfig({ algorithm: 'AES256' });
+                bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
+                    assert.ifError(err);
+                    bucketDelete(authInfo, testRequest, log, () => {
+                        metadata.getBucket(bucketName, log, (err, md) => {
+                            assert.strictEqual(err.is.NoSuchBucket, true);
+                            assert.strictEqual(md, undefined);
+                            // delete the default bucket-level master encryption key
+                            sinon.assert.calledOnce(destroyBucketKeySpy);
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+
+        it('should not delete the bucket-level encryption key if aws:kms algorithm', done => {
+            bucketPut(authInfo, testRequest, log, () => {
+                const post = templateSSEConfig({ algorithm: 'aws:kms' });
+                bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
+                    assert.ifError(err);
+                    bucketDelete(authInfo, testRequest, log, () => {
+                        metadata.getBucket(bucketName, log, (err, md) => {
+                            assert.strictEqual(err.is.NoSuchBucket, true);
+                            assert.strictEqual(md, undefined);
+                            // do not delete the default bucket-level master encryption key
+                            sinon.assert.notCalled(destroyBucketKeySpy);
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+
+        it('should not delete the account-level encryption key', done => {
+            sinon.stub(inMemory, 'supportsDefaultKeyPerAccount').value(true);
+            bucketPut(authInfo, testRequest, log, () => {
+                const post = templateSSEConfig({ algorithm: 'AES256' });
+                bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
+                    assert.ifError(err);
+                    bucketDelete(authInfo, testRequest, log, () => {
+                        metadata.getBucket(bucketName, log, (err, md) => {
+                            assert.strictEqual(err.is.NoSuchBucket, true);
+                            assert.strictEqual(md, undefined);
+                            // do not delete the default bucket-level master encryption key
+                            sinon.assert.notCalled(destroyBucketKeySpy);
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+    });
+
+    describe('with failed encryption', () => {
+        beforeEach(() => {
+            sinon.stub(inMemory, 'destroyBucketKey').callsFake((bucketKeyId, log, cb) => cb(errors.InternalError));
+        });
+
+        afterEach(() => {
+            sinon.restore();
+            cleanup();
+        });
+
+        it('should fail deleting the bucket-level encryption key', done => {
+            bucketPut(authInfo, testRequest, log, () => {
+                const post = templateSSEConfig({ algorithm: 'AES256' });
+                bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
+                    assert.ifError(err);
+                    bucketDelete(authInfo, testRequest, log, err => {
+                        assert(err && err.InternalError);
+                        done();
+                    });
+                });
+            });
         });
     });
 });
