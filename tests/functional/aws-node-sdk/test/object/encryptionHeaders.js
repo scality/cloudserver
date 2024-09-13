@@ -1,6 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const uuid = require('uuid');
+const BucketInfo = require('arsenal').models.BucketInfo;
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const kms = require('../../../../../lib/kms/wrapper');
@@ -87,8 +88,10 @@ describe('per object encryption headers', () => {
         let kmsKeyId;
 
         before(done => {
-            kms.createBucketKey('enc-bucket-test', log,
-                (err, keyId) => {
+            const bucket = new BucketInfo('enc-bucket-test', 'OwnerId',
+                'OwnerDisplayName', new Date().toJSON());
+            kms.createBucketKey(bucket, log,
+                (err, { masterKeyId: keyId }) => {
                     assert.ifError(err);
                     kmsKeyId = keyId;
                     done();
@@ -167,46 +170,51 @@ describe('per object encryption headers', () => {
                     ));
 
                 testCases
-                .forEach(existing => it('should override default bucket encryption settings', done => {
-                    const _existing = Object.assign({}, existing);
-                    if (existing.masterKeyId) {
-                        _existing.masterKeyId = kmsKeyId;
-                    }
-                    const params = {
-                        Bucket: bucket,
-                        ServerSideEncryptionConfiguration: hydrateSSEConfig(_existing),
-                    };
-                    // no op putBucketNotification for the unencrypted case
-                    const s3Op = existing.algo ? (...args) => s3.putBucketEncryption(...args) : s3NoOp;
-                    s3Op(params, error => {
-                        assert.ifError(error);
-                        return putEncryptedObject(s3, bucket, object, target, kmsKeyId, error => {
+                .forEach(existing => {
+                    const hasKey = target.masterKeyId ? 'a' : 'no';
+                    const { algo } = target;
+                    it('should override bucket encryption settings with '
+                    + `algo ${algo || 'none'} with ${hasKey} key id`, done => {
+                        const _existing = Object.assign({}, existing);
+                        if (existing.masterKeyId) {
+                            _existing.masterKeyId = kmsKeyId;
+                        }
+                        const params = {
+                            Bucket: bucket,
+                            ServerSideEncryptionConfiguration: hydrateSSEConfig(_existing),
+                        };
+                        // no op putBucketNotification for the unencrypted case
+                        const s3Op = existing.algo ? (...args) => s3.putBucketEncryption(...args) : s3NoOp;
+                        s3Op(params, error => {
                             assert.ifError(error);
-                            return getSSEConfig(
-                                s3,
-                                bucket,
-                                object,
-                                (error, sseConfig) => {
-                                    assert.ifError(error);
-                                    let expected = createExpected(target, kmsKeyId);
-                                    // In the null case the expected encryption config is
-                                    // the buckets default policy
-                                    if (!target.algo) {
-                                        expected = createExpected(existing, kmsKeyId);
+                            return putEncryptedObject(s3, bucket, object, target, kmsKeyId, error => {
+                                assert.ifError(error);
+                                return getSSEConfig(
+                                    s3,
+                                    bucket,
+                                    object,
+                                    (error, sseConfig) => {
+                                        assert.ifError(error);
+                                        let expected = createExpected(target, kmsKeyId);
+                                        // In the null case the expected encryption config is
+                                        // the buckets default policy
+                                        if (!target.algo) {
+                                            expected = createExpected(existing, kmsKeyId);
+                                        }
+                                        // We differ from aws behavior and always return a
+                                        // masterKeyId even when not explicitly configured.
+                                        if (expected.algo === 'aws:kms' && !expected.masterKeyId) {
+                                            // eslint-disable-next-line no-param-reassign
+                                            delete sseConfig.masterKeyId;
+                                        }
+                                        assert.deepStrictEqual(sseConfig, expected);
+                                        done();
                                     }
-                                    // We differ from aws behavior and always return a
-                                    // masterKeyId even when not explicitly configured.
-                                    if (expected.algo === 'aws:kms' && !expected.masterKeyId) {
-                                        // eslint-disable-next-line no-param-reassign
-                                        delete sseConfig.masterKeyId;
-                                    }
-                                    assert.deepStrictEqual(sseConfig, expected);
-                                    done();
-                                }
-                            );
+                                );
+                            });
                         });
                     });
-                }));
+                });
 
                 testCases
                 .forEach(existing => it('should copy an object to an encrypted key overriding bucket settings',
