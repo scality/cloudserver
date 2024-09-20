@@ -20,6 +20,9 @@ runs:
       with:
         node-version: '16'
         cache: 'yarn'
+    - name: install typescript
+      shell: bash
+      run: yarn global add typescript@4.9.5
     - name: install dependencies
       shell: bash
       run: yarn install --ignore-engines --frozen-lockfile --network-concurrency 1

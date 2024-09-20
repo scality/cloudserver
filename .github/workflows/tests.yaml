@@ -79,6 +79,9 @@ jobs:
       with:
         node-version: '16'
         cache: yarn
+    - name: install typescript
+      shell: bash
+      run: yarn global add typescript@4.9.5
     - name: install dependencies
       run: yarn install --frozen-lockfile --network-concurrency 1
     - uses: actions/setup-python@v5

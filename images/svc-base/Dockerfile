@@ -14,7 +14,7 @@ RUN rm -f ~/.gitconfig && \
     git config --global --add safe.directory . && \
     git lfs install && \
     GIT_LFS_SKIP_SMUDGE=1 && \
-    yarn global add typescript && \
+    yarn global add typescript@4.9.5 && \
     yarn install --frozen-lockfile --production --network-concurrency 1 && \
     yarn cache clean --all && \
     yarn global remove typescript
