@@ -1,6 +1,6 @@
-ARG NODE_VERSION=16.20-bullseye-slim
+ARG NODE_VERSION=16.20.2-bookworm-slim
 
-FROM node:${NODE_VERSION} as builder
+FROM node:${NODE_VERSION} AS builder
 
 WORKDIR /usr/src/app
 
