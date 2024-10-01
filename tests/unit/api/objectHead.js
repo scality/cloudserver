@@ -552,6 +552,7 @@ describe('objectHead API', () => {
                         new Date(objectCustomMDFields.archive.restoreCompletedAt).toUTCString());
                     assert.strictEqual(res['x-amz-scal-restore-will-expire-at'],
                         new Date(objectCustomMDFields.archive.restoreWillExpireAt).toUTCString());
+                    assert.strictEqual(res['x-amz-scal-restore-etag'], mdColdHelper.restoredEtag);
                     assert.strictEqual(res['x-amz-storage-class'], mdColdHelper.defaultLocation);
                     assert.strictEqual(res['x-amz-scal-owner-id'], mdColdHelper.defaultOwnerId);
                     done(err);

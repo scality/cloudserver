@@ -214,7 +214,11 @@ describe('cold storage', () => {
                 /*restoreRequestedDays*/ 2,
                 /*restoreCompletedAt*/  new Date(Date.now() - 1 * oneDay),
                 /*restoreWillExpireAt*/ new Date(Date.now() + 1 * oneDay),
-            )).getValue();
+            )).setAmzRestore({
+                'ongoing-request': false,
+                'expiry-date': new Date(Date.now() + 1 * oneDay),
+                'content-md5': '12345'
+            }).getValue();
 
             const restoreCompletedAt = objectMd.archive.restoreCompletedAt;
             const t = new Date();
@@ -233,6 +237,7 @@ describe('cold storage', () => {
                 assert.deepEqual(objectMd['x-amz-restore'], {
                     'ongoing-request': false,
                     'expiry-date': objectMd.archive.restoreWillExpireAt,
+                    'content-md5': '12345'
                 });
 
                 done();

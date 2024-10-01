@@ -8,6 +8,7 @@ const BucketInfo = require('arsenal').models.BucketInfo;
 
 const defaultLocation = 'location-dmf-v1';
 const defaultOwnerId = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
+const restoredEtag = '1234567890abcdef';
 
 const baseMd = {
     'owner-display-name': 'accessKey1displayName',
@@ -149,7 +150,11 @@ function getArchiveRestoredMD() {
             5,
             new Date(Date.now() - 10000),
             new Date(Date.now() + 60000 * 60 * 24)).getValue(),
-        'x-amz-restore': new ObjectMDAmzRestore(false, new Date(Date.now() + 60 * 60 * 24)),
+        'x-amz-restore': {
+            'ongoing-request': false,
+            'expiry-date': new Date(Date.now() + 60 * 60 * 24),
+            'content-md5': restoredEtag,
+        },
     };
 }
 
@@ -180,4 +185,5 @@ module.exports = {
     putBucketMock,
     defaultLocation,
     defaultOwnerId,
+    restoredEtag,
 };

@@ -985,13 +985,54 @@ describe('versioning helpers', () => {
                         'restoreCompletedAt': new Date(now),
                         'restoreWillExpireAt': new Date(now + (days * scaledMsPerDay)),
                     }
-                }
+                },
+            },
+                {
+                    description: 'Should keep contentMD5 of the original object',
+                    objMD: {
+                    'versionId': '2345678',
+                    'creation-time': now,
+                    'last-modified': now,
+                    'originOp': 's3:PutObject',
+                    'x-amz-storage-class': 'cold-location',
+                    'content-md5': '123456789-5',
+                    'acl': {},
+                    'archive': {
+                        'restoreRequestedDays': days,
+                        'restoreRequestedAt': now,
+                        archiveInfo
+                        }
+                    },
+                    metadataStoreParams: {
+                        'contentMD5': '987654321-3',
+                    },
+                    expectedRes: {
+                        'creationTime': now,
+                        'lastModifiedDate': now,
+                        'updateMicroVersionId': true,
+                        'originOp': 's3:ObjectRestore:Completed',
+                        'contentMD5': '123456789-5',
+                        'restoredEtag': '987654321-3',
+                        'acl': {},
+                        'taggingCopy': undefined,
+                        'amzStorageClass': 'cold-location',
+                        'archive': {
+                            archiveInfo,
+                            'restoreRequestedDays': 3,
+                            'restoreRequestedAt': now,
+                            'restoreCompletedAt': new Date(now),
+                            'restoreWillExpireAt': new Date(now + (days * scaledMsPerDay)),
+                        }
+                    }
             },
         ].forEach(testCase => {
             it(testCase.description, () => {
                 const metadataStoreParams = {};
                 if (testCase.hasUserMD) {
                     metadataStoreParams.metaHeaders = {};
+                }
+                if (testCase.metadataStoreParams) {
+                    Object.assign(metadataStoreParams, testCase.metadataStoreParams);
                 }
                 const options = overwritingVersioning(testCase.objMD, metadataStoreParams);
                 assert.deepStrictEqual(options.versionId, testCase.objMD.versionId);
