@@ -1,10 +1,13 @@
 const assert = require('assert');
+const BucketInfo = require('arsenal').models.BucketInfo;
 const KMS = require('../../../lib/kms/wrapper');
 const { parseBucketEncryptionHeaders } = require('../../../lib/api/apiUtils/bucket/bucketEncryption');
 const Common = require('../../../lib/kms/common');
 const { cleanup, DummyRequestLogger } = require('../helpers');
 
 const log = new DummyRequestLogger();
+const dummyBucket = new BucketInfo(
+    'dummyBucket', 'dummyOwnerId', 'Joe, John', new Date().toJSON());
 
 describe('KMS unit tests', () => {
     beforeEach(() => {
@@ -18,7 +21,7 @@ describe('KMS unit tests', () => {
         };
         const sseConfig = parseBucketEncryptionHeaders(headers);
         KMS.bucketLevelEncryption(
-            'dummyBucket', sseConfig, log,
+            dummyBucket, sseConfig, log,
             (err, sseInfo) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(sseInfo.cryptoScheme, 1);
@@ -39,7 +42,7 @@ describe('KMS unit tests', () => {
         };
         const sseConfig = parseBucketEncryptionHeaders(headers);
         KMS.bucketLevelEncryption(
-            'dummyBucket', sseConfig, log,
+            dummyBucket, sseConfig, log,
             (err, sseInfo) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(sseInfo.cryptoScheme, 1);
@@ -61,7 +64,7 @@ describe('KMS unit tests', () => {
         };
         const sseConfig = parseBucketEncryptionHeaders(headers);
         KMS.bucketLevelEncryption(
-            'dummyBucket', sseConfig, log,
+            dummyBucket, sseConfig, log,
             (err, sseInfo) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(sseInfo, null);
@@ -74,7 +77,7 @@ describe('KMS unit tests', () => {
         done => {
             const sseConfig = parseBucketEncryptionHeaders({});
             KMS.bucketLevelEncryption(
-                'dummyBucket', sseConfig, log,
+                dummyBucket, sseConfig, log,
                 (err, sseInfo) => {
                     assert.strictEqual(err, null);
                     assert.strictEqual(sseInfo, null);
@@ -89,7 +92,7 @@ describe('KMS unit tests', () => {
         };
         const sseConfig = parseBucketEncryptionHeaders(headers);
         KMS.bucketLevelEncryption(
-            'dummyBucket', sseConfig, log,
+            dummyBucket, sseConfig, log,
             (err, sseInfo) => {
                 KMS.createCipherBundle(
                     sseInfo, log, (err, cipherBundle) => {
@@ -113,7 +116,7 @@ describe('KMS unit tests', () => {
         let masterKeyId;
         let sseConfig = parseBucketEncryptionHeaders(headers);
         KMS.bucketLevelEncryption(
-            'dummyBucket', sseConfig, log,
+            dummyBucket, sseConfig, log,
             (err, sseInfo) => {
                 assert.strictEqual(err, null);
                 masterKeyId = sseInfo.bucketKeyId;
@@ -124,7 +127,7 @@ describe('KMS unit tests', () => {
             masterKeyId;
         sseConfig = parseBucketEncryptionHeaders(headers);
         KMS.bucketLevelEncryption(
-            'dummyBucket', sseConfig, log,
+            dummyBucket, sseConfig, log,
             (err, sseInfo) => {
                 KMS.createCipherBundle(
                     sseInfo, log, (err, cipherBundle) => {
@@ -149,7 +152,7 @@ describe('KMS unit tests', () => {
         };
         const sseConfig = parseBucketEncryptionHeaders(headers);
         KMS.bucketLevelEncryption(
-            'dummyBucket', sseConfig, log,
+            dummyBucket, sseConfig, log,
             (err, sseInfo) => {
                 if (err) {
                     cb(err);
