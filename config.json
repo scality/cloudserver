@@ -130,5 +130,12 @@
             "type": "dummy",
             "host": "localhost:6000"
         }
-    ]
+    ],
+    "defaultEncryptionKeyPerAccount": true,
+    "kmsAWS": {
+        "region": "us-east-1", 
+        "endpoint": "http://127.0.0.1:8080",
+        "ak": "tbd",
+        "sk": "tbd"
+    }
 }
