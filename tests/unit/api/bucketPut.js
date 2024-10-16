@@ -748,7 +748,7 @@ describe('bucketPut API with SSE Configurations', () => {
         cleanup();
     });
 
-    const createTestRequestWithSSE = (sseHeaders) => ({
+    const createTestRequestWithSSE = sseHeaders => ({
         ...testRequest,
         headers: {
             ...testRequest.headers,
