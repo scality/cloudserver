@@ -707,3 +707,160 @@ describe('bucketPut API with failed vault service', () => {
     });
 });
 
+describe('bucketPut API with SSE Configurations', () => {
+    const initialGlobalEncryption = config.globalEncryptionEnabled;
+
+    afterEach(() => {
+        config.globalEncryptionEnabled = initialGlobalEncryption;
+        cleanup();
+    });
+
+    const createTestRequestWithSSE = (sseHeaders) => ({
+        ...testRequest,
+        headers: {
+            ...testRequest.headers,
+            ...sseHeaders,
+        },
+    });
+
+    it('should apply default AES256 SSE when global encryption is enabled and no SSE headers are provided', done => {
+        config.globalEncryptionEnabled = true;
+        const request = createTestRequestWithSSE({});
+
+        bucketPut(authInfo, request, log, err => {
+            assert.ifError(err);
+            return metadata.getBucket(bucketName, log, (err, md) => {
+                assert.ifError(err);
+                const sse = md.getServerSideEncryption();
+                assert.strictEqual(sse.algorithm, 'AES256');
+                assert.strictEqual(sse.mandatory, true);
+                done();
+            });
+        });
+    });
+
+    it('should override global SSE with bucket-specific SSE headers when provided', done => {
+        config.globalEncryptionEnabled = true;
+        const request = createTestRequestWithSSE({
+            'x-amz-scal-server-side-encryption': 'aws:kms',
+            'x-amz-scal-server-side-encryption-aws-kms-key-id': 'test-kms-key-id',
+        });
+
+        bucketPut(authInfo, request, log, err => {
+            assert.ifError(err);
+            return metadata.getBucket(bucketName, log, (err, md) => {
+                assert.ifError(err);
+                const sse = md.getServerSideEncryption();
+                assert.strictEqual(sse.algorithm, 'aws:kms');
+                assert.strictEqual(sse.mandatory, true);
+                assert.strictEqual(sse.configuredMasterKeyId, 'test-kms-key-id');
+                done();
+            });
+        });
+    });
+
+    it('should not apply global SSE when global encryption is disabled and no SSE headers are provided', done => {
+        config.globalEncryptionEnabled = false;
+        const request = createTestRequestWithSSE({});
+
+        bucketPut(authInfo, request, log, err => {
+            assert.ifError(err);
+            return metadata.getBucket(bucketName, log, (err, md) => {
+                assert.ifError(err);
+                const sse = md.getServerSideEncryption();
+                assert(!sse);
+                done();
+            });
+        });
+    });
+
+    it('should apply bucket-specific SSE headers when global encryption is disabled', done => {
+        config.globalEncryptionEnabled = false;
+        const request = createTestRequestWithSSE({
+            'x-amz-scal-server-side-encryption': 'AES256',
+        });
+
+        bucketPut(authInfo, request, log, err => {
+            assert.ifError(err);
+            return metadata.getBucket(bucketName, log, (err, md) => {
+                assert.ifError(err);
+                const sse = md.getServerSideEncryption();
+                assert.strictEqual(sse.algorithm, 'AES256');
+                assert.strictEqual(sse.mandatory, true);
+                done();
+            });
+        });
+    });
+
+    it('should apply default AES256 SSE when global encryption is enabled and an invalid algorithm is set', done => {
+        config.globalEncryptionEnabled = true;
+        const request = createTestRequestWithSSE({
+            'x-amz-scal-server-side-encryption': 'INVALID_ALGO',
+        });
+
+        bucketPut(authInfo, request, log, err => {
+            assert.ifError(err);
+            metadata.getBucket(bucketName, log, (err, md) => {
+                assert.ifError(err);
+                const sse = md.getServerSideEncryption();
+                assert.strictEqual(sse.algorithm, 'AES256');
+                assert.strictEqual(sse.mandatory, true);
+                done();
+            });
+        });
+    });
+
+    it('should prioritize bucket-specific SSE over global settings even if global is enabled', done => {
+        config.globalEncryptionEnabled = true;
+        const request = createTestRequestWithSSE({
+            'x-amz-scal-server-side-encryption': 'aws:kms',
+            'x-amz-scal-server-side-encryption-aws-kms-key-id': 'another-kms-key-id',
+        });
+
+        bucketPut(authInfo, request, log, err => {
+            assert.ifError(err);
+            return metadata.getBucket(bucketName, log, (err, md) => {
+                assert.ifError(err);
+                const sse = md.getServerSideEncryption();
+                assert.strictEqual(sse.algorithm, 'aws:kms');
+                assert.strictEqual(sse.mandatory, true);
+                assert.strictEqual(sse.configuredMasterKeyId, 'another-kms-key-id');
+                done();
+            });
+        });
+    });
+
+    it('should apply default SSE if global encryption is enabled and no bucket-specific SSE is provided', done => {
+        config.globalEncryptionEnabled = true;
+        const request = createTestRequestWithSSE({});
+
+        bucketPut(authInfo, request, log, err => {
+            assert.ifError(err);
+            return metadata.getBucket(bucketName, log, (err, md) => {
+                assert.ifError(err);
+                const sse = md.getServerSideEncryption();
+                assert.strictEqual(sse.algorithm, 'AES256');
+                assert.strictEqual(sse.mandatory, true);
+                done();
+            });
+        });
+    });
+
+    it('should not override bucket-specific SSE with global settings', done => {
+        config.globalEncryptionEnabled = true;
+        const request = createTestRequestWithSSE({
+            'x-amz-scal-server-side-encryption': 'aws:kms',
+        });
+
+        bucketPut(authInfo, request, log, err => {
+            assert.ifError(err);
+            return metadata.getBucket(bucketName, log, (err, md) => {
+                assert.ifError(err);
+                const sse = md.getServerSideEncryption();
+                assert.strictEqual(sse.algorithm, 'aws:kms');
+                assert.strictEqual(sse.mandatory, true);
+                done();
+            });
+        });
+    });
+});
