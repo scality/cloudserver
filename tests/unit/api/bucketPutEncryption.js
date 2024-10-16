@@ -360,6 +360,136 @@ describe('bucketPutEncryption API with account level encryption', () => {
             });
         });
     });
+
+    it('should keep isAccountEncryptionEnabled after AES256 encryption update', done => {
+        const post = templateSSEConfig({ algorithm: 'AES256' });
+        const expectedSseInfo = {
+            cryptoScheme: 1,
+            algorithm: 'AES256',
+            mandatory: true,
+            masterKeyId: accountLevelMasterKeyId,
+            isAccountEncryptionEnabled: true,
+        };
+
+        bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
+            assert.ifError(err);
+            return getSSEConfig(bucketName, log, (err, sseInfo) => {
+                assert.ifError(err);
+                assert.deepStrictEqual(sseInfo, expectedSseInfo);
+                const newConf = templateSSEConfig({ algorithm: 'AES256' });
+                return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log,
+                    err => {
+                        assert.ifError(err);
+                        return getSSEConfig(bucketName, log, (err, updatedSSEInfo) => {
+                            assert.deepStrictEqual(updatedSSEInfo, expectedSseInfo);
+                            done();
+                        });
+                    }
+                );
+            });
+        });
+    });
+
+    it('should keep isAccountEncryptionEnabled after switching from AES256 to aws:kms with keyId', done => {
+        const post = templateSSEConfig({ algorithm: 'AES256' });
+        bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
+            assert.ifError(err);
+            return getSSEConfig(bucketName, log, (err, sseInfo) => {
+                assert.ifError(err);
+                assert.deepStrictEqual(sseInfo, {
+                    cryptoScheme: 1,
+                    algorithm: 'AES256',
+                    mandatory: true,
+                    masterKeyId: accountLevelMasterKeyId,
+                    isAccountEncryptionEnabled: true,
+                });
+                const keyId = '12345';
+                const newConf = templateSSEConfig({ algorithm: 'aws:kms', keyId });
+                return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log,
+                    err => {
+                        assert.ifError(err);
+                        return getSSEConfig(bucketName, log, (err, updatedSSEInfo) => {
+                            assert.deepStrictEqual(updatedSSEInfo, {
+                                cryptoScheme: 1,
+                                algorithm: 'aws:kms',
+                                mandatory: true,
+                                masterKeyId: accountLevelMasterKeyId,
+                                configuredMasterKeyId: keyId,
+                                isAccountEncryptionEnabled: true,
+                            });
+                            done();
+                        });
+                    }
+                );
+            });
+        });
+    });
+
+    it('should keep isAccountEncryptionEnabled after switching from aws:kms to AES256 encryption', done => {
+        const post = templateSSEConfig({ algorithm: 'aws:kms' });
+        bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
+            assert.ifError(err);
+            return getSSEConfig(bucketName, log, (err, sseInfo) => {
+                assert.ifError(err);
+                assert.deepStrictEqual(sseInfo, {
+                    cryptoScheme: 1,
+                    algorithm: 'aws:kms',
+                    mandatory: true,
+                    masterKeyId: accountLevelMasterKeyId,
+                    isAccountEncryptionEnabled: true,
+                });
+                const newConf = templateSSEConfig({ algorithm: 'AES256' });
+                return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log,
+                    err => {
+                        assert.ifError(err);
+                        return getSSEConfig(bucketName, log, (err, updatedSSEInfo) => {
+                            assert.deepStrictEqual(updatedSSEInfo, {
+                                cryptoScheme: 1,
+                                algorithm: 'AES256',
+                                mandatory: true,
+                                masterKeyId: accountLevelMasterKeyId,
+                                isAccountEncryptionEnabled: true,
+                            });
+                            done();
+                        });
+                    }
+                );
+            });
+        });
+    });
+
+    it('should set isAccountEncryptionEnabled after switching from aws:kms with keyId to AES256', done => {
+        const keyId = '12345';
+        const post = templateSSEConfig({ algorithm: 'aws:kms', keyId });
+        bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
+            assert.ifError(err);
+            return getSSEConfig(bucketName, log, (err, sseInfo) => {
+                assert.ifError(err);
+                assert.deepStrictEqual(sseInfo, {
+                    cryptoScheme: 1,
+                    algorithm: 'aws:kms',
+                    mandatory: true,
+                    configuredMasterKeyId: keyId,
+                });
+                const newConf = templateSSEConfig({ algorithm: 'AES256' });
+                return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log,
+                    err => {
+                        assert.ifError(err);
+                        return getSSEConfig(bucketName, log, (err, updatedSSEInfo) => {
+                            assert.deepStrictEqual(updatedSSEInfo, {
+                                cryptoScheme: 1,
+                                algorithm: 'AES256',
+                                mandatory: true,
+                                masterKeyId: accountLevelMasterKeyId,
+                                isAccountEncryptionEnabled: true,
+                            });
+                            done();
+                        });
+                    }
+                );
+            });
+        });
+    });
 });
 
 describe('bucketPutEncryption API with failed vault service', () => {
