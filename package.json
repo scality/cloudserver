@@ -4,7 +4,7 @@
   "description": "S3 connector",
   "main": "index.js",
   "engines": {
-    "node": ">=16"
+    "node": ">=20"
   },
   "repository": "scality/S3",
   "keywords": [
@@ -20,7 +20,7 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "@hapi/joi": "^17.1.0",
-    "arsenal": "git+https://github.com/scality/arsenal#7.10.62",
+    "arsenal": "git+https://github.com/scality/arsenal#f9c97343b26aeabf3fd082258613e9da0d14d9a4",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
@@ -29,6 +29,7 @@
     "cron-parser": "^2.11.0",
     "diskusage": "1.1.3",
     "express": "^4.17.1",
+    "globals": "^15.11.0",
     "google-auto-auth": "^0.9.1",
     "http-proxy": "^1.17.0",
     "level-mem": "^5.0.1",
@@ -56,6 +57,9 @@
     "node-mocks-http": "1.5.2",
     "sinon": "^13.0.1",
     "tv4": "^1.2.7"
+  },
+  "resolutions": {
+    "nan": "github:nodejs/nan#v2.22.0"
   },
   "scripts": {
     "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/",
