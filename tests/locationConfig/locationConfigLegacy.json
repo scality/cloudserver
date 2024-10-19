@@ -49,7 +49,7 @@
         "legacyAwsBehavior": true,
         "details": {
             "awsEndpoint": "s3.amazonaws.com",
-            "bucketName": "multitester555",
+            "bucketName": "cloudserver-ci-aws-backend-test-bucket",
             "bucketMatch": true,
             "credentialsProfile": "default",
             "serverSideEncryption": true
@@ -61,7 +61,7 @@
         "legacyAwsBehavior": true,
         "details": {
             "awsEndpoint": "s3.amazonaws.com",
-            "bucketName": "multitester555",
+            "bucketName": "cloudserver-ci-aws-backend-test-bucket",
             "bucketMatch": true,
             "credentialsProfile": "default"
         }
@@ -72,7 +72,7 @@
         "legacyAwsBehavior": true,
         "details": {
             "awsEndpoint": "s3.amazonaws.com",
-            "bucketName": "multitester555",
+            "bucketName": "cloudserver-ci-aws-backend-test-bucket",
             "bucketMatch": false,
             "credentialsProfile": "default"
         }
