@@ -1,10 +1,12 @@
 const assert = require('assert');
+const sinon = require('sinon');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutEncryption = require('../../../lib/api/bucketPutEncryption');
 const bucketDeleteEncryption = require('../../../lib/api/bucketDeleteEncryption');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const { templateSSEConfig, templateRequest, getSSEConfig } = require('../utils/bucketEncryption');
+const inMemory = require('../../../lib/kms/in_memory/backend').backend;
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
@@ -210,6 +212,77 @@ describe('bucketDeleteEncryption API', () => {
                             assert.strictEqual(sseInfo.masterKeyId, expectedMasterKeyId);
                             assert(!sseInfo.configuredMasterKeyId);
                             done();
+                        });
+                    });
+                });
+            });
+        });
+    });
+
+    describe('bucketDeleteEncryption API with account level encryption', () => {
+        beforeEach(() => {
+            sinon.stub(inMemory, 'supportsDefaultKeyPerAccount').value(true);
+        });
+
+        afterEach(() => {
+            sinon.restore();
+        });
+
+        it('should keep isAccountEncryptionEnabled after deleting AES256 bucket encryption', done => {
+            const post = templateSSEConfig({ algorithm: 'AES256' });
+            bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
+                assert.ifError(err);
+                return getSSEConfig(bucketName, log, (err, sseInfo) => {
+                    assert.ifError(err);
+                    assert.strictEqual(sseInfo.isAccountEncryptionEnabled, true);
+                    bucketDeleteEncryption(authInfo, templateRequest(bucketName, {}), log, err => {
+                        assert.ifError(err);
+                        return getSSEConfig(bucketName, log, (err, sseInfoAfterDeletion) => {
+                            assert.ifError(err);
+                            assert.strictEqual(sseInfoAfterDeletion.isAccountEncryptionEnabled, true);
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+
+        it('should keep isAccountEncryptionEnabled after deleting aws:kms bucket encryption', done => {
+            const post = templateSSEConfig({ algorithm: 'aws:kms' });
+            bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
+                assert.ifError(err);
+                return getSSEConfig(bucketName, log, (err, sseInfo) => {
+                    assert.ifError(err);
+                    assert.strictEqual(sseInfo.isAccountEncryptionEnabled, true);
+                    bucketDeleteEncryption(authInfo, templateRequest(bucketName, {}), log, err => {
+                        assert.ifError(err);
+                        return getSSEConfig(bucketName, log, (err, sseInfoAfterDeletion) => {
+                            assert.ifError(err);
+                            assert.strictEqual(sseInfoAfterDeletion.isAccountEncryptionEnabled, true);
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+
+        it('should keep isAccountEncryptionEnabled after deleting aws:kms and key id bucket encryption', done => {
+            const postAES256 = templateSSEConfig({ algorithm: 'AES256' });
+            bucketPutEncryption(authInfo, templateRequest(bucketName, { post: postAES256 }), log, err => {
+                assert.ifError(err);
+                const post = templateSSEConfig({ algorithm: 'aws:kms', keyId: '123' });
+                bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
+                    assert.ifError(err);
+                    return getSSEConfig(bucketName, log, (err, sseInfo) => {
+                        assert.ifError(err);
+                        assert.strictEqual(sseInfo.isAccountEncryptionEnabled, true);
+                        bucketDeleteEncryption(authInfo, templateRequest(bucketName, {}), log, err => {
+                            assert.ifError(err);
+                            return getSSEConfig(bucketName, log, (err, sseInfoAfterDeletion) => {
+                                assert.ifError(err);
+                                assert.strictEqual(sseInfoAfterDeletion.isAccountEncryptionEnabled, true);
+                                done();
+                            });
                         });
                     });
                 });
