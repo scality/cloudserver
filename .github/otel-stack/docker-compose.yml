@@ -1,0 +1,42 @@
+# endpoints
+# grafana: http://localhost:3000
+# otel-collector-metrics: http://localhost:8889
+# tempo: http://localhost:3200
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.113.0
+    restart: always
+    command:
+      - --config=/etc/otelcol-contrib/otel-collector.yml
+    volumes:
+      - ./collector/otel-collector.yml:/etc/otelcol-contrib/otel-collector.yml
+    ports:
+      - "1888:1888"   # pprof extension
+      - "13133:13133" # health_check extension
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "55679:55679" # zpages extension
+    depends_on:
+      - tempo
+
+  tempo:
+    image: grafana/tempo:latest
+    command: [ "-config.file=/etc/tempo.yml" ]
+    volumes:
+      - ./tempo/tempo.yml:/etc/tempo.yml
+    ports:
+      - "3200:3200"   # tempo HTTP endpoint
+      - "4317"        # otlp grpc
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana
+    environment:
+      - GF_INSTALL_PLUGINS=https://storage.googleapis.com/integration-artifacts/grafana-exploretraces-app/grafana-exploretraces-app-latest.zip;grafana-traces-app
+    volumes:
+      - ./grafana/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    ports:
+      - "3000:3000"
+    depends_on:
+      - otel-collector
+      - tempo

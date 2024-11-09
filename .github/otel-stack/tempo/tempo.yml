@@ -1,0 +1,28 @@
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers:                           # this configuration will listen on all ports and protocols that tempo is capable of.
+    otlp:
+      protocols:
+        http:
+        grpc:
+
+ingester:
+  max_block_duration: 1m               # cut the headblock when this much time passes. this is being set for demo purposes and should probably be left alone normally
+
+compactor:
+  compaction:
+    block_retention: 10h                # overall Tempo trace retention. set for demo purposes
+
+storage:
+  trace:
+    backend: s3                     # backend configuration to use
+    s3:
+      bucket: anurag-bucket-a      # s3 bucket name
+      prefix: CLDSRV-575
+      endpoint: s3.eu-north-1.amazonaws.com          # s3 endpoint
+      access_key:              # s3 access key
+      secret_key:           # s3 secret key
+      region: eu-north-1             # s3 region
+      insecure: false
