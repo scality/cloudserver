@@ -50,7 +50,7 @@ describe('bucketDeleteEncryption API', () => {
             });
         }));
 
-    it('should disable mandatory sse and clear key for aws:kms with a configured master key id', done => {
+    it('should remove sse and clear key for aws:kms with a configured master key id', done => {
         const post = templateSSEConfig({ algorithm: 'aws:kms', keyId: '12345' });
         bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
             assert.ifError(err);
@@ -58,9 +58,7 @@ describe('bucketDeleteEncryption API', () => {
                 assert.ifError(err);
                 return getSSEConfig(bucketName, log, (err, sseInfo) => {
                     assert.ifError(err);
-                    assert(!sseInfo.masterKeyId);
-                    assert.strictEqual(sseInfo.mandatory, false);
-                    assert.strictEqual(sseInfo.configuredMasterKeyId, '12345');
+                    assert(!sseInfo);
                     done();
                 });
             });
@@ -227,7 +225,7 @@ describe('bucketDeleteEncryption API', () => {
             sinon.restore();
         });
 
-        it('should keep isAccountEncryptionEnabled after deleting AES256 bucket encryption', done => {
+        it('should clear the sse config after deleting AES256 bucket encryption', done => {
             const post = templateSSEConfig({ algorithm: 'AES256' });
             bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
                 assert.ifError(err);
@@ -238,7 +236,7 @@ describe('bucketDeleteEncryption API', () => {
                         assert.ifError(err);
                         return getSSEConfig(bucketName, log, (err, sseInfoAfterDeletion) => {
                             assert.ifError(err);
-                            assert.strictEqual(sseInfoAfterDeletion.isAccountEncryptionEnabled, true);
+                            assert(!sseInfoAfterDeletion);
                             done();
                         });
                     });
@@ -246,7 +244,7 @@ describe('bucketDeleteEncryption API', () => {
             });
         });
 
-        it('should keep isAccountEncryptionEnabled after deleting aws:kms bucket encryption', done => {
+        it('should clear the sse config after deleting aws:kms bucket encryption', done => {
             const post = templateSSEConfig({ algorithm: 'aws:kms' });
             bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
                 assert.ifError(err);
@@ -257,7 +255,7 @@ describe('bucketDeleteEncryption API', () => {
                         assert.ifError(err);
                         return getSSEConfig(bucketName, log, (err, sseInfoAfterDeletion) => {
                             assert.ifError(err);
-                            assert.strictEqual(sseInfoAfterDeletion.isAccountEncryptionEnabled, true);
+                            assert(!sseInfoAfterDeletion);
                             done();
                         });
                     });
@@ -265,7 +263,7 @@ describe('bucketDeleteEncryption API', () => {
             });
         });
 
-        it('should keep isAccountEncryptionEnabled after deleting aws:kms and key id bucket encryption', done => {
+        it('should clear the sse config after deleting aws:kms and key id bucket encryption', done => {
             const postAES256 = templateSSEConfig({ algorithm: 'AES256' });
             bucketPutEncryption(authInfo, templateRequest(bucketName, { post: postAES256 }), log, err => {
                 assert.ifError(err);
@@ -279,7 +277,7 @@ describe('bucketDeleteEncryption API', () => {
                             assert.ifError(err);
                             return getSSEConfig(bucketName, log, (err, sseInfoAfterDeletion) => {
                                 assert.ifError(err);
-                                assert.strictEqual(sseInfoAfterDeletion.isAccountEncryptionEnabled, true);
+                                assert(!sseInfoAfterDeletion);
                                 done();
                             });
                         });
