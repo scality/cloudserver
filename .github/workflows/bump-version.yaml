@@ -1,0 +1,38 @@
+---
+name: bump-version
+
+on:
+  push:
+    tags:
+    - '**'
+  workflow_dispatch:
+
+jobs:
+  bump:
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: Bump version on package.json
+        run: |
+          yarn version --patch --no-git-tag-version
+      - name: Output properties
+        id: properties
+        run: |
+          echo "NEW_VERSION=$(node -p -e "require('./package.json').version")" >> $GITHUB_ENV
+          # target branch is development/major.minor
+          echo "TARGET_BRANCH=development/$(node -p -e "require('./package.json').version" | awk -F. '{print $1 "." $2}')" >> $GITHUB_ENV
+
+      - name: Create a pull request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Bump version to ${{ env.NEW_VERSION }}"
+          title: "Bump version to ${{ env.NEW_VERSION }}"
+          branch: "feature/bump-${{ env.NEW_VERSION }}"
+          base: "${{ env.TARGET_BRANCH }}"
