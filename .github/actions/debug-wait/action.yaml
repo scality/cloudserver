@@ -1,0 +1,15 @@
+---
+name: "Debug wait"
+description: "If debugging is enabled, wait"
+
+runs:
+  using: composite
+  steps:
+    - name: "Debug: SSH to runner"
+      uses: scality/actions/action-ssh-to-runner@1.8.0
+      continue-on-error: true
+      with:
+        tmate-server-host: ${{ env.TMATE_SERVER_HOST }}
+        tmate-server-port: ${{ env.TMATE_SERVER_PORT }}
+        tmate-server-rsa-fingerprint: ${{ env.TMATE_SERVER_RSA_FINGERPRINT }}
+        tmate-server-ed25519-fingerprint: ${{ env.TMATE_SERVER_ED25519_FINGERPRINT }}

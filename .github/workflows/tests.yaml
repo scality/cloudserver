@@ -69,6 +69,11 @@ env:
   REMOTE_MANAGEMENT_DISABLE: "1"
   # https://github.com/git-lfs/git-lfs/issues/5749
   GIT_CLONE_PROTECTION_ACTIVE: 'false'
+   # DEBUG WAIT
+  TMATE_SERVER_HOST: ${{ secrets.TMATE_SERVER_HOST }}
+  TMATE_SERVER_PORT: ${{ secrets.TMATE_SERVER_PORT }}
+  TMATE_SERVER_RSA_FINGERPRINT: ${{ secrets.TMATE_SERVER_RSA_FINGERPRINT }}
+  TMATE_SERVER_ED25519_FINGERPRINT: ${{ secrets.TMATE_SERVER_ED25519_FINGERPRINT }}
 jobs:
   linting-coverage:
     runs-on: ubuntu-latest
@@ -211,6 +216,10 @@ jobs:
         yarn run multiple_backend_test | tee /tmp/artifacts/${{ github.job }}/tests.log
       env:
         S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+    - name: Debug wait
+      uses: ./.github/actions/debug-wait
+      timeout-minutes: 60
+      if: always()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
