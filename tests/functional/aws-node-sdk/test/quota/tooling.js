@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+const nodeFetch = require('node-fetch');
 const AWS = require('aws-sdk');
 const xml2js = require('xml2js');
 
