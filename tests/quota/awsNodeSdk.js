@@ -136,6 +136,7 @@ function deleteVersionID(bucket, key, versionId, size, cb) {
         Key: key,
         VersionId: versionId,
     }, (err, data) => {
+        console.log('error', err);
         if (!err && !s3Config.isQuotaInflightEnabled()) {
             mockScuba.incrementBytesForBucket(bucket, -size);
         }
@@ -790,6 +791,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                     return next();
                 },
                 next => deleteVersionID(bucket, key, vID, size, err => {
+                    console.log('error', err);
                     assert.strictEqual(err.code, 'AccessDenied');
                     next();
                 }),
