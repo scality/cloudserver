@@ -418,6 +418,10 @@ jobs:
         set -ex -o pipefail;
         bash wait_for_local_port.bash 8000 40
         yarn run test_quota | tee /tmp/artifacts/${{ github.job }}/tests.log
+    - name: Debug wait
+      uses: ./.github/actions/debug-wait
+      timeout-minutes: 60
+      if: always()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
