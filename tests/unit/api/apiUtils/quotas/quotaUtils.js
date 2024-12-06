@@ -114,6 +114,32 @@ describe('validateQuotas (buckets)', () => {
         });
     });
 
+    it('should not return QuotaExceeded if quotas are exceeded but operation is creating a delete marker', done => {
+        const result1 = {
+            bytesTotal: 150,
+        };
+        const result2 = {
+            bytesTotal: 120,
+        };
+        QuotaService._getLatestMetricsCallback.yields(null, result1);
+        QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
+
+        validateQuotas(request, mockBucket, {}, ['objectDelete'], 'objectDelete', 0, false, mockLog, err => {
+            assert.ifError(err);
+            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledWith(
+                'bucket',
+                'bucketName_1640995200000',
+                null,
+                {
+                    action: 'objectDelete',
+                    inflight: 0,
+                }
+            ), true);
+            done();
+        });
+    });
+
     it('should not return QuotaExceeded if the quotas are exceeded but operation is a delete', done => {
         const result1 = {
             bytesTotal: 150,
@@ -125,6 +151,32 @@ describe('validateQuotas (buckets)', () => {
         QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
 
         validateQuotas(request, mockBucket, {}, ['objectDelete'], 'objectDelete', -50, false, mockLog, err => {
+            assert.ifError(err);
+            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledWith(
+                'bucket',
+                'bucketName_1640995200000',
+                null,
+                {
+                    action: 'objectDelete',
+                    inflight: -50,
+                }
+            ), true);
+            done();
+        });
+    });
+
+    it('should not return QuotaExceeded if the quotas are exceeded but operation is a delete with version', done => {
+        const result1 = {
+            bytesTotal: 150,
+        };
+        const result2 = {
+            bytesTotal: 120,
+        };
+        QuotaService._getLatestMetricsCallback.yields(null, result1);
+        QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
+
+        validateQuotas(request, mockBucket, {}, ['objectDelete'], 'objectDeleteVersion', -50, false, mockLog, err => {
             assert.ifError(err);
             assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
             assert.strictEqual(QuotaService._getLatestMetricsCallback.calledWith(
