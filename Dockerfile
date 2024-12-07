@@ -34,8 +34,8 @@ RUN apt-get update && \
         jq \
     && rm -rf /var/lib/apt/lists/*
 
-ENV NO_PROXY localhost,127.0.0.1
-ENV no_proxy localhost,127.0.0.1
+ENV NO_PROXY=localhost,127.0.0.1
+ENV no_proxy=localhost,127.0.0.1
 
 EXPOSE 8000
 EXPOSE 8002
@@ -51,7 +51,6 @@ WORKDIR /usr/src/app
 # Keep the .git directory in order to properly report version
 COPY . /usr/src/app
 COPY --from=builder /usr/src/app/node_modules ./node_modules/
-
 
 VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 
