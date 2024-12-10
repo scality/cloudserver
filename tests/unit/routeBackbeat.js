@@ -23,8 +23,6 @@ const testBucket = {
     namespace,
     headers: {
         'host': `${bucketName}.s3.amazonaws.com`,
-        // set versioning
-
     },
     url: `/${bucketName}`,
     actionImplicitDenies: false,
@@ -47,7 +45,6 @@ describe('routeBackbeat', () => {
     let response;
 
     beforeEach(() => {
-        // Mock backbeatRoutes
         sinon.stub(backbeatRoutes, 'PUT').returns({
             data: sinon.stub(),
             metadata: sinon.stub(),
@@ -86,7 +83,6 @@ describe('routeBackbeat', () => {
             index: sinon.stub(),
         });
 
-        // Mock request and response
         request = new DummyRequest(
             {
                 method: 'GET',
@@ -131,7 +127,6 @@ describe('routeBackbeat', () => {
             target: `${bucketName}/${objectName}`,
             operation: null,
             versionId: false,
-            // not sending any body here, so expect error
             expect: errors.MalformedPOSTRequest,
         },
         {
