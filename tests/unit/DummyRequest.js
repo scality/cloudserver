@@ -25,6 +25,14 @@ class DummyRequest extends http.IncomingMessage {
             this.push(msg);
         }
         this.push(null);
+        if (!this.socket) {
+            this.socket = {
+                remoteAddress: '127.0.0.1',
+                destroy: () => {},
+                on: () => {},
+                removeListener: () => {},
+            };
+        }
     }
 }
 
