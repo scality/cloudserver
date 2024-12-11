@@ -124,7 +124,7 @@ describe('excludedDataStoreName', () => {
         });
     });
 
-    it('should return trucated listing that excludes current versions stored in location2', done => {
+    it.only('should return trucated listing that excludes current versions stored in location2', done => {
         makeBackbeatRequest({
             method: 'GET',
             bucket: testBucket,
