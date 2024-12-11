@@ -1436,7 +1436,7 @@ describe('backbeat routes', () => {
     });
 
     // TODO: CLDSRV-394 unskip routeBackbeat tests
-    describe.skip('backbeat PUT routes', () => {
+    describe('backbeat PUT routes', () => {
         describe('PUT data + metadata should create a new complete object',
         () => {
             [{
@@ -2037,7 +2037,8 @@ describe('backbeat routes', () => {
             });
         });
     });
-    describe.skip('backbeat authorization checks', () => {
+
+    describe('backbeat authorization checks', () => {
         [{ method: 'PUT', resourceType: 'metadata' },
          { method: 'PUT', resourceType: 'data' }].forEach(test => {
              const queryObj = test.resourceType === 'data' ? { v2: '' } : {};
@@ -2155,7 +2156,7 @@ describe('backbeat routes', () => {
            });
     });
 
-    describe.skip('GET Metadata route', () => {
+    describe('GET Metadata route', () => {
         beforeEach(done => makeBackbeatRequest({
             method: 'PUT', bucket: TEST_BUCKET,
             objectKey: TEST_KEY,
@@ -2213,7 +2214,7 @@ describe('backbeat routes', () => {
             });
         });
     });
-    describe.skip('backbeat multipart upload operations', function test() {
+    describe('backbeat multipart upload operations', function test() {
         this.timeout(10000);
 
         // The ceph image does not support putting tags during initiate MPU.
@@ -2374,7 +2375,8 @@ describe('backbeat routes', () => {
             ], done);
         });
     });
-    describe.skip('Batch Delete Route', function test() {
+
+    describe('Batch Delete Route', function test() {
         this.timeout(30000);
         it('should batch delete a local location', done => {
             let versionId;
