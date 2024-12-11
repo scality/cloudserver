@@ -1437,7 +1437,7 @@ describe('backbeat routes', () => {
 
     // TODO: CLDSRV-394 unskip routeBackbeat tests
     describe('backbeat PUT routes', () => {
-        describe('PUT data + metadata should create a new complete object',
+        describe.only('PUT data + metadata should create a new complete object',
         () => {
             [{
                 caption: 'with ascii test key',
