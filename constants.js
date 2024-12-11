@@ -246,6 +246,13 @@ const constants = {
     // if requester is not bucket owner, bucket policy actions should be denied with
     // MethodNotAllowed error
     onlyOwnerAllowed: ['bucketDeletePolicy', 'bucketGetPolicy', 'bucketPutPolicy'],
+    supportedLifecycleRules: [
+        'expiration',
+        'noncurrentVersionExpiration',
+        'abortIncompleteMultipartUpload',
+        'transitions',
+        'noncurrentVersionTransition',
+    ],
 };
 
 module.exports = constants;

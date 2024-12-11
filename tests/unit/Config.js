@@ -1,8 +1,13 @@
 const assert = require('assert');
 const {
     azureArchiveLocationConstraintAssert,
+    parseSupportedLifecycleRules,
     ConfigObject: ConfigObjectForTest,
 } = require('../../lib/Config');
+
+const {
+    supportedLifecycleRules,
+} = require('../../constants');
 
 describe('Config', () => {
     const envToRestore = [];
@@ -666,6 +671,32 @@ describe('Config', () => {
                 }
             };
             assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
+        });
+    });
+
+    describe('parseSupportedLifecycleRules', () => {
+        it('should throw when an empty array is provided', () => {
+            assert.throws(() => parseSupportedLifecycleRules([]));
+        });
+
+        it('should use default values when no value is provided', () => {
+            const rules = parseSupportedLifecycleRules(undefined);
+            assert.deepStrictEqual(rules, [...supportedLifecycleRules]);
+        });
+
+        it('should throw when rule name is not valid', () => {
+            const rules = ['invalid'];
+            assert.throws(() => parseSupportedLifecycleRules(rules));
+        });
+
+        it('should return the rules provided when they are valid', () => {
+            const rules = [
+                'expiration',
+                'noncurrentVersionExpiration',
+                'abortIncompleteMultipartUpload',
+            ];
+            const parsedRules = parseSupportedLifecycleRules(rules);
+            assert.deepStrictEqual(parsedRules, rules);
         });
     });
 });
