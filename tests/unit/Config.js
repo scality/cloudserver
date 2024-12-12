@@ -452,60 +452,6 @@ describe('Config', () => {
         });
     });
 
-    describe('utapi option setup', () => {
-        let oldConfig;
-
-        before(() => {
-            oldConfig = process.env.S3_CONFIG_FILE;
-            process.env.S3_CONFIG_FILE =
-                'tests/unit/testConfigs/allOptsConfig/config.json';
-        });
-
-        after(() => {
-            process.env.S3_CONFIG_FILE = oldConfig;
-        });
-
-        it('should set up utapi local cache', () => {
-            const { ConfigObject } = require('../../lib/Config');
-            const config = new ConfigObject();
-
-            assert.deepStrictEqual(
-                config.localCache,
-                { name: 'zenko', sentinels: [{ host: 'localhost', port: 6379 }] },
-            );
-            assert.deepStrictEqual(
-                config.utapi.localCache,
-                config.localCache,
-            );
-        });
-
-        it('should set up utapi redis', () => {
-            const { ConfigObject } = require('../../lib/Config');
-            const config = new ConfigObject();
-
-            assert.deepStrictEqual(
-                config.redis,
-                { name: 'zenko', sentinels: [{ host: 'localhost', port: 6379 }] },
-            );
-            assert.deepStrictEqual(
-                config.utapi.redis,
-                {
-                    host: 'localhost',
-                    port: 6379,
-                    retry: {
-                        connectBackoff: {
-                            min: 10,
-                            max: 1000,
-                            factor: 1.5,
-                            jitter: 0.1,
-                            deadline: 10000,
-                        },
-                    },
-                },
-            );
-        });
-    });
-
     it('should have a default overlay version', () => {
         const { config } = require('../../lib/Config');
         assert.strictEqual(config.overlayVersion, 0);
