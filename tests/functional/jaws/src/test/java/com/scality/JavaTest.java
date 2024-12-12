@@ -49,14 +49,22 @@ public class JavaTest {
     }
 
     @Test public void testCreateBucket() throws Exception {
+        Object[] initialBuckets=getS3Client().listBuckets().toArray();
         getS3Client().createBucket(bucketName);
         Object[] buckets=getS3Client().listBuckets().toArray();
-        Assert.assertEquals(buckets.length,1);
-        Bucket bucket = (Bucket) buckets[0];
-        Assert.assertEquals(bucketName, bucket.getName());
+        Assert.assertEquals(buckets.length, initialBuckets.length + 1);
+        boolean bucketFound = false;
+        for (Object bucketObj : buckets) {
+            Bucket bucket = (Bucket) bucketObj;
+            if (bucketName.equals(bucket.getName())) {
+                bucketFound = true;
+                break;
+            }
+        }
+        Assert.assertTrue("Bucket not found in the list", bucketFound);
         getS3Client().deleteBucket(bucketName);
         Object[] bucketsAfter=getS3Client().listBuckets().toArray();
-        Assert.assertEquals(bucketsAfter.length, 0);
+        Assert.assertEquals(bucketsAfter.length, initialBuckets.length);
     }
 
 }
