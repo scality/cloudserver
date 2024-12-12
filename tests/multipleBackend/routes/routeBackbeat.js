@@ -1632,7 +1632,7 @@ describe('backbeat routes', () => {
                 });
             });
 
-        it('should PUT tags for a non-versioned bucket', function test(done) {
+        itSkipCeph('should PUT tags for a non-versioned bucket', function test(done) {
             this.timeout(10000);
             const bucket = NONVERSIONED_BUCKET;
             const awsBucket =
@@ -2441,7 +2441,8 @@ describe('backbeat routes', () => {
                 }),
             ], done);
         });
-        it('should batch delete a versioned AWS location', done => {
+
+        itSkipCeph('should batch delete a versioned AWS location', done => {
             let versionId;
             const awsKey = `${TEST_BUCKET}/batch-delete-test-key-${makeid(8)}`;
 
@@ -2581,7 +2582,7 @@ describe('backbeat routes', () => {
                 ], done);
             });
 
-        it('should not put tags if the source is not Azure and ' +
+        itSkipCeph('should not put tags if the source is not Azure and ' +
             'if-unmodified-since condition is not met', done => {
                 const awsKey = uuidv4();
                 async.series([
@@ -2630,7 +2631,7 @@ describe('backbeat routes', () => {
                 ], done);
             });
 
-        it('should put tags if the source is not Azure and ' +
+        itSkipCeph('should put tags if the source is not Azure and ' +
             'if-unmodified-since condition is met', done => {
                 const awsKey = uuidv4();
                 let lastModified;
