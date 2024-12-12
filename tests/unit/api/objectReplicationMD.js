@@ -1,6 +1,6 @@
 const assert = require('assert');
 const async = require('async');
-const crypto = require('crypto');
+const myCrypto = require('crypto');
 
 const BucketInfo = require('arsenal').models.BucketInfo;
 
@@ -155,7 +155,7 @@ function putMPU(key, body, cb) {
     const uploadId = '9a0364b9e99bb480dd25e1f0284c8555';
     createShadowBucket(key, uploadId);
     const partBody = Buffer.from(body, 'utf8');
-    const md5Hash = crypto.createHash('md5').update(partBody);
+    const md5Hash = myCrypto.createHash('md5').update(partBody);
     const calculatedHash = md5Hash.digest('hex');
     const partKey = `${uploadId}${constants.splitter}00001`;
     const obj = {
@@ -230,7 +230,7 @@ describe('Replication object MD without bucket replication config', () => {
             if (err) {
                 return done(err);
             }
-            checkObjectReplicationInfo(keyA, emptyReplicationMD);
+            checkObjectReplicationInfo(keyA, emptyReplicationMDUndef);
             return done();
         }));
 

@@ -1,5 +1,5 @@
 const assert = require('assert');
-const crypto = require('crypto');
+const myCrypto = require('crypto');
 
 const { DummyRequestLogger } = require('../helpers');
 const log = new DummyRequestLogger();
@@ -42,7 +42,7 @@ const locationConstraintsOriginal = Object.assign({},
 const restEndpointsOriginal = Object.assign({}, config.restEndpoints);
 const browserAccessEnabledOriginal = config.browserAccessEnabled;
 const instanceId = '19683e55-56f7-4a4c-98a7-706c07e4ec30';
-const publicInstanceId = crypto.createHash('sha256')
+const publicInstanceId = myCrypto.createHash('sha256')
                                .update(instanceId)
                                .digest('hex');
 

@@ -1,5 +1,5 @@
 const assert = require('assert');
-const process = require('process');
+const myProcess = require('process');
 const cp = require('child_process');
 const { parseString } = require('xml2js');
 
@@ -12,7 +12,7 @@ const bucket = `mybucket-${random}`;
 
 
 function diff(putFile, receivedFile, done) {
-    process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
+    myProcess.stdout.write(`diff ${putFile} ${receivedFile}\n`);
     cp.spawn('diff', [putFile, receivedFile]).on('exit', code => {
         assert.strictEqual(code, 0);
         done();
@@ -20,7 +20,7 @@ function diff(putFile, receivedFile, done) {
 }
 
 function deleteFile(file, callback) {
-    process.stdout.write(`rm ${file}\n`);
+    myProcess.stdout.write(`rm ${file}\n`);
     cp.spawn('rm', [file]).on('exit', () => {
         callback();
     });

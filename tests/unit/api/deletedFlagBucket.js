@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+const myCrypto = require('crypto');
 const assert = require('assert');
 
 const BucketInfo = require('arsenal').models.BucketInfo;
@@ -238,7 +238,7 @@ describe('deleted flag bucket handling', () => {
             baseTestRequest, baseTestRequest.headers);
             setUpRequest.objectKey = objName;
             const postBody = Buffer.from('I am a body', 'utf8');
-            const md5Hash = crypto.createHash('md5');
+            const md5Hash = myCrypto.createHash('md5');
             const etag = md5Hash.update(postBody).digest('hex');
             const putObjRequest = new DummyRequest(setUpRequest, postBody);
             objectPut(authInfo, putObjRequest, undefined, log, err => {
@@ -381,7 +381,7 @@ describe('deleted flag bucket handling', () => {
         '<AllowedMethod>PUT</AllowedMethod>' +
         '<AllowedOrigin>http://www.example.com</AllowedOrigin>' +
         '</CORSRule></CORSConfiguration>';
-        bucketPutCorsRequest.headers['content-md5'] = crypto.createHash('md5')
+        bucketPutCorsRequest.headers['content-md5'] = myCrypto.createHash('md5')
             .update(bucketPutCorsRequest.post, 'utf8').digest('base64');
         bucketPutCors(authInfo, bucketPutCorsRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);

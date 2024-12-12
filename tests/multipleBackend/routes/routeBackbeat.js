@@ -1,7 +1,7 @@
 const assert = require('assert');
 const AWS = require('aws-sdk');
 const async = require('async');
-const crypto = require('crypto');
+const myCrypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const { versioning } = require('arsenal');
 const versionIdUtils = versioning.VersionID;
@@ -47,7 +47,7 @@ const testArn = 'aws::iam:123456789012:user/bart';
 const testKey = 'testkey';
 const testKeyUTF8 = '䆩鈁櫨㟔罳';
 const testData = 'testkey data';
-const testDataMd5 = crypto.createHash('md5')
+const testDataMd5 = myCrypto.createHash('md5')
           .update(testData, 'utf-8')
           .digest('hex');
 const emptyContentsMd5 = 'd41d8cd98f00b204e9800998ecf8427e';
@@ -263,14 +263,13 @@ describe('backbeat routes', () => {
             });
     });
 
-    after(done =>
+    after(() =>
         bucketUtil.empty(TEST_BUCKET)
             .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
             .then(() => bucketUtil.empty(TEST_ENCRYPTED_BUCKET))
             .then(() => s3.deleteBucket({ Bucket: TEST_ENCRYPTED_BUCKET }).promise())
             .then(() => bucketUtil.empty(NONVERSIONED_BUCKET))
             .then(() => s3.deleteBucket({ Bucket: NONVERSIONED_BUCKET }).promise())
-            .then(() => done(), err => done(err))
     );
 
     describe('null version', () => {
@@ -292,16 +291,14 @@ describe('backbeat routes', () => {
             assert.strictEqual(StorageClass, 'STANDARD');
         }
 
-        beforeEach(done =>
+        beforeEach(() =>
             bucketUtil.emptyIfExists(BUCKET_FOR_NULL_VERSION)
                 .then(() => s3.createBucket({ Bucket: BUCKET_FOR_NULL_VERSION }).promise())
-                .then(() => done(), err => done(err))
         );
 
-        afterEach(done =>
+        afterEach(() =>
             bucketUtil.empty(BUCKET_FOR_NULL_VERSION)
                 .then(() => s3.deleteBucket({ Bucket: BUCKET_FOR_NULL_VERSION }).promise())
-                .then(() => done(), err => done(err))
         );
 
         it('should update metadata of a current null version', done => {

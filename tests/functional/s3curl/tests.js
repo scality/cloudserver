@@ -1,8 +1,8 @@
-'use strict'; // eslint-disable-line strict
+'use strict';
 
 const assert = require('assert');
 const proc = require('child_process');
-const process = require('process');
+const myProcess = require('process');
 const parseString = require('xml2js').parseString;
 
 const conf = require('../../../lib/Config').config;
@@ -12,7 +12,7 @@ let sslArguments = ['-s'];
 if (conf.https && conf.https.ca) {
     sslArguments = ['-s', '--cacert', conf.httpsPath.ca];
 }
-const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
+const ipAddress = myProcess.env.IP ? myProcess.env.IP : '127.0.0.1';
 const program = `${__dirname}/s3curl.pl`;
 const upload = 'test1MB';
 const aclUpload = 'test500KB';
@@ -39,12 +39,12 @@ const prefixedPath = `${bucketPath}/${basePath}`;
  * testing rather than functional testing)
  * XXX TODO FIXME TODO XXX
  */
-if (process.env.S3_TESTVAL_OWNERCANONICALID) {
-    ownerCanonicalId = process.env.S3_TESTVAL_OWNERCANONICALID;
+if (myProcess.env.S3_TESTVAL_OWNERCANONICALID) {
+    ownerCanonicalId = myProcess.env.S3_TESTVAL_OWNERCANONICALID;
 }
 
 function diff(putFile, receivedFile, done) {
-    process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
+    myProcess.stdout.write(`diff ${putFile} ${receivedFile}\n`);
     proc.spawn('diff', [putFile, receivedFile]).on('exit', code => {
         assert.strictEqual(code, 0);
         done();
@@ -53,18 +53,18 @@ function diff(putFile, receivedFile, done) {
 
 
 function createFile(name, bytes, callback) {
-    process.stdout.write(`dd if=/dev/urandom of=${name} bs=${bytes} count=1\n`);
+    myProcess.stdout.write(`dd if=/dev/urandom of=${name} bs=${bytes} count=1\n`);
     let ret = proc.spawnSync('dd', ['if=/dev/urandom', `of=${name}`,
         `bs=${bytes}`, 'count=1'], { stdio: 'inherit' });
     assert.strictEqual(ret.status, 0);
-    process.stdout.write(`chmod ugoa+rw ${name}\n`);
+    myProcess.stdout.write(`chmod ugoa+rw ${name}\n`);
     ret = proc.spawnSync('chmod', ['ugo+rw', name], { stdio: 'inherit' });
     assert.strictEqual(ret.status, 0);
     callback();
 }
 
 function deleteFile(file, callback) {
-    process.stdout.write(`rm ${file}\n`);
+    myProcess.stdout.write(`rm ${file}\n`);
     proc.spawnSync('rm', [file]);
     callback();
 }
@@ -80,7 +80,7 @@ function assertError(data, expectedOutput, done) {
 // Get stdout and stderr stringified
 function provideRawOutput(args, cb) {
     const av = args.concat(sslArguments);
-    process.stdout.write(`${program} ${av}\n`);
+    myProcess.stdout.write(`${program} ${av}\n`);
     const child = proc.spawn(program, av);
     const procData = {
         stdout: '',
@@ -94,7 +94,7 @@ function provideRawOutput(args, cb) {
     });
     child.on('error', cb);
     child.on('close', code => {
-        process.stdout.write(`s3curl return code : ${code}\n`);
+        myProcess.stdout.write(`s3curl return code : ${code}\n`);
         let httpCode;
         if (procData.stderr !== '') {
             const lines = procData.stderr.replace(/[<>]/g, '').split(/[\r\n]/);
@@ -111,11 +111,11 @@ function provideRawOutput(args, cb) {
                 httpCode = httpCode.trim().replace('HTTP/1.1 ', '')
                                           .toUpperCase();
             } else {
-                process.stdout.write(`${lines.join('\n')}\n`);
+                myProcess.stdout.write(`${lines.join('\n')}\n`);
                 return cb(new Error("Can't find line in http response code"));
             }
         } else {
-            process.stdout.write(`stdout: ${procData.stdout}`);
+            myProcess.stdout.write(`stdout: ${procData.stdout}`);
             return cb(new Error('Cannot have stderr'));
         }
         return cb(httpCode, procData);

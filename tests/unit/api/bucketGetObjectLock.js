@@ -58,7 +58,6 @@ function getObjectLockXml(mode, type, time) {
     let xmlStr = `<?xml version="1.0" encoding="UTF-8"?>${xml.objLockConfigOpen}${xml.link}${xml.objectLockEnabled}`;
 
     // object lock is enabled and object lock configuration is set
-    // eslint-disable-next-line
     if (arguments.length === 3) {
         xmlStr += xml.ruleOpen +
             retentionMode +

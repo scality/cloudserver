@@ -1,5 +1,5 @@
 const assert = require('assert');
-const process = require('process');
+const myProcess = require('process');
 const cp = require('child_process');
 const { S3 } = require('aws-sdk');
 const getConfig = require('../support/config');
@@ -8,13 +8,13 @@ const provideRawOutput = require('../../lib/utility/provideRawOutput');
 const random = Math.round(Math.random() * 100).toString();
 const bucket = `mybucket-${random}`;
 const almostOutsideTime = 99990;
-const itSkipAWS = process.env.AWS_ON_AIR
+const itSkipAWS = myProcess.env.AWS_ON_AIR
     ? it.skip
     : it;
 
 
 function diff(putFile, receivedFile, done) {
-    process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
+    myProcess.stdout.write(`diff ${putFile} ${receivedFile}\n`);
     cp.spawn('diff', [putFile, receivedFile]).on('exit', code => {
         assert.strictEqual(code, 0);
         done();
@@ -22,7 +22,7 @@ function diff(putFile, receivedFile, done) {
 }
 
 function deleteFile(file, callback) {
-    process.stdout.write(`rm ${file}\n`);
+    myProcess.stdout.write(`rm ${file}\n`);
     cp.spawn('rm', [file]).on('exit', () => {
         callback();
     });

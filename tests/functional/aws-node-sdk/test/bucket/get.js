@@ -1,6 +1,6 @@
 const assert = require('assert');
 const tv4 = require('tv4');
-const Promise = require('bluebird');
+const myPromise = require('bluebird');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -346,7 +346,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
 
-                Promise
+                myPromise
                     .mapSeries(test.objectPutParams(Bucket),
                         param => s3.putObject(param).promise())
                     .then(() =>

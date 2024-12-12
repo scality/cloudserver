@@ -1,6 +1,6 @@
 const assert = require('assert');
 const async = require('async');
-const crypto = require('crypto');
+const myCrypto = require('crypto');
 const xml2js = require('xml2js');
 
 const DummyRequest = require('../DummyRequest');
@@ -18,7 +18,7 @@ const authInfo = makeAuthInfo(canonicalID);
 
 // part 1
 const partBody = Buffer.from('I am a part\n', 'utf8');
-const md5Hash = crypto.createHash('md5').update(partBody);
+const md5Hash = myCrypto.createHash('md5').update(partBody);
 const calculatedHash = md5Hash.digest('hex');
 
 function createinitiateMPURequest(namespace, bucketName, objectKey) {

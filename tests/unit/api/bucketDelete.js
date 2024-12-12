@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+const myCrypto = require('crypto');
 const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
@@ -41,7 +41,7 @@ function createMPU(testRequest, initiateRequest, deleteOverviewMPUObj, cb) {
         },
         (json, next) => {
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
-            const md5Hash = crypto.createHash('md5');
+            const md5Hash = myCrypto.createHash('md5');
             const bufferBody = Buffer.from(postBody);
             md5Hash.update(bufferBody);
             const calculatedHash = md5Hash.digest('hex');

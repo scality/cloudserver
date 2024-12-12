@@ -1,4 +1,3 @@
-/* eslint-disable dot-notation */
 const net = require('net');
 const async = require('async');
 const http = require('http');
@@ -108,10 +107,14 @@ function testHandler(req, res) {
                 postJsonStringified.slice(3)
             ]);
         case '/post':
-            if (req.method !== 'POST') return respondWithError(req, res, 405);
+            if (req.method !== 'POST') {
+                return respondWithError(req, res, 405);
+            }
             return handlePostRequest(req, res, postData);
         case '/postjson':
-            if (req.method !== 'POST') return respondWithError(req, res, 405);
+            if (req.method !== 'POST') {
+                return respondWithError(req, res, 405);
+            }
             return handlePostRequest(req, res, postJsonStringified);
         case '/postempty':
             return handlePostRequest(req, res, '');

@@ -1,4 +1,4 @@
-'use strict'; // eslint-disable-line strict
+'use strict';
 const http = require('http');
 const assert = require('assert');
 
@@ -80,7 +80,7 @@ describe('Monitoring - getting metrics', () => {
         it(`should measure http ${labels.method} requests duration metrics on ${path}`, async () => {
             const initialDuration = parseDuration(await getMetrics(), labels);
             let previousDuration = initialDuration;
-            for (let i = 0; i < 1000; i++) { /* eslint no-await-in-loop: "off" */
+            for (let i = 0; i < 1000; i++) {
                 await query(path, labels.method);
 
                 const duration = parseDuration(await getMetrics(), labels);

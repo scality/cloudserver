@@ -101,7 +101,6 @@ describe('updateRequestContextsWithTags', () => {
             err => {
                 assert.ifError(err);
                 // FIXME introduced by CLDSRV-256, this syntax should be allowed by the linter
-                // eslint-disable-next-line no-restricted-syntax
                 for (const requestContext of objectGetRequestContexts) {
                     assert(requestContext.getNeedTagEval());
                     assert.strictEqual(requestContext.getExistingObjTag(),

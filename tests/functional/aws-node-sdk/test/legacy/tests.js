@@ -1,5 +1,5 @@
 const assert = require('assert');
-const crypto = require('crypto');
+const myCrypto = require('crypto');
 const { S3 } = require('aws-sdk');
 
 const getConfig = require('../support/config');
@@ -11,9 +11,9 @@ const bucketEmptyObj = `ftest-bucketemptyobj-${random}`;
 
 // Create a buffer to put as a multipart upload part
 // and get its ETag
-const md5HashFirstPart = crypto.createHash('md5');
+const md5HashFirstPart = myCrypto.createHash('md5');
 const firstBufferBody = Buffer.alloc(5242880, 0);
-const md5HashSecondPart = crypto.createHash('md5');
+const md5HashSecondPart = myCrypto.createHash('md5');
 const secondBufferBody = Buffer.alloc(5242880, 1);
 md5HashFirstPart.update(firstBufferBody);
 md5HashSecondPart.update(secondBufferBody);
