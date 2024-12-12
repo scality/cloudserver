@@ -79,7 +79,7 @@ function testSuite() {
                         assert.equal(err, null, 'Expected success ' +
                             `but got error ${err}`);
                         setTimeout(() => azureClient.getContainerClient(azureContainerName)
-                            .getProperties(keyName)
+                            .getBlobClient(keyName).getProperties()
                             .then(() => assert.fail('Expected error'), err => {
                                 assert.strictEqual(err.statusCode, 404);
                                 assert.strictEqual(err.code, 'NotFound');
@@ -112,13 +112,13 @@ function testSuite() {
                     assert.equal(err, null, 'Expected success ' +
                         `but got error ${err}`);
                     setTimeout(() =>
-                    azureClient.getContainerClient(azureContainerName)
-                        .getProperties(`${azureContainerName}/${this.test.azureObject}`)
-                        .then(() => assert.fail('Expected error'), err => {
-                            assert.strictEqual(err.statusCode, 404);
-                            assert.strictEqual(err.code, 'NotFound');
-                            return done();
-                        }), azureTimeout);
+                        azureClient.getContainerClient(azureContainerName)
+                            .getBlobClient(`${azureContainerName}/${this.test.azureObject}`).getProperties()
+                            .then(() => assert.fail('Expected error'), err => {
+                                assert.strictEqual(err.statusCode, 404);
+                                assert.strictEqual(err.code, 'NotFound');
+                                return done();
+                            }), azureTimeout);
                 });
             });
         });

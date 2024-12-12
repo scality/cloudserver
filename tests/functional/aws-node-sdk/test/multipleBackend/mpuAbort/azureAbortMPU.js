@@ -18,7 +18,7 @@ let bucketUtil;
 let s3;
 
 function azureCheck(container, key, expected, cb) {
-    azureClient.getContainerClient(container).getProperties(key).then(res => {
+    azureClient.getContainerClient(container).getBlobClient(key).getProperties().then(res => {
         assert.ok(!expected.error);
         const convertedMD5 = convertMD5(res.contentSettings.contentMD5);
         assert.strictEqual(convertedMD5, expectedMD5);
