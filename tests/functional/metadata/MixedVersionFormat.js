@@ -97,7 +97,9 @@ describe('Mongo backend mixed bucket format versions', () => {
             });
         });
 
-        after(done => mongoClient.close(true).then(() => done()).catch(() => done()));
+        after(() => {
+            mongoClient.close(true);
+        });
 
         ['v0', 'v1'].forEach(vFormat => {
             it(`Should perform operations on non versioned bucket in ${vFormat} format`, done => {
