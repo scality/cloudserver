@@ -18,7 +18,7 @@ runs:
         mkdir -p /tmp/artifacts/${JOB_NAME}/;
     - uses: actions/setup-node@v4
       with:
-        node-version: '16'
+        node-version: '22'
         cache: 'yarn'
     - name: install typescript
       shell: bash
