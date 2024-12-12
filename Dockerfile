@@ -1,4 +1,4 @@
-ARG NODE_VERSION=16.20.2-bookworm-slim
+ARG NODE_VERSION=22-bookworm-slim
 
 FROM node:${NODE_VERSION} AS builder
 
@@ -22,6 +22,7 @@ RUN apt-get update \
     && ssh-keyscan -H github.com > /root/ssh/known_hosts
 
 ENV PYTHON=python3
+RUN npm install -g node-gyp
 COPY package.json yarn.lock /usr/src/app/
 RUN npm install typescript@4.9.5 -g
 RUN yarn install --production --ignore-optional --frozen-lockfile --ignore-engines --network-concurrency 1
