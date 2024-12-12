@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+const myCrypto = require('crypto');
 const assert = require('assert');
 const { storage } = require('arsenal');
 
@@ -73,7 +73,7 @@ function makeAuthInfo(accessKey, userName) {
         accessKey2: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7'
             + 'cd47ef2bf',
         lifecycleKey1: '0123456789abcdef/lifecycle',
-        default: crypto.randomBytes(32).toString('hex'),
+        default: myCrypto.randomBytes(32).toString('hex'),
     };
     canIdMap[constants.publicId] = constants.publicId;
     const acctIdMap = {
@@ -257,7 +257,7 @@ class DummyRequestLogger {
         this.counts.fatal += 1;
     }
 
-    getSerializedUids() { // eslint-disable-line class-methods-use-this
+    getSerializedUids() {
         return 'dummy:Serialized:Uids';
     }
 
@@ -344,7 +344,7 @@ class CorsConfigTester {
         };
         if (method === 'PUT') {
             request.post = body || this.constructXml();
-            request.headers['content-md5'] = crypto.createHash('md5')
+            request.headers['content-md5'] = myCrypto.createHash('md5')
                 .update(request.post, 'utf8').digest('base64');
         }
         return request;
@@ -437,7 +437,7 @@ class TaggingConfigTester {
         };
         if (method === 'PUT') {
             request.post = body || this.constructXml();
-            request.headers['content-md5'] = crypto.createHash('md5')
+            request.headers['content-md5'] = myCrypto.createHash('md5')
                 .update(request.post, 'utf8').digest('base64');
         }
         return request;
@@ -455,7 +455,7 @@ class TaggingConfigTester {
         };
         if (method === 'PUT') {
             request.post = body || this.constructXml();
-            request.headers['content-md5'] = crypto.createHash('md5')
+            request.headers['content-md5'] = myCrypto.createHash('md5')
                 .update(request.post, 'utf8').digest('base64');
         }
         return request;

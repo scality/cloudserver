@@ -1,12 +1,12 @@
 const assert = require('assert');
-const Promise = require('bluebird');
+const myPromise = require('bluebird');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const checkError = require('../../lib/utility/checkError');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
 
-const changeLockPromise = Promise.promisify(changeObjectLock);
+const changeLockPromise = myPromise.promisify(changeObjectLock);
 
 const bucket = 'mock-bucket-lock';
 const unlockedBucket = 'mock-bucket-no-lock';

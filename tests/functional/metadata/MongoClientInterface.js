@@ -44,7 +44,7 @@ const updatedObjVal = { updated: true };
 const runIfMongo =
     process.env.S3METADATA === 'mongodb' ? describe : describe.skip;
 
-function unescape(obj) {
+function unescapeFunc(obj) {
     return JSON.parse(JSON.stringify(obj).
                       replace(/\uFF04/g, '$').
                       replace(/\uFF0E/g, '.'));
@@ -70,7 +70,6 @@ runIfMongo('MongoClientInterface', () => {
     function getObject(params, cb) {
         let objName = OBJECT_NAME;
         if (params && params.versionId) {
-            // eslint-disable-next-line
             objName = `${objName}${VID_SEP}${params.versionId}`;
         }
         collection.findOne({
@@ -81,7 +80,7 @@ runIfMongo('MongoClientInterface', () => {
             }
             if (doc.value.tags) {
                 // eslint-disable-next-line
-                doc.value.tags = unescape(doc.value.tags);
+                doc.value.tags = unescapeFunc(doc.value.tags);
             }
             return cb(null, doc.value);
         }).catch(err => cb(err));

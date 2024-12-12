@@ -1,7 +1,7 @@
-'use strict'; // eslint-disable-line strict
+'use strict';
 
 const proc = require('child_process');
-const process = require('process');
+const myProcess = require('process');
 const assert = require('assert');
 const fs = require('fs');
 const async = require('async');
@@ -27,7 +27,7 @@ const nonexist = 'nonexist';
 const invalidName = 'VOID';
 const emailAccount = 'sampleAccount1@sampling.com';
 const lowerCaseEmail = emailAccount.toLowerCase();
-const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
+const describeSkipIfE2E = myProcess.env.S3_END_TO_END ? describe.skip : describe;
 
 function safeJSONParse(s) {
     let res;
@@ -39,10 +39,10 @@ function safeJSONParse(s) {
     return res;
 }
 
-const isScality = process.env.CI ? ['-c', `${__dirname}/${configCfg}`] : null;
+const isScality = myProcess.env.CI ? ['-c', `${__dirname}/${configCfg}`] : null;
 
 function diff(putFile, receivedFile, done) {
-    process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
+    myProcess.stdout.write(`diff ${putFile} ${receivedFile}\n`);
     proc.spawn('diff', [putFile, receivedFile]).on('exit', code => {
         assert.strictEqual(code, 0);
         done();
@@ -50,7 +50,7 @@ function diff(putFile, receivedFile, done) {
 }
 
 function createFile(name, bytes, callback) {
-    process.stdout.write(`dd if=/dev/urandom of=${name} bs=${bytes} count=1\n`);
+    myProcess.stdout.write(`dd if=/dev/urandom of=${name} bs=${bytes} count=1\n`);
     const ret = proc.spawnSync('dd', ['if=/dev/urandom', `of=${name}`,
         `bs=${bytes}`, 'count=1'], { stdio: 'inherit' });
     assert.strictEqual(ret.status, 0);
@@ -58,14 +58,14 @@ function createFile(name, bytes, callback) {
 }
 
 function createEmptyFile(name, callback) {
-    process.stdout.write(`touch ${name}\n`);
+    myProcess.stdout.write(`touch ${name}\n`);
     const ret = proc.spawnSync('touch', [name], { stdio: 'inherit' });
     assert.strictEqual(ret.status, 0);
     callback();
 }
 
 function deleteFile(file, callback) {
-    process.stdout.write(`rm ${file}\n`);
+    myProcess.stdout.write(`rm ${file}\n`);
     proc.spawnSync('rm', [`${file}`]);
     callback();
 }
@@ -79,7 +79,7 @@ function exec(args, done, exitCode) {
     if (isScality) {
         av = av.concat(isScality);
     }
-    process.stdout.write(`${program} ${av}\n`);
+    myProcess.stdout.write(`${program} ${av}\n`);
     const ret = proc.spawnSync(program, av, { stdio: 'inherit' });
     assert.strictEqual(ret.status, exit,
                         's3cmd did not yield expected exit status.');
@@ -92,17 +92,17 @@ function checkRawOutput(args, lineFinder, testString, stream, cb) {
     if (isScality) {
         av = av.concat(isScality);
     }
-    process.stdout.write(`${program} ${av}\n`);
+    myProcess.stdout.write(`${program} ${av}\n`);
     const allData = [];
     const allErrData = [];
     const child = proc.spawn(program, av);
     child.stdout.on('data', data => {
         allData.push(data.toString());
-        process.stdout.write(data.toString());
+        myProcess.stdout.write(data.toString());
     });
     child.stderr.on('data', data => {
         allErrData.push(data.toString());
-        process.stdout.write(data.toString());
+        myProcess.stdout.write(data.toString());
     });
     child.on('close', () => {
         if (stream === 'stderr') {
@@ -153,7 +153,7 @@ function readJsonFromChild(child, lineFinder, cb) {
     const allData = [];
     child.stderr.on('data', data => {
         allData.push(data.toString());
-        process.stdout.write(data.toString());
+        myProcess.stdout.write(data.toString());
     });
     child.on('close', () => {
         const data = allData.join('');
@@ -172,7 +172,7 @@ function readJsonFromChild(child, lineFinder, cb) {
 function provideLineOfInterest(args, lineFinder, cb) {
     const argsWithCfg = ['-c', configCfg].concat(args);
     const av = isScality ? argsWithCfg.concat(isScality) : argsWithCfg;
-    process.stdout.write(`${program} ${av}\n`);
+    myProcess.stdout.write(`${program} ${av}\n`);
     const child = proc.spawn(program, av);
     readJsonFromChild(child, lineFinder, cb);
 }
@@ -238,7 +238,7 @@ function createEncryptedBucket(name, cb) {
             return false;
         });
         if (!hasSucceed) {
-            process.stderr.write(`${body.join('')}\n`);
+            myProcess.stderr.write(`${body.join('')}\n`);
             return cb(new Error('Cannot create encrypted bucket'));
         }
         return cb();
@@ -275,7 +275,7 @@ describe('s3cmd putBucket', () => {
         exec(['rb', 's3://regioned', '--region=us-east-1'], done);
     });
 
-    if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
+    if (myProcess.env.ENABLE_KMS_ENCRYPTION === 'true') {
         it('creates a valid bucket with server side encryption',
            function f(done) {
                this.timeout(5000);

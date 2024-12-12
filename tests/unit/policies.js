@@ -297,7 +297,9 @@ function prepareDummyRequest(headers = {}) {
 
 describe('Policies: permission checks for S3 APIs', () => {
     apiMatrix.forEach(api => {
-        if (api.name.length === 0) return;
+        if (api.name.length === 0) {
+            return;
+        }
         const message = `should return ${api.expectedPermissions.join(', ')} in requestContextParams for ${api.name}` +
             `${(api.headers && api.headers.length) > 0 ?
                 ` with headers ${api.headers.map(el => el[0]).join(', ')}` : ''}`;

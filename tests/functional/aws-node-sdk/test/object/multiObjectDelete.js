@@ -1,6 +1,6 @@
 const assert = require('assert');
 const moment = require('moment');
-const Promise = require('bluebird');
+const myPromise = require('bluebird');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -8,7 +8,7 @@ const changeObjectLock = require('../../../../utilities/objectLock-util');
 
 const otherAccountBucketUtility = new BucketUtility('lisa', {});
 const otherAccountS3 = otherAccountBucketUtility.s3;
-const changeLockPromise = Promise.promisify(changeObjectLock);
+const changeLockPromise = myPromise.promisify(changeObjectLock);
 
 const bucketName = 'multi-object-delete-234-634';
 const key = 'key';
@@ -75,7 +75,7 @@ describe('Multi-Object Delete Success', function success() {
             const parallel = 20;
             const putPromises = objects.map(key => {
                 const mustComplete = Math.max(0, queued.length - parallel + 1);
-                const result = Promise.some(queued, mustComplete).then(() =>
+                const result = myPromise.some(queued, mustComplete).then(() =>
                     s3.putObject({
                         Bucket: bucketName,
                         Key: key,
@@ -85,7 +85,7 @@ describe('Multi-Object Delete Success', function success() {
                 queued.push(result);
                 return result;
             });
-            return Promise.all(putPromises).catch(err => {
+            return myPromise.all(putPromises).catch(err => {
                 process.stdout.write(`Error creating objects: ${err}\n`);
                 throw err;
             });
@@ -234,7 +234,7 @@ describe('Multi-Object Delete Access', function access() {
                     Body: 'somebody',
                 }).promise());
             }
-            return Promise.all(createObjects)
+            return myPromise.all(createObjects)
             .catch(err => {
                 process.stdout.write(`Error creating objects: ${err}\n`);
                 throw err;
@@ -328,7 +328,7 @@ describeSkipIfCeph('Multi-Object Delete with Object Lock', () => {
                     Body: 'somebody',
                 }).promise());
             }
-            return Promise.all(createObjects)
+            return myPromise.all(createObjects)
             .then(res => {
                 res.forEach(r => {
                     versionIds.push(r.VersionId);
@@ -370,7 +370,7 @@ describeSkipIfCeph('Multi-Object Delete with Object Lock', () => {
                 },
             }).promise());
         }
-        return Promise.all(putObjectLegalHolds)
+        return myPromise.all(putObjectLegalHolds)
             .then(() => s3.deleteObjects({
                 Bucket: bucketName,
                 Delete: {

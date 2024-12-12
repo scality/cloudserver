@@ -1,6 +1,6 @@
 const assert = require('assert');
 const async = require('async');
-const crypto = require('crypto');
+const myCrypto = require('crypto');
 const { parseString } = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
@@ -259,7 +259,7 @@ describe('objectGet API', () => {
                 (json, next) => {
                     const testUploadId =
                     json.InitiateMultipartUploadResult.UploadId[0];
-                    const md5Hash = crypto.createHash('md5').update(partBody);
+                    const md5Hash = myCrypto.createHash('md5').update(partBody);
                     const calculatedHash = md5Hash.digest('hex');
                     const partRequest = new DummyRequest({
                         bucketName,

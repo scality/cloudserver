@@ -1,5 +1,5 @@
 const assert = require('assert');
-const Promise = require('bluebird');
+const myPromise = require('bluebird');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -72,7 +72,7 @@ describe('PUT Object ACL', () => {
                 { Bucket, Key },
             ];
 
-            Promise
+            myPromise
                 .mapSeries(objects, param => s3.putObject(param).promise())
                 .then(() => s3.putObjectAcl({ Bucket, Key,
                     ACL: 'public-read' }).promise())

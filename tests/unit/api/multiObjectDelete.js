@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+const myCrypto = require('crypto');
 const assert = require('assert');
 const { errors, storage } = require('arsenal');
 
@@ -377,7 +377,7 @@ describe('multiObjectDelete function', () => {
             objectKey: 'objectname',
             parsedHost: 'localhost',
             headers: {
-                'content-md5': crypto.createHash('md5').update(post, 'utf8').digest('base64')
+                'content-md5': myCrypto.createHash('md5').update(post, 'utf8').digest('base64')
             },
             post,
             url: '/bucketname',

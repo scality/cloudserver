@@ -1,4 +1,4 @@
-'use strict'; // eslint-disable-line strict
+'use strict';
 const assert = require('assert');
 const DummyRequestLogger = require('../unit/helpers').DummyRequestLogger;
 const clientCheck

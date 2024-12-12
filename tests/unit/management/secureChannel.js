@@ -34,7 +34,9 @@ describe('report handler', () => {
         it(`should allow set local file system capability ${param.value}`, () => {
             const OLD_ENV = process.env;
 
-            if (param.value !== undefined) process.env.LOCAL_VOLUME_CAPABILITY = param.value;
+            if (param.value !== undefined) {
+                process.env.LOCAL_VOLUME_CAPABILITY = param.value;
+            }
             assert.strictEqual(getCapabilities().locationTypeLocal, param.result);
 
             process.env = OLD_ENV;
