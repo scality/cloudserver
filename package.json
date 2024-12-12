@@ -19,7 +19,6 @@
   },
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
-    "@azure/storage-blob": "^12.12.0",
     "@hapi/joi": "^17.1.0",
     "arsenal": "https://github.com/scality/arsenal#8.1.143",
     "async": "~2.5.0",
@@ -53,6 +52,7 @@
     "xml2js": "~0.4.16"
   },
   "devDependencies": {
+    "@azure/storage-blob": "^12.12.0",
     "bluebird": "^3.3.1",
     "eslint": "^8.14.0",
     "eslint-config-airbnb-base": "^13.1.0",
