@@ -137,17 +137,24 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
             });
 
             it('should list buckets concurrently', done => {
-                async.times(20, (n, next) => {
-                    s3.listBuckets((err, result) => {
-                        assert.equal(result.Buckets.length,
-                            createdBuckets.length,
-                            'Created buckets are missing in response');
-                        next(err);
+                s3.listBuckets((err, result) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    const initialBucketCount = result.Buckets.length;
+                    return async.times(20, (n, next) => {
+                        s3.listBuckets((err, result) => {
+                            if (err) {
+                                return next(err);
+                            }
+                            assert.equal(result.Buckets.length, initialBucketCount,
+                                'The number of buckets has changed unexpectedly');
+                            return next();
+                        });
+                    }, err => {
+                        assert.ifError(err, `error listing buckets: ${err}`);
+                        return done();
                     });
-                },
-                err => {
-                    assert.ifError(err, `error listing buckets: ${err}`);
-                    done();
                 });
             });
 
