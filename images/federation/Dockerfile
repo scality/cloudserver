@@ -38,5 +38,5 @@ ENV S3_CONFIG_FILE=${CONF_DIR}/config.json
 ENV S3_LOCATION_FILE=${CONF_DIR}/locationConfig.json
 EXPOSE 8000
 
-CMD bash -c "source ${CONF_DIR}/env && export && supervisord -c ${CONF_DIR}/supervisord.conf"
+CMD [ "/bin/bash", "-c", "source ${CONF_DIR}/env && export && exec supervisord -c ${CONF_DIR}/supervisord.conf" ]
 ENTRYPOINT []
