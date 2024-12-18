@@ -1,5 +1,6 @@
 const assert = require('assert');
 const async = require('async');
+const sinon = require('sinon');
 
 const { errors } = require('arsenal');
 const AuthInfo = require('arsenal').auth.AuthInfo;
@@ -479,6 +480,57 @@ describe('putObjectACL API', () => {
                         done();
                     });
                 });
+        });
+
+        describe('overheadField', () => {
+            before(done => {
+                cleanup();
+                sinon.spy(metadata, 'putObjectMD');
+                return done();
+            });
+
+            after(() => {
+                metadata.putObjectMD.restore();
+                cleanup();
+            });
+
+            it('should pass overheadField', done => {
+                const testObjACLRequest = {
+                    bucketName,
+                    namespace,
+                    objectKey: objectName,
+                    headers: {
+                        'x-amz-grant-full-control':
+                        'emailaddress="sampleaccount1@sampling.com"' +
+                        ',emailaddress="sampleaccount2@sampling.com"',
+                        'x-amz-grant-read': `uri=${constants.logId}`,
+                        'x-amz-grant-read-acp': `id=${ownerID}`,
+                        'x-amz-grant-write-acp': `id=${anotherID}`,
+                    },
+                    url: `/${bucketName}/${objectName}?acl`,
+                    query: { acl: '' },
+                    actionImplicitDenies: false,
+                };
+                bucketPut(authInfo, testPutBucketRequest, log, () => {
+                    objectPut(authInfo, testPutObjectRequest, undefined, log,
+                        (err) => {
+                            assert.ifError(err);
+                            objectPutACL(authInfo, testObjACLRequest, log, err => {
+                                assert.ifError(err);
+                                sinon.assert.calledWith(
+                                    metadata.putObjectMD,
+                                    sinon.match.string,
+                                    objectName,
+                                    sinon.match.any,
+                                    sinon.match({ overheadField: sinon.match.array }),
+                                    sinon.match.any,
+                                    sinon.match.any
+                                );
+                                done();
+                            });
+                        });
+                });
+            });
         });
     });
 

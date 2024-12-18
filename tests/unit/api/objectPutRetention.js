@@ -1,5 +1,6 @@
 const assert = require('assert');
 const moment = require('moment');
+const sinon = require('sinon');
 
 const { errors } = require('arsenal');
 const { bucketPut } = require('../../../lib/api/bucketPut');
@@ -219,6 +220,35 @@ describe('putObjectRetention API', () => {
                 assert.ifError(err);
                 return objectPutRetention(authInfo, putObjRetRequestGovernanceWithHeader, log, err => {
                     assert.ifError(err);
+                    done();
+                });
+            });
+        });
+
+        describe('overheadField', () => {
+            before(done => {
+                cleanup();
+                sinon.spy(metadata, 'putObjectMD');
+                return done();
+            });
+
+            after(() => {
+                metadata.putObjectMD.restore();
+                cleanup();
+            });
+
+            it('should pass overheadField', done => {
+                objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
+                    assert.ifError(err);
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD,
+                        sinon.match.string,
+                        objectName,
+                        sinon.match.any,
+                        sinon.match({ overheadField: sinon.match.array }),
+                        sinon.match.any,
+                        sinon.match.any
+                    );
                     done();
                 });
             });

@@ -1,4 +1,5 @@
 const assert = require('assert');
+const sinon = require('sinon');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
@@ -95,6 +96,35 @@ describe('putObjectLegalHold API', () => {
                     assert.ifError(err);
                     assert.strictEqual(objMD.legalHold, false);
                     return done();
+                });
+            });
+        });
+
+        describe('overheadField', () => {
+            before(done => {
+                cleanup();
+                sinon.spy(metadata, 'putObjectMD');
+                return done();
+            });
+
+            after(() => {
+                metadata.putObjectMD.restore();
+                cleanup();
+            });
+
+            it('should pass overheadField', done => {
+                objectPutLegalHold(authInfo, putLegalHoldReq('OFF'), log, err => {
+                    assert.ifError(err);
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD,
+                        sinon.match.string,
+                        objectName,
+                        sinon.match.any,
+                        sinon.match({ overheadField: sinon.match.array }),
+                        sinon.match.any,
+                        sinon.match.any
+                    );
+                    done();
                 });
             });
         });

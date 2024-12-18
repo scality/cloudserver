@@ -1,4 +1,5 @@
 const assert = require('assert');
+const sinon = require('sinon');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
@@ -88,6 +89,38 @@ describe('putObjectTagging API', () => {
                 assert.deepStrictEqual(uploadedTags, taggingUtil.getTags());
                 assert.strictEqual(objectMD.originOp, 's3:ObjectTagging:Put');
                 return done();
+            });
+        });
+    });
+
+    describe('overheadField', () => {
+        before(done => {
+            cleanup();
+            sinon.spy(metadata, 'putObjectMD');
+            return done();
+        });
+
+        after(() => {
+            metadata.putObjectMD.restore();
+            cleanup();
+        });
+
+        it('should pass overheadField', done => {
+            const taggingUtil = new TaggingConfigTester();
+            const testObjectPutTaggingRequest = taggingUtil
+                .createObjectTaggingRequest('PUT', bucketName, objectName);
+            objectPutTagging(authInfo, testObjectPutTaggingRequest, log, err => {
+                assert.ifError(err);
+                sinon.assert.calledWith(
+                    metadata.putObjectMD,
+                    sinon.match.string,
+                    objectName,
+                    sinon.match.any,
+                    sinon.match({ overheadField: sinon.match.array }),
+                    sinon.match.any,
+                    sinon.match.any
+                );
+                done();
             });
         });
     });
