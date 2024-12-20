@@ -883,4 +883,136 @@ function multiObjectDelete(bucket, keys, size, callback) {
                     next => deleteBucket(bucket, next),
                 ], done);
             });
+
+        it('should reduce inflights when completing MPU with fewer parts than uploaded', done => {
+            const bucket = 'quota-test-bucket-mpu1';
+            const key = 'quota-test-object';
+            const parts = 3;
+            const partSize = 5 * 1024 * 1024;
+            const totalSize = parts * partSize;
+            const usedParts = 2;
+            let uploadId = null;
+            const ETags = [];
+
+            if (!s3Config.isQuotaInflightEnabled()) {
+                return done();
+            }
+
+            return async.series([
+                next => createBucket(bucket, false, next),
+                next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
+                    JSON.stringify({ quota: totalSize * 2 }), config)
+                    .then(() => next()).catch(err => next(err)),
+                next => s3Client.createMultipartUpload({
+                    Bucket: bucket,
+                    Key: key,
+                }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    uploadId = data.UploadId;
+                    return next();
+                }),
+                next => async.timesSeries(parts, (n, cb) => {
+                    const uploadPartParams = {
+                        Bucket: bucket,
+                        Key: key,
+                        PartNumber: n + 1,
+                        UploadId: uploadId,
+                        Body: Buffer.alloc(partSize),
+                    };
+                    return s3Client.uploadPart(uploadPartParams, (err, data) => {
+                        if (err) {
+                            return cb(err);
+                        }
+                        ETags[n] = data.ETag;
+                        return cb();
+                    });
+                }, next),
+                next => wait(inflightFlushFrequencyMS * 2, next),
+                next => {
+                    // Verify all parts are counted in inflights
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), totalSize);
+                    return next();
+                },
+                next => {
+                    // Complete with only first two parts
+                    const params = {
+                        Bucket: bucket,
+                        Key: key,
+                        MultipartUpload: {
+                            Parts: Array.from({ length: usedParts }, (_, i) => ({
+                                ETag: ETags[i],
+                                PartNumber: i + 1,
+                            })),
+                        },
+                        UploadId: uploadId,
+                    };
+                    return s3Client.completeMultipartUpload(params, next);
+                },
+                next => wait(inflightFlushFrequencyMS * 2, () => next()),
+                next => {
+                    // Verify inflights reduced by dropped part
+                    const expectedInflights = usedParts * partSize;
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), expectedInflights);
+                    return next();
+                },
+                next => deleteObject(bucket, key, usedParts * partSize, next),
+                next => deleteBucket(bucket, next),
+            ], done);
+        });
+
+        it('should reduce inflights when aborting MPU', done => {
+            const bucket = 'quota-test-bucket-mpu2';
+            const key = 'quota-test-object';
+            const parts = 3;
+            const partSize = 5 * 1024 * 1024;
+            const totalSize = parts * partSize;
+            let uploadId = null;
+
+            if (!s3Config.isQuotaInflightEnabled()) {
+                return done();
+            }
+
+            return async.series([
+                next => createBucket(bucket, false, next),
+                next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
+                    JSON.stringify({ quota: totalSize * 2 }), config)
+                    .then(() => next()).catch(err => next(err)),
+                next => s3Client.createMultipartUpload({
+                    Bucket: bucket,
+                    Key: key,
+                }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    uploadId = data.UploadId;
+                    return next();
+                }),
+                next => async.timesSeries(parts, (n, cb) => {
+                    const uploadPartParams = {
+                        Bucket: bucket,
+                        Key: key,
+                        PartNumber: n + 1,
+                        UploadId: uploadId,
+                        Body: Buffer.alloc(partSize),
+                    };
+                    return s3Client.uploadPart(uploadPartParams, cb);
+                }, next),
+                next => wait(inflightFlushFrequencyMS * 2, next),
+                next => {
+                    // Verify all parts are counted in inflights
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), totalSize);
+                    return next();
+                },
+                next => abortMPU(bucket, key, uploadId, totalSize, next),
+                next => wait(inflightFlushFrequencyMS * 2, next),
+                next => {
+                    // Verify inflights reduced to zero after abort
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), 0);
+                    return next();
+                },
+                next => deleteBucket(bucket, next),
+            ], done);
+        });
     });
