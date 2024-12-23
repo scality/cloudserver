@@ -41,6 +41,7 @@ const TEST_BUCKET = 'backbeatbucket';
 const TEST_ENCRYPTED_BUCKET = 'backbeatbucket-encrypted';
 const TEST_KEY = 'fookey';
 const NONVERSIONED_BUCKET = 'backbeatbucket-non-versioned';
+const VERSION_SUSPENDED_BUCKET = 'backbeatbucket-version-suspended';
 const BUCKET_FOR_NULL_VERSION = 'backbeatbucket-null-version';
 
 const testArn = 'aws::iam:123456789012:user/bart';
@@ -229,14 +230,23 @@ describe('backbeat routes', () => {
         bucketUtil = new BucketUtility(
             'default', { signatureVersion: 'v4' });
         s3 = bucketUtil.s3;
-        bucketUtil.emptyManyIfExists([TEST_BUCKET, TEST_ENCRYPTED_BUCKET, NONVERSIONED_BUCKET])
+        bucketUtil.emptyManyIfExists([TEST_BUCKET, TEST_ENCRYPTED_BUCKET, NONVERSIONED_BUCKET,
+        VERSION_SUSPENDED_BUCKET])
             .then(() => s3.createBucket({ Bucket: TEST_BUCKET }).promise())
             .then(() => s3.putBucketVersioning(
                 {
                     Bucket: TEST_BUCKET,
                     VersioningConfiguration: { Status: 'Enabled' },
                 }).promise())
-            .then(() => s3.createBucket({ Bucket: NONVERSIONED_BUCKET }).promise())
+            .then(() => s3.createBucket({
+                Bucket: NONVERSIONED_BUCKET,
+            }).promise())
+            .then(() => s3.createBucket({ Bucket: VERSION_SUSPENDED_BUCKET }).promise())
+            .then(() => s3.putBucketVersioning(
+                {
+                    Bucket: VERSION_SUSPENDED_BUCKET,
+                    VersioningConfiguration: { Status: 'Suspended' },
+                }).promise())
             .then(() => s3.createBucket({ Bucket: TEST_ENCRYPTED_BUCKET }).promise())
             .then(() => s3.putBucketVersioning(
                 {
@@ -269,7 +279,11 @@ describe('backbeat routes', () => {
             .then(() => bucketUtil.empty(TEST_ENCRYPTED_BUCKET))
             .then(() => s3.deleteBucket({ Bucket: TEST_ENCRYPTED_BUCKET }).promise())
             .then(() => bucketUtil.empty(NONVERSIONED_BUCKET))
-            .then(() => s3.deleteBucket({ Bucket: NONVERSIONED_BUCKET }).promise())
+            .then(() =>
+                s3.deleteBucket({ Bucket: NONVERSIONED_BUCKET }).promise())
+            .then(() => bucketUtil.empty(VERSION_SUSPENDED_BUCKET))
+            .then(() =>
+                s3.deleteBucket({ Bucket: VERSION_SUSPENDED_BUCKET }).promise())
             .then(() => done(), err => done(err))
     );
 
@@ -1673,6 +1687,110 @@ describe('backbeat routes', () => {
                         next();
                     }),
             ], done);
+        });
+
+        const testCases = [
+            {
+                description: 'bucket is version suspended',
+                bucket: VERSION_SUSPENDED_BUCKET,
+            },
+            {
+                description: 'bucket is not versioned',
+                bucket: NONVERSIONED_BUCKET,
+            },
+        ];
+
+        testCases.forEach(({ description, bucket }) => {
+            it(`should PUT metadata and data if ${description} and x-scal-versioning-required is not set`, done => {
+                let objectMd;
+                async.waterfall([
+                    next => s3.putObject({
+                        Bucket: bucket,
+                        Key: 'sourcekey',
+                        Body: new Buffer(testData) },
+                        next),
+                    (resp, next) => makeBackbeatRequest({
+                        method: 'GET',
+                        resourceType: 'metadata',
+                        bucket,
+                        objectKey: 'sourcekey',
+                        authCredentials: backbeatAuthCredentials,
+                    }, (err, resp) => {
+                        objectMd = JSON.parse(resp.body).Body;
+                        return next();
+                    }),
+                    next => {
+                        makeBackbeatRequest({
+                            method: 'PUT', bucket,
+                            objectKey: 'destinationkey',
+                            resourceType: 'data',
+                            queryObj: { v2: '' },
+                            headers: {
+                                'content-length': testData.length,
+                                'x-scal-canonical-id': testArn,
+                            },
+                            authCredentials: backbeatAuthCredentials,
+                            requestBody: testData,
+                        }, next);
+                    }, (response, next) => {
+                        assert.strictEqual(response.statusCode, 200);
+                        makeBackbeatRequest({
+                            method: 'PUT', bucket,
+                            objectKey: 'destinationkey',
+                            resourceType: 'metadata',
+                            authCredentials: backbeatAuthCredentials,
+                            requestBody: objectMd,
+                        }, next);
+                    }],
+                    err => {
+                        assert.ifError(err);
+                        done();
+                    });
+            });
+        });
+
+        testCases.forEach(({ description, bucket }) => {
+            it(`should refuse PUT data if ${description} and x-scal-versioning-required is true`, done => {
+                makeBackbeatRequest({
+                    method: 'PUT',
+                    bucket,
+                    objectKey: testKey,
+                    resourceType: 'data',
+                    queryObj: { v2: '' },
+                    headers: {
+                        'content-length': testData.length,
+                        'x-scal-canonical-id': testArn,
+                        'x-scal-versioning-required': 'true',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: testData,
+                }, err => {
+                    assert.strictEqual(err.code, 'InvalidBucketState');
+                    done();
+                });
+            });
+        });
+
+        testCases.forEach(({ description, bucket }) => {
+            it(`should refuse PUT metadata if ${description} and x-scal-versioning-required is true`, done => {
+                makeBackbeatRequest({
+                    method: 'PUT',
+                    bucket,
+                    objectKey: testKey,
+                    resourceType: 'metadata',
+                    queryObj: {
+                        versionId: versionIdUtils.encode(testMd.versionId),
+                    },
+                    headers: {
+                        'x-scal-versioning-required': 'true',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: JSON.stringify(testMd),
+                }, err => {
+                    assert.strictEqual(err.code, 'InvalidBucketState');
+                    done();
+                });
+            });
         });
 
         it('should refuse PUT data if no x-scal-canonical-id header ' +
