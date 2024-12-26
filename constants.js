@@ -221,6 +221,7 @@ const constants = {
         'versionId',
         'isNull',
         'isDeleteMarker',
+        'x-amz-meta-scal-version-id',
     ],
     unsupportedSignatureChecksums: new Set([
         'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
