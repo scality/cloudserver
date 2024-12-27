@@ -98,5 +98,17 @@ describe('putObjectLegalHold API', () => {
                 });
             });
         });
+
+        it('should set originOp in object\'s metadata to s3:ObjectLegalHold:Put', done => {
+            objectPutLegalHold(authInfo, putLegalHoldReq('ON'), log, err => {
+                assert.ifError(err);
+                return metadata.getObjectMD(bucketName, objectName, {}, log,
+                (err, objMD) => {
+                    assert.ifError(err);
+                    assert.strictEqual(objMD.originOp, 's3:ObjectLegalHold:Put');
+                    return done();
+                });
+            });
+        });
     });
 });
