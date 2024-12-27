@@ -1,4 +1,5 @@
 const assert = require('assert');
+const async = require('async');
 const { errors } = require('arsenal');
 const sinon = require('sinon');
 
@@ -13,6 +14,8 @@ const objectGet = require('../../../lib/api/objectGet');
 const DummyRequest = require('../DummyRequest');
 const mpuUtils = require('../utils/mpuUtils');
 const metadataswitch = require('../metadataswitch');
+const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
+const bucketPutNotification = require('../../../lib/api/bucketPutNotification');
 
 const any = sinon.match.any;
 const originalDeleteObject = services.deleteObject;
@@ -48,13 +51,6 @@ function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
 describe('objectDelete API', () => {
     let testPutObjectRequest;
 
-    before(() => {
-        sinon.stub(services, 'deleteObject')
-            .callsFake(originalDeleteObject);
-        sinon.spy(metadataswitch, 'putObjectMD');
-        sinon.spy(metadataswitch, 'deleteObjectMD');
-    });
-
     beforeEach(() => {
         cleanup();
         testPutObjectRequest = new DummyRequest({
@@ -64,9 +60,13 @@ describe('objectDelete API', () => {
             headers: {},
             url: `/${bucketName}/${objectKey}`,
         }, postBody);
+
+        sinon.stub(services, 'deleteObject').callsFake(originalDeleteObject);
+        sinon.spy(metadataswitch, 'putObjectMD');
+        sinon.spy(metadataswitch, 'deleteObjectMD');
     });
 
-    after(() => {
+    afterEach(() => {
         sinon.restore();
     });
 
@@ -93,19 +93,72 @@ describe('objectDelete API', () => {
     });
 
     it('should delete an object', done => {
-        bucketPut(authInfo, testBucketPutRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest,
-                undefined, log, () => {
-                    objectDelete(authInfo, testDeleteRequest, log, err => {
-                        assert.strictEqual(err, null);
-                        objectGet(authInfo, testGetObjectRequest, false,
-                            log, err => {
-                                assert.strictEqual(err.is.NoSuchKey, true);
-                                done();
-                            });
-                    });
-                });
-        });
+        async.series([
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            next => objectDelete(authInfo, testDeleteRequest, log, next),
+            async () => sinon.assert.calledWith(services.deleteObject,
+                any, any, any,
+                sinon.match({
+                    deleteData: true,
+                    doesNotNeedOpogUpdate: true,
+                }),
+                any, any, any),
+            next => objectGet(authInfo, testGetObjectRequest, false, log, err => {
+                assert.strictEqual(err.is.NoSuchKey, true);
+                next();
+            }),
+        ], done);
+    });
+
+    it('should delete an object with oplog update when object is archived', done => {
+        const archived = { archiveInfo: { foo: 0, bar: 'stuff' } };
+        async.series([
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            next => fakeMetadataArchive(bucketName, objectKey, undefined, archived, next),
+            next => objectDelete(authInfo, testDeleteRequest, log, next),
+            async () => sinon.assert.calledWith(services.deleteObject,
+                any, any, any,
+                sinon.match({
+                    deleteData: true,
+                    doesNotNeedOpogUpdate: undefined,
+                }),
+                any, any, any),
+            next => objectGet(authInfo, testGetObjectRequest, false, log, err => {
+                assert.strictEqual(err.is.NoSuchKey, true);
+                next();
+            }),
+        ], done);
+    });
+
+    it('should delete an object with oplog update when bucket has bucket notification', done => {
+        const putNotifConfigRequest = {
+            bucketName,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            post: '<NotificationConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+                '</NotificationConfiguration>',
+            actionImplicitDenies: false,
+        };
+        async.series([
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => bucketPutNotification(authInfo, putNotifConfigRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            next => objectDelete(authInfo, testDeleteRequest, log, next),
+            async () => sinon.assert.calledWith(services.deleteObject,
+                any, any, any,
+                sinon.match({
+                    deleteData: true,
+                    doesNotNeedOpogUpdate: undefined,
+                }),
+                any, any, any),
+            next => objectGet(authInfo, testGetObjectRequest, false, log, err => {
+                assert.strictEqual(err.is.NoSuchKey, true);
+                next();
+            }),
+        ], done);
     });
 
     it('should delete a 0 bytes object', done => {
