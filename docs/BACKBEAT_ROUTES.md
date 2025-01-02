@@ -6,11 +6,11 @@ This special router is responsible for handling all the requests that are
 related to the Backbeat service. Backbeat may call any of the below APIs to
 perform operations on either data or s3 objects (metadata).
 
-These route follow the same authorization and validation as the S3 routes:
+These routes follow the same authorization and validation as the S3 routes:
 
 - Authorize the request with support for Implicit Denies from the IAM service.
 - Retrieve the bucket and object metadata if applicable.
-- Evaluate the S3 Bucket Policies and ACLs before authozing the request.
+- Evaluate the S3 Bucket Policies and ACLs before authorizing the request.
   - Backbeat routes are only authorized given the right permission, currently,
     `objectReplicate` as a unique permission for all these special routes.
   - In order to be authorized without S3 Bucket Policy, the caller must be
@@ -25,6 +25,7 @@ PUT /_/backbeat/metadata/<bucket name>/<object key>
 ```
 
 To edit one existing S3 Object's metadata.
+In the CRR case, this is used to put metadata for new objects.
 
 ```plaintext
 GET /_/backbeat/metadata/<bucket name>/<object key>?versionId=<version id>
