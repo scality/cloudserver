@@ -45,56 +45,56 @@ PUT /_/backbeat/multiplebackenddata/<bucket name>/<object key>?operation=putobje
 ```
 
 To put directly to the storage layer the data for an existing S3 Object.
-Use case: Cross Region Replication (CRR).
+Use case: Zenko Replication.
 
 ```plaintext
 PUT /_/backbeat/multiplebackenddata/<bucket name>/<object key>?operation=putpart
 ```
 
 To put directly to the storage layer the data for an existing S3 Object part.
-Use case: Cross Region Replication (CRR).
+Use case: Zenko Replication.
 
 ```plaintext
 DELETE /_/backbeat/multiplebackenddata/<bucket name>/<object key>?operation=deleteobject
 ```
 
 To delete the data for an existing S3 Object.
-Use case: Cross Region Replication (CRR).
+Use case: Zenko Replication.
 
 ```plaintext
 DELETE /_/backbeat/multiplebackenddata/<bucket name>/<object key>?operation=abortmpu
 ```
 
 To abort a multipart upload.
-Use case: Cross Region Replication (CRR).
+Use case: Zenko Replication.
 
 ```plaintext
 DELETE /_/backbeat/multiplebackenddata/<bucket name>/<object key>?operation=deleteobjecttagging
 ```
 
 To delete the tagging for an existing S3 Object.
-Use case: Cross Region Replication (CRR).
+Use case: Zenko Replication.
 
 ```plaintext
 POST /_/backbeat/multiplebackenddata/<bucket name>/<object key>?operation=initiatempu
 ```
 
 To initiate a multipart upload.
-Use case: Cross Region Replication (CRR).
+Use case: Zenko Replication.
 
 ```plaintext
 POST /_/backbeat/multiplebackenddata/<bucket name>/<object key>?operation=completempu
 ```
 
 To complete a multipart upload.
-Use case: Cross Region Replication (CRR).
+Use case: Zenko Replication.
 
 ```plaintext
 POST /_/backbeat/multiplebackenddata/<bucket name>/<object key>?operation=puttagging
 ```
 
 To put the tagging for an existing S3 Object.
-Use case: Cross Region Replication (CRR).
+Use case: Zenko Replication.
 
 ```plaintext
 GET /_/backbeat/multiplebackendmetadata/<bucket name>/<object key>
