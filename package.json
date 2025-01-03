@@ -21,10 +21,10 @@
   "dependencies": {
     "@azure/storage-blob": "^12.25.0",
     "@hapi/joi": "^17.1.1",
-    "arsenal": "git+https://github.com/scality/Arsenal#e293f894917cd375f8e1ab6d03f4fb6869df136a",
+    "arsenal": "git+https://github.com/scality/Arsenal#5fa6ecab848f1ef10acb20cce616d59c50ae5555",
     "async": "~2.5.0",
     "aws-sdk": "^2.1692.0",
-    "bucketclient": "scality/bucketclient#0fe349950922700af82b57b157f6ef5fe29c6f12",
+    "bucketclient": "scality/bucketclient#878134d36e6b1bd65f1573292ed18f91a61335d0",
     "bufferutil": "^4.0.8",
     "commander": "^12.1.0",
     "cron-parser": "^4.9.0",
