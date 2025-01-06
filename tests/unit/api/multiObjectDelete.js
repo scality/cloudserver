@@ -380,6 +380,9 @@ describe('multiObjectDelete function', () => {
                 'content-md5': crypto.createHash('md5').update(post, 'utf8').digest('base64')
             },
             post,
+            socket: {
+                remoteAddress: '127.0.0.1',
+            },
             url: '/bucketname',
         });
         const authInfo = makeAuthInfo('123456');

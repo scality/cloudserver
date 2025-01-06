@@ -64,6 +64,9 @@ function _createMultiObjectDeleteRequest(numObjects) {
         },
         url: '/?delete',
         query: { delete: '' },
+        socket: {
+            remoteAddress: '127.0.0.1',
+        },
         actionImplicitDenies: false,
     };
     const xml = [];
