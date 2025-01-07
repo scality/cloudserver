@@ -2,8 +2,8 @@ const nodeFetch = require('node-fetch');
 const AWS = require('aws-sdk');
 const xml2js = require('xml2js');
 
-const sendRequest = (method, host, path, body = '', config = null) =>
-    new Promise((resolve, reject) => {
+const sendRequest = async (method, host, path, body = '', config = null) => {
+
         const service = 's3';
         const endpoint = new AWS.Endpoint(host);
 
@@ -33,21 +33,18 @@ const sendRequest = (method, host, path, body = '', config = null) =>
             options.body = request.body;
         }
 
-        (async () => {
-            try {
-                const response = await nodeFetch(url, options);
-                const text = await response.text();
-                const result = await xml2js.parseStringPromise(text);
-                if (result && result.Error) {
-                    reject(result);
-                } else {
-                    resolve(result);
-                }
-            } catch (error) {
-                reject(error);
-            }
-        })();
-    });
+    
+        const response = await nodeFetch(url, options);
+        const text = await response.text();
+        const result = await xml2js.parseStringPromise(text);
+        if (result && result.Error) {
+            throw result;
+        }
+        
+        return result;
+        
+    
+    };
 
 module.exports = {
     sendRequest,

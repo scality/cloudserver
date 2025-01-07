@@ -1,6 +1,6 @@
 const assert = require('assert');
 const async = require('async');
-const myCrypto = require('crypto');
+const crypto = require('crypto');
 const { parseString } = require('xml2js');
 const AWS = require('aws-sdk');
 const { storage } = require('arsenal');
@@ -38,8 +38,8 @@ const bucketName = `bucketname-${Date.now}`;
 const body1 = Buffer.from('I am a body', 'utf8');
 const body2 = Buffer.from('I am a body with a different ETag', 'utf8');
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
-const md5Hash1 = myCrypto.createHash('md5');
-const md5Hash2 = myCrypto.createHash('md5');
+const md5Hash1 = crypto.createHash('md5');
+const md5Hash2 = crypto.createHash('md5');
 const calculatedHash1 = md5Hash1.update(body1).digest('hex');
 const calculatedHash2 = md5Hash2.update(body2).digest('hex');
 
@@ -297,7 +297,7 @@ function testSuite() {
                 // remove location constraint to mimic legacy behvior
                 // eslint-disable-next-line no-param-reassign
                 res.controllingLocationConstraint = undefined;
-                const md5Hash = myCrypto.createHash('md5');
+                const md5Hash = crypto.createHash('md5');
                 const bufferBody = Buffer.from(body1);
                 const calculatedHash = md5Hash.update(bufferBody).digest('hex');
                 const partRequest = new DummyRequest({

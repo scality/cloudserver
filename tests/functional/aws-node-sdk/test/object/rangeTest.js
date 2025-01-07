@@ -2,7 +2,7 @@ const { exec, execFile } = require('child_process');
 const { writeFile, createReadStream } = require('fs');
 
 const assert = require('assert');
-const MyPromise = require('bluebird');
+const BbPromise = require('bluebird');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -13,9 +13,9 @@ const bucket = 'bucket-for-range-test';
 const key = 'key-for-range-test';
 let s3;
 
-const execAsync = MyPromise.promisify(exec);
-const execFileAsync = MyPromise.promisify(execFile);
-const writeFileAsync = MyPromise.promisify(writeFile);
+const execAsync = BbPromise.promisify(exec);
+const execFileAsync = BbPromise.promisify(execFile);
+const writeFileAsync = BbPromise.promisify(writeFile);
 
 // Get the expected end values for various ranges (e.g., '-10', '10-', '-')
 function getOuterRange(range, bytes) {
@@ -67,7 +67,7 @@ function checkRanges(range, bytes) {
 function uploadParts(bytes, uploadId) {
     const name = `hashedFile.${bytes}`;
 
-    return MyPromise.map([1, 2], part =>
+    return BbPromise.map([1, 2], part =>
         execFileAsync('dd', [`if=${name}`, `of=${name}.mpuPart${part}`,
             'bs=5242880', `skip=${part - 1}`, 'count=1'])
         .then(() => s3.uploadPart({
@@ -134,7 +134,7 @@ describeSkipIfCeph('aws-node-sdk range tests', () => {
                     Key: key,
                     UploadId: uploadId,
                 }).promise())
-                .catch(err => new MyPromise((resolve, reject) => {
+                .catch(err => new BbPromise((resolve, reject) => {
                     if (err.code !== 'NoSuchUpload') {
                         reject(err);
                     }

@@ -1,7 +1,7 @@
 const assert = require('assert');
 const AWS = require('aws-sdk');
 const async = require('async');
-const myCrypto = require('crypto');
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const { versioning } = require('arsenal');
 const versionIdUtils = versioning.VersionID;
@@ -47,7 +47,7 @@ const testArn = 'aws::iam:123456789012:user/bart';
 const testKey = 'testkey';
 const testKeyUTF8 = '䆩鈁櫨㟔罳';
 const testData = 'testkey data';
-const testDataMd5 = myCrypto.createHash('md5')
+const testDataMd5 = crypto.createHash('md5')
           .update(testData, 'utf-8')
           .digest('hex');
 const emptyContentsMd5 = 'd41d8cd98f00b204e9800998ecf8427e';

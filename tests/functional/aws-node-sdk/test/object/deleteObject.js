@@ -1,6 +1,6 @@
 const assert = require('assert');
 const moment = require('moment');
-const myPromise = require('bluebird');
+const bbPromise = require('bluebird');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
@@ -45,7 +45,7 @@ describe('DELETE object', () => {
                             }).promise()
                         );
                     }
-                    return myPromise.all(uploads);
+                    return bbPromise.all(uploads);
                 })
                 .catch(err => {
                     process.stdout.write(`Error with uploadPart ${err}\n`);

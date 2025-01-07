@@ -1,14 +1,14 @@
 const assert = require('assert');
 const async = require('async');
-const myCrypto = require('crypto');
+const crypto = require('crypto');
 const moment = require('moment');
-const myPromise = require('bluebird');
+const bbPromise = require('bluebird');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
 
-const changeLockPromise = myPromise.promisify(changeObjectLock);
+const changeLockPromise = bbPromise.promisify(changeObjectLock);
 
 const bucketName = 'buckettestgetobject';
 const objectName = 'someObject';
@@ -70,8 +70,8 @@ describe('GET object', () => {
             }, (err, data) => {
                 checkNoError(err);
                 checkIntegerHeader(data.ContentLength, len);
-                const md5Hash = myCrypto.createHash('md5');
-                const md5HashExpected = myCrypto.createHash('md5');
+                const md5Hash = crypto.createHash('md5');
+                const md5HashExpected = crypto.createHash('md5');
                 assert.strictEqual(
                     md5Hash.update(data.Body).digest('hex'),
                     md5HashExpected.update(body).digest('hex')
@@ -766,8 +766,8 @@ describe('GET object', () => {
                         return requestGet({ PartNumber: num }, (err, data) => {
                             checkNoError(err);
                             checkIntegerHeader(data.ContentLength, partSize);
-                            const md5Hash = myCrypto.createHash('md5');
-                            const md5HashExpected = myCrypto.createHash('md5');
+                            const md5Hash = crypto.createHash('md5');
+                            const md5HashExpected = crypto.createHash('md5');
                             const expected = Buffer.alloc(partSize).fill(num);
                             assert.strictEqual(
                                 md5Hash.update(data.Body).digest('hex'),
@@ -785,8 +785,8 @@ describe('GET object', () => {
                         return requestGet({ PartNumber: num }, (err, data) => {
                             checkNoError(err);
                             checkIntegerHeader(data.ContentLength, partSize);
-                            const md5Hash = myCrypto.createHash('md5');
-                            const md5HashExpected = myCrypto.createHash('md5');
+                            const md5Hash = crypto.createHash('md5');
+                            const md5HashExpected = crypto.createHash('md5');
                             const expected = Buffer.alloc(partSize)
                                 .fill(unOrderedPartNumbers[num - 1]);
                             assert.strictEqual(
@@ -825,8 +825,8 @@ describe('GET object', () => {
                 }, err => {
                     checkNoError(err);
                     return requestGet({ PartNumber: 1 }, (err, data) => {
-                        const md5Hash = myCrypto.createHash('md5');
-                        const md5HashExpected = myCrypto.createHash('md5');
+                        const md5Hash = crypto.createHash('md5');
+                        const md5HashExpected = crypto.createHash('md5');
                         const expected = Buffer.alloc(10);
                         assert.strictEqual(
                             md5Hash.update(data.Body).digest('hex'),
@@ -845,8 +845,8 @@ describe('GET object', () => {
                     checkNoError(err);
                     return requestGet({ PartNumber: '1' }, (err, data) => {
                         checkIntegerHeader(data.ContentLength, 10);
-                        const md5Hash = myCrypto.createHash('md5');
-                        const md5HashExpected = myCrypto.createHash('md5');
+                        const md5Hash = crypto.createHash('md5');
+                        const md5HashExpected = crypto.createHash('md5');
                         const expected = Buffer.alloc(10);
                         assert.strictEqual(
                             md5Hash.update(data.Body).digest('hex'),

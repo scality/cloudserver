@@ -19,7 +19,7 @@ const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const locMetaHeader = constants.objectLocationConstraintHeader.substring(11);
-const myPromise = require('bluebird');
+const bbPromise = require('bluebird');
 
 let bucketUtil;
 let s3;
@@ -115,7 +115,7 @@ function testSuite() {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             process.stdout.write('Creating bucket\n');
-            s3.createBucketPromise = myPromise.promisify(s3.createBucket);
+            s3.createBucketPromise = bbPromise.promisify(s3.createBucket);
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
                 s3.createBucketPromise = createEncryptedBucketPromise;
             }

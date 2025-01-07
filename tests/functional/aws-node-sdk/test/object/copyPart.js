@@ -1,7 +1,7 @@
 const assert = require('assert');
-const myCrypto = require('crypto');
+const crypto = require('crypto');
 
-const myPromise = require('bluebird');
+const bbPromise = require('bluebird');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -41,7 +41,7 @@ describe('Object Part Copy', () => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            s3.createBucketPromise = myPromise.promisify(s3.createBucket);
+            s3.createBucketPromise = bbPromise.promisify(s3.createBucket);
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
                 s3.createBucketPromise = createEncryptedBucketPromise;
             }
@@ -329,11 +329,11 @@ describe('Object Part Copy', () => {
 
             beforeEach(() => {
                 const parts = [];
-                const md5HashPart = myCrypto.createHash('md5');
+                const md5HashPart = crypto.createHash('md5');
                 const partBuff = Buffer.alloc(5242880);
                 md5HashPart.update(partBuff);
                 const partHash = md5HashPart.digest('hex');
-                const otherMd5HashPart = myCrypto.createHash('md5');
+                const otherMd5HashPart = crypto.createHash('md5');
                 const otherPartBuff = Buffer.alloc(5242880, 1);
                 otherMd5HashPart.update(otherPartBuff);
                 const otherPartHash = otherMd5HashPart.digest('hex');
@@ -364,7 +364,7 @@ describe('Object Part Copy', () => {
                         });
                     }
                     process.stdout.write('about to put parts');
-                    return myPromise.all(partUploads);
+                    return bbPromise.all(partUploads);
                 }).catch(err => {
                     process.stdout.write(`Error putting parts in ' +
                     'MPU beforeEach: ${err}\n`);
@@ -595,7 +595,7 @@ describe('Object Part Copy', () => {
                 }).then(() => {
                     process.stdout.write('Overwriting first part in MPU test and completing MPU ' +
                                          'at the same time');
-                    return myPromise.all([
+                    return bbPromise.all([
                         s3.uploadPartCopy({
                             Bucket: destBucketName,
                             Key: destObjName,
@@ -609,7 +609,7 @@ describe('Object Part Copy', () => {
                             // special value, otherwise re-throw the
                             // error
                             if (err && err.code === 'NoSuchKey') {
-                                return myPromise.resolve(null);
+                                return bbPromise.resolve(null);
                             }
                             throw err;
                         }),

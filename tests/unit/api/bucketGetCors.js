@@ -1,5 +1,5 @@
 const assert = require('assert');
-const myCrypto = require('crypto');
+const crypto = require('crypto');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutCors = require('../../../lib/api/bucketPutCors');
@@ -32,7 +32,7 @@ function _makeCorsRequest(xml) {
 
     if (xml) {
         request.post = xml;
-        request.headers['content-md5'] = myCrypto.createHash('md5')
+        request.headers['content-md5'] = crypto.createHash('md5')
             .update(request.post, 'utf8').digest('base64');
     }
     return request;

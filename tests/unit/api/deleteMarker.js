@@ -1,6 +1,6 @@
 const async = require('async');
 const assert = require('assert');
-const myCrypto = require('crypto');
+const crypto = require('crypto');
 
 const { versioning } = require('arsenal');
 const { parseString } = require('xml2js');
@@ -76,7 +76,7 @@ function _createMultiObjectDeleteRequest(numObjects) {
     }
     xml.push('</Delete>');
     request.post = xml.join('');
-    request.headers['content-md5'] = myCrypto.createHash('md5')
+    request.headers['content-md5'] = crypto.createHash('md5')
         .update(request.post, 'utf8').digest('base64');
     return request;
 }

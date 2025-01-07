@@ -97,8 +97,8 @@ describe('Mongo backend mixed bucket format versions', () => {
             });
         });
 
-        after(() => {
-            mongoClient.close(true);
+        after(async () => {
+            await mongoClient.close(true);
         });
 
         ['v0', 'v1'].forEach(vFormat => {

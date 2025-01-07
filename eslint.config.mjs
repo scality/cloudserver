@@ -66,6 +66,7 @@ export default [...compat.extends("scality"), {
         "no-multi-spaces": "off",
         "quote-props": "off",
         "mocha/no-exclusive-tests": "error",
+        "no-redeclare": ["error", { "builtinGlobals": false }],
     },
 }];
 

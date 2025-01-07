@@ -1,4 +1,4 @@
-const mycrypto = require('crypto');
+const crypto = require('crypto');
 
 const constants = {
     /*
@@ -90,7 +90,7 @@ const constants = {
     maxHttpHeadersSize: 14122,
 
     // hex digest of sha256 hash of empty string:
-    emptyStringHash: mycrypto.createHash('sha256')
+    emptyStringHash: crypto.createHash('sha256')
         .update('', 'binary').digest('hex'),
 
     // Queries supported by AWS that we do not currently support.

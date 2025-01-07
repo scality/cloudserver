@@ -1,11 +1,11 @@
-const myCrypto = require('crypto');
+const crypto = require('crypto');
 const http = require('http');
 const stream = require('stream');
 const url = require('url');
 
 const SERVICE = 's3';
 const REGION = 'us-east-1';
-const EMPTY_STRING_HASH = myCrypto.createHash('sha256').digest('hex');
+const EMPTY_STRING_HASH = crypto.createHash('sha256').digest('hex');
 
 /**
  * Execute and sign HTTP requests with AWS signature v4 scheme
@@ -71,13 +71,13 @@ class HttpRequestAuthV4 extends stream.Writable {
 
     getSigningKey() {
         const signingDate = this._timestamp.slice(0, 8);
-        const dateKey = myCrypto.createHmac('sha256', `AWS4${this._secretKey}`)
+        const dateKey = crypto.createHmac('sha256', `AWS4${this._secretKey}`)
               .update(signingDate, 'binary').digest();
-        const dateRegionKey = myCrypto.createHmac('sha256', dateKey)
+        const dateRegionKey = crypto.createHmac('sha256', dateKey)
               .update(REGION, 'binary').digest();
-        const dateRegionServiceKey = myCrypto.createHmac('sha256', dateRegionKey)
+        const dateRegionServiceKey = crypto.createHmac('sha256', dateRegionKey)
               .update(SERVICE, 'binary').digest();
-        this._signingKey = myCrypto.createHmac('sha256', dateRegionServiceKey)
+        this._signingKey = crypto.createHmac('sha256', dateRegionServiceKey)
               .update('aws4_request', 'binary').digest();
     }
 
@@ -85,7 +85,7 @@ class HttpRequestAuthV4 extends stream.Writable {
         if (!this._signingKey) {
             this.getSigningKey();
         }
-        return myCrypto.createHmac('sha256', this._signingKey)
+        return crypto.createHmac('sha256', this._signingKey)
             .update(stringToSign).digest('hex');
     }
 
@@ -124,7 +124,7 @@ class HttpRequestAuthV4 extends stream.Writable {
 
     constructRequestStringToSign(canonicalReq) {
         const canonicalReqHash =
-            myCrypto.createHash('sha256').update(canonicalReq).digest('hex');
+            crypto.createHash('sha256').update(canonicalReq).digest('hex');
         const stringToSign = `AWS4-HMAC-SHA256\n${this._timestamp}\n` +
               `${this.getCredentialScope()}\n${canonicalReqHash}`;
         // console.log(`STRING TO SIGN: "${stringToSign}"`);
@@ -153,7 +153,7 @@ class HttpRequestAuthV4 extends stream.Writable {
 
     constructChunkStringToSign(chunkData) {
         const currentChunkHash =
-            myCrypto.createHash('sha256').update(chunkData.toString())
+            crypto.createHash('sha256').update(chunkData.toString())
               .digest('hex');
         const stringToSign = `AWS4-HMAC-SHA256-PAYLOAD\n${this._timestamp}\n` +
               `${this.getCredentialScope()}\n${this._lastSignature}\n` +

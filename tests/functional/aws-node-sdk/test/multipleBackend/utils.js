@@ -1,5 +1,5 @@
 const assert = require('assert');
-const myCrypto = require('crypto');
+const crypto = require('crypto');
 const { errors, storage } = require('arsenal');
 const AWS = require('aws-sdk');
 AWS.config.logger = console;
@@ -198,7 +198,7 @@ utils.convertMD5 = contentMD5 =>
     Buffer.from(contentMD5, 'base64').toString('hex');
 
 utils.expectedETag = (body, getStringified = true) => {
-    const eTagValue = myCrypto.createHash('md5').update(body).digest('hex');
+    const eTagValue = crypto.createHash('md5').update(body).digest('hex');
     if (!getStringified) {
         return eTagValue;
     }

@@ -1,5 +1,5 @@
 const assert = require('assert');
-const myCrypto = require('crypto');
+const crypto = require('crypto');
 const async = require('async');
 
 const { makeRequest } = require('../../functional/raw-node/utils/makeRequest');
@@ -28,7 +28,7 @@ const testCapacity = `<?xmlversion="1.0"encoding="UTF-8"?>
     <Used>0</Used>
 </CapacityInfo>\n`;
 
-const testCapacityMd5 = myCrypto.createHash('md5')
+const testCapacityMd5 = crypto.createHash('md5')
     .update(testCapacity, 'utf-8')
     .digest('hex');
 
@@ -39,7 +39,7 @@ const invalidTestCapacity = `<?xmlversion="1.0"encoding="UTF-8"?>
     <Used>0</Used>
 </CapacityInfo>\n`;
 
-const invalidTestCapacityMd5 = myCrypto.createHash('md5')
+const invalidTestCapacityMd5 = crypto.createHash('md5')
     .update(invalidTestCapacity, 'utf-8')
     .digest('hex');
 
@@ -64,7 +64,7 @@ const testSystem = `<?xmlversion="1.0"encoding="UTF-8"?>
        </SystemRecommendations>
     </SystemInfo>\n`;
 
-const testSystemMd5 = myCrypto.createHash('md5')
+const testSystemMd5 = crypto.createHash('md5')
     .update(testSystem, 'utf-8')
     .digest('hex');
 
@@ -89,7 +89,7 @@ const invalidTestSystem = `<?xmlversion="1.0"encoding="UTF-8"?>
        </SystemRecommendations>
     </SystemInfo>\n`;
 
-const invalidTestSystemMd5 = myCrypto.createHash('md5')
+const invalidTestSystemMd5 = crypto.createHash('md5')
     .update(testSystem, 'utf-8')
     .digest('hex');
 
