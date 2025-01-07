@@ -159,6 +159,18 @@ describe('putObjectRetention API', () => {
             });
         });
 
+        it('should set originOp in object\'s metadata to s3:ObjectRetention:Put', done => {
+            objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
+                assert.ifError(err);
+                return metadata.getObjectMD(bucketName, objectName, {}, log,
+                (err, objMD) => {
+                    assert.ifError(err);
+                    assert.strictEqual(objMD.originOp, 's3:ObjectRetention:Put');
+                    return done();
+                });
+            });
+        });
+
         it('should disallow COMPLIANCE => GOVERNANCE', done => {
             objectPutRetention(authInfo, putObjRetRequestCompliance, log, err => {
                 assert.ifError(err);
