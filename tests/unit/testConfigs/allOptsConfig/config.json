@@ -107,7 +107,7 @@
     "quota": {
         "maxStalenessMS": 86400000
     },
-    "utapi": {
+    "_utapi": {
         "redis": {
             "host": "localhost",
             "port": 6379,
