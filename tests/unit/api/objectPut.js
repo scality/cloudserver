@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const moment = require('moment');
-const { s3middleware, storage } = require('arsenal');
+const { s3middleware, storage, versioning } = require('arsenal');
 const sinon = require('sinon');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
@@ -12,12 +12,17 @@ const { parseTagFromQuery } = s3middleware.tagging;
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
 const metadata = require('../metadataswitch');
+const { data } = require('../../../lib/data/wrapper');
 const objectPut = require('../../../lib/api/objectPut');
 const { objectLockTestUtils } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
-const { maximumAllowedUploadSize } = require('../../../constants');
+const {
+    lastModifiedHeader,
+    maximumAllowedUploadSize,
+    objectLocationConstraintHeader,
+} = require('../../../constants');
 const mpuUtils = require('../utils/mpuUtils');
-const { lastModifiedHeader } = require('../../../constants');
+const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
 
 const { ds } = storage.data.inMemory.datastore;
 
@@ -787,5 +792,193 @@ describe('objectPut API with versioning', () => {
                 });
             });
         });
+    });
+});
+
+describe('objectPut API in ingestion bucket', () => {
+    const dataClient = data.client;
+    const prevDataImplName = data.implName;
+
+    before(() => {
+        // Setup multi-backend, this is required for ingestion
+        data.switch(new storage.data.MultipleBackendGateway({
+            'us-east-1': dataClient,
+            'us-east-2': dataClient,
+        }, metadata, data.locStorageCheckFn));
+        data.implName = 'multipleBackends';
+    });
+
+    after(() => {
+        data.switch(dataClient);
+        data.implName = prevDataImplName;
+    });
+
+    beforeEach(() => {
+        cleanup();
+    });
+
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    const newPutObjectRequest = params => {
+        const { location, versionID } = params || {};
+        const r = versioningTestUtils
+            .createPutObjectRequest(bucketName, objectName, Buffer.from('I am another body', 'utf8'));
+        if (location) {
+            r.headers[objectLocationConstraintHeader] = location;
+        }
+        if (versionID) {
+            r.headers['x-scal-s3-version-id'] = versionID;
+        }
+        return r;
+    };
+    const newPutIngestBucketRequest = location => new DummyRequest({
+        bucketName,
+        namespace,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        url: '/',
+        post: '<?xml version="1.0" encoding="UTF-8"?>' +
+            '<CreateBucketConfiguration ' +
+            'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+            `<LocationConstraint>${location}</LocationConstraint>` +
+            '</CreateBucketConfiguration>',
+    });
+    const archiveRestoreRequested = {
+        archiveInfo: { foo: 0, bar: 'stuff' }, // opaque, can be anything...
+        restoreRequestedAt: new Date().toString(),
+        restoreRequestedDays: 5,
+    };
+
+    it('should use the versionID from the backend', done => {
+        const versionID = versioning.VersionID.encode(versioning.VersionID.generateVersionId('0', ''));
+
+        // Use a "mock" data location, simulating a write to an ingest location
+        sinon.stub(dataClient, 'put').callsFake((writeStream, size, keyContext, reqUids, cb) => {
+            cb(null, `${keyContext.bucketName}/${keyContext.objectKey}`, versionID, size, 'md5');
+        });
+
+        async.series([
+            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+            next => objectPut(authInfo, newPutObjectRequest(), undefined, log, (err, headers) => {
+                assert.strictEqual(headers['x-amz-version-id'], versionID);
+                next(err);
+            }),
+        ], done);
+    });
+
+    it('should not use the versionID from the backend when writing in another location', done => {
+        const versionID = versioning.VersionID.encode(versioning.VersionID.generateVersionId('0', ''));
+
+        // Use a "mock" data location, simulating a write to an ingest location
+        sinon.stub(dataClient, 'put').callsFake((writeStream, size, keyContext, reqUids, cb) => {
+            cb(null, `${keyContext.bucketName}/${keyContext.objectKey}`, versionID, size, 'md5');
+        });
+
+        async.series([
+            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+            next => objectPut(authInfo, newPutObjectRequest({
+                location: 'us-east-2',
+            }), undefined, log, (err, headers) => {
+                assert.ok(headers['x-amz-version-id']);
+                assert.notEqual(headers['x-amz-version-id'], versionID);
+                next(err);
+            }),
+        ], done);
+    });
+
+    it('should not use the versionID from the backend when it is not a valid versionID', done => {
+        const versionID = undefined;
+
+        // Use a "mock" data location, simulating a write to an ingest location
+        sinon.stub(dataClient, 'put').callsFake((writeStream, size, keyContext, reqUids, cb) => {
+            cb(null, `${keyContext.bucketName}/${keyContext.objectKey}`, versionID, size, 'md5');
+        });
+
+        async.series([
+            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+            next => objectPut(authInfo, newPutObjectRequest(), undefined, log, (err, headers) => {
+                assert.ok(headers['x-amz-version-id']);
+                assert.notEqual(headers['x-amz-version-id'], versionID);
+                next(err);
+            }),
+        ], done);
+    });
+
+    it('should not use the versionID from the backend when it is not provided', done => {
+        async.series([
+            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+            next => objectPut(authInfo, newPutObjectRequest(), undefined, log, (err, headers) => {
+                assert.ok(headers['x-amz-version-id']);
+                next(err);
+            }),
+        ], done);
+    });
+
+    it('should add versionID to backend putObject when restoring object', done => {
+        const versionID = versioning.VersionID.encode(versioning.VersionID.generateVersionId('0', ''));
+        const restoredVersionID = versioning.VersionID.encode(versioning.VersionID.generateVersionId('0', ''));
+
+        // Use a "mock" data location, simulating a write to an ingest location
+        sinon.stub(dataClient, 'put')
+            .onCall(0).callsFake((writeStream, size, keyContext, reqUids, cb) => {
+                // First call: regular object creation, should not pass extra metadata header
+                assert.strictEqual(keyContext.metaHeaders['x-amz-meta-scal-version-id'], undefined);
+                cb(null, `${keyContext.bucketName}/${keyContext.objectKey}`, versionID, size, 'md5');
+            })
+            .onCall(1).callsFake((writeStream, size, keyContext, reqUids, cb) => {
+                // Second call: "restored" data, should pass extra metadata header
+                assert.strictEqual(keyContext.metaHeaders['x-amz-meta-scal-version-id'], versionID);
+                cb(null, `${keyContext.bucketName}/${keyContext.objectKey}`, restoredVersionID, size, 'md5');
+            });
+
+        async.series([
+            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+            next => objectPut(authInfo, newPutObjectRequest(), undefined, log, (err, headers) => {
+                assert.strictEqual(headers['x-amz-version-id'], versionID);
+                next(err);
+            }),
+            next => fakeMetadataArchive(bucketName, objectName, versionID, archiveRestoreRequested, next),
+            next => objectPut(authInfo, newPutObjectRequest({ versionID }), undefined, log, (err, headers) => {
+                assert.ok(headers['x-amz-version-id']);
+                assert.strictEqual(headers['x-amz-version-id'], versionID); // keep the same versionID
+                next(err);
+            }),
+        ], done);
+    });
+
+    it('should not add versionID to backend putObject when restoring object to another location', done => {
+        const versionID = versioning.VersionID.encode(versioning.VersionID.generateVersionId('0', ''));
+        const restoredVersionID = versioning.VersionID.encode(versioning.VersionID.generateVersionId('0', ''));
+
+        // Use a "mock" data location, simulating a write to an ingest location
+        sinon.stub(dataClient, 'put')
+            .onCall(0).callsFake((writeStream, size, keyContext, reqUids, cb) => {
+                // First call: regular object creation, should not pass extra metadata header
+                assert.strictEqual(keyContext.metaHeaders['x-amz-meta-scal-version-id'], undefined);
+                cb(null, `${keyContext.bucketName}/${keyContext.objectKey}`, versionID, size, 'md5');
+            })
+            .onCall(1).callsFake((writeStream, size, keyContext, reqUids, cb) => {
+                // Second call: "restored" data, should not pass extra metadata header (different location)
+                assert.strictEqual(keyContext.metaHeaders['x-amz-meta-scal-version-id'], undefined);
+                cb(null, `${keyContext.bucketName}/${keyContext.objectKey}`, restoredVersionID, size, 'md5');
+            });
+
+        async.series([
+            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+            next => objectPut(authInfo, newPutObjectRequest(), undefined, log, (err, headers) => {
+                assert.strictEqual(headers['x-amz-version-id'], versionID);
+                next(err);
+            }),
+            next => fakeMetadataArchive(bucketName, objectName, versionID, archiveRestoreRequested, next),
+            next => objectPut(authInfo, newPutObjectRequest({
+                versionID,
+                location: 'us-east-2',
+            }), undefined, log, (err, headers) => {
+                assert.ok(headers['x-amz-version-id']);
+                assert.strictEqual(headers['x-amz-version-id'], versionID); // keep the same versionID
+                next(err);
+            }),
+        ], done);
     });
 });
