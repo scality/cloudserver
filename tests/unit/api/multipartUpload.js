@@ -1,11 +1,12 @@
-const { errors, storage } = require('arsenal');
+const { errors, storage, versioning } = require('arsenal');
 
 const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
 const moment = require('moment');
 const sinon = require('sinon');
-const { parseString } = require('xml2js');
+const util = require('util');
+const { parseString, parseStringPromise } = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');
@@ -25,8 +26,9 @@ const objectPutPart = require('../../../lib/api/objectPutPart');
 const DummyRequest = require('../DummyRequest');
 const changeObjectLock = require('../../utilities/objectLock-util');
 const metadataswitch = require('../metadataswitch');
+const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
 
-
+const { data } = require('../../../lib/data/wrapper');
 const { metadata } = storage.metadata.inMemory.metadata;
 const metadataBackend = storage.metadata.inMemory.metastore;
 const { ds } = storage.data.inMemory.datastore;
@@ -2627,5 +2629,184 @@ describe('complete mpu with bucket policy', () => {
             assert.ifError(err);
             done();
         });
+    });
+});
+
+describe('multipart upload in ingestion bucket', () => {
+    const dataClient = data.client;
+    const prevDataImplName = data.implName;
+    const prevConfigBackendsData = data.config.backends.data;
+
+    let versionID;
+
+    before(() => {
+        versionID = versioning.VersionID.encode(versioning.VersionID.generateVersionId('0', ''));
+
+        // Setup multi-backend, this is required for ingestion
+        data.switch(new storage.data.MultipleBackendGateway({
+            'us-east-1': dataClient,
+            'us-east-2': dataClient,
+        }, metadata, data.locStorageCheckFn));
+        data.implName = 'multipleBackends';
+
+        // "mock" the data location, simulating a backend supporting MPU
+        data.config.backends.data = 'multiple';
+        dataClient.clientType = 'aws_s3';
+    });
+
+    after(() => {
+        data.switch(dataClient);
+        data.implName = prevDataImplName;
+        data.config.backends.data = prevConfigBackendsData;
+        delete dataClient.clientType;
+    });
+
+    beforeEach(() => {
+        cleanup();
+
+        // "mock" the data location, simulating a backend supporting MPU
+        dataClient.createMPU = sinon.stub().yields(undefined, {
+            uploadId: 'mock-uploadId',
+        });
+        dataClient.uploadPart = sinon.stub().yields(undefined, {
+            dataStoreType: dataClient.clientType,
+            dataStoreETag: 'mock-part-eTag',
+        });
+        dataClient.completeMPU = sinon.stub().yields(undefined, {
+            key: objectKey,
+            eTag: 'mock-eTag',
+            dataStoreVersionId: versionID,
+            contentLength: 12,
+        });
+    });
+
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    const newPutIngestBucketRequest = location => new DummyRequest({
+        bucketName,
+        namespace,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        url: '/',
+        post: '<?xml version="1.0" encoding="UTF-8"?>' +
+            '<CreateBucketConfiguration ' +
+            'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+            `<LocationConstraint>${location}</LocationConstraint>` +
+            '</CreateBucketConfiguration>',
+    });
+    const archiveRestoreRequested = {
+        archiveInfo: { foo: 0, bar: 'stuff' }, // opaque, can be anything...
+        restoreRequestedAt: new Date().toString(),
+        restoreRequestedDays: 5,
+    };
+
+    const _bucketPut = util.promisify(bucketPut);
+    const _initiateMultipartUpload = async (...params) => {
+        const result = await util.promisify(initiateMultipartUpload)(...params);
+        const json = await parseStringPromise(result);
+        return json.InitiateMultipartUploadResult.UploadId[0];
+    };
+    const _objectPutPart = util.promisify(objectPutPart);
+    const _completeMultipartUpload = (...params) => util.promisify(cb =>
+        completeMultipartUpload(...params, (err, xml, headers) => cb(err, { xml, headers })))();
+    const uploadMpuObject = async (params = {}) => {
+        const headers = { ...initiateRequest.headers };
+        if (params.location) {
+            headers[constants.objectLocationConstraintHeader] = params.location;
+        }
+        if (params.versionID) {
+            headers['x-scal-s3-version-id'] = params.versionID;
+        }
+
+        const uploadId = await _initiateMultipartUpload(authInfo, { ...initiateRequest, headers }, log);
+
+        const partRequest = _createPutPartRequest(uploadId, 1, Buffer.from('I am a part\n', 'utf8'));
+        partRequest.headers = headers;
+        const eTag = await _objectPutPart(authInfo, partRequest, undefined, log);
+
+        const completeRequest = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
+        const resp = await _completeMultipartUpload(authInfo, { ...completeRequest, headers }, log);
+
+        return resp.headers;
+    };
+
+    it('should use the versionID from the backend', async () => {
+        await _bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log);
+
+        const headers = await uploadMpuObject();
+        assert.strictEqual(headers['x-amz-version-id'], versionID);
+    });
+
+    it('should not use the versionID from the backend when writing in another location', async () => {
+        await _bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log);
+
+        const headers = await uploadMpuObject({ location: 'us-east-2' });
+        assert.notEqual(headers['x-amz-version-id'], versionID);
+    });
+
+    it('should not use the versionID from the backend when it is not a valid versionID', async () => {
+        dataClient.completeMPU.onCall(0).yields(undefined, {
+            key: objectKey,
+            eTag: 'mock-eTag',
+            dataStoreVersionId: undefined,
+            contentLength: 12,
+        });
+
+        await _bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log);
+
+        const headers = await uploadMpuObject();
+        assert.notEqual(headers['x-amz-version-id'], versionID);
+    });
+
+    it('should add versionID to backend putObject when restoring object', async () => {
+        const restoredVersionID = versioning.VersionID.encode(versioning.VersionID.generateVersionId('0', ''));
+        dataClient.completeMPU.onCall(0).callThrough();
+        dataClient.completeMPU.onCall(1).yields(undefined, {
+            key: objectKey,
+            eTag: 'mock-eTag',
+            dataStoreVersionId: restoredVersionID,
+            contentLength: 12,
+        });
+
+        await _bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log);
+
+        let headers = await uploadMpuObject();
+        assert.strictEqual(headers['x-amz-version-id'], versionID);
+        assert.strictEqual(dataClient.createMPU.firstCall.args[1]['x-amz-meta-scal-version-id'], undefined);
+
+        await util.promisify(fakeMetadataArchive)(bucketName, objectKey, versionID, archiveRestoreRequested);
+
+        headers = await uploadMpuObject({
+            versionID,
+        });
+        assert.strictEqual(headers['x-amz-version-id'], versionID);
+        assert.strictEqual(dataClient.createMPU.lastCall.args[1]['x-amz-meta-scal-version-id'], versionID);
+    });
+
+    it('should not add versionID to backend putObject when restoring object to another location', async () => {
+        const restoredVersionID = versioning.VersionID.encode(versioning.VersionID.generateVersionId('0', ''));
+        dataClient.completeMPU.onCall(0).callThrough();
+        dataClient.completeMPU.onCall(1).yields(undefined, {
+            key: objectKey,
+            eTag: 'mock-eTag',
+            dataStoreVersionId: restoredVersionID,
+            contentLength: 12,
+        });
+
+        await _bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log);
+
+        let headers = await uploadMpuObject();
+        assert.strictEqual(headers['x-amz-version-id'], versionID);
+        assert.strictEqual(dataClient.createMPU.firstCall.args[1]['x-amz-meta-scal-version-id'], undefined);
+
+        await util.promisify(fakeMetadataArchive)(bucketName, objectKey, versionID, archiveRestoreRequested);
+
+        headers = await uploadMpuObject({
+            versionID,
+            location: 'us-east-2',
+        });
+        assert.strictEqual(headers['x-amz-version-id'], versionID);
+        assert.strictEqual(dataClient.createMPU.lastCall.args[1]['x-amz-meta-scal-version-id'], undefined);
     });
 });
