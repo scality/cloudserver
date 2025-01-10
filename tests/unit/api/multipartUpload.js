@@ -144,9 +144,47 @@ function _createCompleteMpuRequest(uploadId, parts) {
     };
 }
 
+const _bucketPut = util.promisify(bucketPut);
+
+async function _uploadMpuObject(params = {}) {
+    const _initiateMultipartUpload = async (...params) => {
+        const result = await util.promisify(initiateMultipartUpload)(...params);
+        const json = await parseStringPromise(result);
+        return json.InitiateMultipartUploadResult.UploadId[0];
+    };
+    const _objectPutPart = util.promisify(objectPutPart);
+    const _completeMultipartUpload = (...params) => util.promisify(cb =>
+        completeMultipartUpload(...params, (err, xml, headers) => cb(err, { xml, headers })))();
+
+    const headers = { ...initiateRequest.headers };
+    if (params.location) {
+        headers[constants.objectLocationConstraintHeader] = params.location;
+    }
+    if (params.versionID) {
+        headers['x-scal-s3-version-id'] = params.versionID;
+    }
+
+    const uploadId = await _initiateMultipartUpload(authInfo, { ...initiateRequest, headers }, log);
+
+    const partRequest = _createPutPartRequest(uploadId, 1, Buffer.from('I am a part\n', 'utf8'));
+    partRequest.headers = headers;
+    const eTag = await _objectPutPart(authInfo, partRequest, undefined, log);
+
+    const completeRequest = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
+    const resp = await _completeMultipartUpload(authInfo, { ...completeRequest, headers }, log);
+
+    return resp.headers;
+}
+
 describe('Multipart Upload API', () => {
     beforeEach(() => {
         cleanup();
+
+        sinon.spy(metadataswitch, 'putObjectMD');
+    });
+
+    afterEach(() => {
+        sinon.restore();
     });
 
     it('mpuBucketPrefix should be a defined constant', () => {
@@ -2071,6 +2109,70 @@ describe('Multipart Upload API', () => {
             });
         });
     });
+
+    it('should not pass needOplogUpdate when writing new object', done => {
+        async.series([
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            async () => _uploadMpuObject(),
+            async () => {
+                const options = metadataswitch.putObjectMD.lastCall.args[3];
+                assert.strictEqual(options.needOplogUpdate, undefined);
+                assert.strictEqual(options.originOp, undefined);
+            },
+        ], done);
+    });
+
+    it('should not pass needOplogUpdate when replacing object', done => {
+        async.series([
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            async () => _uploadMpuObject(),
+            async () => _uploadMpuObject(),
+            async () => {
+                const options = metadataswitch.putObjectMD.lastCall.args[3];
+                assert.strictEqual(options.needOplogUpdate, undefined);
+                assert.strictEqual(options.originOp, undefined);
+            },
+        ], done);
+    });
+
+    it('should pass needOplogUpdate to metadata when replacing archived object', done => {
+        const archived = {
+            archiveInfo: { foo: 0, bar: 'stuff' }
+        };
+
+        async.series([
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            async () => _uploadMpuObject(),
+            next => fakeMetadataArchive(bucketName, objectKey, undefined, archived, next),
+            async () => _uploadMpuObject(),
+            async () => {
+                const options = metadataswitch.putObjectMD.lastCall.args[3];
+                assert.strictEqual(options.needOplogUpdate, true);
+                assert.strictEqual(options.originOp, 's3:ReplaceArchivedObject');
+            },
+        ], done);
+    });
+
+    it('should pass needOplogUpdate to metadata when replacing archived object in version suspended bucket', done => {
+        const archived = {
+            archiveInfo: { foo: 0, bar: 'stuff' }
+        };
+
+        const suspendVersioningRequest = versioningTestUtils
+            .createBucketPutVersioningReq(bucketName, 'Suspended');
+        async.series([
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => bucketPutVersioning(authInfo, suspendVersioningRequest, log, next),
+            async () => _uploadMpuObject(),
+            next => fakeMetadataArchive(bucketName, objectKey, undefined, archived, next),
+            async () => _uploadMpuObject(),
+            async () => {
+                const options = metadataswitch.putObjectMD.lastCall.args[3];
+                assert.strictEqual(options.needOplogUpdate, true);
+                assert.strictEqual(options.originOp, 's3:ReplaceArchivedObject');
+            },
+        ], done);
+    });
 });
 
 describe('complete mpu with versioning', () => {
@@ -2701,47 +2803,17 @@ describe('multipart upload in ingestion bucket', () => {
         restoreRequestedDays: 5,
     };
 
-    const _bucketPut = util.promisify(bucketPut);
-    const _initiateMultipartUpload = async (...params) => {
-        const result = await util.promisify(initiateMultipartUpload)(...params);
-        const json = await parseStringPromise(result);
-        return json.InitiateMultipartUploadResult.UploadId[0];
-    };
-    const _objectPutPart = util.promisify(objectPutPart);
-    const _completeMultipartUpload = (...params) => util.promisify(cb =>
-        completeMultipartUpload(...params, (err, xml, headers) => cb(err, { xml, headers })))();
-    const uploadMpuObject = async (params = {}) => {
-        const headers = { ...initiateRequest.headers };
-        if (params.location) {
-            headers[constants.objectLocationConstraintHeader] = params.location;
-        }
-        if (params.versionID) {
-            headers['x-scal-s3-version-id'] = params.versionID;
-        }
-
-        const uploadId = await _initiateMultipartUpload(authInfo, { ...initiateRequest, headers }, log);
-
-        const partRequest = _createPutPartRequest(uploadId, 1, Buffer.from('I am a part\n', 'utf8'));
-        partRequest.headers = headers;
-        const eTag = await _objectPutPart(authInfo, partRequest, undefined, log);
-
-        const completeRequest = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
-        const resp = await _completeMultipartUpload(authInfo, { ...completeRequest, headers }, log);
-
-        return resp.headers;
-    };
-
     it('should use the versionID from the backend', async () => {
         await _bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log);
 
-        const headers = await uploadMpuObject();
+        const headers = await _uploadMpuObject();
         assert.strictEqual(headers['x-amz-version-id'], versionID);
     });
 
     it('should not use the versionID from the backend when writing in another location', async () => {
         await _bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log);
 
-        const headers = await uploadMpuObject({ location: 'us-east-2' });
+        const headers = await _uploadMpuObject({ location: 'us-east-2' });
         assert.notEqual(headers['x-amz-version-id'], versionID);
     });
 
@@ -2755,7 +2827,7 @@ describe('multipart upload in ingestion bucket', () => {
 
         await _bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log);
 
-        const headers = await uploadMpuObject();
+        const headers = await _uploadMpuObject();
         assert.notEqual(headers['x-amz-version-id'], versionID);
     });
 
@@ -2771,13 +2843,13 @@ describe('multipart upload in ingestion bucket', () => {
 
         await _bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log);
 
-        let headers = await uploadMpuObject();
+        let headers = await _uploadMpuObject();
         assert.strictEqual(headers['x-amz-version-id'], versionID);
         assert.strictEqual(dataClient.createMPU.firstCall.args[1]['x-amz-meta-scal-version-id'], undefined);
 
         await util.promisify(fakeMetadataArchive)(bucketName, objectKey, versionID, archiveRestoreRequested);
 
-        headers = await uploadMpuObject({
+        headers = await _uploadMpuObject({
             versionID,
         });
         assert.strictEqual(headers['x-amz-version-id'], versionID);
@@ -2796,13 +2868,13 @@ describe('multipart upload in ingestion bucket', () => {
 
         await _bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log);
 
-        let headers = await uploadMpuObject();
+        let headers = await _uploadMpuObject();
         assert.strictEqual(headers['x-amz-version-id'], versionID);
         assert.strictEqual(dataClient.createMPU.firstCall.args[1]['x-amz-meta-scal-version-id'], undefined);
 
         await util.promisify(fakeMetadataArchive)(bucketName, objectKey, versionID, archiveRestoreRequested);
 
-        headers = await uploadMpuObject({
+        headers = await _uploadMpuObject({
             versionID,
             location: 'us-east-2',
         });

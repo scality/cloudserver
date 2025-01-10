@@ -671,11 +671,94 @@ describe('objectPut API', () => {
             });
         });
     });
+
+    it('should not pass needOplogUpdate when writing new object', done => {
+        async.series([
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            async () => {
+                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                    bucketName, objectName, any, sinon.match({
+                        needOplogUpdate: undefined,
+                        originOp: undefined,
+                    }), any, any);
+            },
+        ], done);
+    });
+
+    it('should not pass needOplogUpdate when replacing object', done => {
+        async.series([
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            async () => {
+                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                    bucketName, objectName, any, sinon.match({
+                        needOplogUpdate: undefined,
+                        originOp: undefined,
+                    }), any, any);
+            },
+        ], done);
+    });
+
+    it('should pass needOplogUpdate to metadata when replacing archived object', done => {
+        const archived = {
+            archiveInfo: { foo: 0, bar: 'stuff' }
+        };
+
+        async.series([
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            next => fakeMetadataArchive(bucketName, objectName, undefined, archived, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            async () => {
+                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                    bucketName, objectName, any, sinon.match({
+                        needOplogUpdate: true,
+                        originOp: 's3:ReplaceArchivedObject',
+                    }), any, any);
+            },
+        ], done);
+    });
+
+    it('should pass needOplogUpdate to metadata when replacing archived object in version suspended bucket', done => {
+        const archived = {
+            archiveInfo: { foo: 0, bar: 'stuff' }
+        };
+
+        async.series([
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => bucketPutVersioning(authInfo, suspendVersioningRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            next => fakeMetadataArchive(bucketName, objectName, undefined, archived, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            async () => {
+                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                    bucketName, objectName, any, sinon.match({
+                        needOplogUpdate: true,
+                        originOp: 's3:ReplaceArchivedObject',
+                    }), any, any);
+            },
+        ], done);
+    });
 });
 
 describe('objectPut API with versioning', () => {
     beforeEach(() => {
         cleanup();
+        sinon.spy(metadata, 'putObjectMD');
+        testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            url: '/',
+        }, postBody);
+    });
+
+    afterEach(() => {
+        sinon.restore();
+        metadata.putObjectMD = originalputObjectMD;
     });
 
     const objData = ['foo0', 'foo1', 'foo2'].map(str =>
@@ -792,6 +875,58 @@ describe('objectPut API with versioning', () => {
                 });
             });
         });
+    });
+
+    it('should not pass needOplogUpdate when writing new object', done => {
+        async.series([
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            async () => {
+                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                    bucketName, objectName, any, sinon.match({
+                        needOplogUpdate: undefined,
+                        originOp: undefined,
+                    }), any, any);
+            },
+        ], done);
+    });
+
+    it('should not pass needOplogUpdate when replacing object', done => {
+        async.series([
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            async () => {
+                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                    bucketName, objectName, any, sinon.match({
+                        needOplogUpdate: undefined,
+                        originOp: undefined,
+                    }), any, any);
+            },
+        ], done);
+    });
+
+    it('should not pass needOplogUpdate when replacing archived object', done => {
+        const archived = {
+            archiveInfo: { foo: 0, bar: 'stuff' }
+        };
+
+        async.series([
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            next => fakeMetadataArchive(bucketName, objectName, undefined, archived, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            async () => {
+                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                    bucketName, objectName, any, sinon.match({
+                        needOplogUpdate: undefined,
+                        originOp: undefined,
+                    }), any, any);
+            },
+        ], done);
     });
 });
 

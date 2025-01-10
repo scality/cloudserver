@@ -14,6 +14,7 @@ const mpuUtils = require('../utils/mpuUtils');
 const metadata = require('../metadataswitch');
 const { data } = require('../../../lib/data/wrapper');
 const { objectLocationConstraintHeader } = require('../../../constants');
+const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
 
 const any = sinon.match.any;
 
@@ -129,6 +130,8 @@ describe('objectCopy with versioning', () => {
 describe('non-versioned objectCopy', () => {
     const testPutObjectRequest = versioningTestUtils
         .createPutObjectRequest(sourceBucketName, objectKey, objData[0]);
+    const testPutDestObjectRequest = versioningTestUtils
+        .createPutObjectRequest(destBucketName, objectKey, objData[1]);
 
     before(done => {
         cleanup();
@@ -170,6 +173,76 @@ describe('non-versioned objectCopy', () => {
                     done();
                 });
         });
+    });
+
+    it('should not pass needOplogUpdate when creating object', done => {
+        async.series([
+            next => objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
+                undefined, log, next),
+            async () => {
+                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                    destBucketName, objectKey, any, sinon.match({
+                        needOplogUpdate: undefined,
+                        originOp: undefined,
+                    }), any, any);
+            },
+        ], done);
+    });
+
+    it('should not pass needOplogUpdate when replacing object', done => {
+        async.series([
+            next => objectPut(authInfo, testPutDestObjectRequest, undefined, log, next),
+            next => objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
+                undefined, log, next),
+            async () => {
+                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                    destBucketName, objectKey, any, sinon.match({
+                        needOplogUpdate: undefined,
+                        originOp: undefined,
+                    }), any, any);
+            },
+        ], done);
+    });
+
+    it('should pass needOplogUpdate to metadata when replacing archived object', done => {
+        const archived = {
+            archiveInfo: { foo: 0, bar: 'stuff' }
+        };
+
+        async.series([
+            next => objectPut(authInfo, testPutDestObjectRequest, undefined, log, next),
+            next => fakeMetadataArchive(destBucketName, objectKey, undefined, archived, next),
+            next => objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
+                undefined, log, next),
+            async () => {
+                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                    destBucketName, objectKey, any, sinon.match({
+                        needOplogUpdate: true,
+                        originOp: 's3:ReplaceArchivedObject',
+                    }), any, any);
+            },
+        ], done);
+    });
+
+    it('should pass needOplogUpdate to metadata when replacing archived object in version suspended bucket', done => {
+        const archived = {
+            archiveInfo: { foo: 0, bar: 'stuff' }
+        };
+
+        async.series([
+            next => bucketPutVersioning(authInfo, suspendVersioningRequest, log, next),
+            next => objectPut(authInfo, testPutDestObjectRequest, undefined, log, next),
+            next => fakeMetadataArchive(destBucketName, objectKey, undefined, archived, next),
+            next => objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
+                undefined, log, next),
+            async () => {
+                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                    destBucketName, objectKey, any, sinon.match({
+                        needOplogUpdate: true,
+                        originOp: 's3:ReplaceArchivedObject',
+                    }), any, any);
+            },
+        ], done);
     });
 });
 
