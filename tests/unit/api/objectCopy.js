@@ -1,6 +1,6 @@
 const assert = require('assert');
 const async = require('async');
-const { storage } = require('arsenal');
+const { storage, versioning } = require('arsenal');
 const sinon = require('sinon');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
@@ -12,6 +12,8 @@ const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
 const mpuUtils = require('../utils/mpuUtils');
 const metadata = require('../metadataswitch');
+const { data } = require('../../../lib/data/wrapper');
+const { objectLocationConstraintHeader } = require('../../../constants');
 
 const any = sinon.match.any;
 
@@ -245,5 +247,128 @@ describe('objectCopy overheadField', () => {
                 );
             });
         });
+    });
+});
+
+describe('objectCopy in ingestion bucket', () => {
+    const dataClient = data.client;
+    const prevDataImplName = data.implName;
+    const prevConfigBackendsData = data.config.backends.data;
+    const prevConfigLocationConstraints1Type = data.config.locationConstraints['us-east-1'].type;
+    const prevConfigLocationConstraints2Type = data.config.locationConstraints['us-east-2'].type;
+
+    before(() => {
+        // Setup multi-backend, this is required for ingestion
+        data.switch(new storage.data.MultipleBackendGateway({
+            'us-east-1': dataClient,
+            'us-east-2': dataClient,
+        }, metadata, data.locStorageCheckFn));
+        data.implName = 'multipleBackends';
+
+        // "mock" the data location, simulating a backend supporting server-side copy
+        data.config.backends.data = 'multiple';
+        data.config.locationConstraints['us-east-1'].type = 'aws_s3';
+        data.config.locationConstraints['us-east-2'].type = 'aws_s3';
+    });
+
+    after(() => {
+        data.switch(dataClient);
+        data.implName = prevDataImplName;
+        data.config.backends.data = prevConfigBackendsData;
+        data.config.locationConstraints['us-east-1'].type = prevConfigLocationConstraints1Type;
+        data.config.locationConstraints['us-east-2'].type = prevConfigLocationConstraints2Type;
+    });
+
+    const versionIDs = [];
+
+    beforeEach(() => {
+        cleanup();
+
+        sinon.stub(dataClient, 'put').callsFake((writeStream, size, keyContext, reqUids, cb) => {
+            const versionID = versioning.VersionID.encode(versioning.VersionID.generateVersionId('0', ''));
+            versionIDs.push(versionID);
+            cb(null, `${keyContext.bucketName}/${keyContext.objectKey}`, versionID, size, 'md5');
+        });
+    });
+
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    const newPutIngestBucketRequest = location => new DummyRequest({
+        bucketName: destBucketName,
+        namespace,
+        headers: { host: `${destBucketName}.s3.amazonaws.com` },
+        url: '/',
+        post: '<?xml version="1.0" encoding="UTF-8"?>' +
+            '<CreateBucketConfiguration ' +
+            'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+            `<LocationConstraint>${location}</LocationConstraint>` +
+            '</CreateBucketConfiguration>',
+    });
+    const putSourceObjectRequest = versioningTestUtils.createPutObjectRequest(
+        sourceBucketName, objectKey, objData[0]);
+    const newPutObjectRequest = params => {
+        const { location } = params || {};
+        const r = _createObjectCopyRequest(destBucketName);
+        if (location) {
+            r.headers[objectLocationConstraintHeader] = location;
+
+            // Need to 'replace' the metadata for the constraint to be taken into account
+            r.headers['x-amz-metadata-directive'] = 'REPLACE';
+        }
+        return r;
+    };
+
+    it('should use the versionID from the backend', done => {
+        const versionID = versioning.VersionID.encode(versioning.VersionID.generateVersionId('0', ''));
+        dataClient.copyObject = sinon.stub().yields(null, objectKey, versionID);
+
+        async.series([
+            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+            next => objectPut(authInfo, putSourceObjectRequest, undefined, log, next),
+            next => objectCopy(authInfo, newPutObjectRequest(), sourceBucketName, objectKey, undefined, log,
+                (err, xml, headers) => {
+                    assert.ifError(err);
+                    assert.strictEqual(headers['x-amz-version-id'], versionID);
+                    next();
+                }),
+        ], done);
+    });
+
+    it('should not use the versionID from the backend when writing in another location', done => {
+        const versionID = versioning.VersionID.encode(versioning.VersionID.generateVersionId('0', ''));
+        dataClient.copyObject = sinon.stub().yields(null, objectKey, versionID);
+
+        const copyObjectRequest = newPutObjectRequest({ location: 'us-east-2' });
+        async.series([
+            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+            next => objectPut(authInfo, putSourceObjectRequest, undefined, log, next),
+            next => objectCopy(authInfo, copyObjectRequest, sourceBucketName, objectKey, undefined, log,
+                (err, xml, headers) => {
+                    assert.ifError(err);
+                    assert.notEqual(headers['x-amz-version-id'], versionID);
+                    next();
+                }),
+        ], done);
+    });
+
+    it('should not use the versionID from the backend when it is not a valid versionID', done => {
+        const versionID = undefined;
+        dataClient.copyObject = sinon.stub().yields(null, objectKey, versionID);
+
+        async.series([
+            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+            next => objectPut(authInfo, putSourceObjectRequest, undefined, log, next),
+            next => objectCopy(authInfo, newPutObjectRequest(), sourceBucketName, objectKey, undefined, log,
+                (err, xml, headers) => {
+                    assert.ifError(err);
+                    assert.notEqual(headers['x-amz-version-id'], versionID);
+                    next();
+                }),
+        ], done);
     });
 });
