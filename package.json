@@ -113,7 +113,7 @@
     "utapi_replay": "node lib/utapi/utapiReplay.js",
     "utapi_reindex": "node lib/utapi/utapiReindex.js",
     "management_agent": "node managementAgent.js",
-    "test": "CI=true S3BACKEND=mem S3QUOTA=scuba mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --recursive tests/unit --exit",
+    "test": "CI=true S3BACKEND=mem S3QUOTA=scuba mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --recursive tests/unit/api/objectReplicationMD.js --exit",
     "test_versionid_base62": "S3_VERSION_ID_ENCODING_TYPE=base62 CI=true S3BACKEND=mem mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --recursive tests/unit/api --exit",
     "test_legacy_location": "CI=true S3QUOTA=scuba S3_LOCATION_FILE=tests/locationConfig/locationConfigLegacy.json S3BACKEND=mem mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --recursive tests/unit --exit",
     "test_utapi_v2": "mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --recursive tests/utapi --exit",

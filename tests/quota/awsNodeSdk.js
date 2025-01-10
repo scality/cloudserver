@@ -338,18 +338,11 @@ function multiObjectDelete(bucket, keys, size, callback) {
         };
         mockScuba = scuba;
 
-        before(() => {
+        before(done => {
             const config = getConfig('default', { signatureVersion: 'v4', maxRetries: 0 });
             s3Client = new S3(config);
             scuba.start();
-            return new Promise((resolve, reject) => {
-                metadata.setup(err => {
-                    if (err) {
-                        reject(err);
-                    }
-                    wait(2000, resolve);
-                });
-            });
+            return metadata.setup(err => wait(2000, () => done(err)));
         });
 
         afterEach(() => {

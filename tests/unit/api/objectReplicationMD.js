@@ -79,7 +79,7 @@ const emptyReplicationMD = {
     dataStoreVersionId: '',
     isNFS: undefined,
 };
-const emptyReplicationMDUndef = {
+const expectedEmptyReplicationMD = {
     status: '',
     backends: [],
     content: [],
@@ -240,7 +240,7 @@ describe('Replication object MD without bucket replication config', () => {
             if (err) {
                 return done(err);
             }
-            checkObjectReplicationInfo(keyA, emptyReplicationMDUndef);
+            checkObjectReplicationInfo(keyA, expectedEmptyReplicationMD);
             return done();
         }));
 
@@ -251,7 +251,7 @@ describe('Replication object MD without bucket replication config', () => {
         ], err => done(err)));
 
         it('should not update object metadata if putting tag', done => {
-            checkObjectReplicationInfo(keyA, emptyReplicationMDUndef);
+            checkObjectReplicationInfo(keyA, expectedEmptyReplicationMD);
             return done();
         });
 
@@ -265,7 +265,7 @@ describe('Replication object MD without bucket replication config', () => {
                 if (err) {
                     return done(err);
                 }
-                checkObjectReplicationInfo(keyA, emptyReplicationMDUndef);
+                checkObjectReplicationInfo(keyA, expectedEmptyReplicationMD);
                 return done();
             }));
 
@@ -274,7 +274,7 @@ describe('Replication object MD without bucket replication config', () => {
                 if (err) {
                     return done(err);
                 }
-                checkObjectReplicationInfo(keyA, emptyReplicationMDUndef);
+                checkObjectReplicationInfo(keyA, expectedEmptyReplicationMD);
                 return done();
             }));
 
