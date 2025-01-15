@@ -4,6 +4,11 @@ const { config } = require('../../../lib/Config');
 
 const inflightFlushFrequencyMS = 200;
 
+// eslint-disable-next-line no-extend-native
+BigInt.prototype.toJSON = function toJSON() {
+    return { $bigint: this.toString() };
+};
+
 class Scuba {
     constructor() {
         this._server = null;
@@ -31,21 +36,21 @@ class Scuba {
             if (!this.supportsInflight) {
                 bucketName = req.params.bucket?.split('_')[0];
                 return res.status(200).json({
-                    bytesTotal: this._data.bucket.get(bucketName)?.current || 0,
+                    bytesTotal: (this._data.bucket.get(bucketName)?.current || 0n).toString(),
                 });
             }
-            const inflight = Number(req.body?.inflight) || 0;
+            const inflight = BigInt(req.body?.inflight || 0);
             this._updateData({
                 action: req.body?.action,
                 bucket: bucketName,
                 inflight,
             });
-            const immediateInflights = req.body?.action === 'objectRestore' ? 0 : inflight;
+            const immediateInflights = req.body?.action === 'objectRestore' ? 0n : inflight;
             return res.json({
-                bytesTotal: (this._data.bucket.get(bucketName)?.current || 0) +
-                    (this._data.bucket.get(bucketName)?.nonCurrent || 0) +
-                    (this._data.bucket.get(bucketName)?.inflight || 0) +
-                    immediateInflights,
+                bytesTotal: ((this._data.bucket.get(bucketName)?.current || 0n) +
+                    (this._data.bucket.get(bucketName)?.nonCurrent || 0n) +
+                    (this._data.bucket.get(bucketName)?.inflight || 0n) +
+                    immediateInflights).toString(),
             });
         });
     }
@@ -57,7 +62,7 @@ class Scuba {
             timeout = 0;
         }
         if (!this._data.bucket.get(bucket)) {
-            this._data.bucket.set(bucket, { current: 0, nonCurrent: 0, inflight: 0 });
+            this._data.bucket.set(bucket, { current: 0n, nonCurrent: 0n, inflight: 0n });
         }
         if (timeout && this.supportsInflight) {
             setTimeout(() => {
@@ -104,16 +109,16 @@ class Scuba {
         this._data.bucket.forEach((value, key) => {
             if (key.startsWith(`${bucketName}_`)) {
                 // eslint-disable-next-line no-param-reassign
-                value.current += value.inflight;
+                value.current += BigInt(value.inflight);
                 // eslint-disable-next-line no-param-reassign
-                value.inflight = 0;
+                value.inflight = 0n;
                 this._data.bucket.set(key, value);
             }
         });
     }
 
     getInflightsForBucket(bucketName) {
-        let inflightCount = 0;
+        let inflightCount = 0n;
         this._data.bucket.forEach((value, key) => {
             if (!this.supportsInflight && key === bucketName) {
                 inflightCount += (value.current + value.nonCurrent);
@@ -126,10 +131,10 @@ class Scuba {
 
     incrementBytesForBucket(bucketName, bytes) {
         if (!this._data.bucket.has(bucketName)) {
-            this._data.bucket.set(bucketName, { current: 0, nonCurrent: 0, inflight: 0 });
+            this._data.bucket.set(bucketName, { current: 0n, nonCurrent: 0n, inflight: 0n });
         }
         const bucket = this._data.bucket.get(bucketName);
-        bucket.current += bytes;
+        bucket.current += BigInt(bytes);
         this._data.bucket.set(bucketName, bucket);
     }
 }

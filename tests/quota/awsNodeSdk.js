@@ -431,7 +431,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 next => abortMPU(bucket, key, uploadId, 0, next),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
-                    assert.strictEqual(scuba.getInflightsForBucket(bucket), 0);
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), 0n);
                     return next();
                 },
                 next => deleteBucket(bucket, next),
@@ -553,13 +553,13 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 }, next),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
-                    assert.strictEqual(scuba.getInflightsForBucket(bucket), size);
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), BigInt(size));
                     return next();
                 },
                 next => restoreObject(bucket, key, 0, next),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
-                    assert.strictEqual(scuba.getInflightsForBucket(bucket), size);
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), BigInt(size));
                     return next();
                 },
                 next => deleteVersionID(bucket, key, vID, size, next),
@@ -590,7 +590,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
-                    assert.strictEqual(scuba.getInflightsForBucket(bucket), size * 2);
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), BigInt(size * 2));
                     return next();
                 },
                 next => wait(inflightFlushFrequencyMS * 2, next),
@@ -643,7 +643,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 // Should still have 0 as inflight
                 next => {
-                    assert.strictEqual(scuba.getInflightsForBucket(bucket), 0);
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), 0n);
                     return next();
                 },
                 next => wait(inflightFlushFrequencyMS * 2, next),
@@ -683,7 +683,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
-                    assert.strictEqual(scuba.getInflightsForBucket(bucket), size - 100);
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), BigInt(size - 100));
                     return next();
                 },
                 next => deleteObject(bucket, key, size, next),
@@ -715,7 +715,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
-                    assert.strictEqual(scuba.getInflightsForBucket(bucket), 0);
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), 0n);
                     return next();
                 },
                 next => deleteBucket(bucket, next),
@@ -752,7 +752,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
-                    assert.strictEqual(scuba.getInflightsForBucket(bucket), 0);
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), 0n);
                     return next();
                 },
                 next => multiObjectDelete(bucket, [`${key}1`, `${key}2`], size * 10, err => {
@@ -786,7 +786,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
-                    assert.strictEqual(scuba.getInflightsForBucket(bucket), size);
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), BigInt(size));
                     return next();
                 },
                 next => deleteVersionID(bucket, key, vID, size, err => {
@@ -795,7 +795,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
-                    assert.strictEqual(scuba.getInflightsForBucket(bucket), size);
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), BigInt(size));
                     return next();
                 },
             ], done);
@@ -818,7 +818,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                     }),
                     next => wait(inflightFlushFrequencyMS * 2, next),
                     next => {
-                        assert.strictEqual(scuba.getInflightsForBucket(bucket), size);
+                        assert.strictEqual(scuba.getInflightsForBucket(bucket), BigInt(size));
                         return next();
                     },
                     next => fakeMetadataArchive(bucket, key, vID, {
@@ -832,7 +832,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                         return next();
                     }),
                     next => {
-                        assert.strictEqual(scuba.getInflightsForBucket(bucket), size);
+                        assert.strictEqual(scuba.getInflightsForBucket(bucket), BigInt(size));
                         return next();
                     },
                     next => deleteVersionID(bucket, key, vID, size, next),
@@ -857,7 +857,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                     }),
                     next => wait(inflightFlushFrequencyMS * 2, next),
                     next => {
-                        assert.strictEqual(scuba.getInflightsForBucket(bucket), size);
+                        assert.strictEqual(scuba.getInflightsForBucket(bucket), BigInt(size));
                         return next();
                     },
                     next => fakeMetadataArchive(bucket, key, vID, {
@@ -876,7 +876,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                         return next();
                     }),
                     next => {
-                        assert.strictEqual(scuba.getInflightsForBucket(bucket), size);
+                        assert.strictEqual(scuba.getInflightsForBucket(bucket), BigInt(size));
                         return next();
                     },
                     next => deleteVersionID(bucket, key, vID, size, next),
@@ -932,7 +932,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
                     // Verify all parts are counted in inflights
-                    assert.strictEqual(scuba.getInflightsForBucket(bucket), totalSize);
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), BigInt(totalSize));
                     return next();
                 },
                 next => {
@@ -954,7 +954,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 next => {
                     // Verify inflights reduced by dropped part
                     const expectedInflights = usedParts * partSize;
-                    assert.strictEqual(scuba.getInflightsForBucket(bucket), expectedInflights);
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), BigInt(expectedInflights));
                     return next();
                 },
                 next => deleteObject(bucket, key, usedParts * partSize, next),
@@ -1002,14 +1002,14 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
                     // Verify all parts are counted in inflights
-                    assert.strictEqual(scuba.getInflightsForBucket(bucket), totalSize);
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), BigInt(totalSize));
                     return next();
                 },
                 next => abortMPU(bucket, key, uploadId, totalSize, next),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
                     // Verify inflights reduced to zero after abort
-                    assert.strictEqual(scuba.getInflightsForBucket(bucket), 0);
+                    assert.strictEqual(scuba.getInflightsForBucket(bucket), 0n);
                     return next();
                 },
                 next => deleteBucket(bucket, next),

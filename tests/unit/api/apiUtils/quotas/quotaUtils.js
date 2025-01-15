@@ -90,10 +90,10 @@ describe('validateQuotas (buckets)', () => {
 
     it('should return errors.QuotaExceeded if quota is exceeded', done => {
         const result1 = {
-            bytesTotal: 150,
+            bytesTotal: BigInt(150),
         };
         const result2 = {
-            bytesTotal: 120,
+            bytesTotal: BigInt(120),
         };
         QuotaService._getLatestMetricsCallback.yields(null, result1);
         QuotaService._getLatestMetricsCallback.yields(null, result2);
@@ -117,10 +117,10 @@ describe('validateQuotas (buckets)', () => {
 
     it('should not return QuotaExceeded if quotas are exceeded but operation is creating a delete marker', done => {
         const result1 = {
-            bytesTotal: 150,
+            bytesTotal: BigInt(150),
         };
         const result2 = {
-            bytesTotal: 120,
+            bytesTotal: BigInt(120),
         };
         QuotaService._getLatestMetricsCallback.yields(null, result1);
         QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
@@ -143,10 +143,10 @@ describe('validateQuotas (buckets)', () => {
 
     it('should not return QuotaExceeded if the quotas are exceeded but operation is a delete', done => {
         const result1 = {
-            bytesTotal: 150,
+            bytesTotal: BigInt(150),
         };
         const result2 = {
-            bytesTotal: 120,
+            bytesTotal: BigInt(120),
         };
         QuotaService._getLatestMetricsCallback.yields(null, result1);
         QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
@@ -169,10 +169,10 @@ describe('validateQuotas (buckets)', () => {
 
     it('should not return QuotaExceeded if the quotas are exceeded but operation is a delete with version', done => {
         const result1 = {
-            bytesTotal: 150,
+            bytesTotal: BigInt(150),
         };
         const result2 = {
-            bytesTotal: 120,
+            bytesTotal: BigInt(120),
         };
         QuotaService._getLatestMetricsCallback.yields(null, result1);
         QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
@@ -195,10 +195,10 @@ describe('validateQuotas (buckets)', () => {
 
     it('should decrease the inflights by deleting data, and go below 0 to unblock operations', done => {
         const result1 = {
-            bytesTotal: 150,
+            bytesTotal: BigInt(150),
         };
         const result2 = {
-            bytesTotal: 120,
+            bytesTotal: BigInt(120),
         };
         QuotaService._getLatestMetricsCallback.yields(null, result1);
         QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
@@ -221,10 +221,10 @@ describe('validateQuotas (buckets)', () => {
 
     it('should return null if quota is not exceeded', done => {
         const result1 = {
-            bytesTotal: 80,
+            bytesTotal: BigInt(80),
         };
         const result2 = {
-            bytesTotal: 90,
+            bytesTotal: BigInt(90),
         };
         QuotaService._getLatestMetricsCallback.yields(null, result1);
         QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
@@ -249,10 +249,10 @@ describe('validateQuotas (buckets)', () => {
     it('should not include the inflights in the request if they are disabled', done => {
         config.quota.enableInflights = false;
         const result1 = {
-            bytesTotal: 80,
+            bytesTotal: BigInt(80),
         };
         const result2 = {
-            bytesTotal: 90,
+            bytesTotal: BigInt(90),
         };
         QuotaService._getLatestMetricsCallback.yields(null, result1);
         QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
@@ -276,10 +276,10 @@ describe('validateQuotas (buckets)', () => {
 
     it('should evaluate the quotas and not update the inflights when isStorageReserved is true', done => {
         const result1 = {
-            bytesTotal: 80,
+            bytesTotal: BigInt(80),
         };
         const result2 = {
-            bytesTotal: 90,
+            bytesTotal: BigInt(90),
         };
         QuotaService._getLatestMetricsCallback.yields(null, result1);
         QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
@@ -299,6 +299,77 @@ describe('validateQuotas (buckets)', () => {
                 ), true);
                 done();
             });
+    });
+
+    it('should handle numbers above MAX_SAFE_INTEGER when quota is not exceeded', done => {
+        const largeNumber = 9007199254740992n; // 2^53, above MAX_SAFE_INTEGER
+        const result1 = {
+            bytesTotal: largeNumber,
+        };
+        QuotaService._getLatestMetricsCallback.yields(null, result1);
+
+        validateQuotas(request, {
+            ...mockBucket,
+            getQuota: () => 9007199254740993n,
+        }, {}, ['objectPut'], 'objectPut', 1, false, mockLog, err => {
+            assert.ifError(err);
+            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledWith(
+                'bucket',
+                'bucketName_1640995200000',
+                null,
+                {
+                    action: 'objectPut',
+                    inflight: 1,
+                },
+            ), true);
+            done();
+        });
+    });
+
+    it('should handle numbers above MAX_SAFE_INTEGER when quota is exceeded', done => {
+        const largeNumber = 9007199254740992n; // 2^53
+        const result1 = {
+            bytesTotal: largeNumber,
+        };
+        QuotaService._getLatestMetricsCallback.yields(null, result1);
+
+        validateQuotas(request, {
+            ...mockBucket,
+            getQuota: () => 9007199254740991,
+        }, {}, ['objectPut'], 'objectPut', 1, false, mockLog, err => {
+            assert.strictEqual(err.is.QuotaExceeded, true);
+            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+            assert.strictEqual(request.finalizerHooks.length, 1);
+            done();
+        });
+    });
+
+    it('should handle numbers above MAX_SAFE_INTEGER with disabled inflights when quota is not exceeded', done => {
+        config.quota.enableInflights = false;
+        const largeNumber = 9007199254740992n;
+        const result1 = {
+            bytesTotal: largeNumber,
+        };
+        QuotaService._getLatestMetricsCallback.yields(null, result1);
+
+        validateQuotas(request, {
+            ...mockBucket,
+            getQuota: () => 9007199254740993n,
+        }, {}, ['objectPut'], 'objectPut', 1, false, mockLog, err => {
+            assert.ifError(err);
+            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledWith(
+                'bucket',
+                'bucketName_1640995200000',
+                null,
+                {
+                    action: 'objectPut',
+                    inflight: undefined,
+                },
+            ), true);
+            done();
+        });
     });
 });
 
@@ -386,10 +457,10 @@ describe('validateQuotas (with accounts)', () => {
 
     it('should return errors.QuotaExceeded if quota is exceeded', done => {
         const result1 = {
-            bytesTotal: 150,
+            bytesTotal: BigInt(150),
         };
         const result2 = {
-            bytesTotal: 120,
+            bytesTotal: BigInt(120),
         };
         QuotaService._getLatestMetricsCallback.yields(null, result1);
         QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
@@ -416,10 +487,10 @@ describe('validateQuotas (with accounts)', () => {
 
     it('should not return QuotaExceeded if the quotas are exceeded but operation is a delete', done => {
         const result1 = {
-            bytesTotal: 150,
+            bytesTotal: BigInt(150),
         };
         const result2 = {
-            bytesTotal: 120,
+            bytesTotal: BigInt(120),
         };
         QuotaService._getLatestMetricsCallback.yields(null, result1);
         QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
@@ -445,10 +516,10 @@ describe('validateQuotas (with accounts)', () => {
 
     it('should decrease the inflights by deleting data, and go below 0 to unblock operations', done => {
         const result1 = {
-            bytesTotal: 150,
+            bytesTotal: BigInt(150),
         };
         const result2 = {
-            bytesTotal: 120,
+            bytesTotal: BigInt(120),
         };
         QuotaService._getLatestMetricsCallback.yields(null, result1);
         QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
@@ -474,10 +545,10 @@ describe('validateQuotas (with accounts)', () => {
 
     it('should return null if quota is not exceeded', done => {
         const result1 = {
-            bytesTotal: 80,
+            bytesTotal: BigInt(80),
         };
         const result2 = {
-            bytesTotal: 90,
+            bytesTotal: BigInt(90),
         };
         QuotaService._getLatestMetricsCallback.yields(null, result1);
         QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
@@ -503,10 +574,10 @@ describe('validateQuotas (with accounts)', () => {
 
     it('should return quota exceeded if account and bucket quotas are different', done => {
         const result1 = {
-            bytesTotal: 150,
+            bytesTotal: BigInt(150),
         };
         const result2 = {
-            bytesTotal: 120,
+            bytesTotal: BigInt(120),
         };
         QuotaService._getLatestMetricsCallback.yields(null, result1);
         QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
@@ -524,10 +595,10 @@ describe('validateQuotas (with accounts)', () => {
 
     it('should update the request with one function per action to clear quota updates', done => {
         const result1 = {
-            bytesTotal: 80,
+            bytesTotal: BigInt(80),
         };
         const result2 = {
-            bytesTotal: 90,
+            bytesTotal: BigInt(90),
         };
         QuotaService._getLatestMetricsCallback.yields(null, result1);
         QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
@@ -553,10 +624,10 @@ describe('validateQuotas (with accounts)', () => {
 
     it('should evaluate the quotas and not update the inflights when isStorageReserved is true', done => {
         const result1 = {
-            bytesTotal: 80,
+            bytesTotal: BigInt(80),
         };
         const result2 = {
-            bytesTotal: 90,
+            bytesTotal: BigInt(90),
         };
         QuotaService._getLatestMetricsCallback.yields(null, result1);
         QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
@@ -575,6 +646,77 @@ describe('validateQuotas (with accounts)', () => {
                     action: 'objectPut',
                     inflight: 0,
                 }
+            ), true);
+            done();
+        });
+    });
+
+    it('should handle account numbers above MAX_SAFE_INTEGER when quota is not exceeded', done => {
+        const largeNumber = 9007199254740992n;
+        const result1 = {
+            bytesTotal: largeNumber,
+        };
+        QuotaService._getLatestMetricsCallback.yields(null, result1);
+
+        validateQuotas(request, mockBucketNoQuota, {
+            account: 'test_1',
+            quota: 9007199254740993n,
+        }, ['objectPut'], 'objectPut', 1, false, mockLog, err => {
+            assert.ifError(err);
+            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledWith(
+                'account',
+                'test_1',
+                null,
+                {
+                    action: 'objectPut',
+                    inflight: 1,
+                },
+            ), true);
+            done();
+        });
+    });
+
+    it('should handle account numbers above MAX_SAFE_INTEGER when quota is exceeded', done => {
+        const largeNumber = 9007199254740992n;
+        const result1 = {
+            bytesTotal: largeNumber,
+        };
+        QuotaService._getLatestMetricsCallback.yields(null, result1);
+
+        validateQuotas(request, mockBucketNoQuota, {
+            account: 'test_1',
+            quota: 9007199254740991n,
+        }, ['objectPut'], 'objectPut', 1, false, mockLog, err => {
+            assert.strictEqual(err.is.QuotaExceeded, true);
+            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+            assert.strictEqual(request.finalizerHooks.length, 1);
+            done();
+        });
+    });
+
+    it('should handle account numbers above MAX_SAFE_INTEGER with disabled inflights', done => {
+        config.quota.enableInflights = false;
+        const largeNumber = 9007199254740992n;
+        const result1 = {
+            bytesTotal: largeNumber,
+        };
+        QuotaService._getLatestMetricsCallback.yields(null, result1);
+
+        validateQuotas(request, mockBucketNoQuota, {
+            account: 'test_1',
+            quota: 9007199254740993n,
+        }, ['objectPut'], 'objectPut', 1, false, mockLog, err => {
+            assert.ifError(err);
+            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledWith(
+                'account',
+                'test_1',
+                null,
+                {
+                    action: 'objectPut',
+                    inflight: undefined,
+                },
             ), true);
             done();
         });
