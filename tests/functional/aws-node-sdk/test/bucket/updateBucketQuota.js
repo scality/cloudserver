@@ -7,10 +7,10 @@ const sendRequest = require('../quota/tooling').sendRequest;
 
 const bucket = 'updatequotatestbucket';
 const nonExistantBucket = 'updatequotatestnonexistantbucket';
-const quota = { quota: 2000 };
-const negativeQuota = { quota: -1000 };
+const quota = { quota: 2000n };
+const negativeQuota = { quota: -1000n };
 const wrongquotaFromat = '1000';
-const largeQuota = { quota: 1000000000000 };
+const largeQuota = { quota: 1000000000000n };
 
 describe('Test update bucket quota', () => {
     let s3;

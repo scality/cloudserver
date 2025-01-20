@@ -5,7 +5,8 @@ const getConfig = require('../support/config');
 const sendRequest = require('../quota/tooling').sendRequest;
 
 const bucket = 'getquotatestbucket';
-const quota = { quota: 1000 };
+const quota = { quota: 1000n };
+const largeQuota = { quota: 1000000000000n };
 
 describe('Test get bucket quota', () => {
     let s3;
@@ -26,6 +27,17 @@ describe('Test get bucket quota', () => {
             const data = await sendRequest('GET', '127.0.0.1:8000', `/${bucket}/?quota=true`);
             assert.strictEqual(data.GetBucketQuota.Name[0], bucket);
             assert.strictEqual(data.GetBucketQuota.Quota[0], '1000');
+        } catch (err) {
+            assert.fail(`Expected no error, but got ${err}`);
+        }
+    });
+
+    it('should return the quota (large numbers)', async () => {
+        try {
+            await sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(largeQuota));
+            const data = await sendRequest('GET', '127.0.0.1:8000', `/${bucket}/?quota=true`);
+            assert.strictEqual(data.GetBucketQuota.Name[0], bucket);
+            assert.strictEqual(data.GetBucketQuota.Quota[0], '1000000000000');
         } catch (err) {
             assert.fail(`Expected no error, but got ${err}`);
         }

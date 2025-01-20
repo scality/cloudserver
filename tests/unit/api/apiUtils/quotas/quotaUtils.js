@@ -15,20 +15,20 @@ const mockLog = {
 };
 
 const mockBucket = {
-    getQuota: () => 100,
+    getQuota: () => 100n,
     getName: () => 'bucketName',
     getCreationDate: () => '2022-01-01T00:00:00.000Z',
 };
 
 const mockBucketNoQuota = {
-    getQuota: () => 0,
+    getQuota: () => 0n,
     getName: () => 'bucketName',
     getCreationDate: () => '2022-01-01T00:00:00.000Z',
 };
 
 describe('validateQuotas (buckets)', () => {
     const request = {
-        getQuota: () => 100,
+        getQuota: () => 100n,
     };
 
     beforeEach(() => {
@@ -336,7 +336,7 @@ describe('validateQuotas (buckets)', () => {
 
         validateQuotas(request, {
             ...mockBucket,
-            getQuota: () => 9007199254740991,
+            getQuota: () => 9007199254740991n,
         }, {}, ['objectPut'], 'objectPut', 1, false, mockLog, err => {
             assert.strictEqual(err.is.QuotaExceeded, true);
             assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
@@ -375,7 +375,7 @@ describe('validateQuotas (buckets)', () => {
 
 describe('validateQuotas (with accounts)', () => {
     const request = {
-        getQuota: () => 100,
+        getQuota: () => 100n,
     };
 
     beforeEach(() => {
@@ -400,7 +400,7 @@ describe('validateQuotas (with accounts)', () => {
     it('should return null if quota is <= 0', done => {
         validateQuotas(request, mockBucketNoQuota, {
             account: 'test_1',
-            quota: 0,
+            quota: 0n,
         }, [], '', false, false, mockLog, err => {
             assert.ifError(err);
             assert.strictEqual(QuotaService._getLatestMetricsCallback.called, false);
@@ -411,7 +411,7 @@ describe('validateQuotas (with accounts)', () => {
     it('should not return null if bucket quota is <= 0 but account quota is > 0', done => {
         validateQuotas(request, mockBucketNoQuota, {
             account: 'test_1',
-            quota: 1000,
+            quota: 1000n,
         }, [], '', false, false, mockLog, err => {
             assert.ifError(err);
             assert.strictEqual(QuotaService._getLatestMetricsCallback.called, false);
@@ -423,7 +423,7 @@ describe('validateQuotas (with accounts)', () => {
         QuotaService.enabled = false;
         validateQuotas(request, mockBucket, {
             account: 'test_1',
-            quota: 1000,
+            quota: 1000n,
         }, [], '', false, false, mockLog, err => {
             assert.ifError(err);
             assert.strictEqual(QuotaService._getLatestMetricsCallback.called, false);
@@ -438,7 +438,7 @@ describe('validateQuotas (with accounts)', () => {
 
         validateQuotas(request, mockBucket, {
             account: 'test_1',
-            quota: 1000,
+            quota: 1000n,
         }, ['objectPut', 'getObject'], 'objectPut', 1, false, mockLog, err => {
             assert.ifError(err);
             assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
@@ -467,7 +467,7 @@ describe('validateQuotas (with accounts)', () => {
 
         validateQuotas(request, mockBucketNoQuota, {
             account: 'test_1',
-            quota: 100,
+            quota: 100n,
         }, ['objectPut', 'getObject'], 'objectPut', 1, false, mockLog, err => {
             assert.strictEqual(err.is.QuotaExceeded, true);
             assert.strictEqual(QuotaService._getLatestMetricsCallback.callCount, 1);
@@ -497,7 +497,7 @@ describe('validateQuotas (with accounts)', () => {
 
         validateQuotas(request, mockBucketNoQuota, {
             account: 'test_1',
-            quota: 1000,
+            quota: 1000n,
         }, ['objectDelete'], 'objectDelete', -50, false, mockLog, err => {
             assert.ifError(err);
             assert.strictEqual(QuotaService._getLatestMetricsCallback.callCount, 1);
@@ -526,7 +526,7 @@ describe('validateQuotas (with accounts)', () => {
 
         validateQuotas(request, mockBucketNoQuota, {
             account: 'test_1',
-            quota: 1000,
+            quota: 1000n,
         }, ['objectDelete'], 'objectDelete', -5000, false, mockLog, err => {
             assert.ifError(err);
             assert.strictEqual(QuotaService._getLatestMetricsCallback.callCount, 1);
@@ -555,7 +555,7 @@ describe('validateQuotas (with accounts)', () => {
 
         validateQuotas(request, mockBucket, {
             account: 'test_1',
-            quota: 1000,
+            quota: 1000n,
         }, ['objectRestore', 'objectPut'], 'objectRestore', true, false, mockLog, err => {
             assert.ifError(err);
             assert.strictEqual(QuotaService._getLatestMetricsCallback.callCount, 4);
@@ -584,7 +584,7 @@ describe('validateQuotas (with accounts)', () => {
 
         validateQuotas(request, mockBucket, {
             account: 'test_1',
-            quota: 1000,
+            quota: 1000n,
         }, ['objectPut', 'getObject'], 'objectPut', 1, false, mockLog, err => {
             assert.strictEqual(err.is.QuotaExceeded, true);
             assert.strictEqual(QuotaService._getLatestMetricsCallback.callCount, 2);
@@ -605,7 +605,7 @@ describe('validateQuotas (with accounts)', () => {
 
         validateQuotas(request, mockBucket, {
             account: 'test_1',
-            quota: 1000,
+            quota: 1000n,
         }, ['objectRestore', 'objectPut'], 'objectRestore', true, false, mockLog, err => {
             assert.ifError(err);
             assert.strictEqual(QuotaService._getLatestMetricsCallback.callCount, 4);
@@ -634,7 +634,7 @@ describe('validateQuotas (with accounts)', () => {
 
         validateQuotas(request, mockBucket, {
             account: 'test_1',
-            quota: 1000,
+            quota: 1000n,
         }, ['objectPut'], 'objectPut', true, true, mockLog, err => {
             assert.ifError(err);
             assert.strictEqual(QuotaService._getLatestMetricsCallback.calledTwice, true);
