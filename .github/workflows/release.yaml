@@ -29,6 +29,13 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
 
+      - name: Install Oras
+        run: |
+          curl -L https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz | \
+            tar -xz -C /usr/local/bin oras
+        env:
+          ORAS_VERSION: 1.2.2
+
       - name: Push dashboards into the production namespace
         run: |
           oras push ghcr.io/${{ github.repository }}/${{ env.PROJECT_NAME }}-dashboards:${{ github.event.inputs.tag }} \
