@@ -3,6 +3,9 @@
     "plugins": [
         "mocha"
     ],
+    "env": {
+        "es2020": true
+    },
     "rules": {
         "import/extensions": "off",
         "lines-around-directive": "off",
