@@ -12,7 +12,7 @@ const compat = new FlatCompat({
     allConfig: js.configs.all
 });
 
-export default [...compat.extends("scality"), {
+export default [...compat.extends('@scality/scality'), {
     plugins: {
         mocha,
     },

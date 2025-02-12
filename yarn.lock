@@ -603,6 +603,13 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
+"@scality/eslint-config-scality@scality/Guidelines#8.3.0":
+  version "8.3.0"
+  resolved "https://codeload.github.com/scality/Guidelines/tar.gz/666b90495dc7e9a401a37ba4d58c7eba89db90ac"
+  dependencies:
+    commander "11.1.0"
+    markdownlint "0.31.1"
+
 "@sideway/address@^4.1.5":
   version "4.1.5"
   resolved "https://registry.yarnpkg.com/@sideway/address/-/address-4.1.5.tgz#4bc149a0076623ced99ca8208ba780d65a99b9d5"
@@ -2317,13 +2324,6 @@ escodegen@1.8.x:
   optionalDependencies:
     source-map "~0.2.0"
 
-eslint-config-scality@scality/Guidelines#8.3.0:
-  version "8.3.0"
-  resolved "https://codeload.github.com/scality/Guidelines/tar.gz/666b90495dc7e9a401a37ba4d58c7eba89db90ac"
-  dependencies:
-    commander "11.1.0"
-    markdownlint "0.31.1"
-
 eslint-import-resolver-node@^0.3.9:
   version "0.3.9"
   resolved "https://registry.yarnpkg.com/eslint-import-resolver-node/-/eslint-import-resolver-node-0.3.9.tgz#d4eaac52b8a2e7c3cd1903eb00f7e053356118ac"
@@ -3200,7 +3200,6 @@ http-signature@~1.2.0:
 
 "httpagent@git+https://github.com/scality/httpagent#1.0.6":
   version "1.0.6"
-  uid "66e97ab93532d79dbddcf6c4ea4df849b84c33c9"
   resolved "git+https://github.com/scality/httpagent#66e97ab93532d79dbddcf6c4ea4df849b84c33c9"
   dependencies:
     agentkeepalive "^4.2.1"

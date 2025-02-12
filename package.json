@@ -55,7 +55,7 @@
     "@eslint/compat": "^1.2.2",
     "bluebird": "^3.7.2",
     "eslint": "^9.14.0",
-    "eslint-config-scality": "scality/Guidelines#8.3.0",
+    "@scality/eslint-config-scality": "scality/Guidelines#8.3.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-mocha": "^10.5.0",
     "express": "^4.21.1",
