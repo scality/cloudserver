@@ -11,7 +11,9 @@ const log = new DummyRequestLogger();
 
 function setEncryptionInfo(info, cb) {
     metadata.getBucket(bucketName, log, (err, bucket) => {
-        if (err) return cb(err);
+        if (err) {
+            return cb(err);
+        }
         bucket.setServerSideEncryption(info);
         return metadata.updateBucket(bucket.getName(), bucket, log, cb);
     });

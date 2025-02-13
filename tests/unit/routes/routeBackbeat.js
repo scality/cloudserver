@@ -45,7 +45,9 @@ describe('routeBackbeat', () => {
             }),
             end: sandbox.spy((body, encoding, callback) => {
                 mockResponse.body = JSON.parse(body);
-                if (callback) callback();
+                if (callback) {
+                    callback();
+                }
                 resolveEnd(); // Resolve the Promise when end is called
             }),
         };
@@ -94,7 +96,6 @@ describe('routeBackbeat', () => {
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
 
-            /* eslint-disable-next-line no-void */
             void await endPromise;
 
             assert.strictEqual(mockResponse.statusCode, 409);
@@ -115,7 +116,6 @@ describe('routeBackbeat', () => {
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
 
-        /* eslint-disable-next-line no-void */
         void await endPromise;
 
         assert.strictEqual(mockResponse.statusCode, 200);
@@ -145,7 +145,6 @@ describe('routeBackbeat', () => {
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
 
-        /* eslint-disable-next-line no-void */
         void await endPromise;
 
         assert.strictEqual(mockResponse.statusCode, 200);
@@ -180,7 +179,6 @@ describe('routeBackbeat', () => {
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
 
-        /* eslint-disable-next-line no-void */
         void await endPromise;
 
         assert.strictEqual(mockResponse.statusCode, 200);

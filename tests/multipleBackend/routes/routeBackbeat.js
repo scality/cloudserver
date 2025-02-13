@@ -273,7 +273,7 @@ describe('backbeat routes', () => {
             });
     });
 
-    after(done =>
+    after(() =>
         bucketUtil.empty(TEST_BUCKET)
             .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
             .then(() => bucketUtil.empty(TEST_ENCRYPTED_BUCKET))
@@ -284,7 +284,6 @@ describe('backbeat routes', () => {
             .then(() => bucketUtil.empty(VERSION_SUSPENDED_BUCKET))
             .then(() =>
                 s3.deleteBucket({ Bucket: VERSION_SUSPENDED_BUCKET }).promise())
-            .then(() => done(), err => done(err))
     );
 
     describe('null version', () => {

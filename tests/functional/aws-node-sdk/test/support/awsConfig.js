@@ -9,7 +9,7 @@ function getAwsCredentials(profile, credFile) {
 
     try {
         fs.statSync(filename);
-    } catch (e) {
+    } catch {
         const msg = `AWS credential file does not exist: ${filename}`;
         throw new Error(msg);
     }
