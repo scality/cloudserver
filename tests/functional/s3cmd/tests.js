@@ -1,7 +1,7 @@
-'use strict'; // eslint-disable-line strict
+'use strict';
 
 const proc = require('child_process');
-const process = require('process');
+const process = require('node:process');
 const assert = require('assert');
 const fs = require('fs');
 const async = require('async');

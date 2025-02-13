@@ -1,6 +1,6 @@
 #!/bin/sh
 // 2>/dev/null ; exec "$(which nodejs 2>/dev/null || which node)" "$0" "$@"
-'use strict'; // eslint-disable-line strict
+'use strict';
 
 const { auth } = require('arsenal');
 const commander = require('commander');
