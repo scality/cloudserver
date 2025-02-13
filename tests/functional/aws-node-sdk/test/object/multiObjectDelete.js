@@ -1,6 +1,6 @@
+const { promisify } = require('util');
 const assert = require('assert');
 const moment = require('moment');
-const Promise = require('bluebird');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -8,7 +8,7 @@ const changeObjectLock = require('../../../../utilities/objectLock-util');
 
 const otherAccountBucketUtility = new BucketUtility('lisa', {});
 const otherAccountS3 = otherAccountBucketUtility.s3;
-const changeLockPromise = Promise.promisify(changeObjectLock);
+const changeLockPromise = promisify(changeObjectLock);
 
 const bucketName = 'multi-object-delete-234-634';
 const key = 'key';
@@ -56,40 +56,38 @@ describe('Multi-Object Delete Success', function success() {
     let bucketUtil;
     let s3;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         bucketUtil = new BucketUtility('default', {
             signatureVersion: 'v4',
         });
         s3 = bucketUtil.s3;
-        return s3.createBucket({ Bucket: bucketName }).promise()
-        .catch(err => {
-            process.stdout.write(`Error creating bucket: ${err}\n`);
-            throw err;
-        })
-        .then(() => {
+        try {
+            await s3.createBucket({ Bucket: bucketName }).promise();
             const objects = [];
             for (let i = 1; i < 1001; i++) {
                 objects.push(`${key}${i}`);
             }
-            const queued = [];
             const parallel = 20;
-            const putPromises = objects.map(key => {
-                const mustComplete = Math.max(0, queued.length - parallel + 1);
-                const result = Promise.some(queued, mustComplete).then(() =>
-                    s3.putObject({
-                        Bucket: bucketName,
-                        Key: key,
-                        Body: 'somebody',
-                    }).promise()
-                );
+            const queued = [];
+            const putObjectWithLimit = async key => {
+                while (queued.length >= parallel) {
+                    await Promise.race(queued);
+                    queued.splice(0, queued.findIndex(p => p === queued[0]) + 1);
+                }
+                const result = s3.putObject({
+                    Bucket: bucketName,
+                    Key: key,
+                    Body: 'somebody',
+                }).promise();
                 queued.push(result);
                 return result;
-            });
-            return Promise.all(putPromises).catch(err => {
-                process.stdout.write(`Error creating objects: ${err}\n`);
-                throw err;
-            });
-        });
+            };
+            const putPromises = objects.map(key => putObjectWithLimit(key));
+            await Promise.all(putPromises);
+        } catch (err) {
+            process.stdout.write(`Error creating objects: ${err}\n`);
+            throw err;
+        }
     });
 
     afterEach(() => s3.deleteBucket({ Bucket: bucketName }).promise());

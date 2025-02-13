@@ -1,5 +1,5 @@
+const { promisify } = require('util');
 const childProcess = require('child_process');
-const Promise = require('bluebird');
 const getConfig = require('../../test/support/config');
 
 function safeJSONParse(s) {
@@ -64,7 +64,7 @@ function createEncryptedBucket(bucketParams, cb) {
     child.stdout.on('data', chunk => body.push(chunk.toString()));
 }
 
-const createEncryptedBucketPromise = Promise.promisify(createEncryptedBucket, { suffix: 'Promise' });
+const createEncryptedBucketPromise = promisify(createEncryptedBucket, { suffix: 'Promise' });
 
 module.exports = {
     createEncryptedBucketPromise,

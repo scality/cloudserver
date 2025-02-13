@@ -1,5 +1,4 @@
 const assert = require('assert');
-const Promise = require('bluebird');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -65,23 +64,18 @@ describe('PUT Object ACL', () => {
             return bucketUtil.deleteOne(bucketName);
         });
 
-        it('should put object ACLs', done => {
+        it('should put object ACLs', async () => {
             const s3 = bucketUtil.s3;
             const Bucket = bucketName;
             const objects = [
                 { Bucket, Key },
             ];
-
-            Promise
-                .mapSeries(objects, param => s3.putObject(param).promise())
-                .then(() => s3.putObjectAcl({ Bucket, Key,
-                    ACL: 'public-read' }).promise())
-                .then(data => {
-                    assert(data);
-                    done();
-                })
-                .catch(done);
-        });
+            for (const param of objects) {
+                await s3.putObject(param).promise();
+            }
+            const data = await s3.putObjectAcl({ Bucket, Key, ACL: 'public-read' }).promise();
+            assert(data);
+        });        
 
         it('should return NoSuchKey if try to put object ACLs ' +
             'for nonexistent object', done => {
