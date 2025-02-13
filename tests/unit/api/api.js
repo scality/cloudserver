@@ -17,9 +17,9 @@ describe('api.callApiMethod', () => {
 
         request = new DummyRequest('my-obj');
         request.query = {};
-        request.socket = {
-            remoteAddress: '127.0.0.1',
-        };
+        request.socket = new ReadableStream();
+        request.socket.remoteAddress = '127.0.0.1';
+        request.socket.destroy = sandbox.stub();
 
         response = {
             write: sandbox.stub(),
