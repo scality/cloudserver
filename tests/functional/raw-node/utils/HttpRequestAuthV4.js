@@ -153,7 +153,7 @@ class HttpRequestAuthV4 extends stream.Writable {
 
     constructChunkStringToSign(chunkData) {
         const currentChunkHash =
-              crypto.createHash('sha256').update(chunkData.toString())
+            crypto.createHash('sha256').update(chunkData.toString())
               .digest('hex');
         const stringToSign = `AWS4-HMAC-SHA256-PAYLOAD\n${this._timestamp}\n` +
               `${this.getCredentialScope()}\n${this._lastSignature}\n` +

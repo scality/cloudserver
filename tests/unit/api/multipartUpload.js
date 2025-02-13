@@ -2389,7 +2389,6 @@ describe('complete mpu with versioning', () => {
         ], err => {
             assert.ifError(err);
             let nbVersions = 0;
-            // eslint-disable-next-line no-restricted-syntax
             for (const key of metadata.keyMaps.get(bucketName).keys()) {
                 if (key !== objectKey && key.startsWith(objectKey)) {
                     nbVersions += 1;
@@ -2398,7 +2397,6 @@ describe('complete mpu with versioning', () => {
             // There should be only one version of the object, since
             // the second call should not have created a new version
             assert.strictEqual(nbVersions, 1);
-            // eslint-disable-next-line no-restricted-syntax
             for (const key of metadata.keyMaps.get(mpuBucket).keys()) {
                 assert.fail('There should be no more keys in MPU bucket, ' +
                             `found "${key}"`);

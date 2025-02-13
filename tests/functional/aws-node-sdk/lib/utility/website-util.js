@@ -23,7 +23,7 @@ function _retrieveAWSCredentials(profile) {
 
     try {
         file = fs.readFileSync(filename, 'utf8');
-    } catch (e) {
+    } catch {
         const msg = `AWS credential file does not exist: ${filename}`;
         throw new Error(msg);
     }
