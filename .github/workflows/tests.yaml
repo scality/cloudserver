@@ -414,7 +414,7 @@ jobs:
         user: ${{ secrets.ARTIFACTS_USER }}
         password: ${{ secrets.ARTIFACTS_PASSWORD }}
         source: /tmp/artifacts
-      if: always()
+      if: false
 
   quota-tests:
     runs-on: ubuntu-latest

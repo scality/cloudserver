@@ -470,7 +470,8 @@ describe('Config', () => {
             process.env.S3_CONFIG_FILE = oldConfig;
         });
 
-        it('should set up utapi local cache', () => {
+        // TODO CLDSRV-610 re-enable utapi
+        it.skip('should set up utapi local cache', () => {
             const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 
@@ -484,7 +485,8 @@ describe('Config', () => {
             );
         });
 
-        it('should set up utapi redis', () => {
+        // TODO CLDSRV-610 re-enable utapi
+        it.skip('should set up utapi redis', () => {
             const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 

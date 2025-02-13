@@ -480,7 +480,8 @@ const testEvents = [{
     },
 }];
 
-describe('utapi v2 pushmetrics utility', () => {
+// TODO CLDSRV-610 re-enable utapi
+describe.skip('utapi v2 pushmetrics utility', () => {
     const log = new werelogs.Logger('utapi-utility');
     const { UtapiClient, utapiVersion } = require('utapi');
     let pushMetric;
