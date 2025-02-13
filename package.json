@@ -27,7 +27,6 @@
     "bucketclient": "scality/bucketclient#878134d36e6b1bd65f1573292ed18f91a61335d0",
     "bufferutil": "^4.0.8",
     "commander": "^12.1.0",
-    "cron-parser": "^4.9.0",
     "diskusage": "^1.2.0",
     "google-auto-auth": "^0.10.1",
     "http-proxy": "^1.18.1",
@@ -54,7 +53,6 @@
   "devDependencies": {
     "@eslint/compat": "^1.2.2",
     "@scality/eslint-config-scality": "scality/Guidelines#8.3.0",
-    "bluebird": "^3.7.2",
     "eslint": "^9.14.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-mocha": "^10.5.0",
