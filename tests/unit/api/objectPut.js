@@ -107,6 +107,9 @@ describe('parseTagFromQuery', () => {
 });
 
 describe('objectPut API', () => {
+    const dataClient = data.client;
+    const prevDataImplName = data.implName;
+
     beforeEach(() => {
         cleanup();
         sinon.spy(metadata, 'putObjectMD');
@@ -570,28 +573,46 @@ describe('objectPut API', () => {
             });
         });
     });
-    it('should forward a 400 back to client on metadata 408 response', () => {
-        metadata.putObjectMD =
-            (bucketName, objName, objVal, params, log, cb) =>
-                cb({ httpCode: 408 });
 
+    it('should forward a 400 back to client on metadata 408 response', () => {
+        data.switch(new storage.data.MultipleBackendGateway({
+            'us-east-1': dataClient,
+            'us-east-2': dataClient,
+        }, metadata, data.locStorageCheckFn));
+        data.implName = 'multipleBackends';
+
+        const originalPut = data.client.put;
+        data.client.put = (hashedStream, valueSize, keyContext, backendInfo, log, cb) => 
+            cb({ httpCode: 408 });
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 err => {
                     assert.strictEqual(err.code, 400);
+                    data.client.put = originalPut;
+                    data.switch(dataClient);
+                    data.implName = prevDataImplName;
                 });
         });
     });
 
-    it('should forward a 502 to the client for 4xx != 408', () => {
-        metadata.putObjectMD =
-            (bucketName, objName, objVal, params, log, cb) =>
-                cb({ httpCode: 412 });
+    it('should forward a 503 to the client for 4xx != 408', () => {
+        data.switch(new storage.data.MultipleBackendGateway({
+            'us-east-1': dataClient,
+            'us-east-2': dataClient,
+        }, metadata, data.locStorageCheckFn));
+        data.implName = 'multipleBackends';
+
+        const originalPut = data.client.put;
+        data.client.put = (hashedStream, valueSize, keyContext, backendInfo, log, cb) =>
+            cb({ httpCode: 412 });
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 err => {
-                    assert.strictEqual(err.code, 502);
+                    assert.strictEqual(err.code, 503);
+                    data.client.put = originalPut;
+                    data.switch(dataClient);
+                    data.implName = prevDataImplName;
                 });
         });
     });
