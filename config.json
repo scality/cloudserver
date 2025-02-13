@@ -67,27 +67,27 @@
         "allowFrom": ["127.0.0.1/8", "::1"]
     },
     "metadataClient": {
-        "host": "localhost",
+        "host": "127.0.0.1",
         "port": 9990
     },
     "dataClient": {
-        "host": "localhost",
+        "host": "127.0.0.1",
         "port": 9991
     },
     "pfsClient": {
-        "host": "localhost",
+        "host": "127.0.0.1",
         "port": 9992
     },
     "metadataDaemon": {
-        "bindAddress": "localhost",
+        "bindAddress": "127.0.0.1",
         "port": 9990
     },
     "dataDaemon": {
-        "bindAddress": "localhost",
+        "bindAddress": "127.0.0.1",
         "port": 9991
     },
     "pfsDaemon": {
-        "bindAddress": "localhost",
+        "bindAddress": "127.0.0.1",
         "port": 9992
     },
     "recordLog": {
