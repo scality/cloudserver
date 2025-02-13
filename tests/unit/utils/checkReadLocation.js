@@ -4,7 +4,7 @@ const { ConfigObject } = require('../../../lib/Config');
 const checkReadLocation =
     require('../../../lib/api/apiUtils/object/checkReadLocation');
 
-const locationConstraints = {  // eslint-disable-line quote-props
+const locationConstraints = {
     bucketmatch: {
         type: 'aws_s3',
         legacyAwsBehavior: true,

@@ -124,7 +124,7 @@ class HttpRequestAuthV4 extends stream.Writable {
 
     constructRequestStringToSign(canonicalReq) {
         const canonicalReqHash =
-              crypto.createHash('sha256').update(canonicalReq).digest('hex');
+            crypto.createHash('sha256').update(canonicalReq).digest('hex');
         const stringToSign = `AWS4-HMAC-SHA256\n${this._timestamp}\n` +
               `${this.getCredentialScope()}\n${canonicalReqHash}`;
         // console.log(`STRING TO SIGN: "${stringToSign}"`);

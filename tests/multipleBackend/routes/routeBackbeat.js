@@ -305,16 +305,14 @@ describe('backbeat routes', () => {
             assert.strictEqual(StorageClass, 'STANDARD');
         }
 
-        beforeEach(done =>
+        beforeEach(() =>
             bucketUtil.emptyIfExists(BUCKET_FOR_NULL_VERSION)
                 .then(() => s3.createBucket({ Bucket: BUCKET_FOR_NULL_VERSION }).promise())
-                .then(() => done(), err => done(err))
         );
 
-        afterEach(done =>
+        afterEach(() =>
             bucketUtil.empty(BUCKET_FOR_NULL_VERSION)
                 .then(() => s3.deleteBucket({ Bucket: BUCKET_FOR_NULL_VERSION }).promise())
-                .then(() => done(), err => done(err))
         );
 
         it('should update metadata of a current null version', done => {
