@@ -470,6 +470,7 @@ describe('Config', () => {
             process.env.S3_CONFIG_FILE = oldConfig;
         });
 
+        // Starting cloudserver 9.0, utapi is not supported anymore
         it('should set up utapi local cache', () => {
             const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
@@ -479,12 +480,13 @@ describe('Config', () => {
                 { name: 'zenko', sentinels: [{ host: 'localhost', port: 6379 }] },
             );
             assert.deepStrictEqual(
-                config.utapi.localCache,
-                config.localCache,
+                config.utapi,
+                undefined,
             );
         });
 
-        it('should set up utapi redis', () => {
+        // Starting cloudserver 9.0, utapi is not supported anymore
+        it('should not set up utapi redis', () => {
             const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 
@@ -492,22 +494,7 @@ describe('Config', () => {
                 config.redis,
                 { name: 'zenko', sentinels: [{ host: 'localhost', port: 6379 }] },
             );
-            assert.deepStrictEqual(
-                config.utapi.redis,
-                {
-                    host: 'localhost',
-                    port: 6379,
-                    retry: {
-                        connectBackoff: {
-                            min: 10,
-                            max: 1000,
-                            factor: 1.5,
-                            jitter: 0.1,
-                            deadline: 10000,
-                        },
-                    },
-                },
-            );
+            assert.deepStrictEqual(config.utapi, undefined);
         });
     });
 

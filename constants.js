@@ -186,24 +186,11 @@ const constants = {
     // these queries may or may not be supported at object level
     unsupportedBucketQueries: [
     ],
-    suppressedUtapiEventFields: [
-        'object',
-        'location',
-        'versionId',
-    ],
-    allowedUtapiEventFilterFields: [
-        'operationId',
-        'location',
-        'account',
-        'user',
-        'bucket',
-    ],
     arrayOfAllowed: [
         'objectPutTagging',
         'objectPutLegalHold',
         'objectPutRetention',
     ],
-    allowedUtapiEventFilterStates: ['allow', 'deny'],
     allowedRestoreObjectRequestTierValues: ['Standard'],
     validStorageClasses: [
         'STANDARD',
