@@ -1,7 +1,7 @@
+const { promisify } = require('util');
 const assert = require('assert');
 const crypto = require('crypto');
 
-const Promise = require('bluebird');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -41,7 +41,7 @@ describe('Object Part Copy', () => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            s3.createBucketPromise = Promise.promisify(s3.createBucket);
+            s3.createBucketPromise = promisify(s3.createBucket);
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
                 s3.createBucketPromise = createEncryptedBucketPromise;
             }

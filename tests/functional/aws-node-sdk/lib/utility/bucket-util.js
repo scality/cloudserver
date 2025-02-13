@@ -1,4 +1,3 @@
-const bluebird = require('bluebird');
 const AWS = require('aws-sdk');
 AWS.config.logger = console;
 const { S3 } = require('aws-sdk');
@@ -10,7 +9,7 @@ class BucketUtility {
         const s3Config = getConfig(profile, config);
 
         this.s3 = new S3(s3Config);
-        this.s3.config.setPromisesDependency(bluebird);
+        this.s3.config.setPromisesDependency(Promise);
         this.s3.config.update({
             maxRetries: 0,
         });

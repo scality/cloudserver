@@ -1,14 +1,14 @@
+const { promisify } = require('util');
 const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
 const moment = require('moment');
-const Promise = require('bluebird');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
 
-const changeLockPromise = Promise.promisify(changeObjectLock);
+const changeLockPromise = promisify(changeObjectLock);
 
 const bucketName = 'buckettestgetobject';
 const objectName = 'someObject';

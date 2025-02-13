@@ -1,6 +1,5 @@
 const assert = require('assert');
 const moment = require('moment');
-const Promise = require('bluebird');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const changeObjectLock = require('../../../../utilities/objectLock-util');

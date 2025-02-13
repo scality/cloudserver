@@ -1,5 +1,5 @@
 const assert = require('assert');
-const process = require('process');
+const process = require('node:process');
 const cp = require('child_process');
 const { parseString } = require('xml2js');
 

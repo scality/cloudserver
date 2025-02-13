@@ -1,8 +1,8 @@
+const { promisify } = require('util');
 const { exec, execFile } = require('child_process');
 const { writeFile, createReadStream } = require('fs');
 
 const assert = require('assert');
-const Promise = require('bluebird');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -13,9 +13,9 @@ const bucket = 'bucket-for-range-test';
 const key = 'key-for-range-test';
 let s3;
 
-const execAsync = Promise.promisify(exec);
-const execFileAsync = Promise.promisify(execFile);
-const writeFileAsync = Promise.promisify(writeFile);
+const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
+const writeFileAsync = promisify(writeFile);
 
 // Get the expected end values for various ranges (e.g., '-10', '10-', '-')
 function getOuterRange(range, bytes) {
@@ -64,20 +64,28 @@ function checkRanges(range, bytes) {
 }
 
 // Create 5MB parts and upload them as parts of a MPU
-function uploadParts(bytes, uploadId) {
+async function uploadParts(bytes, uploadId) {
     const name = `hashedFile.${bytes}`;
-
-    return Promise.map([1, 2], part =>
-        execFileAsync('dd', [`if=${name}`, `of=${name}.mpuPart${part}`,
-            'bs=5242880', `skip=${part - 1}`, 'count=1'])
-        .then(() => s3.uploadPart({
-            Bucket: bucket,
-            Key: key,
-            PartNumber: part,
-            UploadId: uploadId,
-            Body: createReadStream(`${name}.mpuPart${part}`),
-        }).promise())
-    );
+    for (let part = 1; part <= 2; part++) {
+        try {
+            await execFileAsync('dd', [
+                `if=${name}`,
+                `of=${name}.mpuPart${part}`,
+                'bs=5242880', 
+                `skip=${part - 1}`,
+                'count=1',
+            ]);
+            await s3.uploadPart({
+                Bucket: bucket,
+                Key: key,
+                PartNumber: part,
+                UploadId: uploadId,
+                Body: createReadStream(`${name}.mpuPart${part}`),
+            }).promise();
+        } catch (error) {
+            throw new Error(`Error uploading part ${part}: ${error.message}`);
+        }
+    }
 }
 
 // Create a hashed file of size bytes

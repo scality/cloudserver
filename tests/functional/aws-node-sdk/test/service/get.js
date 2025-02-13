@@ -1,6 +1,5 @@
 const assert = require('assert');
 const tv4 = require('tv4');
-const bluebird = require('bluebird');
 const async = require('async');
 const { S3 } = require('aws-sdk');
 
@@ -197,7 +196,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
 
                 before(() => {
                     anotherS3 = new S3(getConfig('lisa'));
-                    anotherS3.config.setPromisesDependency(bluebird);
+                    anotherS3.config.setPromisesDependency(Promise);
                 });
 
                 it('should not return other accounts bucket list', done => {
