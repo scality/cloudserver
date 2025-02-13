@@ -5,6 +5,11 @@
 [![Docker Pulls][badgedocker]](https://hub.docker.com/r/zenko/cloudserver)
 [![Docker Pulls][badgetwitter]](https://twitter.com/zenko)
 
+## Build Status
+
+![Public Build Status][badgepub]
+![Private Build Status][badgepriv]
+
 ## Overview
 
 CloudServer (formerly S3 Server) is an open-source Amazon S3-compatible
