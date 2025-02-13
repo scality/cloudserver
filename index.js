@@ -1,4 +1,4 @@
-'use strict'; // eslint-disable-line strict
+'use strict';
 
 require('werelogs').stderrUtils.catchAndTimestampStderr(
     undefined,

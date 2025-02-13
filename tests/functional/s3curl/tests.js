@@ -1,8 +1,8 @@
-'use strict'; // eslint-disable-line strict
+'use strict';
 
 const assert = require('assert');
 const proc = require('child_process');
-const process = require('process');
+const process = require('node:process');
 const parseString = require('xml2js').parseString;
 
 const conf = require('../../../lib/Config').config;

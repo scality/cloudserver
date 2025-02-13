@@ -1,4 +1,4 @@
-'use strict'; // eslint-disable-line strict
+'use strict';
 
 const { config } = require('./lib/Config.js');
 const MetadataFileServer =

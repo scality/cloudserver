@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-'use strict'; // eslint-disable-line strict
+'use strict';
 
 const {
     startWSManagementClient,
