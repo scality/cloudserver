@@ -79,7 +79,6 @@ describe('List parts', () => {
 
 /** Tests for special characters in XML **/
 
-/* eslint-disable no-param-reassign */
 function createPart(sigCfg, bucketUtil, s3, key) {
     let uploadId;
     return s3.createBucket({ Bucket: bucket }).promise()
@@ -92,7 +91,7 @@ function createPart(sigCfg, bucketUtil, s3, key) {
     })
     .then(() => Promise.resolve(uploadId));
 }
-/* eslint-enable no-param-reassign */
+
 function deletePart(s3, bucketUtil, key, uploadId) {
     process.stdout.write('Emptying bucket');
 
@@ -106,7 +105,7 @@ function deletePart(s3, bucketUtil, key, uploadId) {
     });
 }
 
-function test(s3, bucket, key, uploadId, cb) {
+function testFunc(s3, bucket, key, uploadId, cb) {
     s3.listParts({
         Bucket: bucket,
         Key: key,
@@ -136,7 +135,7 @@ describe('List parts - object keys with special characters: `&`', () => {
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
 
         it('should list parts of an object with `&` in its key',
-            done => test(s3, bucket, key, uploadId, done));
+            done => testFunc(s3, bucket, key, uploadId, done));
     });
 });
 
@@ -158,7 +157,7 @@ describe('List parts - object keys with special characters: `"`', () => {
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
 
         it('should list parts of an object with `"` in its key',
-            done => test(s3, bucket, key, uploadId, done));
+            done => testFunc(s3, bucket, key, uploadId, done));
     });
 });
 
@@ -180,7 +179,7 @@ describe('List parts - object keys with special characters: `\'`', () => {
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
 
         it('should list parts of an object with `\'` in its key',
-            done => test(s3, bucket, key, uploadId, done));
+            done => testFunc(s3, bucket, key, uploadId, done));
     });
 });
 
@@ -202,7 +201,7 @@ describe('List parts - object keys with special characters: `<`', () => {
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
 
         it('should list parts of an object with `<` in its key',
-            done => test(s3, bucket, key, uploadId, done));
+            done => testFunc(s3, bucket, key, uploadId, done));
     });
 });
 
@@ -224,6 +223,6 @@ describe('List parts - object keys with special characters: `>`', () => {
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
 
         it('should list parts of an object with `>` in its key',
-            done => test(s3, bucket, key, uploadId, done));
+            done => testFunc(s3, bucket, key, uploadId, done));
     });
 });

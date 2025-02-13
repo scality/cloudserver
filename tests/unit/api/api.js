@@ -52,8 +52,10 @@ describe('api.callApiMethod', () => {
     it('should attach apiMethod to request', done => {
         const testMethod = 'bucketGet';
         api.callApiMethod(testMethod, request, response, log, () => {
-            assert.strictEqual(request.apiMethod, testMethod);
-            done();
+            if (request.apiMethod !== testMethod) {
+                return done(new Error('apiMethod not attached to request'));
+            }
+            return done();
         });
     });
 
