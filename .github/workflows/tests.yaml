@@ -120,6 +120,7 @@ jobs:
         yarn run cover test_legacy_location
       env:
         S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+        NO_PROXY: "test.scality.com,scality.com"
     - name: Upload test results to Codecov
       uses: codecov/test-results-action@v1
       with:
