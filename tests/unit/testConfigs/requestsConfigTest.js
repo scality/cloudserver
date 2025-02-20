@@ -15,17 +15,20 @@ describe('requestsConfigAssert', () => {
                 viaProxy: false,
                 trustedProxyCIDRs: [],
                 extractClientIPFromHeader: '',
+                extractProtocolFromHeader: '',
             });
         },
         'shouldnt throw an error if requests config via proxy is set to false');
     });
     it('should not throw an error if requests config via proxy is true, ' +
-        'trustedProxyCIDRs & extractClientIPFromHeader are set', () => {
+        'trustedProxyCIDRs & extractClientIPFromHeader & ' +
+        'extractProtocolFromHeader are set', () => {
         assert.doesNotThrow(() => {
             requestsConfigAssert({
                 viaProxy: true,
                 trustedProxyCIDRs: ['123.123.123.123'],
                 extractClientIPFromHeader: 'x-forwarded-for',
+                extractProtocolFromHeader: 'x-forwarded-proto',
             });
         },
         'should not throw an error if requests config ' +
@@ -38,6 +41,7 @@ describe('requestsConfigAssert', () => {
                 viaProxy: 1,
                 trustedProxyCIDRs: ['123.123.123.123'],
                 extractClientIPFromHeader: 'x-forwarded-for',
+                extractProtocolFromHeader: 'x-forwarded-proto',
             });
         },
         '/config: invalid requests configuration. viaProxy must be a ' +
@@ -50,6 +54,7 @@ describe('requestsConfigAssert', () => {
                 viaProxy: true,
                 trustedProxyCIDRs: 1,
                 extractClientIPFromHeader: 'x-forwarded-for',
+                extractProtocolFromHeader: 'x-forwarded-proto',
             });
         },
         '/config: invalid requests configuration. ' +
@@ -63,6 +68,7 @@ describe('requestsConfigAssert', () => {
                 viaProxy: true,
                 trustedProxyCIDRs: [],
                 extractClientIPFromHeader: 'x-forwarded-for',
+                extractProtocolFromHeader: 'x-forwarded-proto',
             });
         },
         '/config: invalid requests configuration. ' +
@@ -76,10 +82,25 @@ describe('requestsConfigAssert', () => {
                 viaProxy: true,
                 trustedProxyCIDRs: [],
                 extractClientIPFromHeader: 1,
+                extractProtocolFromHeader: 'x-forwarded-proto',
             });
         },
         '/config: invalid requests configuration. ' +
         'extractClientIPFromHeader must be set if viaProxy is ' +
+        'set to true and must be a string/');
+    });
+    it('should throw an error if requests.extractProtocolFromHeader ' +
+    'is not a string', () => {
+        assert.throws(() => {
+            requestsConfigAssert({
+                viaProxy: true,
+                trustedProxyCIDRs: [],
+                extractClientIPFromHeader: 'x-forwarded-for',
+                extractProtocolFromHeader: 1,
+            });
+        },
+        '/config: invalid requests configuration. ' +
+        'extractProtocolFromHeader must be set if viaProxy is ' +
         'set to true and must be a string/');
     });
     it('should throw an error if requests.extractClientIPFromHeader ' +
@@ -89,10 +110,25 @@ describe('requestsConfigAssert', () => {
                 viaProxy: true,
                 trustedProxyCIDRs: [],
                 extractClientIPFromHeader: '',
+                extractProtocolFromHeader: 'x-forwarded-proto',
             });
         },
         '/config: invalid requests configuration. ' +
         'extractClientIPFromHeader must be set if viaProxy is ' +
+        'set to true and must be a string/');
+    });
+    it('should throw an error if requests.extractProtocolFromHeader ' +
+    'is empty', () => {
+        assert.throws(() => {
+            requestsConfigAssert({
+                viaProxy: true,
+                trustedProxyCIDRs: [],
+                extractClientIPFromHeader: 'x-forwarded-for',
+                extractProtocolFromHeader: '',
+            });
+        },
+        '/config: invalid requests configuration. ' +
+        'extractProtocolFromHeader must be set if viaProxy is ' +
         'set to true and must be a string/');
     });
 });
