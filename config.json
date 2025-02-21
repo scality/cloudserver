@@ -12,6 +12,11 @@
         "127.0.0.2": "us-east-1",
         "s3.amazonaws.com": "us-east-1"
     },
+    "certFilePaths": {
+        "ca": "conf/lab-ca.crt",
+        "key": "conf/s3.key",
+        "cert": "conf/s3.crt"
+    },
     "websiteEndpoints": ["s3-website-us-east-1.amazonaws.com",
                         "s3-website.us-east-2.amazonaws.com",
                         "s3-website-us-west-1.amazonaws.com",

@@ -1,0 +1,9 @@
+
+- Create a 1MB file for testing
+- Run cloudserver locally with SSL (mem backend is good)
+
+docker run --rm -it -v ~/.aws/credentials:/root/.aws/credentials -v /home/fred/Downloads/enwiki:/aws -v /home/fred/dev/cloudserver/conf/lab-ca.pem:/ssl/lab-ca.pem --network host amazon/aws-cli:2.22.35 s3api put-object --bucket test --key wiki1m --body /aws/enwik9-1M --endpoint-url=https://127.0.0.1:8000/ --profile bart --ca-bundle /ssl/lab-ca.pem
+
+docker run --rm -it -v ~/.aws/credentials:/root/.aws/credentials -v /home/fred/Downloads/enwiki:/aws -v /home/fred/dev/cloudserver/conf/lab-ca.pem:/ssl/lab-ca.pem --network host amazon/aws-cli:2.23.15 s3api put-object --bucket test --key wiki1m --body /aws/enwik9-1M --endpoint-url=https://127.0.0.1:8000/ --profile bart --ca-bundle /ssl/lab-ca.pem
+
+

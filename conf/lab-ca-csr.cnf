@@ -1,0 +1,18 @@
+[ req ]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+
+[ req_distinguished_name ]
+C = US
+ST = VA
+L = Ashburn
+O = Scality
+
+[ v3_req ]
+# Extensions to add to a certificate request
+
+basicConstraints = CA:TRUE
+keyUsage = cRLSign, keyCertSign
+subjectKeyIdentifier = hash
+
