@@ -1,5 +1,6 @@
 const assert = require('assert');
 const { BucketInfo, BucketPolicy } = require('arsenal').models;
+const AuthInfo = require('arsenal').auth.AuthInfo;
 const constants = require('../../../constants');
 const { isBucketAuthorized, isObjAuthorized, validatePolicyResource }
     = require('../../../lib/api/apiUtils/authorization/permissionChecks');
@@ -35,6 +36,9 @@ const basePolicyObj = {
 };
 const bucketName = 'matchme';
 const log = new DummyRequestLogger();
+const publicUserAuthInfo = new AuthInfo({
+    canonicalID: constants.publicId,
+});
 
 const authTests = [
     {
@@ -292,8 +296,18 @@ describe('bucket policy authorization', () => {
         it('should allow access to public user if principal is set to "*"',
         done => {
             const allowed = isBucketAuthorized(bucket, bucAction,
-                constants.publicId, null, log);
+                constants.publicId, publicUserAuthInfo, log);
             assert.equal(allowed, true);
+            done();
+        });
+
+        it('should deny access to public user if principal is not set to "*"', function itFn(done) {
+            const newPolicy = this.test.basePolicy;
+            newPolicy.Statement[0].Principal = { AWS: authInfo.getArn() };
+            bucket.setBucketPolicy(newPolicy);
+            const allowed = isBucketAuthorized(bucket, bucAction,
+                constants.publicId, publicUserAuthInfo, log);
+            assert.equal(allowed, false);
             done();
         });
 
@@ -376,7 +390,7 @@ describe('bucket policy authorization', () => {
         it('should allow access to public user if principal is set to "*"',
         done => {
             const allowed = isObjAuthorized(bucket, object, objAction,
-                constants.publicId, null, log);
+                constants.publicId, publicUserAuthInfo, log);
             assert.equal(allowed, true);
             done();
         });
