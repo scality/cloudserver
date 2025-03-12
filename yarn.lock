@@ -1251,9 +1251,9 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#8.2.3":
-  version "8.2.3"
-  resolved "git+https://github.com/scality/arsenal#1766027b31fdfbcb97a367aa88b1324cac7652a7"
+"arsenal@git+https://github.com/scality/arsenal#8.2.5":
+  version "8.2.5"
+  resolved "git+https://github.com/scality/arsenal#3bb996c9282dd54f50004b2008fbc1675a327b69"
   dependencies:
     "@azure/identity" "^4.5.0"
     "@azure/storage-blob" "^12.25.0"
@@ -1273,7 +1273,7 @@ arraybuffer.prototype.slice@^1.0.4:
     bson "^6.8.0"
     debug "^4.3.7"
     diskusage "^1.2.0"
-    fcntl "github:scality/node-fcntl#0.2.2"
+    fcntl "github:scality/node-fcntl#0.3.0"
     httpagent scality/httpagent#1.1.0
     https-proxy-agent "^7.0.5"
     ioredis "^5.4.1"
@@ -2668,6 +2668,14 @@ fast-xml-parser@^4.4.1:
     bindings "^1.1.1"
     nan "^2.3.2"
     node-gyp "^8.0.0"
+
+"fcntl@github:scality/node-fcntl#0.3.0":
+  version "0.3.0"
+  resolved "https://codeload.github.com/scality/node-fcntl/tar.gz/397840a8842e6d8067b6be8c22f1a2b81486f123"
+  dependencies:
+    bindings "^1.1.1"
+    node-addon-api "^8.3.0"
+    node-gyp "^11.1.0"
 
 file-entry-cache@^8.0.0:
   version "8.0.0"
