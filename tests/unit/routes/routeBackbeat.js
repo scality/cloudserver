@@ -214,7 +214,6 @@ describe('routeBackbeat', () => {
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
 
-        /* eslint-disable-next-line no-void */
         void await endPromise;
 
         assert.strictEqual(mockResponse.statusCode, 200);
@@ -244,7 +243,6 @@ describe('routeBackbeat', () => {
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
 
-        /* eslint-disable-next-line no-void */
         void await endPromise;
 
         assert.strictEqual(mockResponse.statusCode, 500);
@@ -260,7 +258,6 @@ describe('routeBackbeat', () => {
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
 
-        /* eslint-disable-next-line no-void */
         void await endPromise;
 
         assert.strictEqual(mockResponse.statusCode, 405);
@@ -284,7 +281,6 @@ describe('routeBackbeat', () => {
         mockRequest.destroy = () => {};
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
 
-        /* eslint-disable-next-line no-void */
         void await endPromise;
         assert.strictEqual(mockResponse.statusCode, 403);
     });
@@ -315,7 +311,6 @@ describe('routeBackbeat', () => {
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
 
-        /* eslint-disable-next-line no-void */
         void await endPromise;
         assert.strictEqual(mockResponse.statusCode, 200);
         assert.deepStrictEqual(mockResponse.body, null);
@@ -348,7 +343,6 @@ describe('routeBackbeat', () => {
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
 
-        /* eslint-disable-next-line no-void */
         void await endPromise;
         assert.strictEqual(mockResponse.statusCode, 200);
         assert.deepStrictEqual(mockResponse.body, {});
@@ -380,7 +374,6 @@ describe('routeBackbeat', () => {
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
 
-        /* eslint-disable-next-line no-void */
         void await endPromise;
         assert.strictEqual(mockResponse.statusCode, 200);
     });
@@ -397,6 +390,7 @@ describe('routeBackbeat', () => {
                 },
             ],
         }));
+        putRequest.destroy = () => { };
         await promisify(dataWrapper.client.put)(putRequest, 91, 1, 'reqUids');
         mockRequest = prepareDummyRequest({
             'if-unmodified-since': '2000-01-01T00:00:00.000Z',
@@ -424,7 +418,6 @@ describe('routeBackbeat', () => {
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
 
-        /* eslint-disable-next-line no-void */
         void await endPromise;
         assert.strictEqual(mockResponse.statusCode, 200);
         assert.deepStrictEqual(mockResponse.body, null);
