@@ -243,5 +243,16 @@ describe('cold storage', () => {
                 done();
             });
         });
+
+        it('should fail if _updateRestoreInfo fails', done => {
+            const objectMd = new ObjectMD().setDataStoreName(
+                'location-dmf-v1'
+            ).setArchive(false).getValue();
+
+            startRestore(objectMd, { days: 7 }, log, err => {
+                assert.deepStrictEqual(err, errors.InternalError);
+                done();
+            });
+        });
     });
 });

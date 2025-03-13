@@ -9,7 +9,7 @@ const bucketPutACL = require('../../../lib/api/bucketPutACL');
 const constants = require('../../../constants');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const objectPut = require('../../../lib/api/objectPut');
-const { objectDelete } = require('../../../lib/api/objectDelete');
+const { objectDelete, objectDeleteInternal } = require('../../../lib/api/objectDelete');
 const objectGet = require('../../../lib/api/objectGet');
 const DummyRequest = require('../DummyRequest');
 const mpuUtils = require('../utils/mpuUtils');
@@ -257,6 +257,38 @@ describe('objectDelete API', () => {
                             sinon.match.any,
                             sinon.match.any
                         );
+                        done();
+                    });
+                });
+        });
+    });
+
+    it('should log when expiration is trying to delete a master version', done => {
+        const warnStub = sinon.stub(log, 'warn');
+        const testBucketPutVersionRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            headers: { 'x-amz-bucket-object-lock-enabled': 'true' },
+            url: `/${bucketName}`,
+        });
+
+        bucketPut(authInfo, testBucketPutVersionRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest,
+                undefined, log, (err, data) => {
+                    const deleteObjectVersionRequest = new DummyRequest({
+                        bucketName,
+                        namespace,
+                        objectKey,
+                        headers: {},
+                        url: `/${bucketName}/${objectKey}?versionId=${data['x-amz-version-id']}`,
+                        query: {
+                            versionId: data['x-amz-version-id'],
+                        },
+                    });
+                    objectDeleteInternal(authInfo, deleteObjectVersionRequest, log, true, err => {
+                        assert.strictEqual(err, null);
+                        sinon.assert.calledWith(warnStub, 'expiration is trying to delete a master version ' +
+                            'of an object with versioning enabled');
                         done();
                     });
                 });

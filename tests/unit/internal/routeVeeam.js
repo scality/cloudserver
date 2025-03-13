@@ -1,6 +1,7 @@
 const assert = require('assert');
 const { DummyRequestLogger } = require('../helpers');
 const routeVeeam = require('../../../lib/routes/routeVeeam');
+const DummyRequest = require('../DummyRequest');
 
 const log = new DummyRequestLogger();
 
@@ -109,5 +110,27 @@ describe('RouteVeeam: _normalizeVeeamRequest', () => {
             headers: [],
         };
         assert.doesNotThrow(() => routeVeeam._normalizeVeeamRequest(request));
+    });
+});
+
+describe('RouteVeeam: routeVeeam', () => {
+    it('should return error for unsupported routes', done => {
+        const req = new DummyRequest({
+            method: 'PATCH',
+            resourceType: 'bucket',
+            subresource: 'veeam',
+            apiMethod: 'routeVeeam',
+            url: '/bucket/veeam',
+        });
+        req.method = 'PATCH';
+        routeVeeam.routeVeeam('127.0.0.1', req, {
+            setHeader: () => {},
+            writeHead: () => {},
+            end: data => {
+                assert(data.includes('MethodNotAllowed'));
+                done();
+            },
+            headersSent: false,
+        }, log);
     });
 });

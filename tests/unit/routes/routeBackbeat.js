@@ -1,14 +1,17 @@
 const assert = require('assert');
 const sinon = require('sinon');
+const { promisify } = require('util');
 const metadataUtils = require('../../../lib/metadata/metadataUtils');
 const storeObject = require('../../../lib/api/apiUtils/object/storeObject');
 const metadata = require('../../../lib/metadata/wrapper');
 const { DummyRequestLogger } = require('../helpers');
+const dataWrapper = require('../../../lib/data/wrapper');
 const DummyRequest = require('../DummyRequest');
+const { auth } = require('arsenal');
 
 const log = new DummyRequestLogger();
 
-function prepareDummyRequest(headers = {}) {
+function prepareDummyRequest(headers = {}, body = '') {
     const request = new DummyRequest({
         hostname: 'localhost',
         method: 'PUT',
@@ -17,8 +20,11 @@ function prepareDummyRequest(headers = {}) {
         headers,
         socket: {
             remoteAddress: '0.0.0.0',
+            destroy: () => {},
+            on: () => {},
+            removeListener: () => {},
         },
-    }, '{"replicationInfo":"{}"}');
+    }, body || '{"replicationInfo":"{}"}');
     return request;
 }
 
@@ -183,5 +189,244 @@ describe('routeBackbeat', () => {
 
         assert.strictEqual(mockResponse.statusCode, 200);
         assert.deepStrictEqual(mockResponse.body, [{}]);
+    });
+
+    it('should put metadata', async () => {
+        mockRequest.method = 'PUT';
+        mockRequest.url = '/_/backbeat/metadata/bucket0/key0';
+        mockRequest.headers = {
+            'x-scal-versioning-required': 'true',
+        };
+        mockRequest.destroy = () => {};
+
+        sandbox.stub(metadata, 'putObjectMD').callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+            cb(null, {});
+        });
+
+        metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
+            const bucketInfo = {
+                getVersioningConfiguration: () => ({ Status: 'Enabled' }),
+                isVersioningEnabled: () => true,
+            };
+            const objMd = {};
+            callback(null, bucketInfo, objMd);
+        });
+
+        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+
+        /* eslint-disable-next-line no-void */
+        void await endPromise;
+
+        assert.strictEqual(mockResponse.statusCode, 200);
+        assert.deepStrictEqual(mockResponse.body, {});
+    });
+
+    it('should handle error when putting metadata', async () => {
+        mockRequest.method = 'PUT';
+        mockRequest.url = '/_/backbeat/metadata/bucket0/key0';
+        mockRequest.headers = {
+            'x-scal-versioning-required': 'true',
+        };
+        mockRequest.destroy = () => {};
+
+        sandbox.stub(metadata, 'putObjectMD').callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+            cb(new Error('error'));
+        });
+
+        metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
+            const bucketInfo = {
+                getVersioningConfiguration: () => ({ Status: 'Enabled' }),
+                isVersioningEnabled: () => true,
+            };
+            const objMd = {};
+            callback(null, bucketInfo, objMd);
+        });
+
+        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+
+        /* eslint-disable-next-line no-void */
+        void await endPromise;
+
+        assert.strictEqual(mockResponse.statusCode, 500);
+    });
+
+    it('should be rejected when using a wrong route', async () => {
+        mockRequest.method = 'PUT';
+        mockRequest.url = '/_/backbeat/metadata/bucket0';
+        mockRequest.headers = {
+            'x-scal-versioning-required': 'true',
+        };
+        mockRequest.destroy = () => {};
+
+        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+
+        /* eslint-disable-next-line no-void */
+        void await endPromise;
+
+        assert.strictEqual(mockResponse.statusCode, 405);
+    });
+
+    it('should be rejected when trying batchDelete as a public user', async () => {
+        mockRequest = prepareDummyRequest(null, JSON.stringify({
+            Locations: [
+                {
+                    key: 'key0',
+                    bucket: 'bucket0',
+                },
+            ],
+        }));
+
+        mockRequest.method = 'POST';
+        mockRequest.url = '/_/backbeat/batchdelete';
+        mockRequest.headers = {
+            'x-scal-versioning-required': 'true',
+        };
+        mockRequest.destroy = () => {};
+        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+
+        /* eslint-disable-next-line no-void */
+        void await endPromise;
+        assert.strictEqual(mockResponse.statusCode, 403);
+    });
+
+    it('should batchDelete', async () => {
+        mockRequest = prepareDummyRequest(null, JSON.stringify({
+            Locations: [
+                {
+                    key: 'key0',
+                    bucket: 'bucket0',
+                },
+            ],
+        }));
+
+        mockRequest.method = 'POST';
+        mockRequest.url = '/_/backbeat/batchdelete';
+        mockRequest.headers = {
+            'x-scal-versioning-required': 'true',
+        };
+        mockRequest.destroy = () => {};
+        const doAuthStub = sandbox.stub(auth.server, 'doAuth');
+        doAuthStub.callsFake((req, log, cb) => {
+            cb(null, {
+                canonicalID: 'id',
+                getCanonicalID: () => 'id',
+            });
+        });
+
+        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+
+        /* eslint-disable-next-line no-void */
+        void await endPromise;
+        assert.strictEqual(mockResponse.statusCode, 200);
+        assert.deepStrictEqual(mockResponse.body, null);
+    });
+
+    it('should batchDelete with conditions and azure location', async () => {
+        mockRequest = prepareDummyRequest({
+            'if-unmodified-since': '1980-01-01T00:00:00.000Z',
+            'x-scal-versioning-required': 'true',
+            'x-scal-storage-class': 'azurebackend',
+        }, JSON.stringify({
+            Locations: [
+                {
+                    key: 'key0',
+                    bucket: 'bucket0',
+                },
+            ],
+        }));
+
+        mockRequest.method = 'POST';
+        mockRequest.url = '/_/backbeat/batchdelete';
+        mockRequest.destroy = () => {};
+        const doAuthStub = sandbox.stub(auth.server, 'doAuth');
+        doAuthStub.callsFake((req, log, cb) => {
+            cb(null, {
+                canonicalID: 'id',
+                getCanonicalID: () => 'id',
+            });
+        });
+
+        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+
+        /* eslint-disable-next-line no-void */
+        void await endPromise;
+        assert.strictEqual(mockResponse.statusCode, 200);
+        assert.deepStrictEqual(mockResponse.body, {});
+    });
+
+    it('should not batchDelete with conditions if "if-unmodified-since" header unset', async () => {
+        mockRequest = prepareDummyRequest({
+            'x-scal-versioning-required': 'true',
+            'x-scal-storage-class': 'azurebackend',
+        }, JSON.stringify({
+            Locations: [
+                {
+                    key: 'key0',
+                    bucket: 'bucket0',
+                },
+            ],
+        }));
+
+        mockRequest.method = 'POST';
+        mockRequest.url = '/_/backbeat/batchdelete';
+        mockRequest.destroy = () => {};
+        const doAuthStub = sandbox.stub(auth.server, 'doAuth');
+        doAuthStub.callsFake((req, log, cb) => {
+            cb(null, {
+                canonicalID: 'id',
+                getCanonicalID: () => 'id',
+            });
+        });
+
+        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+
+        /* eslint-disable-next-line no-void */
+        void await endPromise;
+        assert.strictEqual(mockResponse.statusCode, 200);
+    });
+
+    it('should batchDelete with conditions and non-azure location', async () => {
+        const putRequest = prepareDummyRequest({
+            'x-scal-versioning-required': 'true',
+        }, JSON.stringify({
+            Locations: [
+                {
+                    key: 'key0',
+                    bucket: 'bucket0',
+                    lastModified: '2020-01-01T00:00:00.000Z',
+                },
+            ],
+        }));
+        await promisify(dataWrapper.client.put)(putRequest, 91, 1, 'reqUids');
+        mockRequest = prepareDummyRequest({
+            'if-unmodified-since': '2000-01-01T00:00:00.000Z',
+            'x-scal-versioning-required': 'true',
+            'x-scal-storage-class': 'gcpbackend',
+            'x-scal-tags': JSON.stringify({ key: 'value' }),
+        }, JSON.stringify({
+            Locations: [
+                {
+                    key: 1,
+                    bucket: 'bucket0',
+                },
+            ],
+        }));
+        mockRequest.method = 'POST';
+        mockRequest.url = '/_/backbeat/batchdelete';
+        mockRequest.destroy = () => {};
+        const doAuthStub = sandbox.stub(auth.server, 'doAuth');
+        doAuthStub.callsFake((req, log, cb) => {
+            cb(null, {
+                canonicalID: 'id',
+                getCanonicalID: () => 'id',
+            });
+        });
+
+        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+
+        /* eslint-disable-next-line no-void */
+        void await endPromise;
+        assert.strictEqual(mockResponse.statusCode, 200);
+        assert.deepStrictEqual(mockResponse.body, null);
     });
 });
