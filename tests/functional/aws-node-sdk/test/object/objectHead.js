@@ -1,6 +1,6 @@
 const assert = require('assert');
 const async = require('async');
-const { errors } = require('arsenal');
+const { errorInstances } = require('arsenal');
 const moment = require('moment');
 const Promise = require('bluebird');
 
@@ -127,7 +127,7 @@ describe('HEAD object, conditions', () => {
         it('If-Match: returns PreconditionFailed when ETag does not match',
             done => {
                 requestHead({ IfMatch: 'non-matching ETag' }, err => {
-                    checkError(err, errors.PreconditionFailed.code);
+                    checkError(err, errorInstances.PreconditionFailed.code);
                     done();
                 });
             });
@@ -244,7 +244,7 @@ describe('HEAD object, conditions', () => {
             'lastModified date is lesser',
             done => {
                 requestHead({ IfUnmodifiedSince: dateFromNow(-1) }, err => {
-                    checkError(err, errors.PreconditionFailed.code);
+                    checkError(err, errorInstances.PreconditionFailed.code);
                     done();
                 });
             });
@@ -276,7 +276,7 @@ describe('HEAD object, conditions', () => {
                 IfMatch: 'non-matching',
                 IfUnmodifiedSince: dateFromNow(-1),
             }, err => {
-                checkError(err, errors.PreconditionFailed.code);
+                checkError(err, errorInstances.PreconditionFailed.code);
                 done();
             });
         });
@@ -286,7 +286,7 @@ describe('HEAD object, conditions', () => {
                 IfMatch: 'non-matching',
                 IfUnmodifiedSince: dateFromNow(1),
             }, err => {
-                checkError(err, errors.PreconditionFailed.code);
+                checkError(err, errorInstances.PreconditionFailed.code);
                 done();
             });
         });
@@ -318,7 +318,7 @@ describe('HEAD object, conditions', () => {
                 IfMatch: 'non-matching',
                 IfModifiedSince: dateFromNow(1),
             }, err => {
-                checkError(err, errors.PreconditionFailed.code);
+                checkError(err, errorInstances.PreconditionFailed.code);
                 done();
             });
         });
@@ -328,7 +328,7 @@ describe('HEAD object, conditions', () => {
                 IfMatch: 'non-matching',
                 IfModifiedSince: dateFromNow(-1),
             }, err => {
-                checkError(err, errors.PreconditionFailed.code);
+                checkError(err, errorInstances.PreconditionFailed.code);
                 done();
             });
         });
@@ -392,7 +392,7 @@ describe('HEAD object, conditions', () => {
                 IfNoneMatch: 'non-matching',
                 IfUnmodifiedSince: dateFromNow(-1),
             }, err => {
-                checkError(err, errors.PreconditionFailed.code);
+                checkError(err, errorInstances.PreconditionFailed.code);
                 done();
             });
         });
@@ -412,7 +412,7 @@ describe('HEAD object, conditions', () => {
                 IfNoneMatch: etagTrim,
                 IfUnmodifiedSince: dateFromNow(-1),
             }, err => {
-                checkError(err, errors.PreconditionFailed.code);
+                checkError(err, errorInstances.PreconditionFailed.code);
                 done();
             });
         });

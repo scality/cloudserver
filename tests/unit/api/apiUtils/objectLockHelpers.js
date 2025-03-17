@@ -1,6 +1,6 @@
 const assert = require('assert');
 const moment = require('moment');
-const { errors } = require('arsenal');
+const { errorInstances } = require('arsenal');
 const BucketInfo = require('arsenal').models.BucketInfo;
 const { DummyRequestLogger } = require('../../helpers');
 const {
@@ -35,7 +35,7 @@ describe('objectLockHelpers: validateHeaders', () => {
         };
         const objectLockValidationError
             = validateHeaders(objLockDisabledBucketInfo, headers, log);
-        const expectedError = errors.InvalidRequest.customizeDescription(
+        const expectedError = errorInstances.InvalidRequest.customizeDescription(
             'Bucket is missing ObjectLockConfiguration');
         assert.strictEqual(objectLockValidationError.is.InvalidRequest, true);
         assert.strictEqual(objectLockValidationError.description,
@@ -87,7 +87,7 @@ describe('objectLockHelpers: validateHeaders', () => {
         };
         const objectLockValidationError
             = validateHeaders(bucketInfo, headers, log);
-        const expectedError = errors.InvalidArgument.customizeDescription(
+        const expectedError = errorInstances.InvalidArgument.customizeDescription(
             'x-amz-object-lock-retain-until-date and x-amz-object-lock-mode ' +
             'must both be supplied');
         assert.strictEqual(objectLockValidationError.is.InvalidArgument, true);
@@ -101,7 +101,7 @@ describe('objectLockHelpers: validateHeaders', () => {
         };
         const objectLockValidationError
             = validateHeaders(bucketInfo, headers, log);
-        const expectedError = errors.InvalidArgument.customizeDescription(
+        const expectedError = errorInstances.InvalidArgument.customizeDescription(
             'x-amz-object-lock-retain-until-date and x-amz-object-lock-mode ' +
             'must both be supplied');
         assert.strictEqual(objectLockValidationError.is.InvalidArgument, true);
@@ -114,7 +114,7 @@ describe('objectLockHelpers: validateHeaders', () => {
             'x-amz-object-lock-retain-until-date': '2005-10-12',
             'x-amz-object-lock-mode': 'COMPLIANCE',
         };
-        const expectedError = errors.InvalidArgument.customizeDescription(
+        const expectedError = errorInstances.InvalidArgument.customizeDescription(
             'The retain until date must be in the future!');
         const objectLockValidationError
             = validateHeaders(bucketInfo, headers, log);
@@ -129,7 +129,7 @@ describe('objectLockHelpers: validateHeaders', () => {
         };
         const objectLockValidationError
             = validateHeaders(bucketInfo, headers, log);
-        const expectedError = errors.InvalidArgument.customizeDescription(
+        const expectedError = errorInstances.InvalidArgument.customizeDescription(
             'Legal hold status must be one of "ON", "OFF"');
         assert.strictEqual(objectLockValidationError.is.InvalidArgument, true);
         assert.strictEqual(objectLockValidationError.description,
@@ -143,7 +143,7 @@ describe('objectLockHelpers: validateHeaders', () => {
         };
         const objectLockValidationError
             = validateHeaders(bucketInfo, headers, log);
-        const expectedError = errors.InvalidArgument.customizeDescription(
+        const expectedError = errorInstances.InvalidArgument.customizeDescription(
             'Unknown wormMode directive');
         assert.strictEqual(objectLockValidationError.is.InvalidArgument, true);
         assert.strictEqual(objectLockValidationError.description,

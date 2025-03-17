@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const moment = require('moment');
-const { errors, s3middleware } = require('arsenal');
+const { errors, errorInstances, s3middleware } = require('arsenal');
 const sinon = require('sinon');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
@@ -546,7 +546,7 @@ describe('objectPut API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-                assert.deepStrictEqual(err, errors.InvalidRequest
+                assert.deepStrictEqual(err, errorInstances.InvalidRequest
                     .customizeDescription(
                         'Bucket is missing ObjectLockConfiguration'));
                 done();
