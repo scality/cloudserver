@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
+const { errors, errorInstances } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
@@ -183,7 +183,7 @@ describe('objectHead API', () => {
             },
             actionImplicitDenies: false,
         };
-        const customizedInvalidRequestError = errors.InvalidRequest
+        const customizedInvalidRequestError = errorInstances.InvalidRequest
             .customizeDescription('Cannot specify both Range header and ' +
                 'partNumber query parameter.');
 
@@ -211,7 +211,7 @@ describe('objectHead API', () => {
             },
             actionImplicitDenies: false,
         };
-        const customizedInvalidArgumentError = errors.InvalidArgument
+        const customizedInvalidArgumentError = errorInstances.InvalidArgument
             .customizeDescription('Part number must be a number.');
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
