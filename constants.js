@@ -200,13 +200,13 @@ const constants = {
         'isDeleteMarker',
     ],
     unsupportedSignatureChecksums: new Set([
-        'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
         'STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER',
         'STREAMING-AWS4-ECDSA-P256-SHA256-PAYLOAD',
         'STREAMING-AWS4-ECDSA-P256-SHA256-PAYLOAD-TRAILER',
     ]),
     supportedSignatureChecksums: new Set([
         'UNSIGNED-PAYLOAD',
+        'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
         'STREAMING-AWS4-HMAC-SHA256-PAYLOAD',
     ]),
     ipv4Regex: /^(\d{1,3}\.){3}\d{1,3}(\/(3[0-2]|[12]?\d))?$/,
