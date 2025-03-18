@@ -153,6 +153,7 @@ function updateStorageClass(data, storageClass) {
     try {
         const parsedBody = JSON.parse(JSON.parse(data.body).Body);
         parsedBody['x-amz-storage-class'] = storageClass;
+        parsedBody['location'] = [];
         result = JSON.stringify(parsedBody);
     } catch (err) {
         return { error: err };

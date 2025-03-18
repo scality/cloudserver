@@ -63,6 +63,517 @@ describe('backbeat routes for replication', () => {
         await dstS3.deleteBucket({ Bucket: bucketDestination }).promise();
     });
 
+    it('should successfully replicate a version', done => {
+        let objMD;
+        let versionId;
+
+        async.series({
+            enableVersioningSource: next => srcS3.putBucketVersioning(
+                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            putObject: next => srcS3.putObject(
+                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    versionId = data.VersionId;
+                    return next();
+                }),
+            enableVersioningDestination: next => dstS3.putBucketVersioning(
+                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            getMetadata: next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketSource,
+                objectKey: keyName,
+                queryObj: {
+                    versionId,
+                },
+                authCredentials: sourceAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMD = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
+                return next();
+            }),
+            replicateMetadata: next => makeBackbeatRequest({
+                method: 'PUT',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                queryObj: {
+                    versionId,
+                },
+                authCredentials: destinationAuthCredentials,
+                requestBody: objMD,
+            }, next),
+            headObject: next => dstS3.headObject(
+                { Bucket: bucketDestination, Key: keyName, VersionId: versionId }, next),
+            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+        }, (err, results) => {
+            if (err) {
+                return done(err);
+            }
+
+            const headObjectRes = results.headObject;
+            assert.strictEqual(headObjectRes.VersionId, versionId);
+
+            const listObjectVersionsRes = results.listObjectVersions;
+            const { Versions } = listObjectVersionsRes;
+            assert.strictEqual(Versions.length, 1);
+            assert.strictEqual(Versions[0].IsLatest, true);
+            assert.strictEqual(Versions[0].VersionId, versionId);
+
+            return done();
+        });
+    });
+
+    it('should successfully replicate a version and update it', done => {
+        let objMD;
+        let versionId;
+
+        async.series({
+            enableVersioningSource: next => srcS3.putBucketVersioning(
+                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            putObject: next => srcS3.putObject(
+                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    versionId = data.VersionId;
+                    return next();
+                }),
+            enableVersioningDestination: next => dstS3.putBucketVersioning(
+                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            getMetadata: next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketSource,
+                objectKey: keyName,
+                queryObj: {
+                    versionId,
+                },
+                authCredentials: sourceAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMD = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
+                return next();
+            }),
+            replicateMetadata: next => makeBackbeatRequest({
+                method: 'PUT',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                queryObj: {
+                    versionId,
+                },
+                authCredentials: destinationAuthCredentials,
+                requestBody: objMD,
+            }, next),
+            updateMetadata: next => {
+                const { result, error } = ObjectMD.createFromBlob(objMD);
+                if (error) {
+                    return next(error);
+                }
+                result.setTags({ foo: 'bar' });
+                return makeBackbeatRequest({
+                    method: 'PUT',
+                    resourceType: 'metadata',
+                    bucket: bucketDestination,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId,
+                    },
+                    authCredentials: destinationAuthCredentials,
+                    requestBody: result.getSerialized(),
+                }, next);
+            },
+            getObjectTagging: next => dstS3.getObjectTagging(
+                { Bucket: bucketDestination, Key: keyName, VersionId: versionId }, next),
+            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+        }, (err, results) => {
+            if (err) {
+                return done(err);
+            }
+
+            const getObjectTaggingRes = results.getObjectTagging;
+            assert.strictEqual(getObjectTaggingRes.VersionId, versionId);
+            assert.deepStrictEqual(getObjectTaggingRes.TagSet, [{ Key: 'foo', Value: 'bar' }]);
+
+            const listObjectVersionsRes = results.listObjectVersions;
+            const { Versions } = listObjectVersionsRes;
+            assert.strictEqual(Versions.length, 1);
+            assert.strictEqual(Versions[0].IsLatest, true);
+            assert.strictEqual(Versions[0].VersionId, versionId);
+
+            return done();
+        });
+    });
+
+    it('should successfully replicate a version and update account info', done => {
+        let objMD;
+        let versionId;
+
+        async.series({
+            enableVersioningSource: next => srcS3.putBucketVersioning(
+                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            putObject: next => srcS3.putObject(
+                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    versionId = data.VersionId;
+                    return next();
+                }),
+            enableVersioningDestination: next => dstS3.putBucketVersioning(
+                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            getMetadata: next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketSource,
+                objectKey: keyName,
+                queryObj: {
+                    versionId,
+                },
+                authCredentials: sourceAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                objMD = objectMDFromRequestBody(data)
+                    .getSerialized();
+                return next();
+            }),
+            replicateMetadata: next => makeBackbeatRequest({
+                method: 'PUT',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                queryObj: {
+                    versionId,
+                    // Specifying the account id in the query string
+                    // should make it update the account info in the
+                    // metadata to the destination account info
+                    accountId: dstAccountInfo.shortid,
+                },
+                authCredentials: destinationAuthCredentials,
+                requestBody: objMD,
+            }, next),
+            getDestinationMetadata: next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                queryObj: {
+                    versionId,
+                },
+                authCredentials: destinationAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                return next(null, objectMDFromRequestBody(data));
+            }),
+        }, (err, results) => {
+            if (err) {
+                return done(err);
+            }
+
+            const dstObjMD = results.getDestinationMetadata;
+            assert.strictEqual(dstObjMD.getOwnerDisplayName(), dstAccountInfo.name);
+            assert.strictEqual(dstObjMD.getOwnerId(), dstAccountInfo.canonicalID);
+
+            return done();
+        });
+    });
+
+    it('should fail to replicate a version if the provided account is invalid', done => {
+        let objMD;
+        let versionId;
+
+        async.series({
+            enableVersioningSource: next => srcS3.putBucketVersioning(
+                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            putObject: next => srcS3.putObject(
+                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    versionId = data.VersionId;
+                    return next();
+                }),
+            enableVersioningDestination: next => dstS3.putBucketVersioning(
+                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            getMetadata: next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketSource,
+                objectKey: keyName,
+                queryObj: {
+                    versionId,
+                },
+                authCredentials: sourceAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                objMD = objectMDFromRequestBody(data)
+                    .getSerialized();
+                return next();
+            }),
+            replicateMetadata: next => makeBackbeatRequest({
+                method: 'PUT',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                queryObj: {
+                    versionId,
+                    accountId: 'invalid',
+                },
+                authCredentials: destinationAuthCredentials,
+                requestBody: objMD,
+            }, next),
+        }, err => {
+            assert.strictEqual(err.code, 'AccountNotFound');
+            return done();
+        });
+    });
+
+    it('should successfully replicate multiple versions and keep original order', done => {
+        let objMDCurrent, objMDNonCurrent;
+        let versionIdCurrent, versionIdNonCurrent;
+
+        async.series({
+            enableVersioningSource: next => srcS3.putBucketVersioning(
+                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            putObjectNonCurrent: next => srcS3.putObject(
+                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    versionIdNonCurrent = data.VersionId;
+                    return next();
+                }),
+            putObjectCurrent: next => srcS3.putObject(
+                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    versionIdCurrent = data.VersionId;
+                    return next();
+                }),
+            enableVersioningDestination: next => dstS3.putBucketVersioning(
+                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            getMetadataNonCurrent: next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketSource,
+                objectKey: keyName,
+                queryObj: {
+                    versionId: versionIdNonCurrent,
+                },
+                authCredentials: sourceAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMDNonCurrent = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
+                return next();
+            }),
+            getMetadataCurrent: next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketSource,
+                objectKey: keyName,
+                queryObj: {
+                    versionId: versionIdCurrent,
+                },
+                authCredentials: sourceAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMDCurrent = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
+                return next();
+            }),
+            // replicating the objects in the reverse order
+            replicateMetadataCurrent: next => makeBackbeatRequest({
+                method: 'PUT',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                queryObj: {
+                    versionId: versionIdCurrent,
+                },
+                authCredentials: destinationAuthCredentials,
+                requestBody: objMDCurrent,
+            }, next),
+            replicateMetadataNonCurrent: next => makeBackbeatRequest({
+                method: 'PUT',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                queryObj: {
+                    versionId: versionIdNonCurrent,
+                },
+                authCredentials: destinationAuthCredentials,
+                requestBody: objMDNonCurrent,
+            }, next),
+            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+        }, (err, results) => {
+            if (err) {
+                return done(err);
+            }
+
+            const listObjectVersionsRes = results.listObjectVersions;
+            const { Versions } = listObjectVersionsRes;
+            assert.strictEqual(Versions.length, 2);
+
+            const [currentVersion, nonCurrentVersion] = Versions;
+
+            assert.strictEqual(currentVersion.IsLatest, true);
+            assert.strictEqual(currentVersion.VersionId, versionIdCurrent);
+
+            assert.strictEqual(nonCurrentVersion.IsLatest, false);
+            assert.strictEqual(nonCurrentVersion.VersionId, versionIdNonCurrent);
+
+            return done();
+        });
+    });
+
+    it('should successfully replicate a delete marker', done => {
+        let objMDVersion, objMDDeleteMarker;
+        let versionIdVersion, versionIdDeleteMarker;
+
+        async.series({
+            enableVersioningSource: next => srcS3.putBucketVersioning(
+                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            putObject: next => srcS3.putObject(
+                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    versionIdVersion = data.VersionId;
+                    return next();
+                }),
+            deleteObject: next => srcS3.deleteObject(
+                { Bucket: bucketSource, Key: keyName }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    versionIdDeleteMarker = data.VersionId;
+                    return next();
+                }),
+            enableVersioningDestination: next => dstS3.putBucketVersioning(
+                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            getMetadataVersion: next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketSource,
+                objectKey: keyName,
+                queryObj: {
+                    versionId: versionIdVersion,
+                },
+                authCredentials: sourceAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMDVersion = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
+                return next();
+            }),
+            replicateMetadataVersion: next => makeBackbeatRequest({
+                method: 'PUT',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                queryObj: {
+                    versionId: versionIdVersion,
+                },
+                authCredentials: destinationAuthCredentials,
+                requestBody: objMDVersion,
+            }, next),
+            getMetadataDeleteMarker: next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketSource,
+                objectKey: keyName,
+                queryObj: {
+                    versionId: versionIdDeleteMarker,
+                },
+                authCredentials: sourceAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMDDeleteMarker = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
+                return next();
+            }),
+            replicateMetadataDeleteMarker: next => makeBackbeatRequest({
+                method: 'PUT',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                queryObj: {
+                    versionId: versionIdDeleteMarker,
+                },
+                authCredentials: destinationAuthCredentials,
+                requestBody: objMDDeleteMarker,
+            }, next),
+            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+        }, (err, results) => {
+            if (err) {
+                return done(err);
+            }
+
+            const listObjectVersionsRes = results.listObjectVersions;
+            const { Versions, DeleteMarkers } = listObjectVersionsRes;
+
+            assert.strictEqual(Versions.length, 1);
+            assert.strictEqual(DeleteMarkers.length, 1);
+
+            assert.strictEqual(Versions[0].IsLatest, false);
+            assert.strictEqual(Versions[0].VersionId, versionIdVersion);
+
+            assert.strictEqual(DeleteMarkers[0].IsLatest, true);
+            assert.strictEqual(DeleteMarkers[0].VersionId, versionIdDeleteMarker);
+
+            return done();
+        });
+    });
+
     it('should successfully replicate a null version', done => {
         let objMD;
 
