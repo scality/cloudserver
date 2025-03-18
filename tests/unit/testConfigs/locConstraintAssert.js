@@ -63,7 +63,7 @@ describe('locationConstraintAssert', () => {
             locationConstraintAssert({ 'scality-east': locationConstraint });
         },
         /bad config: locationConstraints[region].type must be/ +
-            /one of mem,file,scality,dmf/);
+            /one of mem,file,scality,dmf,azure_archive,tlp/);
     });
     it('should throw error if legacyAwsBehavior is not a boolean', () => {
         const locationConstraint = new LocationConstraint(
