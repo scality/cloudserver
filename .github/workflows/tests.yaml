@@ -253,6 +253,14 @@ jobs:
         yarn run multiple_backend_test | tee /tmp/artifacts/${{ github.job }}/tests.log
       env:
         S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+    - name: Cleanup and upload coverage
+      uses: ./.github/actions/cleanup-and-coverage
+      with:
+        profiles: >
+          sproxyd
+          mongo
+        codecov-token: ${{ secrets.CODECOV_TOKEN }}
+      if: always()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
@@ -291,6 +299,12 @@ jobs:
         yarn run ft_test | tee /tmp/artifacts/${{ github.job }}/tests.log
       env:
         S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+    - name: Cleanup and upload coverage
+      uses: ./.github/actions/cleanup-and-coverage
+      with:
+        profiles: mongo
+        codecov-token: ${{ secrets.CODECOV_TOKEN }}
+      if: always()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
@@ -331,6 +345,12 @@ jobs:
         yarn run ft_mixed_bucket_format_version | tee /tmp/artifacts/${{ github.job }}/mixed-tests.log
       env:
         S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+    - name: Cleanup and upload coverage
+      uses: ./.github/actions/cleanup-and-coverage
+      with:
+        profiles: mongo
+        codecov-token: ${{ secrets.CODECOV_TOKEN }}
+      if: always()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
@@ -374,6 +394,12 @@ jobs:
         set -o pipefail;
         bash wait_for_local_port.bash 8000 40
         yarn run ft_test | tee /tmp/artifacts/${{ matrix.job-name }}/tests.log
+    - name: Cleanup and upload coverage
+      uses: ./.github/actions/cleanup-and-coverage
+      with:
+        codecov-token: ${{ secrets.CODECOV_TOKEN }}
+        flags: ${{ matrix.job-name }}
+      if: always()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
@@ -408,6 +434,11 @@ jobs:
         set -ex -o pipefail;
         bash wait_for_local_port.bash 8000 40
         yarn run test_utapi_v2 | tee /tmp/artifacts/${{ github.job }}/tests.log
+    - name: Cleanup and upload coverage
+      uses: ./.github/actions/cleanup-and-coverage
+      with:
+        codecov-token: ${{ secrets.CODECOV_TOKEN }}
+      if: always()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
@@ -452,6 +483,13 @@ jobs:
         set -ex -o pipefail;
         bash wait_for_local_port.bash 8000 40
         yarn run test_quota | tee /tmp/artifacts/${{ github.job }}/tests.log
+    - name: Cleanup and upload coverage
+      uses: ./.github/actions/cleanup-and-coverage
+      with:
+        profiles: mongo
+        codecov-token: ${{ secrets.CODECOV_TOKEN }}
+        flags: ${{ github.job }}${{ matrix.inflights.value == 'true' && '-inflights' || '' }}
+      if: always()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
@@ -490,6 +528,12 @@ jobs:
         bash wait_for_local_port.bash 8000 40
         bash wait_for_local_port.bash 5696 40
         yarn run ft_kmip | tee /tmp/artifacts/${{ github.job }}/tests.log
+    - name: Cleanup and upload coverage
+      uses: ./.github/actions/cleanup-and-coverage
+      with:
+        profiles: pykmip
+        codecov-token: ${{ secrets.CODECOV_TOKEN }}
+      if: always()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
@@ -568,6 +612,12 @@ jobs:
         S3BACKEND: file
         S3VAULT: mem
         S3METADATA: mongodb
+    - name: Cleanup and upload coverage
+      uses: ./.github/actions/cleanup-and-coverage
+      with:
+        profiles: ceph
+        codecov-token: ${{ secrets.CODECOV_TOKEN }}
+      if: always()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:

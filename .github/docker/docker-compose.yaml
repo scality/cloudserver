@@ -1,13 +1,28 @@
 services:
   cloudserver:
     image: ${CLOUDSERVER_IMAGE}
-    command: sh -c "yarn start > /artifacts/s3.log"
+    command: |
+      bash -c "
+        # Using tini to handle signals properly
+        tini -s -g -- npx nyc --clean --silent yarn start > /artifacts/s3.log &
+        PID=$$!
+        generate_coverage() {
+          echo 'Stopping NodeJS processes...'
+          kill -TERM $$PID 2>/dev/null || true
+          wait $$PID
+          echo 'Generating coverage report...'
+          npx nyc report --report-dir /coverage/test --reporter=lcov --reporter=text-summary
+        }
+        trap generate_coverage SIGTERM
+        wait $$PID
+      "
     network_mode: "host"
     volumes:
       - /tmp/ssl:/ssl
       - /tmp/ssl-kmip:/ssl-kmip
       - ${HOME}/.aws/credentials:/root/.aws/credentials
       - /tmp/artifacts/${JOB_NAME}:/artifacts
+      - /tmp/coverage/${JOB_NAME}:/coverage/test
     environment:
       - CI=true
       - ENABLE_LOCAL_CACHE=true

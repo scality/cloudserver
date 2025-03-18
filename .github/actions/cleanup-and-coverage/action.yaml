@@ -1,0 +1,40 @@
+name: 'Cleanup and Coverage'
+description: 'Stops CI services and uploads coverage reports to Codecov'
+
+inputs:
+  profiles:
+    description: 'Docker Compose profiles to use (space-separated)'
+    required: false
+    default: ''
+  codecov-token:
+    description: 'Codecov token for uploading reports'
+    required: true
+  flags:
+    description: 'Flags to identify the coverage report'
+    required: false
+    default: '${{ github.job }}'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Stop CI services
+      run: |
+        PROFILES=""
+        # Read from environment variable to avoid syntax issues
+        # related to gha templating
+        for profile in $INPUT_PROFILES; do
+          PROFILES="${PROFILES} --profile ${profile}"
+        done
+        docker compose ${PROFILES} down
+      shell: bash
+      env:
+        INPUT_PROFILES: ${{ inputs.profiles }}
+      working-directory: .github/docker
+    
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ inputs.codecov-token }}
+        directory: /tmp/coverage/${{ github.job }}
+        flags: ${{ inputs.flags }}
+      if: ${{ !cancelled() }}

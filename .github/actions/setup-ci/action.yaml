@@ -16,6 +16,11 @@ runs:
       run: |-
         set -exu;
         mkdir -p /tmp/artifacts/${JOB_NAME}/;
+    - name: Setup coverage directory
+      shell: bash
+      run: |-
+        set -exu;
+        mkdir -p /tmp/coverage/${JOB_NAME}/;
     - uses: actions/setup-node@v4
       with:
         node-version: '22'
