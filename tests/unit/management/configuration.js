@@ -36,7 +36,7 @@ function getConfig() {
 
 // Original Config
 const overlayVersionOriginal = Object.assign({}, config.overlayVersion);
-const authDataOriginal = Object.assign({}, config.authData);
+const authDataOriginal = Object.assign({}, config.authData).accounts;
 const locationConstraintsOriginal = Object.assign({},
     config.locationConstraints);
 const restEndpointsOriginal = Object.assign({}, config.restEndpoints);
@@ -48,10 +48,12 @@ const publicInstanceId = crypto.createHash('sha256')
 
 function resetConfig() {
     config.overlayVersion = overlayVersionOriginal;
-    config.authData = authDataOriginal;
+    config.authData = { accounts: authDataOriginal };
     config.locationConstraints = locationConstraintsOriginal;
     config.restEndpoints = restEndpointsOriginal;
     config.browserAccessEnabled = browserAccessEnabledOriginal;
+    // reset auth data inside the in-memory vault backend
+    config.emit('authdata-update');
 }
 
 function assertConfig(actualConf, expectedConf) {
@@ -68,6 +70,9 @@ describe('patchConfiguration', () => {
         return initManagementCredentialsMock(done);
     }));
     beforeEach(() => {
+        resetConfig();
+    });
+    after(() => {
         resetConfig();
     });
 

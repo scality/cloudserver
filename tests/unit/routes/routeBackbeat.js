@@ -191,7 +191,7 @@ describe('routeBackbeat', () => {
         assert.deepStrictEqual(mockResponse.body, [{}]);
     });
 
-    it('should put metadata', async () => {
+    it('should put non versioned metadata', async () => {
         mockRequest.method = 'PUT';
         mockRequest.url = '/_/backbeat/metadata/bucket0/key0';
         mockRequest.headers = {
@@ -210,6 +210,124 @@ describe('routeBackbeat', () => {
             };
             const objMd = {};
             callback(null, bucketInfo, objMd);
+        });
+
+        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+
+        void await endPromise;
+
+        assert.strictEqual(mockResponse.statusCode, 200);
+        assert.deepStrictEqual(mockResponse.body, {});
+    });
+
+    it('should put metadata after updating account info', async () => {
+        mockRequest.method = 'PUT';
+        mockRequest.url = '/_/backbeat/metadata/bucket0/key0'+
+            '?accountId=123456789012';
+        mockRequest.headers = {
+            'x-scal-versioning-required': 'true',
+        };
+        mockRequest.destroy = () => {};
+
+        sandbox.stub(metadata, 'putObjectMD').callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+            assert.strictEqual(omVal['owner-display-name'], 'Bart');
+            assert.strictEqual(omVal['owner-id'], '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be');
+            cb(null, {});
+        });
+
+        metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
+            const bucketInfo = {
+                getVersioningConfiguration: () => ({ Status: 'Enabled' }),
+                isVersioningEnabled: () => true,
+            };
+            const objMd = {};
+            callback(null, bucketInfo, objMd);
+        });
+
+        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+
+        void await endPromise;
+
+        assert.strictEqual(mockResponse.statusCode, 200);
+        assert.deepStrictEqual(mockResponse.body, {});
+    });
+
+    it('should fail to put metadata when accountId is invalid', async () => {
+        mockRequest.method = 'PUT';
+        mockRequest.url = '/_/backbeat/metadata/bucket0/key0'+
+            '?accountId=invalid';
+        mockRequest.headers = {
+            'x-scal-versioning-required': 'true',
+        };
+        mockRequest.destroy = () => {};
+
+        metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
+            const bucketInfo = {
+                getVersioningConfiguration: () => ({ Status: 'Enabled' }),
+                isVersioningEnabled: () => true,
+            };
+            const objMd = {};
+            callback(null, bucketInfo, objMd);
+        });
+
+        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+
+        void await endPromise;
+
+        assert.strictEqual(mockResponse.statusCode, 404);
+        assert.deepStrictEqual(mockResponse.body.code, 'AccountNotFound');
+    });
+
+    it('should repair master when putting metadata of a new version', async () => {
+        mockRequest.method = 'PUT';
+        mockRequest.url = '/_/backbeat/metadata/bucket0/key0'+
+            '?accountId=123456789012&versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
+        mockRequest.headers = {
+            'x-scal-versioning-required': 'true',
+        };
+        mockRequest.destroy = () => {};
+
+        sandbox.stub(metadata, 'putObjectMD').callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+            assert.strictEqual(options.repairMaster, true);
+            cb(null, {});
+        });
+
+        metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
+            const bucketInfo = {
+                getVersioningConfiguration: () => ({ Status: 'Enabled' }),
+                isVersioningEnabled: () => true,
+            };
+            callback(null, bucketInfo, undefined);
+        });
+
+        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+
+        void await endPromise;
+
+        assert.strictEqual(mockResponse.statusCode, 200);
+        assert.deepStrictEqual(mockResponse.body, {});
+    });
+
+    it('should not repair master when updating metadata of an existing version', async () => {
+        mockRequest.method = 'PUT';
+        mockRequest.url = '/_/backbeat/metadata/bucket0/key0'+
+            '?accountId=123456789012&versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
+        mockRequest.headers = {
+            'x-scal-versioning-required': 'true',
+        };
+        mockRequest.destroy = () => {};
+
+        sandbox.stub(metadata, 'putObjectMD').callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+            assert.strictEqual(options.repairMaster, undefined);
+            cb(null, {});
+        });
+
+        metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
+            const bucketInfo = {
+                getVersioningConfiguration: () => ({ Status: 'Enabled' }),
+                isVersioningEnabled: () => true,
+            };
+            callback(null, bucketInfo, {});
         });
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
