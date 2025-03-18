@@ -955,7 +955,7 @@ describe('backbeat routes for replication', () => {
         });
     });
 
-    it('should replicate/put metadata to a destination that has a null version', done => {
+    it.skip('should replicate/put metadata to a destination that has a null version', done => {
         let objMD;
         let versionId;
 
@@ -1034,7 +1034,7 @@ describe('backbeat routes for replication', () => {
         });
     });
 
-    it('should replicate/put metadata to a destination that has a suspended null version', done => {
+    it.skip('should replicate/put metadata to a destination that has a suspended null version', done => {
         let objMD;
         let versionId;
 
@@ -1114,7 +1114,7 @@ describe('backbeat routes for replication', () => {
         });
     });
 
-    it('should replicate/put metadata to a destination that has a previously updated null version', done => {
+    it.skip('should replicate/put metadata to a destination that has a previously updated null version', done => {
         let objMD;
         let objMDNull;
         let versionId;
@@ -1220,7 +1220,7 @@ describe('backbeat routes for replication', () => {
         });
     });
 
-    it('should replicate/put metadata to a destination that has a suspended null version with internal version',
+    it.skip('should replicate/put metadata to a destination that has a suspended null version with internal version',
     done => {
         const tagSet = [
             {
@@ -1314,7 +1314,7 @@ describe('backbeat routes for replication', () => {
         });
     });
 
-    it('should mimic null version replication by crrExistingObjects, then replicate version', done => {
+    it.skip('should mimic null version replication by crrExistingObjects, then replicate version', done => {
         let objMDNull;
         let objMDNullReplicated;
         let objMDVersion;

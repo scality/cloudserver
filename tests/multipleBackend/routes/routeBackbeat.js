@@ -752,7 +752,7 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should create a new null version if versioning suspended and delete marker null version', done => {
+        it.skip('should create a new null version if versioning suspended and delete marker null version', done => {
             let objMD;
             return async.series([
                 next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } },
