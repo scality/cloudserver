@@ -258,7 +258,7 @@
         "isTransient": true
     },
     "location-dmf-v1": {
-        "type": "dmf",
+        "type": "tlp",
         "objectId": "location-dmf-v1",
         "legacyAwsBehavior": false,
         "isCold": true,

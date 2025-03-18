@@ -1,6 +1,6 @@
 const assert = require('assert');
 const {
-    azureArchiveLocationConstraintAssert,
+    locationConstraintAssert,
     parseSupportedLifecycleRules,
     ConfigObject: ConfigObjectForTest,
 } = require('../../lib/Config');
@@ -262,6 +262,72 @@ describe('Config', () => {
         });
     });
 
+    describe('locationConstraintAssert', () => {
+        const memLocation = {
+            'details': {},
+            'isCold': false,
+            'isTransient': false,
+            'legacyAwsBehavior': false,
+            'locationType': 'location-mem-v1',
+            'objectId': 'a9d9b632-5fa5-11ef-8715-b21941dbc3ea',
+            'type': 'mem',
+        };
+
+        it('should parse tlp location', () => {
+            const locationConstraints = {
+                'dmf-1': {
+                    'details': {},
+                    'isCold': true,
+                    'legacyAwsBehavior': false,
+                    'locationType': 'location-dmf-v1',
+                    'objectId': 'b9d9b632-5fa5-11ef-8715-b21941dbc3ea',
+                    'type': 'tlp'
+                },
+                'us-east-1': memLocation,
+            };
+            locationConstraintAssert(locationConstraints);
+        });
+
+        it('should fail tlp location is not cold', () => {
+            const locationConstraints = {
+                'dmf-1': {
+                    'details': {},
+                    'isCold': false,
+                    'legacyAwsBehavior': false,
+                    'locationType': 'location-dmf-v1',
+                    'objectId': 'b9d9b632-5fa5-11ef-8715-b21941dbc3ea',
+                    'type': 'tlp'
+                },
+                'us-east-1': memLocation,
+            };
+            assert.throws(() => locationConstraintAssert(locationConstraints));
+        });
+
+        it('should fail if tlp location has details', () => {
+            const locationConstraints = {
+                'dmf-1': {
+                    'details': {
+                        'endpoint': 'http://localhost:8000',
+                    },
+                    'isCold': true,
+                    'legacyAwsBehavior': false,
+                    'locationType': 'location-dmf-v1',
+                    'objectId': 'b9d9b632-5fa5-11ef-8715-b21941dbc3ea',
+                    'type': 'tlp'
+                },
+                'us-east-1': memLocation,
+            };
+            assert.throws(() => locationConstraintAssert(locationConstraints));
+        });
+
+        it('should fail if there is no us-east-1 location', () => {
+            const locationConstraints = {
+                'us-west-1': memLocation,
+            };
+            assert.throws(() => locationConstraintAssert(locationConstraints));
+        });
+    });
+
     describe('time options', () => {
         it('should getTimeOptions', () => {
             const config = new ConfigObjectForTest();
@@ -516,164 +582,6 @@ describe('Config', () => {
     it('should have a default overlay version', () => {
         const { config } = require('../../lib/Config');
         assert.strictEqual(config.overlayVersion, 0);
-    });
-
-    describe('azureArchiveLocationConstraintAssert', () => {
-        it('should succeed azureStorageEndpoint is missing', () => {
-            const locationObj = {
-                details: {
-                    azureContainerName: 'mycontainer',
-                }
-            };
-            assert.strictEqual(azureArchiveLocationConstraintAssert(locationObj), undefined);
-        });
-
-        it('should succeed if azureContainerName is missing', () => {
-            const locationObj = {
-                details: {
-                    azureStorageEndpoint: 'http://test.com/',
-                }
-            };
-            assert.strictEqual(azureArchiveLocationConstraintAssert(locationObj), undefined);
-        });
-
-        it('should succeed if both azureStorageEndpoint and azureContainerName are missing', () => {
-            const locationObj = {
-                details: {
-                }
-            };
-            assert.strictEqual(azureArchiveLocationConstraintAssert(locationObj), undefined);
-        });
-
-        it('should fail assert if azureStorageEndpoint is not a string', () => {
-            const locationObj = {
-                details: {
-                    azureContainerName: 'mycontainer',
-                    azureStorageEndpoint: true,
-                }
-            };
-            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
-        });
-
-        it('should assert if azureContainerName is not a string', () => {
-            const locationObj = {
-                details: {
-                    azureContainerName: 42,
-                    azureStorageEndpoint: 'endpoint',
-                }
-            };
-            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
-        });
-
-        it('should assert if missing an authentication method', () => {
-            const locationObj = {
-                details: {
-                    azureContainerName: 'mycontainer',
-                    azureStorageEndpoint: 'endpoint',
-                }
-            };
-            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
-        });
-
-        it('should assert if sasToken is not a string', () => {
-            const locationObj = {
-                details: {
-                    azureContainerName: 'mycontainer',
-                    azureStorageEndpoint: 'endpoint',
-                    sasToken: 42,
-                }
-            };
-            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
-        });
-
-        it('should assert if missing azureStorageAccountName but azureStorageAccessKey defined', () => {
-            const locationObj = {
-                details: {
-                    azureContainerName: 'mycontainer',
-                    azureStorageEndpoint: 'endpoint',
-                    azureStorageAccessKey: 'key',
-                }
-            };
-            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
-        });
-
-        it('should assert if azureStorageAccountName is not a string', () => {
-            const locationObj = {
-                details: {
-                    azureContainerName: 'mycontainer',
-                    azureStorageEndpoint: 'endpoint',
-                    azureStorageAccountName: 42,
-                    azureStorageAccessKey: 'key',
-                }
-            };
-            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
-        });
-
-        it('should assert if azureStorageAccessKey is not a string', () => {
-            const locationObj = {
-                details: {
-                    azureContainerName: 'mycontainer',
-                    azureStorageEndpoint: 'endpoint',
-                    azureStorageAccountName: 'account',
-                    azureStorageAccessKey: false,
-                }
-            };
-            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
-        });
-
-        it('should assert if tenantId is not a string', () => {
-            const locationObj = {
-                details: {
-                    azureContainerName: 'mycontainer',
-                    azureStorageEndpoint: 'endpoint',
-                    tenantId: 42,
-                    clientId: 'client',
-                    clientKey: 'key',
-                }
-            };
-            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
-        });
-
-        it('should assert if tenantId is not a string', () => {
-            const locationObj = {
-                details: {
-                    azureContainerName: 'mycontainer',
-                    azureStorageEndpoint: 'endpoint',
-                    tenantId: 'tenant',
-                    clientId: 42,
-                    clientKey: 'key',
-                }
-            };
-            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
-        });
-
-        it('should assert if tenantId is not a string', () => {
-            const locationObj = {
-                details: {
-                    azureContainerName: 'mycontainer',
-                    azureStorageEndpoint: 'endpoint',
-                    tenantId: 'tenant',
-                    clientId: 'client',
-                    clientKey: 42,
-                }
-            };
-            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
-        });
-
-        it('should assert if multiple auth method are provided', () => {
-            const locationObj = {
-                details: {
-                    azureContainerName: 'mycontainer',
-                    azureStorageEndpoint: 'endpoint',
-                    tenantId: 'tenant',
-                    clientId: 'client',
-                    clientKey: 'key',
-                    azureStorageAccountName: 'account',
-                    azureStorageAccessKey: 'key',
-                }
-            };
-            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
-        });
     });
 
     describe('parseSupportedLifecycleRules', () => {
