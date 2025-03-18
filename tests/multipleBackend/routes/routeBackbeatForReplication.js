@@ -2,57 +2,76 @@ const assert = require('assert');
 const async = require('async');
 const { models } = require('arsenal');
 const { ObjectMD } = models;
+const { v4: uuidv4 } = require('uuid');
 
 const { makeBackbeatRequest } = require('../../functional/raw-node/utils/makeRequest');
 const BucketUtility = require('../../functional/aws-node-sdk/lib/utility/bucket-util');
 const { getCredentials } = require('../../functional/aws-node-sdk/test/support/credentials');
 
-const { accessKeyId, secretAccessKey } = getCredentials();
-
-const backbeatAuthCredentials = {
-    accessKey: accessKeyId,
-    secretKey: secretAccessKey,
+const sourceCreds = getCredentials();
+const sourceAuthCredentials = {
+    accessKey: sourceCreds.accessKeyId,
+    secretKey: sourceCreds.secretAccessKey,
 };
+
+const destinationCreds = getCredentials('replication');
+const destinationAuthCredentials = {
+    accessKey: destinationCreds.accessKeyId,
+    secretKey: destinationCreds.secretAccessKey,
+};
+
+const dstAccountInfo = require('../../../conf/authdata.json')
+    .accounts.find(acc => acc.name === 'Replication');
 
 const testData = 'testkey data';
 
-// Skip since Zenko/Artesca use cloud storage provider clients like AWS SDK
-// to replicate objects/versions rather than using the get and put metadata
-// functions of the Backbeat API.
-describe.skip('backbeat routes for replication', () => {
-    const bucketUtil = new BucketUtility(
-        'default', { signatureVersion: 'v4' });
-    const s3 = bucketUtil.s3;
+// Generate unique bucket name function
+function generateUniqueBucketName(prefix) {
+    return `${prefix}-${uuidv4().substring(0, 8)}`;
+}
 
-    const bucketSource = 'backbeatbucket-replication-source';
-    const bucketDestination = 'backbeatbucket-replication-destination';
+function objectMDFromRequestBody(data) {
+    const bodyStr = JSON.parse(data.body).Body;
+    return new ObjectMD(JSON.parse(bodyStr));
+}
+
+describe('backbeat routes for replication', () => {
+    const srcBucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+    const srcS3 = srcBucketUtil.s3;
+
+    const dstBucketUtil = new BucketUtility('replication', { signatureVersion: 'v4' });
+    const dstS3 = dstBucketUtil.s3;
+
+    let bucketSource;
+    let bucketDestination;
     const keyName = 'key0';
     const storageClass = 'foo';
 
-    beforeEach(done =>
-        bucketUtil.emptyIfExists(bucketSource)
-            .then(() => s3.createBucket({ Bucket: bucketSource }).promise())
-            .then(() => bucketUtil.emptyIfExists(bucketDestination))
-            .then(() => s3.createBucket({ Bucket: bucketDestination }).promise())
-            .then(() => done(), err => done(err))
-    );
+    beforeEach(async () => {
+        bucketSource = generateUniqueBucketName('backbeatbucket-replication-source');
+        bucketDestination = generateUniqueBucketName('backbeatbucket-replication-destination');
+        await srcBucketUtil.emptyIfExists(bucketSource);
+        await srcS3.createBucket({ Bucket: bucketSource }).promise();
+        await dstBucketUtil.emptyIfExists(bucketDestination);
+        await dstS3.createBucket({ Bucket: bucketDestination }).promise();
+    });
 
-    afterEach(done =>
-        bucketUtil.empty(bucketSource)
-            .then(() => s3.deleteBucket({ Bucket: bucketSource }).promise())
-            .then(() => bucketUtil.empty(bucketDestination))
-            .then(() => s3.deleteBucket({ Bucket: bucketDestination }).promise())
-            .then(() => done(), err => done(err))
-    );
+    afterEach(async () => {
+        await srcBucketUtil.empty(bucketSource);
+        await srcS3.deleteBucket({ Bucket: bucketSource }).promise();
+        await dstBucketUtil.empty(bucketDestination);
+        await dstS3.deleteBucket({ Bucket: bucketDestination }).promise();
+    });
 
     it('should successfully replicate a null version', done => {
         let objMD;
 
         async.series({
-            putObject: next => s3.putObject({ Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, next),
-            enableVersioningSource: next => s3.putBucketVersioning(
+            putObject: next => srcS3.putObject(
+                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, next),
+            enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            enableVersioningDestination: next => s3.putBucketVersioning(
+            enableVersioningDestination: next => dstS3.putBucketVersioning(
                 { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
@@ -62,12 +81,17 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId: 'null',
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
                 }
-                objMD = JSON.parse(data.body).Body;
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMD = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -78,11 +102,11 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId: 'null',
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObject: next => s3.headObject({ Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            listObjectVersions: next => s3.listObjectVersions({ Bucket: bucketDestination }, next),
+            headObject: next => dstS3.headObject({ Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
+            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -108,12 +132,13 @@ describe.skip('backbeat routes for replication', () => {
         let objMD;
 
         async.series({
-            suspendVersioningSource: next => s3.putBucketVersioning(
+            suspendVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Suspended' } }, next),
-            putObject: next => s3.putObject({ Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, next),
-            enableVersioningSource: next => s3.putBucketVersioning(
+            putObject: next => srcS3.putObject(
+                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, next),
+            enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            enableVersioningDestination: next => s3.putBucketVersioning(
+            enableVersioningDestination: next => dstS3.putBucketVersioning(
                 { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
@@ -123,12 +148,17 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId: 'null',
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
                 }
-                objMD = JSON.parse(data.body).Body;
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMD = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -139,11 +169,11 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId: 'null',
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObject: next => s3.headObject({ Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            listObjectVersions: next => s3.listObjectVersions({ Bucket: bucketDestination }, next),
+            headObject: next => dstS3.headObject({ Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
+            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -169,10 +199,11 @@ describe.skip('backbeat routes for replication', () => {
         let objMD;
 
         async.series({
-            putObject: next => s3.putObject({ Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, next),
-            enableVersioningSource: next => s3.putBucketVersioning(
+            putObject: next => srcS3.putObject(
+                { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, next),
+            enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            enableVersioningDestination: next => s3.putBucketVersioning(
+            enableVersioningDestination: next => dstS3.putBucketVersioning(
                 { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
@@ -182,12 +213,17 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId: 'null',
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
                 }
-                objMD = JSON.parse(data.body).Body;
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMD = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -198,7 +234,7 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId: 'null',
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
             updateMetadata: next => {
@@ -215,12 +251,12 @@ describe.skip('backbeat routes for replication', () => {
                     queryObj: {
                         versionId: 'null',
                     },
-                    authCredentials: backbeatAuthCredentials,
+                    authCredentials: destinationAuthCredentials,
                     requestBody: result.getSerialized(),
                 }, next);
             },
-            headObject: next => s3.headObject({ Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            listObjectVersions: next => s3.listObjectVersions({ Bucket: bucketDestination }, next),
+            headObject: next => dstS3.headObject({ Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
+            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -249,11 +285,11 @@ describe.skip('backbeat routes for replication', () => {
         let expectedVersionId;
 
         async.series({
-            putObjectSource: next => s3.putObject(
+            putObjectSource: next => srcS3.putObject(
                 { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, next),
-            enableVersioningSource: next => s3.putBucketVersioning(
+            enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            enableVersioningDestination: next => s3.putBucketVersioning(
+            enableVersioningDestination: next => dstS3.putBucketVersioning(
                 { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
@@ -263,12 +299,17 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId: 'null',
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
                 }
-                objMD = JSON.parse(data.body).Body;
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMD = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -279,10 +320,10 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId: 'null',
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            putObjectDestination: next => s3.putObject(
+            putObjectDestination: next => dstS3.putObject(
             { Bucket: bucketDestination, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
                 if (err) {
                     return next(err);
@@ -290,8 +331,8 @@ describe.skip('backbeat routes for replication', () => {
                 expectedVersionId = data.VersionId;
                 return next();
             }),
-            headObject: next => s3.headObject({ Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            listObjectVersions: next => s3.listObjectVersions({ Bucket: bucketDestination }, next),
+            headObject: next => dstS3.headObject({ Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
+            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -319,9 +360,9 @@ describe.skip('backbeat routes for replication', () => {
         let secondVersionId;
 
         async.series({
-            enableVersioningDestination: next => s3.putBucketVersioning(
+            enableVersioningDestination: next => dstS3.putBucketVersioning(
                 { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObjectDestination: next => s3.putObject(
+            putObjectDestination: next => dstS3.putObject(
             { Bucket: bucketDestination, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
                 if (err) {
                     return next(err);
@@ -329,9 +370,9 @@ describe.skip('backbeat routes for replication', () => {
                 firstVersionId = data.VersionId;
                 return next();
             }),
-            enableVersioningSource: next => s3.putBucketVersioning(
+            enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObjectSource: next => s3.putObject(
+            putObjectSource: next => srcS3.putObject(
             { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
                 if (err) {
                     return next(err);
@@ -347,12 +388,17 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId: secondVersionId,
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
                 }
-                objMD = JSON.parse(data.body).Body;
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMD = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -363,14 +409,14 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId: secondVersionId,
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObjectFirstVersion: next => s3.headObject(
+            headObjectFirstVersion: next => dstS3.headObject(
                 { Bucket: bucketDestination, Key: keyName, VersionId: firstVersionId }, next),
-            headObjectSecondVersion: next => s3.headObject(
+            headObjectSecondVersion: next => dstS3.headObject(
                 { Bucket: bucketDestination, Key: keyName, VersionId: secondVersionId }, next),
-            listObjectVersions: next => s3.listObjectVersions({ Bucket: bucketDestination }, next),
+            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -403,13 +449,13 @@ describe.skip('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            putObjectDestinationInitial: next => s3.putObject(
+            putObjectDestinationInitial: next => dstS3.putObject(
                 { Bucket: bucketDestination, Key: keyName, Body: Buffer.from(testData) }, next),
-            enableVersioningDestination: next => s3.putBucketVersioning(
+            enableVersioningDestination: next => dstS3.putBucketVersioning(
                 { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            enableVersioningSource: next => s3.putBucketVersioning(
+            enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObjectSource: next => s3.putObject(
+            putObjectSource: next => srcS3.putObject(
             { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
                 if (err) {
                     return next(err);
@@ -425,12 +471,17 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId,
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
                 }
-                objMD = JSON.parse(data.body).Body;
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMD = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -441,12 +492,12 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId,
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObjectNullVersion: next => s3.headObject(
+            headObjectNullVersion: next => dstS3.headObject(
                 { Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            listObjectVersions: next => s3.listObjectVersions(
+            listObjectVersions: next => dstS3.listObjectVersions(
                 { Bucket: bucketDestination }, next),
         }, (err, results) => {
             if (err) {
@@ -477,15 +528,15 @@ describe.skip('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            suspendVersioningDestination: next => s3.putBucketVersioning(
+            suspendVersioningDestination: next => dstS3.putBucketVersioning(
                 { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Suspended' } }, next),
-            putObjectDestinationInitial: next => s3.putObject(
+            putObjectDestinationInitial: next => dstS3.putObject(
                 { Bucket: bucketDestination, Key: keyName, Body: Buffer.from(testData) }, next),
-            enableVersioningDestination: next => s3.putBucketVersioning(
+            enableVersioningDestination: next => dstS3.putBucketVersioning(
                 { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            enableVersioningSource: next => s3.putBucketVersioning(
+            enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObjectSource: next => s3.putObject(
+            putObjectSource: next => srcS3.putObject(
             { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
                 if (err) {
                     return next(err);
@@ -501,12 +552,17 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId,
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
                 }
-                objMD = JSON.parse(data.body).Body;
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMD = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -517,12 +573,12 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId,
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObjectNullVersion: next => s3.headObject(
+            headObjectNullVersion: next => dstS3.headObject(
                 { Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            listObjectVersions: next => s3.listObjectVersions({ Bucket: bucketDestination }, next),
+            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -553,9 +609,9 @@ describe.skip('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            putObjectDestinationInitial: next => s3.putObject(
+            putObjectDestinationInitial: next => dstS3.putObject(
                 { Bucket: bucketDestination, Key: keyName, Body: Buffer.from(testData) }, next),
-            enableVersioningDestination: next => s3.putBucketVersioning(
+            enableVersioningDestination: next => dstS3.putBucketVersioning(
                 { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
             getMetadataNullVersion: next => makeBackbeatRequest({
                 method: 'GET',
@@ -565,7 +621,7 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId: 'null',
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
@@ -581,12 +637,12 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId: 'null',
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
                 requestBody: objMDNull,
             }, next),
-            enableVersioningSource: next => s3.putBucketVersioning(
+            enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObjectSource: next => s3.putObject(
+            putObjectSource: next => srcS3.putObject(
             { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
                 if (err) {
                     return next(err);
@@ -602,12 +658,17 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId,
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
                 }
-                objMD = JSON.parse(data.body).Body;
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMD = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -618,12 +679,12 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId,
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObjectNullVersion: next => s3.headObject(
+            headObjectNullVersion: next => dstS3.headObject(
                 { Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            listObjectVersions: next => s3.listObjectVersions({ Bucket: bucketDestination }, next),
+            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -660,17 +721,17 @@ describe.skip('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            suspendVersioningDestination: next => s3.putBucketVersioning(
+            suspendVersioningDestination: next => dstS3.putBucketVersioning(
                 { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Suspended' } }, next),
-            putObjectDestinationInitial: next => s3.putObject(
+            putObjectDestinationInitial: next => dstS3.putObject(
                 { Bucket: bucketDestination, Key: keyName, Body: Buffer.from(testData) }, next),
-            putObjectTagging: next => s3.putObjectTagging(
+            putObjectTagging: next => dstS3.putObjectTagging(
                 { Bucket: bucketDestination, Key: keyName, Tagging: { TagSet: tagSet } }, next),
-            enableVersioningDestination: next => s3.putBucketVersioning(
+            enableVersioningDestination: next => dstS3.putBucketVersioning(
                 { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            enableVersioningSource: next => s3.putBucketVersioning(
+            enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObjectSource: next => s3.putObject(
+            putObjectSource: next => srcS3.putObject(
             { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
                 if (err) {
                     return next(err);
@@ -686,12 +747,17 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId,
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
                 }
-                objMD = JSON.parse(data.body).Body;
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMD = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -702,14 +768,14 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId,
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObjectNullVersion: next => s3.headObject(
+            headObjectNullVersion: next => dstS3.headObject(
                 { Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            getObjectTaggingNullVersion: next => s3.getObjectTagging(
+            getObjectTaggingNullVersion: next => dstS3.getObjectTagging(
                 { Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            listObjectVersions: next => s3.listObjectVersions({ Bucket: bucketDestination }, next),
+            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -744,9 +810,9 @@ describe.skip('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            createNullSoloMasterKey: next => s3.putObject(
+            createNullSoloMasterKey: next => srcS3.putObject(
                 { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, next),
-            enableVersioningSource: next => s3.putBucketVersioning(
+            enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
             simulateCrrExistingObjectsGetMetadata: next => makeBackbeatRequest({
                 method: 'GET',
@@ -756,7 +822,7 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId: 'null',
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
@@ -773,10 +839,10 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId: 'null',
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
                 requestBody: objMDNull,
             }, next),
-            enableVersioningDestination: next => s3.putBucketVersioning(
+            enableVersioningDestination: next => dstS3.putBucketVersioning(
                 { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
             replicateNullVersion: next => makeBackbeatRequest({
                 method: 'GET',
@@ -786,12 +852,17 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId: 'null',
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
                 }
-                objMDNullReplicated = JSON.parse(data.body).Body;
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMDNullReplicated = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
                 return next();
             }),
             putReplicatedNullVersion: next => makeBackbeatRequest({
@@ -802,10 +873,10 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId: 'null',
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
                 requestBody: objMDNullReplicated,
             }, next),
-            putNewVersionSource: next => s3.putObject(
+            putNewVersionSource: next => srcS3.putObject(
             { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
                 if (err) {
                     return next(err);
@@ -821,15 +892,20 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId,
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
                 }
-                objMDVersion = JSON.parse(data.body).Body;
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMDVersion = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
                 return next();
             }),
-            listObjectVersionsBeforeReplicate: next => s3.listObjectVersions({ Bucket: bucketDestination }, next),
+            listObjectVersionsBeforeReplicate: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
             putReplicatedVersion: next => makeBackbeatRequest({
                 method: 'PUT',
                 resourceType: 'metadata',
@@ -838,14 +914,14 @@ describe.skip('backbeat routes for replication', () => {
                 queryObj: {
                     versionId,
                 },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
                 requestBody: objMDVersion,
             }, next),
-            checkReplicatedNullVersion: next => s3.headObject(
+            checkReplicatedNullVersion: next => dstS3.headObject(
                 { Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            checkReplicatedVersion: next => s3.headObject(
+            checkReplicatedVersion: next => dstS3.headObject(
                 { Bucket: bucketDestination, Key: keyName, VersionId: versionId }, next),
-            listObjectVersionsAfterReplicate: next => s3.listObjectVersions({ Bucket: bucketDestination }, next),
+            listObjectVersionsAfterReplicate: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -879,11 +955,11 @@ describe.skip('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            enableVersioningDestination: next => s3.putBucketVersioning({
+            enableVersioningDestination: next => dstS3.putBucketVersioning({
                 Bucket: bucketDestination,
                 VersioningConfiguration: { Status: 'Enabled' },
             }, next),
-            putObjectDestination: next => s3.putObject({
+            putObjectDestination: next => dstS3.putObject({
                 Bucket: bucketDestination,
                 Key: keyName,
                 Body: Buffer.from(testData),
@@ -894,12 +970,12 @@ describe.skip('backbeat routes for replication', () => {
                 versionId = data.VersionId;
                 return next();
             }),
-            putObjectSource: next => s3.putObject({
+            putObjectSource: next => srcS3.putObject({
                 Bucket: bucketSource,
                 Key: keyName,
                 Body: Buffer.from(testData),
             }, next),
-            enableVersioningSource: next => s3.putBucketVersioning({
+            enableVersioningSource: next => srcS3.putBucketVersioning({
                 Bucket: bucketSource,
                 VersioningConfiguration: { Status: 'Enabled' },
             }, next),
@@ -909,12 +985,17 @@ describe.skip('backbeat routes for replication', () => {
                 bucket: bucketSource,
                 objectKey: keyName,
                 queryObj: { versionId: 'null' },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
                 }
-                objMD = JSON.parse(data.body).Body;
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMD = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -923,20 +1004,20 @@ describe.skip('backbeat routes for replication', () => {
                 bucket: bucketDestination,
                 objectKey: keyName,
                 queryObj: { versionId: 'null' },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObjectByVersionId: next => s3.headObject({
+            headObjectByVersionId: next => dstS3.headObject({
                 Bucket: bucketDestination,
                 Key: keyName,
                 VersionId: versionId,
             }, next),
-            headObjectByNullVersionId: next => s3.headObject({
+            headObjectByNullVersionId: next => dstS3.headObject({
                 Bucket: bucketDestination,
                 Key: keyName,
                 VersionId: 'null',
             }, next),
-            listObjectVersions: next => s3.listObjectVersions({
+            listObjectVersions: next => dstS3.listObjectVersions({
                 Bucket: bucketDestination,
             }, next),
         }, (err, results) => {
@@ -970,25 +1051,25 @@ describe.skip('backbeat routes for replication', () => {
         let objMD;
 
         async.series({
-            putObjectDestinationInitial: next => s3.putObject({
+            putObjectDestinationInitial: next => dstS3.putObject({
                 Bucket: bucketDestination,
                 Key: keyName,
                 Body: Buffer.from(testData),
             }, next),
-            enableVersioningDestination: next => s3.putBucketVersioning({
+            enableVersioningDestination: next => dstS3.putBucketVersioning({
                 Bucket: bucketDestination,
                 VersioningConfiguration: { Status: 'Enabled' },
             }, next),
-            putObjectSource: next => s3.putObject({
+            putObjectSource: next => srcS3.putObject({
                 Bucket: bucketSource,
                 Key: keyName,
                 Body: Buffer.from(testData),
             }, next),
-            enableVersioningSource: next => s3.putBucketVersioning({
+            enableVersioningSource: next => srcS3.putBucketVersioning({
                 Bucket: bucketSource,
                 VersioningConfiguration: { Status: 'Enabled' },
             }, next),
-            putObjectTaggingSource: next => s3.putObjectTagging({
+            putObjectTaggingSource: next => srcS3.putObjectTagging({
                 Bucket: bucketSource,
                 Key: keyName,
                 VersionId: 'null',
@@ -1000,12 +1081,17 @@ describe.skip('backbeat routes for replication', () => {
                 bucket: bucketSource,
                 objectKey: keyName,
                 queryObj: { versionId: 'null' },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
                 }
-                objMD = JSON.parse(data.body).Body;
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMD = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -1014,20 +1100,20 @@ describe.skip('backbeat routes for replication', () => {
                 bucket: bucketDestination,
                 objectKey: keyName,
                 queryObj: { versionId: 'null' },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObjectNullVersion: next => s3.headObject({
+            headObjectNullVersion: next => dstS3.headObject({
                 Bucket: bucketDestination,
                 Key: keyName,
                 VersionId: 'null',
             }, next),
-            getObjectTaggingNullVersion: next => s3.getObjectTagging({
+            getObjectTaggingNullVersion: next => dstS3.getObjectTagging({
                 Bucket: bucketDestination,
                 Key: keyName,
                 VersionId: 'null',
             }, next),
-            listObjectVersions: next => s3.listObjectVersions({
+            listObjectVersions: next => dstS3.listObjectVersions({
                 Bucket: bucketDestination,
             }, next),
         }, (err, results) => {
@@ -1060,11 +1146,11 @@ describe.skip('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            enableVersioningDestination: next => s3.putBucketVersioning({
+            enableVersioningDestination: next => dstS3.putBucketVersioning({
                 Bucket: bucketDestination,
                 VersioningConfiguration: { Status: 'Enabled' },
             }, next),
-            putObjectDestination: next => s3.putObject({
+            putObjectDestination: next => dstS3.putObject({
                 Bucket: bucketDestination,
                 Key: keyName,
                 Body: Buffer.from(testData),
@@ -1075,12 +1161,12 @@ describe.skip('backbeat routes for replication', () => {
                 versionId = data.VersionId;
                 return next();
             }),
-            putObjectSource: next => s3.putObject({
+            putObjectSource: next => srcS3.putObject({
                 Bucket: bucketSource,
                 Key: keyName,
                 Body: Buffer.from(testData),
             }, next),
-            enableVersioningSource: next => s3.putBucketVersioning({
+            enableVersioningSource: next => srcS3.putBucketVersioning({
                 Bucket: bucketSource,
                 VersioningConfiguration: { Status: 'Enabled' },
             }, next),
@@ -1090,7 +1176,7 @@ describe.skip('backbeat routes for replication', () => {
                 bucket: bucketSource,
                 objectKey: keyName,
                 queryObj: { versionId: 'null' },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
@@ -1104,7 +1190,7 @@ describe.skip('backbeat routes for replication', () => {
                 bucket: bucketSource,
                 objectKey: keyName,
                 queryObj: { versionId: 'null' },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: sourceAuthCredentials,
                 requestBody: objMDUpdated,
             }, next),
             getReplicatedNullVersion: next => makeBackbeatRequest({
@@ -1113,12 +1199,17 @@ describe.skip('backbeat routes for replication', () => {
                 bucket: bucketSource,
                 objectKey: keyName,
                 queryObj: { versionId: 'null' },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
                 }
-                objMDReplicated = JSON.parse(data.body).Body;
+                // Backbeat updates account info in metadata
+                // to the destination account info
+                objMDReplicated = objectMDFromRequestBody(data)
+                    .setOwnerDisplayName(dstAccountInfo.name)
+                    .setOwnerId(dstAccountInfo.canonicalID)
+                    .getSerialized();
                 return next();
             }),
             putReplicatedNullVersion: next => makeBackbeatRequest({
@@ -1127,20 +1218,20 @@ describe.skip('backbeat routes for replication', () => {
                 bucket: bucketDestination,
                 objectKey: keyName,
                 queryObj: { versionId: 'null' },
-                authCredentials: backbeatAuthCredentials,
+                authCredentials: destinationAuthCredentials,
                 requestBody: objMDReplicated,
             }, next),
-            headObjectByVersionId: next => s3.headObject({
+            headObjectByVersionId: next => dstS3.headObject({
                 Bucket: bucketDestination,
                 Key: keyName,
                 VersionId: versionId,
             }, next),
-            headObjectByNullVersion: next => s3.headObject({
+            headObjectByNullVersion: next => dstS3.headObject({
                 Bucket: bucketDestination,
                 Key: keyName,
                 VersionId: 'null',
             }, next),
-            listObjectVersionsDestination: next => s3.listObjectVersions({
+            listObjectVersionsDestination: next => dstS3.listObjectVersions({
                 Bucket: bucketDestination,
             }, next),
         }, (err, results) => {
