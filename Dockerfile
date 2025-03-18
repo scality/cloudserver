@@ -32,11 +32,6 @@ RUN yarn install --production --ignore-optional --frozen-lockfile --ignore-engin
 ################################################################################
 FROM node:${NODE_VERSION}
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        jq \
-    && rm -rf /var/lib/apt/lists/*
-
 ENV NO_PROXY=localhost,127.0.0.1
 ENV no_proxy=localhost,127.0.0.1
 
