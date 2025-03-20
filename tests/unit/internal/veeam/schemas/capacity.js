@@ -1,6 +1,6 @@
 const assert = require('assert');
 const validateCapacitySchema = require('../../../../../lib/routes/veeam/schemas/capacity');
-const { errors } = require('arsenal');
+const { errorInstances } = require('arsenal');
 
 describe('RouteVeeam: validateCapacitySchema', () => {
     [
@@ -25,7 +25,7 @@ describe('RouteVeeam: validateCapacitySchema', () => {
         },
     ].forEach(test => {
         it(`should return MalformedXML for ${JSON.stringify(test)}`, () => {
-            assert.throws(() => validateCapacitySchema(test).message, errors.MalformedXML.message);
+            assert.throws(() => validateCapacitySchema(test).message, errorInstances.MalformedXML.message);
         });
     });
 

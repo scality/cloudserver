@@ -1,12 +1,12 @@
 const assert = require('assert');
-const { errors, storage } = require('arsenal');
+const { errorInstances, storage } = require('arsenal');
 
 const AwsClient = storage.data.external.AwsClient;
 const { config } = require('../../../lib/Config');
 const DummyService = require('../DummyService');
 const { DummyRequestLogger } = require('../helpers');
 
-const missingVerIdInternalError = errors.InternalError.customizeDescription(
+const missingVerIdInternalError = errorInstances.InternalError.customizeDescription(
     'Invalid state. Please ensure versioning is enabled ' +
     'in AWS for the location constraint and try again.'
 );

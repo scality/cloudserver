@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 
-const { errors, errorInstances } = require('arsenal');
+const { errorInstances } = require('arsenal');
 const AuthInfo = require('arsenal').auth.AuthInfo;
 
 const { bucketPut } = require('../../../lib/api/bucketPut');

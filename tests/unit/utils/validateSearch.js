@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
+const { errorInstances } = require('arsenal');
 const validateSearch =
     require('../../../lib/api/apiUtils/bucket/validateSearch');
 
@@ -55,13 +55,13 @@ describe('validate search where clause', () => {
         {
             it: 'should disallow a LIKE search with invalid attribute',
             searchParams: '`x-zma-meta-dog` LIKE "labrador"',
-            result: errors.InvalidArgument.customizeDescription('Search ' +
+            result: errorInstances.InvalidArgument.customizeDescription('Search ' +
             'param contains unknown attribute: x-zma-meta-dog'),
         },
         {
             it: 'should disallow a simple search with unknown attribute',
             searchParams: '`x-zma-meta-dog`="labrador"',
-            result: errors.InvalidArgument.customizeDescription('Search ' +
+            result: errorInstances.InvalidArgument.customizeDescription('Search ' +
             'param contains unknown attribute: x-zma-meta-dog'),
         },
         {
@@ -69,7 +69,7 @@ describe('validate search where clause', () => {
                 'attribute on right',
             searchParams: '`x-amz-meta-dog`="labrador" AND ' +
                 '`x-zma-meta-dog`="labrador"',
-            result: errors.InvalidArgument.customizeDescription('Search ' +
+            result: errorInstances.InvalidArgument.customizeDescription('Search ' +
             'param contains unknown attribute: x-zma-meta-dog'),
         },
         {
@@ -77,7 +77,7 @@ describe('validate search where clause', () => {
                 'attribute on left',
             searchParams: '`x-zma-meta-dog`="labrador" AND ' +
                 '`x-amz-meta-dog`="labrador"',
-            result: errors.InvalidArgument.customizeDescription('Search ' +
+            result: errorInstances.InvalidArgument.customizeDescription('Search ' +
             'param contains unknown attribute: x-zma-meta-dog'),
         },
         {
@@ -86,14 +86,14 @@ describe('validate search where clause', () => {
             searchParams: '`x-amz-meta-dog`="labrador" ' +
                 'AND `x-amz-meta-age`="5" ' +
                 'OR `x-zma-meta-whatever`="ok"',
-            result: errors.InvalidArgument.customizeDescription('Search ' +
+            result: errorInstances.InvalidArgument.customizeDescription('Search ' +
                 'param contains unknown attribute: x-zma-meta-whatever'),
         },
         {
             it: 'should disallow a simple search with unknown ' +
                 'column attribute',
             searchParams: 'whatever="labrador"',
-            result: errors.InvalidArgument.customizeDescription('Search ' +
+            result: errorInstances.InvalidArgument.customizeDescription('Search ' +
             'param contains unknown attribute: whatever'),
         },
         {
@@ -103,13 +103,13 @@ describe('validate search where clause', () => {
                 'AND `x-amz-meta-age`="5" ' +
                 'OR madeUp="something"' +
                 'OR `x-amz-meta-whatever`="ok"',
-            result: errors.InvalidArgument.customizeDescription('Search ' +
+            result: errorInstances.InvalidArgument.customizeDescription('Search ' +
                 'param contains unknown attribute: madeUp'),
         },
         {
             it: 'should disallow unsupported query operators',
             searchParams: 'x-amz-meta-dog BETWEEN "labrador"',
-            result: errors.InvalidArgument.customizeDescription(
+            result: errorInstances.InvalidArgument.customizeDescription(
                 'Invalid sql where clause sent as search query'),
         },
         {

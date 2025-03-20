@@ -1,6 +1,6 @@
 const assert = require('assert');
 const validateSystemSchema = require('../../../../../lib/routes/veeam/schemas/system');
-const { errors } = require('arsenal');
+const { errorInstances } = require('arsenal');
 
 const modelName = '"ARTESCA"';
 
@@ -29,7 +29,7 @@ describe('RouteVeeam: validateSystemSchema 1.0', () => {
         },
     ].forEach(test => {
         it(`should return MalformedXML for ${JSON.stringify(test)}`, () => {
-            assert.throws(() => validateSystemSchema(test).message, errors.MalformedXML.message);
+            assert.throws(() => validateSystemSchema(test).message, errorInstances.MalformedXML.message);
         });
     });
 
