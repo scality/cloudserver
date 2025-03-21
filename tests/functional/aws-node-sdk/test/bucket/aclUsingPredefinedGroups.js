@@ -1,6 +1,6 @@
 const assert = require('assert');
 const AWS = require('aws-sdk');
-const { errors } = require('arsenal');
+const { errorInstances } = require('arsenal');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -41,7 +41,7 @@ withV4(sigCfg => {
     function cbWithError(done) {
         return err => {
             assert.notStrictEqual(err, null);
-            assert.strictEqual(err.statusCode, errors.AccessDenied.code);
+            assert.strictEqual(err.statusCode, errorInstances.AccessDenied.code);
             done();
         };
     }
@@ -181,7 +181,7 @@ withV4(sigCfg => {
                             assert.notStrictEqual(err, null);
                             assert.strictEqual(
                                 err.statusCode,
-                                errors.AccessDenied.code
+                                errorInstances.AccessDenied.code
                             );
                         }
                         done();

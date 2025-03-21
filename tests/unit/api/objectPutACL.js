@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 
-const { errors } = require('arsenal');
+const { errorInstances } = require('arsenal');
 const AuthInfo = require('arsenal').auth.AuthInfo;
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
@@ -695,7 +695,7 @@ describe('putObjectACL API', () => {
                     testObjACLRequest, log, next),
             ], err => {
                 assert(err instanceof Error);
-                assert.strictEqual(err.code, errors.AccessDenied.code);
+                assert.strictEqual(err.code, errorInstances.AccessDenied.code);
                 done();
             });
         });

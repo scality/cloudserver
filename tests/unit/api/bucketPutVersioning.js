@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 
-const { errors } = require('arsenal');
+const { errorInstances } = require('arsenal');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 const bucketPutReplication = require('../../../lib/api/bucketPutReplication');
@@ -157,14 +157,14 @@ describe('bucketPutVersioning API', () => {
                 msg: 'should return error if enabling versioning on location ' +
                 'constraint with supportsVersioning set to false',
                 input: xmlEnableVersioning,
-                output: { error: errors.NotImplemented.customizeDescription(
+                output: { error: errorInstances.NotImplemented.customizeDescription(
                     externalVersioningErrorMessage) },
             },
             {
                 msg: 'should return error if suspending versioning on ' +
                 ' location constraint with supportsVersioning set to false',
                 input: xmlSuspendVersioning,
-                output: { error: errors.NotImplemented.customizeDescription(
+                output: { error: errorInstances.NotImplemented.customizeDescription(
                     externalVersioningErrorMessage) },
             },
         ];

@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { errors, storage } = require('arsenal');
+const { errorInstances, storage } = require('arsenal');
 const { gcpTaggingPrefix } = require('../../../constants');
 const { genPutTagObj } =
     require('../../../tests/functional/raw-node/utils/gcpUtils');
@@ -36,25 +36,25 @@ describe('GcpUtils Tagging Helper Functions:', () => {
             {
                 it: 'should return error for invalid tag set size',
                 input: invalidSizeTagSet,
-                output: errors.BadRequest.customizeDescription(
+                output: errorInstances.BadRequest.customizeDescription(
                     'Object tags cannot be greater than 10'),
             },
             {
                 it: 'should return error for duplicate tag keys',
                 input: invalidDuplicateTagSet,
-                output: errors.InvalidTag.customizeDescription(
+                output: errorInstances.InvalidTag.customizeDescription(
                     'Cannot provide multiple Tags with the same key'),
             },
             {
                 it: 'should return error for invalid "key" value',
                 input: invalidKeyTagSet,
-                output: errors.InvalidTag.customizeDescription(
+                output: errorInstances.InvalidTag.customizeDescription(
                     'The TagKey provided is too long, 129'),
             },
             {
                 it: 'should return error for invalid "value" value',
                 input: invalidValueTagSet,
-                output: errors.InvalidTag.customizeDescription(
+                output: errorInstances.InvalidTag.customizeDescription(
                     'The TagValue provided is too long, 257'),
             },
             {

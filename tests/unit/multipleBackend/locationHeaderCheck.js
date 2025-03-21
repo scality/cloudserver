@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
+const { errorInstances } = require('arsenal');
 
 const locationHeaderCheck =
     require('../../../lib/api/apiUtils/object/locationHeaderCheck');
@@ -10,7 +10,7 @@ const bucketName = 'locationHeaderCheckBucket';
 const testCases = [
     {
         location: 'doesnotexist',
-        expRes: errors.InvalidLocationConstraint.customizeDescription(
+        expRes: errorInstances.InvalidLocationConstraint.customizeDescription(
             'Invalid location constraint specified in header'),
     }, {
         location: '',
