@@ -413,7 +413,7 @@ jobs:
   utapi-v2-tests:
     runs-on: ubuntu-24.04
     needs: build
-    if: false
+    if: always()
     env:
       ENABLE_UTAPI_V2: t
       S3BACKEND: mem

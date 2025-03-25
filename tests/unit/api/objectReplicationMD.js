@@ -306,7 +306,7 @@ describe('Replication object MD without bucket replication config', () => {
                 'arn:aws:iam::account-id:role/dest-resource',
             storageType: '',
             dataStoreVersionId: '',
-            isNFS: null,
+            isNFS: undefined,
         };
         const newReplicationMD = hasStorageClass ? Object.assign(replicationMD,
             { storageClass: storageClassType }) : replicationMD;
@@ -538,7 +538,7 @@ describe('Replication object MD without bucket replication config', () => {
                     role: 'arn:aws:iam::account-id:role/resource',
                     storageType,
                     dataStoreVersionId: '',
-                    isNFS: null,
+                    isNFS: undefined,
                 };
 
                 // Expected for a metadata-only replication operation (for
