@@ -38,7 +38,7 @@ describe('getReplicationInfo helper', () => {
             storageClass: 'awsbackend',
             role: 'arn:aws:iam::root:role/s3-replication-role',
             storageType: 'aws_s3',
-            isNFS: null,
+            isNFS: undefined,
         });
     });
 
@@ -79,7 +79,7 @@ describe('getReplicationInfo helper', () => {
             storageClass: 'awsbackend',
             role: 'arn:aws:iam::root:role/s3-replication-role',
             storageType: 'aws_s3',
-            isNFS: null,
+            isNFS: undefined,
         });
     });
 
@@ -110,7 +110,7 @@ describe('getReplicationInfo helper', () => {
             storageClass: 'awsbackend,azurebackend',
             role: 'arn:aws:iam::root:role/s3-replication-role',
             storageType: 'aws_s3,azure',
-            isNFS: null,
+            isNFS: undefined,
         });
     });
 
@@ -143,7 +143,7 @@ describe('getReplicationInfo helper', () => {
             storageClass: 'awsbackend:preferred_read,azurebackend',
             role: 'arn:aws:iam::root:role/s3-replication-role',
             storageType: 'aws_s3,azure',
-            isNFS: null,
+            isNFS: undefined,
         });
     });
 
@@ -207,7 +207,7 @@ describe('getReplicationInfo helper', () => {
             storageClass: 'awsbackend',
             role: 'arn:aws:iam::root:role/s3-replication-role',
             storageType: 'aws_s3',
-            isNFS: null,
+            isNFS: undefined,
         });
     });
 });
