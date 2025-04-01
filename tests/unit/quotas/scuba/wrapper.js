@@ -1,6 +1,6 @@
 const assert = require('assert');
 const sinon = require('sinon');
-const { ScubaClientImpl } = require('../../../../lib/quotas/scuba/wrapper');
+const { ScubaClientImpl } = require('../../../../lib/utilization/scuba/wrapper');
 
 describe('ScubaClientImpl', () => {
     let client;
