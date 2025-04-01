@@ -1,10 +1,13 @@
 const assert = require('assert');
 const crypto = require('crypto');
 const async = require('async');
+const sinon = require('sinon');
 
 const { makeRequest } = require('../../functional/raw-node/utils/makeRequest');
 const BucketUtility =
     require('../../functional/aws-node-sdk/lib/utility/bucket-util');
+
+const UtilizationService = require('../../../lib/utilization/instance');
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 
@@ -90,11 +93,16 @@ const invalidTestSystem = `<?xmlversion="1.0"encoding="UTF-8"?>
     </SystemInfo>\n`;
 
 const invalidTestSystemMd5 = crypto.createHash('md5')
-    .update(testSystem, 'utf-8')
+    .update(invalidTestSystem, 'utf-8')
     .digest('hex');
+
+const sampleBucketMetrics = {
+    bytesTotal: '1000000'
+};
 
 let bucketUtil;
 let s3;
+let utilizationStub;
 
 /** makeVeeamRequest - utility function to generate a request going
  * through veeam route
@@ -213,6 +221,31 @@ describe('veeam PUT routes:', () => {
                 return done();
             }));
     });
+
+    it('PUT capacity.xml should fail if UtilizationService errors', done => {
+        utilizationStub.restore();
+        utilizationStub = sinon.stub(UtilizationService, 'getUtilizationMetrics')
+            .callsFake((type, key, context, options, callback) => {
+                callback(new Error('Utilization service error'));
+            });
+
+        makeVeeamRequest({
+            method: 'PUT',
+            bucket: TEST_BUCKET,
+            objectKey: '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml',
+            headers: {
+                'content-length': testCapacity.length,
+                'content-md5': testCapacityMd5,
+                'x-scal-canonical-id': testArn,
+            },
+            authCredentials: veeamAuthCredentials,
+            requestBody: testCapacity,
+        }, (err, res) => {
+            assert.strictEqual(res.statusCode, 500);
+            assert.strictEqual(err.code, 'InternalError');
+            return done();
+        });
+    });
 });
 
 describe('veeam GET routes:', () => {
@@ -220,6 +253,11 @@ describe('veeam GET routes:', () => {
         bucketUtil = new BucketUtility(
             'default', { signatureVersion: 'v4' });
         s3 = bucketUtil.s3;
+        utilizationStub = sinon.stub(UtilizationService, 'getUtilizationMetrics')
+            .callsFake((type, key, context, options, callback) => {
+                callback(null, sampleBucketMetrics);
+            });
+
         s3.createBucket({ Bucket: TEST_BUCKET }).promise()
             .then(() => done())
             .catch(err => {
@@ -228,6 +266,7 @@ describe('veeam GET routes:', () => {
             });
     });
     afterEach(done => {
+        utilizationStub.restore();
         bucketUtil.empty(TEST_BUCKET)
             .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
             .then(() => done());
@@ -529,17 +568,40 @@ describe('veeam HEAD routes:', () => {
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
     ].forEach(key => {
         it(`HEAD ${key[0]} should fail if no data in bucket metadata`, done => makeVeeamRequest({
+            method: 'HEAD',
+            bucket: TEST_BUCKET,
+            objectKey: key[0],
+            headers: {
+                'x-scal-canonical-id': testArn,
+            },
+            authCredentials: veeamAuthCredentials,
+        }, (err, res) => {
+            assert.strictEqual(res.statusCode, 404);
+            return done();
+        }));
+
+        it('HEAD capacity.xml should handle utilization service error', done => {
+            // Temporarily modify stub to return error
+            utilizationStub.restore();
+            utilizationStub = sinon.stub(UtilizationService, 'getUtilizationMetrics')
+                .callsFake((type, key, context, options, callback) => {
+                    callback(new Error('Utilization service error'));
+                });
+
+            makeVeeamRequest({
                 method: 'HEAD',
                 bucket: TEST_BUCKET,
-                objectKey: key[0],
+                objectKey: '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml',
                 headers: {
                     'x-scal-canonical-id': testArn,
                 },
                 authCredentials: veeamAuthCredentials,
             }, (err, res) => {
-                assert.strictEqual(res.statusCode, 404);
+                assert.strictEqual(res.statusCode, 500);
+                assert.strictEqual(err.code, 'InternalError');
                 return done();
-            }));
+            });
+        });
     });
 });
 
