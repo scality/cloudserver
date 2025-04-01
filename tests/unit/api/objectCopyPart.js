@@ -137,4 +137,21 @@ describe('objectCopyPart', () => {
             done();
         });
     });
+
+    it('should set owner-id to the canonicalId of the dest bucket owner', done => {
+        const testObjectCopyRequest = _createObjectCopyPartRequest(destBucketName, uploadId);
+        objectPutCopyPart(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+            assert.ifError(err);
+            sinon.assert.calledWith(
+                metadataswitch.putObjectMD.lastCall,
+                sinon.match.string, // MPU shadow bucket
+                `${uploadId}..|..00001`,
+                sinon.match({ 'owner-id': authInfo.canonicalID }),
+                sinon.match.any,
+                sinon.match.any,
+                sinon.match.any
+            );
+            done();
+        });
+    });
 });
