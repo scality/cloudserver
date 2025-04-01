@@ -4,6 +4,7 @@ const sinon = require('sinon');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
+const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');
 const objectPut = require('../../../lib/api/objectPut');
 const objectCopy = require('../../../lib/api/objectCopy');
 const { ds } = require('arsenal').storage.data.inMemory.datastore;
@@ -40,6 +41,7 @@ function _createObjectCopyRequest(destBucketName) {
         objectKey,
         headers: {},
         url: `/${destBucketName}/${objectKey}`,
+        socket: {},
     };
     return new DummyRequest(params);
 }
@@ -63,6 +65,7 @@ describe('objectCopy with versioning', () => {
 
     before(done => {
         cleanup();
+        sinon.spy(metadata, 'putObjectMD');
         async.series([
             callback => bucketPut(authInfo, putDestBucketRequest, log,
                 callback),
@@ -91,7 +94,10 @@ describe('objectCopy with versioning', () => {
         });
     });
 
-    after(() => cleanup());
+    after(() => {
+        metadata.putObjectMD.restore();
+        cleanup();
+    });
 
     it('should delete null version when creating new null version, ' +
     'even when null version is not the latest version', done => {
@@ -107,6 +113,94 @@ describe('objectCopy with versioning', () => {
                     done();
                 });
             });
+    });
+
+    it('should not set bucketOwnerId if requesting account owns dest bucket', done => {
+        const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
+        objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
+            undefined, log, err => {
+                assert.ifError(err);
+                sinon.assert.calledWith(
+                    metadata.putObjectMD.lastCall,
+                    destBucketName,
+                    objectKey,
+                    sinon.match({ _data: { bucketOwnerId: sinon.match.typeOf('undefined') } }),
+                    sinon.match.any,
+                    sinon.match.any,
+                    sinon.match.any
+                );
+                done();
+            });
+    });
+
+    // TODO: S3C-9965
+    // Skipped because the policy is not checked correctly
+    // When source bucket policy is checked destination arn is used
+    it.skip('should set bucketOwnerId if requesting account differs from dest bucket owner', done => {
+        const authInfo2 = makeAuthInfo('accessKey2');
+        const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
+        const testPutSrcPolicyRequest = new DummyRequest({
+            bucketName: sourceBucketName,
+            namespace,
+            headers: { host: `${sourceBucketName}.s3.amazonaws.com` },
+            url: '/',
+            socket: {},
+            post: JSON.stringify({
+                Version: '2012-10-17',
+                Statement: [
+                    {
+                        Sid: 'AllowCrossAccountRead',
+                        Effect: 'Allow',
+                        Principal: { AWS: `arn:aws:iam::${authInfo2.shortid}:root` },
+                        Action: ['s3:GetObject'],
+                        Resource: [
+                            `arn:aws:s3:::${sourceBucketName}/*`,
+                        ],
+                    },
+                ],
+            }),
+        });
+        const testPutDestPolicyRequest = new DummyRequest({
+            bucketName: destBucketName,
+            namespace,
+            headers: { host: `${destBucketName}.s3.amazonaws.com` },
+            url: '/',
+            socket: {},
+            post: JSON.stringify({
+                Version: '2012-10-17',
+                Statement: [
+                    {
+                        Sid: 'AllowCrossAccountWrite',
+                        Effect: 'Allow',
+                        Principal: { AWS: `arn:aws:iam::${authInfo2.shortid}:root` },
+                        Action: ['s3:PutObject'],
+                        Resource: [
+                            `arn:aws:s3:::${destBucketName}/*`,
+                        ],
+                    },
+                ],
+            }),
+        });
+        bucketPutPolicy(authInfo, testPutSrcPolicyRequest, log, err => {
+            assert.ifError(err);
+            bucketPutPolicy(authInfo, testPutDestPolicyRequest, log, err => {
+                assert.ifError(err);
+                objectCopy(authInfo2, testObjectCopyRequest, sourceBucketName, objectKey,
+                    undefined, log, err => {
+                        sinon.assert.calledWith(
+                            metadata.putObjectMD.lastCall,
+                            destBucketName,
+                            objectKey,
+                            sinon.match({ _data: { bucketOwnerId: authInfo.canonicalID } }),
+                            sinon.match.any,
+                            sinon.match.any,
+                            sinon.match.any
+                        );
+                        assert.ifError(err);
+                        done();
+                    });
+            });
+        });
     });
 });
 
