@@ -6,7 +6,7 @@ const {
     processBytesToWrite,
     isMetricStale,
 } = require('../../../../../lib/api/apiUtils/quotas/quotaUtils');
-const QuotaService = require('../../../../../lib/quotas/quotas');
+const QuotaService = require('../../../../../lib/utilization/instance');
 const BucketInfo = require('arsenal').models.BucketInfo;
 
 const mockLog = {

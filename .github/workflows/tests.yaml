@@ -449,7 +449,7 @@ jobs:
         source: /tmp/artifacts
       if: always()
 
-  quota-tests:
+  sur-tests:
     runs-on: ubuntu-24.04
     needs: build
     strategy:
@@ -478,11 +478,11 @@ jobs:
     - name: Setup CI services
       run: docker compose --profile mongo up -d
       working-directory: .github/docker
-    - name: Run quota tests
+    - name: Run SUR-related tests
       run: |-
         set -ex -o pipefail;
         bash wait_for_local_port.bash 8000 40
-        yarn run test_quota | tee /tmp/artifacts/${{ github.job }}/tests.log
+        yarn run test_sur | tee /tmp/artifacts/${{ github.job }}/tests.log
     - name: Cleanup and upload coverage
       uses: ./.github/actions/cleanup-and-coverage
       with:
