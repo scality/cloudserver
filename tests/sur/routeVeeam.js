@@ -130,7 +130,7 @@ function makeVeeamRequest(params, callback) {
     makeRequest(options, callback);
 }
 
-(process.env.S3METADATA === 'mongodb' ? describe.only : describe.skip)('Veeam routes:', () => {
+(process.env.S3METADATA === 'mongodb' ? describe : describe.skip)('Veeam routes:', () => {
     let scuba;
 
     beforeEach(done => {
@@ -384,7 +384,7 @@ function makeVeeamRequest(params, callback) {
         });
 
         [
-            // ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', testSystem, testSystemMd5],
+            ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', testSystem, testSystemMd5],
             ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
         ].forEach(key => {
             it(`DELETE ${key[0]} should delete the XML file`, done => {
