@@ -222,6 +222,7 @@ const constants = {
         'isNull',
         'isDeleteMarker',
         'x-amz-meta-scal-version-id',
+        'bucketOwnerId',
     ],
     unsupportedSignatureChecksums: new Set([
         'STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER',
