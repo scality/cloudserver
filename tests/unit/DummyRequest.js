@@ -26,6 +26,11 @@ class DummyRequest extends http.IncomingMessage {
         }
         this.push(null);
     }
+
+    _destroy(err, cb) {
+        // this is a no-op
+        cb();
+    }
 }
 
 module.exports = DummyRequest;
