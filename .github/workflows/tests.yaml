@@ -150,7 +150,7 @@ jobs:
       if: always()
 
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
