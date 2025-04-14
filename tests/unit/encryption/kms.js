@@ -48,7 +48,7 @@ describe('KMS unit tests', () => {
                 assert.strictEqual(sseInfo.cryptoScheme, 1);
                 assert.strictEqual(sseInfo.mandatory, true);
                 assert.strictEqual(sseInfo.algorithm, 'aws:kms');
-                assert.strictEqual(sseInfo.configuredMasterKeyId, masterKeyId);
+                assert.strictEqual(sseInfo.configuredMasterKeyId, `${KMS.arnPrefix}${masterKeyId}`);
                 done();
             });
     });
