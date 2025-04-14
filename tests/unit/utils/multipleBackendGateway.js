@@ -1,5 +1,6 @@
 const assert = require('assert');
 const { checkExternalBackend } = require('arsenal').storage.data.external.backendUtils;
+const sinon = require('sinon');
 const awsLocations = [
     'awsbackend',
 ];
@@ -29,9 +30,13 @@ function getClients(isSuccess) {
 describe('Testing _checkExternalBackend', function describeF() {
     this.timeout(50000);
     beforeEach(done => {
+        this.clock = sinon.useFakeTimers({ shouldAdvanceTime: true });
         const clients = getClients(true);
         return checkExternalBackend(clients, awsLocations, 'aws_s3', false,
         externalBackendHealthCheckInterval, done);
+    });
+    afterEach(() => {
+        this.clock.restore();
     });
     it('should not refresh response before externalBackendHealthCheckInterval',
     done => {
@@ -59,5 +64,6 @@ describe('Testing _checkExternalBackend', function describeF() {
                 return done();
             });
         }, externalBackendHealthCheckInterval + 1);
+        this.clock.next(); // test faster
     });
 });
