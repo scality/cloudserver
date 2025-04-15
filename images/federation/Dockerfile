@@ -32,7 +32,7 @@ USER ${USER}
 WORKDIR ${HOME_DIR}/s3
 
 # Keep same output as chown command without group (use group 0)
-COPY --chown=${USER}:0 --from=builder /usr/src/app ${HOME_DIR}/cloudserver
+COPY --chown=${USER}:0 --from=builder /usr/src/app ${HOME_DIR}/s3
 
 ENV S3_CONFIG_FILE=${CONF_DIR}/config.json
 ENV S3_LOCATION_FILE=${CONF_DIR}/locationConfig.json
