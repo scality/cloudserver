@@ -17,6 +17,7 @@ const completeMultipartUpload =
 const objectPutACL = require('../../../lib/api/objectPutACL');
 const objectPutTagging = require('../../../lib/api/objectPutTagging');
 const objectDeleteTagging = require('../../../lib/api/objectDeleteTagging');
+const { config } = require('../../../lib/Config');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
@@ -318,7 +319,10 @@ describe('Replication object MD without bucket replication config', () => {
             createBucketWithReplication(hasStorageClass);
         });
 
-        afterEach(() => cleanup());
+        afterEach(() => {
+            cleanup();
+            delete config.locationConstraints['zenko'];
+        });
 
         it('should update metadata when replication config prefix matches ' +
         'an object key', done =>
@@ -358,14 +362,45 @@ describe('Replication object MD without bucket replication config', () => {
                     return done();
                 }));
 
-        it('should not update metadata if putting object ACL', done => {
-            let completedReplicationInfo;
+        it('should update metadata if putting object ACL and CRR replication', done => {
+            // Set 'zenko' as a typical CRR location (i.e. no type)
+            config.locationConstraints['zenko'] = {
+                ...config.locationConstraints['zenko'],
+                type: '',
+            };
+
             async.series([
                 next => putObjectAndCheckMD(keyA, newReplicationMD, next),
                 next => {
                     const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
-                    // Update metadata to a status after replication
-                    // has occurred.
+                    // Update metadata to a status after replication has occurred.
+                    objectMD.replicationInfo.status = 'COMPLETED';
+                    objectPutACL(authInfo, objectACLReq, log, next);
+                },
+            ], err => {
+                if (err) {
+                    return done(err);
+                }
+                checkObjectReplicationInfo(keyA, replicateMetadataOnly);
+                return done();
+            });
+        });
+
+        it('should not update metadata if putting object ACL and cloud replication', done => {
+            // Set 'zenko' as a typical cloud location (i.e.  type)
+            config.locationConstraints['zenko'] = {
+                ...config.locationConstraints['zenko'],
+                type: 'aws_s3',
+            };
+
+            const replicationMD = { ...newReplicationMD, storageType: 'aws_s3' };
+
+            let completedReplicationInfo;
+            async.series([
+                next => putObjectAndCheckMD(keyA, replicationMD, next),
+                next => {
+                    const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+                    // Update metadata to a status after replication has occurred.
                     objectMD.replicationInfo.status = 'COMPLETED';
                     completedReplicationInfo = JSON.parse(
                         JSON.stringify(objectMD.replicationInfo));
