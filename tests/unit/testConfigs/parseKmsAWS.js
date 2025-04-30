@@ -48,6 +48,7 @@ describe('parseKmsAWS Function', () => {
             endpoint: 'https://example.com',
             ak: 'accessKey',
             sk: 'secretKey',
+            noAwsArn: true,
         });
     });
 
@@ -68,6 +69,7 @@ describe('parseKmsAWS Function', () => {
             ak: 'accessKey',
             sk: 'secretKey',
             region: 'us-west-2',
+            noAwsArn: true,
         });
     });
 
@@ -91,6 +93,7 @@ describe('parseKmsAWS Function', () => {
             endpoint: 'https://example.com',
             ak: 'accessKey',
             sk: 'secretKey',
+            noAwsArn: true,
             tls: {
                 rejectUnauthorized: true,
                 minVersion: 'TLSv1.2',
