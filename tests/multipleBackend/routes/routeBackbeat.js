@@ -30,6 +30,7 @@ const azureClient = getAzureClient();
 const containerName = getAzureContainerName(azureLocation);
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
+const isNullVersionCompatMode = process.env.ENABLE_NULL_VERSION_COMPAT_MODE === 'true';
 
 const { accessKeyId, secretAccessKey } = getCredentials();
 
@@ -379,6 +380,9 @@ describe('backbeat routes', () => {
                 const objMDAfter = JSON.parse(getMetadataAfterRes.body).Body;
                 const expectedMd = JSON.parse(objMD);
                 expectedMd.isNull = true; // TODO remove the line once CLDSRV-509 is fixed
+                if (!isNullVersionCompatMode) {
+                    expectedMd.isNull2 = true; // TODO remove the line once CLDSRV-509 is fixed
+                }
                 assert.deepStrictEqual(JSON.parse(objMDAfter), expectedMd);
 
                 const listObjectVersionsRes = results.listObjectVersions;
