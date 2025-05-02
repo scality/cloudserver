@@ -1,10 +1,12 @@
 const assert = require('assert');
+const fs = require('fs');
+const sinon = require('sinon');
 const {
     azureGetStorageAccountName,
     azureGetLocationCredentials,
     locationConstraintAssert,
     parseSupportedLifecycleRules,
-    ConfigObject: ConfigObject,
+    ConfigObject,
 } = require('../../lib/Config');
 
 const {
@@ -442,6 +444,61 @@ describe('Config', () => {
             setEnv('S3METADATA', 'file'); // Not MongoDB
             const config = new ConfigObject();
             assert.strictEqual(config.nullVersionCompatMode, false);
+        });
+    });
+
+    describe('multiObjectDeleteEnableOptimizations', () => {
+        const defaultConfig = JSON.parse(fs.readFileSync('config.json'), { encoding: 'utf-8' });
+        let sandbox;
+        let readFileStub;
+
+        beforeEach(() => {
+            sandbox = sinon.createSandbox();
+            readFileStub = sandbox.stub(fs, 'readFileSync');
+            readFileStub.callThrough();
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+        });
+
+        it('should be true by default when metadata backend is mongodb', () => {
+            process.env.S3METADATA = 'mongodb';
+            const config = new ConfigObject();
+            assert.strictEqual(config.multiObjectDeleteEnableOptimizations, true);
+        });
+
+        it('should be false by default when metadata backend is not mongodb', () => {
+            process.env.S3METADATA = 'file';
+            const config = new ConfigObject();
+            assert.strictEqual(config.multiObjectDeleteEnableOptimizations, false);
+        });
+
+        it('should respect config file setting when set to false', () => {
+            process.env.S3METADATA = 'mongodb';
+            const modifiedConfig = { ...defaultConfig, multiObjectDeleteEnableOptimizations: false };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(modifiedConfig));
+
+            const config = new ConfigObject();
+            assert.strictEqual(config.multiObjectDeleteEnableOptimizations, false);
+        });
+
+        it('should respect config file setting when set to true', () => {
+            process.env.S3METADATA = 'mongodb';
+            const modifiedConfig = { ...defaultConfig, multiObjectDeleteEnableOptimizations: true };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(modifiedConfig));
+
+            const config = new ConfigObject();
+            assert.strictEqual(config.multiObjectDeleteEnableOptimizations, true);
+        });
+
+        it('should ignore config file setting for non-mongodb backend', () => {
+            process.env.S3METADATA = 'file';
+            const modifiedConfig = { ...defaultConfig, multiObjectDeleteEnableOptimizations: true };
+            readFileStub.withArgs('config.json').returns(JSON.stringify(modifiedConfig));
+
+            const config = new ConfigObject();
+            assert.strictEqual(config.multiObjectDeleteEnableOptimizations, false);
         });
     });
 

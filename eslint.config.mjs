@@ -18,7 +18,7 @@ export default [...compat.extends('@scality/scality'), {
     },
 
     languageOptions: {
-        ecmaVersion: 2020,
+        ecmaVersion: 2021,
         sourceType: "script",
     },
 

@@ -10,6 +10,7 @@ const DummyRequest = require('../DummyRequest');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const metadataWrapper = require('../../../lib/metadata/wrapper');
 const objectPut = require('../../../lib/api/objectPut');
+const { config } = require('../../../lib/Config');
 const log = new DummyRequestLogger();
 
 const { metadata } = storage.metadata.inMemory.metadata;
@@ -267,15 +268,20 @@ describe('initializeMultiObjectDeleteWithBatchingSupport', () => {
     let log;
     let callback;
 
+    const wasMultiObjectDeleteEnabled = config.multiObjectDeleteEnableOptimizations;
+
     beforeEach(() => {
         bucketName = 'myBucket';
         inPlay = { one: 'object1', two: 'object2' };
         log = {};
         callback = sinon.spy();
+
+        config.multiObjectDeleteEnableOptimizations = true;
     });
 
     afterEach(() => {
         sinon.restore();
+        config.multiObjectDeleteEnableOptimizations = wasMultiObjectDeleteEnabled;
     });
 
     it('should not throw if the decodeObjectVersion function fails', done => {
