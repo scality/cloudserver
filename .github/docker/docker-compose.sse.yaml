@@ -1,0 +1,50 @@
+services:
+  vault-sse-before-migration:
+    image: ${VAULT_IMAGE}
+    profiles: ['sse-migration']
+    # root because S3C images needs ownership permission on files and mounted paths
+    user: root
+    command: sh -c "chmod 400 tests/utils/keyfile && yarn start > /artifacts/vault.log 2> /artifacts/vault-stderr.log"
+    network_mode: "host"
+    volumes:
+      - /tmp/artifacts/${JOB_NAME}:/artifacts
+      - ./vault-config.json:/conf/config.json:ro
+      - ./vault-db:/data
+    environment:
+      - VAULT_DB_BACKEND=LEVELDB
+      - CI=true
+      - ENABLE_LOCAL_CACHE=true
+      - REDIS_HOST=0.0.0.0
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+  vault-sse-migration:
+    extends: vault-sse-before-migration
+    profiles: ['sse-migration']
+    command: sh -c "chmod 400 tests/utils/keyfile && yarn start > /artifacts/vault.migration.log 2> /artifacts/vault-stderr.migration.log"
+    environment:
+      - KMS_BACKEND
+  cloudserver-sse-before-migration:
+    extends:
+      file: docker-compose.yaml
+      service: cloudserver
+    profiles: [sse-migration]
+    volumes:
+      # using artesca container
+      - ../../localData:/usr/src/app/localData
+      - ../../localMetadata:/usr/src/app/localMetadata
+      - ../../tests/functional/sse-kms-migration/config.json:/conf/config.json
+    environment:
+      - S3_CONFIG_FILE=/conf/config.json
+      - S3VAULT=scality
+    depends_on:
+      - vault-sse-before-migration
+  cloudserver-sse-migration:
+    extends: cloudserver-sse-before-migration
+    profiles: [sse-migration]
+    command: sh -c "yarn start > /artifacts/s3.migration.log 2> /artifacts/s3-stderr.migration.log"
+    environment:
+      - S3KMS
+    depends_on: !override
+      - redis
+      - vault-sse-migration
