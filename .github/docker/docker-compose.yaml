@@ -8,6 +8,9 @@ services:
       - /tmp/ssl-kmip:/ssl-kmip
       - ${HOME}/.aws/credentials:/root/.aws/credentials
       - /tmp/artifacts/${JOB_NAME}:/artifacts
+      # using artesca container, with persistent volumes for sse migration
+      - ../../localData:/usr/src/app/localData
+      - ../../localMetadata:/usr/src/app/localMetadata
     environment:
       - CI=true
       - ENABLE_LOCAL_CACHE=true
@@ -42,6 +45,16 @@ services:
     extra_hosts:
       - "bucketwebsitetester.s3-website-us-east-1.amazonaws.com:127.0.0.1"
       - "pykmip.local:127.0.0.1"
+  cloudserver-sse-migration:
+    extends: cloudserver
+    profiles: [sse-migration]
+    volumes:
+      # using artesca container
+      - ../../tests/functional/sse-kms-migration/config.${SSE_CONF}.json:/conf/config.json
+      - ../../localData:/usr/src/app/localData
+      - ../../localMetadata:/usr/src/app/localMetadata
+    environment:
+      - S3_CONFIG_FILE=/conf/config.json
   redis:
     image: redis:alpine
     network_mode: "host"
