@@ -205,7 +205,9 @@ const constants = {
     ],
     allowedUtapiEventFilterStates: ['allow', 'deny'],
     allowedRestoreObjectRequestTierValues: ['Standard'],
-    validStorageClasses: [
+    // Only STANDARD class is supported, but keep the option to override supported values for now.
+    // This should be removed in CLDSRV-639.
+    validStorageClasses: process.env.VALID_STORAGE_CLASSES?.split(',') || [
         'STANDARD',
     ],
     lifecycleListing: {
