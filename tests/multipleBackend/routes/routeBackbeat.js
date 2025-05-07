@@ -2509,7 +2509,8 @@ describe('backbeat routes', () => {
                 }),
                 done => {
                     makeBackbeatRequest({
-                        method: 'GET', bucket: TEST_BUCKET,
+                        method: 'GET',
+                        bucket: TEST_BUCKET,
                         objectKey: testKey,
                         resourceType: 'metadata',
                         authCredentials: backbeatAuthCredentials,
@@ -2531,7 +2532,7 @@ describe('backbeat routes', () => {
                         hostname: ipAddress,
                         port: 8000,
                         method: 'POST',
-                        path: '/_/backbeat/batchdelete',
+                        path: `/_/backbeat/batchdelete/${TEST_BUCKET}/${testKey}`,
                         requestBody:
                         `{"Locations":${JSON.stringify(location)}}`,
                         jsonResponse: true,

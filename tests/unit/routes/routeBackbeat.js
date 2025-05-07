@@ -8,6 +8,8 @@ const { DummyRequestLogger } = require('../helpers');
 const dataWrapper = require('../../../lib/data/wrapper');
 const DummyRequest = require('../DummyRequest');
 const { auth } = require('arsenal');
+const { config } = require('../../../lib/Config');
+const quotaUtils = require('../../../lib/api/apiUtils/quotas/quotaUtils');
 
 const log = new DummyRequestLogger();
 
@@ -381,118 +383,141 @@ describe('routeBackbeat', () => {
         assert.strictEqual(mockResponse.statusCode, 405);
     });
 
-    it('should be rejected when trying batchDelete as a public user', async () => {
-        mockRequest = prepareDummyRequest(null, JSON.stringify({
-            Locations: [
-                {
+    describe('batchDelete', () => {
+        let doAuthStub;
+        let validateQuotasSpy;
+
+        const prepareBatchDeleteRequest = (locations = undefined) => {
+            const mockRequest = prepareDummyRequest({
+                'x-scal-versioning-required': 'true'
+            }, JSON.stringify({
+                Locations: locations || [{
                     key: 'key0',
                     bucket: 'bucket0',
-                },
-            ],
-        }));
-
-        mockRequest.method = 'POST';
-        mockRequest.url = '/_/backbeat/batchdelete';
-        mockRequest.headers = {
-            'x-scal-versioning-required': 'true',
+                    size: 100,
+                }],
+            }));
+            mockRequest.method = 'POST';
+            mockRequest.url = '/_/backbeat/batchdelete/bucket0/key0';
+            mockRequest.destroy = () => { };
+            return mockRequest;
         };
-        mockRequest.destroy = () => {};
-        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
 
-        void await endPromise;
-        assert.strictEqual(mockResponse.statusCode, 403);
-    });
-
-    it('should batchDelete', async () => {
-        mockRequest = prepareDummyRequest(null, JSON.stringify({
-            Locations: [
-                {
-                    key: 'key0',
-                    bucket: 'bucket0',
-                },
-            ],
-        }));
-
-        mockRequest.method = 'POST';
-        mockRequest.url = '/_/backbeat/batchdelete';
-        mockRequest.headers = {
-            'x-scal-versioning-required': 'true',
-        };
-        mockRequest.destroy = () => {};
-        const doAuthStub = sandbox.stub(auth.server, 'doAuth');
-        doAuthStub.callsFake((req, log, cb) => {
-            cb(null, {
-                canonicalID: 'id',
-                getCanonicalID: () => 'id',
+        beforeEach(() => {
+            validateQuotasSpy = sandbox.spy(quotaUtils, 'validateQuotas');
+            doAuthStub = sandbox.stub(auth.server, 'doAuth');
+            doAuthStub.callsFake((req, log, cb) => {
+                cb(null, {
+                    canonicalID: 'id',
+                    getCanonicalID: () => 'id',
+                });
             });
+
+            // Initialize mock request with default properties
+            mockRequest = prepareBatchDeleteRequest();
         });
 
-        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+        it('should be rejected when trying batchDelete as a public user', async () => {
+            doAuthStub.reset();
+            doAuthStub.callThrough();
 
-        void await endPromise;
-        assert.strictEqual(mockResponse.statusCode, 200);
-        assert.deepStrictEqual(mockResponse.body, null);
-    });
-
-    it('should batchDelete with conditions and azure location', async () => {
-        mockRequest = prepareDummyRequest({
-            'if-unmodified-since': '1980-01-01T00:00:00.000Z',
-            'x-scal-versioning-required': 'true',
-            'x-scal-storage-class': 'azurebackend',
-        }, JSON.stringify({
-            Locations: [
-                {
-                    key: 'key0',
-                    bucket: 'bucket0',
-                },
-            ],
-        }));
-
-        mockRequest.method = 'POST';
-        mockRequest.url = '/_/backbeat/batchdelete';
-        mockRequest.destroy = () => {};
-        const doAuthStub = sandbox.stub(auth.server, 'doAuth');
-        doAuthStub.callsFake((req, log, cb) => {
-            cb(null, {
-                canonicalID: 'id',
-                getCanonicalID: () => 'id',
-            });
+            routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+            void await endPromise;
+            assert.strictEqual(mockResponse.statusCode, 403);
         });
 
-        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+        it('should update quotas when batch deleting data', async () => {
+            sandbox.stub(config, 'isQuotaEnabled').returns(true);
+            const bucketMD = {
+                getName: () => 'bucket0',
+                getQuota: () => 0n,
+            };
+            sandbox.stub(metadata, 'getBucket').callsFake((bucket, log, cb) => cb(null, bucketMD));
 
+            routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+            await endPromise;
+
+            sinon.assert.calledOnce(validateQuotasSpy);
+            sinon.assert.calledWith(validateQuotasSpy,
+                mockRequest,
+                bucketMD,
+                mockRequest.accountQuotas,
+                ['objectDelete'],
+                'objectDelete',
+                -100,
+                false,
+                log,
+                sinon.match.any,
+            );
+
+            assert.strictEqual(mockResponse.statusCode, 200);
+            assert.deepStrictEqual(mockResponse.body, null);
+        });
+
+        it('should skip quota updates when no bucket provided', async () => {
+            sandbox.stub(config, 'isQuotaEnabled').returns(true);
+            mockRequest.url = '/_/backbeat/batchdelete';
+
+            routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+            void await endPromise;
+
+            assert(!validateQuotasSpy.called);
+
+            assert.strictEqual(mockResponse.statusCode, 200);
+            assert.deepStrictEqual(mockResponse.body, null);
+        });
+
+        it('should skip quota updates when quotas disabled', async () => {
+            sandbox.stub(config, 'isQuotaEnabled').returns(false);
+
+            routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+            void await endPromise;
+
+            assert(!validateQuotasSpy.called);
+
+            assert.strictEqual(mockResponse.statusCode, 200);
+            assert.deepStrictEqual(mockResponse.body, null);
+        });
+
+        it('should skip quota updates when content length is 0', async () => {
+            sandbox.stub(config, 'isQuotaEnabled').returns(true);
+            mockRequest = prepareBatchDeleteRequest([{
+                key: 'key0',
+                bucket: 'bucket0',
+                size: 0,
+            }]);
+
+            routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+            void await endPromise;
+
+            assert(!validateQuotasSpy.called);
+
+            assert.strictEqual(mockResponse.statusCode, 200);
+            assert.deepStrictEqual(mockResponse.body, null);
+        });
+
+        it('should batchDelete with conditions and azure location', async () => {
+            mockRequest.headers = {
+                'x-scal-versioning-required': 'true',
+                'if-unmodified-since': '1980-01-01T00:00:00.000Z',
+                'x-scal-storage-class': 'azurebackend',
+            };
+
+            routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
         void await endPromise;
         assert.strictEqual(mockResponse.statusCode, 200);
         assert.deepStrictEqual(mockResponse.body, {});
     });
 
     it('should not batchDelete with conditions if "if-unmodified-since" header unset', async () => {
-        mockRequest = prepareDummyRequest({
+        mockRequest.headers = {
             'x-scal-versioning-required': 'true',
             'x-scal-storage-class': 'azurebackend',
-        }, JSON.stringify({
-            Locations: [
-                {
-                    key: 'key0',
-                    bucket: 'bucket0',
-                },
-            ],
-        }));
-
-        mockRequest.method = 'POST';
-        mockRequest.url = '/_/backbeat/batchdelete';
-        mockRequest.destroy = () => {};
-        const doAuthStub = sandbox.stub(auth.server, 'doAuth');
-        doAuthStub.callsFake((req, log, cb) => {
-            cb(null, {
-                canonicalID: 'id',
-                getCanonicalID: () => 'id',
-            });
-        });
+        };
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-
         void await endPromise;
+
         assert.strictEqual(mockResponse.statusCode, 200);
     });
 
@@ -508,36 +533,24 @@ describe('routeBackbeat', () => {
                 },
             ],
         }));
-        putRequest.destroy = () => { };
         await promisify(dataWrapper.client.put)(putRequest, 91, 1, 'reqUids');
-        mockRequest = prepareDummyRequest({
+
+        mockRequest = prepareBatchDeleteRequest([{
+            key: '1',
+            bucket: 'bucket0',
+        }]);
+        mockRequest.headers = {
             'if-unmodified-since': '2000-01-01T00:00:00.000Z',
             'x-scal-versioning-required': 'true',
             'x-scal-storage-class': 'gcpbackend',
             'x-scal-tags': JSON.stringify({ key: 'value' }),
-        }, JSON.stringify({
-            Locations: [
-                {
-                    key: 1,
-                    bucket: 'bucket0',
-                },
-            ],
-        }));
-        mockRequest.method = 'POST';
-        mockRequest.url = '/_/backbeat/batchdelete';
-        mockRequest.destroy = () => {};
-        const doAuthStub = sandbox.stub(auth.server, 'doAuth');
-        doAuthStub.callsFake((req, log, cb) => {
-            cb(null, {
-                canonicalID: 'id',
-                getCanonicalID: () => 'id',
-            });
-        });
+        };
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-
         void await endPromise;
+
         assert.strictEqual(mockResponse.statusCode, 200);
         assert.deepStrictEqual(mockResponse.body, null);
+    });
     });
 });
