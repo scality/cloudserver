@@ -138,13 +138,14 @@ describe('veeam PUT routes:', () => {
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
+                done(err);
             });
     });
     after(done => {
         bucketUtil.empty(TEST_BUCKET)
             .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
-            .then(() => done());
+            .then(() => done())
+            .catch(done);
     });
 
     [
@@ -224,13 +225,14 @@ describe('veeam GET routes:', () => {
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
+                done(err);
             });
     });
     afterEach(done => {
         bucketUtil.empty(TEST_BUCKET)
             .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
-            .then(() => done());
+            .then(() => done())
+            .catch(done);
     });
 
     [
@@ -358,13 +360,14 @@ describe('veeam DELETE routes:', () => {
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
+                done(err);
             });
     });
     afterEach(done => {
         bucketUtil.empty(TEST_BUCKET)
             .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
-            .then(() => done());
+            .then(() => done())
+            .catch(done);
     });
 
     [
@@ -469,13 +472,14 @@ describe('veeam HEAD routes:', () => {
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
+                done(err);
             });
     });
     afterEach(done => {
         bucketUtil.empty(TEST_BUCKET)
             .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
-            .then(() => done());
+            .then(() => done())
+            .catch(done);
     });
 
     [
@@ -554,12 +558,13 @@ describe.skip('veeam LIST routes:', () => {
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
+                done(err);
             });
     });
     afterEach(done => {
         bucketUtil.empty(TEST_BUCKET)
             .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
-            .then(() => done());
+            .then(() => done())
+            .catch(done);
     });
 });
