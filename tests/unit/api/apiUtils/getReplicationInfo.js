@@ -157,4 +157,78 @@ describe('getReplicationInfo helper', () => {
 
         assert.deepStrictEqual(replicationInfo, undefined);
     });
+
+    it('should get replication info with default StorageClass when rules are enabled', () => {
+        const replicationConfig = {
+            role: 'arn:aws:iam::root:role/s3-replication-role-1,arn:aws:iam::root:role/s3-replication-role-2',
+            rules: [{
+                prefix: '',
+                enabled: true,
+            }],
+            destination: 'tosomewhere',
+        };
+        const replicationInfo = _getObjectReplicationInfo(TEST_CONFIG, replicationConfig);
+        assert.deepStrictEqual(replicationInfo, {
+            status: 'PENDING',
+            backends: [{
+                site: 'zenko',
+                status: 'PENDING',
+                dataStoreVersionId: '',
+            }],
+            content: ['METADATA'],
+            destination: 'tosomewhere',
+            storageClass: 'zenko',
+            role: 'arn:aws:iam::root:role/s3-replication-role-1,arn:aws:iam::root:role/s3-replication-role-2',
+            storageType: '',
+        });
+    });
+
+    it('should return undefined with specified StorageClass mode if no replication endpoint is configured', () => {
+        const replicationConfig = {
+            role: 'arn:aws:iam::root:role/s3-replication-role',
+            rules: [{
+                prefix: '',
+                enabled: true,
+                storageClass: 'awsbackend',
+            }],
+            destination: 'tosomewhere',
+        };
+        const configWithNoReplicationEndpoint = {
+            locationConstraints: TEST_CONFIG.locationConstraints,
+            replicationEndpoints: [],
+        };
+        const replicationInfo = _getObjectReplicationInfo(configWithNoReplicationEndpoint,
+            replicationConfig);
+        assert.deepStrictEqual(replicationInfo, {
+            status: 'PENDING',
+            backends: [{
+                site: 'awsbackend',
+                status: 'PENDING',
+                dataStoreVersionId: '',
+            }],
+            content: ['METADATA'],
+            destination: 'tosomewhere',
+            storageClass: 'awsbackend',
+            role: 'arn:aws:iam::root:role/s3-replication-role',
+            storageType: 'aws_s3',
+        });
+    });
+
+    it('should return undefined with default StorageClass if no replication endpoint is configured', () => {
+        const replicationConfig = {
+            role: 'arn:aws:iam::root:role/s3-replication-role-1,arn:aws:iam::root:role/s3-replication-role-2',
+            rules: [{
+                prefix: '',
+                enabled: true,
+            }],
+            destination: 'tosomewhere',
+        };
+        const configWithNoReplicationEndpoint = {
+            locationConstraints: TEST_CONFIG.locationConstraints,
+            replicationEndpoints: [],
+        };
+        const replicationInfo = _getObjectReplicationInfo(configWithNoReplicationEndpoint,
+            replicationConfig);
+        assert.deepStrictEqual(replicationInfo, undefined);
+    });
 });
