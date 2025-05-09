@@ -2481,15 +2481,12 @@ describe('backbeat routes', () => {
                         jsonResponse: true,
                     }, next),
                 next =>
-                    azureClient.getBlobProperties(
-                        containerName, blob, (err, result) => {
-                            if (err) {
-                                return next(err);
-                            }
+                    azureClient.getContainerClient(containerName).getBlobClient(blob).getProperties()
+                        .then(result => {
                             const tags = JSON.parse(result.metadata.tags);
                             assert.deepStrictEqual(tags, { key1: 'value1' });
                             return next();
-                        }),
+                        }, next),
             ], done);
         });
     });
@@ -2812,8 +2809,8 @@ describe('backbeat routes', () => {
             const blob = uuidv4();
             async.series([
                 next =>
-                    azureClient.createBlockBlobFromText(
-                        containerName, blob, 'a', null, next),
+                    azureClient.getContainerClient(containerName).uploadBlockBlob(blob, 'a', 1)
+                        .then(() => next(), next),
                 next =>
                     makeRequest({
                         authCredentials: backbeatAuthCredentials,
@@ -2845,14 +2842,11 @@ describe('backbeat routes', () => {
                         return next(err);
                     }),
                 next =>
-                    azureClient.getBlobProperties(
-                        containerName, blob, (err, result) => {
-                            if (err) {
-                                return next(err);
-                            }
+                    azureClient.getContainerClient(containerName).getBlobClient(blob).getProperties()
+                        .then(result => {
                             assert(result);
                             return next();
-                        }),
+                        }, next),
             ], done);
         });
 
@@ -2862,17 +2856,14 @@ describe('backbeat routes', () => {
             let lastModified;
             async.series([
                 next =>
-                    azureClient.createBlockBlobFromText(
-                        containerName, blob, 'a', null, next),
+                    azureClient.getContainerClient(containerName).uploadBlockBlob(blob, 'a', 1)
+                        .then(() => next(), next),
                 next =>
-                    azureClient.getBlobProperties(
-                        containerName, blob, (err, result) => {
-                            if (err) {
-                                return next(err);
-                            }
+                    azureClient.getContainerClient(containerName).getBlobClient(blob).getProperties()
+                        .then(result => {
                             lastModified = result.lastModified;
                             return next();
-                        }),
+                        }, next),
                 next =>
                     makeRequest({
                         authCredentials: backbeatAuthCredentials,
@@ -2898,10 +2889,11 @@ describe('backbeat routes', () => {
                         jsonResponse: true,
                     }, next),
                 next =>
-                    azureClient.getBlobProperties(containerName, blob, err => {
-                        assert(err.statusCode === 404);
-                        return next();
-                    }),
+                    azureClient.getContainerClient(containerName).getBlobClient(blob).getProperties()
+                        .then(() => assert.fail('Expected error'), err => {
+                            assert.strictEqual(err.statusCode, 404);
+                            return next();
+                        }),
             ], done);
         });
     });
