@@ -1525,6 +1525,14 @@ bson@^5.3.0:
   resolved "https://registry.yarnpkg.com/bson/-/bson-5.3.0.tgz#37b006df4cd91ed125cb686467c1dd6d4606b514"
   integrity sha512-ukmCZMneMlaC5ebPHXIkP8YJzNl5DC41N5MAIvKDqLggdao342t4McltoJBQfQya/nHBWAcSsYRqlXPoQkTJag==
 
+bucketclient@scality/bucketclient#8.1.13:
+  version "8.1.13"
+  resolved "https://codeload.github.com/scality/bucketclient/tar.gz/6b5d93534949ebced65d0013b9111d0d4601a6c9"
+  dependencies:
+    arsenal "git+https://github.com/scality/Arsenal#8.1.87"
+    httpagent "git+https://github.com/scality/httpagent#1.0.5"
+    werelogs scality/werelogs#8.1.2
+
 bucketclient@scality/bucketclient#8.1.9:
   version "8.1.9"
   resolved "https://codeload.github.com/scality/bucketclient/tar.gz/acbd1c4f6a0e337d19fc6ebc18d31504cec88b35"
