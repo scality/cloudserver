@@ -10,12 +10,18 @@ const assert = require('assert');
 const metadata = require('../../../lib/metadata/wrapper');
 const crypto = require('crypto');
 const log = new DummyRequestLogger();
+const { config } = require('../../../lib/Config');
+const { getKeyIdFromArn } = require('arsenal/build/lib/network/KMSInterface');
 
 // use file to defined key in arn prefix, if no prefix mem is used
 
 // copy part of aws-node-sdk/test/object/encryptionHeaders.js and add more tests
 // around SSE Key prefix and migration
 // always getObject to ensure decryption
+
+function getKey(key) {
+    return config.kmsHideScalityArn ? getKeyIdFromArn(key) : key;
+}
 
 const testCases = [
     {
@@ -50,8 +56,8 @@ const testCases = [
 ];
 const testCasesObj = testCases.filter(tc => !tc.deleteSSE);
 
-const config = getConfig('default', { signatureVersion: 'v4' });
-const s3 = new S3(config);
+const s3config = getConfig('default', { signatureVersion: 'v4' });
+const s3 = new S3(s3config);
 const bucketUtil = new BucketUtility();
 
 // Fix for before migration run
@@ -134,13 +140,13 @@ async function assertObjectSSEMigration(Bucket, Key, objConf, obj, bktConf, bkt,
     }
 
     if (obj.kmsKey) {
-        assert.strictEqual(head.SSEKMSKeyId, expectedKey);
+        assert.strictEqual(head.SSEKMSKeyId, getKey(expectedKey));
     } else if (objConf.algo !== 'AES256' && bkt.kmsKey) {
-        assert.strictEqual(head.SSEKMSKeyId, expectedKey);
+        assert.strictEqual(head.SSEKMSKeyId, getKey(expectedKey));
     } else if (head.ServerSideEncryption === 'aws:kms') {
         // We differ from aws behavior and always return a
         // masterKeyId even when not explicitly configured.
-        assert.strictEqual(head.SSEKMSKeyId, expectedKey);
+        assert.strictEqual(head.SSEKMSKeyId, getKey(expectedKey));
     } else {
         assert.strictEqual(head.SSEKMSKeyId, undefined);
     }
@@ -547,7 +553,11 @@ describe('SSE KMS migration', () => {
                 const head = await s3.headObject({ Bucket: copyBkt, Key: source }).promise();
                 // hardcoded SSE for copy bucket
                 assert.strictEqual(head.ServerSideEncryption, 'aws:kms');
-                assert.match(head.SSEKMSKeyId, /^arn:scality:kms/);
+                if (config.kmsHideScalityArn) {
+                    assert.doesNotMatch(head.SSEKMSKeyId, /^arn:scality:kms/);
+                } else {
+                    assert.match(head.SSEKMSKeyId, /^arn:scality:kms/);
+                }
 
                 const get = await s3.getObject({ Bucket: copyBkt, Key: source }).promise();
                 assert.strictEqual(get.Body.toString(), objForCopy.body);

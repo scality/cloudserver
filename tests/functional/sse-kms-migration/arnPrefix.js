@@ -12,12 +12,18 @@ const crypto = require('crypto');
 const constants = require('../../../constants');
 const log = new DummyRequestLogger();
 const { makeRequest } = require('../raw-node/utils/makeRequest');
+const { config } = require('../../../lib/Config');
+const { getKeyIdFromArn } = require('arsenal/build/lib/network/KMSInterface');
 
 // use file to defined key in arn prefix, if no prefix mem is used
 
 // copy part of aws-node-sdk/test/object/encryptionHeaders.js and add more tests
 // around SSE Key prefix and migration
 // always getObject to ensure decryption
+
+function getKey(key) {
+    return config.kmsHideScalityArn ? getKeyIdFromArn(key) : key;
+}
 
 const testCases = [
     {
@@ -52,8 +58,8 @@ const testCases = [
 ];
 const testCasesObj = testCases.filter(tc => !tc.deleteSSE);
 
-const config = getConfig('default', { signatureVersion: 'v4' });
-const s3 = new S3(config);
+const s3config = getConfig('default', { signatureVersion: 'v4' });
+const s3 = new S3(s3config);
 const bucketUtil = new BucketUtility();
 
 function hydrateSSEConfig({ algo: SSEAlgorithm, masterKeyId: KMSMasterKeyID }) {
@@ -96,13 +102,17 @@ async function assertObjectSSE(Bucket, Key, objConf, obj, bktConf, bkt, VersionI
     // obj precedence over bkt
     assert.strictEqual(head.ServerSideEncryption, (objConf.algo || bktConf.algo));
     if (obj.kmsKey) {
-        assert.strictEqual(head.SSEKMSKeyId, obj.kmsKeyInfo.masterKeyArn);
+        assert.strictEqual(head.SSEKMSKeyId, getKey(obj.kmsKeyInfo.masterKeyArn));
     } else if (objConf.algo !== 'AES256' && bkt.kmsKey) {
-        assert.strictEqual(head.SSEKMSKeyId, bkt.kmsKeyInfo.masterKeyArn);
+        assert.strictEqual(head.SSEKMSKeyId, getKey(bkt.kmsKeyInfo.masterKeyArn));
     } else if (head.ServerSideEncryption === 'aws:kms') {
         // We differ from aws behavior and always return a
         // masterKeyId even when not explicitly configured.
-        assert.match(head.SSEKMSKeyId, new RegExp(kms.arnPrefix));
+        if (config.kmsHideScalityArn){
+            assert.doesNotMatch(head.SSEKMSKeyId, new RegExp(kms.arnPrefix));
+        } else {
+            assert.match(head.SSEKMSKeyId, new RegExp(kms.arnPrefix));
+        }
     } else {
         assert.strictEqual(head.SSEKMSKeyId, undefined);
         if (head.ServerSideEncryption === 'AES256') {
@@ -278,7 +288,7 @@ describe('SSE KMS arnPrefix', () => {
                 if (bktConf.masterKeyId) {
                     // arn prefixed even if not prefixed in input
                     assert.strictEqual(sseMD.configuredMasterKeyId, bkt.kmsKeyInfo.masterKeyArn);
-                    assert.strictEqual(KMSMasterKeyID, bkt.kmsKeyInfo.masterKeyArn);
+                    assert.strictEqual(KMSMasterKeyID, getKey(bkt.kmsKeyInfo.masterKeyArn));
                 }
             });
         }
@@ -438,7 +448,7 @@ describe('SSE KMS arnPrefix', () => {
                 const head = await s3.headObject({ Bucket: copyBkt, Key: source }).promise();
                 // hardcoded SSE for copy bucket
                 assert.strictEqual(head.ServerSideEncryption, 'aws:kms');
-                assert.strictEqual(head.SSEKMSKeyId, copyKmsKey);
+                assert.strictEqual(head.SSEKMSKeyId, getKey(copyKmsKey));
 
                 const get = await s3.getObject({ Bucket: copyBkt, Key: source }).promise();
                 assert.strictEqual(get.Body.toString(), objForCopy.body);
@@ -645,7 +655,7 @@ describe('ensure MPU use good SSE', () => {
         const mpu = await s3.createMultipartUpload({
             Bucket: mpuKmsBkt, Key: key, ServerSideEncryption: 'aws:kms', SSEKMSKeyId: mpuKms }).promise();
         assert.strictEqual(mpu.ServerSideEncryption, 'aws:kms');
-        assert.strictEqual(mpu.SSEKMSKeyId, mpuKms);
+        assert.strictEqual(mpu.SSEKMSKeyId, getKey(mpuKms));
 
         const part1 = await s3.uploadPart({
             UploadId: mpu.UploadId,
@@ -655,7 +665,7 @@ describe('ensure MPU use good SSE', () => {
             PartNumber: 1,
         }).promise();
         assert.strictEqual(part1.ServerSideEncryption, 'aws:kms');
-        assert.strictEqual(part1.SSEKMSKeyId, mpuKms);
+        assert.strictEqual(part1.SSEKMSKeyId, getKey(mpuKms));
         const complete = await s3.completeMultipartUpload({
             UploadId: mpu.UploadId,
             Bucket: mpuKmsBkt,
@@ -667,7 +677,7 @@ describe('ensure MPU use good SSE', () => {
             },
         }).promise();
         assert.strictEqual(complete.ServerSideEncryption, 'aws:kms');
-        assert.strictEqual(complete.SSEKMSKeyId, mpuKms);
+        assert.strictEqual(complete.SSEKMSKeyId, getKey(mpuKms));
         void await assertObjectSSE(mpuKmsBkt, key,
             { algo: 'aws:kms', masterKeyId: true },
             { kmsKey: mpuKms, kmsKeyInfo: { masterKeyId: mpuKms, masterKeyArn: mpuKms } },
