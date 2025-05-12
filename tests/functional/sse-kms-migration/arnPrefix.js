@@ -62,6 +62,8 @@ const s3config = getConfig('default', { signatureVersion: 'v4' });
 const s3 = new S3(s3config);
 const bucketUtil = new BucketUtility();
 
+kms.client._supportsDefaultKeyPerAccount = false; // To generate keys without vault account side effect
+
 function hydrateSSEConfig({ algo: SSEAlgorithm, masterKeyId: KMSMasterKeyID }) {
     // stringify and parse to strip undefined values
     return JSON.parse(JSON.stringify({ Rules: [{
