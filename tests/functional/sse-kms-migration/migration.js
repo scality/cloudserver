@@ -57,9 +57,9 @@ const testCases = [
 ];
 const testCasesObj = testCases.filter(tc => !tc.deleteSSE);
 
-const s3config = getConfig('default', { signatureVersion: 'v4' });
+const s3config = getConfig('vault', { signatureVersion: 'v4' });
 const s3 = new S3(s3config);
-const bucketUtil = new BucketUtility();
+const bucketUtil = new BucketUtility('vault');
 
 kms.client._supportsDefaultKeyPerAccount = false; // To generate keys without vault account side effect
 

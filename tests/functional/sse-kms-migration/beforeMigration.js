@@ -50,9 +50,9 @@ const testCases = [
 ];
 const testCasesObj = testCases.filter(tc => !tc.deleteSSE);
 
-const config = getConfig('default', { signatureVersion: 'v4' });
+const config = getConfig('vault', { signatureVersion: 'v4' });
 const s3 = new S3(config);
-const bucketUtil = new BucketUtility();
+const bucketUtil = new BucketUtility('vault');
 
 // Fix for before migration run
 Object.defineProperty(kms, 'arnPrefix', { get() { return ''; } });

@@ -44,9 +44,9 @@ const testCases = [
     },
 ];
 
-const config = getConfig('default', { signatureVersion: 'v4' });
+const config = getConfig('vault', { signatureVersion: 'v4' });
 const s3 = new S3(config);
-const bucketUtil = new BucketUtility();
+const bucketUtil = new BucketUtility('vault');
 
 async function cleanup(Bucket) {
     try {
@@ -63,6 +63,7 @@ describe('SSE KMS Cleanup', () => {
     const mpuCopyBkt = 'enc-bkt-mpu-copy';
 
     it('Empty and delete buckets for SSE KMS Migration', async () => {
+        console.log('cleanup');
         void await promisify(metadata.setup.bind(metadata))();
 
         try {

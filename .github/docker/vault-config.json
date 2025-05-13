@@ -1,0 +1,76 @@
+{
+    "clusters": 1,
+    "healthChecks": {
+        "allowFrom": ["127.0.0.1/8", "::1"]
+    },
+    "interfaces": {
+        "S3": {
+            "address": "0.0.0.0",
+            "port": 8500,
+            "allowFrom": ["0.0.0.0/8", "::1"]
+        },
+        "administration": {
+            "address": "0.0.0.0",
+            "port": 8600
+        },
+        "sts": {
+            "address": "127.0.0.1",
+            "port": 8800
+        }
+    },
+    "map": ["127.0.0.1:4300", "127.0.0.2:4301", "127.0.0.3:4302", "127.0.0.4:4303", "127.0.0.5:4304"],
+    "keyFilePath": "./tests/utils/keyfile",
+    "adminCredentialsFilePath": "./tests/utils/admincredentials.json.encrypted",
+    "log": {
+        "level": "info",
+        "dump": "error"
+    },
+    "accountSeeds": [
+        {
+            "role": {
+                "roleName": "scality-role1",
+                "trustPolicy": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": { "AWS": "arn:aws:iam::000000000000:user/root" },
+                            "Action": "sts:AssumeRole",
+                            "Condition": {}
+                        }
+                    ]
+                }
+            },
+            "permissionPolicy": {
+                "policyName": "scality-policy1",
+                "policyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "FullAccess",
+                            "Effect": "Allow",
+                            "Action": ["s3:*"],
+                            "Resource": ["*"]
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "utapi": {
+        "host": "127.0.0.1",
+        "port": 8100
+    },
+    "scuba": {
+        "host": "127.0.0.1",
+        "port": 8100
+    },
+    "kmsAWS": {
+        "noAwsArn": true,
+        "providerName": "local",
+        "region": "us-east-1", 
+        "endpoint": "http://0:8080",
+        "ak": "456",
+        "sk": "123"
+    }
+}

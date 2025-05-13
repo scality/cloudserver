@@ -363,9 +363,12 @@ jobs:
     needs: build
     env:
       S3BACKEND: file
-      S3VAULT: mem
+      S3VAULT: scality
       CLOUDSERVER_IMAGE_BEFORE_SSE_MIGRATION: ghcr.io/${{ github.repository }}:7.70.21-11
+      VAULT_IMAGE_BEFORE_SSE_MIGRATION: ghcr.io/scality/vault:7.70.15-5
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      VAULT_IMAGE: ghcr.io/scality/vault:e8c0fa2890c131581efd13ad3fd1ade7dcbd0968
+      KMS_IMAGE: nsmithuk/local-kms:3.11.7
       MPU_TESTING: "yes"
       JOB_NAME: ${{ matrix.job-name }}
     steps:

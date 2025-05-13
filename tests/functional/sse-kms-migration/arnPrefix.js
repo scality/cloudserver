@@ -58,9 +58,9 @@ const testCases = [
 ];
 const testCasesObj = testCases.filter(tc => !tc.deleteSSE);
 
-const s3config = getConfig('default', { signatureVersion: 'v4' });
+const s3config = getConfig('vault', { signatureVersion: 'v4' });
 const s3 = new S3(s3config);
-const bucketUtil = new BucketUtility();
+const bucketUtil = new BucketUtility('vault');
 
 kms.client._supportsDefaultKeyPerAccount = false; // To generate keys without vault account side effect
 
@@ -139,7 +139,7 @@ async function cleanup(Bucket) {
 const bucketInfo = new BucketInfo('enc-bucket-test', 'OwnerId',
     'OwnerDisplayName', new Date().toJSON());
 
-describe('SSE KMS arnPrefix', () => {
+describe.only('SSE KMS arnPrefix', () => {
     /** Bucket to test CopyObject from and to */
     const copyBkt = 'enc-bkt-copy';
     const copyObj = 'copy-obj';
@@ -195,7 +195,12 @@ describe('SSE KMS arnPrefix', () => {
                     ? obj.kmsKeyInfo.masterKeyArn
                     : obj.kmsKeyInfo.masterKeyId;
             }
-            return await putEncryptedObject(bkt.name, obj.name, objConf, obj.kmsKey, obj.body);
+            try {
+                return await putEncryptedObject(bkt.name, obj.name, objConf, obj.kmsKey, obj.body);
+            } catch (err) {
+                console.log('ERR', err, err && err.toString(), bktConf.name, obj.name, objConf.algo, obj.kmsKeyInfo)
+                throw err;
+            }
         }));
     };
 

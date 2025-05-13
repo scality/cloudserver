@@ -49,7 +49,7 @@
     },
     "clusters": 10,
     "log": {
-        "logLevel": "info",
+        "logLevel": "debug",
         "dumpLevel": "error"
     },
     "healthChecks": {
@@ -93,5 +93,13 @@
         "previousKeyType": "internal",
         "previousKeyProtocol": "file",
         "previousKeyProvider": "scality"
+    },
+    "kmsAWS": {
+        "noAwsArn": true,
+        "providerName": "local",
+        "region": "us-east-1", 
+        "endpoint": "http://0:8080",
+        "ak": "456",
+        "sk": "123"
     }
 }
