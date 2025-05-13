@@ -560,4 +560,66 @@ describe('objectHead API', () => {
             });
         });
     });
+
+    [
+        {
+            name: 'should return content-length of 0 when requesting part 1 of empty object',
+            partNumber: '1',
+            expectedError: null,
+            expectedContentLength: 0
+        },
+        {
+            name: 'should return InvalidRange error when requesting part > 1 of empty object',
+            partNumber: '2',
+            expectedError: 'InvalidRange',
+            expectedContentLength: undefined
+        }
+    ].forEach(testCase => {
+        it(testCase.name, done => {
+            const emptyBody = '';
+            const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
+            const testPutEmptyObjectRequest = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'content-length': '0',
+                    'x-amz-meta-test': userMetadataValue,
+                },
+                parsedContentLength: 0,
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: emptyMD5,
+            }, emptyBody);
+
+            const testGetRequest = {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {},
+                url: `/${bucketName}/${objectName}`,
+                query: {
+                    partNumber: testCase.partNumber,
+                },
+                actionImplicitDenies: false,
+            };
+
+            bucketPut(authInfo, testPutBucketRequest, log, () => {
+                objectPut(authInfo, testPutEmptyObjectRequest, undefined, log, (err, resHeaders) => {
+                    assert.strictEqual(err, null, `Error putting object: ${err}`);
+                    assert.strictEqual(resHeaders.ETag, `"${emptyMD5}"`);
+                    objectHead(authInfo, testGetRequest, log, (err, res) => {
+                        if (testCase.expectedError) {
+                            assert.strictEqual(err.is[testCase.expectedError], true);
+                        } else {
+                            assert.strictEqual(err, null);
+                            assert.strictEqual(res[userMetadataKey], userMetadataValue);
+                            assert.strictEqual(res.ETag, `"${emptyMD5}"`);
+                            assert.strictEqual(res['content-length'], testCase.expectedContentLength);
+                        }
+                        done();
+                    });
+                });
+            });
+        });
+    });
 });

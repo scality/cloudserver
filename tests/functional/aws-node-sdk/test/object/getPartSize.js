@@ -7,6 +7,8 @@ const { maximumAllowedPartCount } = require('../../../../../constants');
 
 const bucket = 'mpu-test-bucket';
 const object = 'mpu-test-object';
+const emptyObject = 'empty-object';
+const nonMpuObject = 'simple-object';
 
 const bodySize = 1024 * 1024 * 5;
 const bodyContent = 'a';
@@ -36,17 +38,18 @@ describe('Part size tests with object head', () => {
         let s3;
 
         function headObject(fields, cb) {
-            s3.headObject(Object.assign({
+            s3.headObject({
                 Bucket: bucket,
                 Key: object,
-            }, fields), cb);
+                ...fields,
+            }, cb);
         }
 
-        beforeEach(function beforeF(done) {
+        before(function beforeF(done) {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
 
-            async.waterfall([
+            async.series([
                 next => s3.createBucket({ Bucket: bucket }, err => next(err)),
                 next => s3.createMultipartUpload({
                     Bucket: bucket,
@@ -91,17 +94,28 @@ describe('Part size tests with object head', () => {
                     };
                     return s3.completeMultipartUpload(params, next);
                 },
+                next => s3.putObject({
+                    Bucket: bucket,
+                    Key: emptyObject,
+                    Body: '',
+                }, next),
+                next => s3.putObject({
+                    Bucket: bucket,
+                    Key: nonMpuObject,
+                    Body: generateContent(0),
+                }, next),
             ], err => {
                 checkNoError(err);
                 done();
             });
         });
 
-        afterEach(done => {
-            async.waterfall([
-                next => s3.deleteObject({ Bucket: bucket, Key: object },
-                    err => next(err)),
-                next => s3.deleteBucket({ Bucket: bucket }, err => next(err)),
+        after(done => {
+            async.series([
+                next => s3.deleteObject({ Bucket: bucket, Key: object }, next),
+                next => s3.deleteObject({ Bucket: bucket, Key: emptyObject }, next),
+                next => s3.deleteObject({ Bucket: bucket, Key: nonMpuObject }, next),
+                next => s3.deleteBucket({ Bucket: bucket }, next),
             ], done);
         });
 
@@ -149,5 +163,37 @@ describe('Part size tests with object head', () => {
                     done();
                 });
             });
+
+        it('should return content-length 0 when requesting part 1 of empty object', done => {
+            headObject({ Key: emptyObject, PartNumber: 1 }, (err, data) => {
+                checkNoError(err);
+                assert.strictEqual(data.ContentLength, 0);
+                done();
+            });
+        });
+
+        it('should return an error when requesting part 2 of empty object', done => {
+            headObject({ Key: emptyObject, PartNumber: 2 }, (err, data) => {
+                checkError(err, 416, 'InvalidRange');
+                assert.strictEqual(data, null);
+                done();
+            });
+        });
+
+        it('should return content-length requesting part 1 of non-MPU object', done => {
+            headObject({ Key: nonMpuObject, PartNumber: 1 }, (err, data) => {
+                checkNoError(err);
+                assert.strictEqual(data.ContentLength, 0);
+                done();
+            });
+        });
+
+        it('should return an error when requesting part 2 of non-MPU object', done => {
+            headObject({ Key: nonMpuObject, PartNumber: 1 }, (err, data) => {
+                checkError(err, 416, 'InvalidRange');
+                assert.strictEqual(data.ContentLength, bodySize);
+                done();
+            });
+        });
     });
 });
