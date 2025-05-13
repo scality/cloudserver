@@ -1,8 +1,12 @@
 const assert = require('assert');
+const fs = require('fs');
+const sinon = require('sinon');
 const {
+    azureGetStorageAccountName,
+    azureGetLocationCredentials,
     locationConstraintAssert,
     parseSupportedLifecycleRules,
-    ConfigObject: ConfigObjectForTest,
+    ConfigObject,
 } = require('../../lib/Config');
 
 const {
@@ -30,7 +34,6 @@ describe('Config', () => {
     });
 
     it('should emit an event when auth data is updated', done => {
-        const { ConfigObject } = require('../../lib/Config');
         const config = new ConfigObject();
         let emitted = false;
         config.on('authdata-update', () => {
@@ -44,8 +47,6 @@ describe('Config', () => {
     });
 
     describe('azureGetStorageAccountName', () => {
-        const { azureGetStorageAccountName } = require('../../lib/Config');
-
         it('should return the azureStorageAccountName', done => {
             const accountName = azureGetStorageAccountName('us-west-1', {
                 azureStorageAccountName: 'someaccount'
@@ -66,8 +67,6 @@ describe('Config', () => {
     });
 
     describe('azureGetLocationCredentials', () => {
-        const { azureGetLocationCredentials } = require('../../lib/Config');
-
         const locationDetails = {
             azureStorageAccountName: 'someaccount',
             azureStorageAccessKey: 'ZW5jcnlwdGVkCg==',
@@ -214,8 +213,6 @@ describe('Config', () => {
     });
 
     describe('getAzureStorageAccountName', () => {
-        const { ConfigObject } = require('../../lib/Config');
-
         it('should return account name from config', () => {
             setEnv('azurebackend_AZURE_STORAGE_ACCOUNT_NAME', '');
             const config = new ConfigObject();
@@ -330,7 +327,7 @@ describe('Config', () => {
 
     describe('time options', () => {
         it('should getTimeOptions', () => {
-            const config = new ConfigObjectForTest();
+            const config = new ConfigObject();
             const expectedOptions = {
                 expireOneDayEarlier: false,
                 transitionOneDayEarlier: false,
@@ -344,7 +341,7 @@ describe('Config', () => {
         it('should getTimeOptions with TIME_PROGRESSION_FACTOR', () => {
             setEnv('TIME_PROGRESSION_FACTOR', 2);
 
-            const config = new ConfigObjectForTest();
+            const config = new ConfigObject();
             const expectedOptions = {
                 expireOneDayEarlier: false,
                 transitionOneDayEarlier: false,
@@ -358,7 +355,7 @@ describe('Config', () => {
         it('should getTimeOptions with EXPIRE_ONE_DAY_EARLIER', () => {
             setEnv('EXPIRE_ONE_DAY_EARLIER', true);
 
-            const config = new ConfigObjectForTest();
+            const config = new ConfigObject();
             const expectedOptions = {
                 expireOneDayEarlier: true,
                 transitionOneDayEarlier: false,
@@ -372,7 +369,7 @@ describe('Config', () => {
         it('should getTimeOptions with TRANSITION_ONE_DAY_EARLIER', () => {
             setEnv('TRANSITION_ONE_DAY_EARLIER', true);
 
-            const config = new ConfigObjectForTest();
+            const config = new ConfigObject();
             const expectedOptions = {
                 expireOneDayEarlier: false,
                 transitionOneDayEarlier: true,
@@ -387,7 +384,7 @@ describe('Config', () => {
             setEnv('EXPIRE_ONE_DAY_EARLIER', true);
             setEnv('TRANSITION_ONE_DAY_EARLIER', true);
 
-            const config = new ConfigObjectForTest();
+            const config = new ConfigObject();
             const expectedOptions = {
                 expireOneDayEarlier: true,
                 transitionOneDayEarlier: true,
@@ -402,14 +399,14 @@ describe('Config', () => {
             setEnv('EXPIRE_ONE_DAY_EARLIER', true);
             setEnv('TIME_PROGRESSION_FACTOR', 2);
 
-            assert.throws(() => new ConfigObjectForTest());
+            assert.throws(() => new ConfigObject());
         });
 
         it('should throw error if TRANSITION_ONE_DAY_EARLIER and TIME_PROGRESSION_FACTOR', () => {
             setEnv('TRANSITION_ONE_DAY_EARLIER', true);
             setEnv('TIME_PROGRESSION_FACTOR', 2);
 
-            assert.throws(() => new ConfigObjectForTest());
+            assert.throws(() => new ConfigObject());
         });
 
         it('should throw error if both EXPIRE/TRANSITION_ONE_DAY_EARLIER and TIME_PROGRESSION_FACTOR', () => {
@@ -417,7 +414,91 @@ describe('Config', () => {
             setEnv('TRANSITION_ONE_DAY_EARLIER', true);
             setEnv('TIME_PROGRESSION_FACTOR', 2);
 
-            assert.throws(() => new ConfigObjectForTest());
+            assert.throws(() => new ConfigObject());
+        });
+    });
+
+    describe('nullVersionCompatMode', () => {
+        it('should be true when metadata backend is mongodb', () => {
+            setEnv('S3METADATA', 'mongodb');
+            setEnv('ENABLE_NULL_VERSION_COMPAT_MODE', 'false'); // should be ignored
+            const config = new ConfigObject();
+            assert.strictEqual(config.nullVersionCompatMode, true);
+        });
+
+        it('should be true when ENABLE_NULL_VERSION_COMPAT_MODE is true', () => {
+            setEnv('S3METADATA', 'file'); // Not MongoDB
+            setEnv('ENABLE_NULL_VERSION_COMPAT_MODE', 'true');
+            const config = new ConfigObject();
+            assert.strictEqual(config.nullVersionCompatMode, true);
+        });
+
+        it('should be false when ENABLE_NULL_VERSION_COMPAT_MODE is false', () => {
+            setEnv('S3METADATA', 'file'); // Not MongoDB
+            setEnv('ENABLE_NULL_VERSION_COMPAT_MODE', 'false');
+            const config = new ConfigObject();
+            assert.strictEqual(config.nullVersionCompatMode, false);
+        });
+
+        it('should be false when metadata backend is not mongodb and env var not set', () => {
+            setEnv('S3METADATA', 'file'); // Not MongoDB
+            const config = new ConfigObject();
+            assert.strictEqual(config.nullVersionCompatMode, false);
+        });
+    });
+
+    describe('multiObjectDeleteEnableOptimizations', () => {
+        const defaultConfig = JSON.parse(fs.readFileSync('config.json'), { encoding: 'utf-8' });
+        let sandbox;
+        let readFileStub;
+
+        beforeEach(() => {
+            sandbox = sinon.createSandbox();
+            readFileStub = sandbox.stub(fs, 'readFileSync');
+            readFileStub.callThrough();
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+        });
+
+        it('should be true by default when metadata backend is mongodb', () => {
+            process.env.S3METADATA = 'mongodb';
+            const config = new ConfigObject();
+            assert.strictEqual(config.multiObjectDeleteEnableOptimizations, true);
+        });
+
+        it('should be false by default when metadata backend is not mongodb', () => {
+            process.env.S3METADATA = 'file';
+            const config = new ConfigObject();
+            assert.strictEqual(config.multiObjectDeleteEnableOptimizations, false);
+        });
+
+        it('should respect config file setting when set to false', () => {
+            process.env.S3METADATA = 'mongodb';
+            const modifiedConfig = { ...defaultConfig, multiObjectDeleteEnableOptimizations: false };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(modifiedConfig));
+
+            const config = new ConfigObject();
+            assert.strictEqual(config.multiObjectDeleteEnableOptimizations, false);
+        });
+
+        it('should respect config file setting when set to true', () => {
+            process.env.S3METADATA = 'mongodb';
+            const modifiedConfig = { ...defaultConfig, multiObjectDeleteEnableOptimizations: true };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(modifiedConfig));
+
+            const config = new ConfigObject();
+            assert.strictEqual(config.multiObjectDeleteEnableOptimizations, true);
+        });
+
+        it('should ignore config file setting for non-mongodb backend', () => {
+            process.env.S3METADATA = 'file';
+            const modifiedConfig = { ...defaultConfig, multiObjectDeleteEnableOptimizations: true };
+            readFileStub.withArgs('config.json').returns(JSON.stringify(modifiedConfig));
+
+            const config = new ConfigObject();
+            assert.strictEqual(config.multiObjectDeleteEnableOptimizations, false);
         });
     });
 
@@ -435,7 +516,6 @@ describe('Config', () => {
         });
 
         it('should set up scuba', () => {
-            const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 
             assert.deepStrictEqual(
@@ -451,7 +531,6 @@ describe('Config', () => {
             setEnv('SCUBA_HOST', 'scubahost');
             setEnv('SCUBA_PORT', 1234);
 
-            const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 
             assert.deepStrictEqual(
@@ -478,7 +557,6 @@ describe('Config', () => {
         });
 
         it('should set up quota', () => {
-            const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 
             assert.deepStrictEqual(
@@ -494,7 +572,6 @@ describe('Config', () => {
             setEnv('QUOTA_MAX_STALENESS_MS', 1234);
             setEnv('QUOTA_ENABLE_INFLIGHTS', 'true');
 
-            const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 
             assert.deepStrictEqual(
@@ -510,7 +587,6 @@ describe('Config', () => {
             setEnv('QUOTA_MAX_STALENESS_MS', 'notanumber');
             setEnv('QUOTA_ENABLE_INFLIGHTS', 'true');
 
-            const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 
             assert.deepStrictEqual(
@@ -537,7 +613,6 @@ describe('Config', () => {
         });
 
         it('should set up utapi local cache', () => {
-            const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 
             assert.deepStrictEqual(
@@ -551,7 +626,6 @@ describe('Config', () => {
         });
 
         it('should set up utapi redis', () => {
-            const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 
             assert.deepStrictEqual(

@@ -7,6 +7,7 @@ const { removeAllVersions } = require('../../lib/utility/versioning-util');
 const customS3Request = require('../../lib/utility/customS3Request');
 
 const { taggingTests } = require('../../lib/utility/tagging');
+const constants = require('../../lib/constants');
 
 const sourceBucketName = 'supersourcebucket8102016';
 const sourceObjName = 'supersourceobject';
@@ -466,24 +467,29 @@ describe('Object Version Copy', () => {
             });
         });
 
-        // TODO: disabled in CLDSRV-184 as only STANDARD class is supported
-        it.skip('should copy a 0 byte object to same destination', done => {
-            const emptyFileETag = '"d41d8cd98f00b204e9800998ecf8427e"';
-            s3.putObject({ Bucket: sourceBucketName, Key: sourceObjName,
-                Body: '' }, (err, putRes) => {
-                checkNoError(err);
-                copySource = `${sourceBucketName}/${sourceObjName}` +
-                    `?versionId=${putRes.VersionId}`;
-                s3.copyObject({ Bucket: sourceBucketName, Key: sourceObjName,
-                    CopySource: copySource,
-                    StorageClass: 'REDUCED_REDUNDANCY',
-                },
-                    (err, copyRes) => {
+        // TODO: remove (or update to use different location constraint) in CLDSRV-639
+        if (constants.validStorageClasses.includes('REDUCED_REDUNDANCY')) {
+            it('should copy a 0 byte object to same destination', done => {
+                const emptyFileETag = '"d41d8cd98f00b204e9800998ecf8427e"';
+                s3.putObject({
+                    Bucket: sourceBucketName, Key: sourceObjName,
+                    Body: ''
+                }, (err, putRes) => {
+                    checkNoError(err);
+                    copySource = `${sourceBucketName}/${sourceObjName}` +
+                        `?versionId=${putRes.VersionId}`;
+                    s3.copyObject({
+                        Bucket: sourceBucketName, Key: sourceObjName,
+                        CopySource: copySource,
+                        StorageClass: 'REDUCED_REDUNDANCY',
+                    }, (err, copyRes) => {
                         checkNoError(err);
                         assert.notEqual(copyRes.VersionId, putRes.VersionId);
                         assert.strictEqual(copyRes.ETag, emptyFileETag);
-                        s3.getObject({ Bucket: sourceBucketName,
-                            Key: sourceObjName }, (err, res) => {
+                        s3.getObject({
+                            Bucket: sourceBucketName,
+                            Key: sourceObjName
+                        }, (err, res) => {
                             assert.deepStrictEqual(res.Metadata,
                                 {});
                             assert.deepStrictEqual(res.StorageClass,
@@ -492,45 +498,48 @@ describe('Object Version Copy', () => {
                             done();
                         });
                     });
+                });
             });
-        });
 
-        // TODO: disabled in CLDSRV-184 as only STANDARD class is supported
-        it.skip('should copy an object to a different destination and change ' +
-            'the storage class if storage class header provided', done => {
-            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
-                CopySource: copySource,
-                StorageClass: 'REDUCED_REDUNDANCY',
-            },
-                err => {
+            it('should copy an object to a different destination and change ' +
+                'the storage class if storage class header provided', done => {
+                s3.copyObject({
+                    Bucket: destBucketName, Key: destObjName,
+                    CopySource: copySource,
+                    StorageClass: 'REDUCED_REDUNDANCY',
+                }, err => {
                     checkNoError(err);
-                    s3.getObject({ Bucket: destBucketName,
-                        Key: destObjName }, (err, res) => {
+                    s3.getObject({
+                        Bucket: destBucketName,
+                        Key: destObjName
+                    }, (err, res) => {
                         assert.strictEqual(res.StorageClass,
                             'REDUCED_REDUNDANCY');
                         done();
                     });
                 });
-        });
+            });
 
-        // TODO: disabled in CLDSRV-184 as only STANDARD class is supported
-        it.skip('should copy an object to the same destination and change the ' +
-            'storage class if the storage class header provided', done => {
-            s3.copyObject({ Bucket: sourceBucketName, Key: sourceObjName,
-                CopySource: copySource,
-                StorageClass: 'REDUCED_REDUNDANCY',
-            },
-                err => {
+            it('should copy an object to the same destination and change the ' +
+                'storage class if the storage class header provided', done => {
+                s3.copyObject({
+                    Bucket: sourceBucketName, Key: sourceObjName,
+                    CopySource: copySource,
+                    StorageClass: 'REDUCED_REDUNDANCY',
+                }, err => {
                     checkNoError(err);
-                    s3.getObject({ Bucket: sourceBucketName,
-                        Key: sourceObjName }, (err, res) => {
+                    s3.getObject({
+                        Bucket: sourceBucketName,
+                        Key: sourceObjName
+                    }, (err, res) => {
                         checkNoError(err);
                         assert.strictEqual(res.StorageClass,
                             'REDUCED_REDUNDANCY');
                         done();
                     });
                 });
-        });
+            });
+        }
 
         it('should copy an object to a new bucket and overwrite an already ' +
             'existing object in the destination bucket', done => {

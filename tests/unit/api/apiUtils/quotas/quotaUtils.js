@@ -40,7 +40,7 @@ describe('validateQuotas (buckets)', () => {
             maxStaleness: 24 * 60 * 60 * 1000,
             enableInflights: true,
         };
-        config.isQuotaEnabled = sinon.stub().returns(true);
+        sinon.stub(config, 'isQuotaEnabled').returns(true);
         QuotaService.enabled = true;
         QuotaService._getLatestMetricsCallback = sinon.stub().resolves({});
         request.finalizerHooks = [];
@@ -388,7 +388,7 @@ describe('validateQuotas (with accounts)', () => {
             enableInflights: true,
         };
         request.finalizerHooks = [];
-        config.isQuotaEnabled = sinon.stub().returns(true);
+        sinon.stub(config, 'isQuotaEnabled').returns(true);
         QuotaService.enabled = true;
         QuotaService._getLatestMetricsCallback = sinon.stub().resolves({});
     });

@@ -75,10 +75,10 @@ describe('Versioning on a replication source bucket', () => {
             });
         });
 
-        it('should not be able to suspend versioning if replication disabled',
+        it('should be able to suspend versioning if replication disabled',
         done => {
             testVersioning(s3, 'Suspended', 'Disabled', false, err => {
-                checkError(err, 'InvalidBucketState');
+                checkNoError(err);
                 done();
             });
         });

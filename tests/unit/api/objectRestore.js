@@ -76,7 +76,7 @@ describe('restoreObject API', () => {
 
     it('should return RestoreAlreadyInProgress error when object restore is already in progress', done => {
         mdColdHelper.putBucketMock(bucketName, null, () => {
-            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchiveOngoingRequestMD(), () => {
+            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getRestoringObjectMD(), () => {
                 objectRestore(authInfo, objectRestoreRequest(objectRestoreXml), log, err => {
                     assert.strictEqual(err.is.RestoreAlreadyInProgress, true);
                     done();
@@ -87,7 +87,7 @@ describe('restoreObject API', () => {
 
     it('should return NotImplemented error when object restore Tier is \'Bulk\'', done => {
         mdColdHelper.putBucketMock(bucketName, null, () => {
-            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchiveArchivedMD(), () => {
+            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchivedObjectMD(), () => {
                 objectRestore(authInfo, objectRestoreRequest(objectRestoreXmlBulkTier), log, err => {
                     assert.strictEqual(err.is.NotImplemented, true);
                     done();
@@ -98,7 +98,7 @@ describe('restoreObject API', () => {
 
     it('should return NotImplemented error when object restore Tier is \'Expedited\'', done => {
         mdColdHelper.putBucketMock(bucketName, null, () => {
-            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchiveArchivedMD(), () => {
+            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchivedObjectMD(), () => {
                 objectRestore(authInfo, objectRestoreRequest(objectRestoreXmlExpeditedTier), log, err => {
                     assert.strictEqual(err.is.NotImplemented, true);
                     done();
@@ -112,7 +112,7 @@ describe('restoreObject API', () => {
         'and the object doesn\'t have a restored copy in bucket', done => {
         const testStartTime = new Date(Date.now());
         mdColdHelper.putBucketMock(bucketName, null, () => {
-            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchiveArchivedMD(), () => {
+            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchivedObjectMD(), () => {
                 objectRestore(authInfo, objectRestoreRequest(objectRestoreXml), log, (err, statusCode) => {
                     assert.ifError(err);
                     assert.strictEqual(statusCode, 202);
@@ -132,7 +132,7 @@ describe('restoreObject API', () => {
         'and the object have a restored copy in bucket', done => {
         const testStartTime = new Date(Date.now());
         mdColdHelper.putBucketMock(bucketName, null, () => {
-            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchiveRestoredMD(), () => {
+            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getRestoredObjectMD(), () => {
                 objectRestore(authInfo, objectRestoreRequest(objectRestoreXml), log, (err, statusCode) => {
                     assert.ifError(err);
                     assert.strictEqual(statusCode, 200);
@@ -150,7 +150,7 @@ describe('restoreObject API', () => {
     it('should return InvalidObjectState ' +
         'while restoring an expired restored object', () => {
         mdColdHelper.putBucketMock(bucketName, null, () => {
-            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchiveExpiredMD(), () => {
+            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getExpiredObjectMD(), () => {
                 objectRestore(authInfo, objectRestoreRequest(objectRestoreXml), log, err => {
                     assert.strictEqual(err.is.InvalidObjectState, true);
                 });

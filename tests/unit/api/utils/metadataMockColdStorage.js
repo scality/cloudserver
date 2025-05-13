@@ -2,9 +2,7 @@ const assert = require('assert');
 const metadata = require('../../metadataswitch');
 const { DummyRequestLogger } = require('../../helpers');
 const log = new DummyRequestLogger();
-const ObjectMDAmzRestore = require('arsenal').models.ObjectMDAmzRestore;
-const ObjectMDArchive = require('arsenal').models.ObjectMDArchive;
-const BucketInfo = require('arsenal').models.BucketInfo;
+const { BucketInfo, ObjectMD, ObjectMDAmzRestore, ObjectMDArchive } = require('arsenal').models;
 
 const defaultLocation = 'location-dmf-v1';
 const defaultOwnerId = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
@@ -53,7 +51,7 @@ const baseMd = {
         dataStoreVersionId: '',
         isNFS: null
     },
-    dataStoreName: 'location-dmf-v1',
+    dataStoreName: 'mem',
     originOp: 's3:ObjectCreated:Put',
     'last-modified': '2022-05-10T08:31:51.878Z',
     'md-model-version': 5,
@@ -79,7 +77,7 @@ function putBucketMock(bucketName, location, cb) {
         null,
         null,
         null,
-        location ?? defaultLocation);
+        location);
     return metadata.createBucket(bucketName, bucket, log, cb);
 }
 
@@ -87,101 +85,106 @@ function putBucketMock(bucketName, location, cb) {
  * Mocks a Put Object to store custom metadata
  * @param {string} bucketName - the bucket name
  * @param {string} objectName - the object name
- * @param {object} fields - custom MD fields to add to the object
+ * @param {ObjectMD} fields - custom MD fields to add to the object
  * @param {Function} cb - callback once the object MD is created
  * @returns {undefined}
  */
 function putObjectMock(bucketName, objectName, fields, cb) {
-    return metadata.putObjectMD(bucketName, objectName, {
-        ...baseMd,
-        ...fields,
-    }, {}, log, err => {
+    const md = fields ? fields.getValue() : baseMd;
+    return metadata.putObjectMD(bucketName, objectName, md, {}, log, err => {
         assert.ifError(err);
         return cb();
     });
 }
 
 /**
- * Computes the 'archive' field of the object MD as an archived object
- * @returns {ObjectMDArchive} the MD object
+ * Computes the 'archive' field of the object MD as an object being restored
+ * @returns {ObjectMD} the MD object
  */
-function getArchiveArchivedMD() {
-    return {
-        archive: new ObjectMDArchive(
-            { foo: 0, bar: 'stuff' }, // opaque, can be anything...
-        ).getValue(),
-    };
+function getTransitionInProgressObjectMD() {
+    return new ObjectMD(baseMd)
+        .setTransitionInProgress(true, new Date(Date.now() - 60))
+        .setOriginOp('s3:LifecycleTransition:Start');
 }
 
 /**
- * Computes the 'archive' field of the object MD as an object being restored
- * @returns {ObjectMDArchive} the MD object
+ * Computes the object MD of an archived object
+ * @returns {ObjectMD} the MD object
  */
-function getArchiveOngoingRequestMD() {
-    return {
-        archive: new ObjectMDArchive(
+function getArchivedObjectMD() {
+    return getTransitionInProgressObjectMD()
+        .setArchive(new ObjectMDArchive(
             { foo: 0, bar: 'stuff' }, // opaque, can be anything...
+        ))
+        .setDataStoreName(defaultLocation)
+        .setAmzStorageClass(defaultLocation)
+        .setTransitionInProgress(false)
+        .setOriginOp('s3:LifecycleTransition');
+}
+
+/**
+ * Computes the object MD of an archived object being restored
+ * @returns {ObjectMD} the MD object
+ */
+function getRestoringObjectMD() {
+    const archivedObjectMD = getArchivedObjectMD();
+    return archivedObjectMD
+        .setAmzRestore(new ObjectMDAmzRestore(
+            true,
+        ))
+        .setArchive(new ObjectMDArchive(
+            archivedObjectMD.getArchive().getArchiveInfo(),
             new Date(Date.now() - 60),
-            5).getValue(),
-        'x-amz-restore': new ObjectMDAmzRestore(true, new Date(Date.now() + 60 * 60 * 24)),
-    };
+            5,
+        ))
+        .setOriginOp('s3:ObjectRestore:Post');
 }
 
 /**
- * Computes the 'archive' field of the object MD as an object being restored
- * @returns {ObjectMDArchive} the MD object
+ * Computes the object MD as a restored object from cold storage
+ * @param {Date} date - the expiry date of the restored object
+ * @returns {ObjectMD} the MD object
  */
-function getTransitionInProgressMD() {
-    return {
-        'x-amz-scal-transition-in-progress': true,
-        'x-amz-scal-transition-time': new Date(Date.now() - 60),
-    };
-}
+function getRestoredObjectMD(date) {
+    const restoreDays = 5;
+    const restoreDate = new Date((date || Date.now()) - 10000);
+    const expiryDate = date || new Date(restoreDate.getTime() + 1000 * 60 * 60 * 24 * restoreDays);
 
-/**
- * Computes the 'archive' field of the object MD as a restored object from cold storage
- * @returns {ObjectMDArchive} the MD object
- */
-function getArchiveRestoredMD() {
-    return {
-        archive: new ObjectMDArchive(
-            { foo: 0, bar: 'stuff' }, // opaque, can be anything...
+    const restoringObjectMD = getRestoringObjectMD();
+    const restoreInfo = new ObjectMDAmzRestore(
+        false,
+        expiryDate,
+    );
+    restoreInfo['content-md5'] = restoredEtag;
+
+    return restoringObjectMD
+        .setAmzRestore(restoreInfo)
+        .setArchive(new ObjectMDArchive(
+            restoringObjectMD.getArchive().getArchiveInfo(),
             new Date(Date.now() - 60000),
-            5,
-            new Date(Date.now() - 10000),
-            new Date(Date.now() + 60000 * 60 * 24)).getValue(),
-        'x-amz-restore': {
-            'ongoing-request': false,
-            'expiry-date': new Date(Date.now() + 60 * 60 * 24),
-            'content-md5': restoredEtag,
-        },
-    };
+            restoreDays,
+            restoreDate,
+            expiryDate,
+        ))
+        .setDataStoreName('mem')
+        .setOriginOp('s3:ObjectRestore:Completed');
 }
 
 /**
- * Computes the 'archive' field of the object MD as a restored object from cold storage
- * @returns {ObjectMDArchive} the MD object
+ * Computes the object MD of an restored object from cold storage which has expired
+ * @returns {ObjectMD} the MD object
  */
-function getArchiveExpiredMD() {
-    return {
-        archive: new ObjectMDArchive(
-            { foo: 0, bar: 'stuff' }, // opaque, can be anything...
-            new Date(Date.now() - 30000),
-            5,
-            new Date(Date.now() - 20000),
-            new Date(Date.now() - 10000)).getValue(),
-        'x-amz-restore': new ObjectMDAmzRestore(false, new Date(Date.now() + 60 * 60 * 24)),
-    };
+function getExpiredObjectMD() {
+    return getRestoredObjectMD(Date.now() - 10000);
 }
-
 
 module.exports = {
     putObjectMock,
-    getArchiveArchivedMD,
-    getArchiveOngoingRequestMD,
-    getArchiveRestoredMD,
-    getArchiveExpiredMD,
-    getTransitionInProgressMD,
+    getArchivedObjectMD,
+    getRestoringObjectMD,
+    getRestoredObjectMD,
+    getExpiredObjectMD,
+    getTransitionInProgressObjectMD,
     putBucketMock,
     defaultLocation,
     defaultOwnerId,
