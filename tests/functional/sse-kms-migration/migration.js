@@ -2,6 +2,7 @@
 const getConfig = require('../aws-node-sdk/test/support/config');
 const { S3 } = require('aws-sdk');
 const kms = require('../../../lib/kms/wrapper');
+const filekms = require('../../../lib/kms/file/backend');
 const { promisify } = require('util');
 const BucketInfo = require('arsenal').models.BucketInfo;
 const { DummyRequestLogger } = require('../../unit/helpers');
@@ -65,8 +66,7 @@ kms.client._supportsDefaultKeyPerAccount = false; // To generate keys without va
 // Fix for before migration run
 // if (!kms.arnPrefix) kms.arnPrefix = '';
 
-const memKms = require('../../../lib/kms/in_memory/backend').backend;
-
+const fileKmsPrefix = filekms.backend.arnPrefix;
 
 function hydrateSSEConfig({ algo: SSEAlgorithm, masterKeyId: KMSMasterKeyID }) {
     // stringify and parse to strip undefined values
@@ -121,6 +121,41 @@ async function putEncryptedObject(Bucket, Key, sseConfig, kmsKeyId, Body) {
         ...putObjParams(Bucket, Key, sseConfig, kmsKeyId),
         Body,
     }).promise();
+}
+
+async function assertObjectSSEMigrationFILE(Bucket, Key, objConf, obj, bktConf, bkt, VersionId, Body) {
+    const sseMD = await getObjectMDSSE(Bucket, Key);
+    const head = await s3.headObject({ Bucket, Key, VersionId }).promise();
+    const sseMDMigrated = await getObjectMDSSE(Bucket, Key);
+    const expectedKey = `${sseMD.SSEKMSKeyId && sseMD.SSEKMSKeyId.startsWith('arn:scality:kms')
+        ? '' : fileKmsPrefix}${sseMD.SSEKMSKeyId}`;
+
+    if (sseMD.SSEKMSKeyId) {
+        // assert.doesNotMatch(sseMD.SSEKMSKeyId, /^arn:scality:kms/);
+    }
+
+    // obj precedence over bkt
+    assert.strictEqual(head.ServerSideEncryption, (objConf.algo || bktConf.algo));
+
+    if (sseMDMigrated.SSEKMSKeyId) {
+        assert.strictEqual(sseMDMigrated.SSEKMSKeyId, expectedKey);
+    }
+
+    if (obj.kmsKey) {
+        assert.strictEqual(head.SSEKMSKeyId, getKey(expectedKey));
+    } else if (objConf.algo !== 'AES256' && bkt.kmsKey) {
+        assert.strictEqual(head.SSEKMSKeyId, getKey(expectedKey));
+    } else if (head.ServerSideEncryption === 'aws:kms') {
+        // We differ from aws behavior and always return a
+        // masterKeyId even when not explicitly configured.
+        assert.strictEqual(head.SSEKMSKeyId, getKey(expectedKey));
+    } else {
+        assert.strictEqual(head.SSEKMSKeyId, undefined);
+    }
+
+    // always verify GetObject as well to ensure acurate decryption
+    const get = await s3.getObject({ Bucket, Key, ...(VersionId && { VersionId }) }).promise();
+    assert.strictEqual(get.Body.toString(), Body);
 }
 
 async function assertObjectSSEMigration(Bucket, Key, objConf, obj, bktConf, bkt, VersionId, Body) {
@@ -298,7 +333,7 @@ describe('SSE KMS migration', () => {
 
         testCasesObj.forEach(objConf => it(`should have pre uploaded object with SSE ${objConf.name}`, async () => {
             const obj = bkt.objs[objConf.name];
-            void await assertObjectSSEMigration(bkt.name, obj.name, objConf, obj, bktConf, bkt, null, obj.body);
+            void await assertObjectSSEMigrationFILE(bkt.name, obj.name, objConf, obj, bktConf, bkt, null, obj.body);
         }));
 
         testCasesObj.forEach(objConf => describe(`object enc-obj-${objConf.name}`, () => {
@@ -336,19 +371,19 @@ describe('SSE KMS migration', () => {
                 const mpuKey = `${obj.name}-mpu`;
 
                 const fullBody = `${obj.body}-MPU1${obj.body}-MPU2`;
-                void await assertObjectSSEMigration(bkt.name, mpuKey, objConf, obj, bktConf, bkt, null, fullBody);
+                void await assertObjectSSEMigrationFILE(bkt.name, mpuKey, objConf, obj, bktConf, bkt, null, fullBody);
             });
 
             optionalSkip('should migrate completed MPU that had copy', async () => {
                 const mpuKey = `${obj.name}-mpucopy`;
                 const fullBody = `BODY(copy)${obj.body}-MPU2`;
-                void await assertObjectSSEMigration(bkt.name, mpuKey, objConf, obj, bktConf, bkt, null, fullBody);
+                void await assertObjectSSEMigrationFILE(bkt.name, mpuKey, objConf, obj, bktConf, bkt, null, fullBody);
             });
 
             optionalSkip('should migrate completed MPU that had byte range copy', async () => {
                 const mpuKey = `${obj.name}-mpucopyrange`;
                 const fullBody = 'copyBODY';
-                void await assertObjectSSEMigration(bkt.name, mpuKey, objConf, obj, bktConf, bkt, null, fullBody);
+                void await assertObjectSSEMigrationFILE(bkt.name, mpuKey, objConf, obj, bktConf, bkt, null, fullBody);
             });
             const mpus = {};
             before('retrieve MPUS', async () => {
@@ -399,7 +434,7 @@ describe('SSE KMS migration', () => {
                 }).promise();
                 // console.log('complete', complete);
                 const fullBody = `${obj.body}-MPU1${obj.body}-MPU2`;
-                void await assertObjectSSEMigration(bkt.name, mpuKey, objConf, obj, bktConf, bkt, null, fullBody);
+                void await assertObjectSSEMigrationFILE(bkt.name, mpuKey, objConf, obj, bktConf, bkt, null, fullBody);
             });
 
             optionalSkip('should prepare encrypte MPU and put 2 encrypted parts without completion', async () => {
@@ -444,7 +479,7 @@ describe('SSE KMS migration', () => {
                 }).promise();
                 // console.log('complete', complete);
                 const fullBody = `${obj.body}-MPU1${obj.body}-MPU2`.repeat(2);
-                void await assertObjectSSEMigration(bkt.name, mpuKey, objConf, obj, bktConf, bkt, null, fullBody);
+                void await assertObjectSSEMigrationFILE(bkt.name, mpuKey, objConf, obj, bktConf, bkt, null, fullBody);
             });
 
             optionalSkip('should prepare encrypted MPU and copy an encrypted parts from encrypted bucket without completion', async () => {
@@ -490,7 +525,7 @@ describe('SSE KMS migration', () => {
                 }).promise();
                 // console.log('complete', complete);
                 const fullBody = `BODY(copy)${obj.body}-MPU2`.repeat(2);
-                void await assertObjectSSEMigration(bkt.name, mpuKey, objConf, obj, bktConf, bkt, null, fullBody);
+                void await assertObjectSSEMigrationFILE(bkt.name, mpuKey, objConf, obj, bktConf, bkt, null, fullBody);
             });
 
             optionalSkip('should prepare encrypte MPU and copy an encrypted range parts from encrypted bucket without completion', async () => {
@@ -537,7 +572,7 @@ describe('SSE KMS migration', () => {
                 }).promise();
                 // console.log('complete', complete);
                 const fullBody = 'copyBODY'.repeat(2);
-                void await assertObjectSSEMigration(bkt.name, mpuKey, objConf, obj, bktConf, bkt, null, fullBody);
+                void await assertObjectSSEMigrationFILE(bkt.name, mpuKey, objConf, obj, bktConf, bkt, null, fullBody);
             });
 
             it(`should CopyObject ${obj.name} into encrypted destination bucket`, async () => {
@@ -706,6 +741,6 @@ describe('SSE KMS migration', () => {
         }).promise();
         // console.log('complete', complete);
         const fullBody = parts.reduce((acc, part) => `${acc}${part.body}`, '').repeat(2);
-        void await assertObjectSSEMigration(mpuCopyBkt, mpuKey, {}, {}, { algo: 'AES256' }, {}, null, fullBody);
+        void await assertObjectSSEMigrationFILE(mpuCopyBkt, mpuKey, {}, {}, { algo: 'AES256' }, {}, null, fullBody);
     });
 });
