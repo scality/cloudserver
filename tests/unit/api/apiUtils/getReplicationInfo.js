@@ -5,14 +5,50 @@ const AuthInfo = require('arsenal').auth.AuthInfo;
 const getReplicationInfo =
       require('../../../../lib/api/apiUtils/object/getReplicationInfo');
 
-function _getObjectReplicationInfo(replicationConfig) {
+function _getObjectReplicationInfo(s3config, replicationConfig) {
     const bucketInfo = new BucketInfo(
         'testbucket', 'someCanonicalId', 'accountDisplayName',
         new Date().toJSON(),
         null, null, null, null, null, null, null, null, null,
         replicationConfig);
-    return getReplicationInfo('fookey', bucketInfo, true, 123, null, null);
+    return getReplicationInfo(s3config, 'fookey', bucketInfo, true, 123, null, null);
 }
+
+const TEST_CONFIG = {
+    locationConstraints: {
+        awsbackend: {
+            type: 'aws_s3',
+            objectId: 'awsbackend',
+            legacyAwsBehavior: true,
+            details: {
+                awsEndpoint: 's3.amazonaws.com',
+                bucketName: 'awsbucket',
+                bucketMatch: true,
+                credentialsProfile: 'default',
+            },
+        },
+        azurebackend: {
+            type: 'azure',
+            objectId: 'azurebackend',
+            legacyAwsBehavior: true,
+            details: {
+                azureStorageEndpoint: 'https://fakeaccountname.blob.core.fake.net/',
+                azureStorageAccountName: 'fakeaccountname',
+                azureStorageAccessKey: 'Fake00Key001',
+                bucketMatch: true,
+                azureContainerName: 's3test'
+            }
+        },
+    },
+    replicationEndpoints: [{
+        site: 'zenko',
+        servers: ['127.0.0.1:8000'],
+        default: true,
+    }, {
+        site: 'us-east-2',
+        type: 'aws_s3',
+    }],
+};
 
 describe('getReplicationInfo helper', () => {
     it('should get replication info when rules are enabled', () => {
@@ -25,7 +61,7 @@ describe('getReplicationInfo helper', () => {
             }],
             destination: 'tosomewhere',
         };
-        const replicationInfo = _getObjectReplicationInfo(replicationConfig);
+        const replicationInfo = _getObjectReplicationInfo(TEST_CONFIG, replicationConfig);
         assert.deepStrictEqual(replicationInfo, {
             status: 'PENDING',
             backends: [{
@@ -52,7 +88,7 @@ describe('getReplicationInfo helper', () => {
             }],
             destination: 'tosomewhere',
         };
-        const replicationInfo = _getObjectReplicationInfo(replicationConfig);
+        const replicationInfo = _getObjectReplicationInfo(TEST_CONFIG, replicationConfig);
         assert.deepStrictEqual(replicationInfo, undefined);
     });
 
@@ -66,7 +102,7 @@ describe('getReplicationInfo helper', () => {
             }],
             destination: 'tosomewhere',
         };
-        const replicationInfo = _getObjectReplicationInfo(replicationConfig);
+        const replicationInfo = _getObjectReplicationInfo(TEST_CONFIG, replicationConfig);
         assert.deepStrictEqual(replicationInfo, {
             status: 'PENDING',
             backends: [{
@@ -93,7 +129,7 @@ describe('getReplicationInfo helper', () => {
             }],
             destination: 'tosomewhere',
         };
-        const replicationInfo = _getObjectReplicationInfo(replicationConfig);
+        const replicationInfo = _getObjectReplicationInfo(TEST_CONFIG, replicationConfig);
         assert.deepStrictEqual(replicationInfo, {
             status: 'PENDING',
             backends: [{
@@ -126,7 +162,7 @@ describe('getReplicationInfo helper', () => {
             destination: 'tosomewhere',
             preferredReadLocation: 'awsbackend',
         };
-        const replicationInfo = _getObjectReplicationInfo(replicationConfig);
+        const replicationInfo = _getObjectReplicationInfo(TEST_CONFIG, replicationConfig);
         assert.deepStrictEqual(replicationInfo, {
             status: 'PENDING',
             backends: [{
@@ -167,7 +203,7 @@ describe('getReplicationInfo helper', () => {
             canonicalID: 'abcdef/lifecycle',
             accountDisplayName: 'Lifecycle Service Account',
         });
-        const replicationInfo = getReplicationInfo(
+        const replicationInfo = getReplicationInfo(TEST_CONFIG,
             'fookey', bucketInfo, true, 123, null, null, authInfo);
         assert.deepStrictEqual(replicationInfo, undefined);
     });
@@ -193,7 +229,7 @@ describe('getReplicationInfo helper', () => {
             canonicalID: 'abcdef/md-ingestion',
             accountDisplayName: 'Metadata Ingestion Service Account',
         });
-        const replicationInfo = getReplicationInfo(
+        const replicationInfo = getReplicationInfo(TEST_CONFIG,
             'fookey', bucketInfo, true, 123, null, null, authInfo);
         assert.deepStrictEqual(replicationInfo, {
             status: 'PENDING',
@@ -209,5 +245,81 @@ describe('getReplicationInfo helper', () => {
             storageType: 'aws_s3',
             isNFS: undefined,
         });
+    });
+
+    it('should get replication info with default StorageClass when rules are enabled', () => {
+        const replicationConfig = {
+            role: 'arn:aws:iam::root:role/s3-replication-role-1,arn:aws:iam::root:role/s3-replication-role-2',
+            rules: [{
+                prefix: '',
+                enabled: true,
+            }],
+            destination: 'tosomewhere',
+        };
+        const replicationInfo = _getObjectReplicationInfo(TEST_CONFIG, replicationConfig);
+        assert.deepStrictEqual(replicationInfo, {
+            status: 'PENDING',
+            backends: [{
+                site: 'zenko',
+                status: 'PENDING',
+                dataStoreVersionId: '',
+            }],
+            content: ['METADATA'],
+            destination: 'tosomewhere',
+            storageClass: 'zenko',
+            role: 'arn:aws:iam::root:role/s3-replication-role-1,arn:aws:iam::root:role/s3-replication-role-2',
+            storageType: '',
+            isNFS: undefined,
+        });
+    });
+
+    it('should return undefined with specified StorageClass mode if no replication endpoint is configured', () => {
+        const replicationConfig = {
+            role: 'arn:aws:iam::root:role/s3-replication-role',
+            rules: [{
+                prefix: '',
+                enabled: true,
+                storageClass: 'awsbackend',
+            }],
+            destination: 'tosomewhere',
+        };
+        const configWithNoReplicationEndpoint = {
+            locationConstraints: TEST_CONFIG.locationConstraints,
+            replicationEndpoints: [],
+        };
+        const replicationInfo = _getObjectReplicationInfo(configWithNoReplicationEndpoint,
+            replicationConfig);
+        assert.deepStrictEqual(replicationInfo, {
+            status: 'PENDING',
+            backends: [{
+                site: 'awsbackend',
+                status: 'PENDING',
+                dataStoreVersionId: '',
+            }],
+            content: ['METADATA'],
+            destination: 'tosomewhere',
+            storageClass: 'awsbackend',
+            role: 'arn:aws:iam::root:role/s3-replication-role',
+            storageType: 'aws_s3',
+            isNFS: undefined,
+        });
+    });
+
+    it('should return undefined with default StorageClass if no replication endpoint is configured', () => {
+        const replicationConfig = {
+            role: 'arn:aws:iam::root:role/s3-replication-role-1,arn:aws:iam::root:role/s3-replication-role-2',
+            rules: [{
+                prefix: '',
+                enabled: true,
+            }],
+            destination: 'tosomewhere',
+        };
+        const configWithNoReplicationEndpoint = {
+            locationConstraints: TEST_CONFIG.locationConstraints,
+            replicationEndpoints: [],
+        };
+        const replicationInfo = _getObjectReplicationInfo(configWithNoReplicationEndpoint,
+            replicationConfig);
+        assert.deepStrictEqual(replicationInfo, undefined);
     });
 });
