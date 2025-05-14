@@ -1650,8 +1650,6 @@ describe('backbeat routes', () => {
         it('should PUT tags for a non-versioned bucket', function test(done) {
             this.timeout(10000);
             const bucket = NONVERSIONED_BUCKET;
-            const awsBucket =
-                  config.locationConstraints[awsLocation].details.bucketName;
             const awsKey = uuidv4();
             async.waterfall([
                 next =>
@@ -2337,9 +2335,7 @@ describe('backbeat routes', () => {
 
         // The ceph image does not support putting tags during initiate MPU.
         itSkipCeph('should put tags if the source is AWS and tags are ' +
-        'provided when initiating the multipart upload', done => {
-            const awsBucket =
-                config.locationConstraints[awsLocation].details.bucketName;
+            'provided when initiating the multipart upload', done => {
             const awsKey = uuidv4();
             const multipleBackendPath =
                 `/_/backbeat/multiplebackenddata/${awsBucket}/${awsKey}`;
