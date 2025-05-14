@@ -40,7 +40,7 @@ const tests = [
     },
 ];
 
-describe('getReplicationInfo helper', () => {
+describe('validateMaxScannedEntries helper', () => {
     tests.forEach(t => {
         it(t.it, () => {
             const result = validateMaxScannedEntries(t.params, t.config, t.minEntriesToBeScanned);
