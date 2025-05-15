@@ -1342,6 +1342,45 @@ arraybuffer.prototype.slice@^1.0.4:
     get-intrinsic "^1.2.6"
     is-array-buffer "^3.0.4"
 
+"arsenal@git+https://github.com/scality/Arsenal#8.2.15":
+  version "8.2.15"
+  resolved "git+https://github.com/scality/Arsenal#8ff08de556d5c5d7c8dee7c5a0f1fd73a831f207"
+  dependencies:
+    "@azure/identity" "^4.9.1"
+    "@azure/storage-blob" "^12.25.0"
+    "@js-sdsl/ordered-set" "^4.4.2"
+    "@scality/hdclient" "^1.3.1"
+    JSONStream "^1.3.5"
+    agentkeepalive "^4.6.0"
+    ajv "6.12.3"
+    async "~2.6.4"
+    aws-sdk "^2.1691.0"
+    backo "^1.1.0"
+    base-x "3.0.8"
+    base62 "^2.0.2"
+    debug "^4.3.7"
+    fcntl "github:scality/node-fcntl#0.3.0"
+    httpagent scality/httpagent#1.1.0
+    https-proxy-agent "^7.0.6"
+    ioredis "^5.6.1"
+    ipaddr.js "^2.2.0"
+    joi "^17.13.3"
+    level "~5.0.1"
+    level-sublevel "~6.6.5"
+    mongodb "^6.15.0"
+    node-forge "^1.3.1"
+    prom-client "^15.1.3"
+    simple-glob "^0.2.0"
+    socket.io "^4.8.0"
+    socket.io-client "^4.8.0"
+    sproxydclient "github:scality/sproxydclient#8.1.0"
+    utf8 "^3.0.0"
+    uuid "^10.0.0"
+    werelogs scality/werelogs#8.2.2
+    xml2js "^0.6.2"
+  optionalDependencies:
+    ioctl "^2.0.2"
+
 "arsenal@git+https://github.com/scality/Arsenal#8.2.4":
   version "8.2.4"
   resolved "git+https://github.com/scality/Arsenal#96ef6a3e26d7528f877300606586759f1da6d0cd"
@@ -1461,45 +1500,6 @@ arraybuffer.prototype.slice@^1.0.4:
     level "~5.0.1"
     level-sublevel "~6.6.5"
     mongodb "^6.11.0"
-    node-forge "^1.3.1"
-    prom-client "^15.1.3"
-    simple-glob "^0.2.0"
-    socket.io "^4.8.0"
-    socket.io-client "^4.8.0"
-    sproxydclient "github:scality/sproxydclient#8.1.0"
-    utf8 "^3.0.0"
-    uuid "^10.0.0"
-    werelogs scality/werelogs#8.2.2
-    xml2js "^0.6.2"
-  optionalDependencies:
-    ioctl "^2.0.2"
-
-"arsenal@git+https://github.com/scality/arsenal#8.2.14":
-  version "8.2.14"
-  resolved "git+https://github.com/scality/arsenal#7e858dd42dbbdf05f8281b278105969e1e3ef54e"
-  dependencies:
-    "@azure/identity" "^4.9.1"
-    "@azure/storage-blob" "^12.25.0"
-    "@js-sdsl/ordered-set" "^4.4.2"
-    "@scality/hdclient" "^1.3.1"
-    JSONStream "^1.3.5"
-    agentkeepalive "^4.6.0"
-    ajv "6.12.3"
-    async "~2.6.4"
-    aws-sdk "^2.1691.0"
-    backo "^1.1.0"
-    base-x "3.0.8"
-    base62 "^2.0.2"
-    debug "^4.3.7"
-    fcntl "github:scality/node-fcntl#0.3.0"
-    httpagent scality/httpagent#1.1.0
-    https-proxy-agent "^7.0.6"
-    ioredis "^5.6.1"
-    ipaddr.js "^2.2.0"
-    joi "^17.13.3"
-    level "~5.0.1"
-    level-sublevel "~6.6.5"
-    mongodb "^6.15.0"
     node-forge "^1.3.1"
     prom-client "^15.1.3"
     simple-glob "^0.2.0"
@@ -2246,13 +2246,6 @@ debug@^3.1.0, debug@^3.2.7:
   integrity sha512-CFjzYYAi4ThfiQvizrFQevTTXHtnCqWfe7x1AhgEscTz6ZbLbfoLRLPugTQyBth6f8ZERVUSyWHFD/7Wu4t1XQ==
   dependencies:
     ms "^2.1.1"
-
-debug@~4.3.1, debug@~4.3.2, debug@~4.3.4:
-  version "4.3.7"
-  resolved "https://registry.yarnpkg.com/debug/-/debug-4.3.7.tgz#87945b4151a011d76d95a198d7111c865c360a52"
-  integrity sha512-Er2nc/H7RrMXZBFCEim6TCmMk02Z8vLC2Rbi1KEBggpo0fS6l0S1nnapwmIi3yW/+GOJap1Krg4w0Hg80oCqgQ==
-  dependencies:
-    ms "^2.1.3"
 
 debug@~4.3.1, debug@~4.3.2, debug@~4.3.4:
   version "4.3.7"
@@ -3639,7 +3632,6 @@ http-signature@~1.2.0:
 
 "httpagent@git+https://github.com/scality/httpagent#1.1.0":
   version "1.1.0"
-  uid "8f9958eb9cde086db7819a86582fba640a5f8876"
   resolved "git+https://github.com/scality/httpagent#8f9958eb9cde086db7819a86582fba640a5f8876"
   dependencies:
     agentkeepalive "^4.5.0"
@@ -7127,11 +7119,6 @@ undici-types@~6.20.0:
   version "6.20.0"
   resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-6.20.0.tgz#8171bf22c1f588d1554d55bf204bc624af388433"
   integrity sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg==
-
-undici-types@~6.21.0:
-  version "6.21.0"
-  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-6.21.0.tgz#691d00af3909be93a7faa13be61b3a5b50ef12cb"
-  integrity sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==
 
 unique-filename@^1.1.1:
   version "1.1.1"
