@@ -27,6 +27,7 @@ const testRequest = {
     post: '',
     headers: { host: `${bucketName}.s3.amazonaws.com` },
 };
+const arnPrefix = inMemory.backend.arnPrefix;
 
 const testChecks = [
     {
@@ -522,6 +523,7 @@ describe('bucketPut API with bucket-level encryption', () => {
                 assert.strictEqual(serverSideEncryption.algorithm, 'AES256');
                 assert.strictEqual(serverSideEncryption.mandatory, true);
                 assert(serverSideEncryption.masterKeyId);
+                assert.match(serverSideEncryption.masterKeyId, new RegExp(arnPrefix));
                 assert(!serverSideEncryption.isAccountEncryptionEnabled);
                 done();
             });
@@ -545,6 +547,7 @@ describe('bucketPut API with bucket-level encryption', () => {
                 assert.strictEqual(serverSideEncryption.algorithm, 'aws:kms');
                 assert.strictEqual(serverSideEncryption.mandatory, true);
                 assert(serverSideEncryption.masterKeyId);
+                assert.match(serverSideEncryption.masterKeyId, new RegExp(arnPrefix));
                 assert(!serverSideEncryption.isAccountEncryptionEnabled);
                 done();
             });
@@ -570,7 +573,7 @@ describe('bucketPut API with bucket-level encryption', () => {
                     cryptoScheme: 1,
                     algorithm: 'aws:kms',
                     mandatory: true,
-                    configuredMasterKeyId: keyId,
+                    configuredMasterKeyId: `${arnPrefix}${keyId}`,
                 });
                 done();
             });
@@ -628,7 +631,7 @@ describe('bucketPut API with account level encryption', () => {
                     cryptoScheme: 1,
                     algorithm: 'AES256',
                     mandatory: true,
-                    masterKeyId: accountLevelMasterKeyId,
+                    masterKeyId: `${arnPrefix}${accountLevelMasterKeyId}`,
                     isAccountEncryptionEnabled: true,
                 });
                 done();
@@ -653,7 +656,7 @@ describe('bucketPut API with account level encryption', () => {
                     cryptoScheme: 1,
                     algorithm: 'aws:kms',
                     mandatory: true,
-                    masterKeyId: accountLevelMasterKeyId,
+                    masterKeyId: `${arnPrefix}${accountLevelMasterKeyId}`,
                     isAccountEncryptionEnabled: true,
                 });
                 done();
@@ -680,7 +683,7 @@ describe('bucketPut API with account level encryption', () => {
                     cryptoScheme: 1,
                     algorithm: 'aws:kms',
                     mandatory: true,
-                    configuredMasterKeyId: keyId,
+                    configuredMasterKeyId: `${arnPrefix}${keyId}`,
                 });
                 done();
             });
@@ -786,7 +789,7 @@ describe('bucketPut API with SSE Configurations', () => {
                 const sse = md.getServerSideEncryption();
                 assert.strictEqual(sse.algorithm, 'aws:kms');
                 assert.strictEqual(sse.mandatory, true);
-                assert.strictEqual(sse.configuredMasterKeyId, 'test-kms-key-id');
+                assert.strictEqual(sse.configuredMasterKeyId, `${arnPrefix}test-kms-key-id`);
                 done();
             });
         });
@@ -857,7 +860,7 @@ describe('bucketPut API with SSE Configurations', () => {
                 const sse = md.getServerSideEncryption();
                 assert.strictEqual(sse.algorithm, 'aws:kms');
                 assert.strictEqual(sse.mandatory, true);
-                assert.strictEqual(sse.configuredMasterKeyId, 'another-kms-key-id');
+                assert.strictEqual(sse.configuredMasterKeyId, `${arnPrefix}another-kms-key-id`);
                 done();
             });
         });
