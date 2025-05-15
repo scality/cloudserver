@@ -18,6 +18,8 @@ const bucketPutRequest = {
     actionImplicitDenies: false,
 };
 
+const arnPrefix = inMemory.backend.arnPrefix;
+
 describe('bucketDeleteEncryption API', () => {
     before(() => cleanup());
 
@@ -130,7 +132,7 @@ describe('bucketDeleteEncryption API', () => {
                         assert.strictEqual(sseInfo.mandatory, true);
                         assert.strictEqual(sseInfo.algorithm, 'aws:kms');
                         assert(!sseInfo.masterKeyId);
-                        assert.strictEqual(sseInfo.configuredMasterKeyId, keyId2);
+                        assert.strictEqual(sseInfo.configuredMasterKeyId, `${arnPrefix}${keyId2}`);
                         done();
                     });
                 });
@@ -156,7 +158,7 @@ describe('bucketDeleteEncryption API', () => {
                             assert.strictEqual(sseInfo.mandatory, true);
                             assert.strictEqual(sseInfo.algorithm, 'aws:kms');
                             assert.strictEqual(sseInfo.masterKeyId, expectedMasterKeyId);
-                            assert.strictEqual(sseInfo.configuredMasterKeyId, keyId);
+                            assert.strictEqual(sseInfo.configuredMasterKeyId, `${arnPrefix}${keyId}`);
                             done();
                         });
                     });
