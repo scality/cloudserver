@@ -19,23 +19,24 @@ describe('parseKmsAWS Function', () => {
     });
 
     it('should throw an error if endpoint is not defined in kmsAWS', () => {
-        const config = { kmsAWS: { ak: 'ak', sk: 'sk' } };
+        const config = { kmsAWS: { providerName: 'tests', ak: 'ak', sk: 'sk' } };
         assert.throws(() => configInstance._parseKmsAWS(config), 'endpoint must be defined');
     });
 
     it('should throw an error if ak is not defined in kmsAWS', () => {
-        const config = { kmsAWS: { endpoint: 'https://example.com', sk: 'sk' } };
+        const config = { kmsAWS: { providerName: 'tests', endpoint: 'https://example.com', sk: 'sk' } };
         assert.throws(() => configInstance._parseKmsAWS(config), 'ak must be defined');
     });
 
     it('should throw an error if sk is not defined in kmsAWS', () => {
-        const config = { kmsAWS: { endpoint: 'https://example.com', ak: 'ak' } };
+        const config = { kmsAWS: { providerName: 'tests', endpoint: 'https://example.com', ak: 'ak' } };
         assert.throws(() => configInstance._parseKmsAWS(config), 'sk must be defined');
     });
 
     it('should return the expected kmsAWS object when valid config is provided', () => {
         const config = {
             kmsAWS: {
+                providerName: 'tests',
                 endpoint: 'https://example.com',
                 ak: 'accessKey',
                 sk: 'secretKey',
@@ -43,6 +44,7 @@ describe('parseKmsAWS Function', () => {
         };
         const result = configInstance._parseKmsAWS(config);
         assert.deepStrictEqual(result, {
+            providerName: 'tests',
             endpoint: 'https://example.com',
             ak: 'accessKey',
             sk: 'secretKey',
@@ -52,6 +54,7 @@ describe('parseKmsAWS Function', () => {
     it('should include region if provided in the config', () => {
         const config = {
             kmsAWS: {
+                providerName: 'tests',
                 endpoint: 'https://example.com',
                 ak: 'accessKey',
                 sk: 'secretKey',
@@ -60,6 +63,7 @@ describe('parseKmsAWS Function', () => {
         };
         const result = configInstance._parseKmsAWS(config);
         assert.deepStrictEqual(result, {
+            providerName: 'tests',
             endpoint: 'https://example.com',
             ak: 'accessKey',
             sk: 'secretKey',
@@ -70,6 +74,7 @@ describe('parseKmsAWS Function', () => {
     it('should include tls configuration if provided', () => {
         const config = {
             kmsAWS: {
+                providerName: 'tests',
                 endpoint: 'https://example.com',
                 ak: 'accessKey',
                 sk: 'secretKey',
@@ -82,6 +87,7 @@ describe('parseKmsAWS Function', () => {
         };
         const result = configInstance._parseKmsAWS(config);
         assert.deepStrictEqual(result, {
+            providerName: 'tests',
             endpoint: 'https://example.com',
             ak: 'accessKey',
             sk: 'secretKey',
@@ -112,6 +118,7 @@ describe('parseKmsAWS TLS section', () => {
     it('should throw an error if tls.rejectUnauthorized is not a boolean', () => {
         const config = {
             kmsAWS: {
+                providerName: 'tests',
                 endpoint: 'https://example.com',
                 ak: 'accessKey',
                 sk: 'secretKey',
@@ -127,6 +134,7 @@ describe('parseKmsAWS TLS section', () => {
     it('should throw an error if tls.minVersion is not a string', () => {
         const config = {
             kmsAWS: {
+                providerName: 'tests',
                 endpoint: 'https://example.com',
                 ak: 'accessKey',
                 sk: 'secretKey',
@@ -144,6 +152,7 @@ describe('parseKmsAWS TLS section', () => {
     it('should throw an error if tls.maxVersion is not a string', () => {
         const config = {
             kmsAWS: {
+                providerName: 'tests',
                 endpoint: 'https://example.com',
                 ak: 'accessKey',
                 sk: 'secretKey',
@@ -161,6 +170,7 @@ describe('parseKmsAWS TLS section', () => {
     it('should throw an error if tls.ca is not a string or an array', () => {
         const config = {
             kmsAWS: {
+                providerName: 'tests',
                 endpoint: 'https://example.com',
                 ak: 'accessKey',
                 sk: 'secretKey',
@@ -178,6 +188,7 @@ describe('parseKmsAWS TLS section', () => {
     it('should return an empty tls object if all tls fields are undefined', () => {
         const config = {
             kmsAWS: {
+                providerName: 'tests',
                 endpoint: 'https://example.com',
                 ak: 'accessKey',
                 sk: 'secretKey',
@@ -192,6 +203,7 @@ describe('parseKmsAWS TLS section', () => {
     it('should load tls.ca as an array of files', () => {
         const config = {
             kmsAWS: {
+                providerName: 'tests',
                 endpoint: 'http://example.com',
                 ak: 'accessKey',
                 sk: 'secretKey',
@@ -212,6 +224,7 @@ describe('parseKmsAWS TLS section', () => {
     it('should load tls.cert as a single file', () => {
         const config = {
             kmsAWS: {
+                providerName: 'tests',
                 endpoint: 'http://example.com',
                 ak: 'accessKey',
                 sk: 'secretKey',
@@ -231,6 +244,7 @@ describe('parseKmsAWS TLS section', () => {
     it('should load tls.key as a single file', () => {
         const config = {
             kmsAWS: {
+                providerName: 'tests',
                 endpoint: 'http://example.com',
                 ak: 'accessKey',
                 sk: 'secretKey',
@@ -250,6 +264,7 @@ describe('parseKmsAWS TLS section', () => {
     it('should not load TLS files if tls is undefined', () => {
         const config = {
             kmsAWS: {
+                providerName: 'tests',
                 endpoint: 'http://example.com',
                 ak: 'accessKey',
                 sk: 'secretKey',
@@ -267,6 +282,7 @@ describe('parseKmsAWS TLS section', () => {
         const basePath = configInstance._basePath;
         const config = {
             kmsAWS: {
+                providerName: 'tests',
                 endpoint: 'http://example.com',
                 ak: 'accessKey',
                 sk: 'secretKey',
@@ -292,6 +308,7 @@ describe('parseKmsAWS TLS section', () => {
 
         const config = {
             kmsAWS: {
+                providerName: 'tests',
                 endpoint: 'http://example.com',
                 ak: 'accessKey',
                 sk: 'secretKey',
