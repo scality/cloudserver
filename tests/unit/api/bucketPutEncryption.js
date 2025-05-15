@@ -20,6 +20,7 @@ const bucketPutRequest = {
     url: '/',
     actionImplicitDenies: false,
 };
+const arnPrefix = inMemory.backend.arnPrefix;
 
 describe('bucketPutEncryption API', () => {
     let createBucketKeySpy;
@@ -138,7 +139,7 @@ describe('bucketPutEncryption API', () => {
                         mandatory: true,
                         algorithm: 'aws:kms',
                         cryptoScheme: 1,
-                        configuredMasterKeyId: '12345',
+                        configuredMasterKeyId: `${arnPrefix}12345`,
                     });
                     done();
                 });
@@ -213,7 +214,7 @@ describe('bucketPutEncryption API', () => {
                                 algorithm: 'aws:kms',
                                 cryptoScheme: 1,
                                 masterKeyId,
-                                configuredMasterKeyId: '12345',
+                                configuredMasterKeyId: `${arnPrefix}12345`,
                             });
                             done();
                         });
@@ -260,6 +261,7 @@ describe('bucketPutEncryption API', () => {
                             assert.strictEqual(updatedSSEInfo.algorithm, 'AES256');
                             assert.strictEqual(updatedSSEInfo.cryptoScheme, 1);
                             assert(updatedSSEInfo.masterKeyId);
+                            assert(updatedSSEInfo.masterKeyId, new RegExp(arnPrefix));
                             done();
                         });
                     });
@@ -315,7 +317,7 @@ describe('bucketPutEncryption API with account level encryption', () => {
                     cryptoScheme: 1,
                     algorithm: 'AES256',
                     mandatory: true,
-                    masterKeyId: accountLevelMasterKeyId,
+                    masterKeyId: `${arnPrefix}${accountLevelMasterKeyId}`,
                     isAccountEncryptionEnabled: true,
                 });
                 done();
@@ -334,7 +336,7 @@ describe('bucketPutEncryption API with account level encryption', () => {
                     cryptoScheme: 1,
                     algorithm: 'aws:kms',
                     mandatory: true,
-                    masterKeyId: accountLevelMasterKeyId,
+                    masterKeyId: `${arnPrefix}${accountLevelMasterKeyId}`,
                     isAccountEncryptionEnabled: true,
                 });
                 done();
@@ -354,7 +356,7 @@ describe('bucketPutEncryption API with account level encryption', () => {
                     cryptoScheme: 1,
                     algorithm: 'aws:kms',
                     mandatory: true,
-                    configuredMasterKeyId: keyId,
+                    configuredMasterKeyId: `${arnPrefix}${keyId}`,
                 });
                 done();
             });
@@ -367,7 +369,7 @@ describe('bucketPutEncryption API with account level encryption', () => {
             cryptoScheme: 1,
             algorithm: 'AES256',
             mandatory: true,
-            masterKeyId: accountLevelMasterKeyId,
+            masterKeyId: `${arnPrefix}${accountLevelMasterKeyId}`,
             isAccountEncryptionEnabled: true,
         };
 
@@ -400,7 +402,7 @@ describe('bucketPutEncryption API with account level encryption', () => {
                     cryptoScheme: 1,
                     algorithm: 'AES256',
                     mandatory: true,
-                    masterKeyId: accountLevelMasterKeyId,
+                    masterKeyId: `${arnPrefix}${accountLevelMasterKeyId}`,
                     isAccountEncryptionEnabled: true,
                 });
                 const keyId = '12345';
@@ -413,8 +415,8 @@ describe('bucketPutEncryption API with account level encryption', () => {
                                 cryptoScheme: 1,
                                 algorithm: 'aws:kms',
                                 mandatory: true,
-                                masterKeyId: accountLevelMasterKeyId,
-                                configuredMasterKeyId: keyId,
+                                masterKeyId: `${arnPrefix}${accountLevelMasterKeyId}`,
+                                configuredMasterKeyId: `${arnPrefix}${keyId}`,
                                 isAccountEncryptionEnabled: true,
                             });
                             done();
@@ -435,7 +437,7 @@ describe('bucketPutEncryption API with account level encryption', () => {
                     cryptoScheme: 1,
                     algorithm: 'aws:kms',
                     mandatory: true,
-                    masterKeyId: accountLevelMasterKeyId,
+                    masterKeyId: `${arnPrefix}${accountLevelMasterKeyId}`,
                     isAccountEncryptionEnabled: true,
                 });
                 const newConf = templateSSEConfig({ algorithm: 'AES256' });
@@ -447,7 +449,7 @@ describe('bucketPutEncryption API with account level encryption', () => {
                                 cryptoScheme: 1,
                                 algorithm: 'AES256',
                                 mandatory: true,
-                                masterKeyId: accountLevelMasterKeyId,
+                                masterKeyId: `${arnPrefix}${accountLevelMasterKeyId}`,
                                 isAccountEncryptionEnabled: true,
                             });
                             done();
@@ -469,7 +471,7 @@ describe('bucketPutEncryption API with account level encryption', () => {
                     cryptoScheme: 1,
                     algorithm: 'aws:kms',
                     mandatory: true,
-                    configuredMasterKeyId: keyId,
+                    configuredMasterKeyId: `${arnPrefix}${keyId}`,
                 });
                 const newConf = templateSSEConfig({ algorithm: 'AES256' });
                 return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log,
@@ -480,7 +482,7 @@ describe('bucketPutEncryption API with account level encryption', () => {
                                 cryptoScheme: 1,
                                 algorithm: 'AES256',
                                 mandatory: true,
-                                masterKeyId: accountLevelMasterKeyId,
+                                masterKeyId: `${arnPrefix}${accountLevelMasterKeyId}`,
                                 isAccountEncryptionEnabled: true,
                             });
                             done();

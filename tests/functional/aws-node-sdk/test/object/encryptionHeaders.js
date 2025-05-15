@@ -6,6 +6,11 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const kms = require('../../../../../lib/kms/wrapper');
 const { DummyRequestLogger } = require('../../../../unit/helpers');
+const { config } = require('../../../../../lib/Config');
+const { getKeyIdFromArn } = require('arsenal/build/lib/network/KMSInterface');
+
+// For this test env S3_CONFIG_FILE should be the same as running cloudserver
+// to have the same config.kmsHideScalityArn value
 
 const log = new DummyRequestLogger();
 
@@ -55,7 +60,9 @@ function createExpected(sseConfig, kmsKeyId) {
     }
 
     if (sseConfig.masterKeyId) {
-        expected.masterKeyId = kmsKeyId;
+        expected.masterKeyId = config.kmsHideScalityArn
+            ? getKeyIdFromArn(kmsKeyId)
+            : kmsKeyId;
     }
     return expected;
 }
@@ -91,7 +98,7 @@ describe('per object encryption headers', () => {
             const bucket = new BucketInfo('enc-bucket-test', 'OwnerId',
                 'OwnerDisplayName', new Date().toJSON());
             kms.createBucketKey(bucket, log,
-                (err, { masterKeyId: keyId }) => {
+                (err, { masterKeyArn: keyId }) => {
                     assert.ifError(err);
                     kmsKeyId = keyId;
                     done();
@@ -221,7 +228,9 @@ describe('per object encryption headers', () => {
                     done => {
                         const _existing = Object.assign({}, existing);
                         if (existing.masterKeyId) {
-                            _existing.masterKeyId = kmsKeyId;
+                            _existing.masterKeyId = config.kmsHideScalityArn
+                                ? getKeyIdFromArn(kmsKeyId)
+                                : kmsKeyId;
                         }
                         const params = {
                             Bucket: bucket2,
