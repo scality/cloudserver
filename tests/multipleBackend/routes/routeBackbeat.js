@@ -30,6 +30,7 @@ const azureClient = getAzureClient();
 const containerName = getAzureContainerName(azureLocation);
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
+const isNullVersionCompatMode = process.env.ENABLE_NULL_VERSION_COMPAT_MODE === 'true';
 
 const { accessKeyId, secretAccessKey } = getCredentials();
 
@@ -379,6 +380,9 @@ describe('backbeat routes', () => {
                 const objMDAfter = JSON.parse(getMetadataAfterRes.body).Body;
                 const expectedMd = JSON.parse(objMD);
                 expectedMd.isNull = true; // TODO remove the line once CLDSRV-509 is fixed
+                if (!isNullVersionCompatMode) {
+                    expectedMd.isNull2 = true; // TODO remove the line once CLDSRV-509 is fixed
+                }
                 assert.deepStrictEqual(JSON.parse(objMDAfter), expectedMd);
 
                 const listObjectVersionsRes = results.listObjectVersions;
@@ -1447,8 +1451,7 @@ describe('backbeat routes', () => {
         });
     });
 
-    // TODO: CLDSRV-394 unskip routeBackbeat tests
-    describe.skip('backbeat PUT routes', () => {
+    describe('backbeat PUT routes', () => {
         describe('PUT data + metadata should create a new complete object',
         () => {
             [{
@@ -1644,11 +1647,9 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should PUT tags for a non-versioned bucket', function test(done) {
+        itSkipCeph('should PUT tags for a non-versioned bucket', function test(done) {
             this.timeout(10000);
             const bucket = NONVERSIONED_BUCKET;
-            const awsBucket =
-                  config.locationConstraints[awsLocation].details.bucketName;
             const awsKey = uuidv4();
             async.waterfall([
                 next =>
@@ -2153,7 +2154,7 @@ describe('backbeat routes', () => {
             });
         });
     });
-    describe.skip('backbeat authorization checks', () => {
+    describe('backbeat authorization checks', () => {
         [{ method: 'PUT', resourceType: 'metadata' },
          { method: 'PUT', resourceType: 'data' }].forEach(test => {
              const queryObj = test.resourceType === 'data' ? { v2: '' } : {};
@@ -2271,7 +2272,7 @@ describe('backbeat routes', () => {
            });
     });
 
-    describe.skip('GET Metadata route', () => {
+    describe('GET Metadata route', () => {
         beforeEach(done => makeBackbeatRequest({
             method: 'PUT', bucket: TEST_BUCKET,
             objectKey: TEST_KEY,
@@ -2329,14 +2330,12 @@ describe('backbeat routes', () => {
             });
         });
     });
-    describe.skip('backbeat multipart upload operations', function test() {
+    describe('backbeat multipart upload operations', function test() {
         this.timeout(10000);
 
         // The ceph image does not support putting tags during initiate MPU.
         itSkipCeph('should put tags if the source is AWS and tags are ' +
-        'provided when initiating the multipart upload', done => {
-            const awsBucket =
-                config.locationConstraints[awsLocation].details.bucketName;
+            'provided when initiating the multipart upload', done => {
             const awsKey = uuidv4();
             const multipleBackendPath =
                 `/_/backbeat/multiplebackenddata/${awsBucket}/${awsKey}`;
@@ -2478,19 +2477,16 @@ describe('backbeat routes', () => {
                         jsonResponse: true,
                     }, next),
                 next =>
-                    azureClient.getBlobProperties(
-                        containerName, blob, (err, result) => {
-                            if (err) {
-                                return next(err);
-                            }
+                    azureClient.getContainerClient(containerName).getBlobClient(blob).getProperties()
+                        .then(result => {
                             const tags = JSON.parse(result.metadata.tags);
                             assert.deepStrictEqual(tags, { key1: 'value1' });
                             return next();
-                        }),
+                        }, next),
             ], done);
         });
     });
-    describe.skip('Batch Delete Route', function test() {
+    describe('Batch Delete Route', function test() {
         this.timeout(30000);
         it('should batch delete a local location', done => {
             let versionId;
@@ -2549,7 +2545,8 @@ describe('backbeat routes', () => {
                 }),
             ], done);
         });
-        it('should batch delete a versioned AWS location', done => {
+
+        itSkipCeph('should batch delete a versioned AWS location', done => {
             let versionId;
             const awsKey = `${TEST_BUCKET}/batch-delete-test-key-${makeid(8)}`;
 
@@ -2689,7 +2686,7 @@ describe('backbeat routes', () => {
             ], done);
         });
 
-        it('should not put tags if the source is not Azure and ' +
+        itSkipCeph('should not put tags if the source is not Azure and ' +
         'if-unmodified-since condition is not met', done => {
             const awsKey = uuidv4();
             async.series([
@@ -2734,7 +2731,7 @@ describe('backbeat routes', () => {
             ], done);
         });
 
-        it('should put tags if the source is not Azure and ' +
+        itSkipCeph('should put tags if the source is not Azure and ' +
         'if-unmodified-since condition is met', done => {
             const awsKey = uuidv4();
             let lastModified;
@@ -2809,8 +2806,8 @@ describe('backbeat routes', () => {
             const blob = uuidv4();
             async.series([
                 next =>
-                    azureClient.createBlockBlobFromText(
-                        containerName, blob, 'a', null, next),
+                    azureClient.getContainerClient(containerName).uploadBlockBlob(blob, 'a', 1)
+                        .then(() => next(), next),
                 next =>
                     makeRequest({
                         authCredentials: backbeatAuthCredentials,
@@ -2842,14 +2839,11 @@ describe('backbeat routes', () => {
                         return next(err);
                     }),
                 next =>
-                    azureClient.getBlobProperties(
-                        containerName, blob, (err, result) => {
-                            if (err) {
-                                return next(err);
-                            }
+                    azureClient.getContainerClient(containerName).getBlobClient(blob).getProperties()
+                        .then(result => {
                             assert(result);
                             return next();
-                        }),
+                        }, next),
             ], done);
         });
 
@@ -2859,17 +2853,14 @@ describe('backbeat routes', () => {
             let lastModified;
             async.series([
                 next =>
-                    azureClient.createBlockBlobFromText(
-                        containerName, blob, 'a', null, next),
+                    azureClient.getContainerClient(containerName).uploadBlockBlob(blob, 'a', 1)
+                        .then(() => next(), next),
                 next =>
-                    azureClient.getBlobProperties(
-                        containerName, blob, (err, result) => {
-                            if (err) {
-                                return next(err);
-                            }
+                    azureClient.getContainerClient(containerName).getBlobClient(blob).getProperties()
+                        .then(result => {
                             lastModified = result.lastModified;
                             return next();
-                        }),
+                        }, next),
                 next =>
                     makeRequest({
                         authCredentials: backbeatAuthCredentials,
@@ -2895,10 +2886,11 @@ describe('backbeat routes', () => {
                         jsonResponse: true,
                     }, next),
                 next =>
-                    azureClient.getBlobProperties(containerName, blob, err => {
-                        assert(err.statusCode === 404);
-                        return next();
-                    }),
+                    azureClient.getContainerClient(containerName).getBlobClient(blob).getProperties()
+                        .then(() => assert.fail('Expected error'), err => {
+                            assert.strictEqual(err.statusCode, 404);
+                            return next();
+                        }),
             ], done);
         });
     });

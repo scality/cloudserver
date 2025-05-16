@@ -41,7 +41,7 @@ let gcpBucket;
 let gcpBucketMPU;
 
 const isCEPH = process.env.CI_CEPH !== undefined;
-const itSkipCeph = isCEPH ? it.skip : it.skip;
+const itSkipCeph = isCEPH ? it.skip : it;
 const describeSkipIfCeph = isCEPH ? describe.skip : describe.skip; // always skip
 
 if (config.backends.data === 'multiple') {

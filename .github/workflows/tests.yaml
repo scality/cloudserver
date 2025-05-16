@@ -230,6 +230,7 @@ jobs:
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
       S3DATA: multiple
       S3METADATA: mongodb
+      ENABLE_NULL_VERSION_COMPAT_MODE: true # needed with mongodb backend
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
@@ -557,6 +558,7 @@ jobs:
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
+      ENABLE_NULL_VERSION_COMPAT_MODE: true # needed with mongodb backend
     steps:
     - name: Checkout
       uses: actions/checkout@v4
