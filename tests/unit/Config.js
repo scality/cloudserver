@@ -9,9 +9,7 @@ const {
     ConfigObject,
 } = require('../../lib/Config');
 
-const {
-    supportedLifecycleRules,
-} = require('../../constants');
+const { ValidLifecycleRules: supportedLifecycleRules } = require('arsenal').models;
 
 describe('Config', () => {
     const envToRestore = [];
@@ -673,9 +671,9 @@ describe('Config', () => {
 
         it('should return the rules provided when they are valid', () => {
             const rules = [
-                'expiration',
-                'noncurrentVersionExpiration',
-                'abortIncompleteMultipartUpload',
+                'Expiration',
+                'NoncurrentVersionExpiration',
+                'AbortIncompleteMultipartUpload',
             ];
             const parsedRules = parseSupportedLifecycleRules(rules);
             assert.deepStrictEqual(parsedRules, rules);
