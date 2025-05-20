@@ -12,6 +12,8 @@ const {
 const { ValidLifecycleRules: supportedLifecycleRules } = require('arsenal').models;
 
 describe('Config', () => {
+    const defaultConfig = JSON.parse(fs.readFileSync('config.json'), { encoding: 'utf-8' });
+
     const envToRestore = [];
     const setEnv = (key, value) => {
         if (key in process.env) {
@@ -446,7 +448,6 @@ describe('Config', () => {
     });
 
     describe('multiObjectDeleteEnableOptimizations', () => {
-        const defaultConfig = JSON.parse(fs.readFileSync('config.json'), { encoding: 'utf-8' });
         let sandbox;
         let readFileStub;
 
@@ -677,6 +678,136 @@ describe('Config', () => {
             ];
             const parsedRules = parseSupportedLifecycleRules(rules);
             assert.deepStrictEqual(parsedRules, rules);
+        });
+    });
+
+    describe('port and internalPort configuration', () => {
+        // same as `defaultConfig` (i.e. config.json) but without the port settings
+        const baseConfig = (() => {
+            const config = { ...defaultConfig };
+            delete config.port;
+            delete config.listenOn;
+            delete config.internalPort;
+            delete config.internalListenOn;
+            delete config.metricsPort;
+            delete config.metricsListenOn;
+            return config;
+        })();
+
+        let sandbox;
+        let readFileStub;
+
+        beforeEach(() => {
+            sandbox = sinon.createSandbox();
+            readFileStub = sandbox.stub(fs, 'readFileSync');
+            readFileStub.callThrough();
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+        });
+
+        it('should throw an error for negative port number', () => {
+            const testConfig = { ...baseConfig, port: -1 };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(testConfig));
+
+            assert.throws(() => new ConfigObject(), /bad config: port must be a positive integer/);
+        });
+
+        it('should throw an error for non-integer port number', () => {
+            const testConfig = { ...baseConfig, port: 8000.5 };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(testConfig));
+
+            assert.throws(() => new ConfigObject(), /bad config: port must be a positive integer/);
+        });
+
+        it('should throw an error for negative internalPort number', () => {
+            const testConfig = { ...baseConfig, internalPort: -1 };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(testConfig));
+
+            assert.throws(() => new ConfigObject(), /bad config: internalPort must be a positive integer/);
+        });
+
+        it('should throw an error for non-integer internalPort number', () => {
+            const testConfig = { ...baseConfig, internalPort: 9000.5 };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(testConfig));
+
+            assert.throws(() => new ConfigObject(), /bad config: internalPort must be a positive integer/);
+        });
+
+        it('should accept a valid port number', () => {
+            const testConfig = { ...baseConfig, port: 8765 };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(testConfig));
+
+            const config = new ConfigObject();
+            assert.strictEqual(config.port, 8765);
+            assert.strictEqual(config.internalPort, undefined);
+        });
+
+        it('should accept a valid internalPort number', () => {
+            const testConfig = { ...baseConfig, internalPort: 9000 };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(testConfig));
+
+            const config = new ConfigObject();
+            assert.strictEqual(config.port, undefined);
+            assert.strictEqual(config.internalPort, 9000);
+        });
+
+        it('should accept both port and internalPort when provided', () => {
+            const testConfig = { ...baseConfig, port: 8000, internalPort: 9000 };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(testConfig));
+
+            const config = new ConfigObject();
+            assert.strictEqual(config.port, 8000);
+            assert.strictEqual(config.internalPort, 9000);
+        });
+
+        it('should use default port 8000 if no port or internalPort specified', () => {
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(baseConfig));
+
+            const config = new ConfigObject();
+            assert.strictEqual(config.port, 8000);
+            assert.strictEqual(config.internalPort, undefined);
+        });
+
+        it('should default port if listenOn is provided', () => {
+            const testConfig = {
+                ...baseConfig,
+                listenOn: ['127.0.0.1:9000'],
+            };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(testConfig));
+
+            const config = new ConfigObject();
+            assert.strictEqual(config.port, 8000);
+            assert.strictEqual(config.internalPort, undefined);
+            assert.deepEqual(config.listenOn, [{ ip: '127.0.0.1', port: 9000 }]);
+        });
+
+        it('should not default port if internalListenOn is provided', () => {
+            const testConfig = {
+                ...baseConfig,
+                internalListenOn: ['127.0.0.1:9000'],
+            };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(testConfig));
+
+            const config = new ConfigObject();
+            assert.strictEqual(config.port, undefined);
+            assert.strictEqual(config.internalPort, undefined);
+            assert.deepEqual(config.internalListenOn, [{ ip: '127.0.0.1', port: 9000 }]);
+        });
+
+        it('should properly handle listenOn and internalListenOn configuration', () => {
+            const testConfig = {
+                ...baseConfig,
+                listenOn: ['0.0.0.0:8000'],
+                internalListenOn: ['127.0.0.1:9000'],
+            };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(testConfig));
+
+            const config = new ConfigObject();
+            assert.strictEqual(config.port, 8000);
+            assert.deepEqual(config.listenOn, [{ ip: '0.0.0.0', port: 8000 }]);
+            assert.deepEqual(config.internalListenOn, [{ ip: '127.0.0.1', port: 9000 }]);
         });
     });
 });
