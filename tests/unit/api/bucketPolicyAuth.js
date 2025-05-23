@@ -346,6 +346,34 @@ describe('bucket policy authorization', () => {
             assert.equal(allowed, false);
             done();
         });
+
+        it('should bypass bucket policy when request.bypassUserBucketPolicies is true', function () {
+            // Create a request with the bypassUserBucketPolicies flag initially not set
+            const request = {
+                bucketName,
+                socket: {},
+            };
+
+            // Add a policy to explicitely deny access
+            const newPolicy = this.test.basePolicy;
+            newPolicy.Statement[0] = {
+                Effect: 'Deny',
+                Principal: { CanonicalUser: [bucketOwnerCanonicalId] },
+                Resource: `arn:aws:s3:::${bucketName}`,
+                Action: 's3:*',
+            };
+            bucket.setBucketPolicy(newPolicy);
+
+            // Check that the policy denies access, as expected
+            assert.ok(!isBucketAuthorized(bucket, bucAction,
+                bucketOwnerCanonicalId, user1AuthInfo, log, request));
+
+            // But with bypassUserBucketPolicies set to true, it should still be authorized
+            // based on ACL permissions (which we mock to return true)
+            request.bypassUserBucketPolicies = true;
+            assert.ok(isBucketAuthorized(bucket, bucAction,
+                bucketOwnerCanonicalId, user1AuthInfo, log, request));
+        });
     });
 
     describe('isObjAuthorized with no policy set', () => {
@@ -427,6 +455,35 @@ describe('bucket policy authorization', () => {
             assert.equal(allowed, false);
             done();
         });
+
+        it('should bypass bucket policy when request.bypassUserBucketPolicies is true', function () {
+            // Create a request with the bypassUserBucketPolicies flag initially not set
+            const request = {
+                bucketName,
+                socket: {},
+            };
+
+            // Add a policy to explicitely deny access
+            const newPolicy = this.test.basePolicy;
+            newPolicy.Statement[0] = {
+                Effect: 'Deny',
+                Principal: { CanonicalUser: [bucketOwnerCanonicalId] },
+                Resource: `arn:aws:s3:::${bucketName}`,
+                Action: 's3:*',
+            };
+            bucket.setBucketPolicy(newPolicy);
+
+            // Check that the policy denies access, as expected
+            assert.ok(!isObjAuthorized(bucket, object, 'objectGet',
+                bucketOwnerCanonicalId, user1AuthInfo, log, request));
+
+            // But with bypassUserBucketPolicies set to true, it should still be authorized
+            // based on ACL permissions (which we mock to return true)
+            request.bypassUserBucketPolicies = true;
+            assert.ok(isObjAuthorized(bucket, object, 'objectGet',
+                bucketOwnerCanonicalId, user1AuthInfo, log, request));
+        });
+
         it('should deny access to non-object owner if two statements apply ' +
         'to principal but one denies access', function itFn(done) {
             const newPolicy = this.test.basePolicy;

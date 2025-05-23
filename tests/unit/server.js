@@ -2,6 +2,7 @@
 
 const assert = require('assert');
 const sinon = require('sinon');
+const arsenal = require('arsenal');
 const logger = require('../../lib/utilities/logger');
 const { config: defaultConfig } = require('../../lib/Config');
 const { S3Server } = require('../../lib/server');
@@ -83,7 +84,7 @@ describe('S3Server', () => {
             await waitReady();
 
             assert.strictEqual(startServerStub.callCount, 2);
-            assert(startServerStub.calledWith(server.routeRequest, 9000));
+            assert(startServerStub.calledWith(server.internalRouteRequest, 9000));
         });
         
         it('should start internal API servers from internalListenOn array', async () => {
@@ -98,8 +99,8 @@ describe('S3Server', () => {
             await waitReady();
 
             assert.strictEqual(startServerStub.callCount, 3);
-            assert(startServerStub.calledWith(server.routeRequest, 9000, '127.0.0.1'));
-            assert(startServerStub.calledWith(server.routeRequest, 9001, '0.0.0.0'));
+            assert(startServerStub.calledWith(server.internalRouteRequest, 9000, '127.0.0.1'));
+            assert(startServerStub.calledWith(server.internalRouteRequest, 9001, '0.0.0.0'));
             assert(startServerStub.calledWith(server.routeAdminRequest));
             assert.strictEqual(startServerStub.neverCalledWith(server.routeRequest, 9999), true);
         });
@@ -143,8 +144,53 @@ describe('S3Server', () => {
 
             assert.strictEqual(startServerStub.callCount, 3);
             assert(startServerStub.calledWith(server.routeRequest, 8000));
-            assert(startServerStub.calledWith(server.routeRequest, 9000));
+            assert(startServerStub.calledWith(server.internalRouteRequest, 9000));
             assert(startServerStub.calledWith(server.routeAdminRequest, 8002));
+        });
+    });
+
+    describe('internalRouteRequest', () => {
+        const resp = {
+            on: () => { },
+            setHeader: () => { },
+            writeHead: () => { },
+            end: () => { },
+        };
+
+        let req;
+
+        beforeEach(() => {
+            req = {
+                headers: {},
+                socket: {
+                    setNoDelay: () => { },
+                },
+                url: 'http://localhost:8000',
+            };
+        });
+
+        afterEach(() => {
+            sinon.restore();
+        });
+
+        it('should bypass bucket policy for internal requests', () => {
+            const routesMock = sinon.stub().callsFake(req => {
+                assert(req.bypassUserBucketPolicies);
+            });
+            sinon.stub(arsenal.s3routes, 'routes').value(routesMock);
+
+            server.internalRouteRequest(req, resp);
+            sinon.assert.calledOnce(routesMock);
+        });
+
+        it('should bypass bucket policy for routes requests', () => {
+            const routesMock = sinon.stub().callsFake(req => {
+                assert(!req.bypassUserBucketPolicies);
+            });
+            sinon.stub(arsenal.s3routes, 'routes').value(routesMock);
+
+            server.routeRequest(req, resp);
+            sinon.assert.calledOnce(routesMock);
         });
     });
 });
