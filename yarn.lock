@@ -1733,9 +1733,9 @@ bucketclient@scality/bucketclient#8.2.0:
     httpagent "git+https://github.com/scality/httpagent#1.1.0"
     werelogs scality/werelogs#8.1.5
 
-bucketclient@scality/bucketclient#8.2.3:
-  version "8.2.3"
-  resolved "https://codeload.github.com/scality/bucketclient/tar.gz/3dfe625021ef45ee2a0f6321e0a9ba04dee63378"
+bucketclient@scality/bucketclient#8.2.4:
+  version "8.2.4"
+  resolved "https://codeload.github.com/scality/bucketclient/tar.gz/99ce471a7e665547317e0103a1ba38d75e331a63"
   dependencies:
     arsenal "git+https://github.com/scality/Arsenal#8.2.4"
     httpagent "git+https://github.com/scality/httpagent#1.1.0"
