@@ -882,14 +882,6 @@ bucketclient@scality/bucketclient#7.10.21:
     arsenal "git+https://github.com/scality/Arsenal#7.10.46"
     werelogs scality/werelogs#8.1.0
 
-bucketclient@scality/bucketclient#7.10.6:
-  version "7.10.6"
-  resolved "https://codeload.github.com/scality/bucketclient/tar.gz/115ab1ae974781aafaba455cf83228b1732191af"
-  dependencies:
-    agentkeepalive "^4.1.4"
-    arsenal "git+https://github.com/scality/Arsenal#7.10.46"
-    werelogs scality/werelogs#8.1.0
-
 buffer-equal-constant-time@1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/buffer-equal-constant-time/-/buffer-equal-constant-time-1.0.1.tgz#f8e71132f7ffe6e01a5c9697a4c6f3e48d5cc819"
@@ -5333,9 +5325,9 @@ user-home@^2.0.0:
   dependencies:
     os-homedir "^1.0.0"
 
-"utapi@git+https://github.com/scality/utapi#7.10.18":
-  version "7.10.18"
-  resolved "git+https://github.com/scality/utapi#e05220ca9b90150da2058583c8e6cf35040a4c24"
+"utapi@git+https://github.com/scality/utapi#7.10.19":
+  version "7.10.19"
+  resolved "git+https://github.com/scality/utapi#76806287e93d63dee3020d5f70de120b0266d2e4"
   dependencies:
     "@hapi/joi" "^17.1.1"
     "@senx/warp10" "^1.0.14"
@@ -5345,7 +5337,7 @@ user-home@^2.0.0:
     aws4 "^1.8.0"
     backo "^1.1.0"
     body-parser "^1.19.0"
-    bucketclient scality/bucketclient#7.10.6
+    bucketclient scality/bucketclient#7.10.21
     byte-size "^7.0.0"
     commander "^5.1.0"
     cron-parser "^2.15.0"
