@@ -173,30 +173,10 @@
     fast-xml-parser "^5.0.7"
     tslib "^2.8.1"
 
-"@azure/identity@^4.5.0":
-  version "4.8.0"
-  resolved "https://registry.yarnpkg.com/@azure/identity/-/identity-4.8.0.tgz#686682683a470ccf4dbb2597ee234f9c5c483a40"
-  integrity sha512-l9ALUGHtFB/JfsqmA+9iYAp2a+cCwdNO/cyIr2y7nJLJsz1aae6qVP8XxT7Kbudg0IQRSIMXj0+iivFdbD1xPA==
-  dependencies:
-    "@azure/abort-controller" "^2.0.0"
-    "@azure/core-auth" "^1.9.0"
-    "@azure/core-client" "^1.9.2"
-    "@azure/core-rest-pipeline" "^1.17.0"
-    "@azure/core-tracing" "^1.0.0"
-    "@azure/core-util" "^1.11.0"
-    "@azure/logger" "^1.0.0"
-    "@azure/msal-browser" "^4.2.0"
-    "@azure/msal-node" "^3.2.3"
-    events "^3.0.0"
-    jws "^4.0.0"
-    open "^10.1.0"
-    stoppable "^1.1.0"
-    tslib "^2.2.0"
-
-"@azure/identity@^4.9.1":
-  version "4.9.1"
-  resolved "https://registry.yarnpkg.com/@azure/identity/-/identity-4.9.1.tgz#ee4b9435f1b96bea5985e7dec989760a67d9a119"
-  integrity sha512-986D7Cf1AOwYqSDtO/FnMAyk/Jc8qpftkGsxuehoh4F85MhQ4fICBGX/44+X1y78lN4Sqib3Bsoaoh/FvOGgmg==
+"@azure/identity@^4.10.0", "@azure/identity@^4.5.0":
+  version "4.10.0"
+  resolved "https://registry.yarnpkg.com/@azure/identity/-/identity-4.10.0.tgz#10cfe49207b4d111ebe3aab3ade47561c2852c6d"
+  integrity sha512-iT53Sre2NJK6wzMWnvpjNiR3md597LZ3uK/5kQD2TkrY9vqhrY5bt2KwELNjkOWQ9n8S/92knj/QEykTtjMNqQ==
   dependencies:
     "@azure/abort-controller" "^2.0.0"
     "@azure/core-auth" "^1.9.0"
@@ -233,15 +213,6 @@
   version "15.6.0"
   resolved "https://registry.yarnpkg.com/@azure/msal-common/-/msal-common-15.6.0.tgz#0764d6446eeff3970221995e25f265fdb218da66"
   integrity sha512-EotmBz42apYGjqiIV9rDUdptaMptpTn4TdGf3JfjLvFvinSe9BJ6ywU92K9ky+t/b0ghbeTSe9RfqlgLh8f2jA==
-
-"@azure/msal-node@^3.2.3":
-  version "3.4.0"
-  resolved "https://registry.yarnpkg.com/@azure/msal-node/-/msal-node-3.4.0.tgz#d94e8d5bf9563e2e730bde566e597834c19a0eb0"
-  integrity sha512-b4wBaPV68i+g61wFOfl5zh1lQ9UylgCQpI2638pJHV0SINneO78hOFdnX8WCoGw5OOc4Eewth9pYOg7gaiyUYw==
-  dependencies:
-    "@azure/msal-common" "15.3.0"
-    jsonwebtoken "^9.0.0"
-    uuid "^8.3.0"
 
 "@azure/msal-node@^3.5.0":
   version "3.5.3"
@@ -1296,11 +1267,12 @@ arraybuffer.prototype.slice@^1.0.4:
     get-intrinsic "^1.2.6"
     is-array-buffer "^3.0.4"
 
-"arsenal@git+https://github.com/scality/Arsenal#8.2.18":
-  version "8.2.18"
-  resolved "git+https://github.com/scality/Arsenal#6d0165b870575d77f265bd3dd98b1ca875ebaa06"
+"arsenal@git+https://github.com/scality/Arsenal#8.2.19":
+  version "8.2.19"
+  uid fc9057ee107315601e9c1b17dfddbd16ab5859cf
+  resolved "git+https://github.com/scality/Arsenal#fc9057ee107315601e9c1b17dfddbd16ab5859cf"
   dependencies:
-    "@azure/identity" "^4.9.1"
+    "@azure/identity" "^4.10.0"
     "@azure/storage-blob" "^12.27.0"
     "@js-sdsl/ordered-set" "^4.4.2"
     "@scality/hdclient" "^1.3.1"
@@ -1312,7 +1284,7 @@ arraybuffer.prototype.slice@^1.0.4:
     backo "^1.1.0"
     base-x "3.0.8"
     base62 "^2.0.2"
-    debug "^4.3.7"
+    debug "^4.4.1"
     fcntl "github:scality/node-fcntl#0.3.0"
     httpagent scality/httpagent#1.1.0
     https-proxy-agent "^7.0.6"
@@ -2089,10 +2061,10 @@ debug@2.6.9:
   dependencies:
     ms "2.0.0"
 
-debug@4, debug@^4.1.0, debug@^4.1.1, debug@^4.3.1, debug@^4.3.2, debug@^4.3.4, debug@^4.3.5, debug@^4.3.7:
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/debug/-/debug-4.4.0.tgz#2b3f2aea2ffeb776477460267377dc8710faba8a"
-  integrity sha512-6WTZ/IxCY/T6BALoZHaE4ctp9xm+Z5kY/pzYaCHRFeyVhojxlrm+46y68HA6hr0TcwEssoxNiDEUJQjfPZ/RYA==
+debug@4, debug@^4.1.0, debug@^4.1.1, debug@^4.3.1, debug@^4.3.2, debug@^4.3.4, debug@^4.3.5, debug@^4.3.7, debug@^4.4.1:
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/debug/-/debug-4.4.1.tgz#e5a8bc6cbc4c6cd3e64308b0693a3d4fa550189b"
+  integrity sha512-KcKCqiftBJcZr++7ykoDIEwSa3XWowTfNPo92BYxjXiyYEVrUQh2aLyhxBCwww+heortUFxEJYcRzosstTEBYQ==
   dependencies:
     ms "^2.1.3"
 
@@ -3561,22 +3533,7 @@ ioctl@^2.0.2:
     bindings "^1.5.0"
     nan "^2.14.0"
 
-ioredis@^5.4.1, ioredis@^5.4.2:
-  version "5.6.0"
-  resolved "https://registry.yarnpkg.com/ioredis/-/ioredis-5.6.0.tgz#faa2a27132f8a05c0ddfef400b01d1326df211a0"
-  integrity sha512-tBZlIIWbndeWBWCXWZiqtOF/yxf6yZX3tAlTJ7nfo5jhd6dctNxF7QnYlZLZ1a0o0pDoen7CgZqO+zjNaFbJAg==
-  dependencies:
-    "@ioredis/commands" "^1.1.1"
-    cluster-key-slot "^1.1.0"
-    debug "^4.3.4"
-    denque "^2.1.0"
-    lodash.defaults "^4.2.0"
-    lodash.isarguments "^3.1.0"
-    redis-errors "^1.2.0"
-    redis-parser "^3.0.0"
-    standard-as-callback "^2.1.0"
-
-ioredis@^5.6.1:
+ioredis@^5.4.1, ioredis@^5.4.2, ioredis@^5.6.1:
   version "5.6.1"
   resolved "https://registry.yarnpkg.com/ioredis/-/ioredis-5.6.1.tgz#1ed7dc9131081e77342503425afceaf7357ae599"
   integrity sha512-UxC0Yv1Y4WRJiGQxQkP0hfdL0/5/6YvdfOOClRgJ0qppSarkhneSa6UvkMkms0AkdGimSH3Ikqm+6mkMmX7vGA==
@@ -4239,29 +4196,12 @@ jwa@^1.4.1:
     ecdsa-sig-formatter "1.0.11"
     safe-buffer "^5.0.1"
 
-jwa@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/jwa/-/jwa-2.0.0.tgz#a7e9c3f29dae94027ebcaf49975c9345593410fc"
-  integrity sha512-jrZ2Qx916EA+fq9cEAeCROWPTfCwi1IVHqT2tapuqLEVVDKFDENFw1oL+MwrTvH6msKxsd1YTDVw6uKEcsrLEA==
-  dependencies:
-    buffer-equal-constant-time "1.0.1"
-    ecdsa-sig-formatter "1.0.11"
-    safe-buffer "^5.0.1"
-
 jws@^3.1.5, jws@^3.2.2:
   version "3.2.2"
   resolved "https://registry.yarnpkg.com/jws/-/jws-3.2.2.tgz#001099f3639468c9414000e99995fa52fb478304"
   integrity sha512-YHlZCB6lMTllWDtSPHz/ZXTsi8S00usEV6v1tjq8tOUZzw7DpSDWVXjXDre6ed1w/pd495ODpHZYSdkRTsa0HA==
   dependencies:
     jwa "^1.4.1"
-    safe-buffer "^5.0.1"
-
-jws@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/jws/-/jws-4.0.0.tgz#2d4e8cf6a318ffaa12615e9dec7e86e6c97310f4"
-  integrity sha512-KDncfTmOZoOMTFG4mBlG0qUIOlc03fmzH+ru6RgYVZhPkyiy/92Owlt/8UEN+a4TXR1FQetfIpJE8ApdvdVxTg==
-  dependencies:
-    jwa "^2.0.0"
     safe-buffer "^5.0.1"
 
 keyv@^4.5.4:
@@ -4926,16 +4866,7 @@ mongodb-connection-string-url@^3.0.0:
     "@types/whatwg-url" "^11.0.2"
     whatwg-url "^14.1.0 || ^13.0.0"
 
-mongodb@^6.11.0:
-  version "6.15.0"
-  resolved "https://registry.yarnpkg.com/mongodb/-/mongodb-6.15.0.tgz#4303ce0f7d5e5750749b1cb318dc7a115778f92e"
-  integrity sha512-ifBhQ0rRzHDzqp9jAQP6OwHSH7dbYIQjD3SbJs9YYk9AikKEettW/9s/tbSFDTpXcRbF+u1aLrhHxDFaYtZpFQ==
-  dependencies:
-    "@mongodb-js/saslprep" "^1.1.9"
-    bson "^6.10.3"
-    mongodb-connection-string-url "^3.0.0"
-
-mongodb@^6.16.0:
+mongodb@^6.11.0, mongodb@^6.16.0:
   version "6.16.0"
   resolved "https://registry.yarnpkg.com/mongodb/-/mongodb-6.16.0.tgz#2a7a1986ec151d9c738fc8ce4cf4324c3f728a2f"
   integrity sha512-D1PNcdT0y4Grhou5Zi/qgipZOYeWrhLEpk33n3nm6LGtz61jvO88WlrWCK/bigMjpnOdAUKKQwsGIl0NtWMyYw==
@@ -6313,11 +6244,6 @@ statuses@2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/statuses/-/statuses-2.0.1.tgz#55cb000ccf1d48728bd23c685a063998cf1a1b63"
   integrity sha512-RwNA9Z/7PrK06rYLIzFMlaF+l73iwpzsqRIFgbMLbTcLD6cOao82TaWefPXQvB2fOC4AjuYSEndS7N/mTCbkdQ==
-
-stoppable@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/stoppable/-/stoppable-1.1.0.tgz#32da568e83ea488b08e4d7ea2c3bcc9d75015d5b"
-  integrity sha512-KXDYZ9dszj6bzvnEMRYvxgeTHU74QBFL54XKtP3nyMuJ81CFYtABZ3bAzL2EdFUaEwJOBOgENyFj3R7oTzDyyw==
 
 stream-to-pull-stream@^1.7.1:
   version "1.7.3"
