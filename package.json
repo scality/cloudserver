@@ -57,7 +57,7 @@
     "@scality/eslint-config-scality": "scality/Guidelines#8.3.0",
     "eslint": "^9.14.0",
     "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-mocha": "^10.5.0",
+    "eslint-plugin-mocha": "^11.1.0",
     "express": "^4.21.1",
     "ioredis": "^5.4.1",
     "istanbul": "^0.4.5",
