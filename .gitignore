@@ -28,3 +28,6 @@ node_modules
 
 # Junit directory
 junit
+
+
+.github/docker/vault-db

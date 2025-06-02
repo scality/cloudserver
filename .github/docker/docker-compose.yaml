@@ -11,7 +11,9 @@ services:
       # using artesca container, with persistent volumes for sse migration
       - ../../localData:/usr/src/app/localData
       - ../../localMetadata:/usr/src/app/localMetadata
+      - ../../tests/functional/sse-kms-migration/config.${SSE_CONF}.json:/conf/config.json
     environment:
+      - S3_CONFIG_FILE=/conf/config.json
       - CI=true
       - ENABLE_LOCAL_CACHE=true
       - REDIS_HOST=0.0.0.0
@@ -22,7 +24,9 @@ services:
       - DATA_HOST=0.0.0.0
       - METADATA_HOST=0.0.0.0
       - S3BACKEND
+      - S3VAULT=scality
       - S3DATA
+      - S3METADATA
       - MPU_TESTING
       - S3VAULT
       - S3_LOCATION_FILE
@@ -55,6 +59,26 @@ services:
       - ../../localMetadata:/usr/src/app/localMetadata
     environment:
       - S3_CONFIG_FILE=/conf/config.json
+      - S3KMS=aws
+      - S3VAULT=scality
+  vault:
+    # image: ${VAULT_IMAGE_BEFORE_SSE_MIGRATION}
+    image: ${VAULT_IMAGE}
+    command: sh -c "chmod 400 tests/utils/keyfile && yarn start > /artifacts/vault.log"
+    network_mode: "host"
+    volumes:
+      - /tmp/artifacts/${JOB_NAME}:/artifacts
+      - ./vault-config.json:/conf/config.json:ro
+      - ./vault-db:/data
+    environment:
+      - VAULT_DB_BACKEND=LEVELDB
+      - CI=true
+      - ENABLE_LOCAL_CACHE=true
+      - REDIS_HOST=0.0.0.0
+      - REDIS_PORT=6379
+      - KMS_BACKEND=aws
+    depends_on:
+      - redis
   redis:
     image: redis:alpine
     network_mode: "host"
