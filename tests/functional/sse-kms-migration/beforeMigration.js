@@ -153,6 +153,29 @@ describe('SSE KMS before migration', () => {
                 : bkt.kmsKeyInfo.masterKeyId;
         }
         void await s3.createBucket(({ Bucket: bkt.name })).promise();
+        // test reading website
+        void await s3.putBucketWebsite({ Bucket: bkt.name, WebsiteConfiguration: { IndexDocument: { Suffix: 'index.html' }} }).promise();
+
+        const bpolicy = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "PublicReadGetObject",
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": [
+                        "s3:GetObject"
+                    ],
+                    "Resource": [
+                        `arn:aws:s3:::${bkt.name}/*`
+                    ]
+                }
+            ]
+        }
+        void await s3.putBucketPolicy({
+            Bucket: bkt.name,
+            Policy: JSON.stringify(bpolicy),
+        }).promise();
         void await s3.createBucket(({ Bucket: bkt.vname })).promise();
         if (bktConf.algo) {
             // bucket encryption will be asserted in bucket test
@@ -184,6 +207,7 @@ describe('SSE KMS before migration', () => {
                     ? obj.kmsKeyInfo.masterKeyArn
                     : obj.kmsKeyInfo.masterKeyId;
             }
+            void await putEncryptedObject(bkt.name, `${objConf.name}/index.html`, objConf, obj.kmsKey, obj.body)
             return await putEncryptedObject(bkt.name, obj.name, objConf, obj.kmsKey, obj.body);
         }));
     };
