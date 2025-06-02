@@ -48,7 +48,7 @@
     "utf8": "^3.0.0",
     "uuid": "^11.0.3",
     "vaultclient": "scality/vaultclient#8.5.2",
-    "werelogs": "scality/werelogs#8.2.0",
+    "werelogs": "scality/werelogs#8.2.2",
     "ws": "^8.18.0",
     "xml2js": "^0.6.2"
   },
