@@ -3,6 +3,7 @@
 const assert = require('assert');
 const sinon = require('sinon');
 const arsenal = require('arsenal');
+const uuid = require('uuid');
 const logger = require('../../lib/utilities/logger');
 const { config: defaultConfig } = require('../../lib/Config');
 const { S3Server } = require('../../lib/server');
@@ -45,6 +46,21 @@ describe('S3Server', () => {
     });
 
     describe('initiateStartup', () => {
+        beforeEach(() => {
+            sinon.stub(server, 'routeRequest');
+            sinon.stub(server, 'internalRouteRequest');
+            sinon.stub(server, 'routeAdminRequest');
+        });
+
+        // `sinon` matcher to match when the callback argument actually invokes the expected
+        // function
+        const wrapperFor = expected => sinon.match(actual => {
+            const req = uuid.v4();
+            const res = uuid.v4();
+            actual(req, res);
+            return expected.calledWith(req, res);
+        });
+
         it('should start API server with default port if no listenOn is provided', async () => {
             config.port = 8000;
 
@@ -53,8 +69,8 @@ describe('S3Server', () => {
             await waitReady();
 
             assert.strictEqual(startServerStub.callCount, 2);
-            assert(startServerStub.calledWith(server.routeRequest, 8000));
-            assert(startServerStub.calledWith(server.routeAdminRequest));
+            assert(startServerStub.calledWith(wrapperFor(server.routeRequest), 8000));
+            assert(startServerStub.calledWith(wrapperFor(server.routeAdminRequest)));
 
         });
         
@@ -70,10 +86,10 @@ describe('S3Server', () => {
             await waitReady();
 
             assert.strictEqual(startServerStub.callCount, 3);
-            assert(startServerStub.calledWith(server.routeRequest, 8000, '127.0.0.1'));
-            assert(startServerStub.calledWith(server.routeRequest, 8001, '0.0.0.0'));
-            assert(startServerStub.calledWith(server.routeAdminRequest));
-            assert.strictEqual(startServerStub.neverCalledWith(server.routeRequest, 9999), true);
+            assert(startServerStub.calledWith(wrapperFor(server.routeRequest), 8000, '127.0.0.1'));
+            assert(startServerStub.calledWith(wrapperFor(server.routeRequest), 8001, '0.0.0.0'));
+            assert(startServerStub.calledWith(wrapperFor(server.routeAdminRequest)));
+            assert.strictEqual(startServerStub.neverCalledWith(sinon.any, 9999), true);
         });
         
         it('should start internal API server with internalPort if no internalListenOn is provided', async () => {
@@ -84,7 +100,7 @@ describe('S3Server', () => {
             await waitReady();
 
             assert.strictEqual(startServerStub.callCount, 2);
-            assert(startServerStub.calledWith(server.internalRouteRequest, 9000));
+            assert(startServerStub.calledWith(wrapperFor(server.internalRouteRequest), 9000));
         });
         
         it('should start internal API servers from internalListenOn array', async () => {
@@ -99,10 +115,10 @@ describe('S3Server', () => {
             await waitReady();
 
             assert.strictEqual(startServerStub.callCount, 3);
-            assert(startServerStub.calledWith(server.internalRouteRequest, 9000, '127.0.0.1'));
-            assert(startServerStub.calledWith(server.internalRouteRequest, 9001, '0.0.0.0'));
-            assert(startServerStub.calledWith(server.routeAdminRequest));
-            assert.strictEqual(startServerStub.neverCalledWith(server.routeRequest, 9999), true);
+            assert(startServerStub.calledWith(wrapperFor(server.internalRouteRequest), 9000, '127.0.0.1'));
+            assert(startServerStub.calledWith(wrapperFor(server.internalRouteRequest), 9001, '0.0.0.0'));
+            assert(startServerStub.calledWith(wrapperFor(server.routeAdminRequest)));
+            assert.strictEqual(startServerStub.neverCalledWith(sinon.any, 9999), true);
         });
         
         it('should start metrics server with metricsPort if no metricsListenOn is provided', async () => {
@@ -113,7 +129,7 @@ describe('S3Server', () => {
             await waitReady();
             
             assert.strictEqual(startServerStub.callCount, 1);
-            assert(startServerStub.calledWith(server.routeAdminRequest, 8012));
+            assert(startServerStub.calledWith(wrapperFor(server.routeAdminRequest), 8012));
         });
         
         it('should start metrics servers from metricsListenOn array', async () => {
@@ -128,9 +144,9 @@ describe('S3Server', () => {
             await waitReady();
             
             assert.strictEqual(startServerStub.callCount, 2);
-            assert(startServerStub.calledWith(server.routeAdminRequest, 8002, '127.0.0.1'));
-            assert(startServerStub.calledWith(server.routeAdminRequest, 8003, '0.0.0.0'));
-            assert.strictEqual(startServerStub.neverCalledWith(server.routeAdminRequest, 9999), true);
+            assert(startServerStub.calledWith(wrapperFor(server.routeAdminRequest), 8002, '127.0.0.1'));
+            assert(startServerStub.calledWith(wrapperFor(server.routeAdminRequest), 8003, '0.0.0.0'));
+            assert.strictEqual(startServerStub.neverCalledWith(server.any, 9999), true);
         });
 
         it('should start all servers with the correct parameters', async () => {
@@ -143,9 +159,9 @@ describe('S3Server', () => {
             await waitReady();
 
             assert.strictEqual(startServerStub.callCount, 3);
-            assert(startServerStub.calledWith(server.routeRequest, 8000));
-            assert(startServerStub.calledWith(server.internalRouteRequest, 9000));
-            assert(startServerStub.calledWith(server.routeAdminRequest, 8002));
+            assert(startServerStub.calledWith(wrapperFor(server.routeRequest), 8000));
+            assert(startServerStub.calledWith(wrapperFor(server.internalRouteRequest), 9000));
+            assert(startServerStub.calledWith(wrapperFor(server.routeAdminRequest), 8002));
         });
     });
 
