@@ -39,12 +39,12 @@ function _createBucketPutRequest(bucketName) {
     });
 }
 
-function _createObjectCopyRequest(destBucketName) {
+function _createObjectCopyRequest(destBucketName, headers = {}) {
     const params = {
         bucketName: destBucketName,
         namespace,
         objectKey,
-        headers: {},
+        headers,
         url: `/${destBucketName}/${objectKey}`,
         socket: {},
     };
@@ -231,6 +231,7 @@ describe('non-versioned objectCopy', () => {
         cleanup();
         sinon.stub(metadata, 'putObjectMD')
             .callsFake(originalputObjectMD);
+
         async.series([
             callback => bucketPut(authInfo, putDestBucketRequest, log,
                 callback),
@@ -337,6 +338,22 @@ describe('non-versioned objectCopy', () => {
                     }), any, any);
             },
         ], done);
+    });
+
+    it('should fail to copy object when setting a crr location as the locationConstraint', done => {
+        const testObjectCopyRequest = _createObjectCopyRequest(destBucketName, {
+            'x-amz-metadata-directive': 'REPLACE', // needed to take the locationConstraint into account
+            [objectLocationConstraintHeader]: 'location-crr-v1',
+        });
+
+        async.series([
+            next => objectPut(authInfo, testPutDestObjectRequest, undefined, log, next),
+            next => objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
+                undefined, log, next),
+        ], err => {
+            assert(err.is.InvalidArgument);
+            done();
+        });
     });
 });
 

@@ -843,6 +843,27 @@ describe('objectPut API', () => {
             });
         });
     });
+
+    it('should fail to put object when setting a crr location as the locationConstraint', done => {
+        const testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                [objectLocationConstraintHeader]: 'location-crr-v1',
+            },
+            url: `/${bucketName}/${objectName}`,
+            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+        }, postBody);
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                err => {
+                    assert(err.is.InvalidArgument);
+                    done();
+                });
+        });
+    });
 });
 
 describe('objectPut API with versioning', () => {

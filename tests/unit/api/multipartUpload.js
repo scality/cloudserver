@@ -2174,6 +2174,32 @@ describe('Multipart Upload API', () => {
             },
         ], done);
     });
+
+    it('should fail to initiate a multipart upload if location constraint is crr', done => {
+        const initiateRequest = {
+            socket: {
+                remoteAddress: '1.1.1.1',
+            },
+            bucketName,
+            namespace,
+            objectKey,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                [constants.objectLocationConstraintHeader]: 'location-crr-v1',
+            },
+            url: `/${objectKey}?uploads`,
+            actionImplicitDenies: false,
+        };
+
+        bucketPut(authInfo, bucketPutRequest, log, err => {
+            assert.ifError(err);
+            initiateMultipartUpload(authInfo, initiateRequest,
+                log, err => {
+                    assert(err.is.InvalidArgument);
+                    done();
+                });
+        });
+    });
 });
 
 describe('complete mpu with versioning', () => {
