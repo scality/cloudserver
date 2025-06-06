@@ -22,8 +22,8 @@ describe('Healthcheck response', () => {
         clientCheck(true, log, (err, results) => {
             const resultKeys = Object.keys(results);
             locConstraints.forEach(constraint => {
-                if (constraint === 'location-dmf-v1') {
-                    // FIXME: location-dmf-v1 is not in results, see CLDSRV-440
+                if (constraint === 'location-dmf-v1' || constraint === 'location-crr-v1') {
+                    // FIXME: location-dmf-v1 and location-crr-v1 are not in results, see CLDSRV-440
                     return;
                 }
                 assert(resultKeys.includes(constraint), `constraint: ${constraint} not in results: ${resultKeys}`);
@@ -45,8 +45,8 @@ describe('Healthcheck response', () => {
         clientCheck(false, log, (err, results) => {
             assert.notStrictEqual(results.length, locConstraints.length);
             locConstraints.forEach(constraint => {
-                if (constraint === 'location-dmf-v1') {
-                    // FIXME: location-dmf-v1 is not in results, see CLDSRV-440
+                if (constraint === 'location-dmf-v1' || constraint === 'location-crr-v1') {
+                    // FIXME: location-dmf-v1 and location-crr-v1 are not in results, see CLDSRV-440
                     return;
                 }
                 if (Object.keys(results).indexOf(constraint) === -1) {

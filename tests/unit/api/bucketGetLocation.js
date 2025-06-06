@@ -47,8 +47,8 @@ describe('getBucketLocation API', () => {
             // see next test.
             return;
         }
-        if (location === 'location-dmf-v1') {
-            // if region location-dmf-v1 should return InvalidLocationConstraint error
+        if (location === 'location-dmf-v1' || location === 'location-crr-v1') {
+            // if region location-dmf-v1 or location-crr-v1 should return InvalidLocationConstraint error
             return;
         }
         const bucketPutRequest = getBucketRequestObject(location);

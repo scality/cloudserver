@@ -274,5 +274,12 @@
         "legacyAwsBehavior": false,
         "isCold": true,
         "details": {}
+    },
+    "location-crr-v1": {
+        "type": "crr",
+        "objectId": "location-crr-v1",
+        "legacyAwsBehavior": false,
+        "isCRR": true,
+        "details": {}
     }
 }
