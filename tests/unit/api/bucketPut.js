@@ -78,6 +78,14 @@ const testChecks = [
         isError: true,
         expectedError: 'InvalidLocationConstraint',
     },
+    {
+        data: 'multiple',
+        locationSent: 'location-crr-v1',
+        parsedHost: '127.3.2.1',
+        locationReturn: 'location-crr-v1',
+        isError: true,
+        expectedError: 'InvalidLocationConstraint',
+    },
 ];
 
 describe('checkLocationConstraint function', () => {
@@ -368,6 +376,27 @@ describe('bucketPut API', () => {
 
         const newRestEndpoints = Object.assign({}, config.restEndpoints);
         newRestEndpoints[newRestEndpoint] = coldLocation;
+        config.setRestEndpoints(newRestEndpoints);
+
+        bucketPut(authInfo, req, log, err => {
+            assert.strictEqual(err.is.InvalidLocationConstraint, true);
+            done();
+        });
+    });
+
+    it('should deny put bucket if locationConstraint is the crr location', done => {
+        const bucketName = 'bucket-name';
+        const newRestEndpoint = 'location-crr-v1';
+        const location = 'location-crr-v1';
+
+        const req = {
+            ...testRequest,
+            parsedHost: newRestEndpoint,
+            bucketName,
+        };
+
+        const newRestEndpoints = Object.assign({}, config.restEndpoints);
+        newRestEndpoints[newRestEndpoint] = location;
         config.setRestEndpoints(newRestEndpoints);
 
         bucketPut(authInfo, req, log, err => {
