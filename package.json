@@ -27,7 +27,7 @@
     "bucketclient": "scality/bucketclient#8.2.4",
     "bufferutil": "^4.0.8",
     "commander": "^12.1.0",
-    "cron-parser": "^4.9.0",
+    "cron-parser": "^5.3.0",
     "diskusage": "^1.2.0",
     "google-auto-auth": "^0.10.1",
     "http-proxy": "^1.18.1",
