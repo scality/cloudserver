@@ -5,7 +5,7 @@ services:
     network_mode: "host"
     volumes:
       - /tmp/ssl:/ssl
-      - /tmp/ssl-kmip:/ssl-kmip
+      - /tmp/ssl-kmip:/tmp/ssl-kmip
       - ${HOME}/.aws/credentials:/root/.aws/credentials
       - /tmp/artifacts/${JOB_NAME}:/artifacts
     environment:
@@ -29,7 +29,7 @@ services:
       - S3KMS
       - S3KMIP_PORT
       - S3KMIP_HOSTS
-      - S3KMIP-COMPOUND_CREATE
+      - S3KMIP_COMPOUND_CREATE
       - S3KMIP_BUCKET_ATTRIBUTE_NAME
       - S3KMIP_PIPELINE_DEPTH
       - S3KMIP_KEY
