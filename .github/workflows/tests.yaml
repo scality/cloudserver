@@ -325,6 +325,15 @@ jobs:
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
       PYKMIP_IMAGE: ghcr.io/${{ github.repository }}/pykmip:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
+      S3KMS: kmip
+      S3KMIP_PORT: 5696
+      S3KMIP_HOSTS: pykmip.local
+      S3KMIP_COMPOUND_CREATE: false
+      S3KMIP_BUCKET_ATTRIBUTE_NAME: ''
+      S3KMIP_PIPELINE_DEPTH: 8
+      S3KMIP_KEY: /tmp/ssl-kmip/kmip-client-key.pem
+      S3KMIP_CERT: /tmp/ssl-kmip/kmip-client-cert.pem
+      S3KMIP_CA: /tmp/ssl-kmip/kmip-ca.pem
     steps:
     - name: Checkout
       uses: actions/checkout@v4
