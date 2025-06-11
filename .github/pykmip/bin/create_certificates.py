@@ -9,6 +9,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 import datetime
 import argparse
 import sys
+import ipaddress
 
 
 def get_args():
@@ -16,7 +17,7 @@ def get_args():
         prog=sys.argv[0],
         description='Tool to generate a x509 CA root, server and client certs')
     parser.add_argument('-c', '--common-name', action='store',
-                        default='localhost',
+                        default='pykmip.local',
                         help='Set the common name for the server-side cert')
     return parser.parse_args()
 
@@ -62,7 +63,8 @@ def create_certificate(subject_name,
                        signing_certificate,
                        signing_key,
                        days_valid=36500,
-                       client_auth=False):
+                       client_auth=False,
+                       alt_names=[]):
     subject = x509.Name([
         x509.NameAttribute(x509.NameOID.ORGANIZATION_NAME, u"Scality"),
         x509.NameAttribute(x509.NameOID.COMMON_NAME, subject_name)
@@ -87,6 +89,12 @@ def create_certificate(subject_name,
             critical=True
         )
 
+    if alt_names:
+        builder = builder.add_extension(
+            x509.SubjectAlternativeName(alt_names),
+            critical=False
+        )
+
     certificate = builder.sign(
         signing_key,
         hashes.SHA256(),
@@ -107,7 +115,14 @@ def main(common_name):
         common_name,
         server_key,
         root_certificate,
-        root_key
+        root_key,
+        alt_names=[
+            x509.DNSName(common_name),
+            x509.DNSName('*.' + common_name),
+            x509.DNSName('localhost'),
+        ]
+        + [x509.IPAddress(ipaddress.ip_address('127.0.0.' + str(ip)))
+           for ip in range(1, 51)]
     )
 
     john_doe_client_key = create_rsa_private_key()
