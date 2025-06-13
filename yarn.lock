@@ -1296,9 +1296,9 @@ arraybuffer.prototype.slice@^1.0.4:
     get-intrinsic "^1.2.6"
     is-array-buffer "^3.0.4"
 
-"arsenal@git+https://github.com/scality/Arsenal#8.2.20":
-  version "8.2.20"
-  resolved "git+https://github.com/scality/Arsenal#682643db352ca89d32557ce49f3fee5f5927fa72"
+"arsenal@git+https://github.com/scality/Arsenal#8.2.21":
+  version "8.2.21"
+  resolved "git+https://github.com/scality/Arsenal#534e10f48d170b0c4dff9bd818376f796eac8aaa"
   dependencies:
     "@azure/identity" "^4.10.0"
     "@azure/storage-blob" "^12.27.0"
