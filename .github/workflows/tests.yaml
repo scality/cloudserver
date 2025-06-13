@@ -262,6 +262,13 @@ jobs:
           mongo
         codecov-token: ${{ secrets.CODECOV_TOKEN }}
       if: always()
+    - name: Upload test results to Codecov
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: '**/junit/*junit*.xml'
+        flags: multiple-backend
+      if: always() && !cancelled()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
@@ -306,6 +313,13 @@ jobs:
         profiles: mongo
         codecov-token: ${{ secrets.CODECOV_TOKEN }}
       if: always()
+    - name: Upload test results to Codecov
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: '**/junit/*junit*.xml'
+        flags: mongo-v0-ft-tests
+      if: always() && !cancelled()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
@@ -352,6 +366,13 @@ jobs:
         profiles: mongo
         codecov-token: ${{ secrets.CODECOV_TOKEN }}
       if: always()
+    - name: Upload test results to Codecov
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: '**/junit/*junit*.xml'
+        flags: mongo-v1-ft-tests
+      if: always() && !cancelled()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
@@ -401,6 +422,13 @@ jobs:
         codecov-token: ${{ secrets.CODECOV_TOKEN }}
         flags: ${{ matrix.job-name }}
       if: always()
+    - name: Upload test results to Codecov
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: '**/junit/*junit*.xml'
+        flags: ${{ matrix.job-name }}
+      if: always() && !cancelled()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
@@ -440,6 +468,13 @@ jobs:
       with:
         codecov-token: ${{ secrets.CODECOV_TOKEN }}
       if: always()
+    - name: Upload test results to Codecov
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: '**/junit/*junit*.xml'
+        flags: utapi-v2-tests
+      if: always() && !cancelled()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
@@ -491,6 +526,13 @@ jobs:
         codecov-token: ${{ secrets.CODECOV_TOKEN }}
         flags: ${{ github.job }}${{ matrix.inflights.value == 'true' && '-inflights' || '' }}
       if: always()
+    - name: Upload test results to Codecov
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: '**/junit/*junit*.xml'
+        flags: ${{ github.job }}${{ matrix.inflights.value == 'true' && '-inflights' || '' }}
+      if: always() && !cancelled()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
@@ -544,6 +586,13 @@ jobs:
         profiles: pykmip
         codecov-token: ${{ secrets.CODECOV_TOKEN }}
       if: always()
+    - name: Upload test results to Codecov
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: '**/junit/*junit*.xml'
+        flags: kmip-ft-tests
+      if: always() && !cancelled()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
@@ -629,6 +678,13 @@ jobs:
         profiles: ceph
         codecov-token: ${{ secrets.CODECOV_TOKEN }}
       if: always()
+    - name: Upload test results to Codecov
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: '**/junit/*junit*.xml'
+        flags: ceph-backend-test
+      if: always() && !cancelled()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:
