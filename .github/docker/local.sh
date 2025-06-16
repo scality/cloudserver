@@ -16,7 +16,7 @@ export VAULT_IMAGE_BEFORE_SSE_MIGRATION=ghcr.io/scality/vault:7.70.31
 export VAULT_IMAGE_ORIGINAL=ghcr.io/scality/vault:7.70.32
 export KMS_IMAGE=nsmithuk/local-kms:3.11.7
 
-export S3_CONFIG_FILE=config.json
+export S3_CONFIG_FILE="$(pwd)/../../tests/functional/sse-kms-migration/config.json"
 
 export kmsContainer=localkms
 export kmsProvider=aws

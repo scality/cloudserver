@@ -674,8 +674,8 @@ jobs:
     - name: Run SSE before migration tests (setup buckets and objects)
       shell: bash # for pipefail
       env:
-        # yarn run does a cd into the test folder
-        S3_CONFIG_FILE: config.json
+        # absolute path to override default root config
+        S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
         S3KMS: file
       run: yarn run ft_sse_before_migration | tee /tmp/artifacts/${{ env.JOB_NAME }}/beforeMigration.log
     - name: Merge config.json files for options
@@ -713,8 +713,8 @@ jobs:
       env:
         # Functional tests needs access to the running config to use the same
         # KMS provider and sseMigration
-        # yarn run does a cd into the test folder
-        S3_CONFIG_FILE: config.json
+        # absolute path to override default root config
+        S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
         S3KMS: ${{ matrix.kms.provider }}
       run: yarn run ft_sse_migration | tee /tmp/artifacts/${{ env.JOB_NAME }}/migration.log
     - name: Run SSE arnPrefix tests
@@ -722,8 +722,8 @@ jobs:
       env:
         # Functional tests needs access to the running config to use the same
         # KMS provider and sseMigration
-        # yarn run does a cd into the test folder
-        S3_CONFIG_FILE: config.json
+        # absolute path to override default root config
+        S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
         S3KMS: ${{ matrix.kms.provider }}
       run: yarn run ft_sse_arn | tee /tmp/artifacts/${{ env.JOB_NAME }}/arnPrefix.log
     - name: Print docker compose logs
