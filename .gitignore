@@ -33,3 +33,9 @@ yarn.lock
 
 # Junit directory
 junit
+
+
+.github/docker/vault-db
+
+# config file build using jq to merge configs json
+tests/functional/sse-kms-migration/config.json

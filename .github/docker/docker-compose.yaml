@@ -4,7 +4,7 @@ services:
     command: |
       bash -c "
         # Using tini to handle signals properly
-        tini -s -g -- npx nyc --clean --silent yarn start > /artifacts/s3.log &
+        tini -s -g -- npx nyc --clean --silent yarn start > /artifacts/s3.log 2> /artifacts/s3-stderr.log &
         PID=$$!
         generate_coverage() {
           echo 'Stopping NodeJS processes...'
@@ -94,6 +94,10 @@ services:
       - ../pykmip/certs:/ssl
       - ../pykmip/policy.json:/etc/pykmip/policies/policy.json
       - ../pykmip/server.conf:/etc/pykmip/server.conf
+  localkms:
+    network_mode: "host"
+    profiles: ['localkms']
+    image: ${KMS_IMAGE:-nsmithuk/local-kms:3.11.7}
   mongo:
     network_mode: "host"
     profiles: ['mongo', 'ceph']

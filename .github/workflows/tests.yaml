@@ -68,6 +68,12 @@ env:
   REMOTE_MANAGEMENT_DISABLE: "1"
   # https://github.com/git-lfs/git-lfs/issues/5749
   GIT_CLONE_PROTECTION_ACTIVE: 'false'
+  AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE: '1'
+
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   lint:
     runs-on: ubuntu-24.04
@@ -382,6 +388,8 @@ jobs:
         source: /tmp/artifacts
       if: always()
 
+  # All tests use non federation images
+
   file-ft-tests:
     strategy:
       matrix:
@@ -684,6 +692,185 @@ jobs:
         files: '**/junit/*junit*.xml'
         flags: ceph-backend-test
       if: always() && !cancelled()
+    - name: Upload logs to artifacts
+      uses: scality/action-artifacts@v4
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: /tmp/artifacts
+      if: always()
+
+  # This test with the final yarn run ft_sse_arn covers more code than the kmip tests
+  sse-kms-migration-tests:
+    strategy:
+      fail-fast: false # prevent cancel if one 1 matrix option fails
+      matrix:
+        kms:
+          - provider: aws
+            container: localkms
+            port: 8080
+          - provider: kmip
+            container: pykmip
+            port: 5696
+        opts:
+          - kmsHideScalityArn: true
+            globalEncryptionEnabled: false
+          - kmsHideScalityArn: false
+            globalEncryptionEnabled: false
+          - kmsHideScalityArn: false
+            globalEncryptionEnabled: true
+        # This matrix should create 6 different jobs
+        # No need to test globalEncryption with hidden arn (not related)
+    name: >-
+      sse-kms-migration-${{
+        matrix.kms.provider
+      }}-${{
+        matrix.opts.kmsHideScalityArn && 'hideArn' || 'showArn'
+      }}${{
+        matrix.opts.globalEncryptionEnabled && '-global' || ''
+      }}
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      S3BACKEND: file
+      S3VAULT: scality
+      # Versions before using kms scality arn prefix & sse migration used to seed buckets & objects
+      CLOUDSERVER_VERSION_BEFORE: 8.8.45
+      VAULT_VERSION_BEFORE: 7.70.31
+      VAULT_VERSION_CURRENT: 7.70.32
+      CLOUDSERVER_IMAGE_BEFORE_SSE_MIGRATION: ghcr.io/${{ github.repository }}:8.8.45
+      VAULT_IMAGE_BEFORE_SSE_MIGRATION: ghcr.io/scality/vault:7.70.31
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      VAULT_IMAGE: ghcr.io/scality/vault:7.70.32
+      KMS_IMAGE: nsmithuk/local-kms:3.11.7
+      MPU_TESTING: "yes"
+      JOB_NAME: >-
+        sse-kms-migration-${{
+          matrix.kms.provider
+        }}-${{
+          matrix.opts.kmsHideScalityArn && 'hideArn' || 'showArn'
+        }}${{
+          matrix.opts.globalEncryptionEnabled && '-global' || ''
+        }}
+      COMPOSE_FILE: docker-compose.yaml:docker-compose.sse.yaml
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: 3.9
+    - name: Login to GitHub Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ github.token }}
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
+    - name: Copy KMIP certs
+      run: cp -r ./certs /tmp/ssl-kmip
+      working-directory: .github/pykmip
+    - name: Setup matrix job artifacts directory
+      shell: bash
+      run: |
+        set -exu
+        mkdir -p /tmp/artifacts/${{ env.JOB_NAME }}/
+    - name: Copy base config
+      run: cp configs/base.json config.json
+      working-directory: tests/functional/sse-kms-migration
+    - name: Setup CI services (with old cloudserver image before sse migration)
+      run: docker compose up -d --quiet-pull redis vault-sse-before-migration cloudserver-sse-before-migration
+      working-directory: .github/docker
+      env:
+        CLOUDSERVER_IMAGE: ${{ env.CLOUDSERVER_IMAGE_BEFORE_SSE_MIGRATION }}
+        VAULT_IMAGE: ${{ env.VAULT_IMAGE_BEFORE_SSE_MIGRATION }}
+    - name: Wait for services vault and s3
+      run: |-
+        bash wait_for_local_port.bash 8500 40
+        bash wait_for_local_port.bash 8000 40
+    - name: Ensure old version of cloudserver and vault is used
+      run: |-
+        ./ensure-version.sh cloudserver-sse-before-migration ${{ env.CLOUDSERVER_VERSION_BEFORE }}
+        ./ensure-version.sh vault-sse-before-migration ${{ env.VAULT_VERSION_BEFORE }}
+      working-directory: .github/docker
+    - name: Create vault account and keys
+      run: |-
+        export PATH="$PATH:$(pwd)/node_modules/vaultclient/bin/"
+        vaultclient --config .github/docker/admin.json delete-account --name test || true
+        vaultclient --config .github/docker/admin.json create-account --name test --email test@scality.com
+        vaultclient --config .github/docker/admin.json generate-account-access-key --name test --accesskey TESTAK00000000000000 --secretkey TESTSK0000000000000000000000000000000000
+        vaultclient --config .github/docker/admin.json get-account --account-name test
+    - name: Run SSE before migration tests (setup buckets and objects)
+      shell: bash # for pipefail
+      env:
+        # absolute path to override default root config
+        S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
+        S3KMS: file
+      run: yarn run ft_sse_before_migration | tee /tmp/artifacts/${{ env.JOB_NAME }}/beforeMigration.log
+    - name: Merge config.json files for options
+      run: |
+        jq -s '
+          .[0] * .[1] * .[2] *
+          { kmsHideScalityArn: ${{ matrix.opts.kmsHideScalityArn }} } *
+          { globalEncryptionEnabled: ${{ matrix.opts.globalEncryptionEnabled }} }
+        ' \
+          configs/base.json \
+          configs/${{ matrix.kms.provider }}.json \
+          configs/sseMigration.json \
+          > config.json
+      working-directory: tests/functional/sse-kms-migration
+    - name: Replace old cloudserver image with current one
+      run: |-
+        docker compose down cloudserver-sse-before-migration vault-sse-before-migration
+        docker compose up -d --quiet-pull ${{ matrix.kms.container }} vault-sse-migration cloudserver-sse-migration
+      working-directory: .github/docker
+      env:
+        S3KMS: ${{ matrix.kms.provider }} # S3
+        KMS_BACKEND: ${{ matrix.kms.provider == 'aws' && 'aws' || '' }} # vault only supports aws
+    - name: Wait for services kms vault and s3
+      run: |-
+        bash wait_for_local_port.bash ${{ matrix.kms.port }} 40
+        bash wait_for_local_port.bash 8500 40
+        bash wait_for_local_port.bash 8000 40
+    - name: Ensure latest version of cloudserver and vault is used
+      run: |-
+        ./ensure-version.sh cloudserver-sse-migration `jq -r .version ../../package.json`
+        ./ensure-version.sh vault-sse-migration ${{ env.VAULT_VERSION_CURRENT }}
+      working-directory: .github/docker
+    - name: Run SSE migration tests
+      shell: bash # for pipefail
+      env:
+        # Functional tests needs access to the running config to use the same
+        # KMS provider and sseMigration
+        # absolute path to override default root config
+        S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
+        S3KMS: ${{ matrix.kms.provider }}
+      run: yarn run ft_sse_migration | tee /tmp/artifacts/${{ env.JOB_NAME }}/migration.log
+    - name: Run SSE arnPrefix tests
+      shell: bash # for pipefail
+      env:
+        # Functional tests needs access to the running config to use the same
+        # KMS provider and sseMigration
+        # absolute path to override default root config
+        S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
+        S3KMS: ${{ matrix.kms.provider }}
+      run: yarn run ft_sse_arn | tee /tmp/artifacts/${{ env.JOB_NAME }}/arnPrefix.log
+    - name: Print docker compose logs
+      run: |-
+        docker compose logs \
+          cloudserver-sse-before-migration \
+          cloudserver-sse-migration \
+          vault-sse-before-migration \
+          vault-sse-migration \
+          ${{ matrix.kms.container == 'localkms' && 'localkms' || '' }}
+      # pykmip logs are already uploaded to artifacts, but not localkms
+      working-directory: .github/docker
+      if: failure()
+    - name: Remove empty artifact files to simplify viewing artifacts
+      run: find /tmp/artifacts/${{ env.JOB_NAME }}/ -size 0 -delete
+      if: always()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
       with:

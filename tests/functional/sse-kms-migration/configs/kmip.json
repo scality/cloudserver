@@ -1,0 +1,18 @@
+{
+    "kmip": {
+        "providerName": "thales",
+        "client": {
+            "compoundCreateActivate": false
+        },
+        "transport": {
+            "pipelineDepth": 8,
+            "tls": {
+                "port": 5696,
+                "host": "pykmip.local",
+                "key": "/tmp/ssl-kmip/kmip-client-key.pem",
+                "cert": "/tmp/ssl-kmip/kmip-client-cert.pem",
+                "ca": "/tmp/ssl-kmip/kmip-ca.pem"
+            }
+        }
+    }
+}
