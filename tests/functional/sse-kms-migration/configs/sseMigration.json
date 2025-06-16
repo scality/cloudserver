@@ -1,0 +1,7 @@
+{
+    "sseMigration": {
+        "previousKeyType": "internal",
+        "previousKeyProtocol": "file",
+        "previousKeyProvider": "scality"
+    }
+}
