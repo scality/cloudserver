@@ -9,8 +9,8 @@ export S3METADATA=file
 export S3VAULT=scality
 export MPU_TESTING="yes"
 
-export CLOUDSERVER_IMAGE_BEFORE_SSE_MIGRATION=ghcr.io/scality/cloudserver:8.8.45
-export CLOUDSERVER_IMAGE_ORIGINAL=ghcr.io/scality/cloudserver:8.8.51
+export CLOUDSERVER_IMAGE_BEFORE_SSE_MIGRATION=ghcr.io/scality/cloudserver:9.0.8
+export CLOUDSERVER_IMAGE_ORIGINAL=ghcr.io/scality/cloudserver:9.0.16
 
 export VAULT_IMAGE_BEFORE_SSE_MIGRATION=ghcr.io/scality/vault:7.70.31
 export VAULT_IMAGE_ORIGINAL=ghcr.io/scality/vault:7.70.32

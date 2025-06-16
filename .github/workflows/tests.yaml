@@ -737,10 +737,10 @@ jobs:
       S3BACKEND: file
       S3VAULT: scality
       # Versions before using kms scality arn prefix & sse migration used to seed buckets & objects
-      CLOUDSERVER_VERSION_BEFORE: 8.8.45
+      CLOUDSERVER_VERSION_BEFORE: 9.0.8
       VAULT_VERSION_BEFORE: 7.70.31
       VAULT_VERSION_CURRENT: 7.70.32
-      CLOUDSERVER_IMAGE_BEFORE_SSE_MIGRATION: ghcr.io/${{ github.repository }}:8.8.45
+      CLOUDSERVER_IMAGE_BEFORE_SSE_MIGRATION: ghcr.io/${{ github.repository }}:9.0.8
       VAULT_IMAGE_BEFORE_SSE_MIGRATION: ghcr.io/scality/vault:7.70.31
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
       VAULT_IMAGE: ghcr.io/scality/vault:7.70.32
