@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-expressions */
 const getConfig = require('../aws-node-sdk/test/support/config');
 const { S3 } = require('aws-sdk');
 const kms = require('../../../lib/kms/wrapper');

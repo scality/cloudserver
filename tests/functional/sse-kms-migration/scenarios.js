@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-expressions */
 const assert = require('assert');
 const { getKeyIdFromArn, isScalityKmsArn, SCAL_KMS_ARN } = require('arsenal/build/lib/network/KMSInterface');
 const helpers = require('./helpers');
