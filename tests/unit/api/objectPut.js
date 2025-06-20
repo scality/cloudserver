@@ -8,6 +8,7 @@ const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutObjectLock = require('../../../lib/api/bucketPutObjectLock');
 const bucketPutACL = require('../../../lib/api/bucketPutACL');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
+const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');
 const { parseTagFromQuery } = s3middleware.tagging;
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
@@ -660,6 +661,86 @@ describe('objectPut API', () => {
                         assert.ifError(err);
                         sinon.assert.calledWith(metadata.putObjectMD.lastCall,
                             bucketName, objectName, any, sinon.match({ overheadField: sinon.match.array }), any, any);
+                        done();
+                    }
+                );
+            });
+        });
+    });
+
+    it('should not set bucketOwnerId if requester owns the bucket', done => {
+        const testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+        }, postBody);
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                    err => {
+                        assert.ifError(err);
+                        sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                            bucketName,
+                            objectName,
+                            sinon.match({ bucketOwnerId: sinon.match.typeOf('undefined') }),
+                            any,
+                            any,
+                            any
+                        );
+                        done();
+                    }
+                );
+        });
+    });
+
+    it('should set bucketOwnerId if requester does not own the bucket', done => {
+        const authInfo2 = makeAuthInfo('accessKey2');
+
+        const testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+        }, postBody);
+
+        const testPutPolicyRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            url: '/',
+            post: JSON.stringify({
+                Version: '2012-10-17',
+                Statement: [
+                    {
+                        Sid: 'AllowCrossAccountReadWrite',
+                        Effect: 'Allow',
+                        Principal: { AWS: `arn:aws:iam::${authInfo2.shortid}:root` },
+                        Action: ['s3:PutObject'],
+                        Resource: [`arn:aws:s3:::${bucketName}/*`],
+                    },
+                ],
+            }),
+        });
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            bucketPutPolicy(authInfo, testPutPolicyRequest, log, err => {
+                assert.ifError(err);
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
+                    err => {
+                        assert.ifError(err);
+                        sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                            bucketName,
+                            objectName,
+                            sinon.match({ bucketOwnerId: authInfo.canonicalId }),
+                            any,
+                            any,
+                            any
+                        );
                         done();
                     }
                 );

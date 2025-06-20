@@ -36,6 +36,7 @@ const log = new DummyRequestLogger();
 const splitter = constants.splitter;
 const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
+const authInfoOtherAcc = makeAuthInfo('accessKey2');
 const namespace = 'default';
 const bucketName = 'bucketname';
 const lockedBucket = 'objectlockenabledbucket';
@@ -2559,7 +2560,12 @@ describe('complete mpu with bucket policy', () => {
 
     beforeEach(done => {
         cleanup();
+        sinon.spy(metadataswitch, 'putObjectMD');
         bucketPut(authInfo, bucketPutRequest, log, done);
+    });
+
+    afterEach(() => {
+        sinon.restore();
     });
 
     it('should complete with a deny on unrelated object as non root', done => {
@@ -2626,6 +2632,96 @@ describe('complete mpu with bucket policy', () => {
         err => {
             assert.ifError(err);
             done();
+        });
+    });
+
+    it('should set bucketOwnerId if requester is not destination bucket owner', done => {
+        const partBody = Buffer.from('I am a part\n', 'utf8');
+        const bucketPutPolicyRequest = getPolicyRequest({
+            Version: '2012-10-17',
+            Statement: [
+                {
+                    Effect: 'Allow',
+                    Principal: { AWS: `arn:aws:iam::${authInfoOtherAcc.shortid}:root` },
+                    Action: ['s3:*'],
+                    Resource: `arn:aws:s3:::${bucketName}/*`,
+                },
+            ],
+        });
+        async.waterfall([
+            next => bucketPutPolicy(authInfo, bucketPutPolicyRequest, log, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfoOtherAcc,
+                initiateReqFixed, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
+        ],
+        (err, json) => {
+            // Need to build request in here since do not have uploadId
+            // until here
+            assert.ifError(err);
+            const testUploadId =
+                json.InitiateMultipartUploadResult.UploadId[0];
+            const md5Hash = crypto.createHash('md5').update(partBody);
+            const calculatedHash = md5Hash.digest('hex');
+            const partRequest = new DummyRequest(Object.assign({
+                bucketName,
+                namespace,
+                objectKey,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                query: {
+                    partNumber: '1',
+                    uploadId: testUploadId,
+                },
+                // Note that the body of the post set in the request here does
+                // not really matter in this test.
+                // The put is not going through the route so the md5 is being
+                // calculated above and manually being set in the request below.
+                // What is being tested is that the calculatedHash being sent
+                // to the API for the part is stored and then used to
+                // calculate the final ETag upon completion
+                // of the multipart upload.
+                calculatedHash,
+                socket: {
+                    remoteAddress: '1.1.1.1',
+                },
+            }, requestFix), partBody);
+            objectPutPart(authInfoOtherAcc, partRequest, undefined, log, err => {
+                assert.ifError(err);
+                const completeBody = '<CompleteMultipartUpload>' +
+                    '<Part>' +
+                    '<PartNumber>1</PartNumber>' +
+                    `<ETag>"${calculatedHash}"</ETag>` +
+                    '</Part>' +
+                    '</CompleteMultipartUpload>';
+                const completeRequest = new DummyRequest(Object.assign({
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    parsedHost: 's3.amazonaws.com',
+                    url: `/${objectKey}?uploadId=${testUploadId}`,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    query: { uploadId: testUploadId },
+                    post: completeBody,
+                    actionImplicitDenies: false,
+                    socket: {
+                        remoteAddress: '1.1.1.1',
+                    },
+                }, requestFix));
+                completeMultipartUpload(authInfoOtherAcc,
+                    completeRequest, log, err => {
+                        assert.ifError(err);
+                        sinon.assert.calledWith(
+                            metadataswitch.putObjectMD.lastCall,
+                            bucketName,
+                            objectKey,
+                            sinon.match({ bucketOwnerId: authInfo.canonicalId }),
+                            sinon.match.any,
+                            sinon.match.any,
+                            sinon.match.any
+                        );
+                        done();
+                    });
+            });
         });
     });
 });

@@ -221,6 +221,7 @@ const constants = {
         'versionId',
         'isNull',
         'isDeleteMarker',
+        'bucketOwnerId',
     ],
     unsupportedSignatureChecksums: new Set([
         'STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER',
