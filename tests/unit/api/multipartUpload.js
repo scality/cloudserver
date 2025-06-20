@@ -2401,7 +2401,7 @@ describe('complete mpu with bucket policy', () => {
         async.waterfall([
             next => bucketPutPolicy(authInfo, bucketPutPolicyRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfoOtherAcc,
-                initiateRequest, log, next),
+                initiateReqFixed, log, next),
             (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
@@ -2412,7 +2412,7 @@ describe('complete mpu with bucket policy', () => {
                 json.InitiateMultipartUploadResult.UploadId[0];
             const md5Hash = crypto.createHash('md5').update(partBody);
             const calculatedHash = md5Hash.digest('hex');
-            const partRequest = new DummyRequest({
+            const partRequest = new DummyRequest(Object.assign({
                 bucketName,
                 namespace,
                 objectKey,
@@ -2434,7 +2434,7 @@ describe('complete mpu with bucket policy', () => {
                 socket: {
                     remoteAddress: '1.1.1.1',
                 },
-            }, partBody);
+            }, requestFix), partBody);
             objectPutPart(authInfoOtherAcc, partRequest, undefined, log, err => {
                 assert.ifError(err);
                 const completeBody = '<CompleteMultipartUpload>' +
@@ -2443,7 +2443,7 @@ describe('complete mpu with bucket policy', () => {
                     `<ETag>"${calculatedHash}"</ETag>` +
                     '</Part>' +
                     '</CompleteMultipartUpload>';
-                const completeRequest = {
+                const completeRequest = new DummyRequest(Object.assign({
                     bucketName,
                     namespace,
                     objectKey,
@@ -2456,7 +2456,7 @@ describe('complete mpu with bucket policy', () => {
                     socket: {
                         remoteAddress: '1.1.1.1',
                     },
-                };
+                }, requestFix));
                 completeMultipartUpload(authInfoOtherAcc,
                     completeRequest, log, err => {
                         assert.ifError(err);
