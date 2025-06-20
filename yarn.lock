@@ -173,10 +173,10 @@
     fast-xml-parser "^5.0.7"
     tslib "^2.8.1"
 
-"@azure/identity@^4.10.0":
-  version "4.10.0"
-  resolved "https://registry.yarnpkg.com/@azure/identity/-/identity-4.10.0.tgz#10cfe49207b4d111ebe3aab3ade47561c2852c6d"
-  integrity sha512-iT53Sre2NJK6wzMWnvpjNiR3md597LZ3uK/5kQD2TkrY9vqhrY5bt2KwELNjkOWQ9n8S/92knj/QEykTtjMNqQ==
+"@azure/identity@^4.10.1":
+  version "4.10.1"
+  resolved "https://registry.yarnpkg.com/@azure/identity/-/identity-4.10.1.tgz#6ce1e7b367d2eb6680d0efa5817382aafcd86f05"
+  integrity sha512-YM/z6RxRtFlXUH2egAYF/FDPes+MUE6ZoknjEdaq7ebJMMNUzn9zCJ3bd2ZZZlkP0r1xKa88kolhFH/FGV7JnA==
   dependencies:
     "@azure/abort-controller" "^2.0.0"
     "@azure/core-auth" "^1.9.0"
@@ -1296,11 +1296,11 @@ arraybuffer.prototype.slice@^1.0.4:
     get-intrinsic "^1.2.6"
     is-array-buffer "^3.0.4"
 
-"arsenal@git+https://github.com/scality/Arsenal#8.2.21":
-  version "8.2.21"
-  resolved "git+https://github.com/scality/Arsenal#534e10f48d170b0c4dff9bd818376f796eac8aaa"
+"arsenal@git+https://github.com/scality/Arsenal#8.2.23":
+  version "8.2.23"
+  resolved "git+https://github.com/scality/Arsenal#77d5781ba013708e44251c4e0142428c5f05a643"
   dependencies:
-    "@azure/identity" "^4.10.0"
+    "@azure/identity" "^4.10.1"
     "@azure/storage-blob" "^12.27.0"
     "@js-sdsl/ordered-set" "^4.4.2"
     "@scality/hdclient" "^1.3.1"
@@ -1321,7 +1321,7 @@ arraybuffer.prototype.slice@^1.0.4:
     joi "^17.13.3"
     level "~5.0.1"
     level-sublevel "~6.6.5"
-    mongodb "^6.16.0"
+    mongodb "^6.17.0"
     node-forge "^1.3.1"
     prom-client "^15.1.3"
     simple-glob "^0.2.0"
@@ -1634,6 +1634,11 @@ bson@^6.10.3, bson@^6.8.0:
   version "6.10.3"
   resolved "https://registry.yarnpkg.com/bson/-/bson-6.10.3.tgz#5f9a463af6b83e264bedd08b236d1356a30eda47"
   integrity sha512-MTxGsqgYTwfshYWTRdmZRC+M7FnG1b4y7RO7p2k3X24Wq0yv1m77Wsj0BzlPzd/IowgESfsruQCUToa7vbOpPQ==
+
+bson@^6.10.4:
+  version "6.10.4"
+  resolved "https://registry.yarnpkg.com/bson/-/bson-6.10.4.tgz#d530733bb5bb16fb25c162e01a3344fab332fd2b"
+  integrity sha512-WIsKqkSC0ABoBJuT1LEX+2HEvNmNKKgnTAyd0fL8qzK4SH2i9NXg+t08YtdZp/V9IZ33cxe3iV4yM0qg8lMQng==
 
 bucketclient@scality/bucketclient#8.2.4:
   version "8.2.4"
@@ -4942,13 +4947,13 @@ mongodb@^6.11.0:
     bson "^6.10.3"
     mongodb-connection-string-url "^3.0.0"
 
-mongodb@^6.16.0:
-  version "6.16.0"
-  resolved "https://registry.yarnpkg.com/mongodb/-/mongodb-6.16.0.tgz#2a7a1986ec151d9c738fc8ce4cf4324c3f728a2f"
-  integrity sha512-D1PNcdT0y4Grhou5Zi/qgipZOYeWrhLEpk33n3nm6LGtz61jvO88WlrWCK/bigMjpnOdAUKKQwsGIl0NtWMyYw==
+mongodb@^6.17.0:
+  version "6.17.0"
+  resolved "https://registry.yarnpkg.com/mongodb/-/mongodb-6.17.0.tgz#b52da4e3cdf62299e55c51584cb5657283157594"
+  integrity sha512-neerUzg/8U26cgruLysKEjJvoNSXhyID3RvzvdcpsIi2COYM3FS3o9nlH7fxFtefTb942dX3W9i37oPfCVj4wA==
   dependencies:
     "@mongodb-js/saslprep" "^1.1.9"
-    bson "^6.10.3"
+    bson "^6.10.4"
     mongodb-connection-string-url "^3.0.0"
 
 ms@2.0.0:
