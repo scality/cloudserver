@@ -775,7 +775,7 @@ describe('objectPut API', () => {
         }, postBody);
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
                     err => {
                         assert.ifError(err);
                         sinon.assert.calledWith(metadata.putObjectMD.lastCall,
