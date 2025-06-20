@@ -141,7 +141,7 @@ describe('objectCopy with versioning', () => {
                     metadata.putObjectMD.lastCall,
                     destBucketName,
                     objectKey,
-                    sinon.match({ _data: { bucketOwnerId: sinon.match.typeOf('undefined') }}),
+                    sinon.match({ _data: { bucketOwnerId: sinon.match.typeOf('undefined') } }),
                     sinon.match.any,
                     sinon.match.any,
                     sinon.match.any
@@ -171,7 +171,7 @@ describe('objectCopy with versioning', () => {
                         Principal: { AWS: `arn:aws:iam::${authInfo2.shortid}:root` },
                         Action: ['s3:GetObject'],
                         Resource: [
-                            `arn:aws:s3:::${sourceBucketName}/*`
+                            `arn:aws:s3:::${sourceBucketName}/*`,
                         ],
                     },
                 ],
@@ -192,7 +192,7 @@ describe('objectCopy with versioning', () => {
                         Principal: { AWS: `arn:aws:iam::${authInfo2.shortid}:root` },
                         Action: ['s3:PutObject'],
                         Resource: [
-                            `arn:aws:s3:::${destBucketName}/*`
+                            `arn:aws:s3:::${destBucketName}/*`,
                         ],
                     },
                 ],
@@ -208,14 +208,14 @@ describe('objectCopy with versioning', () => {
                             metadata.putObjectMD.lastCall,
                             destBucketName,
                             objectKey,
-                            sinon.match({_data: { bucketOwnerId: authInfo.canonicalID }}),
+                            sinon.match({ _data: { bucketOwnerId: authInfo.canonicalID } }),
                             sinon.match.any,
                             sinon.match.any,
                             sinon.match.any
                         );
                         assert.ifError(err);
                         done();
-                });
+                    });
             });
         });
     });
