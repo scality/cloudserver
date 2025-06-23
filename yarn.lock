@@ -1648,6 +1648,15 @@ bucketclient@scality/bucketclient#8.2.4:
     httpagent "git+https://github.com/scality/httpagent#1.1.0"
     werelogs scality/werelogs#8.2.2
 
+bucketclient@scality/bucketclient#8.2.5:
+  version "8.2.5"
+  uid aeb2655ef82fdacc56968e92367f01d09f0e09a2
+  resolved "https://codeload.github.com/scality/bucketclient/tar.gz/aeb2655ef82fdacc56968e92367f01d09f0e09a2"
+  dependencies:
+    arsenal "git+https://github.com/scality/Arsenal#8.2.4"
+    httpagent "git+https://github.com/scality/httpagent#1.1.0"
+    werelogs scality/werelogs#8.2.2
+
 buffer-equal-constant-time@1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/buffer-equal-constant-time/-/buffer-equal-constant-time-1.0.1.tgz#f8e71132f7ffe6e01a5c9697a4c6f3e48d5cc819"
