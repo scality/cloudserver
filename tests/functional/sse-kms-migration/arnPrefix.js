@@ -505,3 +505,163 @@ describe('ensure MPU use good SSE', () => {
         );
     });
 });
+describe('KMS error', () => {
+    const sseConfig = { algo: 'aws:kms', masterKeyId: true };
+    const Bucket = 'bkt-kms-err';
+    const Key = 'obj';
+    const body = 'content';
+
+    let mpuEncrypted;
+    let mpuPlaintext;
+
+    let masterKeyId;
+    let masterKeyArn;
+
+    let expected;
+
+    const expectedKMIP = {
+        code: 'KMS.NotFoundException',
+        msg: (action, keyId) => new RegExp(`^KMS \\(KMIP\\) error for ${action} on ${keyId}\\..*`),
+    };
+    const expectedAWS = {
+        code: 'KMS.KMSInvalidStateException',
+        msg: (_, keyId) => new RegExp(`${keyId} is pending deletion\\.`),
+    };
+    /**
+     * localkms container returns a different error message when the key is pending deletion
+     * as we decrypt without passing the keyId, so we need to handle it separately
+     */
+    const expectedLocalKms = {
+        code: 'KMS.AccessDeniedException',
+        msg: () => new RegExp(
+            'The ciphertext refers to a customer master key that does not exist, ' +
+            'does not exist in this region, or you are not allowed to access\\.'
+        ),
+    };
+    if (helpers.config.backends.kms === 'kmip') {
+        expected = expectedKMIP;
+    } else if (helpers.config.backends.kms === 'aws') {
+        expected = expectedAWS;
+    } else {
+        throw new Error(`Unsupported KMS backend: ${helpers.config.backends.kms}`);
+    }
+
+    function assertKmsError(action, keyId) {
+        return err => {
+            if (helpers.config.backends.kms === 'aws' && action === 'Decrypt') {
+                assert.strictEqual(err.name, expectedLocalKms.code);
+                assert.match(err.message, expectedLocalKms.msg(action, keyId));
+                return true;
+            }
+            assert.strictEqual(err.name, expected.code);
+            assert.match(err.message, expected.msg(action, keyId));
+            return true;
+        };
+    }
+
+    before(async () => {
+        void await helpers.s3.createBucket({ Bucket }).promise();
+
+        await helpers.s3.putObject({
+            ...helpers.putObjParams(Bucket, 'plaintext', {}, null),
+            Body: body,
+        }).promise();
+
+        mpuPlaintext = await helpers.s3.createMultipartUpload(
+            helpers.putObjParams(Bucket, 'mpuPlaintext', {}, null)).promise();
+
+        ({ masterKeyId, masterKeyArn } = await helpers.createKmsKey(log));
+
+        await helpers.putEncryptedObject(Bucket, Key, sseConfig, masterKeyArn, body);
+        // ensure we can decrypt and read the object
+        const obj = await helpers.s3.getObject({ Bucket, Key }).promise();
+        assert.strictEqual(obj.Body.toString(), body);
+
+        mpuEncrypted = await helpers.s3.createMultipartUpload(
+            helpers.putObjParams(Bucket, 'mpuEncrypted', sseConfig, masterKeyArn)).promise();
+
+        // make key unavailable
+        void await helpers.destroyKmsKey(masterKeyArn, log);
+    });
+
+    after(async () => {
+        void await helpers.cleanup(Bucket);
+        if (masterKeyArn) {
+            try {
+                void await helpers.destroyKmsKey(masterKeyArn, log);
+            } catch (e) { void e; }
+            [masterKeyArn, masterKeyId] = [null, null];
+        }
+    });
+
+    const testCases = [
+        {
+            action: 'putObject', kmsAction: 'Encrypt',
+            fct: async ({ masterKeyArn }) =>
+                helpers.putEncryptedObject(Bucket, 'fail', sseConfig, masterKeyArn, body),
+        },
+        {
+            action: 'getObject', kmsAction: 'Decrypt',
+            fct: async () => helpers.s3.getObject({ Bucket, Key }).promise(),
+        },
+        {
+            action: 'copyObject', detail: ' when getting from source', kmsAction: 'Decrypt',
+            fct: async () =>
+                helpers.s3.copyObject({ Bucket, Key: 'copy', CopySource: `${Bucket}/${Key}` }).promise(),
+        },
+        {
+            action: 'copyObject', detail: ' when putting to destination', kmsAction: 'Encrypt',
+            fct: async ({ masterKeyArn }) => helpers.s3.copyObject({
+                Bucket,
+                Key: 'copyencrypted',
+                CopySource: `${Bucket}/plaintext`,
+                ServerSideEncryption: 'aws:kms',
+                SSEKMSKeyId: masterKeyArn,
+            }).promise(),
+        },
+        {
+            action: 'createMPU', kmsAction: 'Encrypt',
+            fct: async ({ masterKeyArn }) => helpers.s3.createMultipartUpload(
+                helpers.putObjParams(Bucket, 'mpuKeyEncryptedFail', sseConfig, masterKeyArn)).promise(),
+        },
+        {
+            action: 'mpu uploadPartCopy', detail: ' when getting from source', kmsAction: 'Decrypt',
+            fct: async ({ mpuPlaintext }) => helpers.s3.uploadPartCopy({
+                UploadId: mpuPlaintext.UploadId,
+                Bucket,
+                Key: 'mpuPlaintext',
+                PartNumber: 1,
+                CopySource: `${Bucket}/${Key}`,
+            }).promise(),
+        },
+        {
+            action: 'mpu uploadPart', detail: ' when putting to destination', kmsAction: 'Encrypt',
+            fct: async ({ mpuEncrypted }) => helpers.s3.uploadPart({
+                UploadId: mpuEncrypted.UploadId,
+                Bucket,
+                Key: 'mpuEncrypted',
+                PartNumber: 1,
+                Body: body,
+            }).promise(),
+        },
+        {
+            action: 'mpu uploadPartCopy', detail: ' when putting to destination', kmsAction: 'Encrypt',
+            fct: async ({ mpuEncrypted }) => helpers.s3.uploadPartCopy({
+                UploadId: mpuEncrypted.UploadId,
+                Bucket,
+                Key: 'mpuEncrypted',
+                PartNumber: 1,
+                CopySource: `${Bucket}/plaintext`,
+            }).promise(),
+        },
+    ];
+
+    testCases.forEach(({ action, kmsAction, fct, detail }) => {
+        it(`${action} should fail with kms error${detail || ''}`, async () => {
+            await assert.rejects(
+                fct({ masterKeyArn, mpuEncrypted, mpuPlaintext }),
+                assertKmsError(kmsAction, masterKeyId),
+            );
+        });
+    });
+});
