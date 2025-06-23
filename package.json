@@ -58,7 +58,7 @@
     "eslint": "^9.14.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-mocha": "^10.5.0",
-    "express": "^4.21.1",
+    "express": "^5.1.0",
     "ioredis": "^5.4.1",
     "istanbul": "^0.4.5",
     "istanbul-api": "^3.0.0",
