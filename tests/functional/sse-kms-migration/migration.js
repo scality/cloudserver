@@ -1,7 +1,8 @@
-/* eslint-disable */
+/* eslint-disable no-console */
+/* eslint-disable no-unused-expressions */
 const kms = require('../../../lib/kms/wrapper');
 const filekms = require('../../../lib/kms/file/backend');
-const { splitter, mpuBucketPrefix} = require('../../../constants');
+const { splitter, mpuBucketPrefix } = require('../../../constants');
 const { DummyRequestLogger } = require('../../unit/helpers');
 const assert = require('assert');
 const log = new DummyRequestLogger();
@@ -86,8 +87,8 @@ describe('SSE KMS migration', () => {
                 ? bkt.kmsKeyInfo.masterKeyArn
                 : bkt.kmsKeyInfo.masterKeyId;
         }
-        void await helpers.s3.headBucket(({ Bucket: bkt.name })).promise();
-        void await helpers.s3.headBucket(({ Bucket: bkt.vname })).promise();
+        await helpers.s3.headBucket(({ Bucket: bkt.name })).promise();
+        await helpers.s3.headBucket(({ Bucket: bkt.vname })).promise();
         if (bktConf.algo) {
             const bktSSE = await helpers.getBucketSSE(bkt.name);
             assert.strictEqual(bktSSE.SSEAlgorithm, bktConf.algo);
@@ -103,7 +104,7 @@ describe('SSE KMS migration', () => {
         }
 
         // Check object SSE using MD api, not S3 to avoid triggering migration
-        void await Promise.all(scenarios.testCases.map(async objConf => {
+        await Promise.all(scenarios.testCases.map(async objConf => {
             const obj = {
                 name: `for-copy-enc-obj-${objConf.name}`,
                 kmsKeyInfo: null,
@@ -129,9 +130,9 @@ describe('SSE KMS migration', () => {
             { profile: helpers.credsProfile, accessKeyId: helpers.s3.config.credentials.accessKeyId });
         const allBuckets = (await helpers.s3.listBuckets().promise()).Buckets.map(b => b.Name);
         console.log('List buckets:', allBuckets);
-        void await helpers.MD.setup();
-        void await helpers.s3.headBucket({ Bucket: copyBkt }).promise();
-        void await helpers.s3.headBucket(({ Bucket: mpuCopyBkt })).promise();
+        await helpers.MD.setup();
+        await helpers.s3.headBucket({ Bucket: copyBkt }).promise();
+        await helpers.s3.headBucket(({ Bucket: mpuCopyBkt })).promise();
         const copySSE = await helpers.s3.getBucketEncryption({ Bucket: copyBkt }).promise();
         const { SSEAlgorithm, KMSMasterKeyID } = copySSE
             .ServerSideEncryptionConfiguration.Rules[0].ApplyServerSideEncryptionByDefault;
@@ -139,15 +140,15 @@ describe('SSE KMS migration', () => {
         assert.doesNotMatch(KMSMasterKeyID, SCAL_KMS_ARN_REG);
 
         // Check buckets and object are ready and not yet migrated
-        void await Promise.all(scenarios.testCases.map(async bktConf => this.checkInitBucket(bktConf)));
+        await Promise.all(scenarios.testCases.map(async bktConf => this.checkInitBucket(bktConf)));
     });
 
     after(async () => {
-        void await helpers.cleanup(copyBkt);
-        void await helpers.cleanup(mpuCopyBkt);
+        await helpers.cleanup(copyBkt);
+        await helpers.cleanup(mpuCopyBkt);
         // Clean every bucket
-        void await Promise.all(Object.values(bkts).map(async bkt => {
-            void await helpers.cleanup(bkt.name);
+        await Promise.all(Object.values(bkts).map(async bkt => {
+            await helpers.cleanup(bkt.name);
             return await helpers.cleanup(bkt.vname);
         }));
     });
@@ -185,7 +186,7 @@ describe('SSE KMS migration', () => {
                 if (sseMD.SSEKMSKeyId) {
                     assert.doesNotMatch(sseMD.SSEKMSKeyId, SCAL_KMS_ARN_REG);
                 }
-        }));
+            }));
 
         scenarios.testCasesObj.forEach(objConf => describe(`object enc-obj-${objConf.name}`, () => {
             const obj = {
@@ -217,24 +218,24 @@ describe('SSE KMS migration', () => {
             });
 
             it(`should PutObject ${obj.name} overriding bucket SSE`, async () => {
-                void await helpers.putEncryptedObject(bkt.name, obj.name, objConf, obj.kmsKey, obj.body);
+                await helpers.putEncryptedObject(bkt.name, obj.name, objConf, obj.kmsKey, obj.body);
                 const assertion = {
                     Bucket: bkt.name,
                     Key: obj.name,
                     Body: obj.body,
                 };
-                void await assertObjectSSE(assertion, { objConf, obj }, { bktConf, bkt }, { put: true });
+                await assertObjectSSE(assertion, { objConf, obj }, { bktConf, bkt }, { put: true });
             });
 
             // CopyObject scenarios
             [
                 { name: `${obj.name} into encrypted destination bucket`, forceBktSSE: true },
                 { name: `${obj.name} into same bucket with object SSE config` },
-                { name: `from encrypted source into ${obj.name} with object SSE config` }
+                { name: `from encrypted source into ${obj.name} with object SSE config` },
             ].forEach(({ name, forceBktSSE }, index) =>
                 it(`should CopyObject ${name}`, async () =>
                     await scenarios.tests.copyObjectAndSSE(
-                        { copyBkt, objForCopy, copyObj},
+                        { copyBkt, objForCopy, copyObj },
                         { objConf, obj },
                         { bktConf, bkt },
                         { index, forceBktSSE, assertObjectSSEFct: assertObjectSSE },
@@ -255,7 +256,7 @@ describe('SSE KMS migration', () => {
                 optionalSkip(`should migrate completed MPU ${name}`, async () => {
                     const mpuKey = `${obj.name}-mpu${keySuffix}`;
                     const assertion = { Bucket: bkt.name, Key: mpuKey, Body: body };
-                    void await assertObjectSSE(
+                    await assertObjectSSE(
                         assertion, { objConf, obj }, { bktConf, bkt }, fileArnPrefix);
                 }));
 
@@ -314,7 +315,7 @@ describe('SSE KMS migration', () => {
                         Key: mpuKey,
                         Body: body,
                     };
-                    void await assertObjectSSE(
+                    await assertObjectSSE(
                         assertion, { objConf, obj }, { bktConf, bkt }, fileArnPrefix);
                 }));
 
@@ -344,7 +345,7 @@ describe('SSE KMS migration', () => {
                     Key: mpuKey,
                     Body: `BODY(copy)${obj.body}-MPU2`.repeat(2),
                 };
-                void await assertObjectSSE(
+                await assertObjectSSE(
                     assertion, { objConf, obj }, { bktConf, bkt }, fileArnPrefix);
             });
 
@@ -376,7 +377,7 @@ describe('SSE KMS migration', () => {
                     Key: mpuKey,
                     Body: 'copyBODY'.repeat(2),
                 };
-                void await assertObjectSSE(
+                await assertObjectSSE(
                     assertion, { objConf, obj }, { bktConf, bkt }, fileArnPrefix);
             });
         }));
@@ -435,7 +436,7 @@ describe('SSE KMS migration', () => {
             Key: mpuKey,
             Body: parts.reduce((acc, part) => `${acc}${part.body}`, '').repeat(2),
         };
-        void await assertObjectSSE(
-            assertion, { objConf: {}, obj: {}}, { bktConf: { algo: 'AES256' }, bkt: {} }, fileArnPrefix);
+        await assertObjectSSE(
+            assertion, { objConf: {}, obj: {} }, { bktConf: { algo: 'AES256' }, bkt: {} }, fileArnPrefix);
     });
 });
