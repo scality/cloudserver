@@ -25,6 +25,10 @@ const {
 const mpuUtils = require('../utils/mpuUtils');
 const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
 
+const {
+    LOCATION_NAME_CRR,
+} = require('../../constants');
+
 const { ds } = storage.data.inMemory.datastore;
 
 const any = sinon.match.any;
@@ -850,7 +854,7 @@ describe('objectPut API', () => {
             namespace,
             objectKey: objectName,
             headers: {
-                [objectLocationConstraintHeader]: 'location-crr-v1',
+                [objectLocationConstraintHeader]: LOCATION_NAME_CRR,
             },
             url: `/${bucketName}/${objectName}`,
             calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',

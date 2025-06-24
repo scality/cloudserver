@@ -9,6 +9,10 @@ const {
     ConfigObject,
 } = require('../../lib/Config');
 
+const {
+    LOCATION_NAME_DMF,
+} = require('../constants');
+
 const { ValidLifecycleRules: supportedLifecycleRules } = require('arsenal').models;
 
 describe('Config', () => {
@@ -276,7 +280,7 @@ describe('Config', () => {
                     'details': {},
                     'isCold': true,
                     'legacyAwsBehavior': false,
-                    'locationType': 'location-dmf-v1',
+                    'locationType': LOCATION_NAME_DMF,
                     'objectId': 'b9d9b632-5fa5-11ef-8715-b21941dbc3ea',
                     'type': 'tlp'
                 },
@@ -291,7 +295,7 @@ describe('Config', () => {
                     'details': {},
                     'isCold': false,
                     'legacyAwsBehavior': false,
-                    'locationType': 'location-dmf-v1',
+                    'locationType': LOCATION_NAME_DMF,
                     'objectId': 'b9d9b632-5fa5-11ef-8715-b21941dbc3ea',
                     'type': 'tlp'
                 },
@@ -308,7 +312,7 @@ describe('Config', () => {
                     },
                     'isCold': true,
                     'legacyAwsBehavior': false,
-                    'locationType': 'location-dmf-v1',
+                    'locationType': LOCATION_NAME_DMF,
                     'objectId': 'b9d9b632-5fa5-11ef-8715-b21941dbc3ea',
                     'type': 'tlp'
                 },

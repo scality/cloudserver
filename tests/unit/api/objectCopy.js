@@ -17,6 +17,10 @@ const { data } = require('../../../lib/data/wrapper');
 const { objectLocationConstraintHeader } = require('../../../constants');
 const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
 
+const {
+    LOCATION_NAME_CRR,
+} = require('../../constants');
+
 const any = sinon.match.any;
 
 const { ds } = storage.data.inMemory.datastore;
@@ -343,7 +347,7 @@ describe('non-versioned objectCopy', () => {
     it('should fail to copy object when setting a crr location as the locationConstraint', done => {
         const testObjectCopyRequest = _createObjectCopyRequest(destBucketName, {
             'x-amz-metadata-directive': 'REPLACE', // needed to take the locationConstraint into account
-            [objectLocationConstraintHeader]: 'location-crr-v1',
+            [objectLocationConstraintHeader]: LOCATION_NAME_CRR,
         });
 
         async.series([

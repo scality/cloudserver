@@ -4,7 +4,11 @@ const { DummyRequestLogger } = require('../../helpers');
 const log = new DummyRequestLogger();
 const { BucketInfo, ObjectMD, ObjectMDAmzRestore, ObjectMDArchive } = require('arsenal').models;
 
-const defaultLocation = 'location-dmf-v1';
+const {
+    LOCATION_NAME_DMF,
+} = require('../../../constants');
+
+const defaultLocation = LOCATION_NAME_DMF;
 const defaultOwnerId = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
 const restoredEtag = '1234567890abcdef';
 

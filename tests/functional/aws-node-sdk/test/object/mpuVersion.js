@@ -8,6 +8,10 @@ const { DummyRequestLogger } = require('../../../../unit/helpers');
 const checkError = require('../../lib/utility/checkError');
 const { getMetadata, fakeMetadataArchive } = require('../utils/init');
 
+const {
+    LOCATION_NAME_DMF,
+} = require('../../../../constants');
+
 const log = new DummyRequestLogger();
 
 const bucketName = 'bucket1putversion33';
@@ -847,17 +851,17 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     next => s3.listObjects({ Bucket: bucketName }, (err, res) => {
                         assert.ifError(err);
                         assert.strictEqual(res.Contents.length, 1);
-                        assert.strictEqual(res.Contents[0].StorageClass, 'location-dmf-v1');
+                        assert.strictEqual(res.Contents[0].StorageClass, LOCATION_NAME_DMF);
                         return next();
                     }),
                     next => s3.headObject(params, (err, res) => {
                         assert.ifError(err);
-                        assert.strictEqual(res.StorageClass, 'location-dmf-v1');
+                        assert.strictEqual(res.StorageClass, LOCATION_NAME_DMF);
                         return next();
                     }),
                     next => s3.getObject(params, (err, res) => {
                         assert.ifError(err);
-                        assert.strictEqual(res.StorageClass, 'location-dmf-v1');
+                        assert.strictEqual(res.StorageClass, LOCATION_NAME_DMF);
                         return next();
                     }),
                 ], err => {
@@ -957,7 +961,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }
                     /* eslint-disable no-param-reassign */
-                    objMD.dataStoreName = 'location-dmf-v1';
+                    objMD.dataStoreName = LOCATION_NAME_DMF;
                     objMD.archive = archive;
                     objMD.replicationInfo = replicationInfo;
                     // data related

@@ -11,6 +11,11 @@ const {
     getAzureContainerName,
 } = require('../functional/aws-node-sdk/test/multipleBackend/utils');
 
+const {
+    LOCATION_NAME_DMF,
+    LOCATION_NAME_CRR,
+} = require('../constants');
+
 const log = new DummyRequestLogger();
 const locConstraints = Object.keys(config.locationConstraints);
 const azureClient = getAzureClient();
@@ -22,7 +27,7 @@ describe('Healthcheck response', () => {
         clientCheck(true, log, (err, results) => {
             const resultKeys = Object.keys(results);
             locConstraints.forEach(constraint => {
-                if (constraint === 'location-dmf-v1' || constraint === 'location-crr-v1') {
+                if (constraint === LOCATION_NAME_DMF || constraint === LOCATION_NAME_CRR) {
                     // FIXME: location-dmf-v1 and location-crr-v1 are not in results, see CLDSRV-440
                     return;
                 }
@@ -45,7 +50,7 @@ describe('Healthcheck response', () => {
         clientCheck(false, log, (err, results) => {
             assert.notStrictEqual(results.length, locConstraints.length);
             locConstraints.forEach(constraint => {
-                if (constraint === 'location-dmf-v1' || constraint === 'location-crr-v1') {
+                if (constraint === LOCATION_NAME_DMF || constraint === LOCATION_NAME_CRR) {
                     // FIXME: location-dmf-v1 and location-crr-v1 are not in results, see CLDSRV-440
                     return;
                 }

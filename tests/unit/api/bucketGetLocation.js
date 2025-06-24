@@ -8,6 +8,11 @@ const { cleanup,
 = require('../helpers');
 const { config } = require('../../../lib/Config');
 
+const {
+    LOCATION_NAME_DMF,
+    LOCATION_NAME_CRR,
+} = require('../../constants');
+
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketGetLocationTestBucket';
@@ -47,7 +52,7 @@ describe('getBucketLocation API', () => {
             // see next test.
             return;
         }
-        if (location === 'location-dmf-v1' || location === 'location-crr-v1') {
+        if (location === LOCATION_NAME_DMF || location === LOCATION_NAME_CRR) {
             // if region location-dmf-v1 or location-crr-v1 should return InvalidLocationConstraint error
             return;
         }

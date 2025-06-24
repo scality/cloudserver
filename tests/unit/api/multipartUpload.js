@@ -28,6 +28,10 @@ const changeObjectLock = require('../../utilities/objectLock-util');
 const metadataswitch = require('../metadataswitch');
 const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
 
+const {
+    LOCATION_NAME_CRR,
+} = require('../../constants');
+
 const { data } = require('../../../lib/data/wrapper');
 const { metadata } = storage.metadata.inMemory.metadata;
 const metadataBackend = storage.metadata.inMemory.metastore;
@@ -2185,7 +2189,7 @@ describe('Multipart Upload API', () => {
             objectKey,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
-                [constants.objectLocationConstraintHeader]: 'location-crr-v1',
+                [constants.objectLocationConstraintHeader]: LOCATION_NAME_CRR,
             },
             url: `/${objectKey}?uploads`,
             actionImplicitDenies: false,

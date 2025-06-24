@@ -12,6 +12,11 @@ const metadata = require('../metadataswitch');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const originalLCs = Object.assign({}, config.locationConstraints);
 
+const {
+    LOCATION_NAME_DMF,
+    LOCATION_NAME_CRR,
+} = require('../../constants');
+
 const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
 const authInfo = makeAuthInfo(accessKey);
@@ -72,17 +77,17 @@ const testChecks = [
     },
     {
         data: 'multiple',
-        locationSent: 'location-dmf-v1',
+        locationSent: LOCATION_NAME_DMF,
         parsedHost: '127.3.2.1',
-        locationReturn: 'location-dmf-v1',
+        locationReturn: LOCATION_NAME_DMF,
         isError: true,
         expectedError: 'InvalidLocationConstraint',
     },
     {
         data: 'multiple',
-        locationSent: 'location-crr-v1',
+        locationSent: LOCATION_NAME_CRR,
         parsedHost: '127.3.2.1',
-        locationReturn: 'location-crr-v1',
+        locationReturn: LOCATION_NAME_CRR,
         isError: true,
         expectedError: 'InvalidLocationConstraint',
     },
@@ -365,8 +370,8 @@ describe('bucketPut API', () => {
 
     it('should deny put bucket to cold storage', done => {
         const bucketName = 'cold-bucket-name';
-        const newRestEndpoint = 'location-dmf-v1';
-        const coldLocation = 'location-dmf-v1';
+        const newRestEndpoint = LOCATION_NAME_DMF;
+        const coldLocation = LOCATION_NAME_DMF;
 
         const req = {
             ...testRequest,
@@ -386,8 +391,8 @@ describe('bucketPut API', () => {
 
     it('should deny put bucket if locationConstraint is the crr location', done => {
         const bucketName = 'bucket-name';
-        const newRestEndpoint = 'location-crr-v1';
-        const location = 'location-crr-v1';
+        const newRestEndpoint = LOCATION_NAME_CRR;
+        const location = LOCATION_NAME_CRR;
 
         const req = {
             ...testRequest,

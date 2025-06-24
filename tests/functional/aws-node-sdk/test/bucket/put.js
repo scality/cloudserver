@@ -7,6 +7,10 @@ const getConfig = require('../support/config');
 const withV4 = require('../support/withV4');
 const configOfficial = require('../../../../../lib/Config').config;
 
+const {
+    LOCATION_NAME_DMF,
+} = require('../../../../constants');
+
 const bucketName = 'bucketlocation';
 
 const describeSkipAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
@@ -268,7 +272,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                                 LocationConstraint: location,
                             },
                         }, err => {
-                            if (location === 'location-dmf-v1') {
+                            if (location === LOCATION_NAME_DMF) {
                                 assert.strictEqual(
                                     err.code,
                                     'InvalidLocationConstraint'
@@ -304,7 +308,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                     {
                         Bucket: bucketName,
                         CreateBucketConfiguration: {
-                            LocationConstraint: 'location-dmf-v1',
+                            LocationConstraint: LOCATION_NAME_DMF,
                         },
                     }, err => {
                         assert.strictEqual(

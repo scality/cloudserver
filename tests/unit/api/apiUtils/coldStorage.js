@@ -13,6 +13,10 @@ const { scaledMsPerDay } = config.getTimeOptions();
 const log = new DummyRequestLogger();
 const oneDay = 24 * 60 * 60 * 1000;
 
+const {
+    LOCATION_NAME_DMF,
+} = require('../../../constants');
+
 describe('cold storage', () => {
     describe('validatePutVersionId', () => {
         [
@@ -42,14 +46,14 @@ describe('cold storage', () => {
             {
                 description: 'should return InvalidObjectState if object is not archived',
                 objMD: {
-                    dataStoreName: 'location-dmf-v1',
+                    dataStoreName: LOCATION_NAME_DMF,
                 },
                 expectedRes: errors.InvalidObjectState,
             },
             {
                 description: 'should return InvalidObjectState if object is already restored',
                 objMD: {
-                    dataStoreName: 'location-dmf-v1',
+                    dataStoreName: LOCATION_NAME_DMF,
                     archive: {
                         restoreRequestedAt: new Date(0),
                         restoreRequestedDays: 5,
@@ -62,7 +66,7 @@ describe('cold storage', () => {
             {
                 description: 'should pass if object archived',
                 objMD: {
-                    dataStoreName: 'location-dmf-v1',
+                    dataStoreName: LOCATION_NAME_DMF,
                     archive: {
                         restoreRequestedAt: new Date(0),
                         restoreRequestedDays: 5,
@@ -141,7 +145,7 @@ describe('cold storage', () => {
 
         it('should fail when object is being restored', done => {
             const objectMd = new ObjectMD().setDataStoreName(
-                'location-dmf-v1'
+                LOCATION_NAME_DMF
             ).setArchive(new ObjectMDArchive(
                 {
                     archiveId: '97a71dfe-49c1-4cca-840a-69199e0b0322',
@@ -159,7 +163,7 @@ describe('cold storage', () => {
 
         it('should fail when restored object is expired', done => {
             const objectMd = new ObjectMD().setDataStoreName(
-                'location-dmf-v1'
+                LOCATION_NAME_DMF
             ).setArchive(new ObjectMDArchive(
                 {
                     archiveId: '97a71dfe-49c1-4cca-840a-69199e0b0322',
@@ -179,7 +183,7 @@ describe('cold storage', () => {
 
         it('should succeed for cold object', done => {
             const objectMd = new ObjectMD().setDataStoreName(
-                'location-dmf-v1'
+                LOCATION_NAME_DMF
             ).setArchive(new ObjectMDArchive({
                 archiveId: '97a71dfe-49c1-4cca-840a-69199e0b0322',
                 archiveVersion: 5577006791947779,
@@ -204,7 +208,7 @@ describe('cold storage', () => {
 
         it('should succeed for restored object', done => {
             const objectMd = new ObjectMD().setDataStoreName(
-                'location-dmf-v1'
+                LOCATION_NAME_DMF
             ).setArchive(new ObjectMDArchive(
                 {
                     archiveId: '97a71dfe-49c1-4cca-840a-69199e0b0322',
@@ -246,7 +250,7 @@ describe('cold storage', () => {
 
         it('should fail if _updateRestoreInfo fails', done => {
             const objectMd = new ObjectMD().setDataStoreName(
-                'location-dmf-v1'
+                LOCATION_NAME_DMF
             ).setArchive(false).getValue();
 
             startRestore(objectMd, { days: 7 }, log, err => {

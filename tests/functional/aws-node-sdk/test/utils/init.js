@@ -7,6 +7,10 @@ const log = new DummyRequestLogger();
 const nonVersionedObjId =
     versionIdUtils.getInfVid(config.replicationGroupId);
 
+const {
+    LOCATION_NAME_DMF,
+} = require('../../../../constants');
+
 function decodeVersionId(versionId) {
     let decodedVersionId;
     if (versionId) {
@@ -77,8 +81,8 @@ function fakeMetadataArchive(bucketName, objectName, versionId, archive, cb) {
 			return cb(err);
 		}
         /* eslint-disable no-param-reassign */
-        objMD['x-amz-storage-class'] = 'location-dmf-v1';
-        objMD.dataStoreName = 'location-dmf-v1';
+        objMD['x-amz-storage-class'] = LOCATION_NAME_DMF;
+        objMD.dataStoreName = LOCATION_NAME_DMF;
         objMD.archive = archive;
         /* eslint-enable no-param-reassign */
         return metadata.putObjectMD(bucketName, objectName, objMD, { versionId: decodeVersionId(versionId) },

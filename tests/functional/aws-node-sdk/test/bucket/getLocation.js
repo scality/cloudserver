@@ -4,6 +4,10 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const { config } = require('../../../../../lib/Config');
 
+const {
+    LOCATION_NAME_DMF,
+} = require('../../../../constants');
+
 const bucketName = 'testgetlocationbucket';
 
 const describeSkipAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
@@ -22,7 +26,7 @@ describeSkipAWS('GET bucket location ', () => {
                 // see next test.
                 return;
             }
-            if (location === 'location-dmf-v1') {
+            if (location === LOCATION_NAME_DMF) {
                 // if region location-dmf-v1 should return InvalidLocationConstraint error
                 return;
             }
