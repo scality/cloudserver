@@ -1,4 +1,5 @@
-/* eslint-disable */
+/* eslint-disable no-console */
+/* eslint-disable no-unused-expressions */
 const { promisify } = require('util');
 const { DummyRequestLogger } = require('../../unit/helpers');
 const assert = require('assert');
@@ -34,20 +35,20 @@ describe('SSE KMS arnPrefix', () => {
                 ? bkt.kmsKeyInfo.masterKeyArn
                 : bkt.kmsKeyInfo.masterKeyId;
         }
-        void await helpers.s3.createBucket(({ Bucket: bkt.name })).promise();
-        void await helpers.s3.createBucket(({ Bucket: bkt.vname })).promise();
+        await helpers.s3.createBucket(({ Bucket: bkt.name })).promise();
+        await helpers.s3.createBucket(({ Bucket: bkt.vname })).promise();
         if (bktConf.deleteSSE) {
             await scenarios.deleteBucketSSEBeforeEach(bkt.name, log);
             await scenarios.deleteBucketSSEBeforeEach(bkt.vname, log);
         }
         if (bktConf.algo) {
             // bucket encryption will be asserted in bucket test
-            void await helpers.s3.putBucketEncryption({
+            await helpers.s3.putBucketEncryption({
                 Bucket: bkt.name,
                 ServerSideEncryptionConfiguration: helpers.hydrateSSEConfig({
                     algo: bktConf.algo, masterKeyId: bkt.kmsKey }),
             }).promise();
-            void await helpers.s3.putBucketEncryption({
+            await helpers.s3.putBucketEncryption({
                 Bucket: bkt.vname,
                 ServerSideEncryptionConfiguration: helpers.hydrateSSEConfig({
                     algo: bktConf.algo, masterKeyId: bkt.kmsKey }),
@@ -55,7 +56,7 @@ describe('SSE KMS arnPrefix', () => {
         }
 
         // Put an object for each SSE conf in each bucket
-        void await Promise.all(scenarios.testCases.map(async objConf => {
+        await Promise.all(scenarios.testCases.map(async objConf => {
             const obj = {
                 name: `for-copy-enc-obj-${objConf.name}`,
                 kmsKeyInfo: null,
@@ -70,7 +71,7 @@ describe('SSE KMS arnPrefix', () => {
                     : obj.kmsKeyInfo.masterKeyId;
             }
 
-            await helpers.putEncryptedObject(bkt.name, obj.name, objConf, obj.kmsKey, obj.body);
+            return await helpers.putEncryptedObject(bkt.name, obj.name, objConf, obj.kmsKey, obj.body);
         }));
     };
 
@@ -79,37 +80,37 @@ describe('SSE KMS arnPrefix', () => {
             { profile: helpers.credsProfile, accessKeyId: helpers.s3.config.credentials.accessKeyId });
         const allBuckets = (await helpers.s3.listBuckets().promise()).Buckets.map(b => b.Name);
         console.log('List buckets:', allBuckets);
-        void await helpers.MD.setup();
+        await helpers.MD.setup();
         copyKmsKey = (await helpers.createKmsKey(log)).masterKeyArn;
         try {
             // pre cleanup
-            void await cleanup(copyBkt);
-            void await cleanup(mpuCopyBkt);
-            void await Promise.all(Object.values(bkts).map(async bkt => {
-                void await cleanup(bkt.name);
-                return await cleanup(bkt.vname);
+            await helpers.cleanup(copyBkt);
+            await helpers.cleanup(mpuCopyBkt);
+            await Promise.all(Object.values(bkts).map(async bkt => {
+                await helpers.cleanup(bkt.name);
+                return await helpers.cleanup(bkt.vname);
             }));
         } catch (e) { void e; }
 
         // init copy bucket
-        void await helpers.s3.createBucket(({ Bucket: copyBkt })).promise();
-        void await helpers.s3.createBucket(({ Bucket: mpuCopyBkt })).promise();
-        void await helpers.s3.putBucketEncryption({
+        await helpers.s3.createBucket(({ Bucket: copyBkt })).promise();
+        await helpers.s3.createBucket(({ Bucket: mpuCopyBkt })).promise();
+        await helpers.s3.putBucketEncryption({
             Bucket: copyBkt,
             ServerSideEncryptionConfiguration: helpers.hydrateSSEConfig({ algo: 'aws:kms', masterKeyId: copyKmsKey }),
         }).promise();
-        void await helpers.s3.putObject({ Bucket: copyBkt, Key: copyObj, Body: 'BODY(copy)' }).promise();
+        await helpers.s3.putObject({ Bucket: copyBkt, Key: copyObj, Body: 'BODY(copy)' }).promise();
 
         // Prepare every buckets with 1 object (for copy)
-        void await Promise.all(scenarios.testCases.map(async bktConf => this.initBucket(bktConf)));
+        await Promise.all(scenarios.testCases.map(async bktConf => this.initBucket(bktConf)));
     });
 
     after(async () => {
-        void await helpers.cleanup(copyBkt);
-        void await helpers.cleanup(mpuCopyBkt);
+        await helpers.cleanup(copyBkt);
+        await helpers.cleanup(mpuCopyBkt);
         // Clean every bucket
-        void await Promise.all(Object.values(bkts).map(async bkt => {
-            void await helpers.cleanup(bkt.name);
+        await Promise.all(Object.values(bkts).map(async bkt => {
+            await helpers.cleanup(bkt.name);
             return await helpers.cleanup(bkt.vname);
         }));
     });
@@ -177,11 +178,11 @@ describe('SSE KMS arnPrefix', () => {
             [
                 { name: `${obj.name} into encrypted destination bucket`, forceBktSSE: true },
                 { name: `${obj.name} into same bucket with object SSE config` },
-                { name: `from encrypted source into ${obj.name} with object SSE config` }
+                { name: `from encrypted source into ${obj.name} with object SSE config` },
             ].forEach(({ name, forceBktSSE }, index) =>
-                it(`should CopyObject ${name}`, async () => 
+                it(`should CopyObject ${name}`, async () =>
                     await scenarios.tests.copyObjectAndSSE(
-                        { copyBkt, objForCopy, copyObj},
+                        { copyBkt, objForCopy, copyObj },
                         { objConf, obj },
                         { bktConf, bkt },
                         { index, forceBktSSE },
@@ -205,7 +206,7 @@ describe('SSE KMS arnPrefix', () => {
                     }, mpu, objConf.algo || bktConf.algo, 'after');
                     newParts.push(part);
                 }
-                void await scenarios.tests.mpuComplete(
+                await scenarios.tests.mpuComplete(
                     { UploadId: mpu.UploadId, Bucket: bkt.name, Key: mpuKey },
                     { existingParts: [], newParts },
                     mpu, objConf.algo || bktConf.algo, 'after');
@@ -214,7 +215,7 @@ describe('SSE KMS arnPrefix', () => {
                     Key: mpuKey,
                     Body: `${obj.body}-MPU1${obj.body}-MPU2`,
                 };
-                void await scenarios.assertObjectSSE(assertion, { objConf, obj }, { bktConf, bkt }, {}, 'after');
+                await scenarios.assertObjectSSE(assertion, { objConf, obj }, { bktConf, bkt }, {}, 'after');
             });
 
             it('should encrypt MPU and copy an encrypted parts from encrypted bucket', async () => {
@@ -236,7 +237,7 @@ describe('SSE KMS arnPrefix', () => {
                     PartNumber: 2,
                 }, mpu, objConf.algo || bktConf.algo, 'after');
 
-                void await scenarios.tests.mpuComplete(
+                await scenarios.tests.mpuComplete(
                     { UploadId: mpu.UploadId, Bucket: bkt.name, Key: mpuKey },
                     { existingParts: [], newParts: [part1, part2] },
                     mpu, objConf.algo || bktConf.algo, 'after');
@@ -245,7 +246,7 @@ describe('SSE KMS arnPrefix', () => {
                     Key: mpuKey,
                     Body: `BODY(copy)${obj.body}-MPU2`,
                 };
-                void await scenarios.assertObjectSSE(assertion, { objConf, obj }, { bktConf, bkt }, {}, 'after');
+                await scenarios.assertObjectSSE(assertion, { objConf, obj }, { bktConf, bkt }, {}, 'after');
             });
 
             it('should encrypt MPU and copy an encrypted range parts from encrypted bucket', async () => {
@@ -268,7 +269,7 @@ describe('SSE KMS arnPrefix', () => {
                     newParts.push(part);
                 }
 
-                void await scenarios.tests.mpuComplete(
+                await scenarios.tests.mpuComplete(
                     { UploadId: mpu.UploadId, Bucket: bkt.name, Key: mpuKey },
                     { existingParts: [], newParts },
                     mpu, objConf.algo || bktConf.algo, 'after');
@@ -277,26 +278,26 @@ describe('SSE KMS arnPrefix', () => {
                     Key: mpuKey,
                     Body: 'copyBODY',
                 };
-                void await scenarios.assertObjectSSE(assertion, { objConf, obj }, { bktConf, bkt }, {}, 'after');
+                await scenarios.assertObjectSSE(assertion, { objConf, obj }, { bktConf, bkt }, {}, 'after');
             });
 
             it(`should PutObject versioned with SSE ${obj.name}`, async () => {
                 // ensure versioned bucket is empty
-                void await helpers.bucketUtil.empty(bkt.vname);
+                await helpers.bucketUtil.empty(bkt.vname);
                 let { Versions } = await helpers.s3.listObjectVersions({ Bucket: bkt.vname }).promise();
                 // regularly count versioned objects
                 assert.strictEqual(Versions.length, 0);
 
                 const bodyBase = `BODY(${obj.name})-base`;
-                void await helpers.putEncryptedObject(bkt.vname, obj.name, objConf, obj.kmsKey, bodyBase);
+                await helpers.putEncryptedObject(bkt.vname, obj.name, objConf, obj.kmsKey, bodyBase);
                 const baseAssertion = { Bucket: bkt.vname, Key: obj.name };
-                void await scenarios.assertObjectSSE(
+                await scenarios.assertObjectSSE(
                     { ...baseAssertion, Body: bodyBase },
                     { objConf, obj }, { bktConf, bkt }, {}, 'after');
                 ({ Versions } = await helpers.s3.listObjectVersions({ Bucket: bkt.vname }).promise());
                 assert.strictEqual(Versions.length, 1);
 
-                void await helpers.s3.putBucketVersioning({ Bucket: bkt.vname,
+                await helpers.s3.putBucketVersioning({ Bucket: bkt.vname,
                     VersioningConfiguration: { Status: 'Enabled' },
                 }).promise();
 
@@ -312,36 +313,36 @@ describe('SSE KMS arnPrefix', () => {
                 ({ Versions } = await helpers.s3.listObjectVersions({ Bucket: bkt.vname }).promise());
                 assert.strictEqual(Versions.length, 3);
 
-                void await scenarios.assertObjectSSE(
+                await scenarios.assertObjectSSE(
                     { ...baseAssertion, Body: bodyV2 }, { objConf, obj }, { bktConf, bkt },
                     {}, 'after'); // v2
-                void await scenarios.assertObjectSSE(
+                await scenarios.assertObjectSSE(
                     { ...baseAssertion, VersionId: 'null', Body: bodyBase }, { objConf, obj }, { bktConf, bkt },
                     {}, 'after');
-                void await scenarios.assertObjectSSE(
+                await scenarios.assertObjectSSE(
                     { ...baseAssertion, VersionId: v1.VersionId, Body: bodyV1 }, { objConf, obj }, { bktConf, bkt },
                     {}, 'after');
-                void await scenarios.assertObjectSSE(
+                await scenarios.assertObjectSSE(
                     { ...baseAssertion, VersionId: v2.VersionId, Body: bodyV2 }, { objConf, obj }, { bktConf, bkt },
                     {}, 'after');
                 ({ Versions } = await helpers.s3.listObjectVersions({ Bucket: bkt.vname }).promise());
                 assert.strictEqual(Versions.length, 3);
 
-                void await helpers.s3.putBucketVersioning({ Bucket: bkt.vname,
+                await helpers.s3.putBucketVersioning({ Bucket: bkt.vname,
                     VersioningConfiguration: { Status: 'Suspended' },
                 }).promise();
 
                 // should be fine after version suspension
-                void await scenarios.assertObjectSSE(
+                await scenarios.assertObjectSSE(
                     { ...baseAssertion, Body: bodyV2 }, { objConf, obj }, { bktConf, bkt },
                     {}, 'after'); // v2
-                void await scenarios.assertObjectSSE(
+                await scenarios.assertObjectSSE(
                     { ...baseAssertion, VersionId: 'null', Body: bodyBase }, { objConf, obj }, { bktConf, bkt },
                     {}, 'after');
-                void await scenarios.assertObjectSSE(
+                await scenarios.assertObjectSSE(
                     { ...baseAssertion, VersionId: v1.VersionId, Body: bodyV1 }, { objConf, obj }, { bktConf, bkt },
                     {}, 'after');
-                void await scenarios.assertObjectSSE(
+                await scenarios.assertObjectSSE(
                     { ...baseAssertion, VersionId: v2.VersionId, Body: bodyV2 }, { objConf, obj }, { bktConf, bkt },
                     {}, 'after');
                 ({ Versions } = await helpers.s3.listObjectVersions({ Bucket: bkt.vname }).promise());
@@ -349,11 +350,11 @@ describe('SSE KMS arnPrefix', () => {
 
                 // put a new null version
                 const bodyFinal = `BODY(${obj.name})-final`;
-                void await helpers.putEncryptedObject(bkt.vname, obj.name, objConf, obj.kmsKey, bodyFinal);
-                void await scenarios.assertObjectSSE(
+                await helpers.putEncryptedObject(bkt.vname, obj.name, objConf, obj.kmsKey, bodyFinal);
+                await scenarios.assertObjectSSE(
                     { ...baseAssertion, Body: bodyFinal }, { objConf, obj }, { bktConf, bkt },
                     {}, 'after'); // null
-                void await scenarios.assertObjectSSE(
+                await scenarios.assertObjectSSE(
                     { ...baseAssertion, Body: bodyFinal }, { objConf, obj }, { bktConf, bkt },
                     'null', 'after');
                 ({ Versions } = await helpers.s3.listObjectVersions({ Bucket: bkt.vname }).promise());
@@ -363,7 +364,7 @@ describe('SSE KMS arnPrefix', () => {
     }));
 
     it('should encrypt MPU and copy parts from every buckets and objects matrice', async () => {
-        void await helpers.s3.putBucketEncryption({
+        await helpers.s3.putBucketEncryption({
             Bucket: mpuCopyBkt,
             // AES256 because input key is broken for now
             ServerSideEncryptionConfiguration: helpers.hydrateSSEConfig({ algo: 'AES256' }),
@@ -396,7 +397,7 @@ describe('SSE KMS arnPrefix', () => {
 
         const parts = await Promise.all(uploadPromises);
 
-        void await helpers.s3.completeMultipartUpload({
+        await helpers.s3.completeMultipartUpload({
             UploadId: mpu.UploadId,
             Bucket: mpuCopyBkt,
             Key: mpuKey,
@@ -409,7 +410,7 @@ describe('SSE KMS arnPrefix', () => {
             Key: mpuKey,
             Body: parts.reduce((acc, part) => `${acc}${part.body}`, ''),
         };
-        void await scenarios.assertObjectSSE(assertion, { objConf: {}, obj: {} },
+        await scenarios.assertObjectSSE(assertion, { objConf: {}, obj: {} },
             { bktConf: { algo: 'AES256' }, bkt: {} }, {}, 'after');
     });
 });
@@ -420,23 +421,23 @@ describe('ensure MPU use good SSE', () => {
 
     before(async () => {
         kmsKeympuKmsBkt = (await helpers.createKmsKey(log)).masterKeyArn;
-        void await helpers.MD.setup();
-        void await helpers.s3.createBucket({ Bucket: mpuKmsBkt }).promise();
-        void await helpers.s3.putBucketEncryption({
+        await helpers.MD.setup();
+        await helpers.s3.createBucket({ Bucket: mpuKmsBkt }).promise();
+        await helpers.s3.putBucketEncryption({
             Bucket: mpuKmsBkt,
             ServerSideEncryptionConfiguration:
                 helpers.hydrateSSEConfig({ algo: 'aws:kms', masterKeyId: kmsKeympuKmsBkt }) }).promise();
     });
 
     after(async () => {
-        void await helpers.cleanup(mpuKmsBkt);
+        await helpers.cleanup(mpuKmsBkt);
     });
 
     it('mpu upload part should fail with sse header', async () => {
         const key = 'mpuKeyBadUpload';
         const mpu = await helpers.s3.createMultipartUpload({
             Bucket: mpuKmsBkt, Key: key }).promise();
-        void await assert.rejects(promisify(makeRequest)({
+        await assert.rejects(promisify(makeRequest)({
             method: 'PUT',
             hostname: helpers.s3.endpoint.hostname,
             port: helpers.s3.endpoint.port,
@@ -494,9 +495,9 @@ describe('ensure MPU use good SSE', () => {
         const bktForAssert = {
             bktConf: { algo: 'aws:kms', masterKeyId: true },
             bkt: { kmsKey: kmsKeympuKmsBkt,
-                kmsKeyInfo: { masterKeyId: kmsKeympuKmsBkt, masterKeyArn: kmsKeympuKmsBkt } }
+                kmsKeyInfo: { masterKeyId: kmsKeympuKmsBkt, masterKeyArn: kmsKeympuKmsBkt } },
         };
-        void await scenarios.assertObjectSSE(
+        await scenarios.assertObjectSSE(
             assertion,
             objForAssert,
             bktForAssert,
@@ -505,6 +506,7 @@ describe('ensure MPU use good SSE', () => {
         );
     });
 });
+
 describe('KMS error', () => {
     const sseConfig = { algo: 'aws:kms', masterKeyId: true };
     const Bucket = 'bkt-kms-err';
@@ -560,7 +562,7 @@ describe('KMS error', () => {
     }
 
     before(async () => {
-        void await helpers.s3.createBucket({ Bucket }).promise();
+        await helpers.s3.createBucket({ Bucket }).promise();
 
         await helpers.s3.putObject({
             ...helpers.putObjParams(Bucket, 'plaintext', {}, null),
@@ -581,14 +583,14 @@ describe('KMS error', () => {
             helpers.putObjParams(Bucket, 'mpuEncrypted', sseConfig, masterKeyArn)).promise();
 
         // make key unavailable
-        void await helpers.destroyKmsKey(masterKeyArn, log);
+        await helpers.destroyKmsKey(masterKeyArn, log);
     });
 
     after(async () => {
-        void await helpers.cleanup(Bucket);
+        await helpers.cleanup(Bucket);
         if (masterKeyArn) {
             try {
-                void await helpers.destroyKmsKey(masterKeyArn, log);
+                await helpers.destroyKmsKey(masterKeyArn, log);
             } catch (e) { void e; }
             [masterKeyArn, masterKeyId] = [null, null];
         }
