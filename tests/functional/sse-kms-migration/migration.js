@@ -1,5 +1,8 @@
 /* eslint-disable no-console */
 /* eslint-disable no-unused-expressions */
+/* eslint-disable no-return-await */
+/* eslint-disable no-await-in-loop */
+/* eslint-disable no-restricted-syntax */
 const kms = require('../../../lib/kms/wrapper');
 const filekms = require('../../../lib/kms/file/backend');
 const { splitter, mpuBucketPrefix } = require('../../../constants');

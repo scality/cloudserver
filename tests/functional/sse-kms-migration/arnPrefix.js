@@ -1,5 +1,8 @@
 /* eslint-disable no-console */
 /* eslint-disable no-unused-expressions */
+/* eslint-disable no-return-await */
+/* eslint-disable no-await-in-loop */
+/* eslint-disable no-restricted-syntax */
 const { promisify } = require('util');
 const { DummyRequestLogger } = require('../../unit/helpers');
 const assert = require('assert');
@@ -90,6 +93,7 @@ describe('SSE KMS arnPrefix', () => {
                 await helpers.cleanup(bkt.name);
                 return await helpers.cleanup(bkt.vname);
             }));
+        // eslint-disable-next-line no-void
         } catch (e) { void e; }
 
         // init copy bucket
@@ -196,6 +200,7 @@ describe('SSE KMS arnPrefix', () => {
                     helpers.putObjParams(bkt.name, mpuKey, objConf, obj.kmsKey)).promise();
                 const partsBody = [`${obj.body}-MPU1`, `${obj.body}-MPU2`];
                 const newParts = [];
+                // eslint-disable-next-line no-restricted-syntax
                 for (const [index, body] of partsBody.entries()) {
                     const part = await scenarios.tests.mpuUploadPart({
                         UploadId: mpu.UploadId,
@@ -591,6 +596,7 @@ describe('KMS error', () => {
         if (masterKeyArn) {
             try {
                 await helpers.destroyKmsKey(masterKeyArn, log);
+            // eslint-disable-next-line no-void
             } catch (e) { void e; }
             [masterKeyArn, masterKeyId] = [null, null];
         }
