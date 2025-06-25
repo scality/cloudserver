@@ -1,12 +1,14 @@
-/* eslint-disable */
+/* eslint-disable no-console */
+/* eslint-disable no-unused-expressions */
+/* eslint-disable no-return-await */
+/* eslint-disable no-await-in-loop */
+/* eslint-disable no-restricted-syntax */
 const helpers = require('./helpers');
 const scenarios = require('./scenarios');
 
-// copy part of aws-node-sdk/test/object/encryptionHeaders.js and add more tests
-
 async function cleanup(Bucket) {
     try {
-        void await helpers.cleanup(Bucket);
+        await helpers.cleanup(Bucket);
     } catch (e) {
         console.log('Ignore error for', Bucket, e.toString());
     }
@@ -23,16 +25,16 @@ describe('SSE KMS Cleanup', () => {
         const allBuckets = (await helpers.s3.listBuckets().promise()).Buckets.map(b => b.Name);
         console.log('List buckets:', allBuckets);
 
-        void await helpers.MD.setup();
+        await helpers.MD.setup();
 
         try {
-            // pre cleanup
-            void await cleanup(copyBkt);
-            void await cleanup(mpuCopyBkt);
-            void await Promise.all(scenarios.testCases.map(async bktConf => {
-                void await cleanup(`enc-bkt-${bktConf.name}`);
+            await cleanup(copyBkt);
+            await cleanup(mpuCopyBkt);
+            await Promise.all(scenarios.testCases.map(async bktConf => {
+                await cleanup(`enc-bkt-${bktConf.name}`);
                 return await cleanup(`versioned-enc-bkt-${bktConf.name}`);
             }));
+        // eslint-disable-next-line no-void
         } catch (e) { void e; }
     });
 });
