@@ -94,6 +94,8 @@ async function createKmsKey(log) {
     });
 }
 
+const destroyKmsKey = promisify(kms.destroyBucketKey);
+
 async function cleanup(Bucket) {
     await bucketUtil.empty(Bucket);
     await s3.deleteBucket({ Bucket }).promise();
@@ -112,5 +114,6 @@ module.exports = {
     putEncryptedObject,
     getObjectMDSSE,
     createKmsKey,
+    destroyKmsKey,
     cleanup,
 };
