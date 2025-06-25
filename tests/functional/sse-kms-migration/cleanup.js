@@ -1,5 +1,4 @@
 /* eslint-disable no-console */
-/* eslint-disable no-unused-expressions */
 const helpers = require('./helpers');
 const scenarios = require('./scenarios');
 
