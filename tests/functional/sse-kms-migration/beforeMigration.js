@@ -1,8 +1,5 @@
 /* eslint-disable no-console */
 /* eslint-disable no-unused-expressions */
-/* eslint-disable no-return-await */
-/* eslint-disable no-await-in-loop */
-/* eslint-disable no-restricted-syntax */
 const kms = require('../../../lib/kms/wrapper');
 const { promisify } = require('util');
 const { DummyRequestLogger } = require('../../unit/helpers');
