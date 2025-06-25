@@ -229,10 +229,10 @@
   resolved "https://registry.yarnpkg.com/@azure/msal-common/-/msal-common-15.3.0.tgz#cc75760f7929588b261b970a1dd1d292d0efdbc8"
   integrity sha512-lh+eZfibGwtQxFnx+mj6cYWn0pwA8tDnn8CBs9P21nC7Uw5YWRwfXaXdVQSMENZ5ojRqR+NzRaucEo4qUvs3pA==
 
-"@azure/msal-common@15.6.0":
-  version "15.6.0"
-  resolved "https://registry.yarnpkg.com/@azure/msal-common/-/msal-common-15.6.0.tgz#0764d6446eeff3970221995e25f265fdb218da66"
-  integrity sha512-EotmBz42apYGjqiIV9rDUdptaMptpTn4TdGf3JfjLvFvinSe9BJ6ywU92K9ky+t/b0ghbeTSe9RfqlgLh8f2jA==
+"@azure/msal-common@15.7.1":
+  version "15.7.1"
+  resolved "https://registry.yarnpkg.com/@azure/msal-common/-/msal-common-15.7.1.tgz#6f8df5ace9c94d570b5eec1abc6ebdd4e12831f1"
+  integrity sha512-a0eowoYfRfKZEjbiCoA5bPT3IlWRAdGSvi63OU23Hv+X6EI8gbvXCoeqokUceFMoT9NfRUWTJSx5FiuzruqT8g==
 
 "@azure/msal-node@^3.2.3":
   version "3.4.0"
@@ -244,11 +244,11 @@
     uuid "^8.3.0"
 
 "@azure/msal-node@^3.5.0":
-  version "3.5.3"
-  resolved "https://registry.yarnpkg.com/@azure/msal-node/-/msal-node-3.5.3.tgz#02f7a2344a2c2994354a0cec125b9ef9a8e7109b"
-  integrity sha512-c5mifzHX5mwm5JqMIlURUyp6LEEdKF1a8lmcNRLBo0lD7zpSYPHupa4jHyhJyg9ccLwszLguZJdk2h3ngnXwNw==
+  version "3.6.1"
+  resolved "https://registry.yarnpkg.com/@azure/msal-node/-/msal-node-3.6.1.tgz#1f288c3de15bdd734cc41a39bbd50f5a83fd64a1"
+  integrity sha512-ctcVz4xS+st5KxOlQqgpvA+uDFAa59CvkmumnuhlD2XmNczloKBdCiMQG7/TigSlaeHe01qoOlDjz3TyUAmKUg==
   dependencies:
-    "@azure/msal-common" "15.6.0"
+    "@azure/msal-common" "15.7.1"
     jsonwebtoken "^9.0.0"
     uuid "^8.3.0"
 
@@ -1296,9 +1296,9 @@ arraybuffer.prototype.slice@^1.0.4:
     get-intrinsic "^1.2.6"
     is-array-buffer "^3.0.4"
 
-"arsenal@git+https://github.com/scality/Arsenal#8.2.23":
-  version "8.2.23"
-  resolved "git+https://github.com/scality/Arsenal#77d5781ba013708e44251c4e0142428c5f05a643"
+"arsenal@git+https://github.com/scality/Arsenal#8.2.24":
+  version "8.2.24"
+  resolved "git+https://github.com/scality/Arsenal#ebf56826f4201d3bc88b5e5c7e9653c788184c29"
   dependencies:
     "@azure/identity" "^4.10.1"
     "@azure/storage-blob" "^12.27.0"
