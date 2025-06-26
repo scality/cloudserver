@@ -3,9 +3,9 @@ name: codeQL
 
 on:
   push:
-    branches: [w/**, q/*]
+    branches: [development/*, hotfix/*]
   pull_request:
-    branches: [development/*, stabilization/*, hotfix/*]
+    branches: [development/*, hotfix/*]
   workflow_dispatch:
 
 jobs:
