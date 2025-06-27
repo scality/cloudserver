@@ -77,6 +77,7 @@
     "ft_test": "npm-run-all -s ft_awssdk ft_s3cmd ft_s3curl ft_node ft_healthchecks ft_management ft_backbeat",
     "ft_search": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 test/mdSearch",
     "ft_kmip": "cd tests/functional/kmip && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js",
+    "ft_kmip_cluster": "cd tests/functional/sse-kms-migration && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 300000 load.js",
     "ft_sse_cleanup": "cd tests/functional/sse-kms-migration && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 10000 cleanup.js",
     "ft_sse_before_migration": "cd tests/functional/sse-kms-migration && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 10000 cleanup.js beforeMigration.js",
     "ft_sse_migration": "cd tests/functional/sse-kms-migration && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 10000 migration.js",
