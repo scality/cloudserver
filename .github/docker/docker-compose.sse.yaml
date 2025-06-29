@@ -36,15 +36,7 @@ services:
       - ../../tests/functional/sse-kms-migration/config.json:/conf/config.json
     environment:
       - S3_CONFIG_FILE=/conf/config.json
-      - S3VAULT=scality
-    depends_on:
-      - vault-sse-before-migration
   cloudserver-sse-migration:
     extends: cloudserver-sse-before-migration
     profiles: [sse-migration]
     command: sh -c "yarn start > /artifacts/s3.migration.log 2> /artifacts/s3-stderr.migration.log"
-    environment:
-      - S3KMS
-    depends_on: !override
-      - redis
-      - vault-sse-migration
