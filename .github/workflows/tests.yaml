@@ -653,7 +653,8 @@ jobs:
         # Functional tests needs access to the running config to use the same
         # KMS kmip cluster config
         # yarn run does a cd into the test folder
-        S3_CONFIG_FILE: config.json
+        # absolute path to override default root config
+        S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
         S3KMS: kmip
         S3_END_TO_END: true # to use the default credentials profile and not vault profile
       run: |-
