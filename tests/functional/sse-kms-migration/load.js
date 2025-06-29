@@ -1,5 +1,4 @@
 /* eslint-disable no-console */
-/* eslint-disable no-unused-expressions */
 const { DummyRequestLogger } = require('../../unit/helpers');
 const assert = require('assert');
 const log = new DummyRequestLogger();
