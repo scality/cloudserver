@@ -1,0 +1,50 @@
+{
+    "kmip": {
+        "providerName": "thales",
+        "client": {
+            "compoundCreateActivate": false
+        },
+        "transport":  [
+            {
+                "pipelineDepth": 8,
+                "tls": {
+                    "port": 5696,
+                    "host": "1.pykmip.local",
+                    "key": "/tmp/ssl-kmip/kmip-client-key.pem",
+                    "cert": "/tmp/ssl-kmip/kmip-client-cert.pem",
+                    "ca": "/tmp/ssl-kmip/kmip-ca.pem"
+                }
+            },
+            {
+                "pipelineDepth": 8,
+                "tls": {
+                    "port": 5696,
+                    "host": "127.0.0.2",
+                    "key": "/tmp/ssl-kmip/kmip-client-key.pem",
+                    "cert": "/tmp/ssl-kmip/kmip-client-cert.pem",
+                    "ca": "/tmp/ssl-kmip/kmip-ca.pem"
+                }
+            },
+            {
+                "pipelineDepth": 8,
+                "tls": {
+                    "port": 5696,
+                    "host": "3.pykmip.local",
+                    "key": "/tmp/ssl-kmip/kmip-client-key.pem",
+                    "cert": "/tmp/ssl-kmip/kmip-client-cert.pem",
+                    "ca": "/tmp/ssl-kmip/kmip-ca.pem"
+                }
+            },
+            {
+                "pipelineDepth": 8,
+                "tls": {
+                    "port": 5696,
+                    "host": "127.0.0.4",
+                    "key": "/tmp/ssl-kmip/kmip-client-key.pem",
+                    "cert": "/tmp/ssl-kmip/kmip-client-cert.pem",
+                    "ca": "/tmp/ssl-kmip/kmip-ca.pem"
+                }
+            }
+        ]
+    }
+}
