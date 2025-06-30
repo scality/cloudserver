@@ -270,12 +270,12 @@ describe('bucket policy authorization', () => {
         });
 
         it('should deny access to non-bucket owner',
-        done => {
-            const allowed = isBucketAuthorized(bucket, 'bucketPut',
-                altAcctCanonicalId, null, log);
-            assert.equal(allowed, false);
-            done();
-        });
+            done => {
+                const allowed = isBucketAuthorized(bucket, 'bucketPut',
+                    altAcctCanonicalId, null, log);
+                assert.equal(allowed, false);
+                done();
+            });
     });
 
     describe('isBucketAuthorized with bucket policy set', () => {
@@ -286,20 +286,20 @@ describe('bucket policy authorization', () => {
         });
 
         it('should allow access to non-bucket owner if principal is set to "*"',
-        done => {
-            const allowed = isBucketAuthorized(bucket, bucAction,
-                altAcctCanonicalId, null, log);
-            assert.equal(allowed, true);
-            done();
-        });
+            done => {
+                const allowed = isBucketAuthorized(bucket, bucAction,
+                    altAcctCanonicalId, null, log);
+                assert.equal(allowed, true);
+                done();
+            });
 
         it('should allow access to public user if principal is set to "*"',
-        done => {
-            const allowed = isBucketAuthorized(bucket, bucAction,
-                constants.publicId, publicUserAuthInfo, log);
-            assert.equal(allowed, true);
-            done();
-        });
+            done => {
+                const allowed = isBucketAuthorized(bucket, bucAction,
+                    constants.publicId, publicUserAuthInfo, log);
+                assert.equal(allowed, true);
+                done();
+            });
 
         it('should deny access to public user if principal is not set to "*"', function itFn(done) {
             const newPolicy = this.test.basePolicy;
@@ -324,7 +324,7 @@ describe('bucket policy authorization', () => {
         });
 
         it('should deny access to non-bucket owner if two statements apply ' +
-        'to principal but one denies access', function itFn(done) {
+            'to principal but one denies access', function itFn(done) {
             const newPolicy = this.test.basePolicy;
             newPolicy.Statement[1] = {
                 Effect: 'Deny',
@@ -334,18 +334,18 @@ describe('bucket policy authorization', () => {
             };
             bucket.setBucketPolicy(newPolicy);
             const allowed = isBucketAuthorized(bucket, bucAction,
-                altAcctCanonicalId, null, log);
+                    altAcctCanonicalId, null, log);
             assert.equal(allowed, false);
             done();
         });
 
         it('should deny access to non-bucket owner with an unsupported action type',
-        done => {
-            const allowed = isBucketAuthorized(bucket, 'unsupportedAction',
-                altAcctCanonicalId, null, log);
-            assert.equal(allowed, false);
-            done();
-        });
+            done => {
+                const allowed = isBucketAuthorized(bucket, 'unsupportedAction',
+                    altAcctCanonicalId, null, log);
+                assert.equal(allowed, false);
+                done();
+            });
     });
 
     describe('isObjAuthorized with no policy set', () => {
@@ -361,12 +361,12 @@ describe('bucket policy authorization', () => {
         });
 
         it('should deny access to non-object owner',
-        done => {
-            const allowed = isObjAuthorized(bucket, object, objAction,
-                altAcctCanonicalId, null, log);
-            assert.equal(allowed, false);
-            done();
-        });
+            done => {
+                const allowed = isObjAuthorized(bucket, object, objAction,
+                    altAcctCanonicalId, null, log);
+                assert.equal(allowed, false);
+                done();
+            });
     });
 
     describe('isObjAuthorized with bucket policy set', () => {
@@ -380,20 +380,20 @@ describe('bucket policy authorization', () => {
         });
 
         it('should allow access to non-object owner if principal is set to "*"',
-        done => {
-            const allowed = isObjAuthorized(bucket, object, objAction,
-                altAcctCanonicalId, null, log);
-            assert.equal(allowed, true);
-            done();
-        });
+            done => {
+                const allowed = isObjAuthorized(bucket, object, objAction,
+                    altAcctCanonicalId, null, log);
+                assert.equal(allowed, true);
+                done();
+            });
 
         it('should allow access to public user if principal is set to "*"',
-        done => {
-            const allowed = isObjAuthorized(bucket, object, objAction,
-                constants.publicId, publicUserAuthInfo, log);
-            assert.equal(allowed, true);
-            done();
-        });
+            done => {
+                const allowed = isObjAuthorized(bucket, object, objAction,
+                    constants.publicId, publicUserAuthInfo, log);
+                assert.equal(allowed, true);
+                done();
+            });
 
         authTests.forEach(t => {
             it(`${t.name}object owner`, function itFn(done) {
@@ -408,27 +408,27 @@ describe('bucket policy authorization', () => {
         });
 
         it('should allow access to non-object owner for objectHead action with s3:GetObject permission',
-        function itFn(done) {
-            const newPolicy = this.test.basePolicy;
-            newPolicy.Statement[0].Action = ['s3:GetObject'];
-            bucket.setBucketPolicy(newPolicy);
-            const allowed = isObjAuthorized(bucket, object, 'objectHead',
-                                            altAcctCanonicalId, altAcctAuthInfo, log);
-            assert.equal(allowed, true);
-            done();
-        });
+            function itFn(done) {
+                const newPolicy = this.test.basePolicy;
+                newPolicy.Statement[0].Action = ['s3:GetObject'];
+                bucket.setBucketPolicy(newPolicy);
+                const allowed = isObjAuthorized(bucket, object, 'objectHead',
+                    altAcctCanonicalId, altAcctAuthInfo, log);
+                assert.equal(allowed, true);
+                done();
+            });
         it('should deny access to non-object owner for objectHead action without s3:GetObject permission',
-        function itFn(done) {
-            const newPolicy = this.test.basePolicy;
-            newPolicy.Statement[0].Action = ['s3:PutObject'];
-            bucket.setBucketPolicy(newPolicy);
-            const allowed = isObjAuthorized(bucket, object, 'objectHead',
-                                            altAcctCanonicalId, altAcctAuthInfo, log);
-            assert.equal(allowed, false);
-            done();
-        });
+            function itFn(done) {
+                const newPolicy = this.test.basePolicy;
+                newPolicy.Statement[0].Action = ['s3:PutObject'];
+                bucket.setBucketPolicy(newPolicy);
+                const allowed = isObjAuthorized(bucket, object, 'objectHead',
+                    altAcctCanonicalId, altAcctAuthInfo, log);
+                assert.equal(allowed, false);
+                done();
+            });
         it('should deny access to non-object owner if two statements apply ' +
-        'to principal but one denies access', function itFn(done) {
+            'to principal but one denies access', function itFn(done) {
             const newPolicy = this.test.basePolicy;
             newPolicy.Statement[1] = {
                 Effect: 'Deny',
@@ -438,18 +438,18 @@ describe('bucket policy authorization', () => {
             };
             bucket.setBucketPolicy(newPolicy);
             const allowed = isObjAuthorized(bucket, object, objAction,
-                altAcctCanonicalId, null, log);
+                    altAcctCanonicalId, null, log);
             assert.equal(allowed, false);
             done();
         });
 
         it('should deny access to non-object owner with an unsupported action type',
-        done => {
-            const allowed = isObjAuthorized(bucket, object, 'unsupportedAction',
-                altAcctCanonicalId, null, log);
-            assert.equal(allowed, false);
-            done();
-        });
+            done => {
+                const allowed = isObjAuthorized(bucket, object, 'unsupportedAction',
+                    altAcctCanonicalId, null, log);
+                assert.equal(allowed, false);
+                done();
+            });
 
         it('should allow access when implicitDeny true with Allow bucket policy', function itFn() {
             const requestTypes = ['objectPut', 'objectDelete'];
@@ -461,12 +461,19 @@ describe('bucket policy authorization', () => {
             newPolicy.Statement[0].Action = ['s3:PutObject', 's3:DeleteObject'];
             bucket.setBucketPolicy(newPolicy);
 
-            const results = requestTypes.map(type => {
-                const allowed = isObjAuthorized(bucket, object, type,
-                altAcctCanonicalId, altAcctAuthInfo, log, null, impDenies);
-                return allowed;
-            });
-            assert.deepStrictEqual(results, [true, true]);
+            const oldOwner = bucket.getOwner();
+            bucket.setOwner(altAcctCanonicalId); // The bucket owner needs to have the same account as the user.
+
+            try {
+                const results = requestTypes.map(type => {
+                    const allowed = isObjAuthorized(bucket, object, type,
+                        altAcctCanonicalId, altAcctAuthInfo, log, null, impDenies);
+                    return allowed;
+                });
+                assert.deepStrictEqual(results, [true, true]);
+            } finally {
+                bucket.setOwner(oldOwner);
+            }
         });
 
         it('should deny access when implicitDeny true with Deny bucket policy', function itFn() {
@@ -487,7 +494,7 @@ describe('bucket policy authorization', () => {
 
             const results = requestTypes.map(type => {
                 const allowed = isObjAuthorized(bucket, object, type,
-                altAcctCanonicalId, altAcctAuthInfo, log, null, impDenies);
+                    altAcctCanonicalId, altAcctAuthInfo, log, null, impDenies);
                 return allowed;
             });
             assert.deepStrictEqual(results, [false, false]);
@@ -507,7 +514,7 @@ describe('bucket policy authorization', () => {
         });
 
         it('should return false if any statement resource does not match ' +
-        'bucket arn', done => {
+            'bucket arn', done => {
             const newPolicy = basePolicyObj;
             newPolicy.Statement = [newPolicy.Statement];
             newPolicy.Statement[1] = basePolicyObj.Statement;
@@ -632,7 +639,7 @@ describe('bucket policy authorization', () => {
                     altAcctCanonicalId, altAcctAuthInfo, log, request);
                 assert.strictEqual(results, t.expectedVerdict);
             }
-        );
+            );
         });
     });
 });
