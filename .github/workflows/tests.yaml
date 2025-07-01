@@ -293,6 +293,7 @@ jobs:
       S3METADATA: mongodb
       S3KMS: file
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
+      S3_VERSION_ID_ENCODING_TYPE: base62
       DEFAULT_BUCKET_KEY_FORMAT: v1
       METADATA_MAX_CACHED_BUCKETS: 1
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
