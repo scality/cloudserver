@@ -1,7 +1,10 @@
 const assert = require('assert');
+const sinon = require('sinon');
+const fs = require('fs');
+const path = require('path');
 const {
     azureArchiveLocationConstraintAssert,
-    ConfigObject: ConfigObjectForTest,
+    ConfigObject,
 } = require('../../lib/Config');
 
 describe('Config', () => {
@@ -25,7 +28,6 @@ describe('Config', () => {
     });
 
     it('should emit an event when auth data is updated', done => {
-        const { ConfigObject } = require('../../lib/Config');
         const config = new ConfigObject();
         let emitted = false;
         config.on('authdata-update', () => {
@@ -209,8 +211,6 @@ describe('Config', () => {
     });
 
     describe('getAzureStorageAccountName', () => {
-        const { ConfigObject } = require('../../lib/Config');
-
         it('should return account name from config', () => {
             setEnv('azurebackend_AZURE_STORAGE_ACCOUNT_NAME', '');
             const config = new ConfigObject();
@@ -259,7 +259,7 @@ describe('Config', () => {
 
     describe('time options', () => {
         it('should getTimeOptions', () => {
-            const config = new ConfigObjectForTest();
+            const config = new ConfigObject();
             const expectedOptions = {
                 expireOneDayEarlier: false,
                 transitionOneDayEarlier: false,
@@ -273,7 +273,7 @@ describe('Config', () => {
         it('should getTimeOptions with TIME_PROGRESSION_FACTOR', () => {
             setEnv('TIME_PROGRESSION_FACTOR', 2);
 
-            const config = new ConfigObjectForTest();
+            const config = new ConfigObject();
             const expectedOptions = {
                 expireOneDayEarlier: false,
                 transitionOneDayEarlier: false,
@@ -287,7 +287,7 @@ describe('Config', () => {
         it('should getTimeOptions with EXPIRE_ONE_DAY_EARLIER', () => {
             setEnv('EXPIRE_ONE_DAY_EARLIER', true);
 
-            const config = new ConfigObjectForTest();
+            const config = new ConfigObject();
             const expectedOptions = {
                 expireOneDayEarlier: true,
                 transitionOneDayEarlier: false,
@@ -301,7 +301,7 @@ describe('Config', () => {
         it('should getTimeOptions with TRANSITION_ONE_DAY_EARLIER', () => {
             setEnv('TRANSITION_ONE_DAY_EARLIER', true);
 
-            const config = new ConfigObjectForTest();
+            const config = new ConfigObject();
             const expectedOptions = {
                 expireOneDayEarlier: false,
                 transitionOneDayEarlier: true,
@@ -316,7 +316,7 @@ describe('Config', () => {
             setEnv('EXPIRE_ONE_DAY_EARLIER', true);
             setEnv('TRANSITION_ONE_DAY_EARLIER', true);
 
-            const config = new ConfigObjectForTest();
+            const config = new ConfigObject();
             const expectedOptions = {
                 expireOneDayEarlier: true,
                 transitionOneDayEarlier: true,
@@ -331,14 +331,14 @@ describe('Config', () => {
             setEnv('EXPIRE_ONE_DAY_EARLIER', true);
             setEnv('TIME_PROGRESSION_FACTOR', 2);
 
-            assert.throws(() => new ConfigObjectForTest());
+            assert.throws(() => new ConfigObject());
         });
 
         it('should throw error if TRANSITION_ONE_DAY_EARLIER and TIME_PROGRESSION_FACTOR', () => {
             setEnv('TRANSITION_ONE_DAY_EARLIER', true);
             setEnv('TIME_PROGRESSION_FACTOR', 2);
 
-            assert.throws(() => new ConfigObjectForTest());
+            assert.throws(() => new ConfigObject());
         });
 
         it('should throw error if both EXPIRE/TRANSITION_ONE_DAY_EARLIER and TIME_PROGRESSION_FACTOR', () => {
@@ -346,7 +346,7 @@ describe('Config', () => {
             setEnv('TRANSITION_ONE_DAY_EARLIER', true);
             setEnv('TIME_PROGRESSION_FACTOR', 2);
 
-            assert.throws(() => new ConfigObjectForTest());
+            assert.throws(() => new ConfigObject());
         });
     });
 
@@ -364,7 +364,6 @@ describe('Config', () => {
         });
 
         it('should set up scuba', () => {
-            const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 
             assert.deepStrictEqual(
@@ -380,7 +379,6 @@ describe('Config', () => {
             setEnv('SCUBA_HOST', 'scubahost');
             setEnv('SCUBA_PORT', 1234);
 
-            const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 
             assert.deepStrictEqual(
@@ -407,7 +405,6 @@ describe('Config', () => {
         });
 
         it('should set up quota', () => {
-            const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 
             assert.deepStrictEqual(
@@ -423,7 +420,6 @@ describe('Config', () => {
             setEnv('QUOTA_MAX_STALENESS_MS', 1234);
             setEnv('QUOTA_ENABLE_INFLIGHTS', 'true');
 
-            const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 
             assert.deepStrictEqual(
@@ -439,7 +435,6 @@ describe('Config', () => {
             setEnv('QUOTA_MAX_STALENESS_MS', 'notanumber');
             setEnv('QUOTA_ENABLE_INFLIGHTS', 'true');
 
-            const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 
             assert.deepStrictEqual(
@@ -466,7 +461,6 @@ describe('Config', () => {
         });
 
         it('should set up utapi local cache', () => {
-            const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 
             assert.deepStrictEqual(
@@ -480,7 +474,6 @@ describe('Config', () => {
         });
 
         it('should set up utapi redis', () => {
-            const { ConfigObject } = require('../../lib/Config');
             const config = new ConfigObject();
 
             assert.deepStrictEqual(
@@ -666,6 +659,84 @@ describe('Config', () => {
                 }
             };
             assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
+        });
+    });
+
+    describe('instanceId', () => {
+        let defaultConfig;
+
+        before(() => {
+            setEnv('S3_CONFIG_FILE', 'tests/unit/testConfigs/allOptsConfig/config.json');
+            // Import config
+            const defaultConfigPath = path.join(__dirname, './testConfigs/allOptsConfig/config.json');
+            defaultConfig = require(defaultConfigPath);
+        });
+
+        afterEach(() => {
+            sinon.restore();
+        });
+
+        it('should use the instance id set in the config', () => {
+            // Stub fs.readFileSync to return a specific config.json content that includes instanceId
+            const originalReadFileSync = fs.readFileSync;
+            const readFileSyncStub = sinon.stub(fs, 'readFileSync');
+            // Mock only config.json file
+            readFileSyncStub
+                .withArgs(sinon.match(/\/config\.json$/))
+                .returns(JSON.stringify({ ...defaultConfig, instanceId: 'test' }));
+            // For all other files, use the original readFileSync
+            readFileSyncStub
+                .callsFake((filePath, ...args) => originalReadFileSync(filePath, ...args));
+            // Create a new ConfigObject instance
+            const config = new ConfigObject();
+            assert.strictEqual(config.instanceId, 'test');
+        });
+
+        it('should assert if instanceId is not a string', () => {
+            // Stub fs.readFileSync to return a specific config.json content that includes instanceId
+            const originalReadFileSync = fs.readFileSync;
+            const readFileSyncStub = sinon.stub(fs, 'readFileSync');
+            // Mock only config.json file
+            readFileSyncStub
+                .withArgs(sinon.match(/\/config\.json$/))
+                .returns(JSON.stringify({ ...defaultConfig, instanceId: 1234 }));
+            // For all other files, use the original readFileSync
+            readFileSyncStub
+                .callsFake((filePath, ...args) => originalReadFileSync(filePath, ...args));
+            // Create a new ConfigObject instance
+            assert.throws(() => new ConfigObject());
+        });
+
+        it('should use the instance id set in the env var', () => {
+            setEnv('CLOUDSERVER_INSTANCE_ID', '123456');
+            const config = new ConfigObject();
+            assert.strictEqual(config.instanceId, '123456');
+        });
+
+        it('should assert if instanceId is longer than 6 characters', () => {
+            setEnv('CLOUDSERVER_INSTANCE_ID', '1234567');
+            assert.throws(() => new ConfigObject());
+        });
+
+        it('should generate a new instanceId for external cloudserver', () => {
+            setEnv('HOSTNAME', 'connector-cloudserver-69958b4697-bs5pn');
+            const config = new ConfigObject();
+            assert.strictEqual(config.instanceId, 'ebs5pn');
+        });
+
+        it('should generate a new instanceId for internal cloudserver', () => {
+            setEnv('HOSTNAME', 'internal-cloudserver-54dc76b796-48m2x');
+            const config = new ConfigObject();
+            assert.strictEqual(config.instanceId, 'i48m2x');
+        });
+        it('should generate a random instanceId if HOSTNAME has an unexpected format', () => {
+            setEnv('HOSTNAME', 'cldsrv1');
+            const config = new ConfigObject();
+            assert.strictEqual(config.instanceId.length, 6);
+        });
+        it('should generate a random instanceId if HOSTNAME is not set', () => {
+            const config = new ConfigObject();
+            assert.strictEqual(config.instanceId.length, 6);
         });
     });
 });
