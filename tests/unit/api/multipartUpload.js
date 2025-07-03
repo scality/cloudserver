@@ -2070,6 +2070,176 @@ describe('Multipart Upload API', () => {
             });
         });
     });
+
+    it('should return a retryable error if deletePartsMetadata fails', done => {
+        const partBody = Buffer.from('I am a part\n', 'utf8');
+        let batchDeleteStub;
+
+        async.waterfall([
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
+        ],
+        (err, json) => {
+            assert.ifError(err);
+            const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
+            const md5Hash = crypto.createHash('md5').update(partBody);
+            const calculatedHash = md5Hash.digest('hex');
+            const partRequest = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                query: {
+                    partNumber: '1',
+                    uploadId: testUploadId,
+                },
+                calculatedHash,
+            }, partBody);
+
+            objectPutPart(authInfo, partRequest, undefined, log, () => {
+                // Mock batchDeleteObjectMetadata to fail with non-retryable error
+                const services = require('../../../lib/services');
+                batchDeleteStub = sinon.stub(services, 'batchDeleteObjectMetadata')
+                    .callsFake((mpuBucketName, keysToDelete, log, cb) =>
+                        // Simulate a non-retryable error that should be converted to retryable
+                         cb(errors.NoSuchKey)
+                    );
+
+                const completeBody = '<CompleteMultipartUpload>' +
+                    '<Part>' +
+                    '<PartNumber>1</PartNumber>' +
+                    `<ETag>"${calculatedHash}"</ETag>` +
+                    '</Part>' +
+                    '</CompleteMultipartUpload>';
+                const completeRequest = {
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    parsedHost: 's3.amazonaws.com',
+                    url: `/${objectKey}?uploadId=${testUploadId}`,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    query: { uploadId: testUploadId },
+                    post: completeBody,
+                    actionImplicitDenies: false,
+                };
+
+                completeMultipartUpload(authInfo, completeRequest, log, err => {
+                    // Restore original function
+                    batchDeleteStub.restore();
+
+                    // Should get an error (retryable behavior)
+                    assert(err, 'Expected an error when metadata deletion fails');
+
+                    // Verify S3 object was created successfully despite the error
+                    const objMD = metadata.keyMaps.get(bucketName).get(objectKey);
+                    assert(objMD, 'S3 object should exist even when metadata cleanup fails');
+                    assert.strictEqual(objMD.uploadId, testUploadId);
+
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should not return error if batchDeleteExtraParts fails', done => {
+        const fullSizedPart = crypto.randomBytes(5 * 1024 * 1024);
+        const partBody = Buffer.from('I am a smaller part\n', 'utf8');
+        let batchDeleteStub;
+
+        async.waterfall([
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
+        ],
+        (err, json) => {
+            assert.ifError(err);
+            const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
+
+            // Upload part 1 (will be included in completion)
+            const partRequest1 = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                query: {
+                    partNumber: '1',
+                    uploadId: testUploadId,
+                },
+            }, fullSizedPart);
+
+            objectPutPart(authInfo, partRequest1, undefined, log, (err, part1ETag) => {
+                assert.ifError(err);
+
+                // Upload part 2 (will be an "extra part" not included in completion)
+                const partRequest2 = new DummyRequest({
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    url: `/${objectKey}?partNumber=2&uploadId=${testUploadId}`,
+                    query: {
+                        partNumber: '2',
+                        uploadId: testUploadId,
+                    },
+                }, partBody);
+
+                objectPutPart(authInfo, partRequest2, undefined, log, err => {
+                    assert.ifError(err);
+
+                    // Mock data.batchDelete to fail when deleting extra parts
+                    const { data } = require('../../../lib/data/wrapper');
+                    batchDeleteStub = sinon.stub(data, 'batchDelete')
+                        .callsFake((locations, method, dataStoreName, log, cb) =>
+                            // Always fail extra part deletion
+                             cb(new Error('Simulated extra part deletion failure'))
+                        );
+
+                    // Complete MPU with only part 1 (part 2 becomes "extra part")
+                    const completeBody = '<CompleteMultipartUpload>' +
+                        '<Part>' +
+                        '<PartNumber>1</PartNumber>' +
+                        `<ETag>"${part1ETag}"</ETag>` +
+                        '</Part>' +
+                        '</CompleteMultipartUpload>';
+                    const completeRequest = {
+                        bucketName,
+                        namespace,
+                        objectKey,
+                        parsedHost: 's3.amazonaws.com',
+                        url: `/${objectKey}?uploadId=${testUploadId}`,
+                        headers: { host: `${bucketName}.s3.amazonaws.com` },
+                        query: { uploadId: testUploadId },
+                        post: completeBody,
+                        actionImplicitDenies: false,
+                    };
+
+                    completeMultipartUpload(authInfo, completeRequest, log, err => {
+                        // Restore original function
+                        batchDeleteStub.restore();
+
+                        // Should NOT get an error despite extra part deletion failing
+                        assert.ifError(err, 'Should not return error when extra part deletion fails');
+
+                        // Verify S3 object was created successfully
+                        const objMD = metadata.keyMaps.get(bucketName).get(objectKey);
+                        assert(objMD, 'S3 object should exist');
+                        assert.strictEqual(objMD.uploadId, testUploadId);
+
+                        // Verify MPU metadata was cleaned up
+                        assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 0,
+                            'MPU metadata should be cleaned up');
+
+                        done();
+                    });
+                });
+            });
+        });
+    });
 });
 
 describe('complete mpu with versioning', () => {
