@@ -1,6 +1,6 @@
 {
   "name": "@zenko/cloudserver",
-  "version": "9.0.18",
+  "version": "9.0.19",
   "description": "Zenko CloudServer, an open-source Node.js implementation of a server handling the Amazon S3 protocol",
   "main": "index.js",
   "engines": {
@@ -21,7 +21,7 @@
   "dependencies": {
     "@azure/storage-blob": "^12.25.0",
     "@hapi/joi": "^17.1.1",
-    "arsenal": "git+https://github.com/scality/Arsenal#8.2.24",
+    "arsenal": "git+https://github.com/scality/Arsenal#8.2.25",
     "async": "2.6.4",
     "aws-sdk": "^2.1692.0",
     "bucketclient": "scality/bucketclient#8.2.4",
