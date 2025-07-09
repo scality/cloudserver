@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
-const AWS = require('aws-sdk');
+const { S3Client, ListPartsCommand, AbortMultipartUploadCommand } = require('@aws-sdk/client-s3');
 const { storage, errors } = require('arsenal');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo }
@@ -16,7 +16,7 @@ const constants = require('../../constants');
 const { metadata } = storage.metadata.inMemory.metadata;
 const { ds } = storage.data.inMemory.datastore;
 
-const s3 = new AWS.S3();
+const s3Client = new S3Client();
 
 const splitter = constants.splitter;
 const log = new DummyRequestLogger();
@@ -208,17 +208,19 @@ function testSuite() {
 
     itSkipCeph('should copy part to AWS based on mpu location', done => {
         copyPutPart(memLocation, awsLocation, null, 'localhost',
-        (keys, uploadId) => {
+        async (keys, uploadId) => {
             assert.strictEqual(ds.length, 2);
             const awsReq = getAwsParams(keys.destObjName, uploadId);
-            s3.listParts(awsReq, (err, partList) => {
+            try {
+                const partList = await s3Client.send(new ListPartsCommand(awsReq));
                 assertPartList(partList, uploadId);
-                s3.abortMultipartUpload(awsReq, err => {
-                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-                    `You must abort MPU with upload ID ${uploadId} manually.`);
-                    done();
-                });
-            });
+                await s3Client.send(new AbortMultipartUploadCommand(awsReq));
+                done();
+            } catch (err) {
+                assert.equal(err, null, `Error aborting MPU: ${err}. ` +
+                `You must abort MPU with upload ID ${uploadId} manually.`);
+                done();
+            }
         });
     });
 
@@ -250,52 +252,58 @@ function testSuite() {
     });
 
     itSkipCeph('should copy part to AWS based on bucket location', done => {
-        copyPutPart(awsLocation, null, null, 'localhost', (keys, uploadId) => {
+        copyPutPart(awsLocation, null, null, 'localhost', async (keys, uploadId) => {
             assert.deepStrictEqual(ds, []);
             const awsReq = getAwsParams(keys.destObjName, uploadId);
-            s3.listParts(awsReq, (err, partList) => {
+            try {
+                const partList = await s3Client.send(new ListPartsCommand(awsReq));
                 assertPartList(partList, uploadId);
-                s3.abortMultipartUpload(awsReq, err => {
-                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-                    `You must abort MPU with upload ID ${uploadId} manually.`);
-                    done();
-                });
-            });
+                await s3Client.send(new AbortMultipartUploadCommand(awsReq));
+                done();
+            } catch (err) {
+                assert.equal(err, null, `Error aborting MPU: ${err}. ` +
+                `You must abort MPU with upload ID ${uploadId} manually.`);
+                done();
+            }
         });
     });
 
     itSkipCeph('should copy part an object on AWS location that has ' +
     'bucketMatch equals false to a mpu with a different AWS location', done => {
         copyPutPart(null, awsLocation, awsLocationMismatch, 'localhost',
-        (keys, uploadId) => {
+        async (keys, uploadId) => {
             assert.deepStrictEqual(ds, []);
             const awsReq = getAwsParams(keys.destObjName, uploadId);
-            s3.listParts(awsReq, (err, partList) => {
+            try {
+                const partList = await s3Client.send(new ListPartsCommand(awsReq));
                 assertPartList(partList, uploadId);
-                s3.abortMultipartUpload(awsReq, err => {
-                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-                    `You must abort MPU with upload ID ${uploadId} manually.`);
-                    done();
-                });
-            });
+                await s3Client.send(new AbortMultipartUploadCommand(awsReq));
+                done();
+            } catch (err) {
+                assert.equal(err, null, `Error aborting MPU: ${err}. ` +
+                `You must abort MPU with upload ID ${uploadId} manually.`);
+                done();
+            }
         });
     });
 
     itSkipCeph('should copy part an object on AWS to a mpu with a different ' +
     'AWS location that has bucketMatch equals false', done => {
         copyPutPart(null, awsLocationMismatch, awsLocation, 'localhost',
-        (keys, uploadId) => {
+        async (keys, uploadId) => {
             assert.deepStrictEqual(ds, []);
             const awsReq = getAwsParamsBucketMismatch(keys.destObjName,
                 uploadId);
-            s3.listParts(awsReq, (err, partList) => {
+            try {
+                const partList = await s3Client.send(new ListPartsCommand(awsReq));
                 assertPartList(partList, uploadId);
-                s3.abortMultipartUpload(awsReq, err => {
-                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-                    `You must abort MPU with upload ID ${uploadId} manually.`);
-                    done();
-                });
-            });
+                await s3Client.send(new AbortMultipartUploadCommand(awsReq));
+                done();
+            } catch (err) {
+                assert.equal(err, null, `Error aborting MPU: ${err}. ` +
+                `You must abort MPU with upload ID ${uploadId} manually.`);
+                done();
+            }
         });
     });
 
