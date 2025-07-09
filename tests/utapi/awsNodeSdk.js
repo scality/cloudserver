@@ -1,6 +1,10 @@
 const async = require('async');
 const assert = require('assert');
-const { S3Client, CreateBucketCommand, DeleteBucketCommand, PutObjectCommand, DeleteObjectCommand, DeleteObjectsCommand, CopyObjectCommand, PutBucketVersioningCommand, ListObjectVersionsCommand, GetObjectCommand, CreateMultipartUploadCommand, UploadPartCommand, CompleteMultipartUploadCommand } = require('@aws-sdk/client-s3');
+const { S3Client, CreateBucketCommand, DeleteBucketCommand,
+    PutObjectCommand, DeleteObjectCommand, DeleteObjectsCommand, 
+    CopyObjectCommand, PutBucketVersioningCommand, ListObjectVersionsCommand,
+     GetObjectCommand, CreateMultipartUploadCommand, UploadPartCommand, 
+     CompleteMultipartUploadCommand } = require('@aws-sdk/client-s3');
 
 const MockUtapi = require('../utilities/mock/Utapi');
 const getConfig = require('../functional/aws-node-sdk/test/support/config');
@@ -132,7 +136,7 @@ async function removeAllVersions(params, callback) {
     }
 }
 async function objectMPU(bucket, key, parts, partSize, callback) {
-    let ETags = [];
+    const ETags = [];
     let uploadId = null;
     const partNumbers = Array.from(Array(parts).keys());
     const initiateMPUParams = {

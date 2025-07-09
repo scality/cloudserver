@@ -17,8 +17,9 @@ const encodedSearch =
 async function main() {
     // v3 does not support request events, so we use middleware to add custom query params
     s3Client.middlewareStack.add(
-        (next, context) => async (args) => {
+        next => async args => {
             if (args.request && args.request.path) {
+                // eslint-disable-next-line no-param-reassign
                 args.request.path += `?search=${encodedSearch}`;
             }
             return next(args);

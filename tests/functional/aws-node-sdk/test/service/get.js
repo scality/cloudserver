@@ -1,6 +1,5 @@
 const assert = require('assert');
 const tv4 = require('tv4');
-const async = require('async');
 const { S3Client, ListBucketsCommand, CreateBucketCommand, DeleteBucketCommand } = require('@aws-sdk/client-s3');
 
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -16,17 +15,16 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
     this.timeout(600000);
 
     describe('When user is unauthorized', () => {
-        let s3;
         let config;
 
         beforeEach(() => {
             config = getConfig('default');
-            s3 = new S3Client(config);
         });
 
         it('should return 403 and AccessDenied', async () => {
             // v3 does not support unauthenticated requests directly, so simulate with invalid credentials
-            const badS3 = new S3Client({ ...config, credentials: { accessKeyId: 'invalid', secretAccessKey: 'invalid' } });
+            const badS3 = new S3Client({ ...config, credentials: 
+                { accessKeyId: 'invalid', secretAccessKey: 'invalid' } });
             try {
                 await badS3.send(new ListBucketsCommand({}));
                 assert.fail('Expected error');
@@ -35,7 +33,8 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                 assert.strictEqual(error.$metadata?.httpStatusCode, 403);
                 // v3 error code may be in error.Code or error.name
                 assert(
-                    error.Code === 'AccessDenied' || error.name === 'AccessDenied' || error.message.includes('AccessDenied'),
+                    error.Code === 'AccessDenied' || error.name === 'AccessDenied' 
+                    || error.message.includes('AccessDenied'),
                     'Expected AccessDenied error'
                 );
             }

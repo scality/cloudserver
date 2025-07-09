@@ -1,5 +1,5 @@
-const { S3Client, HeadBucketCommand, CreateBucketCommand, DeleteBucketCommand, ListObjectVersionsCommand, DeleteObjectCommand, ListBucketsCommand } = require('@aws-sdk/client-s3');
-const { fromIni } = require('@aws-sdk/credential-provider-ini');
+const { S3Client, HeadBucketCommand, CreateBucketCommand, DeleteBucketCommand,
+    ListObjectVersionsCommand, DeleteObjectCommand, ListBucketsCommand } = require('@aws-sdk/client-s3');
 
 const projectFixture = require('../fixtures/project');
 const getConfig = require('../../test/support/config');
