@@ -1,5 +1,4 @@
 const https = require('https');
-const AWS = require('aws-sdk');
 
 const { getCredentials } = require('./credentials');
 const { getAwsCredentials } = require('./awsConfig');
@@ -31,7 +30,7 @@ const DEFAULT_AWS_OPTIONS = {};
 
 function _getMemCredentials(profile) {
     const { accessKeyId, secretAccessKey } = getCredentials(profile);
-    return new AWS.Credentials(accessKeyId, secretAccessKey);
+    return { accessKeyId, secretAccessKey };
 }
 
 function _getMemConfig(profile, config) {

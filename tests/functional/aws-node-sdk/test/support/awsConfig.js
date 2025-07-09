@@ -1,4 +1,4 @@
-const AWS = require('aws-sdk');
+const { fromIni } = require('@aws-sdk/credential-provider-ini');
 const fs = require('fs');
 const path = require('path');
 const { config } = require('../../../../../lib/Config');
@@ -14,7 +14,7 @@ function getAwsCredentials(profile, credFile) {
         throw new Error(msg);
     }
 
-    return new AWS.SharedIniFileCredentials({ profile, filename });
+    return fromIni({ profile, filepath: filename });
 }
 
 function getRealAwsConfig(location) {

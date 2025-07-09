@@ -1,4 +1,4 @@
-const { S3 } = require('aws-sdk');
+const { S3Client, ListObjectsCommand } = require('@aws-sdk/client-s3');
 const config = {
     sslEnabled: false,
     endpoint: 'http://127.0.0.1:8000',
@@ -9,20 +9,31 @@ const config = {
     accessKeyId: 'accessKey1',
     secretAccessKey: 'verySecretKey1',
 };
-const s3Client = new S3(config);
+const s3Client = new S3Client(config);
 
 const encodedSearch =
     encodeURIComponent('x-amz-meta-color="blue"');
-const req = s3Client.listObjects({ Bucket: 'bucketname' });
 
-// the build event
-req.on('build', () => {
-    req.httpRequest.path = `${req.httpRequest.path}?search=${encodedSearch}`;
-});
-req.on('success', res => {
-    process.stdout.write(`Result ${res.data}`);
-});
-req.on('error', err => {
-    process.stdout.write(`Error ${err}`);
-});
-req.send();
+async function main() {
+    // v3 does not support request events, so we use middleware to add custom query params
+    s3Client.middlewareStack.add(
+        (next, context) => async (args) => {
+            if (args.request && args.request.path) {
+                args.request.path += `?search=${encodedSearch}`;
+            }
+            return next(args);
+        },
+        {
+            step: 'build',
+        }
+    );
+
+    try {
+        const data = await s3Client.send(new ListObjectsCommand({ Bucket: 'bucketname' }));
+        process.stdout.write(`Result ${JSON.stringify(data)}`);
+    } catch (err) {
+        process.stdout.write(`Error ${err}`);
+    }
+}
+
+main();

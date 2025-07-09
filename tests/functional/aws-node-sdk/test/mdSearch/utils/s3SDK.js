@@ -1,4 +1,4 @@
-const S3 = require('aws-sdk').S3;
+const { S3Client } = require('@aws-sdk/client-s3');
 
 const config = {
     sslEnabled: false,
@@ -12,6 +12,6 @@ const config = {
     secretAccessKey: 'verySecretKey1',
 };
 
-const client = new S3(config);
+const client = new S3Client(config);
 
 module.exports = client;

@@ -1,6 +1,6 @@
 const async = require('async');
 const assert = require('assert');
-const { S3 } = require('aws-sdk');
+const { S3Client, CreateBucketCommand, DeleteBucketCommand, PutObjectCommand, DeleteObjectCommand, DeleteObjectsCommand, CopyObjectCommand, PutBucketVersioningCommand, ListObjectVersionsCommand, GetObjectCommand, CreateMultipartUploadCommand, UploadPartCommand, CompleteMultipartUploadCommand } = require('@aws-sdk/client-s3');
 
 const MockUtapi = require('../utilities/mock/Utapi');
 const getConfig = require('../functional/aws-node-sdk/test/support/config');
@@ -10,48 +10,48 @@ let s3Client = null;
 function wait(timeoutMs, cb) {
     setTimeout(cb, timeoutMs);
 }
-function createBucket(bucket, cb) {
-    return s3Client.createBucket({
-        Bucket: bucket,
-    }, (err, data) => {
-        assert.ifError(err);
-        return cb(err, data);
-    });
-}
-function deleteBucket(bucket, cb) {
-    return s3Client.deleteBucket({
-        Bucket: bucket,
-    }, err => {
+async function createBucket(bucket, cb) {
+    try {
+        const data = await s3Client.send(new CreateBucketCommand({ Bucket: bucket }));
+        return cb(null, data);
+    } catch (err) {
         assert.ifError(err);
         return cb(err);
-    });
+    }
 }
-function putObject(bucket, key, size, cb) {
-    return s3Client.putObject({
-        Bucket: bucket,
-        Key: key,
-        Body: Buffer.alloc(size),
-    }, (err, data) => {
-        assert.ifError(err);
-        return cb(err, data);
-    });
-}
-function deleteObject(bucket, key, cb) {
-    return s3Client.deleteObject({
-        Bucket: bucket,
-        Key: key,
-    }, err => {
+async function deleteBucket(bucket, cb) {
+    try {
+        await s3Client.send(new DeleteBucketCommand({ Bucket: bucket }));
+        return cb(null);
+    } catch (err) {
         assert.ifError(err);
         return cb(err);
-    });
+    }
 }
-function deleteObjects(bucket, keys, cb) {
-    const objects = keys.map(key => {
-        const keyObj = {
+async function putObject(bucket, key, size, cb) {
+    try {
+        const data = await s3Client.send(new PutObjectCommand({
+            Bucket: bucket,
             Key: key,
-        };
-        return keyObj;
-    });
+            Body: Buffer.alloc(size),
+        }));
+        return cb(null, data);
+    } catch (err) {
+        assert.ifError(err);
+        return cb(err);
+    }
+}
+async function deleteObject(bucket, key, cb) {
+    try {
+        await s3Client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+        return cb(null);
+    } catch (err) {
+        assert.ifError(err);
+        return cb(err);
+    }
+}
+async function deleteObjects(bucket, keys, cb) {
+    const objects = keys.map(key => ({ Key: key }));
     const params = {
         Bucket: bucket,
         Delete: {
@@ -59,34 +59,43 @@ function deleteObjects(bucket, keys, cb) {
             Quiet: true,
         },
     };
-    return s3Client.deleteObjects(params, err => {
+    try {
+        await s3Client.send(new DeleteObjectsCommand(params));
+        return cb(null);
+    } catch (err) {
         assert.ifError(err);
         return cb(err);
-    });
+    }
 }
-function copyObject(bucket, key, cb) {
-    return s3Client.copyObject({
-        Bucket: bucket,
-        CopySource: `/${bucket}/${key}`,
-        Key: `${key}-copy`,
-    }, err => {
+async function copyObject(bucket, key, cb) {
+    try {
+        await s3Client.send(new CopyObjectCommand({
+            Bucket: bucket,
+            CopySource: `/${bucket}/${key}`,
+            Key: `${key}-copy`,
+        }));
+        return cb(null);
+    } catch (err) {
         assert.ifError(err);
         return cb(err);
-    });
+    }
 }
-function enableVersioning(bucket, enable, cb) {
+async function enableVersioning(bucket, enable, cb) {
     const versioningStatus = {
         Status: enable ? 'Enabled' : 'Disabled',
     };
-    return s3Client.putBucketVersioning({
-        Bucket: bucket,
-        VersioningConfiguration: versioningStatus,
-    }, err => {
+    try {
+        await s3Client.send(new PutBucketVersioningCommand({
+            Bucket: bucket,
+            VersioningConfiguration: versioningStatus,
+        }));
+        return cb(null);
+    } catch (err) {
         assert.ifError(err);
         return cb(err);
-    });
+    }
 }
-function deleteVersionList(versionList, bucket, callback) {
+async function deleteVersionList(versionList, bucket, callback) {
     if (versionList === undefined || versionList.length === 0) {
         return callback();
     }
@@ -96,31 +105,33 @@ function deleteVersionList(versionList, bucket, callback) {
             Key: version.Key, VersionId: version.VersionId,
         });
     });
-
-    return s3Client.deleteObjects(params, callback);
+    try {
+        await s3Client.send(new DeleteObjectsCommand(params));
+        return callback();
+    } catch (err) {
+        return callback(err);
+    }
 }
-function removeAllVersions(params, callback) {
+async function removeAllVersions(params, callback) {
     const bucket = params.Bucket;
-    async.waterfall([
-        cb => s3Client.listObjectVersions(params, cb),
-        (data, cb) => deleteVersionList(data.DeleteMarkers, bucket,
-            err => cb(err, data)),
-        (data, cb) => deleteVersionList(data.Versions, bucket,
-            err => cb(err, data)),
-        (data, cb) => {
-            if (data.IsTruncated) {
-                const params = {
-                    Bucket: bucket,
-                    KeyMarker: data.NextKeyMarker,
-                    VersionIdMarker: data.NextVersionIdMarker,
-                };
-                return removeAllVersions(params, cb);
-            }
-            return cb();
-        },
-    ], callback);
+    try {
+        const data = await s3Client.send(new ListObjectVersionsCommand(params));
+        await deleteVersionList(data.DeleteMarkers, bucket, () => {});
+        await deleteVersionList(data.Versions, bucket, () => {});
+        if (data.IsTruncated) {
+            const nextParams = {
+                Bucket: bucket,
+                KeyMarker: data.NextKeyMarker,
+                VersionIdMarker: data.NextVersionIdMarker,
+            };
+            return removeAllVersions(nextParams, callback);
+        }
+        return callback();
+    } catch (err) {
+        return callback(err);
+    }
 }
-function objectMPU(bucket, key, parts, partSize, callback) {
+async function objectMPU(bucket, key, parts, partSize, callback) {
     let ETags = [];
     let uploadId = null;
     const partNumbers = Array.from(Array(parts).keys());
@@ -128,67 +139,51 @@ function objectMPU(bucket, key, parts, partSize, callback) {
         Bucket: bucket,
         Key: key,
     };
-    return async.waterfall([
-        next => s3Client.createMultipartUpload(initiateMPUParams,
-            (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                uploadId = data.UploadId;
-                return next();
-            }),
-        next =>
-            async.mapLimit(partNumbers, 1, (partNumber, callback) => {
-                const uploadPartParams = {
-                    Bucket: bucket,
-                    Key: key,
-                    PartNumber: partNumber + 1,
-                    UploadId: uploadId,
-                    Body: Buffer.alloc(partSize),
-                };
-
-                return s3Client.uploadPart(uploadPartParams,
-                    (err, data) => {
-                        if (err) {
-                            return callback(err);
-                        }
-                        return callback(null, data.ETag);
-                    });
-            }, (err, results) => {
-                if (err) {
-                    return next(err);
-                }
-                ETags = results;
-                return next();
-            }),
-        next => {
-            const params = {
+    try {
+        const data = await s3Client.send(new CreateMultipartUploadCommand(initiateMPUParams));
+        uploadId = data.UploadId;
+        for (let partNumber = 0; partNumber < parts; partNumber++) {
+            const uploadPartParams = {
                 Bucket: bucket,
                 Key: key,
-                MultipartUpload: {
-                    Parts: partNumbers.map(n => ({
-                        ETag: ETags[n],
-                        PartNumber: n + 1,
-                    })),
-                },
+                PartNumber: partNumber + 1,
                 UploadId: uploadId,
+                Body: Buffer.alloc(partSize),
             };
-            return s3Client.completeMultipartUpload(params, next);
-        },
-    ], callback);
+            const partData = await s3Client.send(new UploadPartCommand(uploadPartParams));
+            ETags[partNumber] = partData.ETag;
+        }
+        const completeParams = {
+            Bucket: bucket,
+            Key: key,
+            MultipartUpload: {
+                Parts: partNumbers.map(n => ({
+                    ETag: ETags[n],
+                    PartNumber: n + 1,
+                })),
+            },
+            UploadId: uploadId,
+        };
+        await s3Client.send(new CompleteMultipartUploadCommand(completeParams));
+        return callback();
+    } catch (err) {
+        return callback(err);
+    }
 }
-function removeVersions(buckets, cb) {
-    return async.each(buckets,
-        (bucket, done) => removeAllVersions({ Bucket: bucket }, done), cb);
+async function removeVersions(buckets, cb) {
+    for (const bucket of buckets) {
+        await removeAllVersions({ Bucket: bucket }, () => {});
+    }
+    cb();
 }
-function getObject(bucket, key, cb) {
-    return s3Client.getObject({
-        Bucket: bucket,
-        Key: key,
-    }, (err, data) => {
+async function getObject(bucket, key, cb) {
+    try {
+        const data = await s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+        return cb(null, data);
+    } catch (err) {
         assert.ifError(err);
-        return cb(err, data);
-    });
+        return cb(err);
+    }
 }
 
 describe('utapi v2 metrics incoming and outgoing bytes', function t() {
@@ -205,7 +200,7 @@ describe('utapi v2 metrics incoming and outgoing bytes', function t() {
 
     before(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3Client = new S3(config);
+        s3Client = new S3Client(config);
         utapi.start();
     });
     afterEach(() => {
