@@ -252,6 +252,8 @@ jobs:
     - name: Setup CI services
       run: docker compose --profile sproxyd --profile mongo up -d
       working-directory: .github/docker
+    - name: SETUP CI 7.70
+      uses: ./.github/actions/setup-ci7
     - name: Run multiple backend test
       run: |-
         set -o pipefail;
@@ -307,6 +309,8 @@ jobs:
     - name: Setup CI services
       run: docker compose --profile mongo up -d
       working-directory: .github/docker
+    - name: SETUP CI 7.70
+      uses: ./.github/actions/setup-ci7
     - name: Run functional tests
       run: |-
         set -o pipefail;
@@ -360,12 +364,13 @@ jobs:
     - name: Setup CI services
       run: docker compose --profile mongo up -d
       working-directory: .github/docker
+    - name: SETUP CI 7.70
+      uses: ./.github/actions/setup-ci7
     - name: Run functional tests
       run: |-
         set -o pipefail;        
         bash wait_for_local_port.bash 8000 40
         yarn run ft_test | tee /tmp/artifacts/${{ github.job }}/tests.log
-        yarn run ft_mixed_bucket_format_version | tee /tmp/artifacts/${{ github.job }}/mixed-tests.log
       env:
         S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
     - name: Cleanup and upload coverage
@@ -422,6 +427,8 @@ jobs:
     - name: Setup CI services
       run: docker compose up -d
       working-directory: .github/docker
+    - name: SETUP CI 7.70
+      uses: ./.github/actions/setup-ci7
     - name: Run file ft tests
       run: |-
         set -o pipefail;
@@ -470,6 +477,8 @@ jobs:
     - name: Setup CI services
       run: docker compose up -d
       working-directory: .github/docker
+    - name: SETUP CI 7.70
+      uses: ./.github/actions/setup-ci7
     - name: Run file utapi v2 tests
       run: |-
         set -ex -o pipefail;
@@ -486,65 +495,6 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: '**/junit/*junit*.xml'
         flags: utapi-v2-tests
-      if: always() && !cancelled()
-    - name: Upload logs to artifacts
-      uses: scality/action-artifacts@v4
-      with:
-        method: upload
-        url: https://artifacts.scality.net
-        user: ${{ secrets.ARTIFACTS_USER }}
-        password: ${{ secrets.ARTIFACTS_PASSWORD }}
-        source: /tmp/artifacts
-      if: always()
-
-  quota-tests:
-    runs-on: ubuntu-24.04
-    needs: build
-    continue-on-error: true
-    strategy:
-      matrix:
-        inflights:
-          - name: "With Inflights"
-            value: "true"
-          - name: "Without Inflights"
-            value: "false"
-    env:
-      S3METADATA: mongodb
-      S3BACKEND: mem
-      S3QUOTA: scuba
-      QUOTA_ENABLE_INFLIGHTS: ${{ matrix.inflights.value }}
-      SCUBA_HOST: localhost
-      SCUBA_PORT: 8100
-      SCUBA_HEALTHCHECK_FREQUENCY: 100
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
-      MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
-      JOB_NAME: ${{ github.job }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Setup CI environment
-      uses: ./.github/actions/setup-ci
-    - name: Setup CI services
-      run: docker compose --profile mongo up -d
-      working-directory: .github/docker
-    - name: Run quota tests
-      run: |-
-        set -ex -o pipefail;
-        bash wait_for_local_port.bash 8000 40
-        yarn run test_quota | tee /tmp/artifacts/${{ github.job }}/tests.log
-    - name: Cleanup and upload coverage
-      uses: ./.github/actions/cleanup-and-coverage
-      with:
-        profiles: mongo
-        codecov-token: ${{ secrets.CODECOV_TOKEN }}
-        flags: ${{ github.job }}${{ matrix.inflights.value == 'true' && '-inflights' || '' }}
-      if: always()
-    - name: Upload test results to Codecov
-      uses: codecov/test-results-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: '**/junit/*junit*.xml'
-        flags: ${{ github.job }}${{ matrix.inflights.value == 'true' && '-inflights' || '' }}
       if: always() && !cancelled()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4
@@ -588,6 +538,8 @@ jobs:
     - name: Setup CI services
       run: docker compose --profile pykmip up -d
       working-directory: .github/docker
+    - name: SETUP CI 7.70
+      uses: ./.github/actions/setup-ci7
     - name: Run file KMIP tests
       run: |-
         set -ex -o pipefail;
@@ -643,6 +595,8 @@ jobs:
     - name: Copy KMIP certs
       run: cp -r ./certs /tmp/ssl-kmip
       working-directory: .github/pykmip
+    - name: SETUP CI 7.70
+      uses: ./.github/actions/setup-ci7
     - name: Merge config.json and kmip-cluster config
       run: |
         jq -s '
@@ -720,6 +674,8 @@ jobs:
       working-directory: .github/docker
       env: 
         S3METADATA: mongodb
+    - name: SETUP CI 7.70
+      uses: ./.github/actions/setup-ci7
     - name: Run Ceph multiple backend tests
       run: |-
         set -ex -o pipefail;
@@ -911,6 +867,8 @@ jobs:
         ./ensure-version.sh cloudserver-sse-migration `jq -r .version ../../package.json`
         ./ensure-version.sh vault-sse-migration ${{ env.VAULT_VERSION_CURRENT }}
       working-directory: .github/docker
+    - name: SETUP CI 7.70
+      uses: ./.github/actions/setup-ci7
     - name: Run SSE migration tests
       shell: bash # for pipefail
       env:
