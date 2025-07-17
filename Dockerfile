@@ -4,9 +4,13 @@ FROM node:${NODE_VERSION} AS builder
 
 WORKDIR /usr/src/app
 
-RUN sed -i 's|deb.debian.org/debian|archive.debian.org/debian|g' /etc/apt/sources.list \
-    && sed -i 's|security.debian.org/debian-security|archive.debian.org/debian-security|g' /etc/apt/sources.list \
-    && apt-get update \
+# Keep the .git directory in order to properly report version
+COPY ./package.json yarn.lock ./
+
+ENV PYTHON=python3.9
+ENV PY_VERSION=3.9.7
+
+RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential \
         ca-certificates \
