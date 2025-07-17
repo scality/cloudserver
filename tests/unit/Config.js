@@ -13,6 +13,7 @@ const {
 const {
     LOCATION_NAME_DMF,
 } = require('../constants');
+const constants = require('../../constants');
 
 const { ValidLifecycleRules: supportedLifecycleRules } = require('arsenal').models;
 
@@ -887,6 +888,49 @@ describe('Config', () => {
         it('should generate a random instanceId if HOSTNAME is not set', () => {
             const config = new ConfigObject();
             assert.strictEqual(config.instanceId.length, 6);
+        });
+    });
+
+    describe('apisLengthLimits configuration', () => {
+        let sandbox;
+        let readFileStub;
+
+        beforeEach(() => {
+            sandbox = sinon.createSandbox();
+            readFileStub = sandbox.stub(fs, 'readFileSync');
+            readFileStub.callThrough();
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+        });
+
+        it('should use default API and overwrite when config is provided', () => {
+            const multiObjectDeleteSize = 42;
+            const modifiedConfig = {
+                ...defaultConfig,
+                apiBodySizeLimits: { 'multiObjectDelete': multiObjectDeleteSize },
+            };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(modifiedConfig));
+            const config = new ConfigObject();
+
+            assert.deepStrictEqual(config.apiBodySizeLimits, {
+                'multiObjectDelete': multiObjectDeleteSize, // Configured: overwrites default
+                'bucketPutPolicy': constants.defaultApiBodySizeLimits['bucketPutPolicy'], // Not configured: default
+            });
+        });
+
+        it('should fail if a user tries to modify a non-existent API', () => {
+            const modifiedConfig = {
+                ...defaultConfig,
+                apiBodySizeLimits: { 'anApiNotSetInConstants.js': 42 },
+            };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(modifiedConfig));
+
+            assert.throws(
+                () => new ConfigObject(),
+                /bad config: apiBodySizeLimits for "anApiNotSetInConstants.js" cannot be configured/
+            );
         });
     });
 });

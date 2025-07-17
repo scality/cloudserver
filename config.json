@@ -142,5 +142,9 @@
     },
     "kmip": {
         "providerName": "thales"
+    },
+    "apiBodySizeLimits": {
+        "multiObjectDelete": 2097152,
+        "bucketPutPolicy": 20480
     }
 }

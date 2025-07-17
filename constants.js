@@ -96,11 +96,15 @@ const constants = {
     oneMegaBytes: 1024 * 1024,
     halfMegaBytes: 512 * 1024,
 
-    // Some apis may need a custom body length limit :
-    apisLengthLimits: {
+    // Some apis may need a custom body length limit
+    // Caution : Users will be able to override these values in config.json
+    defaultApiBodySizeLimits: {
         // Multi Objects Delete request can be large : up to 1000 keys of 1024 bytes is
         // already 1mb, with the other fields it could reach 2mb
         'multiObjectDelete': 2 * 1024 * 1024,
+        // AWS sets the maximum size for bucket policies to 20 KB
+        // https://docs.aws.amazon.com/AmazonS3/latest/userguide/add-bucket-policy.html
+        'bucketPutPolicy': 20 * 1024,
     },
 
     // hex digest of sha256 hash of empty string:
@@ -265,6 +269,5 @@ const constants = {
     // MethodNotAllowed error
     onlyOwnerAllowed: ['bucketDeletePolicy', 'bucketGetPolicy', 'bucketPutPolicy'],
 };
-
 
 module.exports = constants;
