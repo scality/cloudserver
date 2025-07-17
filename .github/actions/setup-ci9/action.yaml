@@ -1,0 +1,66 @@
+---
+name: "Setup CI environment 9"
+description: "Setup Cloudserver CI environment"
+
+runs:
+  using: composite
+  steps:
+    - name: change branch to 9.0
+      shell: bash
+      run: |
+        git fetch
+        git checkout development/9.0
+        git pull
+    - name: rm node node_modules
+      shell: bash
+      run: |
+        rm -rf node_modules
+        rm -rf .yarn/cache
+
+    - name: Setup etc/hosts
+      shell: bash
+      run: |
+        sudo echo "127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com" | sudo tee -a /etc/hosts
+        sudo echo "127.0.0.1 pykmip.local" | sudo tee -a /etc/hosts
+        for i in `seq 1 50`; do sudo echo "127.0.0.$i $i.pykmip.local" | sudo tee -a /etc/hosts ; done
+    - name: Setup Credentials
+      shell: bash
+      run: bash .github/scripts/credentials.bash
+    - name: Setup job artifacts directory
+      shell: bash
+      run: |-
+        set -exu;
+        mkdir -p /tmp/artifacts/${JOB_NAME}/;
+    - name: Setup coverage directory
+      shell: bash
+      run: |-
+        set -exu;
+        mkdir -p /tmp/coverage/${JOB_NAME}/;
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'yarn'
+    - name: install typescript
+      shell: bash
+      run: yarn global add typescript@4.9.5
+    - name: install dependencies
+      shell: bash
+      run: yarn install --ignore-engines --frozen-lockfile --network-concurrency 1
+    - uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    - name: Setup python2 test environment
+      shell: bash
+      run: |
+        sudo apt-get install -y libdigest-hmac-perl
+        pip install 's3cmd==2.3.0'
+    - name: fix sproxyd.conf permissions
+      shell: bash
+      run: sudo chown root:root .github/docker/sproxyd/conf/sproxyd0.conf
+    - name: ensure fuse kernel module is loaded (for sproxyd)
+      shell: bash
+      run: sudo modprobe fuse
