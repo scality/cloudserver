@@ -10,6 +10,7 @@ const object = 'mpu-test-object';
 const emptyObject = 'empty-object';
 const nonMpuObject = 'simple-object';
 
+/** 5MiB */
 const bodySize = 1024 * 1024 * 5;
 const bodyContent = 'a';
 const howManyParts = 3;
@@ -18,6 +19,13 @@ const invalidPartNumbers = [-1, 0, maximumAllowedPartCount + 1];
 
 let ETags = [];
 
+// Because HEAD has no body, the SDK (v2) returns a generic code such as:
+// 400 BadRequest
+// 403 Forbidden
+// 404 NotFound
+// ...
+// It will fall back to HTTP statusCode
+// Example: 416 InvalidRange will be 416 416
 function checkError(err, statusCode, code) {
     assert.strictEqual(err.statusCode, statusCode);
     assert.strictEqual(err.code, code);
@@ -174,7 +182,7 @@ describe('Part size tests with object head', () => {
 
         it('should return an error when requesting part 2 of empty object', done => {
             headObject({ Key: emptyObject, PartNumber: 2 }, (err, data) => {
-                checkError(err, 416, 'InvalidRange');
+                checkError(err, 416, 416);
                 assert.strictEqual(data, null);
                 done();
             });
@@ -183,15 +191,15 @@ describe('Part size tests with object head', () => {
         it('should return content-length requesting part 1 of non-MPU object', done => {
             headObject({ Key: nonMpuObject, PartNumber: 1 }, (err, data) => {
                 checkNoError(err);
-                assert.strictEqual(data.ContentLength, 0);
+                assert.strictEqual(data.ContentLength, bodySize);
                 done();
             });
         });
 
         it('should return an error when requesting part 2 of non-MPU object', done => {
-            headObject({ Key: nonMpuObject, PartNumber: 1 }, (err, data) => {
-                checkError(err, 416, 'InvalidRange');
-                assert.strictEqual(data.ContentLength, bodySize);
+            headObject({ Key: nonMpuObject, PartNumber: 2 }, (err, data) => {
+                checkError(err, 416, 416);
+                assert.strictEqual(data, null);
                 done();
             });
         });
