@@ -7,7 +7,7 @@ const { fakeMetadataTransition, fakeMetadataArchive } = require('../utils/init')
 const { taggingTests } = require('../../lib/utility/tagging');
 const genMaxSizeMetaHeaders
     = require('../../lib/utility/genMaxSizeMetaHeaders');
-const constants = require('../../../../constants');
+const constants = require('../../../../../constants');
 
 const sourceBucketName = 'supersourcebucket8102016';
 const sourceObjName = 'supersourceobject';
