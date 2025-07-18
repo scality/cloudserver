@@ -6,8 +6,7 @@ Docker images are hosted on [ghcri.io](https://github.com/orgs/scality/packages)
 CloudServer has a few images there:
 
 * Cloudserver container image: ghcr.io/scality/cloudserver
-* Dashboard oras image: ghcr.io/scality/cloudserver/cloudser-dashboard
-* Policies oras image: ghcr.io/scality/cloudserver/cloudser-dashboard
+* Dashboard oras image: ghcr.io/scality/cloudserver/cloudserver-dashboards
 
 With every CI build, the CI will push images, tagging the
 content with the developer branch's short SHA-1 commit hash.
