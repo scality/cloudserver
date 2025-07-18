@@ -35,6 +35,8 @@ class ContinueRequestHandler {
 
     getRequestOptions() {
         return {
+            // Prevent socket reuse as a test checks for socket.bytesWritten
+            agent: new http.Agent({ keepAlive: false }),
             path: this.path,
             hostname,
             port,
