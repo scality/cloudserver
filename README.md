@@ -112,7 +112,7 @@ you can do so by setting the `S3DATA` environment variable to `memory`.
 This is useful for testing purposes or when you don't need persistent storage.
 
 ```shell
-export S3DATA=memory
+export S3DATA=mem
 yarn start
 ```
 
