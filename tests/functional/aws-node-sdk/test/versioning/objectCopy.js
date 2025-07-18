@@ -7,7 +7,7 @@ const { removeAllVersions } = require('../../lib/utility/versioning-util');
 const customS3Request = require('../../lib/utility/customS3Request');
 
 const { taggingTests } = require('../../lib/utility/tagging');
-const constants = require('../../lib/constants');
+const constants = require('../../../../../constants');
 
 const sourceBucketName = 'supersourcebucket8102016';
 const sourceObjName = 'supersourceobject';
