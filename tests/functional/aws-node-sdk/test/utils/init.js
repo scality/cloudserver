@@ -7,6 +7,19 @@ const log = new DummyRequestLogger();
 const nonVersionedObjId =
     versionIdUtils.getInfVid(config.replicationGroupId);
 
+const isMetadataOrFile = ['file', 'scality'].includes(config.backends.metadata);
+/**
+ * With null version compat mode the null key should look like
+ * 'object1putversion\u000099999999999999999999RG001  '
+ * Without it for BucketFile backends it looks like
+ * 'object1putversion\x00'
+ *
+ * The later case does not support ObjectRestore and needs some tests to be skipped.
+ *
+ * TODO: CLDSRV-721 RING 10 Support ObjectRestore (cold storage) with MD v1
+ */
+const isNullKeyMetadataV1 = isMetadataOrFile && !config.nullVersionCompatMode;
+
 function decodeVersionId(versionId) {
     let decodedVersionId;
     if (versionId) {
@@ -87,6 +100,7 @@ function fakeMetadataArchive(bucketName, objectName, versionId, archive, cb) {
 }
 
 module.exports = {
+    isNullKeyMetadataV1,
 	initMetadata,
 	getMetadata,
 	fakeMetadataArchive,
