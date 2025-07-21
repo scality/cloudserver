@@ -35,8 +35,7 @@ application on the go.
 ## Contributing
 
 In order to contribute, please follow the
-[Contributing Guidelines](
-https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md).
+[Contributing Guidelines](https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md).
 
 ## Installation
 
@@ -49,12 +48,12 @@ Building and running the Zenko CloudServer requires node.js 10.x and yarn v1.17.
 ### Clone source code
 
 ```shell
-git clone https://github.com/scality/S3.git
+git clone https://github.com/scality/cloudserver.git
 ```
 
 ### Install js dependencies
 
-Go to the ./S3 folder,
+Go to the ./cloudserver folder,
 
 ```shell
 yarn install --frozen-lockfile
@@ -67,6 +66,14 @@ If you get an error regarding level-down bindings, try clearing your yarn cache:
 
 ```shell
 yarn cache clean
+```
+
+#### Install typescript
+
+To use CloudServer, subaclient is needed. This package need typescript to be compiled.
+
+```shell
+npm install -g typescript
 ```
 
 ## Run it with a file backend
@@ -85,8 +92,8 @@ a secret key of verySecretKey1.
 By default the metadata files will be saved in the
 localMetadata directory and the data files will be saved
 in the localData directory within the ./S3 directory on your
-machine.  These directories have been pre-created within the
-repository.  If you would like to save the data or metadata in
+machine. These directories have been pre-created within the
+repository. If you would like to save the data or metadata in
 different locations of your choice, you must specify them with absolute paths.
 So, when starting the server:
 
@@ -95,6 +102,17 @@ mkdir -m 700 $(pwd)/myFavoriteDataPath
 mkdir -m 700 $(pwd)/myFavoriteMetadataPath
 export S3DATAPATH="$(pwd)/myFavoriteDataPath"
 export S3METADATAPATH="$(pwd)/myFavoriteMetadataPath"
+yarn start
+```
+
+## Run it with a memory backend
+
+If you want to run the Zenko CloudServer with an in-memory backend,
+you can do so by setting the `S3DATA` environment variable to `memory`.
+This is useful for testing purposes or when you don't need persistent storage.
+
+```shell
+export S3DATA=mem
 yarn start
 ```
 
