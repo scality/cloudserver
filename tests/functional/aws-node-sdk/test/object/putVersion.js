@@ -6,7 +6,7 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 const metadata = require('../../../../../lib/metadata/wrapper');
 const { DummyRequestLogger } = require('../../../../unit/helpers');
 const checkError = require('../../lib/utility/checkError');
-const { getMetadata, fakeMetadataArchive } = require('../utils/init');
+const { getMetadata, fakeMetadataArchive, isNullKeyMetadataV1 } = require('../utils/init');
 
 const log = new DummyRequestLogger();
 
@@ -47,7 +47,11 @@ function checkObjMdAndUpdate(objMDBefore, objMDAfter, props) {
     });
 }
 
-describe('PUT object with x-scal-s3-version-id header', () => {
+// TODO: CLDSRV-721 RING 10 Support ObjectRestore (cold storage) with MD v1
+// The whole test suite is skipped as bad versionId breaks after each bucket cleanup
+const describeSkipNullMdV1 = isNullKeyMetadataV1 ? describe.skip : describe;
+
+describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
