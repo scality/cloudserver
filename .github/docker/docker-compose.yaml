@@ -60,6 +60,7 @@ services:
       - SCUBA_HEALTHCHECK_FREQUENCY
       - S3QUOTA
       - QUOTA_ENABLE_INFLIGHTS
+      - S3_VERSION_ID_ENCODING_TYPE
     env_file:
       - creds.env
     depends_on:
