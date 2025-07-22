@@ -1,0 +1,32 @@
+# Build outputs
+node_modules/
+dist/
+build/
+coverage/
+
+# Configuration files that should maintain their format
+package-lock.json
+yarn.lock
+*.log
+
+# Data directories
+localData/
+localMetadata/
+
+# Test artifacts
+artifacts/
+**/junit/
+
+# Binary files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.svg
+*.pdf
+
+# Generated or vendor files
+*.min.js
+*.min.css
+*.map 
