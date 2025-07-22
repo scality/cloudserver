@@ -20,7 +20,7 @@ const bucketPutReq = {
 const testBucketPutReqWithObjLock = {
     bucketName,
     headers: {
-        'host': `${bucketName}.s3.amazonaws.com`,
+        host: `${bucketName}.s3.amazonaws.com`,
         'x-amz-bucket-object-lock-enabled': 'True',
     },
     url: '/',
@@ -31,7 +31,7 @@ function getObjectLockConfigRequest(bucketName, xml) {
     const request = {
         bucketName,
         headers: {
-            'host': `${bucketName}.s3.amazonaws.com`,
+            host: `${bucketName}.s3.amazonaws.com`,
             'x-amz-bucket-object-lock-enabled': 'true',
         },
         url: '/?object-lock',
@@ -59,10 +59,7 @@ function getObjectLockXml(mode, type, time) {
 
     // object lock is enabled and object lock configuration is set
     if (arguments.length === 3) {
-        xmlStr += xml.ruleOpen +
-            retentionMode +
-            retentionTime +
-            xml.ruleClose;
+        xmlStr += xml.ruleOpen + retentionMode + retentionTime + xml.ruleClose;
     }
     xmlStr += xml.objLockConfigClose;
     return xmlStr;
@@ -72,14 +69,16 @@ describe('bucketGetObjectLock API', () => {
     before(done => bucketPut(authInfo, bucketPutReq, log, done));
     after(cleanup);
 
-    it('should return ObjectLockConfigurationNotFoundError error if ' +
-        'object lock is not enabled on the bucket', done => {
-        const objectLockRequest = getObjectLockConfigRequest(bucketName);
-        bucketGetObjectLock(authInfo, objectLockRequest, log, err => {
-            assert.strictEqual(err.is.ObjectLockConfigurationNotFoundError, true);
-            done();
-        });
-    });
+    it(
+        'should return ObjectLockConfigurationNotFoundError error if ' + 'object lock is not enabled on the bucket',
+        done => {
+            const objectLockRequest = getObjectLockConfigRequest(bucketName);
+            bucketGetObjectLock(authInfo, objectLockRequest, log, err => {
+                assert.strictEqual(err.is.ObjectLockConfigurationNotFoundError, true);
+                done();
+            });
+        }
+    );
 });
 
 describe('bucketGetObjectLock API', () => {
@@ -87,8 +86,7 @@ describe('bucketGetObjectLock API', () => {
     beforeEach(done => bucketPut(authInfo, testBucketPutReqWithObjLock, log, done));
     afterEach(cleanup);
 
-    it('should return config without \'rule\' if object lock configuration ' +
-        'not set on the bucket', done => {
+    it("should return config without 'rule' if object lock configuration " + 'not set on the bucket', done => {
         const objectLockRequest = getObjectLockConfigRequest(bucketName);
         bucketGetObjectLock(authInfo, objectLockRequest, log, (err, res) => {
             assert.ifError(err);

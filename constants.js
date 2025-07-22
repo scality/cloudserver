@@ -46,8 +46,7 @@ const constants = {
     // only public resources
     publicId: 'http://acs.amazonaws.com/groups/global/AllUsers',
     // All Authenticated Users is an ACL group.
-    allAuthedUsersId: 'http://acs.amazonaws.com/groups/' +
-        'global/AuthenticatedUsers',
+    allAuthedUsersId: 'http://acs.amazonaws.com/groups/' + 'global/AuthenticatedUsers',
     // LogId is used for the AWS logger to write the logs
     // to the destination bucket.  This style of logging is
     // to be implemented later but the logId is used in the
@@ -74,8 +73,7 @@ const constants = {
 
     // Max size on put part or copy part is 5GB. For functional
     // testing use 110 MB as max
-    maximumAllowedPartSize: process.env.MPU_TESTING === 'yes' ? 110100480 :
-        5368709120,
+    maximumAllowedPartSize: process.env.MPU_TESTING === 'yes' ? 110100480 : 5368709120,
 
     // Max size allowed in a single put object request is 5GB
     // https://docs.aws.amazon.com/AmazonS3/latest/dev/UploadingObjects.html
@@ -90,8 +88,7 @@ const constants = {
     maxHttpHeadersSize: 14122,
 
     // hex digest of sha256 hash of empty string:
-    emptyStringHash: crypto.createHash('sha256')
-        .update('', 'binary').digest('hex'),
+    emptyStringHash: crypto.createHash('sha256').update('', 'binary').digest('hex'),
 
     // Queries supported by AWS that we do not currently support.
     // Non-bucket queries
@@ -147,8 +144,7 @@ const constants = {
     /* eslint-enable camelcase */
     mpuMDStoredOnS3Backend: { azure: true },
     azureAccountNameRegex: /^[a-z0-9]{3,24}$/,
-    base64Regex: new RegExp('^(?:[A-Za-z0-9+/]{4})*' +
-        '(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$'),
+    base64Regex: new RegExp('^(?:[A-Za-z0-9+/]{4})*' + '(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$'),
     productName: 'APN/1.0 Scality/1.0 Scality CloudServer for Zenko',
     // location constraint delimiter
     zenkoSeparator: ':',
@@ -184,32 +180,15 @@ const constants = {
     invalidObjectUserMetadataHeader: 'x-amz-missing-meta',
     // Bucket specific queries supported by AWS that we do not currently support
     // these queries may or may not be supported at object level
-    unsupportedBucketQueries: [
-    ],
-    suppressedUtapiEventFields: [
-        'object',
-        'location',
-        'versionId',
-    ],
-    allowedUtapiEventFilterFields: [
-        'operationId',
-        'location',
-        'account',
-        'user',
-        'bucket',
-    ],
-    arrayOfAllowed: [
-        'objectPutTagging',
-        'objectPutLegalHold',
-        'objectPutRetention',
-    ],
+    unsupportedBucketQueries: [],
+    suppressedUtapiEventFields: ['object', 'location', 'versionId'],
+    allowedUtapiEventFilterFields: ['operationId', 'location', 'account', 'user', 'bucket'],
+    arrayOfAllowed: ['objectPutTagging', 'objectPutLegalHold', 'objectPutRetention'],
     allowedUtapiEventFilterStates: ['allow', 'deny'],
     allowedRestoreObjectRequestTierValues: ['Standard'],
     // Only STANDARD class is supported, but keep the option to override supported values for now.
     // This should be removed in CLDSRV-639.
-    validStorageClasses: process.env.VALID_STORAGE_CLASSES?.split(',') || [
-        'STANDARD',
-    ],
+    validStorageClasses: process.env.VALID_STORAGE_CLASSES?.split(',') || ['STANDARD'],
     lifecycleListing: {
         CURRENT_TYPE: 'current',
         NON_CURRENT_TYPE: 'noncurrent',
@@ -242,11 +221,7 @@ const constants = {
     assumedRoleArnResourceType: 'assumed-role',
     // Session name of the backbeat lifecycle assumed role session.
     backbeatLifecycleSessionName: 'backbeat-lifecycle',
-    actionsToConsiderAsObjectPut: [
-        'initiateMultipartUpload',
-        'objectPutPart',
-        'completeMultipartUpload',
-    ],
+    actionsToConsiderAsObjectPut: ['initiateMultipartUpload', 'objectPutPart', 'completeMultipartUpload'],
     // if requester is not bucket owner, bucket policy actions should be denied with
     // MethodNotAllowed error
     onlyOwnerAllowed: ['bucketDeletePolicy', 'bucketGetPolicy', 'bucketPutPolicy'],

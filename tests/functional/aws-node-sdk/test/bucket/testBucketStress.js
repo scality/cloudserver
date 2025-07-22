@@ -9,17 +9,25 @@ const objectCount = 100;
 const loopCount = 10;
 
 function putObjects(s3, loopId, cb) {
-    times(objectCount, (i, next) => {
-        const params = { Bucket: bucket, Key: `foo${loopId}_${i}`, Body: text };
-        s3.putObject(params, next);
-    }, cb);
+    times(
+        objectCount,
+        (i, next) => {
+            const params = { Bucket: bucket, Key: `foo${loopId}_${i}`, Body: text };
+            s3.putObject(params, next);
+        },
+        cb
+    );
 }
 
 function deleteObjects(s3, loopId, cb) {
-    times(objectCount, (i, next) => {
-        const params = { Bucket: bucket, Key: `foo${loopId}_${i}` };
-        s3.deleteObject(params, next);
-    }, cb);
+    times(
+        objectCount,
+        (i, next) => {
+            const params = { Bucket: bucket, Key: `foo${loopId}_${i}` };
+            s3.deleteObject(params, next);
+        },
+        cb
+    );
 }
 
 describe('aws-node-sdk stress test bucket', function testSuite() {
@@ -31,11 +39,18 @@ describe('aws-node-sdk stress test bucket', function testSuite() {
     });
 
     it('createBucket-putObject-deleteObject-deleteBucket loop', done =>
-        timesSeries(loopCount, (loopId, next) => waterfall([
-            next => s3.createBucket({ Bucket: bucket }, err => next(err)),
-            next => putObjects(s3, loopId, err => next(err)),
-            next => deleteObjects(s3, loopId, err => next(err)),
-            next => s3.deleteBucket({ Bucket: bucket }, err => next(err)),
-        ], err => next(err)), done)
-    );
+        timesSeries(
+            loopCount,
+            (loopId, next) =>
+                waterfall(
+                    [
+                        next => s3.createBucket({ Bucket: bucket }, err => next(err)),
+                        next => putObjects(s3, loopId, err => next(err)),
+                        next => deleteObjects(s3, loopId, err => next(err)),
+                        next => s3.deleteBucket({ Bucket: bucket }, err => next(err)),
+                    ],
+                    err => next(err)
+                ),
+            done
+        ));
 });

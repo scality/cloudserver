@@ -63,30 +63,24 @@ class HttpRequestAuthV4 extends stream.Writable {
 
     getCredentialScope() {
         const signingDate = this._timestamp.slice(0, 8);
-        const credentialScope =
-              `${signingDate}/${REGION}/${SERVICE}/aws4_request`;
+        const credentialScope = `${signingDate}/${REGION}/${SERVICE}/aws4_request`;
         // console.log(`CREDENTIAL SCOPE: "${credentialScope}"`);
         return credentialScope;
     }
 
     getSigningKey() {
         const signingDate = this._timestamp.slice(0, 8);
-        const dateKey = crypto.createHmac('sha256', `AWS4${this._secretKey}`)
-              .update(signingDate, 'binary').digest();
-        const dateRegionKey = crypto.createHmac('sha256', dateKey)
-              .update(REGION, 'binary').digest();
-        const dateRegionServiceKey = crypto.createHmac('sha256', dateRegionKey)
-              .update(SERVICE, 'binary').digest();
-        this._signingKey = crypto.createHmac('sha256', dateRegionServiceKey)
-              .update('aws4_request', 'binary').digest();
+        const dateKey = crypto.createHmac('sha256', `AWS4${this._secretKey}`).update(signingDate, 'binary').digest();
+        const dateRegionKey = crypto.createHmac('sha256', dateKey).update(REGION, 'binary').digest();
+        const dateRegionServiceKey = crypto.createHmac('sha256', dateRegionKey).update(SERVICE, 'binary').digest();
+        this._signingKey = crypto.createHmac('sha256', dateRegionServiceKey).update('aws4_request', 'binary').digest();
     }
 
     createSignature(stringToSign) {
         if (!this._signingKey) {
             this.getSigningKey();
         }
-        return crypto.createHmac('sha256', this._signingKey)
-            .update(stringToSign).digest('hex');
+        return crypto.createHmac('sha256', this._signingKey).update(stringToSign).digest('hex');
     }
 
     getCanonicalRequest(urlObj, signedHeaders) {
@@ -96,19 +90,16 @@ class HttpRequestAuthV4 extends stream.Writable {
         urlObj.searchParams.forEach((value, key) => {
             qsParams.push({ key, value });
         });
-        const canonicalQueryString =
-              qsParams
-              .sort((a, b) => {
-                  if (a.key !== b.key) {
-                      return a.key < b.key ? -1 : 1;
-                  }
-                  return a.value < b.value ? -1 : 1;
-              })
-              .map(param => `${encodeURI(param.key)}=${encodeURI(param.value)}`)
-              .join('&');
-        const canonicalSignedHeaders = signedHeadersList
-              .map(header => `${header}:${signedHeaders[header]}\n`)
-              .join('');
+        const canonicalQueryString = qsParams
+            .sort((a, b) => {
+                if (a.key !== b.key) {
+                    return a.key < b.key ? -1 : 1;
+                }
+                return a.value < b.value ? -1 : 1;
+            })
+            .map(param => `${encodeURI(param.key)}=${encodeURI(param.value)}`)
+            .join('&');
+        const canonicalSignedHeaders = signedHeadersList.map(header => `${header}:${signedHeaders[header]}\n`).join('');
         const canonicalRequest = [
             method,
             urlObj.pathname,
@@ -123,41 +114,37 @@ class HttpRequestAuthV4 extends stream.Writable {
     }
 
     constructRequestStringToSign(canonicalReq) {
-        const canonicalReqHash =
-            crypto.createHash('sha256').update(canonicalReq).digest('hex');
-        const stringToSign = `AWS4-HMAC-SHA256\n${this._timestamp}\n` +
-              `${this.getCredentialScope()}\n${canonicalReqHash}`;
+        const canonicalReqHash = crypto.createHash('sha256').update(canonicalReq).digest('hex');
+        const stringToSign =
+            `AWS4-HMAC-SHA256\n${this._timestamp}\n` + `${this.getCredentialScope()}\n${canonicalReqHash}`;
         // console.log(`STRING TO SIGN: "${stringToSign}"`);
         return stringToSign;
     }
 
     getAuthorizationSignature(urlObj, signedHeaders) {
-        const canonicalRequest =
-              this.getCanonicalRequest(urlObj, signedHeaders);
-        this._lastSignature = this.createSignature(
-            this.constructRequestStringToSign(canonicalRequest));
+        const canonicalRequest = this.getCanonicalRequest(urlObj, signedHeaders);
+        this._lastSignature = this.createSignature(this.constructRequestStringToSign(canonicalRequest));
         return this._lastSignature;
     }
 
     getAuthorizationHeader(urlObj, signedHeaders) {
-        const authorizationSignature =
-              this.getAuthorizationSignature(urlObj, signedHeaders);
+        const authorizationSignature = this.getAuthorizationSignature(urlObj, signedHeaders);
         const signedHeadersList = Object.keys(signedHeaders).sort();
 
-        return ['AWS4-HMAC-SHA256',
-                `Credential=${this._accessKey}/${this.getCredentialScope()},`,
-                `SignedHeaders=${signedHeadersList.join(';')},`,
-                `Signature=${authorizationSignature}`,
-               ].join(' ');
+        return [
+            'AWS4-HMAC-SHA256',
+            `Credential=${this._accessKey}/${this.getCredentialScope()},`,
+            `SignedHeaders=${signedHeadersList.join(';')},`,
+            `Signature=${authorizationSignature}`,
+        ].join(' ');
     }
 
     constructChunkStringToSign(chunkData) {
-        const currentChunkHash =
-            crypto.createHash('sha256').update(chunkData.toString())
-              .digest('hex');
-        const stringToSign = `AWS4-HMAC-SHA256-PAYLOAD\n${this._timestamp}\n` +
-              `${this.getCredentialScope()}\n${this._lastSignature}\n` +
-              `${EMPTY_STRING_HASH}\n${currentChunkHash}`;
+        const currentChunkHash = crypto.createHash('sha256').update(chunkData.toString()).digest('hex');
+        const stringToSign =
+            `AWS4-HMAC-SHA256-PAYLOAD\n${this._timestamp}\n` +
+            `${this.getCredentialScope()}\n${this._lastSignature}\n` +
+            `${EMPTY_STRING_HASH}\n${currentChunkHash}`;
         // console.log(`CHUNK STRING TO SIGN: "${stringToSign}"`);
         return stringToSign;
     }
@@ -173,13 +160,7 @@ class HttpRequestAuthV4 extends stream.Writable {
             return chunkData;
         }
         const chunkSignature = this.getChunkSignature(chunkData);
-        return [chunkData.length.toString(16),
-                ';chunk-signature=',
-                chunkSignature,
-                '\r\n',
-                chunkData,
-                '\r\n',
-               ].join('');
+        return [chunkData.length.toString(16), ';chunk-signature=', chunkSignature, '\r\n', chunkData, '\r\n'].join('');
     }
 
     _constructRequest(hasDataToSend) {
@@ -196,7 +177,7 @@ class HttpRequestAuthV4 extends stream.Writable {
 
         const urlObj = new url.URL(this._url);
         const signedHeaders = {
-            'host': urlObj.host,
+            host: urlObj.host,
             'x-amz-date': this._timestamp,
         };
         const httpHeaders = Object.assign({}, this._httpParams.headers);
@@ -206,20 +187,17 @@ class HttpRequestAuthV4 extends stream.Writable {
             if (lowerHeader === 'content-length') {
                 contentLengthHeader = header;
             }
-            if (!['connection',
-                  'transfer-encoding'].includes(lowerHeader)) {
+            if (!['connection', 'transfer-encoding'].includes(lowerHeader)) {
                 signedHeaders[lowerHeader] = httpHeaders[header];
             }
         });
         if (!signedHeaders['x-amz-content-sha256']) {
             if (hasDataToSend) {
-                signedHeaders['x-amz-content-sha256'] =
-                    'STREAMING-AWS4-HMAC-SHA256-PAYLOAD';
+                signedHeaders['x-amz-content-sha256'] = 'STREAMING-AWS4-HMAC-SHA256-PAYLOAD';
                 signedHeaders['content-encoding'] = 'aws-chunked';
                 this._chunkedUpload = true;
                 if (contentLengthHeader !== undefined) {
-                    signedHeaders['x-amz-decoded-content-length'] =
-                        httpHeaders[contentLengthHeader];
+                    signedHeaders['x-amz-decoded-content-length'] = httpHeaders[contentLengthHeader];
                     delete signedHeaders['content-length'];
                     delete httpHeaders[contentLengthHeader];
                     httpHeaders['transfer-encoding'] = 'chunked';
@@ -228,8 +206,7 @@ class HttpRequestAuthV4 extends stream.Writable {
                 signedHeaders['x-amz-content-sha256'] = EMPTY_STRING_HASH;
             }
         }
-        httpHeaders.Authorization =
-            this.getAuthorizationHeader(urlObj, signedHeaders);
+        httpHeaders.Authorization = this.getAuthorizationHeader(urlObj, signedHeaders);
 
         return Object.assign(httpHeaders, signedHeaders);
     }

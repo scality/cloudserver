@@ -10,9 +10,10 @@ const key = 'mpuKey';
 const body = 'abc';
 const partCount = 10000;
 const eTag = require('crypto').createHash('md5').update(body).digest('hex');
-const finalETag = require('crypto').createHash('md5')
-    .update(Buffer.from(eTag.repeat(partCount), 'hex').toString('binary'),
-            'binary').digest('hex');
+const finalETag = require('crypto')
+    .createHash('md5')
+    .update(Buffer.from(eTag.repeat(partCount), 'hex').toString('binary'), 'binary')
+    .digest('hex');
 
 function uploadPart(n, uploadId, s3, next) {
     const params = {
@@ -66,63 +67,65 @@ describe('large mpu', function tester() {
     const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
     // will fail on AWS because parts too small
 
-    itSkipIfAWS('should intiate, put parts and complete mpu ' +
-        `with ${partCount} parts`, done => {
+    itSkipIfAWS('should intiate, put parts and complete mpu ' + `with ${partCount} parts`, done => {
         process.stdout.write('***Running large MPU test***\n');
         let uploadId;
-        return waterfall([
-            next => s3.createMultipartUpload({ Bucket: bucket, Key: key },
-                (err, data) => {
-                    if (err) {
-                        return done(err);
-                    }
-                    process.stdout.write('initated mpu\n');
-                    uploadId = data.UploadId;
-                    return next();
-                }),
-            next => {
-                process.stdout.write('putting parts');
-                return timesLimit(partCount, 20, (n, cb) =>
-                    uploadPart(n, uploadId, s3, cb), err =>
-                        next(err)
+        return waterfall(
+            [
+                next =>
+                    s3.createMultipartUpload({ Bucket: bucket, Key: key }, (err, data) => {
+                        if (err) {
+                            return done(err);
+                        }
+                        process.stdout.write('initated mpu\n');
+                        uploadId = data.UploadId;
+                        return next();
+                    }),
+                next => {
+                    process.stdout.write('putting parts');
+                    return timesLimit(
+                        partCount,
+                        20,
+                        (n, cb) => uploadPart(n, uploadId, s3, cb),
+                        err => next(err)
                     );
-            },
-            next => {
-                const parts = [];
-                for (let i = 1; i <= partCount; i++) {
-                    parts.push({
-                        ETag: eTag,
-                        PartNumber: i,
-                    });
-                }
-                const params = {
-                    Bucket: bucket,
-                    Key: key,
-                    UploadId: uploadId,
-                    MultipartUpload: {
-                        Parts: parts,
-                    },
-                };
-                return s3.completeMultipartUpload(params, err => {
-                    if (err) {
-                        process.stdout.write('err complting mpu: ', err);
-                        return next(err);
+                },
+                next => {
+                    const parts = [];
+                    for (let i = 1; i <= partCount; i++) {
+                        parts.push({
+                            ETag: eTag,
+                            PartNumber: i,
+                        });
                     }
-                    return next();
-                });
-            },
-            next => {
-                process.stdout.write('about to get object');
-                return s3.getObject({ Bucket: bucket, Key: key },
-                    (err, data) => {
+                    const params = {
+                        Bucket: bucket,
+                        Key: key,
+                        UploadId: uploadId,
+                        MultipartUpload: {
+                            Parts: parts,
+                        },
+                    };
+                    return s3.completeMultipartUpload(params, err => {
+                        if (err) {
+                            process.stdout.write('err complting mpu: ', err);
+                            return next(err);
+                        }
+                        return next();
+                    });
+                },
+                next => {
+                    process.stdout.write('about to get object');
+                    return s3.getObject({ Bucket: bucket, Key: key }, (err, data) => {
                         if (err) {
                             return next(err);
                         }
-                        assert.strictEqual(data.ETag,
-                                `"${finalETag}-${partCount}"`);
+                        assert.strictEqual(data.ETag, `"${finalETag}-${partCount}"`);
                         return next();
                     });
-            },
-        ], done);
+                },
+            ],
+            done
+        );
     });
 });

@@ -1,10 +1,8 @@
 const assert = require('assert');
 const { errorInstances, storage } = require('arsenal');
 const { gcpTaggingPrefix } = require('../../../constants');
-const { genPutTagObj } =
-    require('../../../tests/functional/raw-node/utils/gcpUtils');
-const { processTagSet, stripTags, retrieveTags, getPutTagsMetadata } =
-    storage.data.external.GcpUtils;
+const { genPutTagObj } = require('../../../tests/functional/raw-node/utils/gcpUtils');
+const { processTagSet, stripTags, retrieveTags, getPutTagsMetadata } = storage.data.external.GcpUtils;
 
 const maxTagSize = 10;
 const validTagSet = genPutTagObj(2);
@@ -36,26 +34,24 @@ describe('GcpUtils Tagging Helper Functions:', () => {
             {
                 it: 'should return error for invalid tag set size',
                 input: invalidSizeTagSet,
-                output: errorInstances.BadRequest.customizeDescription(
-                    'Object tags cannot be greater than 10'),
+                output: errorInstances.BadRequest.customizeDescription('Object tags cannot be greater than 10'),
             },
             {
                 it: 'should return error for duplicate tag keys',
                 input: invalidDuplicateTagSet,
                 output: errorInstances.InvalidTag.customizeDescription(
-                    'Cannot provide multiple Tags with the same key'),
+                    'Cannot provide multiple Tags with the same key'
+                ),
             },
             {
                 it: 'should return error for invalid "key" value',
                 input: invalidKeyTagSet,
-                output: errorInstances.InvalidTag.customizeDescription(
-                    'The TagKey provided is too long, 129'),
+                output: errorInstances.InvalidTag.customizeDescription('The TagKey provided is too long, 129'),
             },
             {
                 it: 'should return error for invalid "value" value',
                 input: invalidValueTagSet,
-                output: errorInstances.InvalidTag.customizeDescription(
-                    'The TagValue provided is too long, 257'),
+                output: errorInstances.InvalidTag.customizeDescription('The TagValue provided is too long, 257'),
             },
             {
                 it: 'should return empty tag object when input is undefined',
@@ -123,8 +119,7 @@ describe('GcpUtils Tagging Helper Functions:', () => {
     describe('getPutTagsMetadata', () => {
         const tests = [
             {
-                it: 'should return correct object when' +
-                    ' given a tag query string and a metadata obj',
+                it: 'should return correct object when' + ' given a tag query string and a metadata obj',
                 input: { metadata: Object.assign({}, onlyMetadata), tagQuery },
                 output: tagMetadata,
             },
@@ -139,7 +134,8 @@ describe('GcpUtils Tagging Helper Functions:', () => {
                 output: onlyMetadata,
             },
             {
-                it: 'should return metadata with correct tag properties ' +
+                it:
+                    'should return metadata with correct tag properties ' +
                     'if given a metdata with prior tags and query string',
                 input: { metadata: Object.assign({}, withPriorTags), tagQuery },
                 output: tagMetadata,
@@ -148,8 +144,7 @@ describe('GcpUtils Tagging Helper Functions:', () => {
         tests.forEach(test => {
             it(test.it, () => {
                 const { metadata, tagQuery } = test.input;
-                assert.deepStrictEqual(
-                    getPutTagsMetadata(metadata, tagQuery), test.output);
+                assert.deepStrictEqual(getPutTagsMetadata(metadata, tagQuery), test.output);
             });
         });
     });

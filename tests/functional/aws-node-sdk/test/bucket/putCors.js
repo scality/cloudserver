@@ -5,17 +5,18 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucketName = 'testcorsbucket';
 
-const sampleCors = { CORSRules: [
-    { AllowedMethods: ['PUT', 'POST', 'DELETE'],
-        AllowedOrigins: ['http://www.example.com'],
-        AllowedHeaders: ['*'],
-        MaxAgeSeconds: 3000,
-        ExposeHeaders: ['x-amz-server-side-encryption'] },
-    { AllowedMethods: ['GET'],
-        AllowedOrigins: ['*'],
-        AllowedHeaders: ['*'],
-        MaxAgeSeconds: 3000 },
-] };
+const sampleCors = {
+    CORSRules: [
+        {
+            AllowedMethods: ['PUT', 'POST', 'DELETE'],
+            AllowedOrigins: ['http://www.example.com'],
+            AllowedHeaders: ['*'],
+            MaxAgeSeconds: 3000,
+            ExposeHeaders: ['x-amz-server-side-encryption'],
+        },
+        { AllowedMethods: ['GET'], AllowedOrigins: ['*'], AllowedHeaders: ['*'], MaxAgeSeconds: 3000 },
+    ],
+};
 
 function _corsTemplate(params) {
     const sampleRule = {
@@ -25,12 +26,11 @@ function _corsTemplate(params) {
         MaxAgeSeconds: 3000,
         ExposeHeaders: ['x-amz-server-side-encryption'],
     };
-    ['AllowedMethods', 'AllowedOrigins', 'AllowedHeaders', 'MaxAgeSeconds',
-        'ExposeHeaders'].forEach(prop => {
-            if (params[prop]) {
-                sampleRule[prop] = params[prop];
-            }
-        });
+    ['AllowedMethods', 'AllowedOrigins', 'AllowedHeaders', 'MaxAgeSeconds', 'ExposeHeaders'].forEach(prop => {
+        if (params[prop]) {
+            sampleRule[prop] = params[prop];
+        }
+    });
     return { CORSRules: [sampleRule] };
 }
 
@@ -40,8 +40,7 @@ describe('PUT bucket cors', () => {
         const s3 = bucketUtil.s3;
 
         function _testPutBucketCors(rules, statusCode, errMsg, cb) {
-            s3.putBucketCors({ Bucket: bucketName,
-                CORSConfiguration: rules }, err => {
+            s3.putBucketCors({ Bucket: bucketName, CORSConfiguration: rules }, err => {
                 assert(err, 'Expected err but found none');
                 assert.strictEqual(err.code, errMsg);
                 assert.strictEqual(err.statusCode, statusCode);
@@ -54,8 +53,7 @@ describe('PUT bucket cors', () => {
         afterEach(() => bucketUtil.deleteOne(bucketName));
 
         it('should put a bucket cors successfully', done => {
-            s3.putBucketCors({ Bucket: bucketName,
-                CORSConfiguration: sampleCors }, err => {
+            s3.putBucketCors({ Bucket: bucketName, CORSConfiguration: sampleCors }, err => {
                 assert.strictEqual(err, null, `Found unexpected err ${err}`);
                 done();
             });
@@ -81,10 +79,8 @@ describe('PUT bucket cors', () => {
             _testPutBucketCors(testCors, 400, 'MalformedXML', done);
         });
 
-        it('should return InvalidRequest if more than one asterisk in ' +
-        'AllowedOrigin', done => {
-            const testCors =
-                _corsTemplate({ AllowedOrigins: ['http://*.*.com'] });
+        it('should return InvalidRequest if more than one asterisk in ' + 'AllowedOrigin', done => {
+            const testCors = _corsTemplate({ AllowedOrigins: ['http://*.*.com'] });
             _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
         });
 
@@ -93,33 +89,27 @@ describe('PUT bucket cors', () => {
             _testPutBucketCors(testCors, 400, 'MalformedXML', done);
         });
 
-        it('should return InvalidRequest if AllowedMethod is not a valid ' +
-        'method', done => {
+        it('should return InvalidRequest if AllowedMethod is not a valid ' + 'method', done => {
             const testCors = _corsTemplate({ AllowedMethods: ['test'] });
             _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
         });
 
-        it('should return InvalidRequest for lowercase value for ' +
-        'AllowedMethod', done => {
+        it('should return InvalidRequest for lowercase value for ' + 'AllowedMethod', done => {
             const testCors = _corsTemplate({ AllowedMethods: ['put', 'get'] });
             _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
         });
 
-        it('should return InvalidRequest if more than one asterisk in ' +
-        'AllowedHeader', done => {
+        it('should return InvalidRequest if more than one asterisk in ' + 'AllowedHeader', done => {
             const testCors = _corsTemplate({ AllowedHeaders: ['*-amz-*'] });
             _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
         });
 
-        it('should return InvalidRequest if ExposeHeader has character ' +
-        'that is not dash or alphanumeric',
-        done => {
+        it('should return InvalidRequest if ExposeHeader has character ' + 'that is not dash or alphanumeric', done => {
             const testCors = _corsTemplate({ ExposeHeaders: ['test header'] });
             _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
         });
 
-        it('should return InvalidRequest if ExposeHeader has wildcard',
-        done => {
+        it('should return InvalidRequest if ExposeHeader has wildcard', done => {
             const testCors = _corsTemplate({ ExposeHeaders: ['x-amz-*'] });
             _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
         });

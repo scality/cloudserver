@@ -49,8 +49,7 @@ describe('aws-node-sdk test bucket put acl', () => {
         s3.putBucketAcl(params, error => {
             if (error) {
                 assert.strictEqual(error.statusCode, 400);
-                assert.strictEqual(
-                    error.code, 'InvalidRequest');
+                assert.strictEqual(error.code, 'InvalidRequest');
                 done();
             } else {
                 done('accepted xml body larger than 512 KB');
@@ -80,60 +79,70 @@ describe('PUT Bucket ACL', () => {
             });
         });
 
-        it('should set multiple ACL permissions with same grantee specified' +
-        'using email', done => {
-            s3.putBucketAcl({
-                Bucket: bucketName,
-                GrantRead: 'emailAddress=sampleaccount1@sampling.com',
-                GrantWrite: 'emailAddress=sampleaccount1@sampling.com',
-            }, err => {
-                assert(!err);
-                s3.getBucketAcl({
+        it('should set multiple ACL permissions with same grantee specified' + 'using email', done => {
+            s3.putBucketAcl(
+                {
                     Bucket: bucketName,
-                }, (err, res) => {
+                    GrantRead: 'emailAddress=sampleaccount1@sampling.com',
+                    GrantWrite: 'emailAddress=sampleaccount1@sampling.com',
+                },
+                err => {
                     assert(!err);
-                    // expect both READ and WRITE grants to exist
-                    assert.strictEqual(res.Grants.length, 2);
-                    return done();
-                });
-            });
-        });
-
-        it('should return InvalidArgument if invalid grantee ' +
-            'user ID provided in ACL header request', done => {
-            s3.putBucketAcl({
-                Bucket: bucketName,
-                GrantRead: 'id=invalidUserID' }, err => {
-                assert.strictEqual(err.statusCode, 400);
-                assert.strictEqual(err.code, 'InvalidArgument');
-                done();
-            });
-        });
-
-        it('should return InvalidArgument if invalid grantee ' +
-            'user ID provided in ACL request body', done => {
-            s3.putBucketAcl({
-                Bucket: bucketName,
-                AccessControlPolicy: {
-                    Grants: [
+                    s3.getBucketAcl(
                         {
-                            Grantee: {
-                                Type: 'CanonicalUser',
-                                ID: 'invalidUserID',
+                            Bucket: bucketName,
+                        },
+                        (err, res) => {
+                            assert(!err);
+                            // expect both READ and WRITE grants to exist
+                            assert.strictEqual(res.Grants.length, 2);
+                            return done();
+                        }
+                    );
+                }
+            );
+        });
+
+        it('should return InvalidArgument if invalid grantee ' + 'user ID provided in ACL header request', done => {
+            s3.putBucketAcl(
+                {
+                    Bucket: bucketName,
+                    GrantRead: 'id=invalidUserID',
+                },
+                err => {
+                    assert.strictEqual(err.statusCode, 400);
+                    assert.strictEqual(err.code, 'InvalidArgument');
+                    done();
+                }
+            );
+        });
+
+        it('should return InvalidArgument if invalid grantee ' + 'user ID provided in ACL request body', done => {
+            s3.putBucketAcl(
+                {
+                    Bucket: bucketName,
+                    AccessControlPolicy: {
+                        Grants: [
+                            {
+                                Grantee: {
+                                    Type: 'CanonicalUser',
+                                    ID: 'invalidUserID',
+                                },
+                                Permission: 'WRITE_ACP',
                             },
-                            Permission: 'WRITE_ACP',
-                        }],
-                    Owner: {
-                        DisplayName: 'Bart',
-                        ID: '79a59df900b949e55d96a1e698fbace' +
-                        'dfd6e09d98eacf8f8d5218e7cd47ef2be',
+                        ],
+                        Owner: {
+                            DisplayName: 'Bart',
+                            ID: '79a59df900b949e55d96a1e698fbace' + 'dfd6e09d98eacf8f8d5218e7cd47ef2be',
+                        },
                     },
                 },
-            }, err => {
-                assert.strictEqual(err.statusCode, 400);
-                assert.strictEqual(err.code, 'InvalidArgument');
-                done();
-            });
+                err => {
+                    assert.strictEqual(err.statusCode, 400);
+                    assert.strictEqual(err.code, 'InvalidArgument');
+                    done();
+                }
+            );
         });
     });
 });

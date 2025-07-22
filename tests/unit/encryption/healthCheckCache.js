@@ -68,7 +68,7 @@ describe('Cache Class', () => {
 
         it('should return false if elapsed time is less than duration minus maximum jitter', () => {
             const fakeNow = 1625077800000;
-            const fakeLastChecked = fakeNow - (45 * 60 * 1000); // 45 minutes ago
+            const fakeLastChecked = fakeNow - 45 * 60 * 1000; // 45 minutes ago
             sandbox.stub(Date, 'now').returns(fakeNow);
             sandbox.stub(Math, 'random').returns(0);
             cache.lastChecked = fakeLastChecked;
@@ -80,7 +80,7 @@ describe('Cache Class', () => {
 
         it('should return true if elapsed time is greater than duration minus maximum jitter', () => {
             const fakeNow = 1625077800000;
-            const fakeLastChecked = fakeNow - (61 * 60 * 1000); // 61 minutes ago
+            const fakeLastChecked = fakeNow - 61 * 60 * 1000; // 61 minutes ago
             sandbox.stub(Date, 'now').returns(fakeNow);
             sandbox.stub(Math, 'random').returns(0);
             cache.lastChecked = fakeLastChecked;
@@ -96,7 +96,7 @@ describe('Cache Class', () => {
             sandbox.stub(Date, 'now').returns(fakeNow);
 
             // Elapsed time = 5 hours
-            const fakeLastChecked1 = fakeNow - (5 * 60 * 60 * 1000);
+            const fakeLastChecked1 = fakeNow - 5 * 60 * 60 * 1000;
             cache.lastChecked = fakeLastChecked1;
 
             sandbox.stub(Math, 'random').returns(0);
@@ -109,15 +109,11 @@ describe('Cache Class', () => {
             );
 
             // Elapsed time = 7 hours
-            const fakeLastChecked2 = fakeNow - (7 * 60 * 60 * 1000);
+            const fakeLastChecked2 = fakeNow - 7 * 60 * 60 * 1000;
             cache.lastChecked = fakeLastChecked2;
 
             // 7 hours > 6 hours => shouldRefresh = true
-            assert.strictEqual(
-                cache.shouldRefresh(customDuration),
-                true,
-                'Cache should refresh after custom duration'
-            );
+            assert.strictEqual(cache.shouldRefresh(customDuration), true, 'Cache should refresh after custom duration');
         });
     });
 

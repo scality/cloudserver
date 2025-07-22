@@ -57,27 +57,35 @@ describe('aws-sdk test get bucket encryption', () => {
     });
 
     it('should include KMSMasterKeyID if user has configured a custom master key', done => {
-        setEncryptionInfo({ cryptoScheme: 1, algorithm: 'aws:kms', masterKeyId: '12345',
-                            configuredMasterKeyId: '54321', mandatory: true }, err => {
-            assert.ifError(err);
-            s3.getBucketEncryption({ Bucket: bucketName }, (err, res) => {
+        setEncryptionInfo(
+            {
+                cryptoScheme: 1,
+                algorithm: 'aws:kms',
+                masterKeyId: '12345',
+                configuredMasterKeyId: '54321',
+                mandatory: true,
+            },
+            err => {
                 assert.ifError(err);
-                assert.deepStrictEqual(res, {
-                    ServerSideEncryptionConfiguration: {
-                        Rules: [
-                            {
-                                ApplyServerSideEncryptionByDefault: {
-                                    SSEAlgorithm: 'aws:kms',
-                                    KMSMasterKeyID: '54321',
+                s3.getBucketEncryption({ Bucket: bucketName }, (err, res) => {
+                    assert.ifError(err);
+                    assert.deepStrictEqual(res, {
+                        ServerSideEncryptionConfiguration: {
+                            Rules: [
+                                {
+                                    ApplyServerSideEncryptionByDefault: {
+                                        SSEAlgorithm: 'aws:kms',
+                                        KMSMasterKeyID: '54321',
+                                    },
+                                    BucketKeyEnabled: false,
                                 },
-                                BucketKeyEnabled: false,
-                            },
-                        ],
-                    },
+                            ],
+                        },
+                    });
+                    done();
                 });
-                done();
-            });
-        });
+            }
+        );
     });
 
     it('should not include KMSMasterKeyID if no user configured master key', done => {

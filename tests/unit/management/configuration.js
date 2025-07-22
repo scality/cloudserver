@@ -8,26 +8,20 @@ const metadata = require('../../../lib/metadata/wrapper');
 const managementDatabaseName = 'PENSIEVE';
 const tokenConfigurationKey = 'auth/zenko/remote-management-token';
 
-const { privateKey, accessKey, decryptedSecretKey, secretKey, canonicalId,
-    userName } = require('./resources.json');
+const { privateKey, accessKey, decryptedSecretKey, secretKey, canonicalId, userName } = require('./resources.json');
 const shortid = '123456789012';
 const email = 'customaccount1@setbyenv.com';
 const arn = 'arn:aws:iam::123456789012:root';
 const { config } = require('../../../lib/Config');
 
-const {
-    remoteOverlayIsNewer,
-    patchConfiguration,
-} = require('../../../lib/management/configuration');
+const { remoteOverlayIsNewer, patchConfiguration } = require('../../../lib/management/configuration');
 
-const {
-    initManagementDatabase,
-} = require('../../../lib/management/index');
+const { initManagementDatabase } = require('../../../lib/management/index');
 
 function initManagementCredentialsMock(cb) {
-    return metadata.putObjectMD(managementDatabaseName,
-        tokenConfigurationKey, { privateKey }, {},
-        log, error => cb(error));
+    return metadata.putObjectMD(managementDatabaseName, tokenConfigurationKey, { privateKey }, {}, log, error =>
+        cb(error)
+    );
 }
 
 function getConfig() {
@@ -37,14 +31,11 @@ function getConfig() {
 // Original Config
 const overlayVersionOriginal = Object.assign({}, config.overlayVersion);
 const authDataOriginal = Object.assign({}, config.authData).accounts;
-const locationConstraintsOriginal = Object.assign({},
-    config.locationConstraints);
+const locationConstraintsOriginal = Object.assign({}, config.locationConstraints);
 const restEndpointsOriginal = Object.assign({}, config.restEndpoints);
 const browserAccessEnabledOriginal = config.browserAccessEnabled;
 const instanceId = '19683e55-56f7-4a4c-98a7-706c07e4ec30';
-const publicInstanceId = crypto.createHash('sha256')
-                               .update(instanceId)
-                               .digest('hex');
+const publicInstanceId = crypto.createHash('sha256').update(instanceId).digest('hex');
 
 function resetConfig() {
     config.overlayVersion = overlayVersionOriginal;
@@ -63,12 +54,14 @@ function assertConfig(actualConf, expectedConf) {
 }
 
 describe('patchConfiguration', () => {
-    before(done => initManagementDatabase(log, err => {
-        if (err) {
-            return done(err);
-        }
-        return initManagementCredentialsMock(done);
-    }));
+    before(done =>
+        initManagementDatabase(log, err => {
+            if (err) {
+                return done(err);
+            }
+            return initManagementCredentialsMock(done);
+        })
+    );
     beforeEach(() => {
         resetConfig();
     });
@@ -115,17 +108,21 @@ describe('patchConfiguration', () => {
                 publicInstanceId,
                 browserAccessEnabled: true,
                 authData: {
-                    accounts: [{
-                        name: userName,
-                        email,
-                        arn,
-                        canonicalID: canonicalId,
-                        shortid,
-                        keys: [{
-                            access: accessKey,
-                            secret: decryptedSecretKey,
-                        }],
-                    }],
+                    accounts: [
+                        {
+                            name: userName,
+                            email,
+                            arn,
+                            canonicalID: canonicalId,
+                            shortid,
+                            keys: [
+                                {
+                                    access: accessKey,
+                                    secret: decryptedSecretKey,
+                                },
+                            ],
+                        },
+                    ],
                 },
                 locationConstraints: {
                     'us-east-1': {
@@ -141,14 +138,12 @@ describe('patchConfiguration', () => {
                 },
             };
             assertConfig(actualConf, expectedConf);
-            assert.deepStrictEqual(actualConf.restEndpoints['1.1.1.1'],
-                                   'us-east-1');
+            assert.deepStrictEqual(actualConf.restEndpoints['1.1.1.1'], 'us-east-1');
             return done();
         });
     });
 
-    it('should apply second configuration if version (2) is greater than ' +
-    'overlayVersion (1)', done => {
+    it('should apply second configuration if version (2) is greater than ' + 'overlayVersion (1)', done => {
         const newConf1 = {
             version: 1,
             instanceId,
@@ -175,8 +170,7 @@ describe('patchConfiguration', () => {
         });
     });
 
-    it('should not apply the second configuration if version equals ' +
-    'overlayVersion', done => {
+    it('should not apply the second configuration if version equals ' + 'overlayVersion', done => {
         const newConf1 = {
             version: 1,
             instanceId,
@@ -205,40 +199,37 @@ describe('patchConfiguration', () => {
 });
 
 describe('remoteOverlayIsNewer', () => {
-    it('should return remoteOverlayIsNewer equals false if remote overlay ' +
-    'is less than the cached', () => {
+    it('should return remoteOverlayIsNewer equals false if remote overlay ' + 'is less than the cached', () => {
         const cachedOverlay = {
             version: 2,
         };
         const remoteOverlay = {
             version: 1,
         };
-        const isRemoteOverlayNewer = remoteOverlayIsNewer(cachedOverlay,
-            remoteOverlay);
+        const isRemoteOverlayNewer = remoteOverlayIsNewer(cachedOverlay, remoteOverlay);
         assert.equal(isRemoteOverlayNewer, false);
     });
-    it('should return remoteOverlayIsNewer equals false if remote overlay ' +
-    'and the cached one are equal', () => {
+    it('should return remoteOverlayIsNewer equals false if remote overlay ' + 'and the cached one are equal', () => {
         const cachedOverlay = {
             version: 1,
         };
         const remoteOverlay = {
             version: 1,
         };
-        const isRemoteOverlayNewer = remoteOverlayIsNewer(cachedOverlay,
-            remoteOverlay);
+        const isRemoteOverlayNewer = remoteOverlayIsNewer(cachedOverlay, remoteOverlay);
         assert.equal(isRemoteOverlayNewer, false);
     });
-    it('should return remoteOverlayIsNewer equals true if remote overlay ' +
-    'version is greater than the cached one ', () => {
-        const cachedOverlay = {
-            version: 0,
-        };
-        const remoteOverlay = {
-            version: 1,
-        };
-        const isRemoteOverlayNewer = remoteOverlayIsNewer(cachedOverlay,
-            remoteOverlay);
-        assert.equal(isRemoteOverlayNewer, true);
-    });
+    it(
+        'should return remoteOverlayIsNewer equals true if remote overlay ' + 'version is greater than the cached one ',
+        () => {
+            const cachedOverlay = {
+                version: 0,
+            };
+            const remoteOverlay = {
+                version: 1,
+            };
+            const isRemoteOverlayNewer = remoteOverlayIsNewer(cachedOverlay, remoteOverlay);
+            assert.equal(isRemoteOverlayNewer, true);
+        }
+    );
 });

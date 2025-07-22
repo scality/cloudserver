@@ -1,8 +1,7 @@
 'use strict';
 
 const { config } = require('./lib/Config.js');
-const MetadataFileServer =
-          require('arsenal').storage.metadata.file.MetadataFileServer;
+const MetadataFileServer = require('arsenal').storage.metadata.file.MetadataFileServer;
 const logger = require('./lib/utilities/logger');
 
 process.on('uncaughtException', err => {
@@ -16,14 +15,15 @@ process.on('uncaughtException', err => {
 });
 
 if (config.backends.metadata === 'file') {
-    const mdServer = new MetadataFileServer(
-        { bindAddress: config.metadataDaemon.bindAddress,
-            port: config.metadataDaemon.port,
-            path: config.metadataDaemon.metadataPath,
-            restEnabled: config.metadataDaemon.restEnabled,
-            restPort: config.metadataDaemon.restPort,
-            recordLog: config.recordLog,
-            versioning: { replicationGroupId: config.replicationGroupId },
-            log: config.log });
+    const mdServer = new MetadataFileServer({
+        bindAddress: config.metadataDaemon.bindAddress,
+        port: config.metadataDaemon.port,
+        path: config.metadataDaemon.metadataPath,
+        restEnabled: config.metadataDaemon.restEnabled,
+        restPort: config.metadataDaemon.restPort,
+        recordLog: config.recordLog,
+        versioning: { replicationGroupId: config.replicationGroupId },
+        log: config.log,
+    });
     mdServer.startServer();
 }

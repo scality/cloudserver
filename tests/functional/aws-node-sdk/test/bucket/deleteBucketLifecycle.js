@@ -20,11 +20,16 @@ function assertError(err, expectedErr, cb) {
     if (expectedErr === null) {
         assert.strictEqual(err, null, `expected no error but got '${err}'`);
     } else {
-        assert.strictEqual(err.code, expectedErr, 'incorrect error response ' +
-            `code: should be '${expectedErr}' but got '${err.code}'`);
-        assert.strictEqual(err.statusCode, errors[expectedErr].code,
-            'incorrect error status code: should be 400 but got ' +
-            `'${err.statusCode}'`);
+        assert.strictEqual(
+            err.code,
+            expectedErr,
+            'incorrect error response ' + `code: should be '${expectedErr}' but got '${err.code}'`
+        );
+        assert.strictEqual(
+            err.statusCode,
+            errors[expectedErr].code,
+            'incorrect error status code: should be 400 but got ' + `'${err.statusCode}'`
+        );
     }
     cb();
 }
@@ -41,8 +46,7 @@ describe('aws-sdk test delete bucket lifecycle', () => {
     });
 
     it('should return NoSuchBucket error if bucket does not exist', done => {
-        s3.deleteBucketLifecycle({ Bucket: bucket }, err =>
-            assertError(err, 'NoSuchBucket', done));
+        s3.deleteBucketLifecycle({ Bucket: bucket }, err => assertError(err, 'NoSuchBucket', done));
     });
 
     describe('config rules', () => {
@@ -51,25 +55,22 @@ describe('aws-sdk test delete bucket lifecycle', () => {
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
         it('should return AccessDenied if user is not bucket owner', done => {
-            otherAccountS3.deleteBucketLifecycle({ Bucket: bucket },
-            err => assertError(err, 'AccessDenied', done));
+            otherAccountS3.deleteBucketLifecycle({ Bucket: bucket }, err => assertError(err, 'AccessDenied', done));
         });
 
         it('should return no error if no lifecycle config on bucket', done => {
-            s3.deleteBucketLifecycle({ Bucket: bucket }, err =>
-                assertError(err, null, done));
+            s3.deleteBucketLifecycle({ Bucket: bucket }, err => assertError(err, null, done));
         });
 
         it('should delete lifecycle configuration from bucket', done => {
-            const params = { Bucket: bucket,
-                LifecycleConfiguration: { Rules: [basicRule] } };
+            const params = { Bucket: bucket, LifecycleConfiguration: { Rules: [basicRule] } };
             s3.putBucketLifecycleConfiguration(params, err => {
                 assert.equal(err, null);
                 s3.deleteBucketLifecycle({ Bucket: bucket }, err => {
                     assert.equal(err, null);
-                    s3.getBucketLifecycleConfiguration({ Bucket: bucket },
-                    err =>
-                        assertError(err, 'NoSuchLifecycleConfiguration', done));
+                    s3.getBucketLifecycleConfiguration({ Bucket: bucket }, err =>
+                        assertError(err, 'NoSuchLifecycleConfiguration', done)
+                    );
                 });
             });
         });

@@ -22,12 +22,18 @@ const bucketUtil = new BucketUtility(credsProfile);
 
 function hydrateSSEConfig({ algo: SSEAlgorithm, masterKeyId: KMSMasterKeyID }) {
     // stringify and parse to strip undefined values
-    return JSON.parse(JSON.stringify({ Rules: [{
-        ApplyServerSideEncryptionByDefault: {
-            SSEAlgorithm,
-            KMSMasterKeyID,
-        },
-    }] }));
+    return JSON.parse(
+        JSON.stringify({
+            Rules: [
+                {
+                    ApplyServerSideEncryptionByDefault: {
+                        SSEAlgorithm,
+                        KMSMasterKeyID,
+                    },
+                },
+            ],
+        })
+    );
 }
 
 function putObjParams(Bucket, Key, sseConfig, kmsKeyId) {
@@ -52,17 +58,16 @@ const MD = {
 
 async function getBucketSSE(Bucket) {
     const sse = await s3.getBucketEncryption({ Bucket }).promise();
-    return sse
-        .ServerSideEncryptionConfiguration
-        .Rules[0]
-        .ApplyServerSideEncryptionByDefault;
+    return sse.ServerSideEncryptionConfiguration.Rules[0].ApplyServerSideEncryptionByDefault;
 }
 
 async function putEncryptedObject(Bucket, Key, sseConfig, kmsKeyId, Body) {
-    return s3.putObject({
-        ...putObjParams(Bucket, Key, sseConfig, kmsKeyId),
-        Body,
-    }).promise();
+    return s3
+        .putObject({
+            ...putObjParams(Bucket, Key, sseConfig, kmsKeyId),
+            Body,
+        })
+        .promise();
 }
 
 async function getObjectMDSSE(Bucket, Key) {

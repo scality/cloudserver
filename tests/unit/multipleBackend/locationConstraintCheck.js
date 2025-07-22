@@ -3,8 +3,7 @@ const assert = require('assert');
 const { BucketInfo, BackendInfo } = require('arsenal').models;
 const DummyRequest = require('../DummyRequest');
 const { DummyRequestLogger } = require('../helpers');
-const locationConstraintCheck
-    = require('../../../lib/api/apiUtils/object/locationConstraintCheck');
+const locationConstraintCheck = require('../../../lib/api/apiUtils/object/locationConstraintCheck');
 
 const memLocation = 'scality-internal-mem';
 const fileLocation = 'scality-internal-file';
@@ -18,48 +17,51 @@ const objectKey = 'someobject';
 const postBody = Buffer.from('I am a body', 'utf8');
 
 const log = new DummyRequestLogger();
-const testBucket = new BucketInfo(bucketName, owner, ownerDisplayName,
-    testDate, null, null, null, null, null, null, locationConstraint);
+const testBucket = new BucketInfo(
+    bucketName,
+    owner,
+    ownerDisplayName,
+    testDate,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    locationConstraint
+);
 
 function createTestRequest(locationConstraint) {
-    const testRequest = new DummyRequest({
-        bucketName,
-        namespace,
-        objectKey,
-        headers: { 'x-amz-meta-scal-location-constraint': locationConstraint },
-        url: `/${bucketName}/${objectKey}`,
-        parsedHost: 'localhost',
-    }, postBody);
+    const testRequest = new DummyRequest(
+        {
+            bucketName,
+            namespace,
+            objectKey,
+            headers: { 'x-amz-meta-scal-location-constraint': locationConstraint },
+            url: `/${bucketName}/${objectKey}`,
+            parsedHost: 'localhost',
+        },
+        postBody
+    );
     return testRequest;
 }
 
 describe('Location Constraint Check', () => {
-    it('should return error if controlling location constraint is ' +
-    'not valid', done => {
-        const backendInfoObj = locationConstraintCheck(
-            createTestRequest('fail-region'), null, testBucket, log);
-        assert.strictEqual(backendInfoObj.err.code, 400,
-            'Expected "Invalid Argument" code error');
-        assert(backendInfoObj.err.is.InvalidArgument, 'Expected "Invalid ' +
-        'Argument" error');
+    it('should return error if controlling location constraint is ' + 'not valid', done => {
+        const backendInfoObj = locationConstraintCheck(createTestRequest('fail-region'), null, testBucket, log);
+        assert.strictEqual(backendInfoObj.err.code, 400, 'Expected "Invalid Argument" code error');
+        assert(backendInfoObj.err.is.InvalidArgument, 'Expected "Invalid ' + 'Argument" error');
         done();
     });
 
-    it('should return instance of BackendInfo with correct ' +
-    'locationConstraints', done => {
-        const backendInfoObj = locationConstraintCheck(
-            createTestRequest(memLocation), null, testBucket, log);
-        assert.strictEqual(backendInfoObj.err, null, 'Expected success ' +
-            `but got error ${backendInfoObj.err}`);
+    it('should return instance of BackendInfo with correct ' + 'locationConstraints', done => {
+        const backendInfoObj = locationConstraintCheck(createTestRequest(memLocation), null, testBucket, log);
+        assert.strictEqual(backendInfoObj.err, null, 'Expected success ' + `but got error ${backendInfoObj.err}`);
         assert.strictEqual(typeof backendInfoObj.controllingLC, 'string');
-        assert.equal(backendInfoObj.backendInfo instanceof BackendInfo,
-            true);
-        assert.strictEqual(backendInfoObj.
-            backendInfo.getObjectLocationConstraint(), memLocation);
-        assert.strictEqual(backendInfoObj.
-            backendInfo.getBucketLocationConstraint(), fileLocation);
-        assert.strictEqual(backendInfoObj.backendInfo.getRequestEndpoint(),
-            'localhost');
+        assert.equal(backendInfoObj.backendInfo instanceof BackendInfo, true);
+        assert.strictEqual(backendInfoObj.backendInfo.getObjectLocationConstraint(), memLocation);
+        assert.strictEqual(backendInfoObj.backendInfo.getBucketLocationConstraint(), fileLocation);
+        assert.strictEqual(backendInfoObj.backendInfo.getRequestEndpoint(), 'localhost');
         done();
     });
 });

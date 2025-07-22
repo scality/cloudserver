@@ -21,17 +21,19 @@ const bucketPutRequest = {
     actionImplicitDenies: false,
 };
 
-const putObjectRequest = new DummyRequest({
-    bucketName,
-    namespace,
-    objectKey: objectName,
-    headers: {},
-    url: `/${bucketName}/${objectName}`,
-}, postBody);
+const putObjectRequest = new DummyRequest(
+    {
+        bucketName,
+        namespace,
+        objectKey: objectName,
+        headers: {},
+        url: `/${bucketName}/${objectName}`,
+    },
+    postBody
+);
 
 const objectLegalHoldXml = status =>
-    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-    `<LegalHold><Status>${status}</Status></LegalHold>`;
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' + `<LegalHold><Status>${status}</Status></LegalHold>`;
 
 const putObjectLegalHoldRequest = status => ({
     bucketName,
@@ -62,17 +64,17 @@ describe('getObjectLegalHold API', () => {
         afterEach(cleanup);
 
         it('should return InvalidRequest error', done => {
-            objectGetLegalHold(authInfo, getObjectLegalHoldRequest, log,
-                err => {
-                    assert.strictEqual(err.is.InvalidRequest, true);
-                    done();
-                });
+            objectGetLegalHold(authInfo, getObjectLegalHoldRequest, log, err => {
+                assert.strictEqual(err.is.InvalidRequest, true);
+                done();
+            });
         });
     });
 
     describe('with Object Lock enabled on bucket', () => {
-        const bucketObjectLockRequest = Object.assign({}, bucketPutRequest,
-            { headers: { 'x-amz-bucket-object-lock-enabled': 'true' } });
+        const bucketObjectLockRequest = Object.assign({}, bucketPutRequest, {
+            headers: { 'x-amz-bucket-object-lock-enabled': 'true' },
+        });
 
         beforeEach(done => {
             bucketPut(authInfo, bucketObjectLockRequest, log, err => {
@@ -83,42 +85,38 @@ describe('getObjectLegalHold API', () => {
 
         afterEach(cleanup);
 
-        it('should return NoSuchObjectLockConfiguration if no legal hold set',
-            done => {
-                objectGetLegalHold(authInfo, getObjectLegalHoldRequest, log,
-                    err => {
-                        assert.strictEqual(err.is.NoSuchObjectLockConfiguration, true);
-                        done();
-                    });
+        it('should return NoSuchObjectLockConfiguration if no legal hold set', done => {
+            objectGetLegalHold(authInfo, getObjectLegalHoldRequest, log, err => {
+                assert.strictEqual(err.is.NoSuchObjectLockConfiguration, true);
+                done();
             });
+        });
 
-        it('should get an object\'s legal hold status when OFF', done => {
+        it("should get an object's legal hold status when OFF", done => {
             const status = 'OFF';
             const request = putObjectLegalHoldRequest(status);
             objectPutLegalHold(authInfo, request, log, err => {
                 assert.ifError(err);
-                objectGetLegalHold(authInfo, getObjectLegalHoldRequest, log,
-                    (err, xml) => {
-                        const expectedXml = objectLegalHoldXml(status);
-                        assert.ifError(err);
-                        assert.strictEqual(xml, expectedXml);
-                        done();
-                    });
+                objectGetLegalHold(authInfo, getObjectLegalHoldRequest, log, (err, xml) => {
+                    const expectedXml = objectLegalHoldXml(status);
+                    assert.ifError(err);
+                    assert.strictEqual(xml, expectedXml);
+                    done();
+                });
             });
         });
 
-        it('should get an object\'s legal hold status when ON', done => {
+        it("should get an object's legal hold status when ON", done => {
             const status = 'ON';
             const request = putObjectLegalHoldRequest(status);
             objectPutLegalHold(authInfo, request, log, err => {
                 assert.ifError(err);
-                objectGetLegalHold(authInfo, getObjectLegalHoldRequest, log,
-                    (err, xml) => {
-                        const expectedXml = objectLegalHoldXml(status);
-                        assert.ifError(err);
-                        assert.strictEqual(xml, expectedXml);
-                        done();
-                    });
+                objectGetLegalHold(authInfo, getObjectLegalHoldRequest, log, (err, xml) => {
+                    const expectedXml = objectLegalHoldXml(status);
+                    assert.ifError(err);
+                    assert.strictEqual(xml, expectedXml);
+                    done();
+                });
             });
         });
     });

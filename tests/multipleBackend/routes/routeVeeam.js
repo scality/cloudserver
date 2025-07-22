@@ -3,8 +3,7 @@ const crypto = require('crypto');
 const async = require('async');
 
 const { makeRequest } = require('../../functional/raw-node/utils/makeRequest');
-const BucketUtility =
-    require('../../functional/aws-node-sdk/lib/utility/bucket-util');
+const BucketUtility = require('../../functional/aws-node-sdk/lib/utility/bucket-util');
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 
@@ -28,9 +27,7 @@ const testCapacity = `<?xmlversion="1.0"encoding="UTF-8"?>
     <Used>0</Used>
 </CapacityInfo>\n`;
 
-const testCapacityMd5 = crypto.createHash('md5')
-    .update(testCapacity, 'utf-8')
-    .digest('hex');
+const testCapacityMd5 = crypto.createHash('md5').update(testCapacity, 'utf-8').digest('hex');
 
 const invalidTestCapacity = `<?xmlversion="1.0"encoding="UTF-8"?>
 <CapacityInfo>
@@ -39,9 +36,7 @@ const invalidTestCapacity = `<?xmlversion="1.0"encoding="UTF-8"?>
     <Used>0</Used>
 </CapacityInfo>\n`;
 
-const invalidTestCapacityMd5 = crypto.createHash('md5')
-    .update(invalidTestCapacity, 'utf-8')
-    .digest('hex');
+const invalidTestCapacityMd5 = crypto.createHash('md5').update(invalidTestCapacity, 'utf-8').digest('hex');
 
 const testSystem = `<?xmlversion="1.0"encoding="UTF-8"?>
     <SystemInfo>
@@ -64,9 +59,7 @@ const testSystem = `<?xmlversion="1.0"encoding="UTF-8"?>
        </SystemRecommendations>
     </SystemInfo>\n`;
 
-const testSystemMd5 = crypto.createHash('md5')
-    .update(testSystem, 'utf-8')
-    .digest('hex');
+const testSystemMd5 = crypto.createHash('md5').update(testSystem, 'utf-8').digest('hex');
 
 const invalidTestSystem = `<?xmlversion="1.0"encoding="UTF-8"?>
     <SystemInfo>
@@ -89,9 +82,7 @@ const invalidTestSystem = `<?xmlversion="1.0"encoding="UTF-8"?>
        </SystemRecommendations>
     </SystemInfo>\n`;
 
-const invalidTestSystemMd5 = crypto.createHash('md5')
-    .update(testSystem, 'utf-8')
-    .digest('hex');
+const invalidTestSystemMd5 = crypto.createHash('md5').update(testSystem, 'utf-8').digest('hex');
 
 let bucketUtil;
 let s3;
@@ -112,8 +103,7 @@ let s3;
  * @return {undefined} - and call callback
  */
 function makeVeeamRequest(params, callback) {
-    const { method, headers, bucket, objectKey,
-        authCredentials, requestBody, queryObj } = params;
+    const { method, headers, bucket, objectKey, authCredentials, requestBody, queryObj } = params;
     const options = {
         authCredentials,
         hostname: ipAddress,
@@ -131,10 +121,10 @@ function makeVeeamRequest(params, callback) {
 
 describe('veeam PUT routes:', () => {
     before(done => {
-        bucketUtil = new BucketUtility(
-            'default', { signatureVersion: 'v4' });
+        bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
         s3 = bucketUtil.s3;
-        s3.createBucket({ Bucket: TEST_BUCKET }).promise()
+        s3.createBucket({ Bucket: TEST_BUCKET })
+            .promise()
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
@@ -142,7 +132,8 @@ describe('veeam PUT routes:', () => {
             });
     });
     after(done => {
-        bucketUtil.empty(TEST_BUCKET)
+        bucketUtil
+            .empty(TEST_BUCKET)
             .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
             .then(() => done())
             .catch(done);
@@ -152,76 +143,88 @@ describe('veeam PUT routes:', () => {
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', testSystem, testSystemMd5],
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
     ].forEach(key => {
-        it(`PUT ${key[0]}`, done => makeVeeamRequest({
-                method: 'PUT',
-                bucket: TEST_BUCKET,
-                objectKey: key[0],
-                headers: {
-                    'content-length': key[1].length,
-                    'content-md5': key[2],
-                    'x-scal-canonical-id': testArn,
+        it(`PUT ${key[0]}`, done =>
+            makeVeeamRequest(
+                {
+                    method: 'PUT',
+                    bucket: TEST_BUCKET,
+                    objectKey: key[0],
+                    headers: {
+                        'content-length': key[1].length,
+                        'content-md5': key[2],
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: veeamAuthCredentials,
+                    requestBody: key[1],
                 },
-                authCredentials: veeamAuthCredentials,
-                requestBody: key[1],
-            }, (err, response) => {
-                if (err) {
-                    // Return the error, if any
-                    return done(err);
+                (err, response) => {
+                    if (err) {
+                        // Return the error, if any
+                        return done(err);
+                    }
+                    assert.strictEqual(response.statusCode, 200);
+                    return done();
                 }
-                assert.strictEqual(response.statusCode, 200);
-                return done();
-            }));
+            ));
     });
 
     [
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', invalidTestSystem, invalidTestSystemMd5],
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', invalidTestCapacity, invalidTestCapacityMd5],
     ].forEach(key => {
-        it(`PUT ${key[0]} should fail for invalid XML`, done => makeVeeamRequest({
-                method: 'PUT',
-                bucket: TEST_BUCKET,
-                objectKey: key[0],
-                headers: {
-                    'content-length': key[1].length + 3,
-                    'content-md5': key[2],
-                    'x-scal-canonical-id': testArn,
+        it(`PUT ${key[0]} should fail for invalid XML`, done =>
+            makeVeeamRequest(
+                {
+                    method: 'PUT',
+                    bucket: TEST_BUCKET,
+                    objectKey: key[0],
+                    headers: {
+                        'content-length': key[1].length + 3,
+                        'content-md5': key[2],
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: veeamAuthCredentials,
+                    requestBody: `${key[1]}gff`,
                 },
-                authCredentials: veeamAuthCredentials,
-                requestBody: `${key[1]}gff`,
-            }, err => {
-                assert.strictEqual(err.code, 'MalformedXML');
-                return done();
-            }));
+                err => {
+                    assert.strictEqual(err.code, 'MalformedXML');
+                    return done();
+                }
+            ));
     });
 
     [
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', testSystem, testSystemMd5],
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
     ].forEach(key => {
-        it(`PUT ${key[0]} should fail if invalid credentials are sent`, done => makeVeeamRequest({
-                method: 'PUT',
-                bucket: TEST_BUCKET,
-                objectKey: key[0],
-                headers: {
-                    'content-length': key[1].length + 3,
-                    'content-md5': key[2],
-                    'x-scal-canonical-id': testArn,
+        it(`PUT ${key[0]} should fail if invalid credentials are sent`, done =>
+            makeVeeamRequest(
+                {
+                    method: 'PUT',
+                    bucket: TEST_BUCKET,
+                    objectKey: key[0],
+                    headers: {
+                        'content-length': key[1].length + 3,
+                        'content-md5': key[2],
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: badVeeamAuthCredentials,
+                    requestBody: `${key[1]}gff`,
                 },
-                authCredentials: badVeeamAuthCredentials,
-                requestBody: `${key[1]}gff`,
-            }, err => {
-                assert.strictEqual(err.code, 'InvalidAccessKeyId');
-                return done();
-            }));
+                err => {
+                    assert.strictEqual(err.code, 'InvalidAccessKeyId');
+                    return done();
+                }
+            ));
     });
 });
 
 describe('veeam GET routes:', () => {
     beforeEach(done => {
-        bucketUtil = new BucketUtility(
-            'default', { signatureVersion: 'v4' });
+        bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
         s3 = bucketUtil.s3;
-        s3.createBucket({ Bucket: TEST_BUCKET }).promise()
+        s3.createBucket({ Bucket: TEST_BUCKET })
+            .promise()
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
@@ -229,7 +232,8 @@ describe('veeam GET routes:', () => {
             });
     });
     afterEach(done => {
-        bucketUtil.empty(TEST_BUCKET)
+        bucketUtil
+            .empty(TEST_BUCKET)
             .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
             .then(() => done())
             .catch(done);
@@ -240,45 +244,56 @@ describe('veeam GET routes:', () => {
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
     ].forEach(key => {
         it(`GET ${key[0]} should return the expected XML file`, done => {
-            async.waterfall([
-                next => makeVeeamRequest({
-                    method: 'PUT',
-                    bucket: TEST_BUCKET,
-                    objectKey: key[0],
-                    headers: {
-                        'content-length': key[1].length,
-                        'content-md5': key[2],
-                        'x-scal-canonical-id': testArn,
-                    },
-                    authCredentials: veeamAuthCredentials,
-                    requestBody: key[1],
-                }, (err, response) => {
-                    if (err) {
-                        return done(err);
-                    }
-                    assert.strictEqual(response.statusCode, 200);
-                    return next();
-                }),
-                next => makeVeeamRequest({
-                    method: 'GET',
-                    bucket: TEST_BUCKET,
-                    objectKey: key[0],
-                    headers: {
-                        'x-scal-canonical-id': testArn,
-                    },
-                    authCredentials: veeamAuthCredentials,
-                }, (err, response) => {
-                    if (err) {
-                        return done(err);
-                    }
-                    assert.strictEqual(response.statusCode, 200);
-                    assert.strictEqual(response.body.replaceAll(' ', ''), key[1].replaceAll(' ', ''));
-                    return next();
-                }),
-            ], err => {
-                assert.ifError(err);
-                return done();
-            });
+            async.waterfall(
+                [
+                    next =>
+                        makeVeeamRequest(
+                            {
+                                method: 'PUT',
+                                bucket: TEST_BUCKET,
+                                objectKey: key[0],
+                                headers: {
+                                    'content-length': key[1].length,
+                                    'content-md5': key[2],
+                                    'x-scal-canonical-id': testArn,
+                                },
+                                authCredentials: veeamAuthCredentials,
+                                requestBody: key[1],
+                            },
+                            (err, response) => {
+                                if (err) {
+                                    return done(err);
+                                }
+                                assert.strictEqual(response.statusCode, 200);
+                                return next();
+                            }
+                        ),
+                    next =>
+                        makeVeeamRequest(
+                            {
+                                method: 'GET',
+                                bucket: TEST_BUCKET,
+                                objectKey: key[0],
+                                headers: {
+                                    'x-scal-canonical-id': testArn,
+                                },
+                                authCredentials: veeamAuthCredentials,
+                            },
+                            (err, response) => {
+                                if (err) {
+                                    return done(err);
+                                }
+                                assert.strictEqual(response.statusCode, 200);
+                                assert.strictEqual(response.body.replaceAll(' ', ''), key[1].replaceAll(' ', ''));
+                                return next();
+                            }
+                        ),
+                ],
+                err => {
+                    assert.ifError(err);
+                    return done();
+                }
+            );
         });
     });
 
@@ -287,76 +302,90 @@ describe('veeam GET routes:', () => {
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
     ].forEach(key => {
         it(`GET ${key[0]} should return the expected XML file for cors requests`, done => {
-            async.waterfall([
-                next => makeVeeamRequest({
-                    method: 'PUT',
-                    bucket: TEST_BUCKET,
-                    objectKey: key[0],
-                    headers: {
-                        'origin': 'http://localhost:8000',
-                        'content-length': key[1].length,
-                        'content-md5': key[2],
-                        'x-scal-canonical-id': testArn,
-                    },
-                    authCredentials: veeamAuthCredentials,
-                    requestBody: key[1],
-                }, (err, response) => {
-                    if (err) {
-                        return done(err);
-                    }
-                    assert.strictEqual(response.statusCode, 200);
-                    return next();
-                }),
-                next => makeVeeamRequest({
-                    method: 'GET',
-                    bucket: TEST_BUCKET,
-                    objectKey: key[0],
-                    headers: {
-                        'origin': 'http://localhost:8000',
-                        'x-scal-canonical-id': testArn,
-                    },
-                    authCredentials: veeamAuthCredentials,
-                }, (err, response) => {
-                    if (err) {
-                        return done(err);
-                    }
-                    assert.strictEqual(response.statusCode, 200);
-                    assert.strictEqual(response.body.replaceAll(' ', ''), key[1].replaceAll(' ', ''));
-                    return next();
-                }),
-            ], err => {
-                assert.ifError(err);
-                return done();
-            });
+            async.waterfall(
+                [
+                    next =>
+                        makeVeeamRequest(
+                            {
+                                method: 'PUT',
+                                bucket: TEST_BUCKET,
+                                objectKey: key[0],
+                                headers: {
+                                    origin: 'http://localhost:8000',
+                                    'content-length': key[1].length,
+                                    'content-md5': key[2],
+                                    'x-scal-canonical-id': testArn,
+                                },
+                                authCredentials: veeamAuthCredentials,
+                                requestBody: key[1],
+                            },
+                            (err, response) => {
+                                if (err) {
+                                    return done(err);
+                                }
+                                assert.strictEqual(response.statusCode, 200);
+                                return next();
+                            }
+                        ),
+                    next =>
+                        makeVeeamRequest(
+                            {
+                                method: 'GET',
+                                bucket: TEST_BUCKET,
+                                objectKey: key[0],
+                                headers: {
+                                    origin: 'http://localhost:8000',
+                                    'x-scal-canonical-id': testArn,
+                                },
+                                authCredentials: veeamAuthCredentials,
+                            },
+                            (err, response) => {
+                                if (err) {
+                                    return done(err);
+                                }
+                                assert.strictEqual(response.statusCode, 200);
+                                assert.strictEqual(response.body.replaceAll(' ', ''), key[1].replaceAll(' ', ''));
+                                return next();
+                            }
+                        ),
+                ],
+                err => {
+                    assert.ifError(err);
+                    return done();
+                }
+            );
         });
     });
-
 
     [
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', testSystem, testSystemMd5],
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
     ].forEach(key => {
-        it(`GET ${key[0]} should fail if no data in bucket metadata`, done => makeVeeamRequest({
-                method: 'GET',
-                bucket: TEST_BUCKET,
-                objectKey: key[0],
-                headers: {
-                    'x-scal-canonical-id': testArn,
+        it(`GET ${key[0]} should fail if no data in bucket metadata`, done =>
+            makeVeeamRequest(
+                {
+                    method: 'GET',
+                    bucket: TEST_BUCKET,
+                    objectKey: key[0],
+                    headers: {
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: veeamAuthCredentials,
                 },
-                authCredentials: veeamAuthCredentials,
-            }, err => {
-                assert.strictEqual(err.code, 'NoSuchKey');
-                return done();
-            }));
+                err => {
+                    assert.strictEqual(err.code, 'NoSuchKey');
+                    return done();
+                }
+            ));
     });
 });
 
 describe('veeam DELETE routes:', () => {
     beforeEach(done => {
-        bucketUtil = new BucketUtility(
-            'default', { signatureVersion: 'v4' });
+        bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
         s3 = bucketUtil.s3;
-        s3.createBucket({ Bucket: TEST_BUCKET }).promise()
+        s3.createBucket({ Bucket: TEST_BUCKET })
+            .promise()
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
@@ -364,7 +393,8 @@ describe('veeam DELETE routes:', () => {
             });
     });
     afterEach(done => {
-        bucketUtil.empty(TEST_BUCKET)
+        bucketUtil
+            .empty(TEST_BUCKET)
             .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
             .then(() => done())
             .catch(done);
@@ -375,72 +405,91 @@ describe('veeam DELETE routes:', () => {
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
     ].forEach(key => {
         it(`DELETE ${key[0]} should delete the XML file`, done => {
-            async.waterfall([
-                next => makeVeeamRequest({
-                    method: 'PUT',
-                    bucket: TEST_BUCKET,
-                    objectKey: key[0],
-                    headers: {
-                        'content-length': key[1].length,
-                        'content-md5': key[2],
-                        'x-scal-canonical-id': testArn,
-                    },
-                    authCredentials: veeamAuthCredentials,
-                    requestBody: key[1],
-                }, (err, response) => {
-                    if (err) {
-                        return done(err);
-                    }
-                    assert.strictEqual(response.statusCode, 200);
-                    return next();
-                }),
-                next => makeVeeamRequest({
-                    method: 'GET',
-                    bucket: TEST_BUCKET,
-                    objectKey: key[0],
-                    headers: {
-                        'x-scal-canonical-id': testArn,
-                    },
-                    authCredentials: veeamAuthCredentials,
-                }, (err, response) => {
-                    if (err) {
-                        return done(err);
-                    }
-                    assert.strictEqual(response.statusCode, 200);
-                    assert.strictEqual(response.body.replaceAll(' ', ''), key[1].replaceAll(' ', ''));
-                    return next();
-                }),
-                next => makeVeeamRequest({
-                    method: 'DELETE',
-                    bucket: TEST_BUCKET,
-                    objectKey: key[0],
-                    headers: {
-                        'x-scal-canonical-id': testArn,
-                    },
-                    authCredentials: veeamAuthCredentials,
-                }, (err, response) => {
-                    if (err) {
-                        return done(err);
-                    }
-                    assert.strictEqual(response.statusCode, 204);
-                    return next();
-                }),
-                next => makeVeeamRequest({
-                    method: 'GET',
-                    bucket: TEST_BUCKET,
-                    objectKey: key[0],
-                    headers: {
-                        'x-scal-canonical-id': testArn,
-                    },
-                    authCredentials: veeamAuthCredentials,
-                }, err => {
-                    assert.strictEqual(err.code, 'NoSuchKey');
-                    return next();
-                }),
-            ], err => {
-                assert.ifError(err);
-                return done();
-            });
+            async.waterfall(
+                [
+                    next =>
+                        makeVeeamRequest(
+                            {
+                                method: 'PUT',
+                                bucket: TEST_BUCKET,
+                                objectKey: key[0],
+                                headers: {
+                                    'content-length': key[1].length,
+                                    'content-md5': key[2],
+                                    'x-scal-canonical-id': testArn,
+                                },
+                                authCredentials: veeamAuthCredentials,
+                                requestBody: key[1],
+                            },
+                            (err, response) => {
+                                if (err) {
+                                    return done(err);
+                                }
+                                assert.strictEqual(response.statusCode, 200);
+                                return next();
+                            }
+                        ),
+                    next =>
+                        makeVeeamRequest(
+                            {
+                                method: 'GET',
+                                bucket: TEST_BUCKET,
+                                objectKey: key[0],
+                                headers: {
+                                    'x-scal-canonical-id': testArn,
+                                },
+                                authCredentials: veeamAuthCredentials,
+                            },
+                            (err, response) => {
+                                if (err) {
+                                    return done(err);
+                                }
+                                assert.strictEqual(response.statusCode, 200);
+                                assert.strictEqual(response.body.replaceAll(' ', ''), key[1].replaceAll(' ', ''));
+                                return next();
+                            }
+                        ),
+                    next =>
+                        makeVeeamRequest(
+                            {
+                                method: 'DELETE',
+                                bucket: TEST_BUCKET,
+                                objectKey: key[0],
+                                headers: {
+                                    'x-scal-canonical-id': testArn,
+                                },
+                                authCredentials: veeamAuthCredentials,
+                            },
+                            (err, response) => {
+                                if (err) {
+                                    return done(err);
+                                }
+                                assert.strictEqual(response.statusCode, 204);
+                                return next();
+                            }
+                        ),
+                    next =>
+                        makeVeeamRequest(
+                            {
+                                method: 'GET',
+                                bucket: TEST_BUCKET,
+                                objectKey: key[0],
+                                headers: {
+                                    'x-scal-canonical-id': testArn,
+                                },
+                                authCredentials: veeamAuthCredentials,
+                            },
+                            err => {
+                                assert.strictEqual(err.code, 'NoSuchKey');
+                                return next();
+                            }
+                        ),
+                ],
+                err => {
+                    assert.ifError(err);
+                    return done();
+                }
+            );
         });
     });
 
@@ -448,27 +497,31 @@ describe('veeam DELETE routes:', () => {
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', testSystem, testSystemMd5],
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
     ].forEach(key => {
-        it(`DELETE ${key[0]} should fail if XML doesn't exist yet`, done => makeVeeamRequest({
-                method: 'DELETE',
-                bucket: TEST_BUCKET,
-                objectKey: key[0],
-                headers: {
-                    'x-scal-canonical-id': testArn,
+        it(`DELETE ${key[0]} should fail if XML doesn't exist yet`, done =>
+            makeVeeamRequest(
+                {
+                    method: 'DELETE',
+                    bucket: TEST_BUCKET,
+                    objectKey: key[0],
+                    headers: {
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: veeamAuthCredentials,
                 },
-                authCredentials: veeamAuthCredentials,
-            }, err => {
-                assert.strictEqual(err.code, 'NoSuchKey');
-                return done();
-            }));
+                err => {
+                    assert.strictEqual(err.code, 'NoSuchKey');
+                    return done();
+                }
+            ));
     });
 });
 
 describe('veeam HEAD routes:', () => {
     beforeEach(done => {
-        bucketUtil = new BucketUtility(
-            'default', { signatureVersion: 'v4' });
+        bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
         s3 = bucketUtil.s3;
-        s3.createBucket({ Bucket: TEST_BUCKET }).promise()
+        s3.createBucket({ Bucket: TEST_BUCKET })
+            .promise()
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
@@ -476,7 +529,8 @@ describe('veeam HEAD routes:', () => {
             });
     });
     afterEach(done => {
-        bucketUtil.empty(TEST_BUCKET)
+        bucketUtil
+            .empty(TEST_BUCKET)
             .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
             .then(() => done())
             .catch(done);
@@ -487,44 +541,55 @@ describe('veeam HEAD routes:', () => {
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
     ].forEach(key => {
         it(`HEAD ${key[0]} should return the existing XML file metadata`, done => {
-            async.waterfall([
-                next => makeVeeamRequest({
-                    method: 'PUT',
-                    bucket: TEST_BUCKET,
-                    objectKey: key[0],
-                    headers: {
-                        'content-length': key[1].length,
-                        'content-md5': key[2],
-                        'x-scal-canonical-id': testArn,
-                    },
-                    authCredentials: veeamAuthCredentials,
-                    requestBody: key[1],
-                }, (err, response) => {
-                    if (err) {
-                        return done(err);
-                    }
-                    assert.strictEqual(response.statusCode, 200);
-                    return next();
-                }),
-                next => makeVeeamRequest({
-                    method: 'HEAD',
-                    bucket: TEST_BUCKET,
-                    objectKey: key[0],
-                    headers: {
-                        'x-scal-canonical-id': testArn,
-                    },
-                    authCredentials: veeamAuthCredentials,
-                }, (err, response) => {
-                    if (err) {
-                        return done(err);
-                    }
-                    assert.strictEqual(response.statusCode, 200);
-                    return next();
-                }),
-            ], err => {
-                assert.ifError(err);
-                return done();
-            });
+            async.waterfall(
+                [
+                    next =>
+                        makeVeeamRequest(
+                            {
+                                method: 'PUT',
+                                bucket: TEST_BUCKET,
+                                objectKey: key[0],
+                                headers: {
+                                    'content-length': key[1].length,
+                                    'content-md5': key[2],
+                                    'x-scal-canonical-id': testArn,
+                                },
+                                authCredentials: veeamAuthCredentials,
+                                requestBody: key[1],
+                            },
+                            (err, response) => {
+                                if (err) {
+                                    return done(err);
+                                }
+                                assert.strictEqual(response.statusCode, 200);
+                                return next();
+                            }
+                        ),
+                    next =>
+                        makeVeeamRequest(
+                            {
+                                method: 'HEAD',
+                                bucket: TEST_BUCKET,
+                                objectKey: key[0],
+                                headers: {
+                                    'x-scal-canonical-id': testArn,
+                                },
+                                authCredentials: veeamAuthCredentials,
+                            },
+                            (err, response) => {
+                                if (err) {
+                                    return done(err);
+                                }
+                                assert.strictEqual(response.statusCode, 200);
+                                return next();
+                            }
+                        ),
+                ],
+                err => {
+                    assert.ifError(err);
+                    return done();
+                }
+            );
         });
     });
 
@@ -532,29 +597,32 @@ describe('veeam HEAD routes:', () => {
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', testSystem, testSystemMd5],
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
     ].forEach(key => {
-        it(`HEAD ${key[0]} should fail if no data in bucket metadata`, done => makeVeeamRequest({
-                method: 'HEAD',
-                bucket: TEST_BUCKET,
-                objectKey: key[0],
-                headers: {
-                    'x-scal-canonical-id': testArn,
+        it(`HEAD ${key[0]} should fail if no data in bucket metadata`, done =>
+            makeVeeamRequest(
+                {
+                    method: 'HEAD',
+                    bucket: TEST_BUCKET,
+                    objectKey: key[0],
+                    headers: {
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: veeamAuthCredentials,
                 },
-                authCredentials: veeamAuthCredentials,
-            }, (err, res) => {
-                assert.strictEqual(res.statusCode, 404);
-                return done();
-            }));
+                (err, res) => {
+                    assert.strictEqual(res.statusCode, 404);
+                    return done();
+                }
+            ));
     });
 });
-
 
 // TODO {test_debt} handle query params tests with signature (happy path)
 describe.skip('veeam LIST routes:', () => {
     beforeEach(done => {
-        bucketUtil = new BucketUtility(
-            'default', { signatureVersion: 'v4' });
+        bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
         s3 = bucketUtil.s3;
-        s3.createBucket({ Bucket: TEST_BUCKET }).promise()
+        s3.createBucket({ Bucket: TEST_BUCKET })
+            .promise()
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
@@ -562,7 +630,8 @@ describe.skip('veeam LIST routes:', () => {
             });
     });
     afterEach(done => {
-        bucketUtil.empty(TEST_BUCKET)
+        bucketUtil
+            .empty(TEST_BUCKET)
             .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
             .then(() => done())
             .catch(done);

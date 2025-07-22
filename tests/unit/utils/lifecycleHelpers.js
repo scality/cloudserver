@@ -33,7 +33,8 @@ function getLifecycleXml() {
     const days2 = 1;
     const action3 = 'AbortIncompleteMultipartUpload';
     const days3 = 30;
-    return '<LifecycleConfiguration ' +
+    return (
+        '<LifecycleConfiguration ' +
         'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
         '<Rule>' +
         `<ID>${id1}</ID>` +
@@ -61,7 +62,8 @@ function getLifecycleXml() {
         `<Value>${tags[0].value}</Value></Tag></Filter>` +
         `<${action1}><Days>${days1}</Days></${action1}>` +
         '</Rule>' +
-        '</LifecycleConfiguration>';
+        '</LifecycleConfiguration>'
+    );
 }
 
 module.exports = {

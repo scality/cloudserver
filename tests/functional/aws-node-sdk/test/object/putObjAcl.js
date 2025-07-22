@@ -4,8 +4,7 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const constants = require('../../../../../constants');
 
-const notOwnerCanonicalID = '79a59df900b949e55d96a1e698fba' +
-    'cedfd6e09d98eacf8f8d5218e7cd47ef2bf';
+const notOwnerCanonicalID = '79a59df900b949e55d96a1e698fba' + 'cedfd6e09d98eacf8f8d5218e7cd47ef2bf';
 const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
 
 class _AccessControlPolicy {
@@ -46,12 +45,13 @@ describe('PUT Object ACL', () => {
         const Key = 'aclTest';
 
         before(done => {
-            bucketUtil.createRandom(1)
-                      .then(created => {
-                          bucketName = created;
-                          done();
-                      })
-                      .catch(done);
+            bucketUtil
+                .createRandom(1)
+                .then(created => {
+                    bucketName = created;
+                    done();
+                })
+                .catch(done);
         });
 
         afterEach(() => {
@@ -67,30 +67,31 @@ describe('PUT Object ACL', () => {
         it('should put object ACLs', async () => {
             const s3 = bucketUtil.s3;
             const Bucket = bucketName;
-            const objects = [
-                { Bucket, Key },
-            ];
+            const objects = [{ Bucket, Key }];
             for (const param of objects) {
                 await s3.putObject(param).promise();
             }
             const data = await s3.putObjectAcl({ Bucket, Key, ACL: 'public-read' }).promise();
             assert(data);
-        });        
+        });
 
-        it('should return NoSuchKey if try to put object ACLs ' +
-            'for nonexistent object', done => {
+        it('should return NoSuchKey if try to put object ACLs ' + 'for nonexistent object', done => {
             const s3 = bucketUtil.s3;
             const Bucket = bucketName;
 
-            s3.putObjectAcl({
-                Bucket,
-                Key,
-                ACL: 'public-read' }, err => {
-                assert(err);
-                assert.strictEqual(err.statusCode, 404);
-                assert.strictEqual(err.code, 'NoSuchKey');
-                done();
-            });
+            s3.putObjectAcl(
+                {
+                    Bucket,
+                    Key,
+                    ACL: 'public-read',
+                },
+                err => {
+                    assert(err);
+                    assert.strictEqual(err.statusCode, 404);
+                    assert.strictEqual(err.code, 'NoSuchKey');
+                    done();
+                }
+            );
         });
 
         describe('on an object', () => {
@@ -101,10 +102,8 @@ describe('PUT Object ACL', () => {
             });
             // The supplied canonical ID is not associated with a real AWS
             // account, so AWS_ON_AIR will raise a 400 InvalidArgument
-            itSkipIfAWS('should return AccessDenied if try to change owner ' +
-                'ID in ACL request body', done => {
-                const acp = new _AccessControlPolicy(
-                    { ownerID: notOwnerCanonicalID });
+            itSkipIfAWS('should return AccessDenied if try to change owner ' + 'ID in ACL request body', done => {
+                const acp = new _AccessControlPolicy({ ownerID: notOwnerCanonicalID });
                 acp.addGrantee('Group', constants.publicId, 'READ');
                 const putAclParams = {
                     Bucket: bucketName,

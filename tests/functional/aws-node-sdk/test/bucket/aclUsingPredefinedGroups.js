@@ -49,50 +49,63 @@ withV4(sigCfg => {
     // tests for authenticated user(signed) and anonymous user(unsigned)
     [true, false].forEach(auth => {
         const authType = auth ? 'authenticated' : 'unauthenticated';
-        const grantUri = `uri=${auth ?
-            constants.allAuthedUsersId : constants.publicId}`;
+        const grantUri = `uri=${auth ? constants.allAuthedUsersId : constants.publicId}`;
 
         // TODO fix flakiness on E2E and re-enable, see CLDSRV-254
-        describeSkipIfE2E('PUT Bucket ACL using predefined groups - ' +
-            `${authType} request`, () => {
+        describeSkipIfE2E('PUT Bucket ACL using predefined groups - ' + `${authType} request`, () => {
             const aclParam = {
                 Bucket: testBucket,
                 ACL: 'private',
             };
 
-            beforeEach(done => s3.createBucket({
-                Bucket: testBucket,
-            }, err => {
-                assert.ifError(err);
-                return s3.putObject({
-                    Bucket: testBucket,
-                    Body: testBody,
-                    Key: ownerObjKey,
-                }, done);
-            }));
-            afterEach(() => ownerAccountBucketUtil.empty(testBucket)
-                .then(() => ownerAccountBucketUtil.deleteOne(testBucket)));
+            beforeEach(done =>
+                s3.createBucket(
+                    {
+                        Bucket: testBucket,
+                    },
+                    err => {
+                        assert.ifError(err);
+                        return s3.putObject(
+                            {
+                                Bucket: testBucket,
+                                Body: testBody,
+                                Key: ownerObjKey,
+                            },
+                            done
+                        );
+                    }
+                )
+            );
+            afterEach(() =>
+                ownerAccountBucketUtil.empty(testBucket).then(() => ownerAccountBucketUtil.deleteOne(testBucket))
+            );
 
             it('should grant read access', done => {
-                s3.putBucketAcl({
-                    Bucket: testBucket,
-                    GrantRead: grantUri,
-                }, err => {
-                    assert.ifError(err);
-                    const param = { Bucket: testBucket };
-                    awsRequest(auth, 'listObjects', param, cbNoError(done));
-                });
+                s3.putBucketAcl(
+                    {
+                        Bucket: testBucket,
+                        GrantRead: grantUri,
+                    },
+                    err => {
+                        assert.ifError(err);
+                        const param = { Bucket: testBucket };
+                        awsRequest(auth, 'listObjects', param, cbNoError(done));
+                    }
+                );
             });
 
             it('should grant read access with grant-full-control', done => {
-                s3.putBucketAcl({
-                    Bucket: testBucket,
-                    GrantFullControl: grantUri,
-                }, err => {
-                    assert.ifError(err);
-                    const param = { Bucket: testBucket };
-                    awsRequest(auth, 'listObjects', param, cbNoError(done));
-                });
+                s3.putBucketAcl(
+                    {
+                        Bucket: testBucket,
+                        GrantFullControl: grantUri,
+                    },
+                    err => {
+                        assert.ifError(err);
+                        const param = { Bucket: testBucket };
+                        awsRequest(auth, 'listObjects', param, cbNoError(done));
+                    }
+                );
             });
 
             it('should not grant read access', done => {
@@ -104,34 +117,39 @@ withV4(sigCfg => {
             });
 
             it('should grant write access', done => {
-                s3.putBucketAcl({
-                    Bucket: testBucket,
-                    GrantWrite: grantUri,
-                }, err => {
-                    assert.ifError(err);
-                    const param = {
+                s3.putBucketAcl(
+                    {
                         Bucket: testBucket,
-                        Body: testBody,
-                        Key: testKey,
-                    };
-                    awsRequest(auth, 'putObject', param, cbNoError(done));
-                });
+                        GrantWrite: grantUri,
+                    },
+                    err => {
+                        assert.ifError(err);
+                        const param = {
+                            Bucket: testBucket,
+                            Body: testBody,
+                            Key: testKey,
+                        };
+                        awsRequest(auth, 'putObject', param, cbNoError(done));
+                    }
+                );
             });
 
-            it('should grant write access with ' +
-                'grant-full-control', done => {
-                s3.putBucketAcl({
-                    Bucket: testBucket,
-                    GrantFullControl: grantUri,
-                }, err => {
-                    assert.ifError(err);
-                    const param = {
+            it('should grant write access with ' + 'grant-full-control', done => {
+                s3.putBucketAcl(
+                    {
                         Bucket: testBucket,
-                        Body: testBody,
-                        Key: testKey,
-                    };
-                    awsRequest(auth, 'putObject', param, cbNoError(done));
-                });
+                        GrantFullControl: grantUri,
+                    },
+                    err => {
+                        assert.ifError(err);
+                        const param = {
+                            Bucket: testBucket,
+                            Body: testBody,
+                            Key: testKey,
+                        };
+                        awsRequest(auth, 'putObject', param, cbNoError(done));
+                    }
+                );
             });
 
             it('should not grant write access', done => {
@@ -147,68 +165,75 @@ withV4(sigCfg => {
             });
 
             // TODO: S3C-5656
-            itSkipIfE2E('should grant write access on an object not owned ' +
-                'by the grantee', done => {
-                s3.putBucketAcl({
-                    Bucket: testBucket,
-                    GrantWrite: grantUri,
-                }, err => {
-                    assert.ifError(err);
-                    const param = {
+            itSkipIfE2E('should grant write access on an object not owned ' + 'by the grantee', done => {
+                s3.putBucketAcl(
+                    {
                         Bucket: testBucket,
-                        Body: testBody,
-                        Key: ownerObjKey,
-                    };
-                    awsRequest(auth, 'putObject', param, cbNoError(done));
-                });
+                        GrantWrite: grantUri,
+                    },
+                    err => {
+                        assert.ifError(err);
+                        const param = {
+                            Bucket: testBucket,
+                            Body: testBody,
+                            Key: ownerObjKey,
+                        };
+                        awsRequest(auth, 'putObject', param, cbNoError(done));
+                    }
+                );
             });
 
-            it(`should ${auth ? '' : 'not '}delete object not owned by the` +
-            'grantee', done => {
-                s3.putBucketAcl({
-                    Bucket: testBucket,
-                    GrantWrite: grantUri,
-                }, err => {
-                    assert.ifError(err);
-                    const param = {
+            it(`should ${auth ? '' : 'not '}delete object not owned by the` + 'grantee', done => {
+                s3.putBucketAcl(
+                    {
                         Bucket: testBucket,
-                        Key: ownerObjKey,
-                    };
-                    awsRequest(auth, 'deleteObject', param, err => {
-                        if (auth) {
-                            assert.ifError(err);
-                        } else {
-                            assert.notStrictEqual(err, null);
-                            assert.strictEqual(
-                                err.statusCode,
-                                errorInstances.AccessDenied.code
-                            );
-                        }
-                        done();
-                    });
-                });
+                        GrantWrite: grantUri,
+                    },
+                    err => {
+                        assert.ifError(err);
+                        const param = {
+                            Bucket: testBucket,
+                            Key: ownerObjKey,
+                        };
+                        awsRequest(auth, 'deleteObject', param, err => {
+                            if (auth) {
+                                assert.ifError(err);
+                            } else {
+                                assert.notStrictEqual(err, null);
+                                assert.strictEqual(err.statusCode, errorInstances.AccessDenied.code);
+                            }
+                            done();
+                        });
+                    }
+                );
             });
 
             it('should read bucket acl', done => {
-                s3.putBucketAcl({
-                    Bucket: testBucket,
-                    GrantReadACP: grantUri,
-                }, err => {
-                    assert.ifError(err);
-                    const param = { Bucket: testBucket };
-                    awsRequest(auth, 'getBucketAcl', param, cbNoError(done));
-                });
+                s3.putBucketAcl(
+                    {
+                        Bucket: testBucket,
+                        GrantReadACP: grantUri,
+                    },
+                    err => {
+                        assert.ifError(err);
+                        const param = { Bucket: testBucket };
+                        awsRequest(auth, 'getBucketAcl', param, cbNoError(done));
+                    }
+                );
             });
 
             it('should read bucket acl with grant-full-control', done => {
-                s3.putBucketAcl({
-                    Bucket: testBucket,
-                    GrantFullControl: grantUri,
-                }, err => {
-                    assert.ifError(err);
-                    const param = { Bucket: testBucket };
-                    awsRequest(auth, 'getBucketAcl', param, cbNoError(done));
-                });
+                s3.putBucketAcl(
+                    {
+                        Bucket: testBucket,
+                        GrantFullControl: grantUri,
+                    },
+                    err => {
+                        assert.ifError(err);
+                        const param = { Bucket: testBucket };
+                        awsRequest(auth, 'getBucketAcl', param, cbNoError(done));
+                    }
+                );
             });
 
             it('should not read bucket acl', done => {
@@ -220,31 +245,37 @@ withV4(sigCfg => {
             });
 
             it('should write bucket acl', done => {
-                s3.putBucketAcl({
-                    Bucket: testBucket,
-                    GrantWriteACP: grantUri,
-                }, err => {
-                    assert.ifError(err);
-                    const param = {
+                s3.putBucketAcl(
+                    {
                         Bucket: testBucket,
-                        GrantReadACP: `uri=${constants.publicId}`,
-                    };
-                    awsRequest(auth, 'putBucketAcl', param, cbNoError(done));
-                });
+                        GrantWriteACP: grantUri,
+                    },
+                    err => {
+                        assert.ifError(err);
+                        const param = {
+                            Bucket: testBucket,
+                            GrantReadACP: `uri=${constants.publicId}`,
+                        };
+                        awsRequest(auth, 'putBucketAcl', param, cbNoError(done));
+                    }
+                );
             });
 
             it('should write bucket acl with grant-full-control', done => {
-                s3.putBucketAcl({
-                    Bucket: testBucket,
-                    GrantFullControl: grantUri,
-                }, err => {
-                    assert.ifError(err);
-                    const param = {
+                s3.putBucketAcl(
+                    {
                         Bucket: testBucket,
-                        GrantReadACP: `uri=${constants.publicId}`,
-                    };
-                    awsRequest(auth, 'putBucketAcl', param, cbNoError(done));
-                });
+                        GrantFullControl: grantUri,
+                    },
+                    err => {
+                        assert.ifError(err);
+                        const param = {
+                            Bucket: testBucket,
+                            GrantReadACP: `uri=${constants.publicId}`,
+                        };
+                        awsRequest(auth, 'putBucketAcl', param, cbNoError(done));
+                    }
+                );
             });
 
             it('should not write bucket acl', done => {
@@ -259,54 +290,68 @@ withV4(sigCfg => {
             });
         });
 
-        describe('PUT Object ACL using predefined groups - ' +
-            `${authType} request`, () => {
+        describe('PUT Object ACL using predefined groups - ' + `${authType} request`, () => {
             const aclParam = {
                 Bucket: testBucket,
                 Key: testKey,
                 ACL: 'private',
             };
-            beforeEach(done => s3.createBucket({
-                Bucket: testBucket,
-            }, err => {
-                assert.ifError(err);
-                return s3.putObject({
-                    Bucket: testBucket,
-                    Body: testBody,
-                    Key: testKey,
-                }, done);
-            }));
-            afterEach(() => ownerAccountBucketUtil.empty(testBucket)
-                .then(() => ownerAccountBucketUtil.deleteOne(testBucket)));
+            beforeEach(done =>
+                s3.createBucket(
+                    {
+                        Bucket: testBucket,
+                    },
+                    err => {
+                        assert.ifError(err);
+                        return s3.putObject(
+                            {
+                                Bucket: testBucket,
+                                Body: testBody,
+                                Key: testKey,
+                            },
+                            done
+                        );
+                    }
+                )
+            );
+            afterEach(() =>
+                ownerAccountBucketUtil.empty(testBucket).then(() => ownerAccountBucketUtil.deleteOne(testBucket))
+            );
 
             it('should grant read access', done => {
-                s3.putObjectAcl({
-                    Bucket: testBucket,
-                    GrantRead: grantUri,
-                    Key: testKey,
-                }, err => {
-                    assert.ifError(err);
-                    const param = {
+                s3.putObjectAcl(
+                    {
                         Bucket: testBucket,
+                        GrantRead: grantUri,
                         Key: testKey,
-                    };
-                    awsRequest(auth, 'getObject', param, cbNoError(done));
-                });
+                    },
+                    err => {
+                        assert.ifError(err);
+                        const param = {
+                            Bucket: testBucket,
+                            Key: testKey,
+                        };
+                        awsRequest(auth, 'getObject', param, cbNoError(done));
+                    }
+                );
             });
 
             it('should grant read access with grant-full-control', done => {
-                s3.putObjectAcl({
-                    Bucket: testBucket,
-                    GrantFullControl: grantUri,
-                    Key: testKey,
-                }, err => {
-                    assert.ifError(err);
-                    const param = {
+                s3.putObjectAcl(
+                    {
                         Bucket: testBucket,
+                        GrantFullControl: grantUri,
                         Key: testKey,
-                    };
-                    awsRequest(auth, 'getObject', param, cbNoError(done));
-                });
+                    },
+                    err => {
+                        assert.ifError(err);
+                        const param = {
+                            Bucket: testBucket,
+                            Key: testKey,
+                        };
+                        awsRequest(auth, 'getObject', param, cbNoError(done));
+                    }
+                );
             });
 
             it('should not grant read access', done => {
@@ -321,33 +366,39 @@ withV4(sigCfg => {
             });
 
             it('should read object acl', done => {
-                s3.putObjectAcl({
-                    Bucket: testBucket,
-                    GrantReadACP: grantUri,
-                    Key: testKey,
-                }, err => {
-                    assert.ifError(err);
-                    const param = {
+                s3.putObjectAcl(
+                    {
                         Bucket: testBucket,
+                        GrantReadACP: grantUri,
                         Key: testKey,
-                    };
-                    awsRequest(auth, 'getObjectAcl', param, cbNoError(done));
-                });
+                    },
+                    err => {
+                        assert.ifError(err);
+                        const param = {
+                            Bucket: testBucket,
+                            Key: testKey,
+                        };
+                        awsRequest(auth, 'getObjectAcl', param, cbNoError(done));
+                    }
+                );
             });
 
             it('should read object acl with grant-full-control', done => {
-                s3.putObjectAcl({
-                    Bucket: testBucket,
-                    GrantFullControl: grantUri,
-                    Key: testKey,
-                }, err => {
-                    assert.ifError(err);
-                    const param = {
+                s3.putObjectAcl(
+                    {
                         Bucket: testBucket,
+                        GrantFullControl: grantUri,
                         Key: testKey,
-                    };
-                    awsRequest(auth, 'getObjectAcl', param, cbNoError(done));
-                });
+                    },
+                    err => {
+                        assert.ifError(err);
+                        const param = {
+                            Bucket: testBucket,
+                            Key: testKey,
+                        };
+                        awsRequest(auth, 'getObjectAcl', param, cbNoError(done));
+                    }
+                );
             });
 
             it('should not read object acl', done => {
@@ -362,35 +413,41 @@ withV4(sigCfg => {
             });
 
             it('should write object acl', done => {
-                s3.putObjectAcl({
-                    Bucket: testBucket,
-                    GrantWriteACP: grantUri,
-                    Key: testKey,
-                }, err => {
-                    assert.ifError(err);
-                    const param = {
+                s3.putObjectAcl(
+                    {
                         Bucket: testBucket,
+                        GrantWriteACP: grantUri,
                         Key: testKey,
-                        GrantReadACP: grantUri,
-                    };
-                    awsRequest(auth, 'putObjectAcl', param, cbNoError(done));
-                });
+                    },
+                    err => {
+                        assert.ifError(err);
+                        const param = {
+                            Bucket: testBucket,
+                            Key: testKey,
+                            GrantReadACP: grantUri,
+                        };
+                        awsRequest(auth, 'putObjectAcl', param, cbNoError(done));
+                    }
+                );
             });
 
             it('should write object acl with grant-full-control', done => {
-                s3.putObjectAcl({
-                    Bucket: testBucket,
-                    GrantFullControl: grantUri,
-                    Key: testKey,
-                }, err => {
-                    assert.ifError(err);
-                    const param = {
+                s3.putObjectAcl(
+                    {
                         Bucket: testBucket,
+                        GrantFullControl: grantUri,
                         Key: testKey,
-                        GrantReadACP: `uri=${constants.publicId}`,
-                    };
-                    awsRequest(auth, 'putObjectAcl', param, cbNoError(done));
-                });
+                    },
+                    err => {
+                        assert.ifError(err);
+                        const param = {
+                            Bucket: testBucket,
+                            Key: testKey,
+                            GrantReadACP: `uri=${constants.publicId}`,
+                        };
+                        awsRequest(auth, 'putObjectAcl', param, cbNoError(done));
+                    }
+                );
             });
 
             it('should not write object acl', done => {

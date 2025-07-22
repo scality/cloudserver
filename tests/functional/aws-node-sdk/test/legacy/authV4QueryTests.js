@@ -10,7 +10,6 @@ const provideRawOutput = require('../../lib/utility/provideRawOutput');
 const random = Math.round(Math.random() * 100).toString();
 const bucket = `mybucket-${random}`;
 
-
 function diff(putFile, receivedFile, done) {
     process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
     cp.spawn('diff', [putFile, receivedFile]).on('exit', code => {
@@ -65,8 +64,7 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
                 if (err) {
                     assert.ifError(err);
                 }
-                const bucketNames = xml.ListAllMyBucketsResult
-                    .Buckets[0].Bucket.map(item => item.Name[0]);
+                const bucketNames = xml.ListAllMyBucketsResult.Buckets[0].Bucket.map(item => item.Name[0]);
                 const whereIsMyBucket = bucketNames.indexOf(bucket);
                 assert(whereIsMyBucket > -1);
                 done();
@@ -78,38 +76,39 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
     it('should put an object', done => {
         const params = { Bucket: bucket, Key: 'key' };
         const url = s3.getSignedUrl('putObject', params);
-        provideRawOutput(['-verbose', '-X', 'PUT', url,
-            '--upload-file', 'uploadFile'], httpCode => {
+        provideRawOutput(['-verbose', '-X', 'PUT', url, '--upload-file', 'uploadFile'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
     });
 
-    it('should put an object with an acl setting and a storage class setting',
-        done => {
-            // This will test that upper case query parameters and lowercase
-            // query parameters (i.e., 'x-amz-acl') are being sorted properly.
-            // This will also test that query params that contain "x-amz-"
-            // are being added to the canonical headers list in our string
-            // to sign.
-            const params = { Bucket: bucket, Key: 'key',
-                ACL: 'public-read', StorageClass: 'STANDARD',
-                ContentType: 'text/plain' };
-            const url = s3.getSignedUrl('putObject', params);
-            provideRawOutput(['-verbose', '-X', 'PUT', url,
-                '--upload-file', 'uploadFile'], httpCode => {
-                assert.strictEqual(httpCode, '200 OK');
-                done();
-            });
+    it('should put an object with an acl setting and a storage class setting', done => {
+        // This will test that upper case query parameters and lowercase
+        // query parameters (i.e., 'x-amz-acl') are being sorted properly.
+        // This will also test that query params that contain "x-amz-"
+        // are being added to the canonical headers list in our string
+        // to sign.
+        const params = {
+            Bucket: bucket,
+            Key: 'key',
+            ACL: 'public-read',
+            StorageClass: 'STANDARD',
+            ContentType: 'text/plain',
+        };
+        const url = s3.getSignedUrl('putObject', params);
+        provideRawOutput(['-verbose', '-X', 'PUT', url, '--upload-file', 'uploadFile'], httpCode => {
+            assert.strictEqual(httpCode, '200 OK');
+            done();
         });
+    });
 
     it('should put an object with native characters', done => {
-        const Key = 'key-pâtisserie-中文-español-English-हिन्दी-العربية-' +
-        'português-বাংলা-русский-日本語-ਪੰਜਾਬੀ-한국어-தமிழ்';
+        const Key =
+            'key-pâtisserie-中文-español-English-हिन्दी-العربية-' +
+            'português-বাংলা-русский-日本語-ਪੰਜਾਬੀ-한국어-தமிழ்';
         const params = { Bucket: bucket, Key };
         const url = s3.getSignedUrl('putObject', params);
-        provideRawOutput(['-verbose', '-X', 'PUT', url,
-            '--upload-file', 'uploadFile'], httpCode => {
+        provideRawOutput(['-verbose', '-X', 'PUT', url, '--upload-file', 'uploadFile'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
@@ -125,8 +124,7 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
                 if (err) {
                     assert.ifError(err);
                 }
-                assert.strictEqual(result.ListBucketResult
-                    .Contents[0].Key[0], 'key');
+                assert.strictEqual(result.ListBucketResult.Contents[0].Key[0], 'key');
                 done();
             });
         });
@@ -152,36 +150,34 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
     it('should delete an object', done => {
         const params = { Bucket: bucket, Key: 'key' };
         const url = s3.getSignedUrl('deleteObject', params);
-        provideRawOutput(['-verbose', '-X', 'DELETE', url],
-            httpCode => {
-                assert.strictEqual(httpCode, '204 NO CONTENT');
-                done();
-            });
+        provideRawOutput(['-verbose', '-X', 'DELETE', url], httpCode => {
+            assert.strictEqual(httpCode, '204 NO CONTENT');
+            done();
+        });
     });
 
     it('should return a 204 on delete of an already deleted object', done => {
         const params = { Bucket: bucket, Key: 'key' };
         const url = s3.getSignedUrl('deleteObject', params);
-        provideRawOutput(['-verbose', '-X', 'DELETE', url],
-            httpCode => {
-                assert.strictEqual(httpCode, '204 NO CONTENT');
-                done();
-            });
+        provideRawOutput(['-verbose', '-X', 'DELETE', url], httpCode => {
+            assert.strictEqual(httpCode, '204 NO CONTENT');
+            done();
+        });
     });
 
     it('should return 204 on delete of non-existing object', done => {
         const params = { Bucket: bucket, Key: 'randomObject' };
         const url = s3.getSignedUrl('deleteObject', params);
-        provideRawOutput(['-verbose', '-X', 'DELETE', url],
-            httpCode => {
-                assert.strictEqual(httpCode, '204 NO CONTENT');
-                done();
-            });
+        provideRawOutput(['-verbose', '-X', 'DELETE', url], httpCode => {
+            assert.strictEqual(httpCode, '204 NO CONTENT');
+            done();
+        });
     });
 
     it('should delete an object with native characters', done => {
-        const Key = 'key-pâtisserie-中文-español-English-हिन्दी-العربية-' +
-        'português-বাংলা-русский-日本語-ਪੰਜਾਬੀ-한국어-தமிழ்';
+        const Key =
+            'key-pâtisserie-中文-español-English-हिन्दी-العربية-' +
+            'português-বাংলা-русский-日本語-ਪੰਜਾਬੀ-한국어-தமிழ்';
         const params = { Bucket: bucket, Key };
         const url = s3.getSignedUrl('deleteObject', params);
         provideRawOutput(['-verbose', '-X', 'DELETE', url], httpCode => {
@@ -194,10 +190,9 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
     it('should delete a bucket', done => {
         const params = { Bucket: bucket };
         const url = s3.getSignedUrl('deleteBucket', params);
-        provideRawOutput(['-verbose', '-X', 'DELETE', url],
-            httpCode => {
-                assert.strictEqual(httpCode, '204 NO CONTENT');
-                done();
-            });
+        provideRawOutput(['-verbose', '-X', 'DELETE', url], httpCode => {
+            assert.strictEqual(httpCode, '204 NO CONTENT');
+            done();
+        });
     });
 });

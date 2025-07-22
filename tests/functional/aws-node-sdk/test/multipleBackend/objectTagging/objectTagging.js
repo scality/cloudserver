@@ -2,10 +2,21 @@ const assert = require('assert');
 const async = require('async');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultiple, awsS3, awsBucket, getAwsRetry,
-    getAzureClient, getAzureContainerName, convertMD5, memLocation,
-    fileLocation, awsLocation, azureLocation, genUniqID,
-    isCEPH } = require('../utils');
+const {
+    describeSkipIfNotMultiple,
+    awsS3,
+    awsBucket,
+    getAwsRetry,
+    getAzureClient,
+    getAzureContainerName,
+    convertMD5,
+    memLocation,
+    fileLocation,
+    awsLocation,
+    azureLocation,
+    genUniqID,
+    isCEPH,
+} = require('../utils');
 
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName(azureLocation);
@@ -45,18 +56,13 @@ const tagObj = { key1: 'value1', key2: 'value2' };
 function getAndAssertObjectTags(tagParams, callback) {
     return s3.getObjectTagging(tagParams, (err, res) => {
         assert.strictEqual(res.TagSet.length, 2);
-        assert.strictEqual(res.TagSet[0].Key,
-            putTags.TagSet[0].Key);
-        assert.strictEqual(res.TagSet[0].Value,
-            putTags.TagSet[0].Value);
-        assert.strictEqual(res.TagSet[1].Key,
-            putTags.TagSet[1].Key);
-        assert.strictEqual(res.TagSet[1].Value,
-            putTags.TagSet[1].Value);
+        assert.strictEqual(res.TagSet[0].Key, putTags.TagSet[0].Key);
+        assert.strictEqual(res.TagSet[0].Value, putTags.TagSet[0].Value);
+        assert.strictEqual(res.TagSet[1].Key, putTags.TagSet[1].Key);
+        assert.strictEqual(res.TagSet[1].Value, putTags.TagSet[1].Value);
         return callback();
     });
 }
-
 
 function awsGet(key, tagCheck, isEmpty, isMpu, callback) {
     process.stdout.write('Getting object from AWS\n');
@@ -80,24 +86,29 @@ function awsGet(key, tagCheck, isEmpty, isMpu, callback) {
 
 function azureGet(key, tagCheck, isEmpty, callback) {
     process.stdout.write('Getting object from Azure\n');
-    azureClient.getContainerClient(azureContainerName).getProperties(key).then(res => {
-        const resMD5 = convertMD5(res.contentSettings.contentMD5);
-        if (isEmpty) {
-            assert.strictEqual(resMD5, `${emptyMD5}`);
-        } else {
-            assert.strictEqual(resMD5, `${correctMD5}`);
-        }
-        if (tagCheck) {
-            assert.strictEqual(res.metadata.tags,
-                JSON.stringify(tagObj));
-        } else {
-            assert.strictEqual(res.metadata.tags, undefined);
-        }
-        return callback();
-    }, err => {
-        assert.equal(err, null);
-        return callback();
-    });
+    azureClient
+        .getContainerClient(azureContainerName)
+        .getProperties(key)
+        .then(
+            res => {
+                const resMD5 = convertMD5(res.contentSettings.contentMD5);
+                if (isEmpty) {
+                    assert.strictEqual(resMD5, `${emptyMD5}`);
+                } else {
+                    assert.strictEqual(resMD5, `${correctMD5}`);
+                }
+                if (tagCheck) {
+                    assert.strictEqual(res.metadata.tags, JSON.stringify(tagObj));
+                } else {
+                    assert.strictEqual(res.metadata.tags, undefined);
+                }
+                return callback();
+            },
+            err => {
+                assert.equal(err, null);
+                return callback();
+            }
+        );
 }
 
 function getObject(key, backend, tagCheck, isEmpty, isMpu, callback) {
@@ -112,8 +123,7 @@ function getObject(key, backend, tagCheck, isEmpty, isMpu, callback) {
             } else {
                 assert.strictEqual(res.ETag, `"${correctMD5}"`);
             }
-            assert.strictEqual(res.Metadata['scal-location-constraint'],
-                backend);
+            assert.strictEqual(res.Metadata['scal-location-constraint'], backend);
             if (tagCheck) {
                 assert.strictEqual(res.TagCount, 2);
             } else {
@@ -134,38 +144,43 @@ function getObject(key, backend, tagCheck, isEmpty, isMpu, callback) {
 }
 
 function mpuWaterfall(params, cb) {
-    async.waterfall([
-        next => s3.createMultipartUpload(params, (err, data) => {
+    async.waterfall(
+        [
+            next =>
+                s3.createMultipartUpload(params, (err, data) => {
+                    assert.equal(err, null);
+                    next(null, data.UploadId);
+                }),
+            (uploadId, next) => {
+                const partParams = { Bucket: bucket, Key: params.Key, PartNumber: 1, UploadId: uploadId, Body: body };
+                s3.uploadPart(partParams, (err, result) => {
+                    assert.equal(err, null);
+                    next(null, uploadId, result.ETag);
+                });
+            },
+            (uploadId, eTag, next) => {
+                const compParams = {
+                    Bucket: bucket,
+                    Key: params.Key,
+                    MultipartUpload: {
+                        Parts: [{ ETag: eTag, PartNumber: 1 }],
+                    },
+                    UploadId: uploadId,
+                };
+                s3.completeMultipartUpload(compParams, err => {
+                    assert.equal(err, null);
+                    next();
+                });
+            },
+        ],
+        err => {
             assert.equal(err, null);
-            next(null, data.UploadId);
-        }),
-        (uploadId, next) => {
-            const partParams = { Bucket: bucket, Key: params.Key, PartNumber: 1,
-                UploadId: uploadId, Body: body };
-            s3.uploadPart(partParams, (err, result) => {
-                assert.equal(err, null);
-                next(null, uploadId, result.ETag);
-            });
-        },
-        (uploadId, eTag, next) => {
-            const compParams = { Bucket: bucket, Key: params.Key,
-                MultipartUpload: {
-                    Parts: [{ ETag: eTag, PartNumber: 1 }],
-                },
-                UploadId: uploadId };
-            s3.completeMultipartUpload(compParams, err => {
-                assert.equal(err, null);
-                next();
-            });
-        },
-    ], err => {
-        assert.equal(err, null);
-        cb();
-    });
+            cb();
+        }
+    );
 }
 
-describeSkipIfNotMultiple('Object tagging with multiple backends',
-function testSuite() {
+describeSkipIfNotMultiple('Object tagging with multiple backends', function testSuite() {
     if (!process.env.S3_END_TO_END) {
         this.retries(2);
     }
@@ -174,36 +189,38 @@ function testSuite() {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucket({ Bucket: bucket }).promise()
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
-            });
+            return s3
+                .createBucket({ Bucket: bucket })
+                .promise()
+                .catch(err => {
+                    process.stdout.write(`Error creating bucket: ${err}\n`);
+                    throw err;
+                });
         });
 
         afterEach(() => {
             process.stdout.write('Emptying bucket\n');
-            return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write(`Error in afterEach: ${err}\n`);
-                throw err;
-            });
+            return bucketUtil
+                .empty(bucket)
+                .then(() => {
+                    process.stdout.write('Deleting bucket\n');
+                    return bucketUtil.deleteOne(bucket);
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in afterEach: ${err}\n`);
+                    throw err;
+                });
         });
 
         describe('putObject with tags and putObjectTagging', () => {
             testBackends.forEach(backend => {
-                const itSkipIfAzureOrCeph = backend === 'azurebackend' ||
-                                            isCEPH ? it.skip : it;
-                it(`should put an object with tags to ${backend} backend`,
-                done => {
+                const itSkipIfAzureOrCeph = backend === 'azurebackend' || isCEPH ? it.skip : it;
+                it(`should put an object with tags to ${backend} backend`, done => {
                     const key = `somekey-${genUniqID()}`;
-                    const params = Object.assign({ Key: key, Tagging: tagString,
-                        Metadata: { 'scal-location-constraint': backend } },
-                         putParams);
+                    const params = Object.assign(
+                        { Key: key, Tagging: tagString, Metadata: { 'scal-location-constraint': backend } },
+                        putParams
+                    );
                     process.stdout.write('Putting object\n');
                     s3.putObject(params, err => {
                         assert.equal(err, null);
@@ -211,8 +228,7 @@ function testSuite() {
                     });
                 });
 
-                it(`should put a 0 byte object with tags to ${backend} backend`,
-                done => {
+                it(`should put a 0 byte object with tags to ${backend} backend`, done => {
                     const key = `somekey-${genUniqID()}`;
                     const params = {
                         Bucket: bucket,
@@ -227,16 +243,16 @@ function testSuite() {
                     });
                 });
 
-                it(`should put tags to preexisting object in ${backend} ` +
-                'backend', done => {
+                it(`should put tags to preexisting object in ${backend} ` + 'backend', done => {
                     const key = `somekey-${genUniqID()}`;
-                    const params = Object.assign({ Key: key, Metadata:
-                        { 'scal-location-constraint': backend } }, putParams);
+                    const params = Object.assign(
+                        { Key: key, Metadata: { 'scal-location-constraint': backend } },
+                        putParams
+                    );
                     process.stdout.write('Putting object\n');
                     s3.putObject(params, err => {
                         assert.equal(err, null);
-                        const putTagParams = { Bucket: bucket, Key: key,
-                            Tagging: putTags };
+                        const putTagParams = { Bucket: bucket, Key: key, Tagging: putTags };
                         process.stdout.write('Putting object tags\n');
                         s3.putObjectTagging(putTagParams, err => {
                             assert.equal(err, null);
@@ -245,8 +261,7 @@ function testSuite() {
                     });
                 });
 
-                it('should put tags to preexisting 0 byte object in ' +
-                `${backend} backend`, done => {
+                it('should put tags to preexisting 0 byte object in ' + `${backend} backend`, done => {
                     const key = `somekey-${genUniqID()}`;
                     const params = {
                         Bucket: bucket,
@@ -256,8 +271,7 @@ function testSuite() {
                     process.stdout.write('Putting object\n');
                     s3.putObject(params, err => {
                         assert.equal(err, null);
-                        const putTagParams = { Bucket: bucket, Key: key,
-                            Tagging: putTags };
+                        const putTagParams = { Bucket: bucket, Key: key, Tagging: putTags };
                         process.stdout.write('Putting object tags\n');
                         s3.putObjectTagging(putTagParams, err => {
                             assert.equal(err, null);
@@ -266,8 +280,7 @@ function testSuite() {
                     });
                 });
 
-                itSkipIfAzureOrCeph('should put tags to completed MPU ' +
-                `object in ${backend}`, done => {
+                itSkipIfAzureOrCeph('should put tags to completed MPU ' + `object in ${backend}`, done => {
                     const key = `somekey-${genUniqID()}`;
                     const params = {
                         Bucket: bucket,
@@ -275,8 +288,7 @@ function testSuite() {
                         Metadata: { 'scal-location-constraint': backend },
                     };
                     mpuWaterfall(params, () => {
-                        const putTagParams = { Bucket: bucket, Key: key,
-                            Tagging: putTags };
+                        const putTagParams = { Bucket: bucket, Key: key, Tagging: putTags };
                         process.stdout.write('Putting object\n');
                         s3.putObjectTagging(putTagParams, err => {
                             assert.equal(err, null);
@@ -286,39 +298,42 @@ function testSuite() {
                 });
             });
 
-            it('should not return error putting tags to correct object ' +
-            'version in AWS, even if a delete marker was created directly ' +
-            'on AWS before tags are put',
-            done => {
-                const key = `somekey-${genUniqID()}`;
-                const params = Object.assign({ Key: key, Metadata:
-                    { 'scal-location-constraint': awsLocation } }, putParams);
-                process.stdout.write('Putting object\n');
-                s3.putObject(params, err => {
-                    assert.equal(err, null);
-                    process.stdout.write('Deleting object from AWS\n');
-                    awsS3.deleteObject({ Bucket: awsBucket, Key: key }, err => {
+            it(
+                'should not return error putting tags to correct object ' +
+                    'version in AWS, even if a delete marker was created directly ' +
+                    'on AWS before tags are put',
+                done => {
+                    const key = `somekey-${genUniqID()}`;
+                    const params = Object.assign(
+                        { Key: key, Metadata: { 'scal-location-constraint': awsLocation } },
+                        putParams
+                    );
+                    process.stdout.write('Putting object\n');
+                    s3.putObject(params, err => {
                         assert.equal(err, null);
-                        const putTagParams = { Bucket: bucket, Key: key,
-                            Tagging: putTags };
-                        process.stdout.write('Putting object tags\n');
-                        s3.putObjectTagging(putTagParams, err => {
-                            assert.strictEqual(err, null);
-                            done();
+                        process.stdout.write('Deleting object from AWS\n');
+                        awsS3.deleteObject({ Bucket: awsBucket, Key: key }, err => {
+                            assert.equal(err, null);
+                            const putTagParams = { Bucket: bucket, Key: key, Tagging: putTags };
+                            process.stdout.write('Putting object tags\n');
+                            s3.putObjectTagging(putTagParams, err => {
+                                assert.strictEqual(err, null);
+                                done();
+                            });
                         });
                     });
-                });
-            });
+                }
+            );
         });
 
         describe('getObjectTagging', () => {
             testBackends.forEach(backend => {
-                it(`should get tags from object on ${backend} backend`,
-                done => {
+                it(`should get tags from object on ${backend} backend`, done => {
                     const key = `somekey-${genUniqID()}`;
-                    const params = Object.assign({ Key: key, Tagging: tagString,
-                        Metadata: { 'scal-location-constraint': backend } },
-                        putParams);
+                    const params = Object.assign(
+                        { Key: key, Tagging: tagString, Metadata: { 'scal-location-constraint': backend } },
+                        putParams
+                    );
                     process.stdout.write('Putting object\n');
                     s3.putObject(params, err => {
                         assert.equal(err, null);
@@ -328,33 +343,37 @@ function testSuite() {
                 });
             });
 
-            it('should not return error on getting tags from object that has ' +
-            'had a delete marker put directly on AWS', done => {
-                const key = `somekey-${genUniqID()}`;
-                const params = Object.assign({ Key: key, Tagging: tagString,
-                    Metadata: { 'scal-location-constraint': awsLocation } },
-                    putParams);
-                process.stdout.write('Putting object\n');
-                s3.putObject(params, err => {
-                    assert.equal(err, null);
-                    process.stdout.write('Deleting object from AWS\n');
-                    awsS3.deleteObject({ Bucket: awsBucket, Key: key }, err => {
+            it(
+                'should not return error on getting tags from object that has ' +
+                    'had a delete marker put directly on AWS',
+                done => {
+                    const key = `somekey-${genUniqID()}`;
+                    const params = Object.assign(
+                        { Key: key, Tagging: tagString, Metadata: { 'scal-location-constraint': awsLocation } },
+                        putParams
+                    );
+                    process.stdout.write('Putting object\n');
+                    s3.putObject(params, err => {
                         assert.equal(err, null);
-                        const tagParams = { Bucket: bucket, Key: key };
-                        getAndAssertObjectTags(tagParams, done);
+                        process.stdout.write('Deleting object from AWS\n');
+                        awsS3.deleteObject({ Bucket: awsBucket, Key: key }, err => {
+                            assert.equal(err, null);
+                            const tagParams = { Bucket: bucket, Key: key };
+                            getAndAssertObjectTags(tagParams, done);
+                        });
                     });
-                });
-            });
+                }
+            );
         });
 
         describe('deleteObjectTagging', () => {
             testBackends.forEach(backend => {
-                it(`should delete tags from object on ${backend} backend`,
-                done => {
+                it(`should delete tags from object on ${backend} backend`, done => {
                     const key = `somekey-${genUniqID()}`;
-                    const params = Object.assign({ Key: key, Tagging: tagString,
-                        Metadata: { 'scal-location-constraint': backend } },
-                        putParams);
+                    const params = Object.assign(
+                        { Key: key, Tagging: tagString, Metadata: { 'scal-location-constraint': backend } },
+                        putParams
+                    );
                     process.stdout.write('Putting object\n');
                     s3.putObject(params, err => {
                         assert.equal(err, null);
@@ -367,26 +386,30 @@ function testSuite() {
                 });
             });
 
-            it('should not return error on deleting tags from object that ' +
-            'has had delete markers put directly on AWS', done => {
-                const key = `somekey-${genUniqID()}`;
-                const params = Object.assign({ Key: key, Tagging: tagString,
-                    Metadata: { 'scal-location-constraint': awsLocation } },
-                    putParams);
-                process.stdout.write('Putting object\n');
-                s3.putObject(params, err => {
-                    assert.equal(err, null);
-                    process.stdout.write('Deleting object from AWS\n');
-                    awsS3.deleteObject({ Bucket: awsBucket, Key: key }, err => {
+            it(
+                'should not return error on deleting tags from object that ' +
+                    'has had delete markers put directly on AWS',
+                done => {
+                    const key = `somekey-${genUniqID()}`;
+                    const params = Object.assign(
+                        { Key: key, Tagging: tagString, Metadata: { 'scal-location-constraint': awsLocation } },
+                        putParams
+                    );
+                    process.stdout.write('Putting object\n');
+                    s3.putObject(params, err => {
                         assert.equal(err, null);
-                        const tagParams = { Bucket: bucket, Key: key };
-                        s3.deleteObjectTagging(tagParams, err => {
-                            assert.strictEqual(err, null);
-                            done();
+                        process.stdout.write('Deleting object from AWS\n');
+                        awsS3.deleteObject({ Bucket: awsBucket, Key: key }, err => {
+                            assert.equal(err, null);
+                            const tagParams = { Bucket: bucket, Key: key };
+                            s3.deleteObjectTagging(tagParams, err => {
+                                assert.strictEqual(err, null);
+                                done();
+                            });
                         });
                     });
-                });
-            });
+                }
+            );
         });
     });
 });

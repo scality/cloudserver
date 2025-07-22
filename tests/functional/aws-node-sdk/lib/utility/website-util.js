@@ -6,8 +6,7 @@ const url = require('url');
 
 const { makeRequest } = require('../../../raw-node/utils/makeRequest');
 
-const bucketName = process.env.AWS_ON_AIR ? 'awsbucketwebsitetester' :
-    'bucketwebsitetester';
+const bucketName = process.env.AWS_ON_AIR ? 'awsbucketwebsitetester' : 'bucketwebsitetester';
 let awsCredentials;
 
 function _parseConfigValue(string, fileSlice) {
@@ -31,10 +30,8 @@ function _retrieveAWSCredentials(profile) {
     const fileContents = file.split('\n');
     const profileIndex = file.indexOf(`[${profile}]`);
     if (profileIndex > -1) {
-        const accessKey = _parseConfigValue('aws_access_key_id',
-            fileContents.slice(profileIndex));
-        const secretKey = _parseConfigValue('aws_secret_access_key',
-            fileContents.slice(profileIndex));
+        const accessKey = _parseConfigValue('aws_access_key_id', fileContents.slice(profileIndex));
+        const secretKey = _parseConfigValue('aws_secret_access_key', fileContents.slice(profileIndex));
         return { accessKey, secretKey };
     }
     const msg = `Profile ${profile} does not exist in AWS credential file`;
@@ -70,46 +67,41 @@ function _assertResponseHtml(response, elemtag, content) {
         const startIndex = response.indexOf(startingTag);
         const endIndex = response.indexOf('</ul>');
         assert(startIndex > -1 && endIndex > -1, 'Did not find ul element');
-        const ulElem = response.slice(startIndex + startingTag.length,
-            endIndex);
+        const ulElem = response.slice(startIndex + startingTag.length, endIndex);
         content.forEach(item => {
             _assertResponseHtml(ulElem, 'li', item);
         });
     } else {
         const elem = `<${elemtag}>${content}</${elemtag}>`;
-        assert(response.includes(elem),
-            `Expected but did not find '${elem}' in html`);
+        assert(response.includes(elem), `Expected but did not find '${elem}' in html`);
     }
 }
 
 function _assertContainsHtml(responseBody) {
-    assert(responseBody.startsWith('<html>') &&
-        responseBody.includes('</html>'), 'Did not find html tags');
+    assert(responseBody.startsWith('<html>') && responseBody.includes('</html>'), 'Did not find html tags');
 }
 
 function _assertResponseHtml404(method, response, type) {
     assert.strictEqual(response.statusCode, 404);
     if (method === 'HEAD') {
         if (type === '404-no-such-bucket') {
-            assert.strictEqual(response.headers['x-amz-error-code'],
-            'NoSuchBucket');
+            assert.strictEqual(response.headers['x-amz-error-code'], 'NoSuchBucket');
             // Need arsenal fixed to remove period at the end
             // so compatible with aws
-            assert.strictEqual(response.headers['x-amz-error-message'],
-            'The specified bucket does not exist.');
+            assert.strictEqual(response.headers['x-amz-error-message'], 'The specified bucket does not exist.');
         } else if (type === '404-no-such-website-configuration') {
-            assert.strictEqual(response.headers['x-amz-error-code'],
-            'NoSuchWebsiteConfiguration');
-            assert.strictEqual(response.headers['x-amz-error-message'],
-            'The specified bucket does not have a website configuration');
+            assert.strictEqual(response.headers['x-amz-error-code'], 'NoSuchWebsiteConfiguration');
+            assert.strictEqual(
+                response.headers['x-amz-error-message'],
+                'The specified bucket does not have a website configuration'
+            );
         } else if (type === '404-not-found') {
-            assert.strictEqual(response.headers['x-amz-error-code'],
-            'NoSuchKey');
-            assert.strictEqual(response.headers['x-amz-error-message'],
-            'The specified key does not exist.');
+            assert.strictEqual(response.headers['x-amz-error-code'], 'NoSuchKey');
+            assert.strictEqual(response.headers['x-amz-error-message'], 'The specified key does not exist.');
         } else {
-            throw new Error(`'${type}' is not a recognized 404 ` +
-            'error checked in the WebsiteConfigTester.checkHTML function');
+            throw new Error(
+                `'${type}' is not a recognized 404 ` + 'error checked in the WebsiteConfigTester.checkHTML function'
+            );
         }
         // don't need to check HTML for head requests
         return;
@@ -126,18 +118,15 @@ function _assertResponseHtml404(method, response, type) {
     } else if (type === '404-no-such-website-configuration') {
         _assertResponseHtml(response.body, 'ul', [
             'Code: NoSuchWebsiteConfiguration',
-            'Message: The specified bucket does not have a ' +
-            'website configuration',
+            'Message: The specified bucket does not have a ' + 'website configuration',
             `BucketName: ${bucketName}`,
         ]);
     } else if (type === '404-not-found') {
-        _assertResponseHtml(response.body, 'ul', [
-            'Code: NoSuchKey',
-            'Message: The specified key does not exist.',
-        ]);
+        _assertResponseHtml(response.body, 'ul', ['Code: NoSuchKey', 'Message: The specified key does not exist.']);
     } else {
-        throw new Error(`'${type}' is not a recognized 404 ` +
-        'error checked in the WebsiteConfigTester.checkHTML function');
+        throw new Error(
+            `'${type}' is not a recognized 404 ` + 'error checked in the WebsiteConfigTester.checkHTML function'
+        );
     }
 }
 
@@ -145,38 +134,35 @@ function _assertResponseHtml403(method, response, type) {
     assert.strictEqual(response.statusCode, 403);
     if (method === 'HEAD') {
         if (type === '403-access-denied') {
-            assert.strictEqual(response.headers['x-amz-error-code'],
-            'AccessDenied');
-            assert.strictEqual(response.headers['x-amz-error-message'],
-            'Access Denied');
+            assert.strictEqual(response.headers['x-amz-error-code'], 'AccessDenied');
+            assert.strictEqual(response.headers['x-amz-error-message'], 'Access Denied');
         } else if (type !== '403-retrieve-error-document') {
-            throw new Error(`'${type}' is not a recognized 403 ` +
-            'error checked in the WebsiteConfigTester.checkHTML function');
+            throw new Error(
+                `'${type}' is not a recognized 403 ` + 'error checked in the WebsiteConfigTester.checkHTML function'
+            );
         }
     } else {
         _assertContainsHtml(response.body);
         _assertResponseHtml(response.body, 'title', '403 Forbidden');
         _assertResponseHtml(response.body, 'h1', '403 Forbidden');
-        _assertResponseHtml(response.body, 'ul', [
-            'Code: AccessDenied',
-            'Message: Access Denied',
-        ]);
+        _assertResponseHtml(response.body, 'ul', ['Code: AccessDenied', 'Message: Access Denied']);
         if (type === '403-retrieve-error-document') {
-            _assertResponseHtml(response.body, 'h3',
-            'An Error Occurred While Attempting to ' +
-            'Retrieve a Custom Error Document');
+            _assertResponseHtml(
+                response.body,
+                'h3',
+                'An Error Occurred While Attempting to ' + 'Retrieve a Custom Error Document'
+            );
             // start searching for second `ul` element after `h3` element
             const startingTag = '</h3>';
-            const startIndex = response.body.indexOf(startingTag)
-                + startingTag.length;
-            _assertResponseHtml(response.body.slice(startIndex),
-            'ul', [
+            const startIndex = response.body.indexOf(startingTag) + startingTag.length;
+            _assertResponseHtml(response.body.slice(startIndex), 'ul', [
                 'Code: AccessDenied',
                 'Message: Access Denied',
             ]);
         } else if (type !== '403-access-denied') {
-            throw new Error(`'${type}' is not a recognized 403 ` +
-            'error checked in the WebsiteConfigTester.checkHTML function');
+            throw new Error(
+                `'${type}' is not a recognized 403 ` + 'error checked in the WebsiteConfigTester.checkHTML function'
+            );
         }
     }
 }
@@ -187,22 +173,17 @@ function _assertResponseHtmlErrorUser(response, type) {
     } else if (type === 'error-user-404') {
         assert.strictEqual(response.statusCode, 404);
     }
-    _assertResponseHtml(response.body, 'title',
-        'Error!!');
-    _assertResponseHtml(response.body, 'h1',
-        'It appears you messed up');
+    _assertResponseHtml(response.body, 'title', 'Error!!');
+    _assertResponseHtml(response.body, 'h1', 'It appears you messed up');
 }
 
 function _assertResponseHtmlIndexUser(response) {
     assert.strictEqual(response.statusCode, 200);
-    _assertResponseHtml(response.body, 'title',
-        'Best testing website ever');
-    _assertResponseHtml(response.body, 'h1', 'Welcome to my ' +
-        'extraordinary bucket website testing page');
+    _assertResponseHtml(response.body, 'title', 'Best testing website ever');
+    _assertResponseHtml(response.body, 'h1', 'Welcome to my ' + 'extraordinary bucket website testing page');
 }
 
-function _assertResponseHtmlRedirect(response, type, redirectUrl, method,
-    expectedHeaders) {
+function _assertResponseHtmlRedirect(response, type, redirectUrl, method, expectedHeaders) {
     if (type === 'redirect' || type === 'redirect-user') {
         assert.strictEqual(response.statusCode, 301);
         assert.strictEqual(response.body, '');
@@ -213,13 +194,10 @@ function _assertResponseHtmlRedirect(response, type, redirectUrl, method,
             return;
             // no need to check HTML
         }
-        _assertResponseHtml(response.body, 'title',
-        'Best redirect link ever');
-        _assertResponseHtml(response.body, 'h1',
-        'Welcome to your redirection file');
+        _assertResponseHtml(response.body, 'title', 'Best redirect link ever');
+        _assertResponseHtml(response.body, 'h1', 'Welcome to your redirection file');
     } else if (type.startsWith('redirect-error')) {
-        assert.strictEqual(response.statusCode,
-            type === 'redirect-error-found' ? 302 : 301);
+        assert.strictEqual(response.statusCode, type === 'redirect-error-found' ? 302 : 301);
         assert.strictEqual(response.headers.location, redirectUrl);
         Object.entries(expectedHeaders || {}).forEach(([key, val]) => {
             assert.strictEqual(response.headers[key], val);
@@ -227,21 +205,18 @@ function _assertResponseHtmlRedirect(response, type, redirectUrl, method,
 
         if (type === 'redirect-error-found') {
             assert.strictEqual(response.headers['x-amz-error-code'], 'Found');
-            assert.strictEqual(response.headers['x-amz-error-message'],
-            'Resource Found');
+            assert.strictEqual(response.headers['x-amz-error-message'], 'Resource Found');
             _assertContainsHtml(response.body);
             _assertResponseHtml(response.body, 'title', '302 Found');
             _assertResponseHtml(response.body, 'h1', '302 Found');
-            _assertResponseHtml(response.body, 'ul', [
-                'Code: Found',
-                'Message: Resource Found',
-            ]);
+            _assertResponseHtml(response.body, 'ul', ['Code: Found', 'Message: Resource Found']);
         } else {
             _assertResponseHtmlErrorUser(response, type);
         }
     } else {
-        throw new Error(`'${type}' is not a recognized redirect type ` +
-        'checked in the WebsiteConfigTester.checkHTML function');
+        throw new Error(
+            `'${type}' is not a recognized redirect type ` + 'checked in the WebsiteConfigTester.checkHTML function'
+        );
     }
 }
 
@@ -280,21 +255,20 @@ class WebsiteConfigTester {
     }
 
     /** checkHTML - check response for website head or get
-    * @param {object} params - function params
-    * @param {string} params.method - type of website request, 'HEAD' or 'GET'
-    * @param {string} params.responseType - type of response expected
-    * @param {string} [params.auth] - whether to use valid or invalid auth
-    *   crendentials: 'valid credentials' or 'invalid credentials'
-    * @param {string} [params.url] - request url
-    * @param {string} [params.redirectUrl] - redirect
-    * @param {object} [params.expectedHeaders] - expected headers in response
-    * with expected values (e.g., {x-amz-error-code: AccessDenied})
-    * @param {function} callback - callback
-    * @return {undefined}
-    */
+     * @param {object} params - function params
+     * @param {string} params.method - type of website request, 'HEAD' or 'GET'
+     * @param {string} params.responseType - type of response expected
+     * @param {string} [params.auth] - whether to use valid or invalid auth
+     *   crendentials: 'valid credentials' or 'invalid credentials'
+     * @param {string} [params.url] - request url
+     * @param {string} [params.redirectUrl] - redirect
+     * @param {object} [params.expectedHeaders] - expected headers in response
+     * with expected values (e.g., {x-amz-error-code: AccessDenied})
+     * @param {function} callback - callback
+     * @return {undefined}
+     */
     static checkHTML(params, callback) {
-        const { method, responseType, auth, url, redirectUrl, expectedHeaders }
-            = params;
+        const { method, responseType, auth, url, redirectUrl, expectedHeaders } = params;
         _makeWebsiteRequest(auth, method, url, (err, res) => {
             assert.strictEqual(err, null, `Unexpected request err ${err}`);
             if (responseType) {
@@ -305,20 +279,20 @@ class WebsiteConfigTester {
                 } else if (responseType.startsWith('error-user')) {
                     _assertResponseHtmlErrorUser(res, responseType);
                 } else if (responseType.startsWith('redirect')) {
-                    _assertResponseHtmlRedirect(res, responseType, redirectUrl,
-                        method, expectedHeaders);
+                    _assertResponseHtmlRedirect(res, responseType, redirectUrl, method, expectedHeaders);
                     if (responseType === 'redirect-user') {
                         process.stdout.write('Following redirect location\n');
-                        return this.checkHTML({ method,
-                            url: res.headers.location,
-                            responseType: 'redirected-user' },
-                        callback);
+                        return this.checkHTML(
+                            { method, url: res.headers.location, responseType: 'redirected-user' },
+                            callback
+                        );
                     }
                 } else if (responseType === 'index-user') {
                     _assertResponseHtmlIndexUser(res);
                 } else {
-                    throw new Error(`'${responseType}' is not a response ` +
-                    'type recognized by WebsiteConfigTester.checkHTML');
+                    throw new Error(
+                        `'${responseType}' is not a response ` + 'type recognized by WebsiteConfigTester.checkHTML'
+                    );
                 }
             }
             return callback();
@@ -336,58 +310,63 @@ class WebsiteConfigTester {
      * @param {function} cb - callback to end test
      * @return {undefined}
      */
-    static makeHeadRequest(auth, url, expectedStatusCode, expectedHeaders,
-        cb) {
+    static makeHeadRequest(auth, url, expectedStatusCode, expectedHeaders, cb) {
         _makeWebsiteRequest(auth, 'HEAD', url, (err, res) => {
             // body should be empty
             assert.deepStrictEqual(res.body, '');
             assert.strictEqual(res.statusCode, expectedStatusCode);
             const headers = Object.keys(expectedHeaders);
             headers.forEach(header => {
-                assert.strictEqual(res.headers[header],
-                    expectedHeaders[header]);
+                assert.strictEqual(res.headers[header], expectedHeaders[header]);
             });
             return cb();
         });
     }
 
     static createPutBucketWebsite(s3, bucket, bucketACL, objects, done) {
-        s3.createBucket({ Bucket: bucket, ACL: bucketACL },
-        err => {
+        s3.createBucket({ Bucket: bucket, ACL: bucketACL }, err => {
             if (err) {
                 return done(err);
             }
-            const webConfig = new WebsiteConfigTester('index.html',
-              'error.html');
-            return s3.putBucketWebsite({ Bucket: bucket,
-                WebsiteConfiguration: webConfig }, err => {
+            const webConfig = new WebsiteConfigTester('index.html', 'error.html');
+            return s3.putBucketWebsite({ Bucket: bucket, WebsiteConfiguration: webConfig }, err => {
                 if (err) {
                     return done(err);
                 }
-                return async.forEachOf(objects,
-                (acl, object, next) => {
-                    s3.putObject({ Bucket: bucket,
-                        Key: `${object}.html`,
-                        ACL: acl,
-                        Body: fs.readFileSync(path.join(__dirname,
-                            `/../../test/object/websiteFiles/${object}.html`)),
+                return async.forEachOf(
+                    objects,
+                    (acl, object, next) => {
+                        s3.putObject(
+                            {
+                                Bucket: bucket,
+                                Key: `${object}.html`,
+                                ACL: acl,
+                                Body: fs.readFileSync(
+                                    path.join(__dirname, `/../../test/object/websiteFiles/${object}.html`)
+                                ),
+                            },
+                            next
+                        );
                     },
-                        next);
-                }, done);
+                    done
+                );
             });
         });
     }
 
     static deleteObjectsThenBucket(s3, bucket, objects, done) {
-        async.forEachOf(objects, (acl, object, next) => {
-            s3.deleteObject({ Bucket: bucket,
-                Key: `${object}.html` }, next);
-        }, err => {
-            if (err) {
-                return done(err);
+        async.forEachOf(
+            objects,
+            (acl, object, next) => {
+                s3.deleteObject({ Bucket: bucket, Key: `${object}.html` }, next);
+            },
+            err => {
+                if (err) {
+                    return done(err);
+                }
+                return s3.deleteBucket({ Bucket: bucket }, done);
             }
-            return s3.deleteBucket({ Bucket: bucket }, done);
-        });
+        );
     }
 }
 

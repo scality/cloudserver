@@ -16,61 +16,69 @@ function _deleteVersionList(versionList, bucket, callback) {
     const params = { Bucket: bucket, Delete: { Objects: [] } };
     versionList.forEach(version => {
         params.Delete.Objects.push({
-            Key: version.Key, VersionId: version.VersionId });
+            Key: version.Key,
+            VersionId: version.VersionId,
+        });
     });
 
     return s3.deleteObjects(params, callback);
 }
 
 function checkOneVersion(s3, bucket, versionId, callback) {
-    return s3.listObjectVersions({ Bucket: bucket },
-        (err, data) => {
-            if (err) {
-                callback(err);
-            }
-            assert.strictEqual(data.Versions.length, 1);
-            if (versionId) {
-                assert.strictEqual(data.Versions[0].VersionId, versionId);
-            }
-            assert.strictEqual(data.DeleteMarkers.length, 0);
-            callback();
-        });
+    return s3.listObjectVersions({ Bucket: bucket }, (err, data) => {
+        if (err) {
+            callback(err);
+        }
+        assert.strictEqual(data.Versions.length, 1);
+        if (versionId) {
+            assert.strictEqual(data.Versions[0].VersionId, versionId);
+        }
+        assert.strictEqual(data.DeleteMarkers.length, 0);
+        callback();
+    });
 }
 
 function removeAllVersions(params, callback) {
     const bucket = params.Bucket;
-    async.waterfall([
-        cb => s3.listObjectVersions(params, cb),
-        (data, cb) => _deleteVersionList(data.DeleteMarkers, bucket,
-            err => cb(err, data)),
-        (data, cb) => _deleteVersionList(data.Versions, bucket,
-            err => cb(err, data)),
-        (data, cb) => {
-            if (data.IsTruncated) {
-                const params = {
-                    Bucket: bucket,
-                    KeyMarker: data.NextKeyMarker,
-                    VersionIdMarker: data.NextVersionIdMarker,
-                };
-                return removeAllVersions(params, cb);
-            }
-            return cb();
-        },
-    ], callback);
+    async.waterfall(
+        [
+            cb => s3.listObjectVersions(params, cb),
+            (data, cb) => _deleteVersionList(data.DeleteMarkers, bucket, err => cb(err, data)),
+            (data, cb) => _deleteVersionList(data.Versions, bucket, err => cb(err, data)),
+            (data, cb) => {
+                if (data.IsTruncated) {
+                    const params = {
+                        Bucket: bucket,
+                        KeyMarker: data.NextKeyMarker,
+                        VersionIdMarker: data.NextVersionIdMarker,
+                    };
+                    return removeAllVersions(params, cb);
+                }
+                return cb();
+            },
+        ],
+        callback
+    );
 }
 
 function suspendVersioning(bucket, callback) {
-    s3.putBucketVersioning({
-        Bucket: bucket,
-        VersioningConfiguration: versioningSuspended,
-    }, callback);
+    s3.putBucketVersioning(
+        {
+            Bucket: bucket,
+            VersioningConfiguration: versioningSuspended,
+        },
+        callback
+    );
 }
 
 function enableVersioning(bucket, callback) {
-    s3.putBucketVersioning({
-        Bucket: bucket,
-        VersioningConfiguration: versioningEnabled,
-    }, callback);
+    s3.putBucketVersioning(
+        {
+            Bucket: bucket,
+            VersioningConfiguration: versioningEnabled,
+        },
+        callback
+    );
 }
 
 function enableVersioningThenPutObject(bucket, object, callback) {
@@ -100,36 +108,40 @@ function enableVersioningThenPutObject(bucket, object, callback) {
  *  @return {undefined} - and call callback
  */
 function createDualNullVersion(s3, bucketName, keyName, cb) {
-    async.waterfall([
-        // put null version
-        next => s3.putObject({ Bucket: bucketName, Key: keyName },
-            err => next(err)),
-        next => enableVersioning(bucketName, err => next(err)),
-        // should store null version as separate version before
-        // putting new version
-        next => s3.putObject({ Bucket: bucketName, Key: keyName },
-            (err, data) => {
-                assert.strictEqual(err, null,
-                    'Unexpected err putting new version');
-                assert(data.VersionId);
-                next(null, data.VersionId);
-            }),
-        // delete version we just created, master version should be updated
-        // with value of next most recent version: null version previously put
-        (versionId, next) => s3.deleteObject({
-            Bucket: bucketName,
-            Key: keyName,
-            VersionId: versionId,
-        }, err => next(err)),
-        // getting object should return null version now
-        next => s3.getObject({ Bucket: bucketName, Key: keyName },
-            (err, data) => {
-                assert.strictEqual(err, null,
-                    'Unexpected err getting latest version');
-                assert.strictEqual(data.VersionId, 'null');
-                next();
-            }),
-    ], err => cb(err));
+    async.waterfall(
+        [
+            // put null version
+            next => s3.putObject({ Bucket: bucketName, Key: keyName }, err => next(err)),
+            next => enableVersioning(bucketName, err => next(err)),
+            // should store null version as separate version before
+            // putting new version
+            next =>
+                s3.putObject({ Bucket: bucketName, Key: keyName }, (err, data) => {
+                    assert.strictEqual(err, null, 'Unexpected err putting new version');
+                    assert(data.VersionId);
+                    next(null, data.VersionId);
+                }),
+            // delete version we just created, master version should be updated
+            // with value of next most recent version: null version previously put
+            (versionId, next) =>
+                s3.deleteObject(
+                    {
+                        Bucket: bucketName,
+                        Key: keyName,
+                        VersionId: versionId,
+                    },
+                    err => next(err)
+                ),
+            // getting object should return null version now
+            next =>
+                s3.getObject({ Bucket: bucketName, Key: keyName }, (err, data) => {
+                    assert.strictEqual(err, null, 'Unexpected err getting latest version');
+                    assert.strictEqual(data.VersionId, 'null');
+                    next();
+                }),
+        ],
+        err => cb(err)
+    );
 }
 
 module.exports = {

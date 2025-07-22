@@ -6,8 +6,7 @@ const objectPut = require('../../lib/api/objectPut');
 const objectCopy = require('../../lib/api/objectCopy');
 const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const DummyRequest = require('../unit/DummyRequest');
-const { cleanup, DummyRequestLogger, makeAuthInfo }
-    = require('../unit/helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../unit/helpers');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -19,11 +18,13 @@ const memLocation = 'scality-internal-mem';
 const fileLocation = 'scality-internal-file';
 
 function _createBucketPutRequest(bucketName, bucketLoc) {
-    const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
-        '<CreateBucketConfiguration ' +
-        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-        `<LocationConstraint>${bucketLoc}</LocationConstraint>` +
-        '</CreateBucketConfiguration>' : '';
+    const post = bucketLoc
+        ? '<?xml version="1.0" encoding="UTF-8"?>' +
+          '<CreateBucketConfiguration ' +
+          'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+          `<LocationConstraint>${bucketLoc}</LocationConstraint>` +
+          '</CreateBucketConfiguration>'
+        : '';
     return new DummyRequest({
         bucketName,
         namespace,
@@ -56,20 +57,18 @@ function _createObjectPutRequest(bucketName, objectKey, body) {
 }
 
 function copySetup(params, cb) {
-    const { sourceBucket, sourceLocation, sourceKey, destBucket,
-        destLocation, body } = params;
-    const putDestBucketRequest =
-        _createBucketPutRequest(destBucket, destLocation);
-    const putSourceBucketRequest =
-        _createBucketPutRequest(sourceBucket, sourceLocation);
-    const putSourceObjRequest = _createObjectPutRequest(sourceBucket,
-        sourceKey, body);
-    async.series([
-        callback => bucketPut(authInfo, putDestBucketRequest, log, callback),
-        callback => bucketPut(authInfo, putSourceBucketRequest, log, callback),
-        callback => objectPut(authInfo, putSourceObjRequest, undefined, log,
-            callback),
-    ], err => cb(err));
+    const { sourceBucket, sourceLocation, sourceKey, destBucket, destLocation, body } = params;
+    const putDestBucketRequest = _createBucketPutRequest(destBucket, destLocation);
+    const putSourceBucketRequest = _createBucketPutRequest(sourceBucket, sourceLocation);
+    const putSourceObjRequest = _createObjectPutRequest(sourceBucket, sourceKey, body);
+    async.series(
+        [
+            callback => bucketPut(authInfo, putDestBucketRequest, log, callback),
+            callback => bucketPut(authInfo, putSourceBucketRequest, log, callback),
+            callback => objectPut(authInfo, putSourceObjRequest, undefined, log, callback),
+        ],
+        err => cb(err)
+    );
 }
 
 describe('ObjectCopy API with multiple backends', () => {
@@ -79,29 +78,30 @@ describe('ObjectCopy API with multiple backends', () => {
 
     after(() => cleanup());
 
-    it('object metadata for newly stored object should have dataStoreName ' +
-    'if copying to mem based on bucket location', done => {
-        const params = {
-            sourceBucket: sourceBucketName,
-            sourceKey: `sourcekey-${Date.now()}`,
-            sourceLocation: fileLocation,
-            body: 'testbody',
-            destBucket: destBucketName,
-            destLocation: memLocation,
-        };
-        const destKey = `destkey-${Date.now()}`;
-        const testObjectCopyRequest =
-            _createObjectCopyRequest(destBucketName, destKey);
-        copySetup(params, err => {
-            assert.strictEqual(err, null, `Error setting up copy: ${err}`);
-            objectCopy(authInfo, testObjectCopyRequest, sourceBucketName,
-                params.sourceKey, undefined, log, err => {
+    it(
+        'object metadata for newly stored object should have dataStoreName ' +
+            'if copying to mem based on bucket location',
+        done => {
+            const params = {
+                sourceBucket: sourceBucketName,
+                sourceKey: `sourcekey-${Date.now()}`,
+                sourceLocation: fileLocation,
+                body: 'testbody',
+                destBucket: destBucketName,
+                destLocation: memLocation,
+            };
+            const destKey = `destkey-${Date.now()}`;
+            const testObjectCopyRequest = _createObjectCopyRequest(destBucketName, destKey);
+            copySetup(params, err => {
+                assert.strictEqual(err, null, `Error setting up copy: ${err}`);
+                objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, params.sourceKey, undefined, log, err => {
                     assert.strictEqual(err, null, `Error copying: ${err}`);
                     const bucket = metadata.keyMaps.get(params.destBucket);
                     const objMd = bucket.get(destKey);
                     assert.strictEqual(objMd.dataStoreName, memLocation);
                     done();
                 });
-        });
-    });
+            });
+        }
+    );
 });

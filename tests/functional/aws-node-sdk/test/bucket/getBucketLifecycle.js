@@ -12,11 +12,16 @@ function assertError(err, expectedErr, cb) {
     if (expectedErr === null) {
         assert.strictEqual(err, null, `expected no error but got '${err}'`);
     } else {
-        assert.strictEqual(err.code, expectedErr, 'incorrect error response ' +
-            `code: should be '${expectedErr}' but got '${err.code}'`);
-        assert.strictEqual(err.statusCode, errors[expectedErr].code,
-            'incorrect error status code: should be 400 but got ' +
-            `'${err.statusCode}'`);
+        assert.strictEqual(
+            err.code,
+            expectedErr,
+            'incorrect error response ' + `code: should be '${expectedErr}' but got '${err.code}'`
+        );
+        assert.strictEqual(
+            err.statusCode,
+            errors[expectedErr].code,
+            'incorrect error status code: should be 400 but got ' + `'${err.statusCode}'`
+        );
     }
     cb();
 }
@@ -33,8 +38,7 @@ describe('aws-sdk test get bucket lifecycle', () => {
     });
 
     it('should return NoSuchBucket error if bucket does not exist', done => {
-        s3.getBucketLifecycleConfiguration({ Bucket: bucket }, err =>
-            assertError(err, 'NoSuchBucket', done));
+        s3.getBucketLifecycleConfiguration({ Bucket: bucket }, err => assertError(err, 'NoSuchBucket', done));
     });
 
     describe('config rules', () => {
@@ -43,126 +47,134 @@ describe('aws-sdk test get bucket lifecycle', () => {
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
         it('should return AccessDenied if user is not bucket owner', done => {
-            otherAccountS3.getBucketLifecycleConfiguration({ Bucket: bucket },
-            err => assertError(err, 'AccessDenied', done));
+            otherAccountS3.getBucketLifecycleConfiguration({ Bucket: bucket }, err =>
+                assertError(err, 'AccessDenied', done)
+            );
         });
 
-        it('should return NoSuchLifecycleConfiguration error if no lifecycle ' +
-        'put to bucket', done => {
+        it('should return NoSuchLifecycleConfiguration error if no lifecycle ' + 'put to bucket', done => {
             s3.getBucketLifecycleConfiguration({ Bucket: bucket }, err => {
                 assertError(err, 'NoSuchLifecycleConfiguration', done);
             });
         });
 
         it('should get bucket lifecycle config with top-level prefix', done =>
-            s3.putBucketLifecycleConfiguration({
-                Bucket: bucket,
-                LifecycleConfiguration: {
-                    Rules: [{
-                        ID: 'test-id',
-                        Status: 'Enabled',
-                        Prefix: '',
-                        Expiration: { Days: 1 },
-                    }],
+            s3.putBucketLifecycleConfiguration(
+                {
+                    Bucket: bucket,
+                    LifecycleConfiguration: {
+                        Rules: [
+                            {
+                                ID: 'test-id',
+                                Status: 'Enabled',
+                                Prefix: '',
+                                Expiration: { Days: 1 },
+                            },
+                        ],
+                    },
                 },
-            }, err => {
-                assert.equal(err, null, `Err putting lifecycle config: ${err}`);
-                s3.getBucketLifecycleConfiguration({ Bucket: bucket },
-                (err, res) => {
-                    assert.equal(err, null, 'Error getting lifecycle config: ' +
-                        `${err}`);
-                    assert.strictEqual(res.Rules.length, 1);
-                    assert.deepStrictEqual(res.Rules[0], {
-                        Expiration: { Days: 1 },
-                        ID: 'test-id',
-                        Prefix: '',
-                        Status: 'Enabled',
-                        Transitions: [],
-                        NoncurrentVersionTransitions: [],
+                err => {
+                    assert.equal(err, null, `Err putting lifecycle config: ${err}`);
+                    s3.getBucketLifecycleConfiguration({ Bucket: bucket }, (err, res) => {
+                        assert.equal(err, null, 'Error getting lifecycle config: ' + `${err}`);
+                        assert.strictEqual(res.Rules.length, 1);
+                        assert.deepStrictEqual(res.Rules[0], {
+                            Expiration: { Days: 1 },
+                            ID: 'test-id',
+                            Prefix: '',
+                            Status: 'Enabled',
+                            Transitions: [],
+                            NoncurrentVersionTransitions: [],
+                        });
+                        done();
                     });
-                    done();
-                });
-            }));
+                }
+            ));
 
         it('should get bucket lifecycle config with filter prefix', done =>
-            s3.putBucketLifecycleConfiguration({
-                Bucket: bucket,
-                LifecycleConfiguration: {
-                    Rules: [{
-                        ID: 'test-id',
-                        Status: 'Enabled',
-                        Filter: { Prefix: '' },
-                        Expiration: { Days: 1 },
-                    }],
+            s3.putBucketLifecycleConfiguration(
+                {
+                    Bucket: bucket,
+                    LifecycleConfiguration: {
+                        Rules: [
+                            {
+                                ID: 'test-id',
+                                Status: 'Enabled',
+                                Filter: { Prefix: '' },
+                                Expiration: { Days: 1 },
+                            },
+                        ],
+                    },
                 },
-            }, err => {
-                assert.equal(err, null, `Err putting lifecycle config: ${err}`);
-                s3.getBucketLifecycleConfiguration({ Bucket: bucket },
-                (err, res) => {
-                    assert.equal(err, null, 'Error getting lifecycle config: ' +
-                        `${err}`);
-                    assert.strictEqual(res.Rules.length, 1);
-                    assert.deepStrictEqual(res.Rules[0], {
-                        Expiration: { Days: 1 },
-                        ID: 'test-id',
-                        Filter: { Prefix: '' },
-                        Status: 'Enabled',
-                        Transitions: [],
-                        NoncurrentVersionTransitions: [],
+                err => {
+                    assert.equal(err, null, `Err putting lifecycle config: ${err}`);
+                    s3.getBucketLifecycleConfiguration({ Bucket: bucket }, (err, res) => {
+                        assert.equal(err, null, 'Error getting lifecycle config: ' + `${err}`);
+                        assert.strictEqual(res.Rules.length, 1);
+                        assert.deepStrictEqual(res.Rules[0], {
+                            Expiration: { Days: 1 },
+                            ID: 'test-id',
+                            Filter: { Prefix: '' },
+                            Status: 'Enabled',
+                            Transitions: [],
+                            NoncurrentVersionTransitions: [],
+                        });
+                        done();
                     });
-                    done();
-                });
-            }));
+                }
+            ));
 
-        it('should get bucket lifecycle config with filter prefix and tags',
-        done =>
-            s3.putBucketLifecycleConfiguration({
-                Bucket: bucket,
-                LifecycleConfiguration: {
-                    Rules: [{
-                        ID: 'test-id',
-                        Status: 'Enabled',
-                        Filter: {
-                            And: {
-                                Prefix: '',
-                                Tags: [
-                                    {
-                                        Key: 'key',
-                                        Value: 'value',
+        it('should get bucket lifecycle config with filter prefix and tags', done =>
+            s3.putBucketLifecycleConfiguration(
+                {
+                    Bucket: bucket,
+                    LifecycleConfiguration: {
+                        Rules: [
+                            {
+                                ID: 'test-id',
+                                Status: 'Enabled',
+                                Filter: {
+                                    And: {
+                                        Prefix: '',
+                                        Tags: [
+                                            {
+                                                Key: 'key',
+                                                Value: 'value',
+                                            },
+                                        ],
                                     },
-                                ],
+                                },
+                                Expiration: { Days: 1 },
                             },
-                        },
-                        Expiration: { Days: 1 },
-                    }],
+                        ],
+                    },
                 },
-            }, err => {
-                assert.equal(err, null, `Err putting lifecycle config: ${err}`);
-                s3.getBucketLifecycleConfiguration({ Bucket: bucket },
-                (err, res) => {
-                    assert.equal(err, null, 'Error getting lifecycle config: ' +
-                        `${err}`);
-                    assert.strictEqual(res.Rules.length, 1);
-                    assert.deepStrictEqual(res.Rules[0], {
-                        Expiration: { Days: 1 },
-                        ID: 'test-id',
-                        Filter: {
-                            And: {
-                                Prefix: '',
-                                Tags: [
-                                    {
-                                        Key: 'key',
-                                        Value: 'value',
-                                    },
-                                ],
+                err => {
+                    assert.equal(err, null, `Err putting lifecycle config: ${err}`);
+                    s3.getBucketLifecycleConfiguration({ Bucket: bucket }, (err, res) => {
+                        assert.equal(err, null, 'Error getting lifecycle config: ' + `${err}`);
+                        assert.strictEqual(res.Rules.length, 1);
+                        assert.deepStrictEqual(res.Rules[0], {
+                            Expiration: { Days: 1 },
+                            ID: 'test-id',
+                            Filter: {
+                                And: {
+                                    Prefix: '',
+                                    Tags: [
+                                        {
+                                            Key: 'key',
+                                            Value: 'value',
+                                        },
+                                    ],
+                                },
                             },
-                        },
-                        Status: 'Enabled',
-                        Transitions: [],
-                        NoncurrentVersionTransitions: [],
+                            Status: 'Enabled',
+                            Transitions: [],
+                            NoncurrentVersionTransitions: [],
+                        });
+                        done();
                     });
-                    done();
-                });
-            }));
+                }
+            ));
     });
 });

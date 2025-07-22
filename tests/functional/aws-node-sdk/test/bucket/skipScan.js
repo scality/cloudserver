@@ -38,35 +38,41 @@ describe('Skip scan cases tests', () => {
     before(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new AWS.S3(config);
-        s3.createBucket(
-            { Bucket }, (err, data) => {
-                if (err) {
-                    done(err, data);
-                }
-                /* generating different prefixes every x > STREAK_LENGTH
+        s3.createBucket({ Bucket }, (err, data) => {
+            if (err) {
+                done(err, data);
+            }
+            /* generating different prefixes every x > STREAK_LENGTH
                    to force the metadata backends to skip */
-                const x = 120;
-                async.timesLimit(500, 10,
-                                 (n, next) => {
-                                     const o = {};
-                                     o.Bucket = Bucket;
-                                     // eslint-disable-next-line
-                                     o.Key = String.fromCharCode(65 + n / x) +
-                                         '/' + n % x;
-                                     o.Body = '';
-                                     s3.putObject(o, (err, data) => {
-                                         next(err, data);
-                                     });
-                                 }, done);
-            });
+            const x = 120;
+            async.timesLimit(
+                500,
+                10,
+                (n, next) => {
+                    const o = {};
+                    o.Bucket = Bucket;
+                    // eslint-disable-next-line
+                    o.Key = String.fromCharCode(65 + n / x) + '/' + (n % x);
+                    o.Body = '';
+                    s3.putObject(o, (err, data) => {
+                        next(err, data);
+                    });
+                },
+                done
+            );
+        });
     });
     after(done => {
         s3.listObjects({ Bucket }, (err, data) => {
-            async.each(data.Contents, (o, next) => {
-                s3.deleteObject({ Bucket, Key: o.Key }, next);
-            }, () => {
-                s3.deleteBucket({ Bucket }, done);
-            });
+            async.each(
+                data.Contents,
+                (o, next) => {
+                    s3.deleteObject({ Bucket, Key: o.Key }, next);
+                },
+                () => {
+                    s3.deleteBucket({ Bucket }, done);
+                }
+            );
         });
     });
     it('should find all common prefixes in one shot', done => {
@@ -81,13 +87,7 @@ describe('Skip scan cases tests', () => {
                 Name: Bucket,
                 Prefix: '',
                 MaxKeys: 1000,
-                CommonPrefixes: [
-                    'A/',
-                    'B/',
-                    'C/',
-                    'D/',
-                    'E/',
-                ],
+                CommonPrefixes: ['A/', 'B/', 'C/', 'D/', 'E/'],
             });
             done();
         });

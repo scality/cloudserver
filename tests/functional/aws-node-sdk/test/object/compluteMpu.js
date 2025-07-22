@@ -43,8 +43,7 @@ describe('aws-node-sdk test bucket complete mpu', () => {
         s3.completeMultipartUpload(params, error => {
             if (error) {
                 assert.strictEqual(error.statusCode, 400);
-                assert.strictEqual(
-                    error.code, 'InvalidRequest');
+                assert.strictEqual(error.code, 'InvalidRequest');
                 done();
             } else {
                 done('accepted xml body larger than 1 MB');

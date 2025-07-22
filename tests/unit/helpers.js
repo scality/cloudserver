@@ -34,11 +34,9 @@ const testsRangeOnEmptyFile = [
 
 function makeid(size) {
     let text = '';
-    const possible =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     for (let i = 0; i < size; i += 1) {
-        text += possible
-            .charAt(Math.floor(Math.random() * possible.length));
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
     }
     return text;
 }
@@ -62,16 +60,14 @@ function timeDiff(startTime) {
     const timeArray = process.hrtime(startTime);
     // timeArray[0] is whole seconds
     // timeArray[1] is remaining nanoseconds
-    const milliseconds = (timeArray[0] * 1000) + (timeArray[1] / 1e6);
+    const milliseconds = timeArray[0] * 1000 + timeArray[1] / 1e6;
     return milliseconds;
 }
 
 function makeAuthInfo(accessKey, userName) {
     const canIdMap = {
-        accessKey1: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7'
-            + 'cd47ef2be',
-        accessKey2: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7'
-            + 'cd47ef2bf',
+        accessKey1: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7' + 'cd47ef2be',
+        accessKey2: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7' + 'cd47ef2bf',
         lifecycleKey1: '0123456789abcdef/lifecycle',
         default: crypto.randomBytes(32).toString('hex'),
     };
@@ -139,32 +135,23 @@ class WebsiteConfig {
             });
         }
 
-        xml.push('<WebsiteConfiguration xmlns=' +
-            '"http://s3.amazonaws.com/doc/2006-03-01/">');
+        xml.push('<WebsiteConfiguration xmlns=' + '"http://s3.amazonaws.com/doc/2006-03-01/">');
 
         if (this.IndexDocument) {
-            xml.push('<IndexDocument>',
-            `<Suffix>${this.IndexDocument.Suffix}</Suffix>`,
-            '</IndexDocument>');
+            xml.push('<IndexDocument>', `<Suffix>${this.IndexDocument.Suffix}</Suffix>`, '</IndexDocument>');
         }
 
         if (this.ErrorDocument) {
-            xml.push('<ErrorDocument>',
-            `<Key>${this.ErrorDocument.Key}</Key>`,
-            '</ErrorDocument>');
+            xml.push('<ErrorDocument>', `<Key>${this.ErrorDocument.Key}</Key>`, '</ErrorDocument>');
         }
 
         if (this.RedirectAllRequestsTo) {
             xml.push('<RedirectAllRequestsTo>');
             if (this.RedirectAllRequestsTo.HostName) {
-                xml.push('<HostName>',
-                `${this.RedirectAllRequestsTo.HostName})`,
-                '</HostName>');
+                xml.push('<HostName>', `${this.RedirectAllRequestsTo.HostName})`, '</HostName>');
             }
             if (this.RedirectAllRequestsTo.Protocol) {
-                xml.push('<Protocol>',
-                `${this.RedirectAllRequestsTo.Protocol})`,
-                '</Protocol>');
+                xml.push('<Protocol>', `${this.RedirectAllRequestsTo.Protocol})`, '</Protocol>');
             }
             xml.push('</RedirectAllRequestsTo>');
         }
@@ -193,8 +180,7 @@ class WebsiteConfig {
     }
 }
 
-function createAlteredRequest(alteredItems, objToAlter,
-    baseOuterObj, baseInnerObj) {
+function createAlteredRequest(alteredItems, objToAlter, baseOuterObj, baseInnerObj) {
     const alteredRequest = Object.assign({}, baseOuterObj);
     const alteredNestedObj = Object.assign({}, baseInnerObj);
     Object.keys(alteredItems).forEach(key => {
@@ -205,8 +191,8 @@ function createAlteredRequest(alteredItems, objToAlter,
 }
 
 function cleanup() {
-    metadata.buckets = new Map;
-    metadata.keyMaps = new Map;
+    metadata.buckets = new Map();
+    metadata.keyMaps = new Map();
     // Set data store array back to empty array
     ds.length = 0;
     // Set data store key count back to 1
@@ -276,19 +262,22 @@ class DummyRequestLogger {
 
 class CorsConfigTester {
     constructor(params) {
-        this._cors = [{
-            allowedMethods: ['PUT', 'POST', 'DELETE'],
-            allowedOrigins: ['http://www.example.com'],
-            allowedHeaders: ['*'],
-            maxAgeSeconds: 3000,
-            exposeHeaders: ['x-amz-server-side-encryption'],
-        }, {
-            id: 'testid',
-            allowedMethods: ['GET'],
-            allowedOrigins: ['*'],
-            allowedHeaders: ['*'],
-            maxAgeSeconds: 3000,
-        }];
+        this._cors = [
+            {
+                allowedMethods: ['PUT', 'POST', 'DELETE'],
+                allowedOrigins: ['http://www.example.com'],
+                allowedHeaders: ['*'],
+                maxAgeSeconds: 3000,
+                exposeHeaders: ['x-amz-server-side-encryption'],
+            },
+            {
+                id: 'testid',
+                allowedMethods: ['GET'],
+                allowedOrigins: ['*'],
+                allowedHeaders: ['*'],
+                maxAgeSeconds: 3000,
+            },
+        ];
 
         if (params) {
             Object.keys(params).forEach(key => {
@@ -306,14 +295,12 @@ class CorsConfigTester {
         xml.push('<CORSConfiguration>');
         this._cors.forEach(rule => {
             xml.push('<CORSRule>');
-            ['allowedMethods', 'allowedOrigins', 'allowedHeaders',
-                'exposeHeaders', 'maxAgeSeconds']
-            .forEach(key => {
+            ['allowedMethods', 'allowedOrigins', 'allowedHeaders', 'exposeHeaders', 'maxAgeSeconds'].forEach(key => {
                 if (rule[key] && Array.isArray(rule[key])) {
-                    const element = key === 'maxAgeSeconds' ?
-                    key.charAt(0).toUpperCase() + key.slice(1) :
-                    key.charAt(0).toUpperCase() +
-                    key.slice(1, -1);
+                    const element =
+                        key === 'maxAgeSeconds'
+                            ? key.charAt(0).toUpperCase() + key.slice(1)
+                            : key.charAt(0).toUpperCase() + key.slice(1, -1);
                     rule[key].forEach(value => {
                         xml.push(`<${element}>${value}</${element}>`);
                     });
@@ -323,8 +310,7 @@ class CorsConfigTester {
                 xml.push(`<ID>${rule.id}</ID>`);
             }
             if (rule.maxAgeSeconds && !Array.isArray(rule.maxAgeSeconds)) {
-                xml.push(`<MaxAgeSeconds>${rule.maxAgeSeconds}` +
-                    '</MaxAgeSeconds>');
+                xml.push(`<MaxAgeSeconds>${rule.maxAgeSeconds}` + '</MaxAgeSeconds>');
             }
             xml.push('</CORSRule>');
         });
@@ -344,8 +330,7 @@ class CorsConfigTester {
         };
         if (method === 'PUT') {
             request.post = body || this.constructXml();
-            request.headers['content-md5'] = crypto.createHash('md5')
-                .update(request.post, 'utf8').digest('base64');
+            request.headers['content-md5'] = crypto.createHash('md5').update(request.post, 'utf8').digest('base64');
         }
         return request;
     }
@@ -384,10 +369,11 @@ const versioningTestUtils = {
             query: { versioning: '' },
             actionImplicitDenies: false,
         };
-        const xml = '<VersioningConfiguration ' +
-        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-        `<Status>${status}</Status>` +
-        '</VersioningConfiguration>';
+        const xml =
+            '<VersioningConfiguration ' +
+            'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+            `<Status>${status}</Status>` +
+            '</VersioningConfiguration>';
         request.post = xml;
         return request;
     },
@@ -414,8 +400,7 @@ class TaggingConfigTester {
 
     constructXml() {
         const xml = [];
-        xml.push('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-        '<Tagging> <TagSet>');
+        xml.push('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' + '<Tagging> <TagSet>');
         Object.keys(this._tags).forEach(key => {
             const value = this._tags[key];
             xml.push(`<Tag><Key>${key}</Key><Value>${value}</Value></Tag>`);
@@ -437,8 +422,7 @@ class TaggingConfigTester {
         };
         if (method === 'PUT') {
             request.post = body || this.constructXml();
-            request.headers['content-md5'] = crypto.createHash('md5')
-                .update(request.post, 'utf8').digest('base64');
+            request.headers['content-md5'] = crypto.createHash('md5').update(request.post, 'utf8').digest('base64');
         }
         return request;
     }
@@ -455,8 +439,7 @@ class TaggingConfigTester {
         };
         if (method === 'PUT') {
             request.post = body || this.constructXml();
-            request.headers['content-md5'] = crypto.createHash('md5')
-                .update(request.post, 'utf8').digest('base64');
+            request.headers['content-md5'] = crypto.createHash('md5').update(request.post, 'utf8').digest('base64');
         }
         return request;
     }
@@ -499,16 +482,13 @@ class AccessControlPolicy {
                 }
             });
         }
-        xml.push('<AccessControlPolicy xmlns=' +
-            '"http://s3.amazonaws.com/doc/2006-03-01/">', '<Owner>');
+        xml.push('<AccessControlPolicy xmlns=' + '"http://s3.amazonaws.com/doc/2006-03-01/">', '<Owner>');
         _pushChildren(this.Owner);
         xml.push('</Owner>', '<AccessControlList>');
         this.AccessControlList.forEach(grant => {
             xml.push('<Grant>', `<Grantee xsi:type="${grant.Grantee.Type}">`);
             _pushChildren(grant.Grantee);
-            xml.push('</Grantee>',
-                `<Permission>${grant.Permission}</Permission>`,
-                '</Grant>');
+            xml.push('</Grantee>', `<Permission>${grant.Permission}</Permission>`, '</Grant>');
         });
         xml.push('</AccessControlList>', '</AccessControlPolicy>');
         return xml.join('');
@@ -516,9 +496,16 @@ class AccessControlPolicy {
 }
 
 function createRequestContext(apiMethod, request) {
-    return new RequestContext(request.headers,
-        request.query, request.bucketName, request.objectKey,
-        '127.0.0.1', false, apiMethod, 's3');
+    return new RequestContext(
+        request.headers,
+        request.query,
+        request.bucketName,
+        request.objectKey,
+        '127.0.0.1',
+        false,
+        apiMethod,
+        's3'
+    );
 }
 
 module.exports = {

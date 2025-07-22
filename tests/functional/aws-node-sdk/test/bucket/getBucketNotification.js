@@ -7,11 +7,13 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucket = 'notificationtestbucket';
 const notificationConfig = {
-    QueueConfigurations: [{
-        Events: ['s3:ObjectCreated:*'],
-        QueueArn: 'arn:scality:bucketnotif:::target1',
-        Id: 'test-id',
-    }],
+    QueueConfigurations: [
+        {
+            Events: ['s3:ObjectCreated:*'],
+            QueueArn: 'arn:scality:bucketnotif:::target1',
+            Id: 'test-id',
+        },
+    ],
 };
 
 // Check for the expected error response code and status code.
@@ -47,15 +49,13 @@ describe('aws-sdk test get bucket notification', () => {
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
         it('should return AccessDenied if user is not bucket owner', done => {
-            otherAccountS3.getBucketNotificationConfiguration({ Bucket: bucket },
-            err => {
+            otherAccountS3.getBucketNotificationConfiguration({ Bucket: bucket }, err => {
                 assertError(err, 'AccessDenied');
                 done();
             });
         });
 
-        it('should not return an error if no notification configuration ' +
-        'put to bucket', done => {
+        it('should not return an error if no notification configuration ' + 'put to bucket', done => {
             s3.getBucketNotificationConfiguration({ Bucket: bucket }, err => {
                 assert.ifError(err);
                 done();
@@ -63,18 +63,20 @@ describe('aws-sdk test get bucket notification', () => {
         });
 
         it('should get bucket notification config', done => {
-            s3.putBucketNotificationConfiguration({
-                Bucket: bucket,
-                NotificationConfiguration: notificationConfig,
-            }, err => {
-                assert.equal(err, null, `Err putting notification config: ${err}`);
-                s3.getBucketNotificationConfiguration({ Bucket: bucket },
-                (err, res) => {
-                    assert.equal(err, null, `Error getting notification config: ${err}`);
-                    assert.deepStrictEqual(res.QueueConfigurations, notificationConfig.QueueConfigurations);
-                    done();
-                });
-            });
+            s3.putBucketNotificationConfiguration(
+                {
+                    Bucket: bucket,
+                    NotificationConfiguration: notificationConfig,
+                },
+                err => {
+                    assert.equal(err, null, `Err putting notification config: ${err}`);
+                    s3.getBucketNotificationConfiguration({ Bucket: bucket }, (err, res) => {
+                        assert.equal(err, null, `Error getting notification config: ${err}`);
+                        assert.deepStrictEqual(res.QueueConfigurations, notificationConfig.QueueConfigurations);
+                        done();
+                    });
+                }
+            );
         });
     });
 });

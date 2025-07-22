@@ -8,7 +8,9 @@ function _deleteVersionList(s3Client, versionList, bucket, callback) {
     const params = { Bucket: bucket, Delete: { Objects: [] } };
     versionList.forEach(version => {
         params.Delete.Objects.push({
-            Key: version.Key, VersionId: version.VersionId });
+            Key: version.Key,
+            VersionId: version.VersionId,
+        });
     });
 
     return s3Client.deleteObjects(params, callback);
@@ -16,17 +18,14 @@ function _deleteVersionList(s3Client, versionList, bucket, callback) {
 
 const testUtils = {};
 
-testUtils.runIfMongo = process.env.S3METADATA === 'mongodb' ?
-    describe : describe.skip;
+testUtils.runIfMongo = process.env.S3METADATA === 'mongodb' ? describe : describe.skip;
 
-testUtils.runAndCheckSearch = (s3Client, bucketName, encodedSearch, listVersions,
-    testResult, done) => {
+testUtils.runAndCheckSearch = (s3Client, bucketName, encodedSearch, listVersions, testResult, done) => {
     let searchRequest;
     if (listVersions) {
         searchRequest = s3Client.listObjectVersions({ Bucket: bucketName });
         searchRequest.on('build', () => {
-            searchRequest.httpRequest.path =
-                `/${bucketName}?search=${encodedSearch}&&versions`;
+            searchRequest.httpRequest.path = `/${bucketName}?search=${encodedSearch}&&versions`;
         });
         searchRequest.on('success', res => {
             if (testResult) {
@@ -50,8 +49,7 @@ testUtils.runAndCheckSearch = (s3Client, bucketName, encodedSearch, listVersions
     } else {
         searchRequest = s3Client.listObjects({ Bucket: bucketName });
         searchRequest.on('build', () => {
-            searchRequest.httpRequest.path =
-                `/${bucketName}?search=${encodedSearch}`;
+            searchRequest.httpRequest.path = `/${bucketName}?search=${encodedSearch}`;
         });
         searchRequest.on('success', res => {
             if (testResult) {
@@ -75,24 +73,25 @@ testUtils.runAndCheckSearch = (s3Client, bucketName, encodedSearch, listVersions
 };
 
 testUtils.removeAllVersions = (s3Client, bucket, callback) => {
-    async.waterfall([
-        cb => s3Client.listObjectVersions({ Bucket: bucket }, cb),
-        (data, cb) => _deleteVersionList(s3Client, data.DeleteMarkers, bucket,
-            err => cb(err, data)),
-        (data, cb) => _deleteVersionList(s3Client, data.Versions, bucket,
-            err => cb(err, data)),
-        (data, cb) => {
-            if (data.IsTruncated) {
-                const params = {
-                    Bucket: bucket,
-                    KeyMarker: data.NextKeyMarker,
-                    VersionIdMarker: data.NextVersionIdMarker,
-                };
-                return this.removeAllVersions(params, cb);
-            }
-            return cb();
-        },
-    ], callback);
+    async.waterfall(
+        [
+            cb => s3Client.listObjectVersions({ Bucket: bucket }, cb),
+            (data, cb) => _deleteVersionList(s3Client, data.DeleteMarkers, bucket, err => cb(err, data)),
+            (data, cb) => _deleteVersionList(s3Client, data.Versions, bucket, err => cb(err, data)),
+            (data, cb) => {
+                if (data.IsTruncated) {
+                    const params = {
+                        Bucket: bucket,
+                        KeyMarker: data.NextKeyMarker,
+                        VersionIdMarker: data.NextVersionIdMarker,
+                    };
+                    return this.removeAllVersions(params, cb);
+                }
+                return cb();
+            },
+        ],
+        callback
+    );
 };
 
 module.exports = testUtils;

@@ -15,25 +15,31 @@ const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
 
 describe('unsupported checksum requests:', () => {
     before(done => {
-        makeS3Request({
-            method: 'PUT',
-            authCredentials,
-            bucket,
-        }, err => {
-            assert.ifError(err);
-            done();
-        });
+        makeS3Request(
+            {
+                method: 'PUT',
+                authCredentials,
+                bucket,
+            },
+            err => {
+                assert.ifError(err);
+                done();
+            }
+        );
     });
 
     after(done => {
-        makeS3Request({
-            method: 'DELETE',
-            authCredentials,
-            bucket,
-        }, err => {
-            assert.ifError(err);
-            done();
-        });
+        makeS3Request(
+            {
+                method: 'DELETE',
+                authCredentials,
+                bucket,
+            },
+            err => {
+                assert.ifError(err);
+                done();
+            }
+        );
     });
 
     itSkipIfAWS('should respond with BadRequest for trailing checksum', done => {

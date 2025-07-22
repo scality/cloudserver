@@ -37,9 +37,7 @@ function _getMemCredentials(profile) {
 function _getMemConfig(profile, config) {
     const credentials = _getMemCredentials(profile);
 
-    const memConfig = Object.assign({}
-        , DEFAULT_GLOBAL_OPTIONS, DEFAULT_MEM_OPTIONS
-        , { credentials }, config);
+    const memConfig = Object.assign({}, DEFAULT_GLOBAL_OPTIONS, DEFAULT_MEM_OPTIONS, { credentials }, config);
 
     if (process.env.IP) {
         memConfig.endpoint = `${transport}://${process.env.IP}:8000`;
@@ -51,16 +49,13 @@ function _getMemConfig(profile, config) {
 function _getAwsConfig(profile, config) {
     const credentials = getAwsCredentials(profile, '/.aws/scality');
 
-    const awsConfig = Object.assign({}
-        , DEFAULT_GLOBAL_OPTIONS, DEFAULT_AWS_OPTIONS
-        , { credentials }, config);
+    const awsConfig = Object.assign({}, DEFAULT_GLOBAL_OPTIONS, DEFAULT_AWS_OPTIONS, { credentials }, config);
 
     return awsConfig;
 }
 
 function getConfig(profile = 'default', config = {}) {
-    const fn = process.env.AWS_ON_AIR && process.env.AWS_ON_AIR === 'true'
-        ? _getAwsConfig : _getMemConfig;
+    const fn = process.env.AWS_ON_AIR && process.env.AWS_ON_AIR === 'true' ? _getAwsConfig : _getMemConfig;
 
     return fn.apply(this, [profile, config]);
 }

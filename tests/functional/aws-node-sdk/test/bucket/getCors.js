@@ -13,31 +13,42 @@ describe('GET bucket cors', () => {
         afterEach(() => bucketUtil.deleteOne(bucketName));
 
         describe('on bucket with existing cors configuration', () => {
-            const sampleCors = { CORSRules: [
-                { AllowedMethods: ['PUT', 'POST', 'DELETE'],
-                    AllowedOrigins: ['http://www.example.com'],
-                    AllowedHeaders: ['*'],
-                    MaxAgeSeconds: 3000,
-                    ExposeHeaders: ['x-amz-server-side-encryption'] },
-                { AllowedMethods: ['GET'],
-                    AllowedOrigins: ['*'],
-                    ExposeHeaders: [],
-                    AllowedHeaders: ['*'],
-                    MaxAgeSeconds: 3000 },
-            ] };
+            const sampleCors = {
+                CORSRules: [
+                    {
+                        AllowedMethods: ['PUT', 'POST', 'DELETE'],
+                        AllowedOrigins: ['http://www.example.com'],
+                        AllowedHeaders: ['*'],
+                        MaxAgeSeconds: 3000,
+                        ExposeHeaders: ['x-amz-server-side-encryption'],
+                    },
+                    {
+                        AllowedMethods: ['GET'],
+                        AllowedOrigins: ['*'],
+                        ExposeHeaders: [],
+                        AllowedHeaders: ['*'],
+                        MaxAgeSeconds: 3000,
+                    },
+                ],
+            };
             before(() =>
-                s3.createBucket({ Bucket: bucketName }).promise()
-                .then(() => s3.putBucketCors({
-                    Bucket: bucketName,
-                    CORSConfiguration: sampleCors,
-                }).promise()));
+                s3
+                    .createBucket({ Bucket: bucketName })
+                    .promise()
+                    .then(() =>
+                        s3
+                            .putBucketCors({
+                                Bucket: bucketName,
+                                CORSConfiguration: sampleCors,
+                            })
+                            .promise()
+                    )
+            );
 
             it('should return cors configuration successfully', done => {
                 s3.getBucketCors({ Bucket: bucketName }, (err, data) => {
-                    assert.strictEqual(err, null,
-                        `Found unexpected err ${err}`);
-                    assert.deepStrictEqual(data.CORSRules,
-                        sampleCors.CORSRules);
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                    assert.deepStrictEqual(data.CORSRules, sampleCors.CORSRules);
                     return done();
                 });
             });
@@ -45,49 +56,60 @@ describe('GET bucket cors', () => {
 
         describe('mixed case for AllowedHeader', () => {
             const testValue = 'tEsTvAlUe';
-            const sampleCors = { CORSRules: [
-                { AllowedMethods: ['PUT', 'POST', 'DELETE'],
-                    AllowedOrigins: ['http://www.example.com'],
-                    AllowedHeaders: [testValue] },
-            ] };
+            const sampleCors = {
+                CORSRules: [
+                    {
+                        AllowedMethods: ['PUT', 'POST', 'DELETE'],
+                        AllowedOrigins: ['http://www.example.com'],
+                        AllowedHeaders: [testValue],
+                    },
+                ],
+            };
             before(() =>
-                s3.createBucket({ Bucket: bucketName }).promise()
-                .then(() => s3.putBucketCors({
-                    Bucket: bucketName,
-                    CORSConfiguration: sampleCors,
-                }).promise()));
+                s3
+                    .createBucket({ Bucket: bucketName })
+                    .promise()
+                    .then(() =>
+                        s3
+                            .putBucketCors({
+                                Bucket: bucketName,
+                                CORSConfiguration: sampleCors,
+                            })
+                            .promise()
+                    )
+            );
 
-            it('should be preserved when putting / getting cors resource',
-            done => {
+            it('should be preserved when putting / getting cors resource', done => {
                 s3.getBucketCors({ Bucket: bucketName }, (err, data) => {
-                    assert.strictEqual(err, null,
-                        `Found unexpected err ${err}`);
-                    assert.deepStrictEqual(data.CORSRules[0].AllowedHeaders,
-                        sampleCors.CORSRules[0].AllowedHeaders);
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                    assert.deepStrictEqual(data.CORSRules[0].AllowedHeaders, sampleCors.CORSRules[0].AllowedHeaders);
                     return done();
                 });
             });
         });
 
         describe('uppercase for AllowedMethod', () => {
-            const sampleCors = { CORSRules: [
-                { AllowedMethods: ['PUT', 'POST', 'DELETE'],
-                    AllowedOrigins: ['http://www.example.com'] },
-            ] };
+            const sampleCors = {
+                CORSRules: [{ AllowedMethods: ['PUT', 'POST', 'DELETE'], AllowedOrigins: ['http://www.example.com'] }],
+            };
             before(() =>
-                s3.createBucket({ Bucket: bucketName }).promise()
-                .then(() => s3.putBucketCors({
-                    Bucket: bucketName,
-                    CORSConfiguration: sampleCors,
-                }).promise()));
+                s3
+                    .createBucket({ Bucket: bucketName })
+                    .promise()
+                    .then(() =>
+                        s3
+                            .putBucketCors({
+                                Bucket: bucketName,
+                                CORSConfiguration: sampleCors,
+                            })
+                            .promise()
+                    )
+            );
 
-            it('should be preserved when retrieving cors resource',
-            done => {
+            it('should be preserved when retrieving cors resource', done => {
                 s3.getBucketCors({ Bucket: bucketName }, (err, data) => {
-                    assert.strictEqual(err, null,
-                        `Found unexpected err ${err}`);
-                    assert.deepStrictEqual(data.CORSRules[0].AllowedMethods,
-                        sampleCors.CORSRules[0].AllowedMethods);
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                    assert.deepStrictEqual(data.CORSRules[0].AllowedMethods, sampleCors.CORSRules[0].AllowedMethods);
                     return done();
                 });
             });

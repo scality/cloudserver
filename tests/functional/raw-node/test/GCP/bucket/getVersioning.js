@@ -4,8 +4,7 @@ const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external;
 const { makeGcpRequest } = require('../../../utils/makeRequest');
 const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
-const { getRealAwsConfig } =
-    require('../../../../aws-node-sdk/test/support/awsConfig');
+const { getRealAwsConfig } = require('../../../../aws-node-sdk/test/support/awsConfig');
 
 const credentialOne = 'gcpbackend';
 const verEnabledObj = { Status: 'Enabled' };
@@ -27,78 +26,106 @@ describe('GCP: GET Bucket Versioning', () => {
 
     beforeEach(function beforeFn(done) {
         this.currentTest.bucketName = `somebucket-${genUniqID()}`;
-        gcpRequestRetry({
-            method: 'PUT',
-            bucket: this.currentTest.bucketName,
-            authCredentials: config.credentials,
-        }, 0, err => {
-            if (err) {
-                process.stdout.write(`err in creating bucket ${err}\n`);
+        gcpRequestRetry(
+            {
+                method: 'PUT',
+                bucket: this.currentTest.bucketName,
+                authCredentials: config.credentials,
+            },
+            0,
+            err => {
+                if (err) {
+                    process.stdout.write(`err in creating bucket ${err}\n`);
+                }
+                return done(err);
             }
-            return done(err);
-        });
+        );
     });
 
     afterEach(function afterFn(done) {
-        gcpRequestRetry({
-            method: 'DELETE',
-            bucket: this.currentTest.bucketName,
-            authCredentials: config.credentials,
-        }, 0, err => {
-            if (err) {
-                process.stdout.write(`err in deleting bucket ${err}\n`);
+        gcpRequestRetry(
+            {
+                method: 'DELETE',
+                bucket: this.currentTest.bucketName,
+                authCredentials: config.credentials,
+            },
+            0,
+            err => {
+                if (err) {
+                    process.stdout.write(`err in deleting bucket ${err}\n`);
+                }
+                return done(err);
             }
-            return done(err);
-        });
+        );
     });
 
     it('should verify bucket versioning is enabled', function testFn(done) {
-        return async.waterfall([
-            next => makeGcpRequest({
-                method: 'PUT',
-                bucket: this.test.bucketName,
-                authCredentials: config.credentials,
-                queryObj: { versioning: {} },
-                requestBody: xmlEnable,
-            }, err => {
-                if (err) {
-                    process.stdout.write(`err in setting versioning ${err}`);
-                }
-                return next(err);
-            }),
-            next => gcpClient.getBucketVersioning({
-                Bucket: this.test.bucketName,
-            }, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
-                assert.deepStrictEqual(res, verEnabledObj);
-                return next();
-            }),
-        ], err => done(err));
+        return async.waterfall(
+            [
+                next =>
+                    makeGcpRequest(
+                        {
+                            method: 'PUT',
+                            bucket: this.test.bucketName,
+                            authCredentials: config.credentials,
+                            queryObj: { versioning: {} },
+                            requestBody: xmlEnable,
+                        },
+                        err => {
+                            if (err) {
+                                process.stdout.write(`err in setting versioning ${err}`);
+                            }
+                            return next(err);
+                        }
+                    ),
+                next =>
+                    gcpClient.getBucketVersioning(
+                        {
+                            Bucket: this.test.bucketName,
+                        },
+                        (err, res) => {
+                            assert.equal(err, null, `Expected success, but got err ${err}`);
+                            assert.deepStrictEqual(res, verEnabledObj);
+                            return next();
+                        }
+                    ),
+            ],
+            err => done(err)
+        );
     });
 
     it('should verify bucket versioning is disabled', function testFn(done) {
-        return async.waterfall([
-            next => makeGcpRequest({
-                method: 'PUT',
-                bucket: this.test.bucketName,
-                authCredentials: config.credentials,
-                queryObj: { versioning: {} },
-                requestBody: xmlDisable,
-            }, err => {
-                if (err) {
-                    process.stdout.write(`err in setting versioning ${err}`);
-                }
-                return next(err);
-            }),
-            next => gcpClient.getBucketVersioning({
-                Bucket: this.test.bucketName,
-            }, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
-                assert.deepStrictEqual(res, verDisabledObj);
-                return next();
-            }),
-        ], err => done(err));
+        return async.waterfall(
+            [
+                next =>
+                    makeGcpRequest(
+                        {
+                            method: 'PUT',
+                            bucket: this.test.bucketName,
+                            authCredentials: config.credentials,
+                            queryObj: { versioning: {} },
+                            requestBody: xmlDisable,
+                        },
+                        err => {
+                            if (err) {
+                                process.stdout.write(`err in setting versioning ${err}`);
+                            }
+                            return next(err);
+                        }
+                    ),
+                next =>
+                    gcpClient.getBucketVersioning(
+                        {
+                            Bucket: this.test.bucketName,
+                        },
+                        (err, res) => {
+                            assert.equal(err, null, `Expected success, but got err ${err}`);
+                            assert.deepStrictEqual(res, verDisabledObj);
+                            return next();
+                        }
+                    ),
+            ],
+            err => done(err)
+        );
     });
 });

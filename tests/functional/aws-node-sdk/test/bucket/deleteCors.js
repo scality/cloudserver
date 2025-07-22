@@ -4,17 +4,18 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucketName = 'testdeletecorsbucket';
-const sampleCors = { CORSRules: [
-    { AllowedMethods: ['PUT', 'POST', 'DELETE'],
-        AllowedOrigins: ['http://www.example.com'],
-        AllowedHeaders: ['*'],
-        MaxAgeSeconds: 3000,
-        ExposeHeaders: ['x-amz-server-side-encryption'] },
-    { AllowedMethods: ['GET'],
-        AllowedOrigins: ['*'],
-        AllowedHeaders: ['*'],
-        MaxAgeSeconds: 3000 },
-] };
+const sampleCors = {
+    CORSRules: [
+        {
+            AllowedMethods: ['PUT', 'POST', 'DELETE'],
+            AllowedOrigins: ['http://www.example.com'],
+            AllowedHeaders: ['*'],
+            MaxAgeSeconds: 3000,
+            ExposeHeaders: ['x-amz-server-side-encryption'],
+        },
+        { AllowedMethods: ['GET'], AllowedOrigins: ['*'], AllowedHeaders: ['*'], MaxAgeSeconds: 3000 },
+    ],
+};
 
 const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
 
@@ -42,13 +43,10 @@ describe('DELETE bucket cors', () => {
 
             describe('without existing cors configuration', () => {
                 it('should return a 204 response', done => {
-                    s3.deleteBucketCors({ Bucket: bucketName },
-                    function deleteBucketCors(err) {
+                    s3.deleteBucketCors({ Bucket: bucketName }, function deleteBucketCors(err) {
                         const statusCode = this.httpResponse.statusCode;
-                        assert.strictEqual(statusCode, 204,
-                            `Found unexpected statusCode ${statusCode}`);
-                        assert.strictEqual(err, null,
-                            `Found unexpected err ${err}`);
+                        assert.strictEqual(statusCode, 204, `Found unexpected statusCode ${statusCode}`);
+                        assert.strictEqual(err, null, `Found unexpected err ${err}`);
                         return done();
                     });
                 });
@@ -56,21 +54,16 @@ describe('DELETE bucket cors', () => {
 
             describe('with existing cors configuration', () => {
                 beforeEach(done => {
-                    s3.putBucketCors({ Bucket: bucketName,
-                        CORSConfiguration: sampleCors }, done);
+                    s3.putBucketCors({ Bucket: bucketName, CORSConfiguration: sampleCors }, done);
                 });
 
                 it('should delete bucket configuration successfully', done => {
-                    s3.deleteBucketCors({ Bucket: bucketName },
-                    function deleteBucketCors(err) {
+                    s3.deleteBucketCors({ Bucket: bucketName }, function deleteBucketCors(err) {
                         const statusCode = this.httpResponse.statusCode;
-                        assert.strictEqual(statusCode, 204,
-                            `Found unexpected statusCode ${statusCode}`);
-                        assert.strictEqual(err, null,
-                            `Found unexpected err ${err}`);
+                        assert.strictEqual(statusCode, 204, `Found unexpected statusCode ${statusCode}`);
+                        assert.strictEqual(err, null, `Found unexpected err ${err}`);
                         s3.getBucketCors({ Bucket: bucketName }, err => {
-                            assert.strictEqual(err.code,
-                                'NoSuchCORSConfiguration');
+                            assert.strictEqual(err.code, 'NoSuchCORSConfiguration');
                             assert.strictEqual(err.statusCode, 404);
                             return done();
                         });
@@ -83,10 +76,8 @@ describe('DELETE bucket cors', () => {
                 // to add a second set of real aws credentials under a profile
                 // named 'lisa' in ~/.aws/scality, then rename 'itSkipIfAWS' to
                 // 'it'.
-                itSkipIfAWS('should return AccessDenied if user is not bucket' +
-                'owner', done => {
-                    otherAccountS3.deleteBucketCors({ Bucket: bucketName },
-                    err => {
+                itSkipIfAWS('should return AccessDenied if user is not bucket' + 'owner', done => {
+                    otherAccountS3.deleteBucketCors({ Bucket: bucketName }, err => {
                         assert(err);
                         assert.strictEqual(err.code, 'AccessDenied');
                         assert.strictEqual(err.statusCode, 403);

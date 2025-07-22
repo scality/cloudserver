@@ -22,40 +22,55 @@ const objectName1 = `${prefix}${delimiter}objectName1`;
 const objectName2 = `${prefix}${delimiter}objectName2`;
 const objectName3 = 'invalidURI~~~b';
 const objectName4 = `${objectName1}&><"\'`;
-const testPutBucketRequest = new DummyRequest({
-    bucketName,
-    headers: {},
-    url: `/${bucketName}`,
-    namespace,
-}, Buffer.alloc(0));
-const testPutObjectRequest1 = new DummyRequest({
-    bucketName,
-    headers: {},
-    url: `/${bucketName}/${objectName1}`,
-    namespace,
-    objectKey: objectName1,
-}, postBody);
-const testPutObjectRequest2 = new DummyRequest({
-    bucketName,
-    headers: {},
-    url: `/${bucketName}/${objectName2}`,
-    namespace,
-    objectKey: objectName2,
-}, postBody);
-const testPutObjectRequest3 = new DummyRequest({
-    bucketName,
-    headers: {},
-    url: `/${bucketName}/${objectName3}`,
-    namespace,
-    objectKey: objectName3,
-}, postBody);
-const testPutObjectRequest4 = new DummyRequest({
-    bucketName,
-    headers: {},
-    url: `/${bucketName}/${objectName3}`,
-    namespace,
-    objectKey: objectName4,
-}, postBody);
+const testPutBucketRequest = new DummyRequest(
+    {
+        bucketName,
+        headers: {},
+        url: `/${bucketName}`,
+        namespace,
+    },
+    Buffer.alloc(0)
+);
+const testPutObjectRequest1 = new DummyRequest(
+    {
+        bucketName,
+        headers: {},
+        url: `/${bucketName}/${objectName1}`,
+        namespace,
+        objectKey: objectName1,
+    },
+    postBody
+);
+const testPutObjectRequest2 = new DummyRequest(
+    {
+        bucketName,
+        headers: {},
+        url: `/${bucketName}/${objectName2}`,
+        namespace,
+        objectKey: objectName2,
+    },
+    postBody
+);
+const testPutObjectRequest3 = new DummyRequest(
+    {
+        bucketName,
+        headers: {},
+        url: `/${bucketName}/${objectName3}`,
+        namespace,
+        objectKey: objectName3,
+    },
+    postBody
+);
+const testPutObjectRequest4 = new DummyRequest(
+    {
+        bucketName,
+        headers: {},
+        url: `/${bucketName}/${objectName3}`,
+        namespace,
+        objectKey: objectName4,
+    },
+    postBody
+);
 
 const baseGetRequest = {
     bucketName,
@@ -70,39 +85,33 @@ const tests = [
         name: 'list of all objects if no delimiter specified',
         request: Object.assign({ query: {}, url: baseUrl }, baseGetRequest),
         assertion: result => {
-            assert.strictEqual(result.ListBucketResult.Contents[1].Key[0],
-                objectName1);
-            assert.strictEqual(result.ListBucketResult.Contents[2].Key[0],
-                objectName2);
-            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
-                objectName3);
+            assert.strictEqual(result.ListBucketResult.Contents[1].Key[0], objectName1);
+            assert.strictEqual(result.ListBucketResult.Contents[2].Key[0], objectName2);
+            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0], objectName3);
         },
     },
     {
-        name: 'return name of common prefix of common prefix objects if ' +
-            'delimiter and prefix specified',
-        request: Object.assign({
-            url: `/${bucketName}?delimiter=${delimiter}&prefix=${prefix}`,
-            query: { delimiter, prefix },
-        }, baseGetRequest),
+        name: 'return name of common prefix of common prefix objects if ' + 'delimiter and prefix specified',
+        request: Object.assign(
+            {
+                url: `/${bucketName}?delimiter=${delimiter}&prefix=${prefix}`,
+                query: { delimiter, prefix },
+            },
+            baseGetRequest
+        ),
         assertion: result =>
-            assert.strictEqual(result.ListBucketResult
-                .CommonPrefixes[0].Prefix[0], `${prefix}${delimiter}`),
+            assert.strictEqual(result.ListBucketResult.CommonPrefixes[0].Prefix[0], `${prefix}${delimiter}`),
     },
     {
         name: 'return empty list when max-keys is set to 0',
-        request: Object.assign({ query: { 'max-keys': '0' }, url: baseUrl },
-            baseGetRequest),
-        assertion: result =>
-            assert.strictEqual(result.ListBucketResult.Contents, undefined),
+        request: Object.assign({ query: { 'max-keys': '0' }, url: baseUrl }, baseGetRequest),
+        assertion: result => assert.strictEqual(result.ListBucketResult.Contents, undefined),
     },
     {
         name: 'return no more keys than max-keys specified',
-        request: Object.assign({ query: { 'max-keys': '1' }, url: baseUrl },
-            baseGetRequest),
+        request: Object.assign({ query: { 'max-keys': '1' }, url: baseUrl }, baseGetRequest),
         assertion: result => {
-            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
-                objectName3);
+            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0], objectName3);
             assert.strictEqual(result.ListBucketResult.Contents[1], undefined);
         },
     },
@@ -116,13 +125,9 @@ const tests = [
             baseGetRequest
         ),
         assertion: result => {
-            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
-                objectName3);
+            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0], objectName3);
             assert.strictEqual(result.ListBucketResult.Contents[1], undefined);
-            assert.strictEqual(
-                result.ListBucketResult.NextContinuationToken[0],
-                'aW52YWxpZFVSSX5+fmI='
-            );
+            assert.strictEqual(result.ListBucketResult.NextContinuationToken[0], 'aW52YWxpZFVSSX5+fmI=');
         },
     },
     {
@@ -135,40 +140,27 @@ const tests = [
             baseGetRequest
         ),
         assertion: result => {
-            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
-                objectName3);
+            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0], objectName3);
             assert.strictEqual(result.ListBucketResult.Contents[1], undefined);
-            assert.strictEqual(
-                result.ListBucketResult.NextContinuationToken[0],
-                'aW52YWxpZFVSSX5+fmI='
-            );
+            assert.strictEqual(result.ListBucketResult.NextContinuationToken[0], 'aW52YWxpZFVSSX5+fmI=');
         },
     },
     {
-        name: 'return max-keys number from request even if greater than ' +
-            'actual keys returned',
-        request: Object.assign({ query: { 'max-keys': '99999' }, url: baseUrl },
-            baseGetRequest),
-        assertion: result =>
-            assert.strictEqual(result.ListBucketResult.MaxKeys[0], '99999'),
+        name: 'return max-keys number from request even if greater than ' + 'actual keys returned',
+        request: Object.assign({ query: { 'max-keys': '99999' }, url: baseUrl }, baseGetRequest),
+        assertion: result => assert.strictEqual(result.ListBucketResult.MaxKeys[0], '99999'),
     },
     {
         name: 'return max-keys number from request even when value is 0',
-        request: Object.assign({ query: { 'max-keys': '0' }, url: baseUrl },
-            baseGetRequest),
-        assertion: result =>
-            assert.strictEqual(result.ListBucketResult.MaxKeys[0], '0'),
+        request: Object.assign({ query: { 'max-keys': '0' }, url: baseUrl }, baseGetRequest),
+        assertion: result => assert.strictEqual(result.ListBucketResult.MaxKeys[0], '0'),
     },
     {
         name: 'url encode object key name if requested',
-        request: Object.assign(
-            { query: { 'encoding-type': 'url' }, url: baseUrl },
-            baseGetRequest),
+        request: Object.assign({ query: { 'encoding-type': 'url' }, url: baseUrl }, baseGetRequest),
         assertion: result => {
-            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
-                querystring.escape(objectName3));
-            assert.strictEqual(result.ListBucketResult.Contents[1].Key[0],
-                querystring.escape(objectName1));
+            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0], querystring.escape(objectName3));
+            assert.strictEqual(result.ListBucketResult.Contents[1].Key[0], querystring.escape(objectName1));
         },
     },
 ];
@@ -182,28 +174,25 @@ describe('bucketGet API', () => {
         it(`should ${test.name}`, done => {
             const testGetRequest = test.request;
 
-            async.waterfall([
-                next => bucketPut(authInfo, testPutBucketRequest, log, next),
-                (corsHeaders, next) => objectPut(authInfo,
-                        testPutObjectRequest1, undefined, log, next),
-                (resHeaders, next) => objectPut(authInfo,
-                        testPutObjectRequest2, undefined, log, next),
-                (resHeaders, next) => objectPut(authInfo,
-                    testPutObjectRequest3, undefined, log, next),
-                (resHeaders, next) =>
-                    bucketGet(authInfo, testGetRequest, log, next),
-                (result, corsHeaders, next) => parseString(result, next),
-            ],
-            (err, result) => {
-                test.assertion(result);
-                done();
-            });
+            async.waterfall(
+                [
+                    next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                    (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1, undefined, log, next),
+                    (resHeaders, next) => objectPut(authInfo, testPutObjectRequest2, undefined, log, next),
+                    (resHeaders, next) => objectPut(authInfo, testPutObjectRequest3, undefined, log, next),
+                    (resHeaders, next) => bucketGet(authInfo, testGetRequest, log, next),
+                    (result, corsHeaders, next) => parseString(result, next),
+                ],
+                (err, result) => {
+                    test.assertion(result);
+                    done();
+                }
+            );
         });
     });
 
     it('should return an InvalidArgument error if max-keys == -1', done => {
-        const testGetRequest = Object.assign({ query: { 'max-keys': '-1' } },
-            baseGetRequest);
+        const testGetRequest = Object.assign({ query: { 'max-keys': '-1' } }, baseGetRequest);
         bucketGet(authInfo, testGetRequest, log, err => {
             assert.strictEqual(err.is.InvalidArgument, true);
             done();
@@ -211,81 +200,73 @@ describe('bucketGet API', () => {
     });
 
     it('should escape invalid xml characters in object key names', done => {
-        const testGetRequest = Object.assign({ query: {}, url: baseUrl },
-            baseGetRequest);
+        const testGetRequest = Object.assign({ query: {}, url: baseUrl }, baseGetRequest);
 
-        async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
-            (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest4,
-                undefined, log, next),
-            (resHeaders, next) => bucketGet(authInfo, testGetRequest,
-                log, next),
-            (result, corsHeaders, next) => parseString(result, next),
-        ],
-        (err, result) => {
-            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
-                              testPutObjectRequest4.objectKey);
-            done();
-        });
+        async.waterfall(
+            [
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest4, undefined, log, next),
+                (resHeaders, next) => bucketGet(authInfo, testGetRequest, log, next),
+                (result, corsHeaders, next) => parseString(result, next),
+            ],
+            (err, result) => {
+                assert.strictEqual(result.ListBucketResult.Contents[0].Key[0], testPutObjectRequest4.objectKey);
+                done();
+            }
+        );
     });
 
     it('should return xml that refers to the s3 docs for xml specs', done => {
-        const testGetRequest = Object.assign({ query: {}, url: baseUrl },
-            baseGetRequest);
+        const testGetRequest = Object.assign({ query: {}, url: baseUrl }, baseGetRequest);
 
-        async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
-            (corsHeaders, next) =>
-                bucketGet(authInfo, testGetRequest, log, next),
-            (result, corsHeaders, next) => parseString(result, next),
-        ],
-        (err, result) => {
-            assert.strictEqual(result.ListBucketResult.$.xmlns,
-                'http://s3.amazonaws.com/doc/2006-03-01/');
-            done();
-        });
+        async.waterfall(
+            [
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                (corsHeaders, next) => bucketGet(authInfo, testGetRequest, log, next),
+                (result, corsHeaders, next) => parseString(result, next),
+            ],
+            (err, result) => {
+                assert.strictEqual(result.ListBucketResult.$.xmlns, 'http://s3.amazonaws.com/doc/2006-03-01/');
+                done();
+            }
+        );
     });
 });
 
-const testsForV2 = [...tests,
+const testsForV2 = [
+    ...tests,
     {
         name: 'return no owner info when --fetch-owner option is not used',
         request: Object.assign({ query: {}, url: baseUrl }, baseGetRequest),
         assertion: result => {
-            const owners
-                = result.ListBucketResult.Contents.filter(c => c.Owner);
+            const owners = result.ListBucketResult.Contents.filter(c => c.Owner);
             assert.strictEqual(owners.length, 0);
         },
     },
     {
         name: 'return owner info when --fetch-owner option is used',
-        request: Object.assign({ query: { 'fetch-owner': 'true' },
-            url: baseUrl }, baseGetRequest),
+        request: Object.assign({ query: { 'fetch-owner': 'true' }, url: baseUrl }, baseGetRequest),
         assertion: result => {
-            const owners
-                = result.ListBucketResult.Contents.filter(c =>
+            const owners = result.ListBucketResult.Contents.filter(
+                c =>
                     c.Owner[0].ID[0] === authInfo.canonicalID &&
-                    c.Owner[0].DisplayName[0] === authInfo.accountDisplayName);
-            assert.strictEqual(owners.length,
-                result.ListBucketResult.Contents.length);
+                    c.Owner[0].DisplayName[0] === authInfo.accountDisplayName
+            );
+            assert.strictEqual(owners.length, result.ListBucketResult.Contents.length);
         },
     },
     {
         name: 'return no owner info when --no-fetch-owner option is used',
-        request: Object.assign({ query: { 'fetch-owner': 'false' },
-            url: baseUrl }, baseGetRequest),
+        request: Object.assign({ query: { 'fetch-owner': 'false' }, url: baseUrl }, baseGetRequest),
         assertion: result => {
-            const owners
-                = result.ListBucketResult.Contents.filter(c => c.Owner);
+            const owners = result.ListBucketResult.Contents.filter(c => c.Owner);
             assert.strictEqual(owners.length, 0);
         },
     },
     {
         name: 'return max-keys number from request even when value is 0',
-        request: Object.assign({ query: { 'max-keys': '0' }, url: baseUrl },
-            baseGetRequest),
-        assertion: result =>
-            assert.strictEqual(result.ListBucketResult.MaxKeys[0], '0'),
+        request: Object.assign({ query: { 'max-keys': '0' }, url: baseUrl }, baseGetRequest),
+        assertion: result => assert.strictEqual(result.ListBucketResult.MaxKeys[0], '0'),
     },
 ];
 
@@ -297,40 +278,35 @@ describe('bucketGet API V2', () => {
     testsForV2.forEach(test => {
         /* eslint-disable no-param-reassign */
         test.request.query['list-type'] = 2;
-        test.request.url = test.request.url.indexOf('?') > -1 ?
-            `${test.request.url}&list-type=2` :
-            `${test.request.url}?list-type=2`;
+        test.request.url =
+            test.request.url.indexOf('?') > -1 ? `${test.request.url}&list-type=2` : `${test.request.url}?list-type=2`;
         /* eslint-enable no-param-reassign */
 
         it(`should ${test.name}`, done => {
             const testGetRequest = test.request;
 
-            async.waterfall([
-                next => bucketPut(authInfo, testPutBucketRequest, log, next),
-                (corsHeaders, next) => objectPut(authInfo,
-                        testPutObjectRequest1, undefined, log, next),
-                (resHeaders, next) => objectPut(authInfo,
-                        testPutObjectRequest2, undefined, log, next),
-                (resHeaders, next) => objectPut(authInfo,
-                    testPutObjectRequest3, undefined, log, next),
-                (resHeaders, next) =>
-                    bucketGet(authInfo, testGetRequest, log, next),
-                (result, corsHeaders, next) => parseString(result, next),
-            ],
-            (err, result) => {
-                // v2 requests should return 'KeyCount' in response
-                const keyCount =
-                    Number.parseInt(result.ListBucketResult.KeyCount[0], 10);
-                const keysReturned = result.ListBucketResult.Contents ?
-                    result.ListBucketResult.Contents.length : 0;
-                assert.strictEqual(keyCount, keysReturned);
-                // assert the results from tests
-                test.assertion(result);
-                if (result.ListBucketResult.IsTruncated && result.ListBucketResult.IsTruncated[0] === 'false') {
-                    assert.strictEqual(result.ListBucketResult.NextContinuationToken, undefined);
+            async.waterfall(
+                [
+                    next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                    (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1, undefined, log, next),
+                    (resHeaders, next) => objectPut(authInfo, testPutObjectRequest2, undefined, log, next),
+                    (resHeaders, next) => objectPut(authInfo, testPutObjectRequest3, undefined, log, next),
+                    (resHeaders, next) => bucketGet(authInfo, testGetRequest, log, next),
+                    (result, corsHeaders, next) => parseString(result, next),
+                ],
+                (err, result) => {
+                    // v2 requests should return 'KeyCount' in response
+                    const keyCount = Number.parseInt(result.ListBucketResult.KeyCount[0], 10);
+                    const keysReturned = result.ListBucketResult.Contents ? result.ListBucketResult.Contents.length : 0;
+                    assert.strictEqual(keyCount, keysReturned);
+                    // assert the results from tests
+                    test.assertion(result);
+                    if (result.ListBucketResult.IsTruncated && result.ListBucketResult.IsTruncated[0] === 'false') {
+                        assert.strictEqual(result.ListBucketResult.NextContinuationToken, undefined);
+                    }
+                    done();
                 }
-                done();
-            });
+            );
         });
     });
 });

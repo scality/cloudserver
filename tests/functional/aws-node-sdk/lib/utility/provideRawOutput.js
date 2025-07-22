@@ -26,15 +26,13 @@ function provideRawOutput(args, cb) {
             httpCode = lines.find(line => {
                 const trimmed = line.trim().toUpperCase();
                 // ignore 100 Continue HTTP code
-                if (trimmed.startsWith('HTTP/1.1 ') &&
-                    !trimmed.includes('100 CONTINUE')) {
+                if (trimmed.startsWith('HTTP/1.1 ') && !trimmed.includes('100 CONTINUE')) {
                     return true;
                 }
                 return false;
             });
             if (httpCode) {
-                httpCode = httpCode.trim().replace('HTTP/1.1 ', '')
-                    .toUpperCase();
+                httpCode = httpCode.trim().replace('HTTP/1.1 ', '').toUpperCase();
             }
         }
         return cb(httpCode, procData);
