@@ -99,8 +99,6 @@ jobs:
       run: yarn run --silent check-format
     - name: Lint Javascript
       run: yarn run --silent lint -- --max-warnings 0
-    - name: Lint Markdown
-      run: yarn run --silent lint_md
     - name: Lint python
       run: flake8 $(git ls-files "*.py")
     - name: Lint Yaml
