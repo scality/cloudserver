@@ -89,6 +89,20 @@ const constants = {
     // Maximum HTTP headers size allowed
     maxHttpHeadersSize: 14122,
 
+    // AWS sets the maximum number of objects deleted to 1000 for multiDeleteObjects
+    // https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html
+    maxMultiObjectDeleteLen: 1000,
+
+    oneMegaBytes: 1024 * 1024,
+    halfMegaBytes: 512 * 1024,
+
+    // Some apis may need a custom body length limit :
+    apisLengthLimits: {
+        // Multi Objects Delete request can be large : up to 1000 keys of 1024 bytes is
+        // already 1mb, with the other fields it could reach 2mb
+        'multiObjectDelete': 2 * 1024 * 1024,
+    },
+
     // hex digest of sha256 hash of empty string:
     emptyStringHash: crypto.createHash('sha256')
         .update('', 'binary').digest('hex'),
@@ -251,5 +265,6 @@ const constants = {
     // MethodNotAllowed error
     onlyOwnerAllowed: ['bucketDeletePolicy', 'bucketGetPolicy', 'bucketPutPolicy'],
 };
+
 
 module.exports = constants;
