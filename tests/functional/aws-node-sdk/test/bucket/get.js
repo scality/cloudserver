@@ -337,7 +337,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
         });
 
         afterEach(done => {
-            bucketUtil.empty(bucketName).catch(done).done(() => done());
+            bucketUtil.empty(bucketName).then(() => done()).catch(done);
         });
 
         tests.forEach(test => {
@@ -357,181 +357,137 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
         });
 
         tests.forEach(test => {
-            it(`v2 should ${test.name}`, done => {
+            it(`v2 should ${test.name}`, async () => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
 
-                Promise
-                    .mapSeries(test.objectPutParams(Bucket),
-                        param => s3.putObject(param).promise())
-                    .then(() =>
-                        s3.listObjectsV2(test.listObjectParams(Bucket))
-                            .promise())
-                    .then(data => {
-                        const isValidResponse =
-                            tv4.validate(data, bucketSchemaV2);
-                        if (!isValidResponse) {
-                            throw new Error(tv4.error);
-                        }
-                        return data;
-                    }).then(data => {
-                        test.assertions(data, Bucket);
-                        done();
-                    })
-                    .catch(done);
+                for (const param of test.objectPutParams(Bucket)) {
+                    await s3.putObject(param).promise();
+                }
+                const data = await s3.listObjectsV2(test.listObjectParams(Bucket)).promise();
+                const isValidResponse = tv4.validate(data, bucketSchemaV2);
+                if (!isValidResponse) {
+                    throw new Error(tv4.error);
+                }
+                test.assertions(data, Bucket);
             });
         });
 
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
-            it(`should list objects with key ${k} as Prefix`, done => {
+            it(`should list objects with key ${k} as Prefix`, async () => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
                 const objects = [{ Bucket, Key: k }];
 
-                Promise
-                    .mapSeries(objects, param => s3.putObject(param).promise())
-                    .then(() => s3.listObjects({ Bucket, Prefix: k }).promise())
-                    .then(data => {
-                        const isValidResponse = tv4.validate(data,
-                            bucketSchema);
-                        if (!isValidResponse) {
-                            throw new Error(tv4.error);
-                        }
-                        return data;
-                    }).then(data => {
-                        assert.deepStrictEqual(data.Prefix, k);
-                        done();
-                    })
-                    .catch(done);
+                for (const param of objects) {
+                    await s3.putObject(param).promise();
+                }
+                const data = await s3.listObjects({ Bucket, Prefix: k }).promise();
+                const isValidResponse = tv4.validate(data, bucketSchema);
+                if (!isValidResponse) {
+                    throw new Error(tv4.error);
+                }
+                assert.deepStrictEqual(data.Prefix, k);
             });
         });
 
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
-            it(`should list objects with key ${k} as Marker`, done => {
+            it(`should list objects with key ${k} as Marker`, async () => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
                 const objects = [{ Bucket, Key: k }];
 
-                Promise
-                    .mapSeries(objects, param => s3.putObject(param).promise())
-                    .then(() => s3.listObjects({ Bucket, Marker: k }).promise())
-                    .then(data => {
-                        const isValidResponse = tv4.validate(data,
-                            bucketSchema);
-                        if (!isValidResponse) {
-                            throw new Error(tv4.error);
-                        }
-                        return data;
-                    }).then(data => {
-                        assert.deepStrictEqual(data.Marker, k);
-                        done();
-                    })
-                    .catch(done);
+                for (const param of objects) {
+                    await s3.putObject(param).promise();
+                }
+                const data = await s3.listObjects({ Bucket, Marker: k }).promise();
+                const isValidResponse = tv4.validate(data, bucketSchema);
+                if (!isValidResponse) {
+                    throw new Error(tv4.error);
+                }
+                assert.deepStrictEqual(data.Marker, k);
             });
         });
 
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
-            it(`should list objects with key ${k} as NextMarker`, done => {
+            it(`should list objects with key ${k} as NextMarker`, async () => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
                 const objects = [{ Bucket, Key: k }, { Bucket, Key: 'zzz' }];
 
-                Promise
-                    .mapSeries(objects, param => s3.putObject(param).promise())
-                    .then(() => s3.listObjects({ Bucket, MaxKeys: 1,
-                        Delimiter: 'foo' }).promise())
-                    .then(data => {
-                        const isValidResponse = tv4.validate(data,
-                            bucketSchema);
-                        if (!isValidResponse) {
-                            throw new Error(tv4.error);
-                        }
-                        return data;
-                    }).then(data => {
-                        assert.strictEqual(data.NextMarker, k);
-                        done();
-                    })
-                    .catch(done);
+                for (const param of objects) {
+                    await s3.putObject(param).promise();
+                }
+                const data = await s3.listObjects({ Bucket, MaxKeys: 1,
+                    Delimiter: 'foo' }).promise();
+                const isValidResponse = tv4.validate(data, bucketSchema);
+                if (!isValidResponse) {
+                    throw new Error(tv4.error);
+                }
+                assert.strictEqual(data.NextMarker, k);
             });
         });
 
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
-            it(`should list objects with key ${k} as StartAfter`, done => {
+            it(`should list objects with key ${k} as StartAfter`, async () => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
                 const objects = [{ Bucket, Key: k }];
 
-                Promise
-                    .mapSeries(objects, param => s3.putObject(param).promise())
-                    .then(() => s3.listObjectsV2(
-                        { Bucket, StartAfter: k }).promise())
-                    .then(data => {
-                        const isValidResponse = tv4.validate(data,
-                            bucketSchemaV2);
-                        if (!isValidResponse) {
-                            throw new Error(tv4.error);
-                        }
-                        return data;
-                    }).then(data => {
-                        assert.deepStrictEqual(data.StartAfter, k);
-                        done();
-                    })
-                    .catch(done);
+                for (const param of objects) {
+                    await s3.putObject(param).promise();
+                }
+                const data = await s3.listObjectsV2(
+                    { Bucket, StartAfter: k }).promise();
+                const isValidResponse = tv4.validate(data, bucketSchemaV2);
+                if (!isValidResponse) {
+                    throw new Error(tv4.error);
+                }
+                assert.deepStrictEqual(data.StartAfter, k);
             });
         });
 
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
             it(`should list objects with key ${k} as ContinuationToken`,
-            done => {
+            async () => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
                 const objects = [{ Bucket, Key: k }];
 
-                Promise
-                    .mapSeries(objects, param => s3.putObject(param).promise())
-                    .then(() => s3.listObjectsV2({
-                        Bucket,
-                        ContinuationToken: generateToken(k),
-                    }).promise())
-                    .then(data => {
-                        const isValidResponse = tv4.validate(data,
-                            bucketSchemaV2);
-                        if (!isValidResponse) {
-                            throw new Error(tv4.error);
-                        }
-                        return data;
-                    }).then(data => {
-                        assert.deepStrictEqual(
-                            decryptToken(data.ContinuationToken), k);
-                        done();
-                    })
-                    .catch(done);
+                for (const param of objects) {
+                    await s3.putObject(param).promise();
+                }
+                const data = await s3.listObjectsV2({
+                    Bucket,
+                    ContinuationToken: generateToken(k),
+                }).promise();
+                const isValidResponse = tv4.validate(data, bucketSchemaV2);
+                if (!isValidResponse) {
+                    throw new Error(tv4.error);
+                }
+                assert.deepStrictEqual(
+                    decryptToken(data.ContinuationToken), k);
             });
         });
 
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
             it(`should list objects with key ${k} as NextContinuationToken`,
-            done => {
+            async () => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
                 const objects = [{ Bucket, Key: k }, { Bucket, Key: 'zzz' }];
-                Promise
-                    .mapSeries(objects, param => s3.putObject(param).promise())
-                    .then(() => s3.listObjectsV2({ Bucket, MaxKeys: 1,
-                        Delimiter: 'foo' }).promise())
-                    .then(data => {
-                        const isValidResponse = tv4.validate(data,
-                            bucketSchemaV2);
-                        if (!isValidResponse) {
-                            throw new Error(tv4.error);
-                        }
-                        return data;
-                    }).then(data => {
-                        assert.strictEqual(
-                            decryptToken(data.NextContinuationToken), k);
-                        done();
-                    })
-                    .catch(done);
+
+                for (const param of objects) {
+                    await s3.putObject(param).promise();
+                }
+                const data = await s3.listObjectsV2({ Bucket, MaxKeys: 1,
+                    Delimiter: 'foo' }).promise();
+                const isValidResponse = tv4.validate(data, bucketSchemaV2);
+                if (!isValidResponse) {
+                    throw new Error(tv4.error);
+                }
+                assert.strictEqual(
+                    decryptToken(data.NextContinuationToken), k);
             });
         });
     });

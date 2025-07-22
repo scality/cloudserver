@@ -261,9 +261,10 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
         location => {
             describeSkipAWS(`bucket creation with location: ${location}`,
             () => {
-                after(done =>
+                after(done => {
                     bucketUtil.deleteOne(bucketName)
-                        .then(() => done()).catch(() => done()));
+                        .then(() => done()).catch(() => done());
+                });
                 it(`should create bucket with location: ${location}`, done => {
                     bucketUtil.s3.createBucket(
                         {

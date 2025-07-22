@@ -392,9 +392,13 @@ jobs:
 
   file-ft-tests:
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - job-name: file-ft-tests
+          - enable-null-compat: ''
+            job-name: file-ft-tests
+          - enable-null-compat: 'true'
+            job-name: file-ft-tests-null-compat
     name: ${{ matrix.job-name }}
     runs-on: ubuntu-24.04
     needs: build
@@ -404,6 +408,7 @@ jobs:
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       MPU_TESTING: "yes"
+      ENABLE_NULL_VERSION_COMPAT_MODE: "${{ matrix.enable-null-compat }}"
       JOB_NAME: ${{ matrix.job-name }}
     steps:
     - name: Checkout

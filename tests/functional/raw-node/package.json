@@ -14,5 +14,9 @@
     "test": "mocha -t 40000 test/ --exit",
     "test-debug": "_mocha -t 40000 test/ --exit"
   },
-  "author": ""
+  "author": "",
+  "mocha": {
+    "recursive": true,
+    "timeout": 40000
+  }
 }
