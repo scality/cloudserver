@@ -624,6 +624,7 @@ describe('abortMultipartUpload', () => {
         it('should continue despite data deletion errors', done => {
             dataDeleteStub.restore();
             sinon.stub(data, 'delete').yields(errors.InternalError); // Fail data deletion
+            const logWarnSpy = sinon.spy(log, 'warn');
 
             createBucketAndMPU(false, (err, uploadId) => {
                 assert.ifError(err);
@@ -651,6 +652,13 @@ describe('abortMultipartUpload', () => {
 
                     abortMultipartUpload(authInfo, bucketName, objectKey, uploadId, log, err => {
                         assert.strictEqual(err, null); // Should succeed despite data deletion failure
+                        sinon.assert.called(logWarnSpy);
+                        const warnCall = logWarnSpy.getCalls().find(call =>
+                            call.args[0] === 'delete ObjectPart failed'
+                        );
+                        assert(warnCall, 'Expected warning log about failed data deletion');
+                        assert(warnCall.args[1].err, 'Expected error object in log warning');
+                        logWarnSpy.restore();
                         done();
                     }, abortRequest);
                 });
