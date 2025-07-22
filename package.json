@@ -21,7 +21,7 @@
   "dependencies": {
     "@azure/storage-blob": "^12.25.0",
     "@hapi/joi": "^17.1.1",
-    "arsenal": "git+https://github.com/scality/Arsenal#8.2.26",
+    "arsenal": "git+https://github.com/scality/Arsenal#8.2.27",
     "async": "2.6.4",
     "aws-sdk": "^2.1692.0",
     "bucketclient": "scality/bucketclient#8.2.4",
@@ -75,6 +75,10 @@
     "string-width": "4.2.3",
     "jsonwebtoken": "^9.0.0",
     "nan": "v2.22.0"
+  },
+  "mocha": {
+    "recursive": true,
+    "timeout": 40000
   },
   "scripts": {
     "cloudserver": "S3METADATA=mongodb npm-run-all --parallel start_dataserver start_s3server",

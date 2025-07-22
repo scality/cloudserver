@@ -12,6 +12,41 @@ const describeFn = process.env.AWS_ON_AIR
     ? describe.skip
     : describe;
 
+async function cleanBucket(bucketUtils, s3, Bucket) {
+    try {
+        await bucketUtils.empty(Bucket);
+        await s3.deleteBucket({ Bucket }).promise();
+    } catch (err) {
+        process.stdout
+            .write(`Error emptying and deleting bucket: ${err}\n`);
+        // ignore the error and continue
+    }
+}
+
+async function cleanAllBuckets(bucketUtils, s3) {
+    let listingLoop = true;
+    let ContinuationToken;
+
+    process.stdout.write('Try cleaning all buckets before running the test\n');
+
+    while (listingLoop) {
+        const list = await s3.listBuckets({ ContinuationToken }).promise();
+        ContinuationToken = list.ContinuationToken;
+        listingLoop = !!ContinuationToken;
+
+        if (list.Buckets.length) {
+            process.stdout
+                .write(`Found ${list.Buckets.length} buckets to clean:\n${
+                    JSON.stringify(list.Buckets, null, 2)}\n`);
+        }
+
+        // clean sequentially to avoid overloading
+        for (const bucket of list.Buckets) {
+            await cleanBucket(bucketUtils, s3, bucket.Name);
+        }
+    }
+}
+
 describeFn('GET Service - AWS.S3.listBuckets', function getService() {
     this.timeout(600000);
 
@@ -98,22 +133,28 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                 s3 = bucketUtil.s3;
                 s3.config.update({ maxRetries: 0 });
                 s3.config.update({ httpOptions: { timeout: 0 } });
-                async.eachLimit(createdBuckets, 10, (bucketName, moveOn) => {
-                    s3.createBucket({ Bucket: bucketName }, err => {
-                        if (bucketName.endsWith('000')) {
-                            // log to keep ci alive
-                            process.stdout
-                                .write(`creating bucket: ${bucketName}\n`);
-                        }
-                        moveOn(err);
-                    });
-                },
-                err => {
-                    if (err) {
-                        process.stdout.write(`err creating buckets: ${err}`);
-                    }
-                    done(err);
-                });
+                async.series([
+                    // if other tests failed to delete their buckets, listings might be wrong
+                    // try toclean all buckets before running the test
+                    next => cleanAllBuckets(bucketUtil, s3).then(next).catch(next),
+                    next =>
+                        async.eachLimit(createdBuckets, 10, (bucketName, moveOn) => {
+                            s3.createBucket({ Bucket: bucketName }, err => {
+                                if (bucketName.endsWith('000')) {
+                                    // log to keep ci alive
+                                    process.stdout
+                                        .write(`creating bucket: ${bucketName}\n`);
+                                }
+                                moveOn(err);
+                            });
+                        },
+                        err => {
+                            if (err) {
+                                process.stdout.write(`err creating buckets: ${err}`);
+                            }
+                            next(err);
+                        })
+                ], done);
             });
 
             after(done => {
