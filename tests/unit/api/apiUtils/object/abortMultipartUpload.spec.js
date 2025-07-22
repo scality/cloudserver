@@ -2,6 +2,7 @@ const assert = require('assert');
 const sinon = require('sinon');
 const { parseString } = require('xml2js');
 const { errors } = require('arsenal');
+const async = require('async');
 const crypto = require('crypto');
 
 const abortMultipartUpload = require('../../../../../lib/api/apiUtils/object/abortMultipartUpload');
@@ -75,48 +76,24 @@ describe('abortMultipartUpload', () => {
 
     // Helper to create bucket and MPU, returns uploadId
     function createBucketAndMPU(versioned, callback) {
+        const tasks = [
+            next => bucketPut(authInfo, bucketRequest, log, err => next(err)),
+        ];
+
         if (versioned) {
-            bucketPut(authInfo, bucketRequest, log, err => {
-                if (err) {
-                    return callback(err);
-                }
-                return bucketPutVersioning(authInfo, enableVersioningRequest, log, err => {
-                    if (err) {
-                        return callback(err);
-                    }
-                    return initiateMultipartUpload(authInfo, initiateRequest, log, (err, result) => {
-                        if (err) {
-                            return callback(err);
-                        }
-                        return parseString(result, (err, json) => {
-                            if (err) {
-                                return callback(err);
-                            }
-                            const uploadId = json.InitiateMultipartUploadResult.UploadId[0];
-                            return callback(null, uploadId);
-                        });
-                    });
-                });
-            });
-        } else {
-            bucketPut(authInfo, bucketRequest, log, err => {
-                if (err) {
-                    return callback(err);
-                }
-                return initiateMultipartUpload(authInfo, initiateRequest, log, (err, result) => {
-                    if (err) {
-                        return callback(err);
-                    }
-                    return parseString(result, (err, json) => {
-                        if (err) {
-                            return callback(err);
-                        }
-                        const uploadId = json.InitiateMultipartUploadResult.UploadId[0];
-                        return callback(null, uploadId);
-                    });
-                });
-            });
+            tasks.push(next => bucketPutVersioning(authInfo, enableVersioningRequest, log, err => next(err)));
         }
+
+        tasks.push(
+            next => initiateMultipartUpload(authInfo, initiateRequest, log, (err, result) => next(err, result)),
+            (result, next) => parseString(result, (err, json) => next(err, json)),
+            (json, next) => {
+                const uploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                next(null, uploadId);
+            }
+        );
+
+        async.waterfall(tasks, callback);
     }
 
     describe('basic functionality', () => {
@@ -202,6 +179,12 @@ describe('abortMultipartUpload', () => {
                         assert.strictEqual(err, null);
                         sinon.assert.calledOnce(dataAbortMPUStub);
                         sinon.assert.called(dataDeleteStub); // Should delete part data
+                        // ensure the right part was deleted - data.delete is called with location object
+                        const firstCall = dataDeleteStub.getCalls()[0];
+                        const locationArg = firstCall.args[0];
+                        assert(typeof locationArg === 'object', 'First argument should be location object');
+                        assert(locationArg.dataStoreName, 'Location should have dataStoreName');
+                        assert(locationArg.key, 'Location should have key');
                         done();
                     }, abortRequest);
                 });

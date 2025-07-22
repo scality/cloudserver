@@ -26,7 +26,8 @@ describe('Abort MPU', () => {
             s3 = bucketUtil.s3;
             return s3.createBucket({ Bucket: bucket }).promise()
                 .then(() => s3.createMultipartUpload({
-                    Bucket: bucket, Key: key
+                    Bucket: bucket,
+                    Key: key,
                 }).promise())
                 .then(res => {
                     uploadId = res.UploadId;
@@ -322,28 +323,25 @@ describe('Abort MPU - Versioned Bucket Cleanup', function testSuite() {
                     Key: upload.Key,
                     UploadId: upload.UploadId,
                 }).promise().catch(err => {
-                    if (err.code !== 'NoSuchUpload') throw err;
-                })
+                    if (err.code !== 'NoSuchUpload') {
+                        throw err;
+                    }
+                }),
             ));
 
             // Clean up all object versions
             const listVersionsResponse = await s3.listObjectVersions({ Bucket: bucketName }).promise();
-            await Promise.all([
-                ...listVersionsResponse.Versions.map(version =>
-                    s3.deleteObject({
-                        Bucket: bucketName,
-                        Key: version.Key,
-                        VersionId: version.VersionId,
-                    }).promise()
-                ),
-                ...listVersionsResponse.DeleteMarkers.map(marker =>
-                    s3.deleteObject({
-                        Bucket: bucketName,
-                        Key: marker.Key,
-                        VersionId: marker.VersionId,
-                    }).promise()
-                ),
-            ]);
+            const allObjects = [
+                ...listVersionsResponse.Versions,
+                ...listVersionsResponse.DeleteMarkers,
+            ];
+            await Promise.all(allObjects.map(obj =>
+                s3.deleteObject({
+                    Bucket: bucketName,
+                    Key: obj.Key,
+                    VersionId: obj.VersionId,
+                }).promise()
+            ));
 
             await bucketUtil.deleteOne(bucketName);
         });
