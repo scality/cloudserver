@@ -2,10 +2,8 @@ const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
 const { GCP, GcpUtils } = arsenal.storage.data.external;
-const { gcpRequestRetry, setBucketClass, gcpMpuSetup, genUniqID } =
-    require('../../../utils/gcpUtils');
-const { getRealAwsConfig } =
-    require('../../../../aws-node-sdk/test/support/awsConfig');
+const { gcpRequestRetry, setBucketClass, gcpMpuSetup, genUniqID } = require('../../../utils/gcpUtils');
+const { getRealAwsConfig } = require('../../../../aws-node-sdk/test/support/awsConfig');
 
 const credentialOne = 'gcpbackend';
 const bucketNames = {
@@ -42,67 +40,88 @@ describe('GCP: Complete MPU', function testSuite() {
     before(done => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
-        async.eachSeries(bucketNames,
-            (bucket, next) => gcpRequestRetry({
-                method: 'PUT',
-                bucket: bucket.Name,
-                authCredentials: config.credentials,
-                requestBody: setBucketClass(bucket.Type),
-            }, 0, err => {
-                if (err) {
-                    process.stdout.write(`err in creating bucket ${err}\n`);
-                }
-                return next(err);
-            }),
-        done);
+        async.eachSeries(
+            bucketNames,
+            (bucket, next) =>
+                gcpRequestRetry(
+                    {
+                        method: 'PUT',
+                        bucket: bucket.Name,
+                        authCredentials: config.credentials,
+                        requestBody: setBucketClass(bucket.Type),
+                    },
+                    0,
+                    err => {
+                        if (err) {
+                            process.stdout.write(`err in creating bucket ${err}\n`);
+                        }
+                        return next(err);
+                    }
+                ),
+            done
+        );
     });
 
     after(done => {
-        async.eachSeries(bucketNames,
-            (bucket, next) => gcpClient.listObjects({
-                Bucket: bucket.Name,
-            }, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got error ${err}`);
-                async.map(res.Contents, (object, moveOn) => {
-                    const deleteParams = {
+        async.eachSeries(
+            bucketNames,
+            (bucket, next) =>
+                gcpClient.listObjects(
+                    {
                         Bucket: bucket.Name,
-                        Key: object.Key,
-                    };
-                    gcpClient.deleteObject(
-                        deleteParams, err => moveOn(err));
-                }, err => {
-                    assert.equal(err, null,
-                        `Expected success, but got error ${err}`);
-                    gcpRequestRetry({
-                        method: 'DELETE',
-                        bucket: bucket.Name,
-                        authCredentials: config.credentials,
-                    }, 0, err => {
-                        if (err) {
-                            process.stdout.write(
-                                `err in deleting bucket ${err}\n`);
-                        }
-                        return next(err);
-                    });
-                });
-            }),
-        done);
+                    },
+                    (err, res) => {
+                        assert.equal(err, null, `Expected success, but got error ${err}`);
+                        async.map(
+                            res.Contents,
+                            (object, moveOn) => {
+                                const deleteParams = {
+                                    Bucket: bucket.Name,
+                                    Key: object.Key,
+                                };
+                                gcpClient.deleteObject(deleteParams, err => moveOn(err));
+                            },
+                            err => {
+                                assert.equal(err, null, `Expected success, but got error ${err}`);
+                                gcpRequestRetry(
+                                    {
+                                        method: 'DELETE',
+                                        bucket: bucket.Name,
+                                        authCredentials: config.credentials,
+                                    },
+                                    0,
+                                    err => {
+                                        if (err) {
+                                            process.stdout.write(`err in deleting bucket ${err}\n`);
+                                        }
+                                        return next(err);
+                                    }
+                                );
+                            }
+                        );
+                    }
+                ),
+            done
+        );
     });
 
     describe('when MPU has 0 parts', () => {
         beforeEach(function beforeFn(done) {
             this.currentTest.key = `somekey-${genUniqID()}`;
-            gcpMpuSetupWrapper.call(this, {
-                gcpClient,
-                bucketNames,
-                key: this.currentTest.key,
-                partCount: 0, partSize,
-            }, done);
+            gcpMpuSetupWrapper.call(
+                this,
+                {
+                    gcpClient,
+                    bucketNames,
+                    key: this.currentTest.key,
+                    partCount: 0,
+                    partSize,
+                },
+                done
+            );
         });
 
-        it('should return error if 0 parts are given in MPU complete',
-        function testFn(done) {
+        it('should return error if 0 parts are given in MPU complete', function testFn(done) {
             const params = {
                 Bucket: bucketNames.main.Name,
                 MPU: bucketNames.mpu.Name,
@@ -121,20 +140,28 @@ describe('GCP: Complete MPU', function testSuite() {
     describe('when MPU has 1 uploaded part', () => {
         beforeEach(function beforeFn(done) {
             this.currentTest.key = `somekey-${genUniqID()}`;
-            gcpMpuSetupWrapper.call(this, {
-                gcpClient,
-                bucketNames,
-                key: this.currentTest.key,
-                partCount: 1, partSize,
-            }, done);
+            gcpMpuSetupWrapper.call(
+                this,
+                {
+                    gcpClient,
+                    bucketNames,
+                    key: this.currentTest.key,
+                    partCount: 1,
+                    partSize,
+                },
+                done
+            );
         });
 
-        it('should successfully complete MPU',
-        function testFn(done) {
-            const parts = GcpUtils.createMpuList({
-                Key: this.test.key,
-                UploadId: this.test.uploadId,
-            }, 'parts', 1).map(item => {
+        it('should successfully complete MPU', function testFn(done) {
+            const parts = GcpUtils.createMpuList(
+                {
+                    Key: this.test.key,
+                    UploadId: this.test.uploadId,
+                },
+                'parts',
+                1
+            ).map(item => {
                 Object.assign(item, {
                     ETag: this.test.etagList[item.PartNumber - 1],
                 });
@@ -148,8 +175,7 @@ describe('GCP: Complete MPU', function testSuite() {
                 MultipartUpload: { Parts: parts },
             };
             gcpClient.completeMultipartUpload(params, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got error ${err}`);
+                assert.equal(err, null, `Expected success, but got error ${err}`);
                 assert.strictEqual(res.ETag, `"${smallMD5}"`);
                 return done();
             });
@@ -159,20 +185,28 @@ describe('GCP: Complete MPU', function testSuite() {
     describe('when MPU has 1024 uploaded parts', () => {
         beforeEach(function beforeFn(done) {
             this.currentTest.key = `somekey-${genUniqID()}`;
-            gcpMpuSetupWrapper.call(this, {
-                gcpClient,
-                bucketNames,
-                key: this.currentTest.key,
-                partCount: numParts, partSize,
-            }, done);
+            gcpMpuSetupWrapper.call(
+                this,
+                {
+                    gcpClient,
+                    bucketNames,
+                    key: this.currentTest.key,
+                    partCount: numParts,
+                    partSize,
+                },
+                done
+            );
         });
 
-        it('should successfully complete MPU',
-        function testFn(done) {
-            const parts = GcpUtils.createMpuList({
-                Key: this.test.key,
-                UploadId: this.test.uploadId,
-            }, 'parts', numParts).map(item => {
+        it('should successfully complete MPU', function testFn(done) {
+            const parts = GcpUtils.createMpuList(
+                {
+                    Key: this.test.key,
+                    UploadId: this.test.uploadId,
+                },
+                'parts',
+                numParts
+            ).map(item => {
                 Object.assign(item, {
                     ETag: this.test.etagList[item.PartNumber - 1],
                 });
@@ -186,8 +220,7 @@ describe('GCP: Complete MPU', function testSuite() {
                 MultipartUpload: { Parts: parts },
             };
             gcpClient.completeMultipartUpload(params, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got error ${err}`);
+                assert.equal(err, null, `Expected success, but got error ${err}`);
                 assert.strictEqual(res.ETag, `"${bigMD5}"`);
                 return done();
             });

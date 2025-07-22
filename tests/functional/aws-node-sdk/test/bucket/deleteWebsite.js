@@ -30,14 +30,10 @@ describe('DELETE bucket website', () => {
 
             describe('without existing configuration', () => {
                 it('should return a 204 response', done => {
-                    const request =
-                    s3.deleteBucketWebsite({ Bucket: bucketName }, err => {
-                        const statusCode =
-                            request.response.httpResponse.statusCode;
-                        assert.strictEqual(statusCode, 204,
-                            `Found unexpected statusCode ${statusCode}`);
-                        assert.strictEqual(err, null,
-                            `Found unexpected err ${err}`);
+                    const request = s3.deleteBucketWebsite({ Bucket: bucketName }, err => {
+                        const statusCode = request.response.httpResponse.statusCode;
+                        assert.strictEqual(statusCode, 204, `Found unexpected statusCode ${statusCode}`);
+                        assert.strictEqual(err, null, `Found unexpected err ${err}`);
                         return done();
                     });
                 });
@@ -46,22 +42,18 @@ describe('DELETE bucket website', () => {
             describe('with existing configuration', () => {
                 beforeEach(done => {
                     const config = new WebsiteConfigTester('index.html');
-                    s3.putBucketWebsite({ Bucket: bucketName,
-                        WebsiteConfiguration: config }, done);
+                    s3.putBucketWebsite({ Bucket: bucketName, WebsiteConfiguration: config }, done);
                 });
 
                 it('should delete bucket configuration successfully', done => {
                     s3.deleteBucketWebsite({ Bucket: bucketName }, err => {
-                        assert.strictEqual(err, null,
-                            `Found unexpected err ${err}`);
+                        assert.strictEqual(err, null, `Found unexpected err ${err}`);
                         return done();
                     });
                 });
 
-                it('should return AccessDenied if user is not bucket owner',
-                done => {
-                    otherAccountS3.deleteBucketWebsite({ Bucket: bucketName },
-                    err => {
+                it('should return AccessDenied if user is not bucket owner', done => {
+                    otherAccountS3.deleteBucketWebsite({ Bucket: bucketName }, err => {
                         assert(err);
                         assert.strictEqual(err.code, 'AccessDenied');
                         assert.strictEqual(err.statusCode, 403);

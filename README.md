@@ -35,8 +35,7 @@ application on the go.
 ## Contributing
 
 In order to contribute, please follow the
-[Contributing Guidelines](
-https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md).
+[Contributing Guidelines](https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md).
 
 ## Installation
 
@@ -69,6 +68,54 @@ If you get an error regarding level-down bindings, try clearing your yarn cache:
 yarn cache clean
 ```
 
+## Development
+
+### Code Style and Formatting
+
+This project uses ESLint for code quality and Prettier for consistent code formatting.
+
+#### Linting
+
+Check code quality with ESLint:
+
+```shell
+yarn run lint
+```
+
+#### Formatting
+
+Format all code with Prettier:
+
+```shell
+yarn run format
+```
+
+Check if code is properly formatted:
+
+```shell
+yarn run check-format
+```
+
+#### Pre-commit Guidelines
+
+Before submitting a pull request, ensure that:
+
+1. **Code is properly formatted**: Run `yarn run check-format` to verify
+2. **Code passes linting**: Run `yarn run lint` to check for issues
+3. **Tests pass**: Run `yarn test` for unit tests
+
+The CI pipeline will automatically check formatting and linting, so make sure these pass locally first.
+
+#### Code Style Rules
+
+- **Quotes**: Use single quotes (`'`) instead of double quotes (`"`)
+- **Indentation**: Use 4 spaces (no tabs)
+- **Line Length**: Maximum 120 characters per line
+- **Semicolons**: Always use semicolons
+- **Trailing Commas**: Use trailing commas in ES5+ contexts
+
+Prettier will automatically enforce most of these rules when you run `yarn run format`.
+
 ## Run it with a file backend
 
 ```shell
@@ -85,8 +132,8 @@ a secret key of verySecretKey1.
 By default the metadata files will be saved in the
 localMetadata directory and the data files will be saved
 in the localData directory within the ./S3 directory on your
-machine.  These directories have been pre-created within the
-repository.  If you would like to save the data or metadata in
+machine. These directories have been pre-created within the
+repository. If you would like to save the data or metadata in
 different locations of your choice, you must specify them with absolute paths.
 So, when starting the server:
 

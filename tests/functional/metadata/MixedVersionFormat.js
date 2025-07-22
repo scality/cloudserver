@@ -9,8 +9,8 @@ const replicaSetHosts = 'localhost:27017,localhost:27018,localhost:27019';
 const writeConcern = 'majority';
 const replicaSet = 'rs0';
 const readPreference = 'primary';
-const mongoUrl = `mongodb://${replicaSetHosts}/?w=${writeConcern}&` +
-    `replicaSet=${replicaSet}&readPreference=${readPreference}`;
+const mongoUrl =
+    `mongodb://${replicaSetHosts}/?w=${writeConcern}&` + `replicaSet=${replicaSet}&readPreference=${readPreference}`;
 
 /**
  * These tests are intended to see if the vFormat of buckets is respected
@@ -40,61 +40,74 @@ describe('Mongo backend mixed bucket format versions', () => {
 
         function updateBucketVFormat(bucketName, vFormat) {
             const db = mongoClient.db('metadata');
-            return db.collection('__metastore')
-                .updateOne({
+            return db.collection('__metastore').updateOne(
+                {
                     _id: bucketName,
-                }, {
+                },
+                {
                     $set: { vFormat },
-                }, {});
+                },
+                {}
+            );
         }
 
         function getObject(bucketName, key, cb) {
             const db = mongoClient.db('metadata');
-            return db.collection(bucketName)
-            .findOne({
-                _id: key,
-            }, {}).then(doc => {
-                if (!doc) {
-                    return cb(errors.NoSuchKey);
-                }
-                return cb(null, doc.value);
-            }).catch(err => cb(err));
+            return db
+                .collection(bucketName)
+                .findOne(
+                    {
+                        _id: key,
+                    },
+                    {}
+                )
+                .then(doc => {
+                    if (!doc) {
+                        return cb(errors.NoSuchKey);
+                    }
+                    return cb(null, doc.value);
+                })
+                .catch(err => cb(err));
         }
 
         before(done => {
-            MongoClient.connect(mongoUrl, {}).then(client => {
-                mongoClient = client;
-                bucketUtil = new BucketUtility('default', sigCfg);
-                s3 = bucketUtil.s3;
-                return done();
-            }).catch(err => done(err));
+            MongoClient.connect(mongoUrl, {})
+                .then(client => {
+                    mongoClient = client;
+                    bucketUtil = new BucketUtility('default', sigCfg);
+                    s3 = bucketUtil.s3;
+                    return done();
+                })
+                .catch(err => done(err));
         });
 
         beforeEach(() => {
             process.stdout.write('Creating buckets');
-            return bucketUtil.createMany(['v0-bucket', 'v1-bucket'])
-            .then(async () => {
-                process.stdout.write('Updating bucket vFormat');
-                await updateBucketVFormat('v0-bucket', 'v0');
-                await updateBucketVFormat('v1-bucket', 'v1');
-            })
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
-            });
+            return bucketUtil
+                .createMany(['v0-bucket', 'v1-bucket'])
+                .then(async () => {
+                    process.stdout.write('Updating bucket vFormat');
+                    await updateBucketVFormat('v0-bucket', 'v0');
+                    await updateBucketVFormat('v1-bucket', 'v1');
+                })
+                .catch(err => {
+                    process.stdout.write('Error in afterEach');
+                    throw err;
+                });
         });
 
         afterEach(() => {
             process.stdout.write('Emptying buckets');
-            return bucketUtil.emptyMany(['v0-bucket', 'v1-bucket'])
-            .then(() => {
-                process.stdout.write('Deleting buckets');
-                return bucketUtil.deleteMany(['v0-bucket', 'v1-bucket']);
-            })
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
-            });
+            return bucketUtil
+                .emptyMany(['v0-bucket', 'v1-bucket'])
+                .then(() => {
+                    process.stdout.write('Deleting buckets');
+                    return bucketUtil.deleteMany(['v0-bucket', 'v1-bucket']);
+                })
+                .catch(err => {
+                    process.stdout.write('Error in afterEach');
+                    throw err;
+                });
         });
 
         after(async () => {
@@ -105,87 +118,98 @@ describe('Mongo backend mixed bucket format versions', () => {
             it(`Should perform operations on non versioned bucket in ${vFormat} format`, done => {
                 const paramsObj1 = {
                     Bucket: `${vFormat}-bucket`,
-                    Key: `${vFormat}-object-1`
+                    Key: `${vFormat}-object-1`,
                 };
                 const paramsObj2 = {
                     Bucket: `${vFormat}-bucket`,
-                    Key: `${vFormat}-object-2`
+                    Key: `${vFormat}-object-2`,
                 };
                 const masterKey = vFormat === 'v0' ? `${vFormat}-object-1` : `\x7fM${vFormat}-object-1`;
-                async.series([
-                    next => s3.putObject(paramsObj1, next),
-                    next => s3.putObject(paramsObj2, next),
-                    // check if data stored in the correct format
-                    next => getObject(`${vFormat}-bucket`, masterKey, (err, doc) => {
-                        assert.ifError(err);
-                        assert.strictEqual(doc.key, `${vFormat}-object-1`);
-                        return next();
-                    }),
-                    // test if we can get object
-                    next => s3.getObject(paramsObj1, next),
-                    // test if we can list objects
-                    next => s3.listObjects({ Bucket: `${vFormat}-bucket` }, (err, data) => {
-                        assert.ifError(err);
-                        assert.strictEqual(data.Contents.length, 2);
-                        const keys = data.Contents.map(obj => obj.Key);
-                        assert(keys.includes(`${vFormat}-object-1`));
-                        assert(keys.includes(`${vFormat}-object-2`));
-                        return next();
-                    })
-                ], done);
+                async.series(
+                    [
+                        next => s3.putObject(paramsObj1, next),
+                        next => s3.putObject(paramsObj2, next),
+                        // check if data stored in the correct format
+                        next =>
+                            getObject(`${vFormat}-bucket`, masterKey, (err, doc) => {
+                                assert.ifError(err);
+                                assert.strictEqual(doc.key, `${vFormat}-object-1`);
+                                return next();
+                            }),
+                        // test if we can get object
+                        next => s3.getObject(paramsObj1, next),
+                        // test if we can list objects
+                        next =>
+                            s3.listObjects({ Bucket: `${vFormat}-bucket` }, (err, data) => {
+                                assert.ifError(err);
+                                assert.strictEqual(data.Contents.length, 2);
+                                const keys = data.Contents.map(obj => obj.Key);
+                                assert(keys.includes(`${vFormat}-object-1`));
+                                assert(keys.includes(`${vFormat}-object-2`));
+                                return next();
+                            }),
+                    ],
+                    done
+                );
             });
 
             it(`Should perform operations on versioned bucket in ${vFormat} format`, done => {
                 const paramsObj1 = {
                     Bucket: `${vFormat}-bucket`,
-                    Key: `${vFormat}-object-1`
+                    Key: `${vFormat}-object-1`,
                 };
                 const paramsObj2 = {
                     Bucket: `${vFormat}-bucket`,
-                    Key: `${vFormat}-object-2`
+                    Key: `${vFormat}-object-2`,
                 };
                 const versioningParams = {
                     Bucket: `${vFormat}-bucket`,
                     VersioningConfiguration: {
-                     Status: 'Enabled',
-                    }
+                        Status: 'Enabled',
+                    },
                 };
                 const masterKey = vFormat === 'v0' ? `${vFormat}-object-1` : `\x7fM${vFormat}-object-1`;
-                async.series([
-                    next => s3.putBucketVersioning(versioningParams, next),
-                    next => s3.putObject(paramsObj1, next),
-                    next => s3.putObject(paramsObj1, next),
-                    next => s3.putObject(paramsObj2, next),
-                    // check if data stored in the correct version format
-                    next => getObject(`${vFormat}-bucket`, masterKey, (err, doc) => {
-                        assert.ifError(err);
-                        assert.strictEqual(doc.key, `${vFormat}-object-1`);
-                        return next();
-                    }),
-                    // test if we can get object
-                    next => s3.getObject(paramsObj1, next),
-                    // test if we can list objects
-                    next => s3.listObjects({ Bucket: `${vFormat}-bucket` }, (err, data) => {
-                        assert.ifError(err);
-                        assert.strictEqual(data.Contents.length, 2);
-                        const keys = data.Contents.map(obj => obj.Key);
-                        assert(keys.includes(`${vFormat}-object-1`));
-                        assert(keys.includes(`${vFormat}-object-2`));
-                        return next();
-                    }),
-                    // test if we can list object versions
-                    next => s3.listObjectVersions({ Bucket: `${vFormat}-bucket` }, (err, data) => {
-                        assert.ifError(err);
-                        assert.strictEqual(data.Versions.length, 3);
-                        const versionPerObject = {};
-                        data.Versions.forEach(version => {
-                            versionPerObject[version.Key] = (versionPerObject[version.Key] || 0) + 1;
-                        });
-                        assert.strictEqual(versionPerObject[`${vFormat}-object-1`], 2);
-                        assert.strictEqual(versionPerObject[`${vFormat}-object-2`], 1);
-                        return next();
-                    })
-                ], done);
+                async.series(
+                    [
+                        next => s3.putBucketVersioning(versioningParams, next),
+                        next => s3.putObject(paramsObj1, next),
+                        next => s3.putObject(paramsObj1, next),
+                        next => s3.putObject(paramsObj2, next),
+                        // check if data stored in the correct version format
+                        next =>
+                            getObject(`${vFormat}-bucket`, masterKey, (err, doc) => {
+                                assert.ifError(err);
+                                assert.strictEqual(doc.key, `${vFormat}-object-1`);
+                                return next();
+                            }),
+                        // test if we can get object
+                        next => s3.getObject(paramsObj1, next),
+                        // test if we can list objects
+                        next =>
+                            s3.listObjects({ Bucket: `${vFormat}-bucket` }, (err, data) => {
+                                assert.ifError(err);
+                                assert.strictEqual(data.Contents.length, 2);
+                                const keys = data.Contents.map(obj => obj.Key);
+                                assert(keys.includes(`${vFormat}-object-1`));
+                                assert(keys.includes(`${vFormat}-object-2`));
+                                return next();
+                            }),
+                        // test if we can list object versions
+                        next =>
+                            s3.listObjectVersions({ Bucket: `${vFormat}-bucket` }, (err, data) => {
+                                assert.ifError(err);
+                                assert.strictEqual(data.Versions.length, 3);
+                                const versionPerObject = {};
+                                data.Versions.forEach(version => {
+                                    versionPerObject[version.Key] = (versionPerObject[version.Key] || 0) + 1;
+                                });
+                                assert.strictEqual(versionPerObject[`${vFormat}-object-1`], 2);
+                                assert.strictEqual(versionPerObject[`${vFormat}-object-2`], 1);
+                                return next();
+                            }),
+                    ],
+                    done
+                );
             });
         });
     });

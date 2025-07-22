@@ -240,10 +240,7 @@ const apiMatrix = [
         headers: {
             'x-amz-version-id': '1',
         },
-        expectedPermissions: [
-            's3:PutObject',
-            's3:PutObjectVersionTagging',
-        ],
+        expectedPermissions: ['s3:PutObject', 's3:PutObjectVersionTagging'],
     },
     {
         name: 'objectPutACL',
@@ -282,7 +279,6 @@ const apiMatrix = [
     },
 ];
 
-
 function prepareDummyRequest(headers = {}) {
     const request = new DummyRequest({
         hostname: 'localhost',
@@ -300,13 +296,16 @@ describe('Policies: permission checks for S3 APIs', () => {
         if (api.name.length === 0) {
             return;
         }
-        const message = `should return ${api.expectedPermissions.join(', ')} in requestContextParams for ${api.name}` +
-            `${(api.headers && api.headers.length) > 0 ?
-                ` with headers ${api.headers.map(el => el[0]).join(', ')}` : ''}`;
+        const message =
+            `should return ${api.expectedPermissions.join(', ')} in requestContextParams for ${api.name}` +
+            `${
+                (api.headers && api.headers.length) > 0
+                    ? ` with headers ${api.headers.map(el => el[0]).join(', ')}`
+                    : ''
+            }`;
         it(message, () => {
             const request = prepareDummyRequest(api.headers);
-            const requestContexts = prepareRequestContexts(api.name, request,
-                sourceBucket, sourceObject);
+            const requestContexts = prepareRequestContexts(api.name, request, sourceBucket, sourceObject);
             const requestedActions = requestContexts.map(rq => rq.getAction());
             assert.deepStrictEqual(requestedActions, api.expectedPermissions);
         });
@@ -320,26 +319,26 @@ describe('Policies: permission checks for S3 APIs', () => {
         }
 
         it('should return s3:PutBucket without any provided header', () => {
-            assert.deepStrictEqual(
-                putBucketApiMethods(),
-                ['bucketPut'],
-            );
+            assert.deepStrictEqual(putBucketApiMethods(), ['bucketPut']);
         });
 
-        it('should return s3:CreateBucket, s3:PutBucketVersioning and s3:PutBucketObjectLockConfiguration' +
-            ' with object-lock headers', () => {
-            assert.deepStrictEqual(
-                putBucketApiMethods({ 'x-amz-bucket-object-lock-enabled': 'true' }),
-                ['bucketPut', 'bucketPutObjectLock', 'bucketPutVersioning'],
-            );
-        });
+        it(
+            'should return s3:CreateBucket, s3:PutBucketVersioning and s3:PutBucketObjectLockConfiguration' +
+                ' with object-lock headers',
+            () => {
+                assert.deepStrictEqual(putBucketApiMethods({ 'x-amz-bucket-object-lock-enabled': 'true' }), [
+                    'bucketPut',
+                    'bucketPutObjectLock',
+                    'bucketPutVersioning',
+                ]);
+            }
+        );
 
-        it('should return s3:CreateBucket and s3:PutBucketAcl' +
-            ' with ACL headers', () => {
-            assert.deepStrictEqual(
-                putBucketApiMethods({ 'x-amz-grant-read': 'private' }),
-                ['bucketPut', 'bucketPutACL'],
-            );
+        it('should return s3:CreateBucket and s3:PutBucketAcl' + ' with ACL headers', () => {
+            assert.deepStrictEqual(putBucketApiMethods({ 'x-amz-grant-read': 'private' }), [
+                'bucketPut',
+                'bucketPutACL',
+            ]);
         });
     });
 });

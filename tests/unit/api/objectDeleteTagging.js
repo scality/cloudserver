@@ -6,10 +6,7 @@ const objectPut = require('../../../lib/api/objectPut');
 const objectPutTagging = require('../../../lib/api/objectPutTagging');
 const objectDeleteTagging = require('../../../lib/api/objectDeleteTagging');
 const metadata = require('../../../lib/metadata/wrapper');
-const { cleanup,
-    DummyRequestLogger,
-    makeAuthInfo,
-    TaggingConfigTester } = require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo, TaggingConfigTester } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
 
 const log = new DummyRequestLogger();
@@ -25,13 +22,16 @@ const testBucketPutRequest = {
     actionImplicitDenies: false,
 };
 
-const testPutObjectRequest = new DummyRequest({
-    bucketName,
-    namespace,
-    objectKey: objectName,
-    headers: {},
-    url: `/${bucketName}/${objectName}`,
-}, postBody);
+const testPutObjectRequest = new DummyRequest(
+    {
+        bucketName,
+        namespace,
+        objectKey: objectName,
+        headers: {},
+        url: `/${bucketName}/${objectName}`,
+    },
+    postBody
+);
 
 describe('deleteObjectTagging API', () => {
     beforeEach(done => {
@@ -40,8 +40,7 @@ describe('deleteObjectTagging API', () => {
             if (err) {
                 return done(err);
             }
-            return objectPut(authInfo, testPutObjectRequest, undefined, log,
-              done);
+            return objectPut(authInfo, testPutObjectRequest, undefined, log, done);
         });
     });
 
@@ -49,22 +48,20 @@ describe('deleteObjectTagging API', () => {
 
     it('should delete tag set and update originOp', done => {
         const taggingUtil = new TaggingConfigTester();
-        const testObjectPutTaggingRequest = taggingUtil
-            .createObjectTaggingRequest('PUT', bucketName, objectName);
-        const testObjectDeleteTaggingRequest = taggingUtil
-            .createObjectTaggingRequest('DELETE', bucketName, objectName);
-        async.waterfall([
-            next => objectPutTagging(authInfo, testObjectPutTaggingRequest, log,
-              err => next(err)),
-            next => objectDeleteTagging(authInfo,
-              testObjectDeleteTaggingRequest, log, err => next(err)),
-            next => metadata.getObjectMD(bucketName, objectName, {}, log,
-            (err, objectMD) => next(err, objectMD)),
-        ], (err, objectMD) => {
-            const uploadedTags = objectMD.tags;
-            assert.deepStrictEqual(uploadedTags, {});
-            assert.strictEqual(objectMD.originOp, 's3:ObjectTagging:Delete');
-            return done();
-        });
+        const testObjectPutTaggingRequest = taggingUtil.createObjectTaggingRequest('PUT', bucketName, objectName);
+        const testObjectDeleteTaggingRequest = taggingUtil.createObjectTaggingRequest('DELETE', bucketName, objectName);
+        async.waterfall(
+            [
+                next => objectPutTagging(authInfo, testObjectPutTaggingRequest, log, err => next(err)),
+                next => objectDeleteTagging(authInfo, testObjectDeleteTaggingRequest, log, err => next(err)),
+                next => metadata.getObjectMD(bucketName, objectName, {}, log, (err, objectMD) => next(err, objectMD)),
+            ],
+            (err, objectMD) => {
+                const uploadedTags = objectMD.tags;
+                assert.deepStrictEqual(uploadedTags, {});
+                assert.strictEqual(objectMD.originOp, 's3:ObjectTagging:Delete');
+                return done();
+            }
+        );
     });
 });

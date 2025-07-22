@@ -1,6 +1,5 @@
 const assert = require('assert');
-const { validateMaxScannedEntries } =
-      require('../../../../lib/api/apiUtils/object/lifecycle');
+const { validateMaxScannedEntries } = require('../../../../lib/api/apiUtils/object/lifecycle');
 
 const tests = [
     {

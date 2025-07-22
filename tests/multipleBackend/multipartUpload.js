@@ -5,10 +5,8 @@ const { parseString } = require('xml2js');
 const { models } = require('arsenal');
 
 const BucketInfo = models.BucketInfo;
-const { getRealAwsConfig } =
-    require('../functional/aws-node-sdk/test/support/awsConfig');
-const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils } =
-    require('../unit/helpers');
+const { getRealAwsConfig } = require('../functional/aws-node-sdk/test/support/awsConfig');
+const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils } = require('../unit/helpers');
 const DummyRequest = require('../unit/DummyRequest');
 const { config } = require('../../lib/Config');
 const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
@@ -17,13 +15,11 @@ const { bucketPut } = require('../../lib/api/bucketPut');
 const objectPut = require('../../lib/api/objectPut');
 const objectGet = require('../../lib/api/objectGet');
 const bucketPutVersioning = require('../../lib/api/bucketPutVersioning');
-const initiateMultipartUpload =
-    require('../../lib/api/initiateMultipartUpload');
+const initiateMultipartUpload = require('../../lib/api/initiateMultipartUpload');
 const multipartDelete = require('../../lib/api/multipartDelete');
 const objectPutCopyPart = require('../../lib/api/objectPutCopyPart');
 const objectPutPart = require('../../lib/api/objectPutPart');
-const completeMultipartUpload =
-    require('../../lib/api/completeMultipartUpload');
+const completeMultipartUpload = require('../../lib/api/completeMultipartUpload');
 const listParts = require('../../lib/api/listParts');
 const listMultipartUploads = require('../../lib/api/listMultipartUploads');
 const constants = require('../../constants');
@@ -44,15 +40,13 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 const awsBucket = config.locationConstraints[awsLocation].details.bucketName;
-const awsMismatchBucket = config.locationConstraints[awsLocationMismatch]
-                            .details.bucketName;
+const awsMismatchBucket = config.locationConstraints[awsLocationMismatch].details.bucketName;
 const smallBody = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
 const locMetaHeader = 'scal-location-constraint';
-const isCEPH = (config.locationConstraints[awsLocation]
-                    .details.awsEndpoint !== undefined &&
-                config.locationConstraints[awsLocation]
-                    .details.awsEndpoint.indexOf('amazon') === -1);
+const isCEPH =
+    config.locationConstraints[awsLocation].details.awsEndpoint !== undefined &&
+    config.locationConstraints[awsLocation].details.awsEndpoint.indexOf('amazon') === -1;
 const itSkipCeph = isCEPH ? it.skip : it;
 const bucketPutRequest = {
     bucketName,
@@ -67,7 +61,8 @@ const bucketPutRequest = {
 const awsETag = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const awsETagBigObj = 'f1c9645dbc14efddc7d8a322685f26eb';
 const tagSet = 'key1=value1&key2=value2';
-const completeBody = '<CompleteMultipartUpload>' +
+const completeBody =
+    '<CompleteMultipartUpload>' +
     '<Part>' +
     '<PartNumber>1</PartNumber>' +
     `<ETag>"${awsETagBigObj}"</ETag>` +
@@ -85,29 +80,38 @@ const basicParams = {
 };
 
 function getObjectGetRequest(objectKey) {
-    return Object.assign({
-        objectKey,
-        headers: {},
-        url: `/${bucketName}/${objectKey}`,
-    }, basicParams);
+    return Object.assign(
+        {
+            objectKey,
+            headers: {},
+            url: `/${bucketName}/${objectKey}`,
+        },
+        basicParams
+    );
 }
 
 function getDeleteParams(objectKey, uploadId) {
-    return Object.assign({
-        url: `/${objectKey}?uploadId=${uploadId}`,
-        query: { uploadId },
-        objectKey,
-        headers: { host: `${bucketName}.s3.amazonaws.com` },
-    }, basicParams);
+    return Object.assign(
+        {
+            url: `/${objectKey}?uploadId=${uploadId}`,
+            query: { uploadId },
+            objectKey,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+        },
+        basicParams
+    );
 }
 
 function getPartParams(objectKey, uploadId, partNumber) {
-    return Object.assign({
-        objectKey,
-        headers: { host: `${bucketName}.s3.amazonaws.com` },
-        url: `/${objectKey}?partNumber=${partNumber}&uploadId=${uploadId}`,
-        query: { partNumber, uploadId },
-    }, basicParams);
+    return Object.assign(
+        {
+            objectKey,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            url: `/${objectKey}?partNumber=${partNumber}&uploadId=${uploadId}`,
+            query: { partNumber, uploadId },
+        },
+        basicParams
+    );
 }
 
 function _getOverviewKey(objectKey, uploadId) {
@@ -115,23 +119,29 @@ function _getOverviewKey(objectKey, uploadId) {
 }
 
 function getCompleteParams(objectKey, uploadId) {
-    return Object.assign({
-        objectKey,
-        parsedHost: 's3.amazonaws.com',
-        headers: { host: `${bucketName}.s3.amazonaws.com` },
-        post: completeBody,
-        url: `/${objectKey}?uploadId=${uploadId}`,
-        query: { uploadId },
-    }, basicParams);
+    return Object.assign(
+        {
+            objectKey,
+            parsedHost: 's3.amazonaws.com',
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            post: completeBody,
+            url: `/${objectKey}?uploadId=${uploadId}`,
+            query: { uploadId },
+        },
+        basicParams
+    );
 }
 
 function getListParams(objectKey, uploadId) {
-    return Object.assign({
-        objectKey,
-        headers: { host: `${bucketName}.s3.amazonaws.com` },
-        url: `/${objectKey}?uploadId=${uploadId}`,
-        query: { uploadId },
-    }, basicParams);
+    return Object.assign(
+        {
+            objectKey,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            url: `/${objectKey}?uploadId=${uploadId}`,
+            query: { uploadId },
+        },
+        basicParams
+    );
 }
 
 function getAwsParams(objectKey) {
@@ -145,10 +155,8 @@ function getAwsParamsBucketNotMatch(objectKey) {
 function assertMpuInitResults(initResult, key, cb) {
     parseString(initResult, (err, json) => {
         assert.equal(err, null, `Error parsing mpu init results: ${err}`);
-        assert.strictEqual(json.InitiateMultipartUploadResult
-            .Bucket[0], bucketName);
-        assert.strictEqual(json.InitiateMultipartUploadResult
-            .Key[0], key);
+        assert.strictEqual(json.InitiateMultipartUploadResult.Bucket[0], bucketName);
+        assert.strictEqual(json.InitiateMultipartUploadResult.Key[0], key);
         assert(json.InitiateMultipartUploadResult.UploadId[0]);
         cb(json.InitiateMultipartUploadResult.UploadId[0]);
     });
@@ -156,16 +164,13 @@ function assertMpuInitResults(initResult, key, cb) {
 
 function assertMpuCompleteResults(compResult, objectKey) {
     parseString(compResult, (err, json) => {
-        assert.equal(err, null,
-            `Error parsing mpu complete results: ${err}`);
+        assert.equal(err, null, `Error parsing mpu complete results: ${err}`);
         assert.strictEqual(
             json.CompleteMultipartUploadResult.Location[0],
-            `http://${bucketName}.s3.amazonaws.com/${objectKey}`);
-        assert.strictEqual(
-            json.CompleteMultipartUploadResult.Bucket[0],
-            bucketName);
-        assert.strictEqual(
-            json.CompleteMultipartUploadResult.Key[0], objectKey);
+            `http://${bucketName}.s3.amazonaws.com/${objectKey}`
+        );
+        assert.strictEqual(json.CompleteMultipartUploadResult.Bucket[0], bucketName);
+        assert.strictEqual(json.CompleteMultipartUploadResult.Key[0], objectKey);
         const MD = metadata.keyMaps.get(bucketName).get(objectKey);
         assert(MD);
     });
@@ -176,53 +181,42 @@ function assertListResults(listResult, testAttribute, uploadId, objectKey) {
         assert.equal(err, null, `Error parsing list part results: ${err}`);
         assert.strictEqual(json.ListPartsResult.Key[0], objectKey);
         assert.strictEqual(json.ListPartsResult.UploadId[0], uploadId);
-        assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0],
-            authInfo.getCanonicalID());
+        assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0], authInfo.getCanonicalID());
 
         // attributes to test specific to PartNumberMarker being set
         // in listParts
         if (testAttribute === 'partNumMarker') {
-            assert.strictEqual(json.ListPartsResult.NextPartNumberMarker,
-                undefined);
+            assert.strictEqual(json.ListPartsResult.NextPartNumberMarker, undefined);
             assert.strictEqual(json.ListPartsResult.IsTruncated[0], 'false');
             assert.strictEqual(json.ListPartsResult.Part.length, 1);
             assert.strictEqual(json.ListPartsResult.PartNumberMarker[0], '1');
             // data of second part put
             assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0], '2');
-            assert.strictEqual(json.ListPartsResult.Part[0].ETag[0],
-                `"${awsETag}"`);
+            assert.strictEqual(json.ListPartsResult.Part[0].ETag[0], `"${awsETag}"`);
             assert.strictEqual(json.ListPartsResult.Part[0].Size[0], '11');
         } else {
             // common attributes to test if MaxParts set or
             // neither MaxParts nor PartNumberMarker set
-            assert.strictEqual(json.ListPartsResult.PartNumberMarker,
-                undefined);
+            assert.strictEqual(json.ListPartsResult.PartNumberMarker, undefined);
             assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0], '1');
-            assert.strictEqual(json.ListPartsResult.Part[0].ETag[0],
-                `"${awsETagBigObj}"`);
-            assert.strictEqual(json.ListPartsResult.Part[0].Size[0],
-                '10485760');
+            assert.strictEqual(json.ListPartsResult.Part[0].ETag[0], `"${awsETagBigObj}"`);
+            assert.strictEqual(json.ListPartsResult.Part[0].Size[0], '10485760');
 
             // attributes to test specific to MaxParts being set in listParts
             if (testAttribute === 'maxParts') {
-                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker[0],
-                    '1');
+                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker[0], '1');
                 assert.strictEqual(json.ListPartsResult.IsTruncated[0], 'true');
                 assert.strictEqual(json.ListPartsResult.Part.length, 1);
                 assert.strictEqual(json.ListPartsResult.MaxParts[0], '1');
             } else {
                 // attributes to test if neither MaxParts nor
                 // PartNumberMarker set
-                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker,
-                    undefined);
-                assert.strictEqual(json.ListPartsResult.IsTruncated[0],
-                    'false');
+                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker, undefined);
+                assert.strictEqual(json.ListPartsResult.IsTruncated[0], 'false');
                 assert.strictEqual(json.ListPartsResult.Part.length, 2);
                 assert.strictEqual(json.ListPartsResult.MaxParts[0], '1000');
-                assert.strictEqual(json.ListPartsResult.Part[1].PartNumber[0],
-                    '2');
-                assert.strictEqual(json.ListPartsResult.Part[1].ETag[0],
-                    `"${awsETag}"`);
+                assert.strictEqual(json.ListPartsResult.Part[1].PartNumber[0], '2');
+                assert.strictEqual(json.ListPartsResult.Part[1].ETag[0], `"${awsETag}"`);
                 assert.strictEqual(json.ListPartsResult.Part[1].Size[0], '11');
             }
         }
@@ -239,15 +233,12 @@ function _getZenkoObjectKey(objectKey) {
 
 function assertObjOnBackend(expectedBackend, objectKey, cb) {
     const zenkoObjectKey = _getZenkoObjectKey(objectKey);
-    return objectGet(authInfo, getObjectGetRequest(zenkoObjectKey), false, log,
-    (err, result, metaHeaders) => {
+    return objectGet(authInfo, getObjectGetRequest(zenkoObjectKey), false, log, (err, result, metaHeaders) => {
         assert.equal(err, null, `Error getting object on S3: ${err}`);
         assert.strictEqual(metaHeaders[`x-amz-meta-${locMetaHeader}`], expectedBackend);
         if (expectedBackend === awsLocation) {
-            return s3.headObject({ Bucket: awsBucket, Key: objectKey },
-            (err, result) => {
-                assert.equal(err, null, 'Error on headObject call to AWS: ' +
-                    `${err}`);
+            return s3.headObject({ Bucket: awsBucket, Key: objectKey }, (err, result) => {
+                assert.equal(err, null, 'Error on headObject call to AWS: ' + `${err}`);
                 assert.strictEqual(result.Metadata[locMetaHeader], awsLocation);
                 return cb();
             });
@@ -275,14 +266,12 @@ function mpuSetup(location, key, cb) {
         bucketName,
         namespace,
         objectKey: key,
-        headers: { 'host': `${bucketName}.s3.amazonaws.com`,
-            'x-amz-meta-scal-location-constraint': location },
+        headers: { host: `${bucketName}.s3.amazonaws.com`, 'x-amz-meta-scal-location-constraint': location },
         url: `/${key}?uploads`,
         parsedHost: 'localhost',
         actionImplicitDenies: false,
     };
-    initiateMultipartUpload(authInfo, initiateRequest, log,
-    (err, result) => {
+    initiateMultipartUpload(authInfo, initiateRequest, log, (err, result) => {
         assert.strictEqual(err, null, 'Error initiating MPU');
         assertMpuInitResults(result, key, uploadId => {
             putParts(uploadId, key, () => {
@@ -293,14 +282,17 @@ function mpuSetup(location, key, cb) {
 }
 
 function putObject(putBackend, objectKey, cb) {
-    const putParams = Object.assign({
-        headers: {
-            'host': `${bucketName}.s3.amazonaws.com`,
-            'x-amz-meta-scal-location-constraint': putBackend,
+    const putParams = Object.assign(
+        {
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-scal-location-constraint': putBackend,
+            },
+            url: '/',
+            objectKey,
         },
-        url: '/',
-        objectKey,
-    }, basicParams);
+        basicParams
+    );
     const objectPutRequest = new DummyRequest(putParams, smallBody);
     return objectPut(authInfo, objectPutRequest, undefined, log, err => {
         assert.equal(err, null, `Error putting object to ${putBackend} ${err}`);
@@ -317,15 +309,19 @@ function abortMPU(uploadId, awsParams, cb) {
 }
 
 function abortMultipleMpus(backendsInfo, callback) {
-    async.forEach(backendsInfo, (backend, cb) => {
-        const delParams = getDeleteParams(backend.key, backend.uploadId);
-        multipartDelete(authInfo, delParams, log, err => {
-            cb(err);
-        });
-    }, err => {
-        assert.equal(err, null, `Error aborting MPU: ${err}`);
-        callback();
-    });
+    async.forEach(
+        backendsInfo,
+        (backend, cb) => {
+            const delParams = getDeleteParams(backend.key, backend.uploadId);
+            multipartDelete(authInfo, delParams, log, err => {
+                cb(err);
+            });
+        },
+        err => {
+            assert.equal(err, null, `Error aborting MPU: ${err}`);
+            callback();
+        }
+    );
 }
 
 describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
@@ -348,15 +344,16 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             bucketName,
             namespace,
             objectKey,
-            headers: { 'host': `${bucketName}.s3.amazonaws.com`,
-                'x-amz-meta-scal-location-constraint': `${awsLocation}` },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-scal-location-constraint': `${awsLocation}`,
+            },
             url: `/${objectKey}?uploads`,
             parsedHost: 'localhost',
             actionImplicitDenies: false,
         };
 
-        initiateMultipartUpload(authInfo, initiateRequest, log,
-        (err, result) => {
+        initiateMultipartUpload(authInfo, initiateRequest, log, (err, result) => {
             assert.strictEqual(err, null, 'Error initiating MPU');
             assertMpuInitResults(result, objectKey, uploadId => {
                 abortMPU(uploadId, getAwsParams(objectKey), done);
@@ -364,23 +361,22 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should initiate a multipart upload on AWS location with ' +
-    'bucketMatch equals false', done => {
+    it('should initiate a multipart upload on AWS location with ' + 'bucketMatch equals false', done => {
         const objectKey = `key-${Date.now()}`;
         const initiateRequest = {
             bucketName,
             namespace,
             objectKey,
-            headers: { 'host': `${bucketName}.s3.amazonaws.com`,
-                'x-amz-meta-scal-location-constraint':
-                `${awsLocationMismatch}` },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-scal-location-constraint': `${awsLocationMismatch}`,
+            },
             url: `/${objectKey}?uploads`,
             parsedHost: 'localhost',
             actionImplicitDenies: false,
         };
 
-        initiateMultipartUpload(authInfo, initiateRequest, log,
-        (err, result) => {
+        initiateMultipartUpload(authInfo, initiateRequest, log, (err, result) => {
             assert.strictEqual(err, null, 'Error initiating MPU');
             assertMpuInitResults(result, objectKey, uploadId => {
                 abortMPU(uploadId, getAwsParamsBucketNotMatch(objectKey), done);
@@ -395,7 +391,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             namespace,
             objectKey,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-scal-location-constraint': `${awsLocation}`,
                 'x-amz-tagging': tagSet,
             },
@@ -404,8 +400,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             actionImplicitDenies: false,
         };
 
-        initiateMultipartUpload(authInfo, initiateRequest, log,
-        (err, result) => {
+        initiateMultipartUpload(authInfo, initiateRequest, log, (err, result) => {
             assert.ifError(err);
             assertMpuInitResults(result, objectKey, uploadId => {
                 abortMPU(uploadId, getAwsParams(objectKey), done);
@@ -425,8 +420,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should list the parts of a multipart upload on real AWS location ' +
-    'with bucketMatch set to false', done => {
+    it('should list the parts of a multipart upload on real AWS location ' + 'with bucketMatch set to false', done => {
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocationMismatch, objectKey, uploadId => {
             const listParams = getListParams(objectKey, uploadId);
@@ -438,8 +432,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should only return number of parts equal to specified maxParts',
-    function itF(done) {
+    it('should only return number of parts equal to specified maxParts', function itF(done) {
         this.timeout(90000);
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocation, objectKey, uploadId => {
@@ -473,7 +466,8 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             abortMPU(uploadId, getAwsParams(objectKey), () => {
                 const listParams = getListParams(objectKey, uploadId);
                 listParts(authInfo, listParams, log, err => {
-                    let wantedDesc = 'Error returned from AWS: ' +
+                    let wantedDesc =
+                        'Error returned from AWS: ' +
                         'The specified upload does not exist. The upload ID ' +
                         'may be invalid, or the upload may have been aborted' +
                         ' or completed.';
@@ -494,35 +488,40 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             const delParams = getDeleteParams(objectKey, uploadId);
             multipartDelete(authInfo, delParams, log, err => {
                 assert.equal(err, null, `Error aborting MPU: ${err}`);
-                s3.listParts({
-                    Bucket: awsBucket,
-                    Key: objectKey,
-                    UploadId: uploadId,
-                }, err => {
-                    const wantedError = isCEPH ? 'NoSuchKey' : 'NoSuchUpload';
-                    assert.strictEqual(err.code, wantedError);
-                    done();
-                });
+                s3.listParts(
+                    {
+                        Bucket: awsBucket,
+                        Key: objectKey,
+                        UploadId: uploadId,
+                    },
+                    err => {
+                        const wantedError = isCEPH ? 'NoSuchKey' : 'NoSuchUpload';
+                        assert.strictEqual(err.code, wantedError);
+                        done();
+                    }
+                );
             });
         });
     });
 
-    it('should abort a multipart upload on real AWS location with' +
-    'bucketMatch set to false', done => {
+    it('should abort a multipart upload on real AWS location with' + 'bucketMatch set to false', done => {
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocationMismatch, objectKey, uploadId => {
             const delParams = getDeleteParams(objectKey, uploadId);
             multipartDelete(authInfo, delParams, log, err => {
                 assert.equal(err, null, `Error aborting MPU: ${err}`);
-                s3.listParts({
-                    Bucket: awsBucket,
-                    Key: `${bucketName}/${objectKey}`,
-                    UploadId: uploadId,
-                }, err => {
-                    const wantedError = isCEPH ? 'NoSuchKey' : 'NoSuchUpload';
-                    assert.strictEqual(err.code, wantedError);
-                    done();
-                });
+                s3.listParts(
+                    {
+                        Bucket: awsBucket,
+                        Key: `${bucketName}/${objectKey}`,
+                        UploadId: uploadId,
+                    },
+                    err => {
+                        const wantedError = isCEPH ? 'NoSuchKey' : 'NoSuchUpload';
+                        assert.strictEqual(err.code, wantedError);
+                        done();
+                    }
+                );
             });
         });
     });
@@ -537,8 +536,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should return ServiceUnavailable if MPU deleted directly from AWS ' +
-    'and try to complete from S3', done => {
+    it('should return ServiceUnavailable if MPU deleted directly from AWS ' + 'and try to complete from S3', done => {
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocation, objectKey, uploadId => {
             abortMPU(uploadId, getAwsParams(objectKey), () => {
@@ -555,8 +553,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocation, objectKey, uploadId => {
             const compParams = getCompleteParams(objectKey, uploadId);
-            completeMultipartUpload(authInfo, compParams, log,
-            (err, result) => {
+            completeMultipartUpload(authInfo, compParams, log, (err, result) => {
                 assert.equal(err, null, `Error completing mpu on AWS: ${err}`);
                 assertMpuCompleteResults(result, objectKey);
                 assertObjOnBackend(awsLocation, objectKey, done);
@@ -564,31 +561,25 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should complete a multipart upload on real AWS location with ' +
-    'bucketMatch set to false', done => {
+    it('should complete a multipart upload on real AWS location with ' + 'bucketMatch set to false', done => {
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocationMismatch, objectKey, uploadId => {
             const compParams = getCompleteParams(objectKey, uploadId);
-            completeMultipartUpload(authInfo, compParams, log,
-            (err, result) => {
+            completeMultipartUpload(authInfo, compParams, log, (err, result) => {
                 assert.equal(err, null, `Error completing mpu on AWS: ${err}`);
                 assertMpuCompleteResults(result, objectKey);
-                assertObjOnBackend(awsLocationMismatch,
-                `${bucketName}/${objectKey}`, done);
+                assertObjOnBackend(awsLocationMismatch, `${bucketName}/${objectKey}`, done);
             });
         });
     });
 
-    it('should complete MPU on AWS with same key as object put to file',
-    done => {
+    it('should complete MPU on AWS with same key as object put to file', done => {
         const objectKey = `key-${Date.now()}`;
         return putObject(fileLocation, objectKey, () => {
             mpuSetup(awsLocation, objectKey, uploadId => {
                 const compParams = getCompleteParams(objectKey, uploadId);
-                completeMultipartUpload(authInfo, compParams, log,
-                (err, result) => {
-                    assert.equal(err, null, 'Error completing mpu on AWS ' +
-                    `${err}`);
+                completeMultipartUpload(authInfo, compParams, log, (err, result) => {
+                    assert.equal(err, null, 'Error completing mpu on AWS ' + `${err}`);
                     assertMpuCompleteResults(result, objectKey);
                     assertObjOnBackend(awsLocation, objectKey, done);
                 });
@@ -596,16 +587,13 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should complete MPU on file with same key as object put to AWS',
-    done => {
+    it('should complete MPU on file with same key as object put to AWS', done => {
         const objectKey = `key-${Date.now()}`;
         putObject(awsLocation, objectKey, () => {
             mpuSetup(fileLocation, objectKey, uploadId => {
                 const compParams = getCompleteParams(objectKey, uploadId);
-                completeMultipartUpload(authInfo, compParams, log,
-                (err, result) => {
-                    assert.equal(err, null, 'Error completing mpu on file ' +
-                    `${err}`);
+                completeMultipartUpload(authInfo, compParams, log, (err, result) => {
+                    assert.equal(err, null, 'Error completing mpu on file ' + `${err}`);
                     assertMpuCompleteResults(result, objectKey);
                     assertObjOnBackend(fileLocation, objectKey, done);
                 });
@@ -613,28 +601,26 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should be successful initiating MPU on AWS with Scality ' +
-    'S3 versioning enabled', done => {
+    it('should be successful initiating MPU on AWS with Scality ' + 'S3 versioning enabled', done => {
         const objectKey = `key-${Date.now()}`;
         // putting null version: put obj before versioning configured
         putObject(awsLocation, objectKey, () => {
-            const enableVersioningRequest = versioningTestUtils.
-                createBucketPutVersioningReq(bucketName, 'Enabled');
+            const enableVersioningRequest = versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
             bucketPutVersioning(authInfo, enableVersioningRequest, log, err => {
-                assert.equal(err, null, 'Error enabling bucket versioning: ' +
-                    `${err}`);
+                assert.equal(err, null, 'Error enabling bucket versioning: ' + `${err}`);
                 const initiateRequest = {
                     bucketName,
                     namespace,
                     objectKey,
-                    headers: { 'host': `${bucketName}.s3.amazonaws.com`,
-                        'x-amz-meta-scal-location-constraint': awsLocation },
+                    headers: {
+                        host: `${bucketName}.s3.amazonaws.com`,
+                        'x-amz-meta-scal-location-constraint': awsLocation,
+                    },
                     url: `/${objectKey}?uploads`,
                     parsedHost: 'localhost',
                     actionImplicitDenies: false,
                 };
-                initiateMultipartUpload(authInfo, initiateRequest, log,
-                err => {
+                initiateMultipartUpload(authInfo, initiateRequest, log, err => {
                     assert.strictEqual(err, null);
                     done();
                 });
@@ -645,7 +631,8 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
     it('should return invalidPart error', done => {
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocation, objectKey, uploadId => {
-            const errorBody = '<CompleteMultipartUpload>' +
+            const errorBody =
+                '<CompleteMultipartUpload>' +
                 '<Part>' +
                 '<PartNumber>1</PartNumber>' +
                 `<ETag>"${awsETag}"</ETag>` +
@@ -667,7 +654,8 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
     itSkipCeph('should return invalidPartOrder error', done => {
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocation, objectKey, uploadId => {
-            const errorBody = '<CompleteMultipartUpload>' +
+            const errorBody =
+                '<CompleteMultipartUpload>' +
                 '<Part>' +
                 '<PartNumber>2</PartNumber>' +
                 `<ETag>"${awsETag}"</ETag>` +
@@ -692,7 +680,8 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             const partRequest3 = new DummyRequest(putPartParam, smallBody);
             objectPutPart(authInfo, partRequest3, undefined, log, err => {
                 assert.equal(err, null, `Error putting part: ${err}`);
-                const errorBody = '<CompleteMultipartUpload>' +
+                const errorBody =
+                    '<CompleteMultipartUpload>' +
                     '<Part>' +
                     '<PartNumber>1</PartNumber>' +
                     `<ETag>"${awsETagBigObj}"</ETag>` +
@@ -720,57 +709,54 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         const objectKey = `testkey-${Date.now()}`;
         const fileKey = `fileKey-${Date.now()}`;
         const memKey = `memKey-${Date.now()}`;
-        async.series([
-            cb => mpuSetup(fileLocation, fileKey,
-                fileUploadId => cb(null, fileUploadId)),
-            cb => mpuSetup(memLocation, memKey, memUploadId =>
-                cb(null, memUploadId)),
-            cb => mpuSetup(awsLocation, objectKey, awsUploadId =>
-                cb(null, awsUploadId)),
-        ], (err, uploadIds) => {
-            assert.equal(err, null, `Error setting up MPUs: ${err}`);
-            const listMpuParams = {
-                bucketName,
-                namespace,
-                headers: { host: '/' },
-                url: `/${bucketName}?uploads`,
-                query: {},
-                actionImplicitDenies: false,
-            };
-            listMultipartUploads(authInfo, listMpuParams, log,
-            (err, mpuListXml) => {
-                assert.equal(err, null, `Error listing MPUs: ${err}`);
-                parseString(mpuListXml, (err, json) => {
-                    const mpuListing = json.ListMultipartUploadsResult.Upload;
-                    assert.strictEqual(fileKey, mpuListing[0].Key[0]);
-                    assert.strictEqual(uploadIds[0], mpuListing[0].UploadId[0]);
-                    assert.strictEqual(memKey, mpuListing[1].Key[0]);
-                    assert.strictEqual(uploadIds[1], mpuListing[1].UploadId[0]);
-                    assert.strictEqual(objectKey, mpuListing[2].Key[0]);
-                    assert.strictEqual(uploadIds[2], mpuListing[2].UploadId[0]);
-                    const backendsInfo = [
-                        { backend: fileLocation, key: fileKey,
-                            uploadId: uploadIds[0] },
-                        { backend: memLocation, key: memKey,
-                            uploadId: uploadIds[1] },
-                        { backend: 'aws', key: objectKey,
-                            uploadId: uploadIds[2] },
-                    ];
-                    abortMultipleMpus(backendsInfo, done);
+        async.series(
+            [
+                cb => mpuSetup(fileLocation, fileKey, fileUploadId => cb(null, fileUploadId)),
+                cb => mpuSetup(memLocation, memKey, memUploadId => cb(null, memUploadId)),
+                cb => mpuSetup(awsLocation, objectKey, awsUploadId => cb(null, awsUploadId)),
+            ],
+            (err, uploadIds) => {
+                assert.equal(err, null, `Error setting up MPUs: ${err}`);
+                const listMpuParams = {
+                    bucketName,
+                    namespace,
+                    headers: { host: '/' },
+                    url: `/${bucketName}?uploads`,
+                    query: {},
+                    actionImplicitDenies: false,
+                };
+                listMultipartUploads(authInfo, listMpuParams, log, (err, mpuListXml) => {
+                    assert.equal(err, null, `Error listing MPUs: ${err}`);
+                    parseString(mpuListXml, (err, json) => {
+                        const mpuListing = json.ListMultipartUploadsResult.Upload;
+                        assert.strictEqual(fileKey, mpuListing[0].Key[0]);
+                        assert.strictEqual(uploadIds[0], mpuListing[0].UploadId[0]);
+                        assert.strictEqual(memKey, mpuListing[1].Key[0]);
+                        assert.strictEqual(uploadIds[1], mpuListing[1].UploadId[0]);
+                        assert.strictEqual(objectKey, mpuListing[2].Key[0]);
+                        assert.strictEqual(uploadIds[2], mpuListing[2].UploadId[0]);
+                        const backendsInfo = [
+                            { backend: fileLocation, key: fileKey, uploadId: uploadIds[0] },
+                            { backend: memLocation, key: memKey, uploadId: uploadIds[1] },
+                            { backend: 'aws', key: objectKey, uploadId: uploadIds[2] },
+                        ];
+                        abortMultipleMpus(backendsInfo, done);
+                    });
                 });
-            });
-        });
+            }
+        );
     });
 
     describe('with mpu initiated on legacy version', () => {
         beforeEach(function beFn() {
             this.currentTest.lcObj = config.locationConstraints;
-            const legacyObj = Object.assign(config.locationConstraints,
-                { legacy: {
+            const legacyObj = Object.assign(config.locationConstraints, {
+                legacy: {
                     type: 'mem',
                     legacyAwsBehavior: true,
                     details: {},
-                } });
+                },
+            });
             config.setLocationConstraints(legacyObj);
         });
 
@@ -782,40 +768,37 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             const objectKey = `testkey-${Date.now()}`;
             mpuSetup('scality-internal-mem', objectKey, uploadId => {
                 const mpuOverviewKey = _getOverviewKey(objectKey, uploadId);
-                async.waterfall([
-                    next => {
-                        const bucketMD = BucketInfo.fromObj(
-                            metadata.buckets.get(bucketName));
-                        const objMD =
-                            metadata.keyMaps.get(mpuBucket).get(mpuOverviewKey);
-                        // remove location constraints to mimic legacy behavior
-                        bucketMD.setLocationConstraint(undefined);
-                        objMD.controllingLocationConstraint = undefined;
-                        objMD.dataStoreName = undefined;
-                        objMD[constants.objectLocationConstraintHeader] =
-                            undefined;
-                        next(null, uploadId, bucketMD, objMD);
-                    },
-                    (uploadId, bucketMD, objMD, next) => {
-                        metadata.buckets.set(bucketName, bucketMD);
-                        metadata.keyMaps.get(mpuBucket).
-                            set(mpuOverviewKey, objMD);
-                        next(null, uploadId);
-                    },
-                    (uploadId, next) => {
-                        const compParams = getCompleteParams(
-                            objectKey, uploadId);
-                        completeMultipartUpload(
-                            authInfo, compParams, log, next);
-                    },
-                    (completeRes, resHeaders, next) => {
-                        assertMpuCompleteResults(completeRes, objectKey);
-                        next();
-                    },
-                ], err => {
-                    assert.ifError(err);
-                    done();
-                });
+                async.waterfall(
+                    [
+                        next => {
+                            const bucketMD = BucketInfo.fromObj(metadata.buckets.get(bucketName));
+                            const objMD = metadata.keyMaps.get(mpuBucket).get(mpuOverviewKey);
+                            // remove location constraints to mimic legacy behavior
+                            bucketMD.setLocationConstraint(undefined);
+                            objMD.controllingLocationConstraint = undefined;
+                            objMD.dataStoreName = undefined;
+                            objMD[constants.objectLocationConstraintHeader] = undefined;
+                            next(null, uploadId, bucketMD, objMD);
+                        },
+                        (uploadId, bucketMD, objMD, next) => {
+                            metadata.buckets.set(bucketName, bucketMD);
+                            metadata.keyMaps.get(mpuBucket).set(mpuOverviewKey, objMD);
+                            next(null, uploadId);
+                        },
+                        (uploadId, next) => {
+                            const compParams = getCompleteParams(objectKey, uploadId);
+                            completeMultipartUpload(authInfo, compParams, log, next);
+                        },
+                        (completeRes, resHeaders, next) => {
+                            assertMpuCompleteResults(completeRes, objectKey);
+                            next();
+                        },
+                    ],
+                    err => {
+                        assert.ifError(err);
+                        done();
+                    }
+                );
             });
         });
 
@@ -823,39 +806,37 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             const objectKey = `testkey-${Date.now()}`;
             mpuSetup('scality-internal-mem', objectKey, uploadId => {
                 const mpuOverviewKey = _getOverviewKey(objectKey, uploadId);
-                async.waterfall([
-                    next => {
-                        const bucketMD = BucketInfo.fromObj(
-                            metadata.buckets.get(bucketName));
-                        const objMD =
-                            metadata.keyMaps.get(mpuBucket).get(mpuOverviewKey);
-                        // remove location constraints to mimic legacy behavior
-                        bucketMD.setLocationConstraint(undefined);
-                        objMD.controllingLocationConstraint = undefined;
-                        objMD.dataStoreName = undefined;
-                        objMD[constants.objectLocationConstraintHeader] =
-                            undefined;
-                        metadata.buckets.set(bucketName, bucketMD);
-                        metadata.keyMaps.get(mpuBucket).
-                            set(mpuOverviewKey, objMD);
-                        next(null, uploadId);
-                    },
-                    (uploadId, next) => {
-                        const delParams = getDeleteParams(objectKey, uploadId);
-                        multipartDelete(authInfo, delParams, log,
-                            err => next(err, uploadId));
-                    },
-                    (uploadId, next) => {
-                        const listParams = getListParams(objectKey, uploadId);
-                        listParts(authInfo, listParams, log, err => {
-                            assert(err.is.NoSuchUpload);
-                            next();
-                        });
-                    },
-                ], err => {
-                    assert.ifError(err);
-                    done();
-                });
+                async.waterfall(
+                    [
+                        next => {
+                            const bucketMD = BucketInfo.fromObj(metadata.buckets.get(bucketName));
+                            const objMD = metadata.keyMaps.get(mpuBucket).get(mpuOverviewKey);
+                            // remove location constraints to mimic legacy behavior
+                            bucketMD.setLocationConstraint(undefined);
+                            objMD.controllingLocationConstraint = undefined;
+                            objMD.dataStoreName = undefined;
+                            objMD[constants.objectLocationConstraintHeader] = undefined;
+                            metadata.buckets.set(bucketName, bucketMD);
+                            metadata.keyMaps.get(mpuBucket).set(mpuOverviewKey, objMD);
+                            next(null, uploadId);
+                        },
+                        (uploadId, next) => {
+                            const delParams = getDeleteParams(objectKey, uploadId);
+                            multipartDelete(authInfo, delParams, log, err => next(err, uploadId));
+                        },
+                        (uploadId, next) => {
+                            const listParams = getListParams(objectKey, uploadId);
+                            listParts(authInfo, listParams, log, err => {
+                                assert(err.is.NoSuchUpload);
+                                next();
+                            });
+                        },
+                    ],
+                    err => {
+                        assert.ifError(err);
+                        done();
+                    }
+                );
             });
         });
 
@@ -863,40 +844,38 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             const objectKey = `testkey-${Date.now()}`;
             mpuSetup('scality-internal-mem', objectKey, uploadId => {
                 const mpuOverviewKey = _getOverviewKey(objectKey, uploadId);
-                async.waterfall([
-                    next => {
-                        const bucketMD = BucketInfo.fromObj(
-                            metadata.buckets.get(bucketName));
-                        const objMD =
-                            metadata.keyMaps.get(mpuBucket).get(mpuOverviewKey);
-                        // remove location constraints to mimic legacy behavior
-                        bucketMD.setLocationConstraint(undefined);
-                        objMD.controllingLocationConstraint = undefined;
-                        objMD.dataStoreName = undefined;
-                        objMD[constants.objectLocationConstraintHeader] =
-                            undefined;
-                        metadata.buckets.set(bucketName, bucketMD);
-                        metadata.keyMaps.get(mpuBucket).
-                            set(mpuOverviewKey, objMD);
-                        next(null, uploadId);
-                    },
-                    (uploadId, next) => {
-                        const listParams = getListParams(objectKey, uploadId);
-                        listParts(authInfo, listParams, log, (err, res) => {
-                            assert.ifError(err);
-                            assertListResults(res, null, uploadId, objectKey);
+                async.waterfall(
+                    [
+                        next => {
+                            const bucketMD = BucketInfo.fromObj(metadata.buckets.get(bucketName));
+                            const objMD = metadata.keyMaps.get(mpuBucket).get(mpuOverviewKey);
+                            // remove location constraints to mimic legacy behavior
+                            bucketMD.setLocationConstraint(undefined);
+                            objMD.controllingLocationConstraint = undefined;
+                            objMD.dataStoreName = undefined;
+                            objMD[constants.objectLocationConstraintHeader] = undefined;
+                            metadata.buckets.set(bucketName, bucketMD);
+                            metadata.keyMaps.get(mpuBucket).set(mpuOverviewKey, objMD);
                             next(null, uploadId);
-                        });
-                    },
-                    (uploadId, next) => {
-                        const delParams = getDeleteParams(objectKey, uploadId);
-                        multipartDelete(authInfo, delParams, log,
-                            err => next(err, uploadId));
-                    },
-                ], err => {
-                    assert.ifError(err);
-                    done();
-                });
+                        },
+                        (uploadId, next) => {
+                            const listParams = getListParams(objectKey, uploadId);
+                            listParts(authInfo, listParams, log, (err, res) => {
+                                assert.ifError(err);
+                                assertListResults(res, null, uploadId, objectKey);
+                                next(null, uploadId);
+                            });
+                        },
+                        (uploadId, next) => {
+                            const delParams = getDeleteParams(objectKey, uploadId);
+                            multipartDelete(authInfo, delParams, log, err => next(err, uploadId));
+                        },
+                    ],
+                    err => {
+                        assert.ifError(err);
+                        done();
+                    }
+                );
             });
         });
 
@@ -904,70 +883,58 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             const objectKey = `testkey-${Date.now()}`;
             mpuSetup('scality-internal-mem', objectKey, uploadId => {
                 const mpuOverviewKey = _getOverviewKey(objectKey, uploadId);
-                async.waterfall([
-                    next => {
-                        const copyObjectKey = `copykey-${Date.now()}`;
-                        putObject('scality-internal-mem', copyObjectKey,
-                            () => next(null, copyObjectKey));
-                    },
-                    (copyObjectKey, next) => {
-                        const bucketMD = BucketInfo.fromObj(
-                            metadata.buckets.get(bucketName));
-                        const mpuMD =
-                            metadata.keyMaps.get(mpuBucket).get(mpuOverviewKey);
-                        const copyObjMD =
-                            metadata.keyMaps.get(bucketName).get(copyObjectKey);
-                        // remove location constraints to mimic legacy behavior
-                        bucketMD.setLocationConstraint(undefined);
-                        mpuMD.controllingLocationConstraint = undefined;
-                        mpuMD.dataStoreName = undefined;
-                        mpuMD[constants.objectLocationConstraintHeader] =
-                            undefined;
-                        copyObjMD.controllingLocationConstraint = undefined;
-                        copyObjMD.dataStoreName = undefined;
-                        copyObjMD[constants.objectLocationConstraintHeader] =
-                            undefined;
-                        metadata.buckets.set(bucketName, bucketMD);
-                        metadata.keyMaps.get(mpuBucket).
-                            set(mpuOverviewKey, mpuMD);
-                        metadata.keyMaps.get(bucketName).
-                            set(copyObjectKey, copyObjMD);
-                        next(null, uploadId, copyObjectKey);
-                    },
-                    (uploadId, copyObjectKey, next) => {
-                        const copyParams =
-                            getPartParams(objectKey, uploadId, 3);
-                        objectPutCopyPart(authInfo, copyParams, bucketName,
-                        copyObjectKey, undefined, log, err => {
-                            next(err, uploadId);
-                        });
-                    },
-                    (uploadId, next) => {
-                        const listParams = getListParams(objectKey, uploadId);
-                        listParts(authInfo, listParams, log, (err, listRes) => {
-                            assert.ifError(err);
-                            parseString(listRes, (err, json) => {
-                                assert.equal(err, null,
-                                    `Error parsing list part results: ${err}`);
-                                assert.strictEqual(json.ListPartsResult.
-                                    Part[2].PartNumber[0], '3');
-                                assert.strictEqual(json.ListPartsResult.
-                                    Part[2].ETag[0], `"${awsETag}"`);
-                                assert.strictEqual(json.ListPartsResult.
-                                    Part[2].Size[0], '11');
-                                next(null, uploadId);
+                async.waterfall(
+                    [
+                        next => {
+                            const copyObjectKey = `copykey-${Date.now()}`;
+                            putObject('scality-internal-mem', copyObjectKey, () => next(null, copyObjectKey));
+                        },
+                        (copyObjectKey, next) => {
+                            const bucketMD = BucketInfo.fromObj(metadata.buckets.get(bucketName));
+                            const mpuMD = metadata.keyMaps.get(mpuBucket).get(mpuOverviewKey);
+                            const copyObjMD = metadata.keyMaps.get(bucketName).get(copyObjectKey);
+                            // remove location constraints to mimic legacy behavior
+                            bucketMD.setLocationConstraint(undefined);
+                            mpuMD.controllingLocationConstraint = undefined;
+                            mpuMD.dataStoreName = undefined;
+                            mpuMD[constants.objectLocationConstraintHeader] = undefined;
+                            copyObjMD.controllingLocationConstraint = undefined;
+                            copyObjMD.dataStoreName = undefined;
+                            copyObjMD[constants.objectLocationConstraintHeader] = undefined;
+                            metadata.buckets.set(bucketName, bucketMD);
+                            metadata.keyMaps.get(mpuBucket).set(mpuOverviewKey, mpuMD);
+                            metadata.keyMaps.get(bucketName).set(copyObjectKey, copyObjMD);
+                            next(null, uploadId, copyObjectKey);
+                        },
+                        (uploadId, copyObjectKey, next) => {
+                            const copyParams = getPartParams(objectKey, uploadId, 3);
+                            objectPutCopyPart(authInfo, copyParams, bucketName, copyObjectKey, undefined, log, err => {
+                                next(err, uploadId);
                             });
-                        });
-                    },
-                    (uploadId, next) => {
-                        const delParams = getDeleteParams(objectKey, uploadId);
-                        multipartDelete(authInfo, delParams, log,
-                            err => next(err, uploadId));
-                    },
-                ], err => {
-                    assert.ifError(err);
-                    done();
-                });
+                        },
+                        (uploadId, next) => {
+                            const listParams = getListParams(objectKey, uploadId);
+                            listParts(authInfo, listParams, log, (err, listRes) => {
+                                assert.ifError(err);
+                                parseString(listRes, (err, json) => {
+                                    assert.equal(err, null, `Error parsing list part results: ${err}`);
+                                    assert.strictEqual(json.ListPartsResult.Part[2].PartNumber[0], '3');
+                                    assert.strictEqual(json.ListPartsResult.Part[2].ETag[0], `"${awsETag}"`);
+                                    assert.strictEqual(json.ListPartsResult.Part[2].Size[0], '11');
+                                    next(null, uploadId);
+                                });
+                            });
+                        },
+                        (uploadId, next) => {
+                            const delParams = getDeleteParams(objectKey, uploadId);
+                            multipartDelete(authInfo, delParams, log, err => next(err, uploadId));
+                        },
+                    ],
+                    err => {
+                        assert.ifError(err);
+                        done();
+                    }
+                );
             });
         });
     });

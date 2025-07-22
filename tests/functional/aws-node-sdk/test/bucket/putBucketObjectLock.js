@@ -48,9 +48,14 @@ describe('aws-sdk test put object lock configuration', () => {
     });
 
     describe('on object lock disabled bucket', () => {
-        beforeEach(done => s3.createBucket({
-            Bucket: bucket,
-        }, done));
+        beforeEach(done =>
+            s3.createBucket(
+                {
+                    Bucket: bucket,
+                },
+                done
+            )
+        );
 
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
@@ -77,10 +82,15 @@ describe('aws-sdk test put object lock configuration', () => {
     });
 
     describe('config rules', () => {
-        beforeEach(done => s3.createBucket({
-            Bucket: bucket,
-            ObjectLockEnabledForBucket: true,
-        }, done));
+        beforeEach(done =>
+            s3.createBucket(
+                {
+                    Bucket: bucket,
+                    ObjectLockEnabledForBucket: true,
+                },
+                done
+            )
+        );
 
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
@@ -92,85 +102,76 @@ describe('aws-sdk test put object lock configuration', () => {
             });
         });
 
-        it('should put object lock configuration on bucket with Governance mode',
-            done => {
-                const params = getObjectLockParams('Enabled', 'GOVERNANCE', 30);
-                s3.putObjectLockConfiguration(params, err => {
-                    assert.ifError(err);
-                    done();
-                });
+        it('should put object lock configuration on bucket with Governance mode', done => {
+            const params = getObjectLockParams('Enabled', 'GOVERNANCE', 30);
+            s3.putObjectLockConfiguration(params, err => {
+                assert.ifError(err);
+                done();
             });
+        });
 
-        it('should put object lock configuration on bucket with Compliance mode',
-            done => {
-                const params = getObjectLockParams('Enabled', 'COMPLIANCE', 30);
-                s3.putObjectLockConfiguration(params, err => {
-                    assert.ifError(err);
-                    done();
-                });
+        it('should put object lock configuration on bucket with Compliance mode', done => {
+            const params = getObjectLockParams('Enabled', 'COMPLIANCE', 30);
+            s3.putObjectLockConfiguration(params, err => {
+                assert.ifError(err);
+                done();
             });
+        });
 
-        it('should put object lock configuration on bucket with year retention type',
-            done => {
-                const params = getObjectLockParams('Enabled', 'COMPLIANCE', null, 2);
-                s3.putObjectLockConfiguration(params, err => {
-                    assert.ifError(err);
-                    done();
-                });
+        it('should put object lock configuration on bucket with year retention type', done => {
+            const params = getObjectLockParams('Enabled', 'COMPLIANCE', null, 2);
+            s3.putObjectLockConfiguration(params, err => {
+                assert.ifError(err);
+                done();
             });
+        });
 
-        it('should not allow object lock config request with zero day retention',
-            done => {
-                const params = getObjectLockParams('Enabled', 'GOVERNANCE', null, 0);
-                s3.putObjectLockConfiguration(params, err => {
-                    checkError(err, 'MalformedXML', 400);
-                    done();
-                });
+        it('should not allow object lock config request with zero day retention', done => {
+            const params = getObjectLockParams('Enabled', 'GOVERNANCE', null, 0);
+            s3.putObjectLockConfiguration(params, err => {
+                checkError(err, 'MalformedXML', 400);
+                done();
             });
+        });
 
-        it('should not allow object lock config request with negative retention',
-            done => {
-                const params = getObjectLockParams('Enabled', 'GOVERNANCE', -1);
-                s3.putObjectLockConfiguration(params, err => {
-                    checkError(err, 'InvalidArgument', 400);
-                    done();
-                });
+        it('should not allow object lock config request with negative retention', done => {
+            const params = getObjectLockParams('Enabled', 'GOVERNANCE', -1);
+            s3.putObjectLockConfiguration(params, err => {
+                checkError(err, 'InvalidArgument', 400);
+                done();
             });
+        });
 
-        it('should not allow object lock config request with both Days and Years',
-            done => {
-                const params = getObjectLockParams('Enabled', 'GOVERNANCE', 1, 1);
-                s3.putObjectLockConfiguration(params, err => {
-                    checkError(err, 'MalformedXML', 400);
-                    done();
-                });
+        it('should not allow object lock config request with both Days and Years', done => {
+            const params = getObjectLockParams('Enabled', 'GOVERNANCE', 1, 1);
+            s3.putObjectLockConfiguration(params, err => {
+                checkError(err, 'MalformedXML', 400);
+                done();
             });
+        });
 
-        it('should not allow object lock config request without days or years',
-            done => {
-                const params = getObjectLockParams('Enabled', 'GOVERNANCE');
-                s3.putObjectLockConfiguration(params, err => {
-                    checkError(err, 'MalformedXML', 400);
-                    done();
-                });
+        it('should not allow object lock config request without days or years', done => {
+            const params = getObjectLockParams('Enabled', 'GOVERNANCE');
+            s3.putObjectLockConfiguration(params, err => {
+                checkError(err, 'MalformedXML', 400);
+                done();
             });
+        });
 
-        it('should not allow object lock config request with invalid ObjectLockEnabled',
-            done => {
-                const params = getObjectLockParams('enabled', 'GOVERNANCE', 10);
-                s3.putObjectLockConfiguration(params, err => {
-                    checkError(err, 'MalformedXML', 400);
-                    done();
-                });
+        it('should not allow object lock config request with invalid ObjectLockEnabled', done => {
+            const params = getObjectLockParams('enabled', 'GOVERNANCE', 10);
+            s3.putObjectLockConfiguration(params, err => {
+                checkError(err, 'MalformedXML', 400);
+                done();
             });
+        });
 
-        it('should not allow object lock config request with invalid mode',
-            done => {
-                const params = getObjectLockParams('Enabled', 'Governance', 10);
-                s3.putObjectLockConfiguration(params, err => {
-                    checkError(err, 'MalformedXML', 400);
-                    done();
-                });
+        it('should not allow object lock config request with invalid mode', done => {
+            const params = getObjectLockParams('Enabled', 'Governance', 10);
+            s3.putObjectLockConfiguration(params, err => {
+                checkError(err, 'MalformedXML', 400);
+                done();
             });
+        });
     });
 });

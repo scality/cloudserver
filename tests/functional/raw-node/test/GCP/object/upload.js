@@ -2,10 +2,8 @@ const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external;
-const { gcpRequestRetry, setBucketClass, genUniqID } =
-    require('../../../utils/gcpUtils');
-const { getRealAwsConfig } =
-    require('../../../../aws-node-sdk/test/support/awsConfig');
+const { gcpRequestRetry, setBucketClass, genUniqID } = require('../../../utils/gcpUtils');
+const { getRealAwsConfig } = require('../../../../aws-node-sdk/test/support/awsConfig');
 
 const credentialOne = 'gcpbackend';
 const bucketNames = {
@@ -32,81 +30,102 @@ describe('GCP: Upload Object', function testSuite() {
     before(done => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
-        async.eachSeries(bucketNames,
-            (bucket, next) => gcpRequestRetry({
-                method: 'PUT',
-                bucket: bucket.Name,
-                authCredentials: config.credentials,
-                requestBody: setBucketClass(bucket.Type),
-            }, 0, err => {
-                if (err) {
-                    process.stdout.write(`err in creating bucket ${err}\n`);
-                }
-                return next(err);
-            }),
-        err => done(err));
+        async.eachSeries(
+            bucketNames,
+            (bucket, next) =>
+                gcpRequestRetry(
+                    {
+                        method: 'PUT',
+                        bucket: bucket.Name,
+                        authCredentials: config.credentials,
+                        requestBody: setBucketClass(bucket.Type),
+                    },
+                    0,
+                    err => {
+                        if (err) {
+                            process.stdout.write(`err in creating bucket ${err}\n`);
+                        }
+                        return next(err);
+                    }
+                ),
+            err => done(err)
+        );
     });
 
     after(done => {
-        async.eachSeries(bucketNames,
-            (bucket, next) => gcpClient.listObjects({
-                Bucket: bucket.Name,
-            }, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got error ${err}`);
-                async.map(res.Contents, (object, moveOn) => {
-                    const deleteParams = {
+        async.eachSeries(
+            bucketNames,
+            (bucket, next) =>
+                gcpClient.listObjects(
+                    {
                         Bucket: bucket.Name,
-                        Key: object.Key,
-                    };
-                    gcpClient.deleteObject(
-                        deleteParams, err => moveOn(err));
-                }, err => {
-                    assert.equal(err, null,
-                        `Expected success, but got error ${err}`);
-                    gcpRequestRetry({
-                        method: 'DELETE',
-                        bucket: bucket.Name,
-                        authCredentials: config.credentials,
-                    }, 0, err => {
-                        if (err) {
-                            process.stdout.write(
-                                `err in deleting bucket ${err}\n`);
-                        }
-                        return next(err);
-                    });
-                });
-            }),
-        err => done(err));
+                    },
+                    (err, res) => {
+                        assert.equal(err, null, `Expected success, but got error ${err}`);
+                        async.map(
+                            res.Contents,
+                            (object, moveOn) => {
+                                const deleteParams = {
+                                    Bucket: bucket.Name,
+                                    Key: object.Key,
+                                };
+                                gcpClient.deleteObject(deleteParams, err => moveOn(err));
+                            },
+                            err => {
+                                assert.equal(err, null, `Expected success, but got error ${err}`);
+                                gcpRequestRetry(
+                                    {
+                                        method: 'DELETE',
+                                        bucket: bucket.Name,
+                                        authCredentials: config.credentials,
+                                    },
+                                    0,
+                                    err => {
+                                        if (err) {
+                                            process.stdout.write(`err in deleting bucket ${err}\n`);
+                                        }
+                                        return next(err);
+                                    }
+                                );
+                            }
+                        );
+                    }
+                ),
+            err => done(err)
+        );
     });
 
     it('should put an object to GCP', done => {
         const key = `somekey-${genUniqID()}`;
-        gcpClient.upload({
-            Bucket: bucketNames.main.Name,
-            MPU: bucketNames.mpu.Name,
-            Key: key,
-            Body: body,
-        }, (err, res) => {
-            assert.equal(err, null,
-                `Expected success, got error ${err}`);
-            assert.strictEqual(res.ETag, `"${smallMD5}"`);
-            return done();
-        });
+        gcpClient.upload(
+            {
+                Bucket: bucketNames.main.Name,
+                MPU: bucketNames.mpu.Name,
+                Key: key,
+                Body: body,
+            },
+            (err, res) => {
+                assert.equal(err, null, `Expected success, got error ${err}`);
+                assert.strictEqual(res.ETag, `"${smallMD5}"`);
+                return done();
+            }
+        );
     });
 
     it('should put a large object to GCP', done => {
         const key = `somekey-${genUniqID()}`;
-        gcpClient.upload({
-            Bucket: bucketNames.main.Name,
-            MPU: bucketNames.mpu.Name,
-            Key: key,
-            Body: bigBody,
-        }, (err, res) => {
-            assert.equal(err, null,
-                `Expected success, got error ${err}`);
-            assert.strictEqual(res.ETag, `"${bigMD5}"`);
-            return done();
-        });
+        gcpClient.upload(
+            {
+                Bucket: bucketNames.main.Name,
+                MPU: bucketNames.mpu.Name,
+                Key: key,
+                Body: bigBody,
+            },
+            (err, res) => {
+                assert.equal(err, null, `Expected success, got error ${err}`);
+                assert.strictEqual(res.ETag, `"${bigMD5}"`);
+                return done();
+            }
+        );
     });
 });

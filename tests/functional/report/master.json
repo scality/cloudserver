@@ -1,6 +1,6 @@
 {
     "tests": {
-        "files": [ "/test" ],
+        "files": ["/test"],
         "on": "aggressor"
     }
 }

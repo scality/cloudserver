@@ -8,9 +8,7 @@ const getConfig = require('../support/config');
 const withV4 = require('../support/withV4');
 const svcSchema = require('../../schema/service');
 
-const describeFn = process.env.AWS_ON_AIR
-    ? describe.skip
-    : describe;
+const describeFn = process.env.AWS_ON_AIR ? describe.skip : describe;
 
 describeFn('GET Service - AWS.S3.listBuckets', function getService() {
     this.timeout(600000);
@@ -54,10 +52,11 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                 };
             });
 
-            it('should return 403 and InvalidAccessKeyId ' +
-                'if accessKeyId is invalid', done => {
-                const invalidAccess = getConfig('default',
-                    Object.assign({},
+            it('should return 403 and InvalidAccessKeyId ' + 'if accessKeyId is invalid', done => {
+                const invalidAccess = getConfig(
+                    'default',
+                    Object.assign(
+                        {},
                         {
                             credentials: null,
                             accessKeyId: 'wrong',
@@ -72,8 +71,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                 testFn(invalidAccess, expectedCode, expectedStatus, done);
             });
 
-            it('should return 403 and SignatureDoesNotMatch ' +
-                'if credential is polluted', done => {
+            it('should return 403 and SignatureDoesNotMatch ' + 'if credential is polluted', done => {
                 const pollutedConfig = getConfig('default', sigCfg);
                 pollutedConfig.credentials.secretAccessKey = 'wrong';
 
@@ -88,71 +86,80 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
             let bucketUtil;
             let s3;
             const bucketsNumber = 1001;
-            process.stdout
-                .write(`testing listing with ${bucketsNumber} buckets\n`);
-            const createdBuckets = Array.from(Array(bucketsNumber).keys())
-                .map(i => `getservicebuckets-${i}`);
+            process.stdout.write(`testing listing with ${bucketsNumber} buckets\n`);
+            const createdBuckets = Array.from(Array(bucketsNumber).keys()).map(i => `getservicebuckets-${i}`);
 
             before(done => {
                 bucketUtil = new BucketUtility('default', sigCfg);
                 s3 = bucketUtil.s3;
                 s3.config.update({ maxRetries: 0 });
                 s3.config.update({ httpOptions: { timeout: 0 } });
-                async.eachLimit(createdBuckets, 10, (bucketName, moveOn) => {
-                    s3.createBucket({ Bucket: bucketName }, err => {
-                        if (bucketName.endsWith('000')) {
-                            // log to keep ci alive
-                            process.stdout
-                                .write(`creating bucket: ${bucketName}\n`);
+                async.eachLimit(
+                    createdBuckets,
+                    10,
+                    (bucketName, moveOn) => {
+                        s3.createBucket({ Bucket: bucketName }, err => {
+                            if (bucketName.endsWith('000')) {
+                                // log to keep ci alive
+                                process.stdout.write(`creating bucket: ${bucketName}\n`);
+                            }
+                            moveOn(err);
+                        });
+                    },
+                    err => {
+                        if (err) {
+                            process.stdout.write(`err creating buckets: ${err}`);
                         }
-                        moveOn(err);
-                    });
-                },
-                err => {
-                    if (err) {
-                        process.stdout.write(`err creating buckets: ${err}`);
+                        done(err);
                     }
-                    done(err);
-                });
+                );
             });
 
             after(done => {
-                async.eachLimit(createdBuckets, 10, (bucketName, moveOn) => {
-                    s3.deleteBucket({ Bucket: bucketName }, err => {
-                        if (bucketName.endsWith('000')) {
-                            // log to keep ci alive
-                            process.stdout
-                            .write(`deleting bucket: ${bucketName}\n`);
+                async.eachLimit(
+                    createdBuckets,
+                    10,
+                    (bucketName, moveOn) => {
+                        s3.deleteBucket({ Bucket: bucketName }, err => {
+                            if (bucketName.endsWith('000')) {
+                                // log to keep ci alive
+                                process.stdout.write(`deleting bucket: ${bucketName}\n`);
+                            }
+                            moveOn(err);
+                        });
+                    },
+                    err => {
+                        if (err) {
+                            process.stdout.write(`err deleting buckets: ${err}`);
                         }
-                        moveOn(err);
-                    });
-                },
-                err => {
-                    if (err) {
-                        process.stdout.write(`err deleting buckets: ${err}`);
+                        done(err);
                     }
-                    done(err);
-                });
+                );
             });
 
             it('should list buckets concurrently', done => {
-                async.times(20, (n, next) => {
-                    s3.listBuckets((err, result) => {
-                        assert.equal(result.Buckets.length,
-                            createdBuckets.length,
-                            'Created buckets are missing in response');
-                        next(err);
-                    });
-                },
-                err => {
-                    assert.ifError(err, `error listing buckets: ${err}`);
-                    done();
-                });
+                async.times(
+                    20,
+                    (n, next) => {
+                        s3.listBuckets((err, result) => {
+                            assert.equal(
+                                result.Buckets.length,
+                                createdBuckets.length,
+                                'Created buckets are missing in response'
+                            );
+                            next(err);
+                        });
+                    },
+                    err => {
+                        assert.ifError(err, `error listing buckets: ${err}`);
+                        done();
+                    }
+                );
             });
 
             it('should list buckets', done => {
-                s3
-                    .listBuckets().promise()
+                s3.listBuckets()
+                    .promise()
                     .then(data => {
                         const isValidResponse = tv4.validate(data, svcSchema);
                         if (!isValidResponse) {
@@ -163,12 +170,9 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                         return data;
                     })
                     .then(data => {
-                        const buckets = data.Buckets.filter(bucket =>
-                            createdBuckets.indexOf(bucket.Name) > -1
-                        );
+                        const buckets = data.Buckets.filter(bucket => createdBuckets.indexOf(bucket.Name) > -1);
 
-                        assert.equal(buckets.length, createdBuckets.length,
-                            'Created buckets are missing in response');
+                        assert.equal(buckets.length, createdBuckets.length, 'Created buckets are missing in response');
 
                         return buckets;
                     })
@@ -176,14 +180,12 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                         // Sort createdBuckets in alphabetical order
                         createdBuckets.sort();
 
-                        const isCorrectOrder = buckets
-                            .reduce(
-                                (prev, bucket, idx) =>
-                                prev && bucket.Name === createdBuckets[idx]
-                            , true);
+                        const isCorrectOrder = buckets.reduce(
+                            (prev, bucket, idx) => prev && bucket.Name === createdBuckets[idx],
+                            true
+                        );
 
-                        assert.ok(isCorrectOrder,
-                            'Not returning created buckets by alphabetically');
+                        assert.ok(isCorrectOrder, 'Not returning created buckets by alphabetically');
                         done();
                     })
                     .catch(done);
@@ -201,14 +203,12 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
 
                 it('should not return other accounts bucket list', done => {
                     anotherS3
-                        .listBuckets().promise()
+                        .listBuckets()
+                        .promise()
                         .then(data => {
-                            const hasSameBuckets = data.Buckets
-                                .filter(filterFn)
-                                .length;
+                            const hasSameBuckets = data.Buckets.filter(filterFn).length;
 
-                            assert.strictEqual(hasSameBuckets, 0,
-                                'It has other buddies bucket');
+                            assert.strictEqual(hasSameBuckets, 0, 'It has other buddies bucket');
                             done();
                         })
                         .catch(done);

@@ -2,8 +2,11 @@ const crypto = require('crypto');
 const assert = require('assert');
 const { errors, storage } = require('arsenal');
 
-const { decodeObjectVersion, getObjMetadataAndDelete, initializeMultiObjectDeleteWithBatchingSupport }
-    = require('../../../lib/api/multiObjectDelete');
+const {
+    decodeObjectVersion,
+    getObjMetadataAndDelete,
+    initializeMultiObjectDeleteWithBatchingSupport,
+} = require('../../../lib/api/multiObjectDelete');
 const multiObjectDelete = require('../../../lib/api/multiObjectDelete');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
@@ -39,10 +42,13 @@ const testBucketPutRequest = new DummyRequest({
 describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
     let testPutObjectRequest1;
     let testPutObjectRequest2;
-    const request = new DummyRequest({
-        headers: {},
-        parsedContentLength: contentLength,
-    }, postBody);
+    const request = new DummyRequest(
+        {
+            headers: {},
+            parsedContentLength: contentLength,
+        },
+        postBody
+    );
     const bucket = {
         isVersioningEnabled: () => false,
         getVersioningConfiguration: () => null,
@@ -52,34 +58,34 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
     beforeEach(done => {
         cleanup();
         sinon.spy(metadataswitch, 'deleteObjectMD');
-        testPutObjectRequest1 = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectKey1,
-            headers: {},
-            url: `/${bucketName}/${objectKey1}`,
-        }, postBody);
-        testPutObjectRequest2 = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectKey2,
-            headers: {},
-            url: `/${bucketName}/${objectKey2}`,
-        }, postBody);
+        testPutObjectRequest1 = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectKey1,
+                headers: {},
+                url: `/${bucketName}/${objectKey1}`,
+            },
+            postBody
+        );
+        testPutObjectRequest2 = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectKey2,
+                headers: {},
+                url: `/${bucketName}/${objectKey2}`,
+            },
+            postBody
+        );
         bucketPut(authInfo, testBucketPutRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest1,
-                undefined, log, () => {
-                    objectPut(authInfo, testPutObjectRequest2,
-                        undefined, log, () => {
-                            assert.strictEqual(metadata.keyMaps
-                                .get(bucketName)
-                                .has(objectKey1), true);
-                            assert.strictEqual(metadata.keyMaps
-                                .get(bucketName)
-                                .has(objectKey2), true);
-                            done();
-                        });
+            objectPut(authInfo, testPutObjectRequest1, undefined, log, () => {
+                objectPut(authInfo, testPutObjectRequest2, undefined, log, () => {
+                    assert.strictEqual(metadata.keyMaps.get(bucketName).has(objectKey1), true);
+                    assert.strictEqual(metadata.keyMaps.get(bucketName).has(objectKey2), true);
+                    done();
                 });
+            });
         });
     });
 
@@ -87,60 +93,76 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
         sinon.restore();
     });
 
-    it('should successfully get object metadata and then ' +
-        'delete metadata and data', done => {
-        getObjMetadataAndDelete(authInfo, 'foo', request, bucketName, bucket,
-            true, [], [{ key: objectKey1 }, { key: objectKey2 }], log,
-            (err, quietSetting, errorResults, numOfObjects,
-                successfullyDeleted, totalContentLengthDeleted) => {
+    it('should successfully get object metadata and then ' + 'delete metadata and data', done => {
+        getObjMetadataAndDelete(
+            authInfo,
+            'foo',
+            request,
+            bucketName,
+            bucket,
+            true,
+            [],
+            [{ key: objectKey1 }, { key: objectKey2 }],
+            log,
+            (err, quietSetting, errorResults, numOfObjects, successfullyDeleted, totalContentLengthDeleted) => {
                 assert.ifError(err);
                 assert.strictEqual(quietSetting, true);
                 assert.deepStrictEqual(errorResults, []);
                 assert.strictEqual(numOfObjects, 2);
                 assert.strictEqual(totalContentLengthDeleted, contentLength);
-                assert.strictEqual(metadata.keyMaps.get(bucketName)
-                    .has(objectKey1), false);
-                assert.strictEqual(metadata.keyMaps.get(bucketName)
-                    .has(objectKey2), false);
+                assert.strictEqual(metadata.keyMaps.get(bucketName).has(objectKey1), false);
+                assert.strictEqual(metadata.keyMaps.get(bucketName).has(objectKey2), false);
                 // call to delete data is async so wait 20 ms to check
                 // that data deleted
                 setTimeout(() => {
                     // eslint-disable-next-line
-                    assert.deepStrictEqual(ds, [ , , , ]);
+                    assert.deepStrictEqual(ds, [, , ,]);
                     done();
                 }, 20);
-            });
+            }
+        );
     });
 
     it('should return success results if no such key', done => {
-        getObjMetadataAndDelete(authInfo, 'foo', request, bucketName, bucket,
-            true, [], [{ key: 'madeup1' }, { key: 'madeup2' }], log,
-            (err, quietSetting, errorResults, numOfObjects,
-                successfullyDeleted, totalContentLengthDeleted) => {
+        getObjMetadataAndDelete(
+            authInfo,
+            'foo',
+            request,
+            bucketName,
+            bucket,
+            true,
+            [],
+            [{ key: 'madeup1' }, { key: 'madeup2' }],
+            log,
+            (err, quietSetting, errorResults, numOfObjects, successfullyDeleted, totalContentLengthDeleted) => {
                 assert.ifError(err);
                 assert.strictEqual(quietSetting, true);
                 assert.deepStrictEqual(errorResults, []);
                 assert.strictEqual(numOfObjects, 0);
-                assert.strictEqual(totalContentLengthDeleted,
-                    0);
-                assert.strictEqual(metadata.keyMaps.get(bucketName)
-                    .has(objectKey1), true);
-                assert.strictEqual(metadata.keyMaps.get(bucketName)
-                    .has(objectKey2), true);
+                assert.strictEqual(totalContentLengthDeleted, 0);
+                assert.strictEqual(metadata.keyMaps.get(bucketName).has(objectKey1), true);
+                assert.strictEqual(metadata.keyMaps.get(bucketName).has(objectKey2), true);
                 done();
-            });
+            }
+        );
     });
 
-    it('should return error results if err from metadata getting object' +
-        'is error other than NoSuchKey', done => {
+    it('should return error results if err from metadata getting object' + 'is error other than NoSuchKey', done => {
         // we fake an error by calling on an imaginary bucket
         // even though the getObjMetadataAndDelete function would
         // never be called if there was no bucket (would error out earlier
         // in API)
-        getObjMetadataAndDelete(authInfo, 'foo', request, 'madeupbucket',
-            bucket, true, [], [{ key: objectKey1 }, { key: objectKey2 }], log,
-            (err, quietSetting, errorResults, numOfObjects,
-                successfullyDeleted, totalContentLengthDeleted) => {
+        getObjMetadataAndDelete(
+            authInfo,
+            'foo',
+            request,
+            'madeupbucket',
+            bucket,
+            true,
+            [],
+            [{ key: objectKey1 }, { key: objectKey2 }],
+            log,
+            (err, quietSetting, errorResults, numOfObjects, successfullyDeleted, totalContentLengthDeleted) => {
                 assert.ifError(err);
                 assert.strictEqual(quietSetting, true);
                 assert.deepStrictEqual(errorResults, [
@@ -153,31 +175,35 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
                         error: errors.NoSuchBucket,
                     },
                 ]);
-                assert.strictEqual(totalContentLengthDeleted,
-                    0);
-                assert.strictEqual(metadata.keyMaps.get(bucketName)
-                    .has(objectKey1), true);
-                assert.strictEqual(metadata.keyMaps.get(bucketName)
-                    .has(objectKey2), true);
+                assert.strictEqual(totalContentLengthDeleted, 0);
+                assert.strictEqual(metadata.keyMaps.get(bucketName).has(objectKey1), true);
+                assert.strictEqual(metadata.keyMaps.get(bucketName).has(objectKey2), true);
                 done();
-            });
+            }
+        );
     });
 
-    it('should return no error or success results if no objects in play',
-        done => {
-            getObjMetadataAndDelete(authInfo, 'foo', request, bucketName,
-                bucket, true, [], [], log,
-                (err, quietSetting, errorResults, numOfObjects,
-                    successfullyDeleted, totalContentLengthDeleted) => {
-                    assert.ifError(err);
-                    assert.strictEqual(quietSetting, true);
-                    assert.deepStrictEqual(errorResults, []);
-                    assert.strictEqual(numOfObjects, 0);
-                    assert.strictEqual(totalContentLengthDeleted,
-                        0);
-                    done();
-                });
-        });
+    it('should return no error or success results if no objects in play', done => {
+        getObjMetadataAndDelete(
+            authInfo,
+            'foo',
+            request,
+            bucketName,
+            bucket,
+            true,
+            [],
+            [],
+            log,
+            (err, quietSetting, errorResults, numOfObjects, successfullyDeleted, totalContentLengthDeleted) => {
+                assert.ifError(err);
+                assert.strictEqual(quietSetting, true);
+                assert.deepStrictEqual(errorResults, []);
+                assert.strictEqual(numOfObjects, 0);
+                assert.strictEqual(totalContentLengthDeleted, 0);
+                done();
+            }
+        );
+    });
 
     it('should pass along error results', done => {
         const errorResultsSample = [
@@ -190,18 +216,25 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
                 error: errors.AccessDenied,
             },
         ];
-        getObjMetadataAndDelete(authInfo, 'foo', request, bucketName, bucket,
-            true, errorResultsSample,
-            [{ key: objectKey1 }, { key: objectKey2 }], log,
-            (err, quietSetting, errorResults, numOfObjects,
-                successfullyDeleted, totalContentLengthDeleted) => {
+        getObjMetadataAndDelete(
+            authInfo,
+            'foo',
+            request,
+            bucketName,
+            bucket,
+            true,
+            errorResultsSample,
+            [{ key: objectKey1 }, { key: objectKey2 }],
+            log,
+            (err, quietSetting, errorResults, numOfObjects, successfullyDeleted, totalContentLengthDeleted) => {
                 assert.ifError(err);
                 assert.strictEqual(quietSetting, true);
                 assert.deepStrictEqual(errorResults, errorResultsSample);
                 assert.strictEqual(numOfObjects, 2);
                 assert.strictEqual(totalContentLengthDeleted, contentLength);
                 done();
-            });
+            }
+        );
     });
 
     it('should properly batch delete data even if there are errors in other objects', done => {
@@ -209,35 +242,51 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
         deleteObjectStub.onCall(0).callsArgWith(7, errors.InternalError);
         deleteObjectStub.onCall(1).callsArgWith(7, null);
 
-        getObjMetadataAndDelete(authInfo, 'foo', request, bucketName, bucket,
-        true, [], [{ key: objectKey1 }, { key: objectKey2 }], log,
-        (err, quietSetting, errorResults, numOfObjects,
-            successfullyDeleted, totalContentLengthDeleted) => {
-            assert.ifError(err);
-            assert.strictEqual(quietSetting, true);
-            assert.deepStrictEqual(errorResults, [
-                {
-                    entry: {
-                        key: objectKey1,
+        getObjMetadataAndDelete(
+            authInfo,
+            'foo',
+            request,
+            bucketName,
+            bucket,
+            true,
+            [],
+            [{ key: objectKey1 }, { key: objectKey2 }],
+            log,
+            (err, quietSetting, errorResults, numOfObjects, successfullyDeleted, totalContentLengthDeleted) => {
+                assert.ifError(err);
+                assert.strictEqual(quietSetting, true);
+                assert.deepStrictEqual(errorResults, [
+                    {
+                        entry: {
+                            key: objectKey1,
+                        },
+                        error: errors.InternalError,
                     },
-                    error: errors.InternalError,
-                },
-            ]);
-            assert.strictEqual(numOfObjects, 1);
-            assert.strictEqual(totalContentLengthDeleted, contentLength / 2);
-            // Expect still in memory as we stubbed the function
-            assert.strictEqual(metadata.keyMaps.get(bucketName).has(objectKey1), true);
-            assert.strictEqual(metadata.keyMaps.get(bucketName).has(objectKey2), true);
-            // ensure object 2 only is in the list of successful deletions
-            assert.strictEqual(successfullyDeleted.length, 1);
-            assert.deepStrictEqual(successfullyDeleted[0].entry.key, objectKey2);
-            return done();
-        });
+                ]);
+                assert.strictEqual(numOfObjects, 1);
+                assert.strictEqual(totalContentLengthDeleted, contentLength / 2);
+                // Expect still in memory as we stubbed the function
+                assert.strictEqual(metadata.keyMaps.get(bucketName).has(objectKey1), true);
+                assert.strictEqual(metadata.keyMaps.get(bucketName).has(objectKey2), true);
+                // ensure object 2 only is in the list of successful deletions
+                assert.strictEqual(successfullyDeleted.length, 1);
+                assert.deepStrictEqual(successfullyDeleted[0].entry.key, objectKey2);
+                return done();
+            }
+        );
     });
 
     it('should pass overheadField to metadata', done => {
-        getObjMetadataAndDelete(authInfo, 'foo', request, bucketName, bucket,
-            true, [], [{ key: objectKey1 }, { key: objectKey2 }], log,
+        getObjMetadataAndDelete(
+            authInfo,
+            'foo',
+            request,
+            bucketName,
+            bucket,
+            true,
+            [],
+            [{ key: objectKey1 }, { key: objectKey2 }],
+            log,
             (err, quietSetting, errorResults, numOfObjects) => {
                 assert.ifError(err);
                 assert.strictEqual(numOfObjects, 2);
@@ -258,7 +307,8 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
                     sinon.match.any
                 );
                 done();
-            });
+            }
+        );
     });
 });
 
@@ -311,8 +361,9 @@ describe('initializeMultiObjectDeleteWithBatchingSupport', () => {
     });
 
     it('should not return an error if the metadataGetObjects function fails', done => {
-        const metadataGetObjectsStub =
-            sinon.stub(metadataUtils, 'metadataGetObjects').yields(new Error('metadata error'), null);
+        const metadataGetObjectsStub = sinon
+            .stub(metadataUtils, 'metadataGetObjects')
+            .yields(new Error('metadata error'), null);
         const objectVersion = 'someVersionId';
         sinon.stub(multiObjectDelete, 'decodeObjectVersion').returns([null, objectVersion]);
 
@@ -383,7 +434,7 @@ describe('multiObjectDelete function', () => {
             objectKey: 'objectname',
             parsedHost: 'localhost',
             headers: {
-                'content-md5': crypto.createHash('md5').update(post, 'utf8').digest('base64')
+                'content-md5': crypto.createHash('md5').update(post, 'utf8').digest('base64'),
             },
             post,
             socket: {
@@ -393,22 +444,16 @@ describe('multiObjectDelete function', () => {
         });
         const authInfo = makeAuthInfo('123456');
 
-        sinon.stub(metadataWrapper, 'getBucket').callsFake((bucketName, log, cb) =>
-            cb(null, new BucketInfo(
-                'bucketname',
-                '123456',
-                'accountA',
-                new Date().toISOString(),
-                15,
-            )));
+        sinon
+            .stub(metadataWrapper, 'getBucket')
+            .callsFake((bucketName, log, cb) =>
+                cb(null, new BucketInfo('bucketname', '123456', 'accountA', new Date().toISOString(), 15))
+            );
 
         multiObjectDelete.multiObjectDelete(authInfo, request, log, (err, res) => {
             // Expected result is an access denied on the object, and no error, as the API was authorized
             assert.strictEqual(err, null);
-            assert.strictEqual(
-                res.includes('<Error><Key>objectname</Key><Code>AccessDenied</Code>'),
-                true
-            );
+            assert.strictEqual(res.includes('<Error><Key>objectname</Key><Code>AccessDenied</Code>'), true);
             done();
         });
     });

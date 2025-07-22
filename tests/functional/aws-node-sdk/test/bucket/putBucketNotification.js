@@ -47,9 +47,14 @@ describe('aws-sdk test put notification configuration', () => {
     });
 
     describe('config rules', () => {
-        beforeEach(done => s3.createBucket({
-            Bucket: bucket,
-        }, done));
+        beforeEach(done =>
+            s3.createBucket(
+                {
+                    Bucket: bucket,
+                },
+                done
+            )
+        );
 
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
@@ -61,24 +66,20 @@ describe('aws-sdk test put notification configuration', () => {
             });
         });
 
-        it('should put notification configuration on bucket with basic config',
-            done => {
-                const params = getNotificationParams();
-                s3.putBucketNotificationConfiguration(params, done);
-            });
+        it('should put notification configuration on bucket with basic config', done => {
+            const params = getNotificationParams();
+            s3.putBucketNotificationConfiguration(params, done);
+        });
 
-        it('should put notification configuration on bucket with multiple events',
-            done => {
-                const params = getNotificationParams(
-                    ['s3:ObjectCreated:*', 's3:ObjectRemoved:*']);
-                s3.putBucketNotificationConfiguration(params, done);
-            });
+        it('should put notification configuration on bucket with multiple events', done => {
+            const params = getNotificationParams(['s3:ObjectCreated:*', 's3:ObjectRemoved:*']);
+            s3.putBucketNotificationConfiguration(params, done);
+        });
 
-        it('should put notification configuration on bucket with id',
-            done => {
-                const params = getNotificationParams(null, null, 'notification-id');
-                s3.putBucketNotificationConfiguration(params, done);
-            });
+        it('should put notification configuration on bucket with id', done => {
+            const params = getNotificationParams(null, null, 'notification-id');
+            s3.putBucketNotificationConfiguration(params, done);
+        });
 
         it('should put empty notification configuration', done => {
             const params = {
@@ -88,38 +89,40 @@ describe('aws-sdk test put notification configuration', () => {
             s3.putBucketNotificationConfiguration(params, done);
         });
 
-        it('should not allow notification config request with invalid arn',
-            done => {
-                const params = getNotificationParams(null, 'invalidArn');
-                s3.putBucketNotificationConfiguration(params, err => {
-                    checkError(err, 'MalformedXML', 400);
-                    done();
-                });
+        it('should not allow notification config request with invalid arn', done => {
+            const params = getNotificationParams(null, 'invalidArn');
+            s3.putBucketNotificationConfiguration(params, err => {
+                checkError(err, 'MalformedXML', 400);
+                done();
             });
+        });
 
-        it('should not allow notification config request with invalid event',
-            done => {
-                const params = getNotificationParams(['s3:NotAnEvent']);
-                s3.putBucketNotificationConfiguration(params, err => {
-                    checkError(err, 'MalformedXML', 400);
-                    done();
-                });
+        it('should not allow notification config request with invalid event', done => {
+            const params = getNotificationParams(['s3:NotAnEvent']);
+            s3.putBucketNotificationConfiguration(params, err => {
+                checkError(err, 'MalformedXML', 400);
+                done();
             });
+        });
 
-        it('should not allow notification config request with unsupported destination',
-            done => {
-                const params = getNotificationParams(null, 'arn:scality:bucketnotif:::target100');
-                s3.putBucketNotificationConfiguration(params, err => {
-                    checkError(err, 'InvalidArgument', 400);
-                    done();
-                });
+        it('should not allow notification config request with unsupported destination', done => {
+            const params = getNotificationParams(null, 'arn:scality:bucketnotif:::target100');
+            s3.putBucketNotificationConfiguration(params, err => {
+                checkError(err, 'InvalidArgument', 400);
+                done();
             });
+        });
     });
 
     describe('cross origin requests', () => {
-        beforeEach(done => s3.createBucket({
-            Bucket: bucket,
-        }, done));
+        beforeEach(done =>
+            s3.createBucket(
+                {
+                    Bucket: bucket,
+                },
+                done
+            )
+        );
 
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
@@ -128,11 +131,13 @@ describe('aws-sdk test put notification configuration', () => {
                 it: 'return valid error with invalid arn',
                 param: getNotificationParams(null, 'invalidArn'),
                 error: 'MalformedXML',
-            }, {
+            },
+            {
                 it: 'return valid error with unknown/unsupported destination',
                 param: getNotificationParams(null, 'arn:scality:bucketnotif:::target100'),
                 error: 'InvalidArgument',
-            }, {
+            },
+            {
                 it: 'save notification configuration with correct arn',
                 param: getNotificationParams(),
             },

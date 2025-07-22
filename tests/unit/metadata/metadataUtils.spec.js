@@ -10,51 +10,66 @@ const authInfo = makeAuthInfo('accessKey');
 const otherAuthInfo = makeAuthInfo('otherAccessKey');
 const ownerCanonicalId = authInfo.getCanonicalID();
 
-const bucket = new BucketInfo('niftyBucket', ownerCanonicalId,
-    authInfo.getAccountDisplayName(), creationDate);
+const bucket = new BucketInfo('niftyBucket', ownerCanonicalId, authInfo.getAccountDisplayName(), creationDate);
 const log = new DummyRequestLogger();
 
-const {
-    validateBucket,
-    metadataGetObjects,
-    metadataGetObject,
-} = require('../../../lib/metadata/metadataUtils');
+const { validateBucket, metadataGetObjects, metadataGetObject } = require('../../../lib/metadata/metadataUtils');
 const metadata = require('../../../lib/metadata/wrapper');
 
 describe('validateBucket', () => {
     it('action bucketPutPolicy by bucket owner', () => {
-        const validationResult = validateBucket(bucket, {
-            authInfo,
-            requestType: 'bucketPutPolicy',
-            request: null,
-        }, log, false);
+        const validationResult = validateBucket(
+            bucket,
+            {
+                authInfo,
+                requestType: 'bucketPutPolicy',
+                request: null,
+            },
+            log,
+            false
+        );
         assert.ifError(validationResult);
     });
     it('action bucketPutPolicy by other than bucket owner', () => {
-        const validationResult = validateBucket(bucket, {
-            authInfo: otherAuthInfo,
-            requestType: 'bucketPutPolicy',
-            request: null,
-        }, log, false);
+        const validationResult = validateBucket(
+            bucket,
+            {
+                authInfo: otherAuthInfo,
+                requestType: 'bucketPutPolicy',
+                request: null,
+            },
+            log,
+            false
+        );
         assert(validationResult);
         assert(validationResult.is.MethodNotAllowed);
     });
 
     it('action bucketGet by bucket owner', () => {
-        const validationResult = validateBucket(bucket, {
-            authInfo,
-            requestType: 'bucketGet',
-            request: null,
-        }, log, false);
+        const validationResult = validateBucket(
+            bucket,
+            {
+                authInfo,
+                requestType: 'bucketGet',
+                request: null,
+            },
+            log,
+            false
+        );
         assert.ifError(validationResult);
     });
 
     it('action bucketGet by other than bucket owner', () => {
-        const validationResult = validateBucket(bucket, {
-            authInfo: otherAuthInfo,
-            requestType: 'bucketGet',
-            request: null,
-        }, log, false);
+        const validationResult = validateBucket(
+            bucket,
+            {
+                authInfo: otherAuthInfo,
+                requestType: 'bucketGet',
+                request: null,
+            },
+            log,
+            false
+        );
         assert(validationResult);
         assert(validationResult.is.AccessDenied);
     });
@@ -118,7 +133,8 @@ describe('metadataGetObject', () => {
     it('should return the cached document if provided', done => {
         const cachedDoc = {
             [objectKey.inPlay.key]: {
-                key: 'objectKey1', versionId: 'versionId1',
+                key: 'objectKey1',
+                versionId: 'versionId1',
             },
         };
         metadataGetObject('bucketName', objectKey.inPlay.key, objectKey.versionId, cachedDoc, log, (err, result) => {

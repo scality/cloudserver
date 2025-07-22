@@ -15,8 +15,7 @@ describeSkipAWS('GET bucket location ', () => {
         const otherAccountBucketUtility = new BucketUtility('lisa', {});
         const otherAccountS3 = otherAccountBucketUtility.s3;
         const locationConstraints = config.locationConstraints;
-        Object.keys(locationConstraints).forEach(
-        location => {
+        Object.keys(locationConstraints).forEach(location => {
             if (location === 'us-east-1') {
                 // if location is us-east-1 should return empty string
                 // see next test.
@@ -27,24 +26,22 @@ describeSkipAWS('GET bucket location ', () => {
                 return;
             }
             describe(`with location: ${location}`, () => {
-                before(() => s3.createBucket(
-                    {
-                        Bucket: bucketName,
-                        CreateBucketConfiguration: {
-                            LocationConstraint: location,
-                        },
-                    }).promise());
+                before(() =>
+                    s3
+                        .createBucket({
+                            Bucket: bucketName,
+                            CreateBucketConfiguration: {
+                                LocationConstraint: location,
+                            },
+                        })
+                        .promise()
+                );
                 after(() => bucketUtil.deleteOne(bucketName));
 
-                it(`should return location configuration: ${location} ` +
-                'successfully',
-                done => {
-                    s3.getBucketLocation({ Bucket: bucketName },
-                    (err, data) => {
-                        assert.strictEqual(err, null,
-                            `Found unexpected err ${err}`);
-                        assert.deepStrictEqual(data.LocationConstraint,
-                            location);
+                it(`should return location configuration: ${location} ` + 'successfully', done => {
+                    s3.getBucketLocation({ Bucket: bucketName }, (err, data) => {
+                        assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                        assert.deepStrictEqual(data.LocationConstraint, location);
                         return done();
                     });
                 });
@@ -52,20 +49,20 @@ describeSkipAWS('GET bucket location ', () => {
         });
 
         describe('with location us-east-1', () => {
-            before(() => s3.createBucket(
-                {
-                    Bucket: bucketName,
-                    CreateBucketConfiguration: {
-                        LocationConstraint: 'us-east-1',
-                    },
-                }).promise());
+            before(() =>
+                s3
+                    .createBucket({
+                        Bucket: bucketName,
+                        CreateBucketConfiguration: {
+                            LocationConstraint: 'us-east-1',
+                        },
+                    })
+                    .promise()
+            );
             afterEach(() => bucketUtil.deleteOne(bucketName));
-            it('should return empty location',
-            done => {
-                s3.getBucketLocation({ Bucket: bucketName },
-                (err, data) => {
-                    assert.strictEqual(err, null,
-                        `Found unexpected err ${err}`);
+            it('should return empty location', done => {
+                s3.getBucketLocation({ Bucket: bucketName }, (err, data) => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
                     assert.deepStrictEqual(data.LocationConstraint, '');
                     return done();
                 });
@@ -75,8 +72,7 @@ describeSkipAWS('GET bucket location ', () => {
         describe('without location configuration', () => {
             after(() => {
                 process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(bucketName)
-                .catch(err => {
+                return bucketUtil.deleteOne(bucketName).catch(err => {
                     process.stdout.write(`Error in after: ${err}\n`);
                     throw err;
                 });
@@ -89,18 +85,15 @@ describeSkipAWS('GET bucket location ', () => {
                     request.httpRequest.body = '';
                 });
                 request.send(err => {
-                    assert.strictEqual(err, null, 'Error creating bucket: ' +
-                        `${err}`);
+                    assert.strictEqual(err, null, 'Error creating bucket: ' + `${err}`);
                     const host = request.service.endpoint.hostname;
                     let endpoint = config.restEndpoints[host];
                     // s3 actually returns '' for us-east-1
                     if (endpoint === 'us-east-1') {
                         endpoint = '';
                     }
-                    s3.getBucketLocation({ Bucket: bucketName },
-                    (err, data) => {
-                        assert.strictEqual(err, null, 'Expected succes, ' +
-                            `got error ${JSON.stringify(err)}`);
+                    s3.getBucketLocation({ Bucket: bucketName }, (err, data) => {
+                        assert.strictEqual(err, null, 'Expected succes, ' + `got error ${JSON.stringify(err)}`);
                         assert.strictEqual(data.LocationConstraint, endpoint);
                         done();
                     });
@@ -109,19 +102,20 @@ describeSkipAWS('GET bucket location ', () => {
         });
 
         describe('with location configuration', () => {
-            before(() => s3.createBucket(
-                {
-                    Bucket: bucketName,
-                    CreateBucketConfiguration: {
-                        LocationConstraint: 'us-east-1',
-                    },
-                }).promise());
+            before(() =>
+                s3
+                    .createBucket({
+                        Bucket: bucketName,
+                        CreateBucketConfiguration: {
+                            LocationConstraint: 'us-east-1',
+                        },
+                    })
+                    .promise()
+            );
             after(() => bucketUtil.deleteOne(bucketName));
 
-            it('should return AccessDenied if user is not bucket owner',
-            done => {
-                otherAccountS3.getBucketLocation({ Bucket: bucketName },
-                err => {
+            it('should return AccessDenied if user is not bucket owner', done => {
+                otherAccountS3.getBucketLocation({ Bucket: bucketName }, err => {
                     assert(err);
                     assert.strictEqual(err.code, 'AccessDenied');
                     assert.strictEqual(err.statusCode, 403);

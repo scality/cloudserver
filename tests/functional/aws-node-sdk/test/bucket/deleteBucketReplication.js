@@ -8,8 +8,7 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucket = 'source-bucket';
 const replicationConfig = {
-    Role: 'arn:aws:iam::account-id:role/src-resource,' +
-        'arn:aws:iam::account-id:role/dest-resource',
+    Role: 'arn:aws:iam::account-id:role/src-resource,' + 'arn:aws:iam::account-id:role/dest-resource',
     Rules: [
         {
             Destination: { Bucket: 'arn:aws:s3:::destination-bucket' },
@@ -26,17 +25,23 @@ describe('aws-node-sdk test deleteBucketReplication', () => {
     const config = getConfig('default', { signatureVersion: 'v4' });
 
     function putVersioningOnBucket(bucket, cb) {
-        return s3.putBucketVersioning({
-            Bucket: bucket,
-            VersioningConfiguration: { Status: 'Enabled' },
-        }, cb);
+        return s3.putBucketVersioning(
+            {
+                Bucket: bucket,
+                VersioningConfiguration: { Status: 'Enabled' },
+            },
+            cb
+        );
     }
 
     function putReplicationOnBucket(bucket, cb) {
-        return s3.putBucketReplication({
-            Bucket: bucket,
-            ReplicationConfiguration: replicationConfig,
-        }, cb);
+        return s3.putBucketReplication(
+            {
+                Bucket: bucket,
+                ReplicationConfiguration: replicationConfig,
+            },
+            cb
+        );
     }
 
     function deleteReplicationAndCheckResponse(bucket, cb) {
@@ -59,32 +64,43 @@ describe('aws-node-sdk test deleteBucketReplication', () => {
         deleteReplicationAndCheckResponse(bucket, done));
 
     it('should delete a bucket replication config when it has one', done =>
-        series([
-            next => putVersioningOnBucket(bucket, next),
-            next => putReplicationOnBucket(bucket, next),
-            next => deleteReplicationAndCheckResponse(bucket, next),
-        ], done));
+        series(
+            [
+                next => putVersioningOnBucket(bucket, next),
+                next => putReplicationOnBucket(bucket, next),
+                next => deleteReplicationAndCheckResponse(bucket, next),
+            ],
+            done
+        ));
 
-    it('should return ReplicationConfigurationNotFoundError if getting ' +
-    'replication config after it has been deleted', done =>
-        series([
-            next => putVersioningOnBucket(bucket, next),
-            next => putReplicationOnBucket(bucket, next),
-            next => s3.getBucketReplication({ Bucket: bucket }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                assert.deepStrictEqual(data, {
-                    ReplicationConfiguration: replicationConfig,
-                });
-                return next();
-            }),
-            next => deleteReplicationAndCheckResponse(bucket, next),
-            next => s3.getBucketReplication({ Bucket: bucket }, err => {
-                assert(errorInstances.ReplicationConfigurationNotFoundError.is[err.code]);
-                return next();
-            }),
-        ], done));
+    it(
+        'should return ReplicationConfigurationNotFoundError if getting ' +
+            'replication config after it has been deleted',
+        done =>
+            series(
+                [
+                    next => putVersioningOnBucket(bucket, next),
+                    next => putReplicationOnBucket(bucket, next),
+                    next =>
+                        s3.getBucketReplication({ Bucket: bucket }, (err, data) => {
+                            if (err) {
+                                return next(err);
+                            }
+                            assert.deepStrictEqual(data, {
+                                ReplicationConfiguration: replicationConfig,
+                            });
+                            return next();
+                        }),
+                    next => deleteReplicationAndCheckResponse(bucket, next),
+                    next =>
+                        s3.getBucketReplication({ Bucket: bucket }, err => {
+                            assert(errorInstances.ReplicationConfigurationNotFoundError.is[err.code]);
+                            return next();
+                        }),
+                ],
+                done
+            )
+    );
 
     it('should return AccessDenied if user is not bucket owner', done =>
         otherAccountS3.deleteBucketReplication({ Bucket: bucket }, err => {

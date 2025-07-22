@@ -338,6 +338,6 @@ describe('parseKmsAWS TLS section', () => {
             assert(readFileSyncStub.calledWith(path.join(basePath, caPath)));
         });
 
-        assert(readFileSyncStub.callCount === (keyPaths.length + certPaths.length + caPaths.length));
+        assert(readFileSyncStub.callCount === keyPaths.length + certPaths.length + caPaths.length);
     });
 });

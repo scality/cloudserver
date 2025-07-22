@@ -28,15 +28,16 @@ const testCases = [
     },
 ];
 
-function s3NoOp(_, cb) { cb(); }
+function s3NoOp(_, cb) {
+    cb();
+}
 
 function getSSEConfig(s3, Bucket, Key, cb) {
     return s3.headObject({ Bucket, Key }, (err, resp) => {
         if (err) {
             return cb(err);
         }
-        return cb(null,
-            JSON.parse(JSON.stringify({ algo: resp.ServerSideEncryption, masterKeyId: resp.SSEKMSKeyId })));
+        return cb(null, JSON.parse(JSON.stringify({ algo: resp.ServerSideEncryption, masterKeyId: resp.SSEKMSKeyId })));
     });
 }
 
@@ -60,9 +61,7 @@ function createExpected(sseConfig, kmsKeyId) {
     }
 
     if (sseConfig.masterKeyId) {
-        expected.masterKeyId = config.kmsHideScalityArn
-            ? getKeyIdFromArn(kmsKeyId)
-            : kmsKeyId;
+        expected.masterKeyId = config.kmsHideScalityArn ? getKeyIdFromArn(kmsKeyId) : kmsKeyId;
     }
     return expected;
 }
@@ -79,8 +78,7 @@ function hydrateSSEConfig({ algo: SSEAlgorithm, masterKeyId: KMSMasterKeyID }) {
                     },
                 },
             ],
-        }
-        )
+        })
     );
 }
 
@@ -95,15 +93,12 @@ describe('per object encryption headers', () => {
         let kmsKeyId;
 
         before(done => {
-            const bucket = new BucketInfo('enc-bucket-test', 'OwnerId',
-                'OwnerDisplayName', new Date().toJSON());
-            kms.createBucketKey(bucket, log,
-                (err, { masterKeyArn: keyId }) => {
-                    assert.ifError(err);
-                    kmsKeyId = keyId;
-                    done();
-                }
-            );
+            const bucket = new BucketInfo('enc-bucket-test', 'OwnerId', 'OwnerDisplayName', new Date().toJSON());
+            kms.createBucketKey(bucket, log, (err, { masterKeyArn: keyId }) => {
+                assert.ifError(err);
+                kmsKeyId = keyId;
+                done();
+            });
         });
 
         beforeEach(() => {
@@ -113,7 +108,9 @@ describe('per object encryption headers', () => {
             object2 = `enc-object-2-${uuid.v4()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucket({ Bucket: bucket }).promise()
+            return s3
+                .createBucket({ Bucket: bucket })
+                .promise()
                 .then(() => s3.createBucket({ Bucket: bucket2 }).promise())
                 .catch(err => {
                     process.stdout.write(`Error creating bucket: ${err}\n`);
@@ -132,23 +129,18 @@ describe('per object encryption headers', () => {
                 it('should put an encrypted object in a unencrypted bucket', done =>
                     putEncryptedObject(s3, bucket, object, target, kmsKeyId, error => {
                         assert.ifError(error);
-                        return getSSEConfig(
-                            s3,
-                            bucket,
-                            object,
-                            (error, sseConfig) => {
-                                assert.ifError(error);
-                                const expected = createExpected(target, kmsKeyId);
-                                // We differ from aws behavior and always return a
-                                // masterKeyId even when not explicitly configured.
-                                if (expected.algo === 'aws:kms' && !expected.masterKeyId) {
-                                    // eslint-disable-next-line no-param-reassign
-                                    delete sseConfig.masterKeyId;
-                                }
-                                assert.deepStrictEqual(sseConfig, expected);
-                                done();
+                        return getSSEConfig(s3, bucket, object, (error, sseConfig) => {
+                            assert.ifError(error);
+                            const expected = createExpected(target, kmsKeyId);
+                            // We differ from aws behavior and always return a
+                            // masterKeyId even when not explicitly configured.
+                            if (expected.algo === 'aws:kms' && !expected.masterKeyId) {
+                                // eslint-disable-next-line no-param-reassign
+                                delete sseConfig.masterKeyId;
                             }
-                        );
+                            assert.deepStrictEqual(sseConfig, expected);
+                            done();
+                        });
                     }));
 
                 it('should put two encrypted objects in a unencrypted bucket, reusing the generated config', done =>
@@ -176,31 +168,28 @@ describe('per object encryption headers', () => {
                         }
                     ));
 
-                testCases
-                .forEach(existing => {
+                testCases.forEach(existing => {
                     const hasKey = target.masterKeyId ? 'a' : 'no';
                     const { algo } = target;
-                    it('should override bucket encryption settings with '
-                    + `algo ${algo || 'none'} with ${hasKey} key id`, done => {
-                        const _existing = Object.assign({}, existing);
-                        if (existing.masterKeyId) {
-                            _existing.masterKeyId = kmsKeyId;
-                        }
-                        const params = {
-                            Bucket: bucket,
-                            ServerSideEncryptionConfiguration: hydrateSSEConfig(_existing),
-                        };
-                        // no op putBucketNotification for the unencrypted case
-                        const s3Op = existing.algo ? (...args) => s3.putBucketEncryption(...args) : s3NoOp;
-                        s3Op(params, error => {
-                            assert.ifError(error);
-                            return putEncryptedObject(s3, bucket, object, target, kmsKeyId, error => {
+                    it(
+                        'should override bucket encryption settings with ' +
+                            `algo ${algo || 'none'} with ${hasKey} key id`,
+                        done => {
+                            const _existing = Object.assign({}, existing);
+                            if (existing.masterKeyId) {
+                                _existing.masterKeyId = kmsKeyId;
+                            }
+                            const params = {
+                                Bucket: bucket,
+                                ServerSideEncryptionConfiguration: hydrateSSEConfig(_existing),
+                            };
+                            // no op putBucketNotification for the unencrypted case
+                            const s3Op = existing.algo ? (...args) => s3.putBucketEncryption(...args) : s3NoOp;
+                            s3Op(params, error => {
                                 assert.ifError(error);
-                                return getSSEConfig(
-                                    s3,
-                                    bucket,
-                                    object,
-                                    (error, sseConfig) => {
+                                return putEncryptedObject(s3, bucket, object, target, kmsKeyId, error => {
+                                    assert.ifError(error);
+                                    return getSSEConfig(s3, bucket, object, (error, sseConfig) => {
                                         assert.ifError(error);
                                         let expected = createExpected(target, kmsKeyId);
                                         // In the null case the expected encryption config is
@@ -216,21 +205,18 @@ describe('per object encryption headers', () => {
                                         }
                                         assert.deepStrictEqual(sseConfig, expected);
                                         done();
-                                    }
-                                );
+                                    });
+                                });
                             });
-                        });
-                    });
+                        }
+                    );
                 });
 
-                testCases
-                .forEach(existing => it('should copy an object to an encrypted key overriding bucket settings',
-                    done => {
+                testCases.forEach(existing =>
+                    it('should copy an object to an encrypted key overriding bucket settings', done => {
                         const _existing = Object.assign({}, existing);
                         if (existing.masterKeyId) {
-                            _existing.masterKeyId = config.kmsHideScalityArn
-                                ? getKeyIdFromArn(kmsKeyId)
-                                : kmsKeyId;
+                            _existing.masterKeyId = config.kmsHideScalityArn ? getKeyIdFromArn(kmsKeyId) : kmsKeyId;
                         }
                         const params = {
                             Bucket: bucket2,
@@ -255,32 +241,28 @@ describe('per object encryption headers', () => {
                                 }
                                 return s3.copyObject(copyParams, error => {
                                     assert.ifError(error);
-                                    return getSSEConfig(
-                                        s3,
-                                        bucket2,
-                                        object2,
-                                        (error, sseConfig) => {
-                                            assert.ifError(error);
-                                            let expected = createExpected(target, kmsKeyId);
-                                            // In the null case the expected encryption config is
-                                            // the buckets default policy
-                                            if (!target.algo) {
-                                                expected = _existing;
-                                            }
-                                            // We differ from aws behavior and always return a
-                                            // masterKeyId even when not explicitly configured.
-                                            if (expected.algo === 'aws:kms' && !expected.masterKeyId) {
-                                            // eslint-disable-next-line no-param-reassign
-                                                delete sseConfig.masterKeyId;
-                                            }
-                                            assert.deepStrictEqual(sseConfig, expected);
-                                            done();
+                                    return getSSEConfig(s3, bucket2, object2, (error, sseConfig) => {
+                                        assert.ifError(error);
+                                        let expected = createExpected(target, kmsKeyId);
+                                        // In the null case the expected encryption config is
+                                        // the buckets default policy
+                                        if (!target.algo) {
+                                            expected = _existing;
                                         }
-                                    );
+                                        // We differ from aws behavior and always return a
+                                        // masterKeyId even when not explicitly configured.
+                                        if (expected.algo === 'aws:kms' && !expected.masterKeyId) {
+                                            // eslint-disable-next-line no-param-reassign
+                                            delete sseConfig.masterKeyId;
+                                        }
+                                        assert.deepStrictEqual(sseConfig, expected);
+                                        done();
+                                    });
                                 });
                             });
                         });
-                    }));
+                    })
+                );
 
                 it('should init an encrypted MPU and put an encrypted part', done => {
                     const params = {

@@ -61,10 +61,12 @@ describe('KMS.checkHealth', () => {
 
             assert(shouldRefreshStub.calledOnce, 'shouldRefresh should be called once');
 
-            assert(setResultSpy.calledOnceWithExactly({
-                code: 200,
-                message: 'OK',
-            }));
+            assert(
+                setResultSpy.calledOnceWithExactly({
+                    code: 200,
+                    message: 'OK',
+                })
+            );
 
             done();
         });
@@ -89,11 +91,13 @@ describe('KMS.checkHealth', () => {
 
             assert(shouldRefreshStub.calledOnce, 'shouldRefresh should be called once');
 
-            assert(setResultSpy.calledOnceWithExactly({
-                code: 500,
-                message: 'KMS health check failed',
-                description: 'We encountered an internal error. Please try again.',
-            }));
+            assert(
+                setResultSpy.calledOnceWithExactly({
+                    code: 500,
+                    message: 'KMS health check failed',
+                    description: 'We encountered an internal error. Please try again.',
+                })
+            );
 
             done();
         });

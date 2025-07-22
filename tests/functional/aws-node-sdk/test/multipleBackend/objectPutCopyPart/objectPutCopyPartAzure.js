@@ -6,20 +6,28 @@ const azureMpuUtils = s3middleware.azureHelper.mpuUtils;
 const { config } = require('../../../../../../lib/Config');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { uniqName, getAzureClient, azureLocation, azureLocationMismatch,
-  memLocation, awsLocation, awsS3, getOwnerInfo, genUniqID }
-  = require('../utils');
+const {
+    uniqName,
+    getAzureClient,
+    azureLocation,
+    azureLocationMismatch,
+    memLocation,
+    awsLocation,
+    awsS3,
+    getOwnerInfo,
+    genUniqID,
+} = require('../utils');
 
-const describeSkipIfNotMultipleOrCeph = config.backends.data !== 'multiple'
-    ? describe.skip : describe.skip;
+const describeSkipIfNotMultipleOrCeph = config.backends.data !== 'multiple' ? describe.skip : describe.skip;
 
 let azureContainerName;
 
-if (config.locationConstraints[azureLocation] &&
-config.locationConstraints[azureLocation].details &&
-config.locationConstraints[azureLocation].details.azureContainerName) {
-    azureContainerName =
-      config.locationConstraints[azureLocation].details.azureContainerName;
+if (
+    config.locationConstraints[azureLocation] &&
+    config.locationConstraints[azureLocation].details &&
+    config.locationConstraints[azureLocation].details.azureContainerName
+) {
+    azureContainerName = config.locationConstraints[azureLocation].details.azureContainerName;
 }
 
 const memBucketName = `memputcopypartazure${genUniqID()}`;
@@ -57,12 +65,8 @@ const result = {
     MaxParts: 1000,
     IsTruncated: false,
     Parts: [],
-    Initiator:
-     { ID: ownerID,
-       DisplayName: ownerDisplayName },
-    Owner:
-     { DisplayName: ownerDisplayName,
-       ID: ownerID },
+    Initiator: { ID: ownerID, DisplayName: ownerDisplayName },
+    Owner: { DisplayName: ownerDisplayName, ID: ownerID },
     StorageClass: 'STANDARD',
 };
 
@@ -70,8 +74,7 @@ let s3;
 let bucketUtil;
 
 function assertCopyPart(infos, cb) {
-    const { azureContainerName, mpuKeyNameAzure, uploadId, md5,
-    subPartSize } = infos;
+    const { azureContainerName, mpuKeyNameAzure, uploadId, md5, subPartSize } = infos;
     const resultCopy = JSON.parse(JSON.stringify(result));
     resultCopy.Bucket = azureContainerName;
     resultCopy.Key = mpuKeyNameAzure;
@@ -80,37 +83,51 @@ function assertCopyPart(infos, cb) {
     for (let i = 0; i < subPartSize.length; i++) {
         totalSize = totalSize + subPartSize[i];
     }
-    async.waterfall([
-        next => s3.listParts({
-            Bucket: azureContainerName,
-            Key: mpuKeyNameAzure,
-            UploadId: uploadId,
-        }, (err, res) => {
-            assert.equal(err, null, 'listParts: Expected success,' +
-            ` got error: ${err}`);
-            resultCopy.Parts =
-             [{ PartNumber: 1,
-                 LastModified: res.Parts[0].LastModified,
-                 ETag: `"${md5}"`,
-                 Size: totalSize }];
-            assert.deepStrictEqual(res, resultCopy);
-            next();
-        }),
-        next => azureClient.getContainerClient(azureContainerName)
-            .getBlockBlobClient(mpuKeyNameAzure)
-            .getBlockList('all').then(res => {
-                subPartSize.forEach((size, index) => {
-                    const partName = azureMpuUtils.getBlockId(uploadId, 1, index);
-                    assert.strictEqual(res.uncommittedBlocks[index].name, partName);
-                    assert.equal(res.uncommittedBlocks[index].size, size);
-                });
-                next();
-            }, err => {
-                assert.equal(err, null, 'listBlocks: Expected ' +
-                    `success, got error: ${err}`);
-                next();
-            }),
-    ], cb);
+    async.waterfall(
+        [
+            next =>
+                s3.listParts(
+                    {
+                        Bucket: azureContainerName,
+                        Key: mpuKeyNameAzure,
+                        UploadId: uploadId,
+                    },
+                    (err, res) => {
+                        assert.equal(err, null, 'listParts: Expected success,' + ` got error: ${err}`);
+                        resultCopy.Parts = [
+                            {
+                                PartNumber: 1,
+                                LastModified: res.Parts[0].LastModified,
+                                ETag: `"${md5}"`,
+                                Size: totalSize,
+                            },
+                        ];
+                        assert.deepStrictEqual(res, resultCopy);
+                        next();
+                    }
+                ),
+            next =>
+                azureClient
+                    .getContainerClient(azureContainerName)
+                    .getBlockBlobClient(mpuKeyNameAzure)
+                    .getBlockList('all')
+                    .then(
+                        res => {
+                            subPartSize.forEach((size, index) => {
+                                const partName = azureMpuUtils.getBlockId(uploadId, 1, index);
+                                assert.strictEqual(res.uncommittedBlocks[index].name, partName);
+                                assert.equal(res.uncommittedBlocks[index].size, size);
+                            });
+                            next();
+                        },
+                        err => {
+                            assert.equal(err, null, 'listBlocks: Expected ' + `success, got error: ${err}`);
+                            next();
+                        }
+                    ),
+        ],
+        cb
+    );
 }
 
 describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE', function describeF() {
@@ -123,39 +140,33 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE', function describeF() {
 
         afterEach(() => {
             process.stdout.write('Emptying bucket\n');
-            return bucketUtil.empty(azureContainerName)
-            .then(() => bucketUtil.empty(memBucketName))
-            .then(() => {
-                process.stdout.write(`Deleting bucket ${azureContainerName}\n`);
-                return bucketUtil.deleteOne(azureContainerName);
-            })
-            .then(() => {
-                process.stdout.write(`Deleting bucket ${memBucketName}\n`);
-                return bucketUtil.deleteOne(memBucketName);
-            })
-            .catch(err => {
-                process.stdout.write(`Error in afterEach: ${err}\n`);
-                throw err;
-            });
+            return bucketUtil
+                .empty(azureContainerName)
+                .then(() => bucketUtil.empty(memBucketName))
+                .then(() => {
+                    process.stdout.write(`Deleting bucket ${azureContainerName}\n`);
+                    return bucketUtil.deleteOne(azureContainerName);
+                })
+                .then(() => {
+                    process.stdout.write(`Deleting bucket ${memBucketName}\n`);
+                    return bucketUtil.deleteOne(memBucketName);
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in afterEach: ${err}\n`);
+                    throw err;
+                });
         });
         describe('Basic test: ', () => {
             beforeEach(function beF(done) {
-                this.currentTest.keyNameNormalAzure =
-                `normalazure${uniqName(keyObjectAzure)}`;
-                this.currentTest.keyNameNormalAzureMismatch =
-                `normalazuremismatch${uniqName(keyObjectAzure)}`;
+                this.currentTest.keyNameNormalAzure = `normalazure${uniqName(keyObjectAzure)}`;
+                this.currentTest.keyNameNormalAzureMismatch = `normalazuremismatch${uniqName(keyObjectAzure)}`;
 
-                this.currentTest.keyNameFiveMbAzure =
-                `fivembazure${uniqName(keyObjectAzure)}`;
-                this.currentTest.keyNameFiveMbMem =
-                `fivembmem${uniqName(keyObjectMemory)}`;
+                this.currentTest.keyNameFiveMbAzure = `fivembazure${uniqName(keyObjectAzure)}`;
+                this.currentTest.keyNameFiveMbMem = `fivembmem${uniqName(keyObjectMemory)}`;
 
-                this.currentTest.mpuKeyNameAzure =
-                `mpukeyname${uniqName(keyObjectAzure)}`;
-                this.currentTest.mpuKeyNameMem =
-                `mpukeyname${uniqName(keyObjectMemory)}`;
-                this.currentTest.mpuKeyNameAWS =
-                `mpukeyname${uniqName(keyObjectAWS)}`;
+                this.currentTest.mpuKeyNameAzure = `mpukeyname${uniqName(keyObjectAzure)}`;
+                this.currentTest.mpuKeyNameMem = `mpukeyname${uniqName(keyObjectMemory)}`;
+                this.currentTest.mpuKeyNameAWS = `mpukeyname${uniqName(keyObjectAWS)}`;
                 const paramsAzure = {
                     Bucket: azureContainerName,
                     Key: this.currentTest.mpuKeyNameAzure,
@@ -171,58 +182,83 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE', function describeF() {
                     Key: this.currentTest.mpuKeyNameAWS,
                     Metadata: { 'scal-location-constraint': awsLocation },
                 };
-                async.waterfall([
-                    next => s3.createBucket({ Bucket: azureContainerName },
-                      err => next(err)),
-                    next => s3.createBucket({ Bucket: memBucketName },
-                      err => next(err)),
-                    next => s3.putObject({
-                        Bucket: azureContainerName,
-                        Key: this.currentTest.keyNameNormalAzure,
-                        Body: normalBody,
-                        Metadata: { 'scal-location-constraint': azureLocation },
-                    }, err => next(err)),
-                    next => s3.putObject({
-                        Bucket: azureContainerName,
-                        Key: this.currentTest.keyNameNormalAzureMismatch,
-                        Body: normalBody,
-                        Metadata: { 'scal-location-constraint':
-                        azureLocationMismatch },
-                    }, err => next(err)),
-                    next => s3.putObject({
-                        Bucket: azureContainerName,
-                        Key: this.currentTest.keyNameFiveMbAzure,
-                        Body: fiveMbBody,
-                        Metadata: { 'scal-location-constraint': azureLocation },
-                    }, err => next(err)),
-                    next => s3.putObject({
-                        Bucket: azureContainerName,
-                        Key: this.currentTest.keyNameFiveMbMem,
-                        Body: fiveMbBody,
-                        Metadata: { 'scal-location-constraint': memLocation },
-                    }, err => next(err)),
-                    next => s3.createMultipartUpload(paramsAzure,
-                    (err, res) => {
-                        assert.equal(err, null, 'createMultipartUpload ' +
-                        `on Azure: Expected success, got error: ${err}`);
-                        this.currentTest.uploadId = res.UploadId;
-                        next();
-                    }),
-                    next => s3.createMultipartUpload(paramsMem,
-                    (err, res) => {
-                        assert.equal(err, null, 'createMultipartUpload ' +
-                        `in memory: Expected success, got error: ${err}`);
-                        this.currentTest.uploadIdMem = res.UploadId;
-                        next();
-                    }),
-                    next => s3.createMultipartUpload(paramsAWS,
-                    (err, res) => {
-                        assert.equal(err, null, 'createMultipartUpload ' +
-                        `on AWS: Expected success, got error: ${err}`);
-                        this.currentTest.uploadIdAWS = res.UploadId;
-                        next();
-                    }),
-                ], done);
+                async.waterfall(
+                    [
+                        next => s3.createBucket({ Bucket: azureContainerName }, err => next(err)),
+                        next => s3.createBucket({ Bucket: memBucketName }, err => next(err)),
+                        next =>
+                            s3.putObject(
+                                {
+                                    Bucket: azureContainerName,
+                                    Key: this.currentTest.keyNameNormalAzure,
+                                    Body: normalBody,
+                                    Metadata: { 'scal-location-constraint': azureLocation },
+                                },
+                                err => next(err)
+                            ),
+                        next =>
+                            s3.putObject(
+                                {
+                                    Bucket: azureContainerName,
+                                    Key: this.currentTest.keyNameNormalAzureMismatch,
+                                    Body: normalBody,
+                                    Metadata: { 'scal-location-constraint': azureLocationMismatch },
+                                },
+                                err => next(err)
+                            ),
+                        next =>
+                            s3.putObject(
+                                {
+                                    Bucket: azureContainerName,
+                                    Key: this.currentTest.keyNameFiveMbAzure,
+                                    Body: fiveMbBody,
+                                    Metadata: { 'scal-location-constraint': azureLocation },
+                                },
+                                err => next(err)
+                            ),
+                        next =>
+                            s3.putObject(
+                                {
+                                    Bucket: azureContainerName,
+                                    Key: this.currentTest.keyNameFiveMbMem,
+                                    Body: fiveMbBody,
+                                    Metadata: { 'scal-location-constraint': memLocation },
+                                },
+                                err => next(err)
+                            ),
+                        next =>
+                            s3.createMultipartUpload(paramsAzure, (err, res) => {
+                                assert.equal(
+                                    err,
+                                    null,
+                                    'createMultipartUpload ' + `on Azure: Expected success, got error: ${err}`
+                                );
+                                this.currentTest.uploadId = res.UploadId;
+                                next();
+                            }),
+                        next =>
+                            s3.createMultipartUpload(paramsMem, (err, res) => {
+                                assert.equal(
+                                    err,
+                                    null,
+                                    'createMultipartUpload ' + `in memory: Expected success, got error: ${err}`
+                                );
+                                this.currentTest.uploadIdMem = res.UploadId;
+                                next();
+                            }),
+                        next =>
+                            s3.createMultipartUpload(paramsAWS, (err, res) => {
+                                assert.equal(
+                                    err,
+                                    null,
+                                    'createMultipartUpload ' + `on AWS: Expected success, got error: ${err}`
+                                );
+                                this.currentTest.uploadIdAWS = res.UploadId;
+                                next();
+                            }),
+                    ],
+                    done
+                );
             });
             afterEach(function afterEachF(done) {
                 const paramsAzure = {
@@ -240,271 +276,272 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE', function describeF() {
                     Key: this.currentTest.mpuKeyNameAWS,
                     UploadId: this.currentTest.uploadIdAWS,
                 };
-                async.waterfall([
-                    next => s3.abortMultipartUpload(paramsAzure,
-                      err => next(err)),
-                    next => s3.abortMultipartUpload(paramsMem,
-                      err => next(err)),
-                    next => s3.abortMultipartUpload(paramsAWS,
-                      err => next(err)),
-                ], done);
+                async.waterfall(
+                    [
+                        next => s3.abortMultipartUpload(paramsAzure, err => next(err)),
+                        next => s3.abortMultipartUpload(paramsMem, err => next(err)),
+                        next => s3.abortMultipartUpload(paramsAWS, err => next(err)),
+                    ],
+                    done
+                );
             });
-            it('should copy small part from Azure to MPU with Azure location',
-            function ifF(done) {
+            it('should copy small part from Azure to MPU with Azure location', function ifF(done) {
                 const params = {
                     Bucket: azureContainerName,
-                    CopySource:
-                      `${azureContainerName}/${this.test.keyNameNormalAzure}`,
+                    CopySource: `${azureContainerName}/${this.test.keyNameNormalAzure}`,
                     Key: this.test.mpuKeyNameAzure,
                     PartNumber: 1,
                     UploadId: this.test.uploadId,
                 };
-                async.waterfall([
-                    next => s3.uploadPartCopy(params, (err, res) => {
-                        assert.equal(err, null, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${normalMD5}"`);
-                        next(err);
-                    }),
-                    next => {
-                        const infos = {
-                            azureContainerName,
-                            mpuKeyNameAzure: this.test.mpuKeyNameAzure,
-                            uploadId: this.test.uploadId,
-                            md5: normalMD5,
-                            subPartSize: [normalBodySize],
-                        };
-                        assertCopyPart(infos, next);
-                    },
-                ], done);
+                async.waterfall(
+                    [
+                        next =>
+                            s3.uploadPartCopy(params, (err, res) => {
+                                assert.equal(err, null, 'uploadPartCopy: Expected ' + `success, got error: ${err}`);
+                                assert.strictEqual(res.ETag, `"${normalMD5}"`);
+                                next(err);
+                            }),
+                        next => {
+                            const infos = {
+                                azureContainerName,
+                                mpuKeyNameAzure: this.test.mpuKeyNameAzure,
+                                uploadId: this.test.uploadId,
+                                md5: normalMD5,
+                                subPartSize: [normalBodySize],
+                            };
+                            assertCopyPart(infos, next);
+                        },
+                    ],
+                    done
+                );
             });
 
-            it('should copy small part from Azure location with ' +
-            'bucketMatch=false to MPU with Azure location',
-            function ifF(done) {
+            it(
+                'should copy small part from Azure location with ' + 'bucketMatch=false to MPU with Azure location',
+                function ifF(done) {
+                    const params = {
+                        Bucket: azureContainerName,
+                        CopySource: `${azureContainerName}/` + `${this.test.keyNameNormalAzureMismatch}`,
+                        Key: this.test.mpuKeyNameAzure,
+                        PartNumber: 1,
+                        UploadId: this.test.uploadId,
+                    };
+                    async.waterfall(
+                        [
+                            next =>
+                                s3.uploadPartCopy(params, (err, res) => {
+                                    assert.equal(err, null, 'uploadPartCopy: Expected ' + `success, got error: ${err}`);
+                                    assert.strictEqual(res.ETag, `"${normalMD5}"`);
+                                    next(err);
+                                }),
+                            next => {
+                                const infos = {
+                                    azureContainerName,
+                                    mpuKeyNameAzure: this.test.mpuKeyNameAzure,
+                                    uploadId: this.test.uploadId,
+                                    md5: normalMD5,
+                                    subPartSize: [normalBodySize],
+                                };
+                                assertCopyPart(infos, next);
+                            },
+                        ],
+                        done
+                    );
+                }
+            );
+
+            it('should copy 5 Mb part from Azure to MPU with Azure location', function ifF(done) {
                 const params = {
                     Bucket: azureContainerName,
-                    CopySource:
-                      `${azureContainerName}/` +
-                      `${this.test.keyNameNormalAzureMismatch}`,
+                    CopySource: `${azureContainerName}/${this.test.keyNameFiveMbAzure}`,
                     Key: this.test.mpuKeyNameAzure,
                     PartNumber: 1,
                     UploadId: this.test.uploadId,
                 };
-                async.waterfall([
-                    next => s3.uploadPartCopy(params, (err, res) => {
-                        assert.equal(err, null, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${normalMD5}"`);
-                        next(err);
-                    }),
-                    next => {
-                        const infos = {
-                            azureContainerName,
-                            mpuKeyNameAzure: this.test.mpuKeyNameAzure,
-                            uploadId: this.test.uploadId,
-                            md5: normalMD5,
-                            subPartSize: [normalBodySize],
-                        };
-                        assertCopyPart(infos, next);
-                    },
-                ], done);
+                async.waterfall(
+                    [
+                        next =>
+                            s3.uploadPartCopy(params, (err, res) => {
+                                assert.equal(err, null, 'uploadPartCopy: Expected ' + `success, got error: ${err}`);
+                                assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
+                                next(err);
+                            }),
+                        next => {
+                            const infos = {
+                                azureContainerName,
+                                mpuKeyNameAzure: this.test.mpuKeyNameAzure,
+                                uploadId: this.test.uploadId,
+                                md5: fiveMbMD5,
+                                subPartSize: [fiveMB],
+                            };
+                            assertCopyPart(infos, next);
+                        },
+                    ],
+                    done
+                );
             });
 
-            it('should copy 5 Mb part from Azure to MPU with Azure location',
-            function ifF(done) {
-                const params = {
-                    Bucket: azureContainerName,
-                    CopySource:
-                      `${azureContainerName}/${this.test.keyNameFiveMbAzure}`,
-                    Key: this.test.mpuKeyNameAzure,
-                    PartNumber: 1,
-                    UploadId: this.test.uploadId,
-                };
-                async.waterfall([
-                    next => s3.uploadPartCopy(params, (err, res) => {
-                        assert.equal(err, null, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
-                        next(err);
-                    }),
-                    next => {
-                        const infos = {
-                            azureContainerName,
-                            mpuKeyNameAzure: this.test.mpuKeyNameAzure,
-                            uploadId: this.test.uploadId,
-                            md5: fiveMbMD5,
-                            subPartSize: [fiveMB],
-                        };
-                        assertCopyPart(infos, next);
-                    },
-                ], done);
-            });
-
-            it('should copy part from Azure to MPU with memory location',
-            function ifF(done) {
+            it('should copy part from Azure to MPU with memory location', function ifF(done) {
                 const params = {
                     Bucket: memBucketName,
-                    CopySource:
-                      `${azureContainerName}/${this.test.keyNameNormalAzure}`,
+                    CopySource: `${azureContainerName}/${this.test.keyNameNormalAzure}`,
                     Key: this.test.mpuKeyNameMem,
                     PartNumber: 1,
                     UploadId: this.test.uploadIdMem,
                 };
-                async.waterfall([
-                    next => s3.uploadPartCopy(params, (err, res) => {
-                        assert.equal(err, null, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${normalMD5}"`);
-                        next(err);
-                    }),
-                    next => {
-                        s3.listParts({
-                            Bucket: memBucketName,
-                            Key: this.test.mpuKeyNameMem,
-                            UploadId: this.test.uploadIdMem,
-                        }, (err, res) => {
-                            assert.equal(err, null,
-                            'listParts: Expected success,' +
-                            ` got error: ${err}`);
-                            const resultCopy =
-                            JSON.parse(JSON.stringify(result));
-                            resultCopy.Bucket = memBucketName;
-                            resultCopy.Key = this.test.mpuKeyNameMem;
-                            resultCopy.UploadId = this.test.uploadIdMem;
-                            resultCopy.Parts =
-                             [{ PartNumber: 1,
-                                 LastModified: res.Parts[0].LastModified,
-                                 ETag: `"${normalMD5}"`,
-                                 Size: normalBodySize }];
-                            assert.deepStrictEqual(res, resultCopy);
-                            next();
-                        });
-                    },
-                ], done);
+                async.waterfall(
+                    [
+                        next =>
+                            s3.uploadPartCopy(params, (err, res) => {
+                                assert.equal(err, null, 'uploadPartCopy: Expected ' + `success, got error: ${err}`);
+                                assert.strictEqual(res.ETag, `"${normalMD5}"`);
+                                next(err);
+                            }),
+                        next => {
+                            s3.listParts(
+                                {
+                                    Bucket: memBucketName,
+                                    Key: this.test.mpuKeyNameMem,
+                                    UploadId: this.test.uploadIdMem,
+                                },
+                                (err, res) => {
+                                    assert.equal(err, null, 'listParts: Expected success,' + ` got error: ${err}`);
+                                    const resultCopy = JSON.parse(JSON.stringify(result));
+                                    resultCopy.Bucket = memBucketName;
+                                    resultCopy.Key = this.test.mpuKeyNameMem;
+                                    resultCopy.UploadId = this.test.uploadIdMem;
+                                    resultCopy.Parts = [
+                                        {
+                                            PartNumber: 1,
+                                            LastModified: res.Parts[0].LastModified,
+                                            ETag: `"${normalMD5}"`,
+                                            Size: normalBodySize,
+                                        },
+                                    ];
+                                    assert.deepStrictEqual(res, resultCopy);
+                                    next();
+                                }
+                            );
+                        },
+                    ],
+                    done
+                );
             });
 
-            it('should copy part from Azure to MPU with AWS location',
-            function ifF(done) {
+            it('should copy part from Azure to MPU with AWS location', function ifF(done) {
                 const params = {
                     Bucket: memBucketName,
-                    CopySource:
-                      `${azureContainerName}/${this.test.keyNameNormalAzure}`,
+                    CopySource: `${azureContainerName}/${this.test.keyNameNormalAzure}`,
                     Key: this.test.mpuKeyNameAWS,
                     PartNumber: 1,
                     UploadId: this.test.uploadIdAWS,
                 };
-                async.waterfall([
-                    next => s3.uploadPartCopy(params, (err, res) => {
-                        assert.equal(err, null, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${normalMD5}"`);
-                        next(err);
-                    }),
-                    next => {
-                        const awsBucket =
-                          config.locationConstraints[awsLocation]
-                          .details.bucketName;
-                        awsS3.listParts({
-                            Bucket: awsBucket,
-                            Key: this.test.mpuKeyNameAWS,
-                            UploadId: this.test.uploadIdAWS,
-                        }, (err, res) => {
-                            assert.equal(err, null,
-                            'listParts: Expected success,' +
-                            ` got error: ${err}`);
-                            assert.strictEqual(res.Bucket, awsBucket);
-                            assert.strictEqual(res.Key,
-                              this.test.mpuKeyNameAWS);
-                            assert.strictEqual(res.UploadId,
-                              this.test.uploadIdAWS);
-                            assert.strictEqual(res.Parts.length, 1);
-                            assert.strictEqual(res.Parts[0].PartNumber, 1);
-                            assert.strictEqual(res.Parts[0].ETag,
-                              `"${normalMD5}"`);
-                            assert.strictEqual(res.Parts[0].Size,
-                              normalBodySize);
-                            next();
-                        });
-                    },
-                ], done);
+                async.waterfall(
+                    [
+                        next =>
+                            s3.uploadPartCopy(params, (err, res) => {
+                                assert.equal(err, null, 'uploadPartCopy: Expected ' + `success, got error: ${err}`);
+                                assert.strictEqual(res.ETag, `"${normalMD5}"`);
+                                next(err);
+                            }),
+                        next => {
+                            const awsBucket = config.locationConstraints[awsLocation].details.bucketName;
+                            awsS3.listParts(
+                                {
+                                    Bucket: awsBucket,
+                                    Key: this.test.mpuKeyNameAWS,
+                                    UploadId: this.test.uploadIdAWS,
+                                },
+                                (err, res) => {
+                                    assert.equal(err, null, 'listParts: Expected success,' + ` got error: ${err}`);
+                                    assert.strictEqual(res.Bucket, awsBucket);
+                                    assert.strictEqual(res.Key, this.test.mpuKeyNameAWS);
+                                    assert.strictEqual(res.UploadId, this.test.uploadIdAWS);
+                                    assert.strictEqual(res.Parts.length, 1);
+                                    assert.strictEqual(res.Parts[0].PartNumber, 1);
+                                    assert.strictEqual(res.Parts[0].ETag, `"${normalMD5}"`);
+                                    assert.strictEqual(res.Parts[0].Size, normalBodySize);
+                                    next();
+                                }
+                            );
+                        },
+                    ],
+                    done
+                );
             });
 
-            it('should copy part from Azure object with range to MPU ' +
-            'with AWS location', function ifF(done) {
+            it('should copy part from Azure object with range to MPU ' + 'with AWS location', function ifF(done) {
                 const params = {
                     Bucket: memBucketName,
-                    CopySource:
-                      `${azureContainerName}/${this.test.keyNameNormalAzure}`,
+                    CopySource: `${azureContainerName}/${this.test.keyNameNormalAzure}`,
                     Key: this.test.mpuKeyNameAWS,
                     CopySourceRange: 'bytes=0-5',
                     PartNumber: 1,
                     UploadId: this.test.uploadIdAWS,
                 };
-                async.waterfall([
-                    next => s3.uploadPartCopy(params, (err, res) => {
-                        assert.equal(err, null, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${sixBytesMD5}"`);
-                        next(err);
-                    }),
-                    next => {
-                        const awsBucket =
-                          config.locationConstraints[awsLocation]
-                          .details.bucketName;
-                        awsS3.listParts({
-                            Bucket: awsBucket,
-                            Key: this.test.mpuKeyNameAWS,
-                            UploadId: this.test.uploadIdAWS,
-                        }, (err, res) => {
-                            assert.equal(err, null,
-                            'listParts: Expected success,' +
-                            ` got error: ${err}`);
-                            assert.strictEqual(res.Bucket, awsBucket);
-                            assert.strictEqual(res.Key,
-                              this.test.mpuKeyNameAWS);
-                            assert.strictEqual(res.UploadId,
-                              this.test.uploadIdAWS);
-                            assert.strictEqual(res.Parts.length, 1);
-                            assert.strictEqual(res.Parts[0].PartNumber, 1);
-                            assert.strictEqual(res.Parts[0].ETag,
-                              `"${sixBytesMD5}"`);
-                            assert.strictEqual(res.Parts[0].Size, 6);
-                            next();
-                        });
-                    },
-                ], done);
+                async.waterfall(
+                    [
+                        next =>
+                            s3.uploadPartCopy(params, (err, res) => {
+                                assert.equal(err, null, 'uploadPartCopy: Expected ' + `success, got error: ${err}`);
+                                assert.strictEqual(res.ETag, `"${sixBytesMD5}"`);
+                                next(err);
+                            }),
+                        next => {
+                            const awsBucket = config.locationConstraints[awsLocation].details.bucketName;
+                            awsS3.listParts(
+                                {
+                                    Bucket: awsBucket,
+                                    Key: this.test.mpuKeyNameAWS,
+                                    UploadId: this.test.uploadIdAWS,
+                                },
+                                (err, res) => {
+                                    assert.equal(err, null, 'listParts: Expected success,' + ` got error: ${err}`);
+                                    assert.strictEqual(res.Bucket, awsBucket);
+                                    assert.strictEqual(res.Key, this.test.mpuKeyNameAWS);
+                                    assert.strictEqual(res.UploadId, this.test.uploadIdAWS);
+                                    assert.strictEqual(res.Parts.length, 1);
+                                    assert.strictEqual(res.Parts[0].PartNumber, 1);
+                                    assert.strictEqual(res.Parts[0].ETag, `"${sixBytesMD5}"`);
+                                    assert.strictEqual(res.Parts[0].Size, 6);
+                                    next();
+                                }
+                            );
+                        },
+                    ],
+                    done
+                );
             });
 
-            it('should copy 5 Mb part from a memory location to MPU with ' +
-            'Azure location',
-            function ifF(done) {
+            it('should copy 5 Mb part from a memory location to MPU with ' + 'Azure location', function ifF(done) {
                 const params = {
                     Bucket: azureContainerName,
-                    CopySource:
-                      `${azureContainerName}/${this.test.keyNameFiveMbMem}`,
+                    CopySource: `${azureContainerName}/${this.test.keyNameFiveMbMem}`,
                     Key: this.test.mpuKeyNameAzure,
                     PartNumber: 1,
                     UploadId: this.test.uploadId,
                 };
-                async.waterfall([
-                    next => s3.uploadPartCopy(params, (err, res) => {
-                        assert.equal(err, null, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
-                        next(err);
-                    }),
-                    next => {
-                        const infos = {
-                            azureContainerName,
-                            mpuKeyNameAzure: this.test.mpuKeyNameAzure,
-                            uploadId: this.test.uploadId,
-                            md5: fiveMbMD5,
-                            subPartSize: [fiveMB],
-                        };
-                        assertCopyPart(infos, next);
-                    },
-                ], done);
+                async.waterfall(
+                    [
+                        next =>
+                            s3.uploadPartCopy(params, (err, res) => {
+                                assert.equal(err, null, 'uploadPartCopy: Expected ' + `success, got error: ${err}`);
+                                assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
+                                next(err);
+                            }),
+                        next => {
+                            const infos = {
+                                azureContainerName,
+                                mpuKeyNameAzure: this.test.mpuKeyNameAzure,
+                                uploadId: this.test.uploadId,
+                                md5: fiveMbMD5,
+                                subPartSize: [fiveMB],
+                            };
+                            assertCopyPart(infos, next);
+                        },
+                    ],
+                    done
+                );
             });
 
             describe('with existing part', () => {
@@ -518,74 +555,87 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE', function describeF() {
                     };
                     s3.uploadPart(params, done);
                 });
-                it('should copy part from Azure to Azure with existing ' +
-                'parts', function ifF(done) {
+                it('should copy part from Azure to Azure with existing ' + 'parts', function ifF(done) {
                     const resultCopy = JSON.parse(JSON.stringify(result));
                     const params = {
                         Bucket: azureContainerName,
-                        CopySource:
-                        `${azureContainerName}/${this.test.keyNameNormalAzure}`,
+                        CopySource: `${azureContainerName}/${this.test.keyNameNormalAzure}`,
                         Key: this.test.mpuKeyNameAzure,
                         PartNumber: 2,
                         UploadId: this.test.uploadId,
                     };
-                    async.waterfall([
-                        next => s3.uploadPartCopy(params, (err, res) => {
-                            assert.equal(err, null,
-                              'uploadPartCopy: Expected success, got ' +
-                              `error: ${err}`);
-                            assert.strictEqual(res.ETag, `"${normalMD5}"`);
-                            next(err);
-                        }),
-                        next => s3.listParts({
-                            Bucket: azureContainerName,
-                            Key: this.test.mpuKeyNameAzure,
-                            UploadId: this.test.uploadId,
-                        }, (err, res) => {
-                            assert.equal(err, null, 'listParts: Expected ' +
-                            `success, got error: ${err}`);
-                            resultCopy.Bucket = azureContainerName;
-                            resultCopy.Key = this.test.mpuKeyNameAzure;
-                            resultCopy.UploadId = this.test.uploadId;
-                            resultCopy.Parts =
-                             [{ PartNumber: 1,
-                                 LastModified: res.Parts[0].LastModified,
-                                 ETag: `"${oneKbMD5}"`,
-                                 Size: oneKb },
-                               { PartNumber: 2,
-                                   LastModified: res.Parts[1].LastModified,
-                                   ETag: `"${normalMD5}"`,
-                                   Size: 11 },
-                             ];
-                            assert.deepStrictEqual(res, resultCopy);
-                            next();
-                        }),
-                        next => azureClient.getContainerClient(azureContainerName)
-                            .getBlockBlobClient(this.test.mpuKeyNameAzure)
-                            .getBlockList('all').then(res => {
-                                const partName = azureMpuUtils.getBlockId(
-                                    this.test.uploadId, 1, 0);
-                                const partName2 = azureMpuUtils.getBlockId(
-                                    this.test.uploadId, 2, 0);
-                                assert.strictEqual(res.uncommittedBlocks[0].name, partName);
-                                assert.equal(res.uncommittedBlocks[0].size, oneKb);
-                                assert.strictEqual(res.uncommittedBlocks[1].name, partName2);
-                                assert.equal(res.uncommittedBlocks[1].size, 11);
-                                next();
-                            }, err => {
-                                assert.equal(err, null, 'listBlocks: Expected ' +
-                                    `success, got error: ${err}`);
-                                next();
-                            }),
-                    ], done);
+                    async.waterfall(
+                        [
+                            next =>
+                                s3.uploadPartCopy(params, (err, res) => {
+                                    assert.equal(err, null, 'uploadPartCopy: Expected success, got ' + `error: ${err}`);
+                                    assert.strictEqual(res.ETag, `"${normalMD5}"`);
+                                    next(err);
+                                }),
+                            next =>
+                                s3.listParts(
+                                    {
+                                        Bucket: azureContainerName,
+                                        Key: this.test.mpuKeyNameAzure,
+                                        UploadId: this.test.uploadId,
+                                    },
+                                    (err, res) => {
+                                        assert.equal(err, null, 'listParts: Expected ' + `success, got error: ${err}`);
+                                        resultCopy.Bucket = azureContainerName;
+                                        resultCopy.Key = this.test.mpuKeyNameAzure;
+                                        resultCopy.UploadId = this.test.uploadId;
+                                        resultCopy.Parts = [
+                                            {
+                                                PartNumber: 1,
+                                                LastModified: res.Parts[0].LastModified,
+                                                ETag: `"${oneKbMD5}"`,
+                                                Size: oneKb,
+                                            },
+                                            {
+                                                PartNumber: 2,
+                                                LastModified: res.Parts[1].LastModified,
+                                                ETag: `"${normalMD5}"`,
+                                                Size: 11,
+                                            },
+                                        ];
+                                        assert.deepStrictEqual(res, resultCopy);
+                                        next();
+                                    }
+                                ),
+                            next =>
+                                azureClient
+                                    .getContainerClient(azureContainerName)
+                                    .getBlockBlobClient(this.test.mpuKeyNameAzure)
+                                    .getBlockList('all')
+                                    .then(
+                                        res => {
+                                            const partName = azureMpuUtils.getBlockId(this.test.uploadId, 1, 0);
+                                            const partName2 = azureMpuUtils.getBlockId(this.test.uploadId, 2, 0);
+                                            assert.strictEqual(res.uncommittedBlocks[0].name, partName);
+                                            assert.equal(res.uncommittedBlocks[0].size, oneKb);
+                                            assert.strictEqual(res.uncommittedBlocks[1].name, partName2);
+                                            assert.equal(res.uncommittedBlocks[1].size, 11);
+                                            next();
+                                        },
+                                        err => {
+                                            assert.equal(
+                                                err,
+                                                null,
+                                                'listBlocks: Expected ' + `success, got error: ${err}`
+                                            );
+                                            next();
+                                        }
+                                    ),
+                        ],
+                        done
+                    );
                 });
             });
         });
     });
 });
 
-describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE with large object',
-function describeF() {
+describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE with large object', function describeF() {
     this.timeout(800000);
     withV4(sigCfg => {
         beforeEach(() => {
@@ -595,44 +645,53 @@ function describeF() {
 
         afterEach(() => {
             process.stdout.write('Emptying bucket\n');
-            return bucketUtil.empty(azureContainerName)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(azureContainerName);
-            })
-            .catch(err => {
-                process.stdout.write(`Error in afterEach: ${err}\n`);
-                throw err;
-            });
+            return bucketUtil
+                .empty(azureContainerName)
+                .then(() => {
+                    process.stdout.write('Deleting bucket\n');
+                    return bucketUtil.deleteOne(azureContainerName);
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in afterEach: ${err}\n`);
+                    throw err;
+                });
         });
         describe('Basic test with large object: ', () => {
             beforeEach(function beF(done) {
-                this.currentTest.keyNameOneHundredAndFiveMbAzure =
-                `onehundredandfivembazure${uniqName(keyObjectAzure)}`;
-                this.currentTest.mpuKeyNameAzure =
-                `mpukeyname${uniqName(keyObjectAzure)}`;
+                this.currentTest.keyNameOneHundredAndFiveMbAzure = `onehundredandfivembazure${uniqName(keyObjectAzure)}`;
+                this.currentTest.mpuKeyNameAzure = `mpukeyname${uniqName(keyObjectAzure)}`;
 
                 const params = {
                     Bucket: azureContainerName,
                     Key: this.currentTest.mpuKeyNameAzure,
                     Metadata: { 'scal-location-constraint': azureLocation },
                 };
-                async.waterfall([
-                    next => s3.createBucket({ Bucket: azureContainerName },
-                      err => next(err)),
-                    next => s3.putObject({
-                        Bucket: azureContainerName,
-                        Key: this.currentTest.keyNameOneHundredAndFiveMbAzure,
-                        Body: oneHundredAndFiveMbBody,
-                        Metadata: { 'scal-location-constraint': azureLocation },
-                    }, err => next(err)),
-                    next => s3.createMultipartUpload(params, (err, res) => {
-                        assert.equal(err, null, 'createMultipartUpload: ' +
-                        `Expected success, got error: ${err}`);
-                        this.currentTest.uploadId = res.UploadId;
-                        next();
-                    }),
-                ], done);
+                async.waterfall(
+                    [
+                        next => s3.createBucket({ Bucket: azureContainerName }, err => next(err)),
+                        next =>
+                            s3.putObject(
+                                {
+                                    Bucket: azureContainerName,
+                                    Key: this.currentTest.keyNameOneHundredAndFiveMbAzure,
+                                    Body: oneHundredAndFiveMbBody,
+                                    Metadata: { 'scal-location-constraint': azureLocation },
+                                },
+                                err => next(err)
+                            ),
+                        next =>
+                            s3.createMultipartUpload(params, (err, res) => {
+                                assert.equal(
+                                    err,
+                                    null,
+                                    'createMultipartUpload: ' + `Expected success, got error: ${err}`
+                                );
+                                this.currentTest.uploadId = res.UploadId;
+                                next();
+                            }),
+                    ],
+                    done
+                );
             });
             afterEach(function afterEachF(done) {
                 const params = {
@@ -643,44 +702,41 @@ function describeF() {
                 s3.abortMultipartUpload(params, done);
             });
 
-            it('should copy 105 MB part from Azure to MPU with Azure ' +
-            'location', function ifF(done) {
+            it('should copy 105 MB part from Azure to MPU with Azure ' + 'location', function ifF(done) {
                 const params = {
                     Bucket: azureContainerName,
-                    CopySource:
-                      `${azureContainerName}/` +
-                      `${this.test.keyNameOneHundredAndFiveMbAzure}`,
+                    CopySource: `${azureContainerName}/` + `${this.test.keyNameOneHundredAndFiveMbAzure}`,
                     Key: this.test.mpuKeyNameAzure,
                     PartNumber: 1,
                     UploadId: this.test.uploadId,
                 };
-                async.waterfall([
-                    next => s3.uploadPartCopy(params, (err, res) => {
-                        assert.equal(err, null, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag,
-                        `"${oneHundredAndFiveMbMD5}"`);
-                        next(err);
-                    }),
-                    next => {
-                        const infos = {
-                            azureContainerName,
-                            mpuKeyNameAzure:
-                            this.test.mpuKeyNameAzure,
-                            uploadId: this.test.uploadId,
-                            md5: oneHundredAndFiveMbMD5,
-                            subPartSize: [100 * 1024 * 1024, 5 * 1024 * 1024],
-                        };
-                        assertCopyPart(infos, next);
-                    },
-                ], done);
+                async.waterfall(
+                    [
+                        next =>
+                            s3.uploadPartCopy(params, (err, res) => {
+                                assert.equal(err, null, 'uploadPartCopy: Expected ' + `success, got error: ${err}`);
+                                assert.strictEqual(res.ETag, `"${oneHundredAndFiveMbMD5}"`);
+                                next(err);
+                            }),
+                        next => {
+                            const infos = {
+                                azureContainerName,
+                                mpuKeyNameAzure: this.test.mpuKeyNameAzure,
+                                uploadId: this.test.uploadId,
+                                md5: oneHundredAndFiveMbMD5,
+                                subPartSize: [100 * 1024 * 1024, 5 * 1024 * 1024],
+                            };
+                            assertCopyPart(infos, next);
+                        },
+                    ],
+                    done
+                );
             });
         });
     });
 });
 
-describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE with complete MPU',
-function describeF() {
+describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE with complete MPU', function describeF() {
     this.timeout(800000);
     withV4(sigCfg => {
         beforeEach(() => {
@@ -690,120 +746,125 @@ function describeF() {
 
         afterEach(() => {
             process.stdout.write('Emptying bucket azureContainerName\n');
-            return bucketUtil.empty(azureContainerName)
-            .then(() => {
-                process.stdout.write('Deleting bucket azureContainerName\n');
-                return bucketUtil.deleteOne(azureContainerName);
-            })
-            .then(() => {
-                process.stdout.write('Emptying bucket awsBucketName\n');
-                return bucketUtil.empty(awsBucketName);
-            })
-            .then(() => {
-                process.stdout.write('Deleting bucket awsBucketName\n');
-                return bucketUtil.deleteOne(awsBucketName);
-            })
-            .catch(err => {
-                process.stdout.write(`Error in afterEach: ${err}\n`);
-                throw err;
-            });
+            return bucketUtil
+                .empty(azureContainerName)
+                .then(() => {
+                    process.stdout.write('Deleting bucket azureContainerName\n');
+                    return bucketUtil.deleteOne(azureContainerName);
+                })
+                .then(() => {
+                    process.stdout.write('Emptying bucket awsBucketName\n');
+                    return bucketUtil.empty(awsBucketName);
+                })
+                .then(() => {
+                    process.stdout.write('Deleting bucket awsBucketName\n');
+                    return bucketUtil.deleteOne(awsBucketName);
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in afterEach: ${err}\n`);
+                    throw err;
+                });
         });
-        describe('Basic test with complete MPU from AWS to Azure location: ',
-        () => {
+        describe('Basic test with complete MPU from AWS to Azure location: ', () => {
             beforeEach(function beF(done) {
-                this.currentTest.keyNameAws =
-                `onehundredandfivembazure${uniqName(keyObjectAWS)}`;
-                this.currentTest.mpuKeyNameAzure =
-                `mpukeyname${uniqName(keyObjectAzure)}`;
+                this.currentTest.keyNameAws = `onehundredandfivembazure${uniqName(keyObjectAWS)}`;
+                this.currentTest.mpuKeyNameAzure = `mpukeyname${uniqName(keyObjectAzure)}`;
 
                 const createMpuParams = {
                     Bucket: azureContainerName,
                     Key: this.currentTest.mpuKeyNameAzure,
                     Metadata: { 'scal-location-constraint': azureLocation },
                 };
-                async.waterfall([
-                    next => s3.createBucket({ Bucket: awsBucketName },
-                      err => next(err)),
-                    next => s3.createBucket({ Bucket: azureContainerName },
-                      err => next(err)),
-                    next => s3.putObject({
-                        Bucket: awsBucketName,
-                        Key: this.currentTest.keyNameAws,
-                        Body: fiveMbBody,
-                        Metadata: { 'scal-location-constraint': awsLocation },
-                    }, err => next(err)),
-                    next => s3.createMultipartUpload(createMpuParams,
-                    (err, res) => {
-                        assert.equal(err, null, 'createMultipartUpload: ' +
-                        `Expected success, got error: ${err}`);
-                        this.currentTest.uploadId = res.UploadId;
-                        next();
-                    }),
-                ], done);
+                async.waterfall(
+                    [
+                        next => s3.createBucket({ Bucket: awsBucketName }, err => next(err)),
+                        next => s3.createBucket({ Bucket: azureContainerName }, err => next(err)),
+                        next =>
+                            s3.putObject(
+                                {
+                                    Bucket: awsBucketName,
+                                    Key: this.currentTest.keyNameAws,
+                                    Body: fiveMbBody,
+                                    Metadata: { 'scal-location-constraint': awsLocation },
+                                },
+                                err => next(err)
+                            ),
+                        next =>
+                            s3.createMultipartUpload(createMpuParams, (err, res) => {
+                                assert.equal(
+                                    err,
+                                    null,
+                                    'createMultipartUpload: ' + `Expected success, got error: ${err}`
+                                );
+                                this.currentTest.uploadId = res.UploadId;
+                                next();
+                            }),
+                    ],
+                    done
+                );
             });
 
-            it('should copy two 5 MB part from Azure to MPU with Azure ' +
-            'location', function ifF(done) {
+            it('should copy two 5 MB part from Azure to MPU with Azure ' + 'location', function ifF(done) {
                 const uploadParams = {
                     Bucket: azureContainerName,
-                    CopySource:
-                      `${awsBucketName}/` +
-                      `${this.test.keyNameAws}`,
+                    CopySource: `${awsBucketName}/` + `${this.test.keyNameAws}`,
                     Key: this.test.mpuKeyNameAzure,
                     PartNumber: 1,
                     UploadId: this.test.uploadId,
                 };
                 const uploadParams2 = {
                     Bucket: azureContainerName,
-                    CopySource:
-                      `${awsBucketName}/` +
-                      `${this.test.keyNameAws}`,
+                    CopySource: `${awsBucketName}/` + `${this.test.keyNameAws}`,
                     Key: this.test.mpuKeyNameAzure,
                     PartNumber: 2,
                     UploadId: this.test.uploadId,
                 };
-                async.waterfall([
-                    next => s3.uploadPartCopy(uploadParams, (err, res) => {
-                        assert.equal(err, null, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
-                        next(err);
-                    }),
-                    next => s3.uploadPartCopy(uploadParams2, (err, res) => {
-                        assert.equal(err, null, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
-                        next(err);
-                    }),
-                    next => {
-                        const completeMpuParams = {
-                            Bucket: azureContainerName,
-                            Key: this.test.mpuKeyNameAzure,
-                            MultipartUpload: {
-                                Parts: [
-                                    {
-                                        ETag: `"${fiveMbMD5}"`,
-                                        PartNumber: 1,
-                                    },
-                                    {
-                                        ETag: `"${fiveMbMD5}"`,
-                                        PartNumber: 2,
-                                    },
-                                ],
-                            },
-                            UploadId: this.test.uploadId,
-                        };
-                        s3.completeMultipartUpload(completeMpuParams,
-                        (err, res) => {
-                            assert.equal(err, null, 'completeMultipartUpload:' +
-                            ` Expected success, got error: ${err}`);
-                            assert.strictEqual(res.Bucket, azureContainerName);
-                            assert.strictEqual(res.Key,
-                              this.test.mpuKeyNameAzure);
-                            next();
-                        });
-                    },
-                ], done);
+                async.waterfall(
+                    [
+                        next =>
+                            s3.uploadPartCopy(uploadParams, (err, res) => {
+                                assert.equal(err, null, 'uploadPartCopy: Expected ' + `success, got error: ${err}`);
+                                assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
+                                next(err);
+                            }),
+                        next =>
+                            s3.uploadPartCopy(uploadParams2, (err, res) => {
+                                assert.equal(err, null, 'uploadPartCopy: Expected ' + `success, got error: ${err}`);
+                                assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
+                                next(err);
+                            }),
+                        next => {
+                            const completeMpuParams = {
+                                Bucket: azureContainerName,
+                                Key: this.test.mpuKeyNameAzure,
+                                MultipartUpload: {
+                                    Parts: [
+                                        {
+                                            ETag: `"${fiveMbMD5}"`,
+                                            PartNumber: 1,
+                                        },
+                                        {
+                                            ETag: `"${fiveMbMD5}"`,
+                                            PartNumber: 2,
+                                        },
+                                    ],
+                                },
+                                UploadId: this.test.uploadId,
+                            };
+                            s3.completeMultipartUpload(completeMpuParams, (err, res) => {
+                                assert.equal(
+                                    err,
+                                    null,
+                                    'completeMultipartUpload:' + ` Expected success, got error: ${err}`
+                                );
+                                assert.strictEqual(res.Bucket, azureContainerName);
+                                assert.strictEqual(res.Key, this.test.mpuKeyNameAzure);
+                                next();
+                            });
+                        },
+                    ],
+                    done
+                );
             });
         });
     });

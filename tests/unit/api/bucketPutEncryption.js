@@ -9,7 +9,6 @@ const bucketPutEncryption = require('../../../lib/api/bucketPutEncryption');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const { templateSSEConfig, templateRequest, getSSEConfig } = require('../utils/bucketEncryption');
 
-
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
@@ -44,26 +43,36 @@ describe('bucketPutEncryption API', () => {
         });
 
         it('should reject a config with no Rule', done => {
-            bucketPutEncryption(authInfo, templateRequest(bucketName,
-            { post: `<?xml version="1.0" encoding="UTF-8"?>
+            bucketPutEncryption(
+                authInfo,
+                templateRequest(bucketName, {
+                    post: `<?xml version="1.0" encoding="UTF-8"?>
                 <ServerSideEncryptionConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
                 </ServerSideEncryptionConfiguration>`,
-            }), log, err => {
-                assert.strictEqual(err.is.MalformedXML, true);
-                done();
-            });
+                }),
+                log,
+                err => {
+                    assert.strictEqual(err.is.MalformedXML, true);
+                    done();
+                }
+            );
         });
 
         it('should reject a config with no ApplyServerSideEncryptionByDefault section', done => {
-            bucketPutEncryption(authInfo, templateRequest(bucketName,
-            { post: `<?xml version="1.0" encoding="UTF-8"?>
+            bucketPutEncryption(
+                authInfo,
+                templateRequest(bucketName, {
+                    post: `<?xml version="1.0" encoding="UTF-8"?>
                 <ServerSideEncryptionConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
                 <Rule></Rule>
                 </ServerSideEncryptionConfiguration>`,
-            }), log, err => {
-                assert.strictEqual(err.is.MalformedXML, true);
-                done();
-            });
+                }),
+                log,
+                err => {
+                    assert.strictEqual(err.is.MalformedXML, true);
+                    done();
+                }
+            );
         });
 
         it('should reject a config with no SSEAlgorithm', done => {
@@ -170,8 +179,9 @@ describe('bucketPutEncryption API', () => {
             });
         });
 
-        it('should update SSEAlgorithm if existing SSEAlgorithm is AES256, ' +
-            'new SSEAlgorithm is aws:kms and no KMSMasterKeyID is provided',
+        it(
+            'should update SSEAlgorithm if existing SSEAlgorithm is AES256, ' +
+                'new SSEAlgorithm is aws:kms and no KMSMasterKeyID is provided',
             done => {
                 const post = templateSSEConfig({ algorithm: 'AES256' });
                 bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
@@ -180,7 +190,10 @@ describe('bucketPutEncryption API', () => {
                         assert.ifError(err);
                         const { masterKeyId } = sseInfo;
                         const newConf = templateSSEConfig({ algorithm: 'aws:kms' });
-                        return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log,
+                        return bucketPutEncryption(
+                            authInfo,
+                            templateRequest(bucketName, { post: newConf }),
+                            log,
                             err => {
                                 assert.ifError(err);
                                 return getSSEConfig(bucketName, log, (err, updatedSSEInfo) => {
@@ -196,7 +209,8 @@ describe('bucketPutEncryption API', () => {
                         );
                     });
                 });
-            });
+            }
+        );
 
         it('should update SSEAlgorithm to aws:kms and set KMSMasterKeyID', done => {
             const post = templateSSEConfig({ algorithm: 'AES256' });
@@ -379,15 +393,13 @@ describe('bucketPutEncryption API with account level encryption', () => {
                 assert.ifError(err);
                 assert.deepStrictEqual(sseInfo, expectedSseInfo);
                 const newConf = templateSSEConfig({ algorithm: 'AES256' });
-                return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log,
-                    err => {
-                        assert.ifError(err);
-                        return getSSEConfig(bucketName, log, (err, updatedSSEInfo) => {
-                            assert.deepStrictEqual(updatedSSEInfo, expectedSseInfo);
-                            done();
-                        });
-                    }
-                );
+                return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log, err => {
+                    assert.ifError(err);
+                    return getSSEConfig(bucketName, log, (err, updatedSSEInfo) => {
+                        assert.deepStrictEqual(updatedSSEInfo, expectedSseInfo);
+                        done();
+                    });
+                });
             });
         });
     });
@@ -407,22 +419,20 @@ describe('bucketPutEncryption API with account level encryption', () => {
                 });
                 const keyId = '12345';
                 const newConf = templateSSEConfig({ algorithm: 'aws:kms', keyId });
-                return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log,
-                    err => {
-                        assert.ifError(err);
-                        return getSSEConfig(bucketName, log, (err, updatedSSEInfo) => {
-                            assert.deepStrictEqual(updatedSSEInfo, {
-                                cryptoScheme: 1,
-                                algorithm: 'aws:kms',
-                                mandatory: true,
-                                masterKeyId: `${arnPrefix}${accountLevelMasterKeyId}`,
-                                configuredMasterKeyId: `${arnPrefix}${keyId}`,
-                                isAccountEncryptionEnabled: true,
-                            });
-                            done();
+                return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log, err => {
+                    assert.ifError(err);
+                    return getSSEConfig(bucketName, log, (err, updatedSSEInfo) => {
+                        assert.deepStrictEqual(updatedSSEInfo, {
+                            cryptoScheme: 1,
+                            algorithm: 'aws:kms',
+                            mandatory: true,
+                            masterKeyId: `${arnPrefix}${accountLevelMasterKeyId}`,
+                            configuredMasterKeyId: `${arnPrefix}${keyId}`,
+                            isAccountEncryptionEnabled: true,
                         });
-                    }
-                );
+                        done();
+                    });
+                });
             });
         });
     });
@@ -441,21 +451,19 @@ describe('bucketPutEncryption API with account level encryption', () => {
                     isAccountEncryptionEnabled: true,
                 });
                 const newConf = templateSSEConfig({ algorithm: 'AES256' });
-                return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log,
-                    err => {
-                        assert.ifError(err);
-                        return getSSEConfig(bucketName, log, (err, updatedSSEInfo) => {
-                            assert.deepStrictEqual(updatedSSEInfo, {
-                                cryptoScheme: 1,
-                                algorithm: 'AES256',
-                                mandatory: true,
-                                masterKeyId: `${arnPrefix}${accountLevelMasterKeyId}`,
-                                isAccountEncryptionEnabled: true,
-                            });
-                            done();
+                return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log, err => {
+                    assert.ifError(err);
+                    return getSSEConfig(bucketName, log, (err, updatedSSEInfo) => {
+                        assert.deepStrictEqual(updatedSSEInfo, {
+                            cryptoScheme: 1,
+                            algorithm: 'AES256',
+                            mandatory: true,
+                            masterKeyId: `${arnPrefix}${accountLevelMasterKeyId}`,
+                            isAccountEncryptionEnabled: true,
                         });
-                    }
-                );
+                        done();
+                    });
+                });
             });
         });
     });
@@ -474,21 +482,19 @@ describe('bucketPutEncryption API with account level encryption', () => {
                     configuredMasterKeyId: `${arnPrefix}${keyId}`,
                 });
                 const newConf = templateSSEConfig({ algorithm: 'AES256' });
-                return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log,
-                    err => {
-                        assert.ifError(err);
-                        return getSSEConfig(bucketName, log, (err, updatedSSEInfo) => {
-                            assert.deepStrictEqual(updatedSSEInfo, {
-                                cryptoScheme: 1,
-                                algorithm: 'AES256',
-                                mandatory: true,
-                                masterKeyId: `${arnPrefix}${accountLevelMasterKeyId}`,
-                                isAccountEncryptionEnabled: true,
-                            });
-                            done();
+                return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log, err => {
+                    assert.ifError(err);
+                    return getSSEConfig(bucketName, log, (err, updatedSSEInfo) => {
+                        assert.deepStrictEqual(updatedSSEInfo, {
+                            cryptoScheme: 1,
+                            algorithm: 'AES256',
+                            mandatory: true,
+                            masterKeyId: `${arnPrefix}${accountLevelMasterKeyId}`,
+                            isAccountEncryptionEnabled: true,
                         });
-                    }
-                );
+                        done();
+                    });
+                });
             });
         });
     });
@@ -497,8 +503,9 @@ describe('bucketPutEncryption API with account level encryption', () => {
 describe('bucketPutEncryption API with failed vault service', () => {
     beforeEach(done => {
         sinon.stub(inMemory, 'supportsDefaultKeyPerAccount').value(true);
-        sinon.stub(vault, 'getOrCreateEncryptionKeyId').callsFake((accountCanonicalId, log, cb) =>
-            cb(errors.ServiceFailure));
+        sinon
+            .stub(vault, 'getOrCreateEncryptionKeyId')
+            .callsFake((accountCanonicalId, log, cb) => cb(errors.ServiceFailure));
         bucketPut(authInfo, bucketPutRequest, log, done);
     });
 

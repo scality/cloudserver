@@ -4,8 +4,7 @@ const querystring = require('querystring');
 const { parseString } = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
-const initiateMultipartUpload
-    = require('../../../lib/api/initiateMultipartUpload');
+const initiateMultipartUpload = require('../../../lib/api/initiateMultipartUpload');
 const listMultipartUploads = require('../../../lib/api/listMultipartUploads');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 
@@ -59,40 +58,39 @@ describe('listMultipartUploads API', () => {
         actionImplicitDenies: false,
     };
 
-    it('should return the name of the common prefix ' +
-       'of common prefix object keys for multipart uploads if delimiter ' +
-       'and prefix specified', done => {
-        const commonPrefix = `${prefix}${delimiter}`;
-        const testListRequest = {
-            bucketName,
-            namespace,
-            headers: { host: '/' },
-            url: `/${bucketName}?uploads&delimiter=/&prefix=sub`,
-            query: { delimiter, prefix },
-            actionImplicitDenies: false,
-        };
+    it(
+        'should return the name of the common prefix ' +
+            'of common prefix object keys for multipart uploads if delimiter ' +
+            'and prefix specified',
+        done => {
+            const commonPrefix = `${prefix}${delimiter}`;
+            const testListRequest = {
+                bucketName,
+                namespace,
+                headers: { host: '/' },
+                url: `/${bucketName}?uploads&delimiter=/&prefix=sub`,
+                query: { delimiter, prefix },
+                actionImplicitDenies: false,
+            };
 
-        async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
-            (corsHeaders, next) => initiateMultipartUpload(authInfo,
-                testInitiateMPURequest1, log, next),
-            (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
-                testInitiateMPURequest2, log, next),
-            (result, corsHeaders, next) => listMultipartUploads(authInfo,
-                testListRequest, log, next),
-            (result, corsHeaders, next) =>
-                parseString(result, corsHeaders, next),
-        ],
-        (err, result) => {
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .CommonPrefixes[0].Prefix[0],
-                commonPrefix);
-            done();
-        });
-    });
+            async.waterfall(
+                [
+                    next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                    (corsHeaders, next) => initiateMultipartUpload(authInfo, testInitiateMPURequest1, log, next),
+                    (result, corsHeaders, next) =>
+                        initiateMultipartUpload(authInfo, testInitiateMPURequest2, log, next),
+                    (result, corsHeaders, next) => listMultipartUploads(authInfo, testListRequest, log, next),
+                    (result, corsHeaders, next) => parseString(result, corsHeaders, next),
+                ],
+                (err, result) => {
+                    assert.strictEqual(result.ListMultipartUploadsResult.CommonPrefixes[0].Prefix[0], commonPrefix);
+                    done();
+                }
+            );
+        }
+    );
 
-    it('should return list of all multipart uploads if ' +
-       'no delimiter specified', done => {
+    it('should return list of all multipart uploads if ' + 'no delimiter specified', done => {
         const testListRequest = {
             bucketName,
             namespace,
@@ -102,31 +100,24 @@ describe('listMultipartUploads API', () => {
             actionImplicitDenies: false,
         };
 
-
-        async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
-            (corsHeaders, next) => initiateMultipartUpload(authInfo,
-                testInitiateMPURequest1, log, next),
-            (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
-                testInitiateMPURequest2, log, next),
-            (result, corsHeaders, next) =>
-                listMultipartUploads(authInfo, testListRequest, log, next),
-            (result, corsHeaders, next) =>
-                parseString(result, corsHeaders, next),
-        ],
-        (err, result) => {
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[0].Key[0], objectName1);
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[1].Key[0], objectName2);
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .IsTruncated[0], 'false');
-            done();
-        });
+        async.waterfall(
+            [
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                (corsHeaders, next) => initiateMultipartUpload(authInfo, testInitiateMPURequest1, log, next),
+                (result, corsHeaders, next) => initiateMultipartUpload(authInfo, testInitiateMPURequest2, log, next),
+                (result, corsHeaders, next) => listMultipartUploads(authInfo, testListRequest, log, next),
+                (result, corsHeaders, next) => parseString(result, corsHeaders, next),
+            ],
+            (err, result) => {
+                assert.strictEqual(result.ListMultipartUploadsResult.Upload[0].Key[0], objectName1);
+                assert.strictEqual(result.ListMultipartUploadsResult.Upload[1].Key[0], objectName2);
+                assert.strictEqual(result.ListMultipartUploadsResult.IsTruncated[0], 'false');
+                done();
+            }
+        );
     });
 
-    it('should return no more keys than ' +
-       'max-uploads specified', done => {
+    it('should return no more keys than ' + 'max-uploads specified', done => {
         const testListRequest = {
             bucketName,
             namespace,
@@ -136,34 +127,26 @@ describe('listMultipartUploads API', () => {
             actionImplicitDenies: false,
         };
 
-        async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
-            (corsHeaders, next) => initiateMultipartUpload(authInfo,
-                testInitiateMPURequest1, log, next),
-            (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
-                testInitiateMPURequest2, log, next),
-            (result, corsHeaders, next) => listMultipartUploads(authInfo,
-                testListRequest, log, next),
-            (result, corsHeaders, next) =>
-                parseString(result, corsHeaders, next),
-        ],
-        (err, result) => {
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[0].Key[0], objectName1);
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[1], undefined);
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .IsTruncated[0], 'true');
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .NextKeyMarker[0], objectName1);
-            assert(result.ListMultipartUploadsResult
-                .NextUploadIdMarker[0].length > 5);
-            done();
-        });
+        async.waterfall(
+            [
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                (corsHeaders, next) => initiateMultipartUpload(authInfo, testInitiateMPURequest1, log, next),
+                (result, corsHeaders, next) => initiateMultipartUpload(authInfo, testInitiateMPURequest2, log, next),
+                (result, corsHeaders, next) => listMultipartUploads(authInfo, testListRequest, log, next),
+                (result, corsHeaders, next) => parseString(result, corsHeaders, next),
+            ],
+            (err, result) => {
+                assert.strictEqual(result.ListMultipartUploadsResult.Upload[0].Key[0], objectName1);
+                assert.strictEqual(result.ListMultipartUploadsResult.Upload[1], undefined);
+                assert.strictEqual(result.ListMultipartUploadsResult.IsTruncated[0], 'true');
+                assert.strictEqual(result.ListMultipartUploadsResult.NextKeyMarker[0], objectName1);
+                assert(result.ListMultipartUploadsResult.NextUploadIdMarker[0].length > 5);
+                done();
+            }
+        );
     });
 
-    it('should url encode object key name ' +
-       'if requested', done => {
+    it('should url encode object key name ' + 'if requested', done => {
         const testListRequest = {
             bucketName,
             namespace,
@@ -173,30 +156,24 @@ describe('listMultipartUploads API', () => {
             actionImplicitDenies: false,
         };
 
-        async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
-            (corsHeaders, next) => initiateMultipartUpload(authInfo,
-                testInitiateMPURequest1, log, next),
-            (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
-                testInitiateMPURequest2, log, next),
-            (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
-                testInitiateMPURequest3, log, next),
-            (result, corsHeaders, next) => listMultipartUploads(authInfo,
-                testListRequest, log, next),
-            (result, corsHeaders, next) =>
-                parseString(result, corsHeaders, next),
-        ],
-        (err, result) => {
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[0].Key[0], querystring.escape(objectName3));
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[1].Key[0], querystring.escape(objectName1));
-            done();
-        });
+        async.waterfall(
+            [
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                (corsHeaders, next) => initiateMultipartUpload(authInfo, testInitiateMPURequest1, log, next),
+                (result, corsHeaders, next) => initiateMultipartUpload(authInfo, testInitiateMPURequest2, log, next),
+                (result, corsHeaders, next) => initiateMultipartUpload(authInfo, testInitiateMPURequest3, log, next),
+                (result, corsHeaders, next) => listMultipartUploads(authInfo, testListRequest, log, next),
+                (result, corsHeaders, next) => parseString(result, corsHeaders, next),
+            ],
+            (err, result) => {
+                assert.strictEqual(result.ListMultipartUploadsResult.Upload[0].Key[0], querystring.escape(objectName3));
+                assert.strictEqual(result.ListMultipartUploadsResult.Upload[1].Key[0], querystring.escape(objectName1));
+                done();
+            }
+        );
     });
 
-    it('should return key following specified ' +
-    'key-marker', done => {
+    it('should return key following specified ' + 'key-marker', done => {
         const testListRequest = {
             bucketName,
             namespace,
@@ -206,25 +183,20 @@ describe('listMultipartUploads API', () => {
             actionImplicitDenies: false,
         };
 
-        async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
-            (corsHeaders, next) => initiateMultipartUpload(authInfo,
-                testInitiateMPURequest1, log, next),
-            (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
-                testInitiateMPURequest2, log, next),
-            (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
-                testInitiateMPURequest3, log, next),
-            (result, corsHeaders, next) => listMultipartUploads(authInfo,
-                testListRequest, log, next),
-            (result, corsHeaders, next) =>
-                parseString(result, corsHeaders, next),
-        ],
-        (err, result) => {
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[0].Key[0], objectName2);
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[1], undefined);
-            done();
-        });
+        async.waterfall(
+            [
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                (corsHeaders, next) => initiateMultipartUpload(authInfo, testInitiateMPURequest1, log, next),
+                (result, corsHeaders, next) => initiateMultipartUpload(authInfo, testInitiateMPURequest2, log, next),
+                (result, corsHeaders, next) => initiateMultipartUpload(authInfo, testInitiateMPURequest3, log, next),
+                (result, corsHeaders, next) => listMultipartUploads(authInfo, testListRequest, log, next),
+                (result, corsHeaders, next) => parseString(result, corsHeaders, next),
+            ],
+            (err, result) => {
+                assert.strictEqual(result.ListMultipartUploadsResult.Upload[0].Key[0], objectName2);
+                assert.strictEqual(result.ListMultipartUploadsResult.Upload[1], undefined);
+                done();
+            }
+        );
     });
 });

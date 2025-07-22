@@ -36,55 +36,61 @@ let testPutObjectRequest;
 describe('objectHead API', () => {
     beforeEach(() => {
         cleanup();
-        testPutObjectRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: { 'x-amz-meta-test': userMetadataValue },
-            url: `/${bucketName}/${objectName}`,
-            calculatedHash: correctMD5,
-        }, postBody);
+        testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { 'x-amz-meta-test': userMetadataValue },
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: correctMD5,
+            },
+            postBody
+        );
     });
 
-    it('should return NotModified if request header ' +
-       'includes "if-modified-since" and object ' +
-       'not modified since specified time', done => {
-        const testGetRequest = {
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: { 'if-modified-since': laterDate },
-            url: `/${bucketName}/${objectName}`,
-            actionImplicitDenies: false,
-        };
+    it(
+        'should return NotModified if request header ' +
+            'includes "if-modified-since" and object ' +
+            'not modified since specified time',
+        done => {
+            const testGetRequest = {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { 'if-modified-since': laterDate },
+                url: `/${bucketName}/${objectName}`,
+                actionImplicitDenies: false,
+            };
 
-        bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, resHeaders) => {
+            bucketPut(authInfo, testPutBucketRequest, log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log, (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
                         assert.strictEqual(err.is.NotModified, true);
                         done();
                     });
                 });
-        });
-    });
+            });
+        }
+    );
 
-    it('should return PreconditionFailed if request header ' +
-       'includes "if-unmodified-since" and object has ' +
-       'been modified since specified time', done => {
-        const testGetRequest = {
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: { 'if-unmodified-since': earlierDate },
-            url: `/${bucketName}/${objectName}`,
-            actionImplicitDenies: false,
-        };
+    it(
+        'should return PreconditionFailed if request header ' +
+            'includes "if-unmodified-since" and object has ' +
+            'been modified since specified time',
+        done => {
+            const testGetRequest = {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { 'if-unmodified-since': earlierDate },
+                url: `/${bucketName}/${objectName}`,
+                actionImplicitDenies: false,
+            };
 
-        bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, resHeaders) => {
+            bucketPut(authInfo, testPutBucketRequest, log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log, (err, resHeaders) => {
                     assert.ifError(err);
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
@@ -92,106 +98,118 @@ describe('objectHead API', () => {
                         done();
                     });
                 });
-        });
-    });
+            });
+        }
+    );
 
-    it('should return PreconditionFailed if request header ' +
-       'includes "if-match" and ETag of object ' +
-       'does not match specified ETag', done => {
-        const testGetRequest = {
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: { 'if-match': incorrectMD5 },
-            url: `/${bucketName}/${objectName}`,
-            actionImplicitDenies: false,
-        };
+    it(
+        'should return PreconditionFailed if request header ' +
+            'includes "if-match" and ETag of object ' +
+            'does not match specified ETag',
+        done => {
+            const testGetRequest = {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { 'if-match': incorrectMD5 },
+                url: `/${bucketName}/${objectName}`,
+                actionImplicitDenies: false,
+            };
 
-        bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, resHeaders) => {
+            bucketPut(authInfo, testPutBucketRequest, log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log, (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
                         assert.strictEqual(err.is.PreconditionFailed, true);
                         done();
                     });
                 });
-        });
-    });
+            });
+        }
+    );
 
-    it('should return NotModified if request header ' +
-       'includes "if-none-match" and ETag of object does ' +
-       'match specified ETag', done => {
-        const testGetRequest = {
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: { 'if-none-match': correctMD5 },
-            url: `/${bucketName}/${objectName}`,
-            actionImplicitDenies: false,
-        };
+    it(
+        'should return NotModified if request header ' +
+            'includes "if-none-match" and ETag of object does ' +
+            'match specified ETag',
+        done => {
+            const testGetRequest = {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { 'if-none-match': correctMD5 },
+                url: `/${bucketName}/${objectName}`,
+                actionImplicitDenies: false,
+            };
 
-        bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, resHeaders) => {
+            bucketPut(authInfo, testPutBucketRequest, log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log, (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
                         assert.strictEqual(err.is.NotModified, true);
                         done();
                     });
                 });
-        });
-    });
+            });
+        }
+    );
 
-    it('should return Accept-Ranges header if request includes "Range" ' +
-       'header with specified range bytes of an object', done => {
-        const testGetRequest = {
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: { range: 'bytes=1-9' },
-            url: `/${bucketName}/${objectName}`,
-            actionImplicitDenies: false,
-        };
+    it(
+        'should return Accept-Ranges header if request includes "Range" ' +
+            'header with specified range bytes of an object',
+        done => {
+            const testGetRequest = {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { range: 'bytes=1-9' },
+                url: `/${bucketName}/${objectName}`,
+                actionImplicitDenies: false,
+            };
 
-        bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-                assert.strictEqual(err, null, `Error copying: ${err}`);
-                objectHead(authInfo, testGetRequest, log, (err, res) => {
-                    assert.strictEqual(res['accept-ranges'], 'bytes');
-                    done();
+            bucketPut(authInfo, testPutBucketRequest, log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                    assert.strictEqual(err, null, `Error copying: ${err}`);
+                    objectHead(authInfo, testGetRequest, log, (err, res) => {
+                        assert.strictEqual(res['accept-ranges'], 'bytes');
+                        done();
+                    });
                 });
             });
-        });
-    });
+        }
+    );
 
-    it('should return InvalidRequest error when both the Range header and ' +
-       'the partNumber query parameter specified', done => {
-        const testGetRequest = {
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: { range: 'bytes=1-9' },
-            url: `/${bucketName}/${objectName}`,
-            query: {
-                partNumber: '1',
-            },
-            actionImplicitDenies: false,
-        };
+    it(
+        'should return InvalidRequest error when both the Range header and ' +
+            'the partNumber query parameter specified',
+        done => {
+            const testGetRequest = {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { range: 'bytes=1-9' },
+                url: `/${bucketName}/${objectName}`,
+                query: {
+                    partNumber: '1',
+                },
+                actionImplicitDenies: false,
+            };
 
-        bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-                assert.strictEqual(err, null, `Error objectPut: ${err}`);
-                objectHead(authInfo, testGetRequest, log, err => {
-                    assert.strictEqual(err.is.InvalidRequest, true);
-                    assert.strictEqual(err.description,
-                        'Cannot specify both Range header and ' +
-                        'partNumber query parameter.');
-                    done();
+            bucketPut(authInfo, testPutBucketRequest, log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                    assert.strictEqual(err, null, `Error objectPut: ${err}`);
+                    objectHead(authInfo, testGetRequest, log, err => {
+                        assert.strictEqual(err.is.InvalidRequest, true);
+                        assert.strictEqual(
+                            err.description,
+                            'Cannot specify both Range header and ' + 'partNumber query parameter.'
+                        );
+                        done();
+                    });
                 });
             });
-        });
-    });
+        }
+    );
 
     it('should return InvalidArgument error if partNumber is nan', done => {
         const testGetRequest = {
@@ -218,27 +236,30 @@ describe('objectHead API', () => {
         });
     });
 
-    it('should not return Accept-Ranges header if request does not include ' +
-       '"Range" header with specified range bytes of an object', done => {
-        const testGetRequest = {
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {},
-            url: `/${bucketName}/${objectName}`,
-            actionImplicitDenies: false,
-        };
+    it(
+        'should not return Accept-Ranges header if request does not include ' +
+            '"Range" header with specified range bytes of an object',
+        done => {
+            const testGetRequest = {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {},
+                url: `/${bucketName}/${objectName}`,
+                actionImplicitDenies: false,
+            };
 
-        bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-                assert.strictEqual(err, null, `Error objectPut: ${err}`);
-                objectHead(authInfo, testGetRequest, log, (err, res) => {
-                    assert.strictEqual(res['accept-ranges'], undefined);
-                    done();
+            bucketPut(authInfo, testPutBucketRequest, log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                    assert.strictEqual(err, null, `Error objectPut: ${err}`);
+                    objectHead(authInfo, testGetRequest, log, (err, res) => {
+                        assert.strictEqual(res['accept-ranges'], undefined);
+                        done();
+                    });
                 });
             });
-        });
-    });
+        }
+    );
 
     it('should get the object metadata', done => {
         const testGetRequest = {
@@ -251,17 +272,14 @@ describe('objectHead API', () => {
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
-                    objectHead(authInfo, testGetRequest, log, (err, res) => {
-                        assert.strictEqual(res[userMetadataKey],
-                            userMetadataValue);
-                        assert
-                        .strictEqual(res.ETag, `"${correctMD5}"`);
-                        done();
-                    });
+            objectPut(authInfo, testPutObjectRequest, undefined, log, (err, resHeaders) => {
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                objectHead(authInfo, testGetRequest, log, (err, res) => {
+                    assert.strictEqual(res[userMetadataKey], userMetadataValue);
+                    assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                    done();
                 });
+            });
         });
     });
 
@@ -273,18 +291,21 @@ describe('objectHead API', () => {
             url: `/${bucketName}`,
             actionImplicitDenies: false,
         };
-        const testPutObjectRequestLock = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {
-                'x-amz-object-lock-retain-until-date': '2050-10-10',
-                'x-amz-object-lock-mode': 'GOVERNANCE',
-                'x-amz-object-lock-legal-hold': 'ON',
+        const testPutObjectRequestLock = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'x-amz-object-lock-retain-until-date': '2050-10-10',
+                    'x-amz-object-lock-mode': 'GOVERNANCE',
+                    'x-amz-object-lock-legal-hold': 'ON',
+                },
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: correctMD5,
             },
-            url: `/${bucketName}/${objectName}`,
-            calculatedHash: correctMD5,
-        }, postBody);
+            postBody
+        );
         const testGetRequest = {
             bucketName,
             namespace,
@@ -295,31 +316,30 @@ describe('objectHead API', () => {
         };
 
         bucketPut(authInfo, testPutBucketRequestLock, log, () => {
-            objectPut(authInfo, testPutObjectRequestLock, undefined, log,
-                (err, resHeaders) => {
+            objectPut(authInfo, testPutObjectRequestLock, undefined, log, (err, resHeaders) => {
+                assert.ifError(err);
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                objectHead(authInfo, testGetRequest, log, (err, res) => {
                     assert.ifError(err);
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
-                    objectHead(authInfo, testGetRequest, log, (err, res) => {
-                        assert.ifError(err);
-                        const expectedDate = testPutObjectRequestLock
-                        .headers['x-amz-object-lock-retain-until-date'];
-                        const expectedMode = testPutObjectRequestLock
-                        .headers['x-amz-object-lock-mode'];
-                        assert.ifError(err);
-                        assert.strictEqual(
-                            res['x-amz-object-lock-retain-until-date'],
-                            expectedDate);
-                        assert.strictEqual(res['x-amz-object-lock-mode'],
-                            expectedMode);
-                        assert.strictEqual(res['x-amz-object-lock-legal-hold'],
-                            'ON');
-                        changeObjectLock([{
-                            bucket: bucketName,
-                            key: objectName,
-                            versionId: res['x-amz-version-id'],
-                        }], '', done);
-                    });
+                    const expectedDate = testPutObjectRequestLock.headers['x-amz-object-lock-retain-until-date'];
+                    const expectedMode = testPutObjectRequestLock.headers['x-amz-object-lock-mode'];
+                    assert.ifError(err);
+                    assert.strictEqual(res['x-amz-object-lock-retain-until-date'], expectedDate);
+                    assert.strictEqual(res['x-amz-object-lock-mode'], expectedMode);
+                    assert.strictEqual(res['x-amz-object-lock-legal-hold'], 'ON');
+                    changeObjectLock(
+                        [
+                            {
+                                bucket: bucketName,
+                                key: objectName,
+                                versionId: res['x-amz-version-id'],
+                            },
+                        ],
+                        '',
+                        done
+                    );
                 });
+            });
         });
     });
 
@@ -393,37 +413,40 @@ describe('objectHead API', () => {
         });
     });
 
-    it('should reflect the restore header with ongoing-request=false and expiry-date set ' +
-        'if the object is restored and not yet expired', done => {
-        const testGetRequest = {
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {},
-            url: `/${bucketName}/${objectName}`,
-        };
-        mdColdHelper.putBucketMock(bucketName, null, () => {
-            const objectCustomMDFields = mdColdHelper.getRestoredObjectMD();
-            mdColdHelper.putObjectMock(bucketName, objectName, objectCustomMDFields, () => {
-                objectHead(authInfo, testGetRequest, log, (err, res) => {
-                    const restoreInfo = objectCustomMDFields.getAmzRestore();
-                    assert.strictEqual(res[userMetadataKey], userMetadataValue);
-                    assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                    assert.strictEqual(res['x-amz-storage-class'], mdColdHelper.defaultLocation);
-                    const utcDate = new Date(restoreInfo.getExpiryDate()).toUTCString();
-                    assert.strictEqual(res['x-amz-restore'], `ongoing-request="false", expiry-date="${utcDate}"`);
-                    // Check we do not leak non-standard fields
-                    assert.strictEqual(res['x-amz-scal-transition-in-progress'], undefined);
-                    assert.strictEqual(res['x-amz-scal-archive-info'], undefined);
-                    assert.strictEqual(res['x-amz-scal-restore-requested-at'], undefined);
-                    assert.strictEqual(res['x-amz-scal-restore-completed-at'], undefined);
-                    assert.strictEqual(res['x-amz-scal-restore-will-expire-at'], undefined);
-                    assert.strictEqual(res['x-amz-scal-owner-id'], undefined);
-                    done();
+    it(
+        'should reflect the restore header with ongoing-request=false and expiry-date set ' +
+            'if the object is restored and not yet expired',
+        done => {
+            const testGetRequest = {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {},
+                url: `/${bucketName}/${objectName}`,
+            };
+            mdColdHelper.putBucketMock(bucketName, null, () => {
+                const objectCustomMDFields = mdColdHelper.getRestoredObjectMD();
+                mdColdHelper.putObjectMock(bucketName, objectName, objectCustomMDFields, () => {
+                    objectHead(authInfo, testGetRequest, log, (err, res) => {
+                        const restoreInfo = objectCustomMDFields.getAmzRestore();
+                        assert.strictEqual(res[userMetadataKey], userMetadataValue);
+                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                        assert.strictEqual(res['x-amz-storage-class'], mdColdHelper.defaultLocation);
+                        const utcDate = new Date(restoreInfo.getExpiryDate()).toUTCString();
+                        assert.strictEqual(res['x-amz-restore'], `ongoing-request="false", expiry-date="${utcDate}"`);
+                        // Check we do not leak non-standard fields
+                        assert.strictEqual(res['x-amz-scal-transition-in-progress'], undefined);
+                        assert.strictEqual(res['x-amz-scal-archive-info'], undefined);
+                        assert.strictEqual(res['x-amz-scal-restore-requested-at'], undefined);
+                        assert.strictEqual(res['x-amz-scal-restore-completed-at'], undefined);
+                        assert.strictEqual(res['x-amz-scal-restore-will-expire-at'], undefined);
+                        assert.strictEqual(res['x-amz-scal-owner-id'], undefined);
+                        done();
+                    });
                 });
             });
-        });
-    });
+        }
+    );
 
     it('should report when transition in progress', done => {
         const testGetRequest = {
@@ -465,8 +488,10 @@ describe('objectHead API', () => {
                 objectHead(authInfo, testGetRequest, log, (err, res) => {
                     assert.strictEqual(res['x-amz-meta-scal-s3-transition-in-progress'], true);
                     assert.strictEqual(res['x-amz-scal-transition-in-progress'], true);
-                    assert.strictEqual(res['x-amz-scal-transition-time'],
-                        new Date(objectCustomMDFields.getTransitionTime()).toUTCString());
+                    assert.strictEqual(
+                        res['x-amz-scal-transition-time'],
+                        new Date(objectCustomMDFields.getTransitionTime()).toUTCString()
+                    );
                     assert.strictEqual(res['x-amz-scal-archive-info'], undefined);
                     assert.strictEqual(res['x-amz-scal-owner-id'], mdColdHelper.defaultOwnerId);
                     done(err);
@@ -518,10 +543,11 @@ describe('objectHead API', () => {
                     assert.strictEqual(res['x-amz-meta-scal-s3-transition-in-progress'], undefined);
                     assert.strictEqual(res['x-amz-scal-transition-in-progress'], undefined);
                     assert.strictEqual(res['x-amz-scal-archive-info'], '{"foo":0,"bar":"stuff"}');
-                    assert.strictEqual(res['x-amz-scal-restore-requested-at'],
-                        new Date(archive.restoreRequestedAt).toUTCString());
-                    assert.strictEqual(res['x-amz-scal-restore-requested-days'],
-                        archive.restoreRequestedDays);
+                    assert.strictEqual(
+                        res['x-amz-scal-restore-requested-at'],
+                        new Date(archive.restoreRequestedAt).toUTCString()
+                    );
+                    assert.strictEqual(res['x-amz-scal-restore-requested-days'], archive.restoreRequestedDays);
                     assert.strictEqual(res['x-amz-storage-class'], mdColdHelper.defaultLocation);
                     assert.strictEqual(res['x-amz-scal-owner-id'], mdColdHelper.defaultOwnerId);
                     done(err);
@@ -548,14 +574,19 @@ describe('objectHead API', () => {
                     assert.strictEqual(res['x-amz-meta-scal-s3-transition-in-progress'], undefined);
                     assert.strictEqual(res['x-amz-scal-transition-in-progress'], undefined);
                     assert.strictEqual(res['x-amz-scal-archive-info'], '{"foo":0,"bar":"stuff"}');
-                    assert.strictEqual(res['x-amz-scal-restore-requested-at'],
-                        new Date(archive.restoreRequestedAt).toUTCString());
-                    assert.strictEqual(res['x-amz-scal-restore-requested-days'],
-                        archive.restoreRequestedDays);
-                    assert.strictEqual(res['x-amz-scal-restore-completed-at'],
-                        new Date(archive.restoreCompletedAt).toUTCString());
-                    assert.strictEqual(res['x-amz-scal-restore-will-expire-at'],
-                        new Date(archive.restoreWillExpireAt).toUTCString());
+                    assert.strictEqual(
+                        res['x-amz-scal-restore-requested-at'],
+                        new Date(archive.restoreRequestedAt).toUTCString()
+                    );
+                    assert.strictEqual(res['x-amz-scal-restore-requested-days'], archive.restoreRequestedDays);
+                    assert.strictEqual(
+                        res['x-amz-scal-restore-completed-at'],
+                        new Date(archive.restoreCompletedAt).toUTCString()
+                    );
+                    assert.strictEqual(
+                        res['x-amz-scal-restore-will-expire-at'],
+                        new Date(archive.restoreWillExpireAt).toUTCString()
+                    );
                     assert.strictEqual(res['x-amz-scal-restore-etag'], mdColdHelper.restoredEtag);
                     assert.strictEqual(res['x-amz-storage-class'], mdColdHelper.defaultLocation);
                     assert.strictEqual(res['x-amz-scal-owner-id'], mdColdHelper.defaultOwnerId);
@@ -570,30 +601,33 @@ describe('objectHead API', () => {
             name: 'should return content-length of 0 when requesting part 1 of empty object',
             partNumber: '1',
             expectedError: null,
-            expectedContentLength: 0
+            expectedContentLength: 0,
         },
         {
             name: 'should return InvalidRange error when requesting part > 1 of empty object',
             partNumber: '2',
             expectedError: 'InvalidRange',
-            expectedContentLength: undefined
-        }
+            expectedContentLength: undefined,
+        },
     ].forEach(testCase => {
         it(testCase.name, done => {
             const emptyBody = '';
             const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
-            const testPutEmptyObjectRequest = new DummyRequest({
-                bucketName,
-                namespace,
-                objectKey: objectName,
-                headers: {
-                    'content-length': '0',
-                    'x-amz-meta-test': userMetadataValue,
+            const testPutEmptyObjectRequest = new DummyRequest(
+                {
+                    bucketName,
+                    namespace,
+                    objectKey: objectName,
+                    headers: {
+                        'content-length': '0',
+                        'x-amz-meta-test': userMetadataValue,
+                    },
+                    parsedContentLength: 0,
+                    url: `/${bucketName}/${objectName}`,
+                    calculatedHash: emptyMD5,
                 },
-                parsedContentLength: 0,
-                url: `/${bucketName}/${objectName}`,
-                calculatedHash: emptyMD5,
-            }, emptyBody);
+                emptyBody
+            );
 
             const testGetRequest = {
                 bucketName,

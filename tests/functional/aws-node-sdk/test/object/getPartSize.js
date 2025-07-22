@@ -24,8 +24,7 @@ function checkError(err, statusCode, code) {
 }
 
 function checkNoError(err) {
-    assert.equal(err, null,
-        `Expected success, got error ${JSON.stringify(err)}`);
+    assert.equal(err, null, `Expected success, got error ${JSON.stringify(err)}`);
 }
 
 function generateContent(partNumber) {
@@ -38,101 +37,123 @@ describe('Part size tests with object head', () => {
         let s3;
 
         function headObject(fields, cb) {
-            s3.headObject({
-                Bucket: bucket,
-                Key: object,
-                ...fields,
-            }, cb);
+            s3.headObject(
+                {
+                    Bucket: bucket,
+                    Key: object,
+                    ...fields,
+                },
+                cb
+            );
         }
 
         before(function beforeF(done) {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
 
-            async.series([
-                next => s3.createBucket({ Bucket: bucket }, err => next(err)),
-                next => s3.createMultipartUpload({
-                    Bucket: bucket,
-                    Key: object
-                }, (err, data) => {
-                    checkNoError(err);
-                    this.currentTest.UploadId = data.UploadId;
-                    return next();
-                }),
-                next => async.mapSeries(partNumbers, (partNumber, callback) => {
-                    const uploadPartParams = {
-                        Bucket: bucket,
-                        Key: object,
-                        PartNumber: partNumber + 1,
-                        UploadId: this.currentTest.UploadId,
-                        Body: generateContent(partNumber + 1),
-                    };
-
-                    return s3.uploadPart(uploadPartParams,
-                        (err, data) => {
-                            if (err) {
-                                return callback(err);
+            async.series(
+                [
+                    next => s3.createBucket({ Bucket: bucket }, err => next(err)),
+                    next =>
+                        s3.createMultipartUpload(
+                            {
+                                Bucket: bucket,
+                                Key: object,
+                            },
+                            (err, data) => {
+                                checkNoError(err);
+                                this.currentTest.UploadId = data.UploadId;
+                                return next();
                             }
-                            return callback(null, data.ETag);
-                        });
-                }, (err, results) => {
+                        ),
+                    next =>
+                        async.mapSeries(
+                            partNumbers,
+                            (partNumber, callback) => {
+                                const uploadPartParams = {
+                                    Bucket: bucket,
+                                    Key: object,
+                                    PartNumber: partNumber + 1,
+                                    UploadId: this.currentTest.UploadId,
+                                    Body: generateContent(partNumber + 1),
+                                };
+
+                                return s3.uploadPart(uploadPartParams, (err, data) => {
+                                    if (err) {
+                                        return callback(err);
+                                    }
+                                    return callback(null, data.ETag);
+                                });
+                            },
+                            (err, results) => {
+                                checkNoError(err);
+                                ETags = results;
+                                return next();
+                            }
+                        ),
+                    next => {
+                        const params = {
+                            Bucket: bucket,
+                            Key: object,
+                            MultipartUpload: {
+                                Parts: partNumbers.map(partNumber => ({
+                                    ETag: ETags[partNumber],
+                                    PartNumber: partNumber + 1,
+                                })),
+                            },
+                            UploadId: this.currentTest.UploadId,
+                        };
+                        return s3.completeMultipartUpload(params, next);
+                    },
+                    next =>
+                        s3.putObject(
+                            {
+                                Bucket: bucket,
+                                Key: emptyObject,
+                                Body: '',
+                            },
+                            next
+                        ),
+                    next =>
+                        s3.putObject(
+                            {
+                                Bucket: bucket,
+                                Key: nonMpuObject,
+                                Body: generateContent(0),
+                            },
+                            next
+                        ),
+                ],
+                err => {
                     checkNoError(err);
-                    ETags = results;
-                    return next();
-                }),
-                next => {
-                    const params = {
-                        Bucket: bucket,
-                        Key: object,
-                        MultipartUpload: {
-                            Parts: partNumbers.map(partNumber => ({
-                                ETag: ETags[partNumber],
-                                PartNumber: partNumber + 1,
-                            })),
-                        },
-                        UploadId: this.currentTest.UploadId,
-                    };
-                    return s3.completeMultipartUpload(params, next);
-                },
-                next => s3.putObject({
-                    Bucket: bucket,
-                    Key: emptyObject,
-                    Body: '',
-                }, next),
-                next => s3.putObject({
-                    Bucket: bucket,
-                    Key: nonMpuObject,
-                    Body: generateContent(0),
-                }, next),
-            ], err => {
+                    done();
+                }
+            );
+        });
+
+        after(done => {
+            async.series(
+                [
+                    next => s3.deleteObject({ Bucket: bucket, Key: object }, next),
+                    next => s3.deleteObject({ Bucket: bucket, Key: emptyObject }, next),
+                    next => s3.deleteObject({ Bucket: bucket, Key: nonMpuObject }, next),
+                    next => s3.deleteBucket({ Bucket: bucket }, next),
+                ],
+                done
+            );
+        });
+
+        it('should return the total size of the object ' + 'when --part-number is not used', done => {
+            const totalSize = partNumbers.reduce((total, current) => total + (bodySize + current + 1), 0);
+            headObject({}, (err, data) => {
                 checkNoError(err);
+                assert.equal(totalSize, data.ContentLength);
                 done();
             });
         });
 
-        after(done => {
-            async.series([
-                next => s3.deleteObject({ Bucket: bucket, Key: object }, next),
-                next => s3.deleteObject({ Bucket: bucket, Key: emptyObject }, next),
-                next => s3.deleteObject({ Bucket: bucket, Key: nonMpuObject }, next),
-                next => s3.deleteBucket({ Bucket: bucket }, next),
-            ], done);
-        });
-
-        it('should return the total size of the object ' +
-            'when --part-number is not used', done => {
-                const totalSize = partNumbers.reduce((total, current) =>
-                    total + (bodySize + current + 1), 0);
-                headObject({}, (err, data) => {
-                    checkNoError(err);
-                    assert.equal(totalSize, data.ContentLength);
-                    done();
-                });
-            });
-
         partNumbers.forEach(part => {
-            it(`should return the size of part ${part + 1} ` +
-                `when --part-number is set to ${part + 1}`, done => {
+            it(`should return the size of part ${part + 1} ` + `when --part-number is set to ${part + 1}`, done => {
                 const partNumber = Number.parseInt(part, 10) + 1;
                 const partSize = bodySize + partNumber;
                 headObject({ PartNumber: partNumber }, (err, data) => {
@@ -144,8 +165,7 @@ describe('Part size tests with object head', () => {
         });
 
         invalidPartNumbers.forEach(part => {
-            it(`should return an error when --part-number is set to ${part}`,
-            done => {
+            it(`should return an error when --part-number is set to ${part}`, done => {
                 headObject({ PartNumber: part }, (err, data) => {
                     checkError(err, 400, 'BadRequest');
                     assert.strictEqual(data, null);
@@ -154,15 +174,13 @@ describe('Part size tests with object head', () => {
             });
         });
 
-        it('should return an error when incorrect --part-number is used',
-            done => {
-                headObject({ PartNumber: partNumbers.length + 1 },
-                (err, data) => {
-                    checkError(err, 416, 416);
-                    assert.strictEqual(data, null);
-                    done();
-                });
+        it('should return an error when incorrect --part-number is used', done => {
+            headObject({ PartNumber: partNumbers.length + 1 }, (err, data) => {
+                checkError(err, 416, 416);
+                assert.strictEqual(data, null);
+                done();
             });
+        });
 
         it('should return content-length 0 when requesting part 1 of empty object', done => {
             headObject({ Key: emptyObject, PartNumber: 1 }, (err, data) => {

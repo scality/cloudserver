@@ -110,8 +110,7 @@ describe('Healthcheck stats', () => {
     const totalReqs = 5;
     beforeEach(done => {
         redis.flushdb(() => {
-            async.timesSeries(totalReqs,
-                (n, next) => makeDummyS3Request(next), done);
+            async.timesSeries(totalReqs, (n, next) => makeDummyS3Request(next), done);
         });
     });
 
@@ -124,11 +123,9 @@ describe('Healthcheck stats', () => {
                 if (err) {
                     return done(err);
                 }
-                const expectedStatsRes = { 'requests': totalReqs, '500s': 0,
-                    'sampleDuration': 30 };
+                const expectedStatsRes = { requests: totalReqs, '500s': 0, sampleDuration: 30 };
                 assert.deepStrictEqual(JSON.parse(res), expectedStatsRes);
                 return done();
             });
-        }, 500)
-    );
+        }, 500));
 });

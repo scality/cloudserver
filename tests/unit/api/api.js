@@ -23,23 +23,32 @@ describe('api.callApiMethod', () => {
 
         response = {
             write: sandbox.stub(),
-            end: sandbox.stub()
+            end: sandbox.stub(),
         };
 
         log = {
             addDefaultFields: sandbox.stub(),
             trace: sandbox.stub(),
             error: sandbox.stub(),
-            debug: sandbox.stub()
+            debug: sandbox.stub(),
         };
 
         authServer = {
-            doAuth: sandbox.stub().callsArgWith(2, null, new AuthInfo({}), [{
-                isAllowed: true,
-                isImplicit: false,
-            }], null, {
-                accountQuota: 5000,
-            }),
+            doAuth: sandbox.stub().callsArgWith(
+                2,
+                null,
+                new AuthInfo({}),
+                [
+                    {
+                        isAllowed: true,
+                        isImplicit: false,
+                    },
+                ],
+                null,
+                {
+                    accountQuota: 5000,
+                }
+            ),
         };
 
         sandbox.stub(auth, 'server').value(authServer);
@@ -98,8 +107,7 @@ describe('api.callApiMethod', () => {
             assert.strictEqual(requestContexts[0]._needQuota, true);
             done();
         });
-        sandbox.stub(api, 'completeMultipartUpload').callsFake(
-            (userInfo, _request, streamingV4Params, log, cb) => cb);
+        sandbox.stub(api, 'completeMultipartUpload').callsFake((userInfo, _request, streamingV4Params, log, cb) => cb);
         api.callApiMethod('completeMultipartUpload', request, response, log);
     });
 
@@ -108,8 +116,7 @@ describe('api.callApiMethod', () => {
             assert.strictEqual(requestContexts[0]._needQuota, true);
             done();
         });
-        sandbox.stub(api, 'multipartDelete').callsFake(
-            (userInfo, _request, streamingV4Params, log, cb) => cb);
+        sandbox.stub(api, 'multipartDelete').callsFake((userInfo, _request, streamingV4Params, log, cb) => cb);
         api.callApiMethod('multipartDelete', request, response, log);
     });
 });

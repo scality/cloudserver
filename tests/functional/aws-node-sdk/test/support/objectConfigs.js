@@ -10,9 +10,8 @@ const canonicalObjectConfig = {
     invalidPartNumbers: [-1, 0, maximumAllowedPartCount + 1],
     signature: 'for canonical object',
     meta: {
-        computeTotalSize: (partNumbers, bodySize) => partNumbers.reduce((total, current) =>
-            total + bodySize + current + 1
-        , 0),
+        computeTotalSize: (partNumbers, bodySize) =>
+            partNumbers.reduce((total, current) => total + bodySize + current + 1, 0),
         objectIsEmpty: false,
     },
 };
@@ -32,9 +31,6 @@ const emptyObjectConfig = {
     },
 };
 
-const objectConfigs = [
-    canonicalObjectConfig,
-    emptyObjectConfig,
-];
+const objectConfigs = [canonicalObjectConfig, emptyObjectConfig];
 
 module.exports = objectConfigs;

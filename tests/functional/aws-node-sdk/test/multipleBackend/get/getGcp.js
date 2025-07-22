@@ -1,12 +1,7 @@
 const assert = require('assert');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const {
-    describeSkipIfNotMultipleOrCeph,
-    gcpLocation,
-    gcpLocationMismatch,
-    genUniqID,
-} = require('../utils');
+const { describeSkipIfNotMultipleOrCeph, gcpLocation, gcpLocationMismatch, genUniqID } = require('../utils');
 
 const bucket = `getgcp${genUniqID()}`;
 const gcpObject = `gcpobject-${genUniqID()}`;
@@ -29,89 +24,95 @@ describe('Multiple backend get object', function testSuite() {
             process.stdout.write('Creating bucket');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucket({ Bucket: bucket }).promise()
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
-            });
+            return s3
+                .createBucket({ Bucket: bucket })
+                .promise()
+                .catch(err => {
+                    process.stdout.write(`Error creating bucket: ${err}\n`);
+                    throw err;
+                });
         });
 
         after(() => {
             process.stdout.write('Emptying bucket\n');
-            return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write('Error emptying/deleting bucket: ' +
-                `${err}\n`);
-                throw err;
-            });
+            return bucketUtil
+                .empty(bucket)
+                .then(() => {
+                    process.stdout.write('Deleting bucket\n');
+                    return bucketUtil.deleteOne(bucket);
+                })
+                .catch(err => {
+                    process.stdout.write('Error emptying/deleting bucket: ' + `${err}\n`);
+                    throw err;
+                });
         });
 
         describeSkipIfNotMultipleOrCeph('with objects in GCP', () => {
             before(() => {
                 process.stdout.write('Putting object to GCP\n');
-                return s3.putObject({ Bucket: bucket, Key: gcpObject,
-                    Body: body,
-                    Metadata: { 'scal-location-constraint': gcpLocation },
-                }).promise()
-                .then(() => {
-                    process.stdout.write('Putting 0-byte object to GCP\n');
-                    return s3.putObject({ Bucket: bucket,
-                        Key: emptyGcpObject,
+                return s3
+                    .putObject({
+                        Bucket: bucket,
+                        Key: gcpObject,
+                        Body: body,
                         Metadata: { 'scal-location-constraint': gcpLocation },
-                    }).promise();
-                })
-                .then(() => {
-                    process.stdout.write('Putting large object to GCP\n');
-                    return s3.putObject({ Bucket: bucket,
-                        Key: bigObject, Body: bigBody,
-                        Metadata: { 'scal-location-constraint': gcpLocation },
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write(`Error putting objects: ${err}\n`);
-                    throw err;
-                });
+                    })
+                    .promise()
+                    .then(() => {
+                        process.stdout.write('Putting 0-byte object to GCP\n');
+                        return s3
+                            .putObject({
+                                Bucket: bucket,
+                                Key: emptyGcpObject,
+                                Metadata: { 'scal-location-constraint': gcpLocation },
+                            })
+                            .promise();
+                    })
+                    .then(() => {
+                        process.stdout.write('Putting large object to GCP\n');
+                        return s3
+                            .putObject({
+                                Bucket: bucket,
+                                Key: bigObject,
+                                Body: bigBody,
+                                Metadata: { 'scal-location-constraint': gcpLocation },
+                            })
+                            .promise();
+                    })
+                    .catch(err => {
+                        process.stdout.write(`Error putting objects: ${err}\n`);
+                        throw err;
+                    });
             });
 
             const getTests = [
                 {
                     msg: 'should get a 0-byte object from GCP',
-                    input: { Bucket: bucket, Key: emptyGcpObject,
-                        range: null, size: null },
+                    input: { Bucket: bucket, Key: emptyGcpObject, range: null, size: null },
                     output: { MD5: emptyMD5, contentRange: null },
                 },
                 {
                     msg: 'should get an object from GCP',
-                    input: { Bucket: bucket, Key: gcpObject,
-                        range: null, size: null },
+                    input: { Bucket: bucket, Key: gcpObject, range: null, size: null },
                     output: { MD5: correctMD5, contentRange: null },
                 },
                 {
                     msg: 'should get a large object from GCP',
-                    input: { Bucket: bucket, Key: bigObject,
-                        range: null, size: null },
+                    input: { Bucket: bucket, Key: bigObject, range: null, size: null },
                     output: { MD5: bigMD5, contentRange: null },
                 },
                 {
                     msg: 'should get an object using range query from GCP',
-                    input: { Bucket: bucket, Key: bigObject,
-                        range: 'bytes=0-9', size: 10 },
-                    output: { MD5: bigMD5,
-                        contentRange: `bytes 0-9/${bigBodyLen}` },
+                    input: { Bucket: bucket, Key: bigObject, range: 'bytes=0-9', size: 10 },
+                    output: { MD5: bigMD5, contentRange: `bytes 0-9/${bigBodyLen}` },
                 },
             ];
             getTests.forEach(test => {
                 const { Bucket, Key, range, size } = test.input;
                 const { MD5, contentRange } = test.output;
                 it(test.msg, done => {
-                    s3.getObject({ Bucket, Key, Range: range },
-                    (err, res) => {
-                        assert.equal(err, null,
-                            `Expected success but got error ${err}`);
+                    s3.getObject({ Bucket, Key, Range: range }, (err, res) => {
+                        assert.equal(err, null, `Expected success but got error ${err}`);
                         if (range) {
                             assert.strictEqual(res.ContentLength, size);
                             assert.strictEqual(res.ContentRange, contentRange);
@@ -125,17 +126,22 @@ describe('Multiple backend get object', function testSuite() {
 
         describeSkipIfNotMultipleOrCeph('with bucketMatch set to false', () => {
             beforeEach(done => {
-                s3.putObject({ Bucket: bucket, Key: mismatchObject, Body: body,
-                Metadata: { 'scal-location-constraint': gcpLocationMismatch } },
-                err => {
-                    assert.equal(err, null, `Err putting object: ${err}`);
-                    done();
-                });
+                s3.putObject(
+                    {
+                        Bucket: bucket,
+                        Key: mismatchObject,
+                        Body: body,
+                        Metadata: { 'scal-location-constraint': gcpLocationMismatch },
+                    },
+                    err => {
+                        assert.equal(err, null, `Err putting object: ${err}`);
+                        done();
+                    }
+                );
             });
 
             it('should get an object from GCP', done => {
-                s3.getObject({ Bucket: bucket, Key: mismatchObject },
-                (err, res) => {
+                s3.getObject({ Bucket: bucket, Key: mismatchObject }, (err, res) => {
                     assert.equal(err, null, `Error getting object: ${err}`);
                     assert.strictEqual(res.ETag, `"${correctMD5}"`);
                     done();

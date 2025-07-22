@@ -9,7 +9,6 @@ const { removeAllVersions } = require('../../lib/utility/versioning-util.js');
 const bucketName = `versioning-bucket-${Date.now()}`;
 const key = 'anObject';
 
-
 function checkError(err, code) {
     assert.notEqual(err, null, 'Expected failure but got success');
     assert.strictEqual(err.code, code);
@@ -26,16 +25,22 @@ describe('aws-node-sdk test delete bucket', () => {
 
         // setup test
         beforeEach(done => {
-            async.waterfall([
-                next => s3.createBucket({ Bucket: bucketName },
-                    err => next(err)),
-                next => s3.putBucketVersioning({
-                    Bucket: bucketName,
-                    VersioningConfiguration: {
-                        Status: 'Enabled',
-                    },
-                }, err => next(err)),
-            ], done);
+            async.waterfall(
+                [
+                    next => s3.createBucket({ Bucket: bucketName }, err => next(err)),
+                    next =>
+                        s3.putBucketVersioning(
+                            {
+                                Bucket: bucketName,
+                                VersioningConfiguration: {
+                                    Status: 'Enabled',
+                                },
+                            },
+                            err => next(err)
+                        ),
+                ],
+                done
+            );
         });
 
         // empty and delete bucket after testing if bucket exists
@@ -50,16 +55,14 @@ describe('aws-node-sdk test delete bucket', () => {
             });
         });
 
-        it('should be able to delete empty bucket with version enabled',
-        done => {
+        it('should be able to delete empty bucket with version enabled', done => {
             s3.deleteBucket({ Bucket: bucketName }, err => {
                 checkNoError(err);
                 return done();
             });
         });
 
-        it('should return error 409 BucketNotEmpty if trying to delete bucket' +
-        ' containing delete marker', done => {
+        it('should return error 409 BucketNotEmpty if trying to delete bucket' + ' containing delete marker', done => {
             s3.deleteObject({ Bucket: bucketName, Key: key }, err => {
                 if (err) {
                     return done(err);
@@ -71,22 +74,26 @@ describe('aws-node-sdk test delete bucket', () => {
             });
         });
 
-        it('should return error 409 BucketNotEmpty if trying to delete bucket' +
-        ' containing version and delete marker', done => {
-            async.waterfall([
-                next => s3.putObject({ Bucket: bucketName, Key: key },
-                  err => next(err)),
-                next => s3.deleteObject({ Bucket: bucketName, Key: key },
-                  err => next(err)),
-                next => s3.deleteBucket({ Bucket: bucketName }, err => {
-                    checkError(err, 'BucketNotEmpty');
-                    return next();
-                }),
-            ], done);
-        });
+        it(
+            'should return error 409 BucketNotEmpty if trying to delete bucket' +
+                ' containing version and delete marker',
+            done => {
+                async.waterfall(
+                    [
+                        next => s3.putObject({ Bucket: bucketName, Key: key }, err => next(err)),
+                        next => s3.deleteObject({ Bucket: bucketName, Key: key }, err => next(err)),
+                        next =>
+                            s3.deleteBucket({ Bucket: bucketName }, err => {
+                                checkError(err, 'BucketNotEmpty');
+                                return next();
+                            }),
+                    ],
+                    done
+                );
+            }
+        );
 
-        it('should return error 404 NoSuchBucket if the bucket name is invalid',
-        done => {
+        it('should return error 404 NoSuchBucket if the bucket name is invalid', done => {
             s3.deleteBucket({ Bucket: 'bucketA' }, err => {
                 checkError(err, 'NoSuchBucket');
                 return done();

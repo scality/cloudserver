@@ -49,10 +49,15 @@ describe('aws-sdk test get bucket object lock', () => {
     });
 
     describe('config rules', () => {
-        beforeEach(done => s3.createBucket({
-            Bucket: bucket,
-            ObjectLockEnabledForBucket: true,
-        }, done));
+        beforeEach(done =>
+            s3.createBucket(
+                {
+                    Bucket: bucket,
+                    ObjectLockEnabledForBucket: true,
+                },
+                done
+            )
+        );
 
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
@@ -64,19 +69,22 @@ describe('aws-sdk test get bucket object lock', () => {
         });
 
         it('should get bucket object lock config', done => {
-            s3.putObjectLockConfiguration({
-                Bucket: bucket,
-                ObjectLockConfiguration: objectLockConfig,
-            }, err => {
-                assert.ifError(err);
-                s3.getObjectLockConfiguration({ Bucket: bucket }, (err, res) => {
+            s3.putObjectLockConfiguration(
+                {
+                    Bucket: bucket,
+                    ObjectLockConfiguration: objectLockConfig,
+                },
+                err => {
                     assert.ifError(err);
-                    assert.deepStrictEqual(res, {
-                        ObjectLockConfiguration: objectLockConfig,
+                    s3.getObjectLockConfiguration({ Bucket: bucket }, (err, res) => {
+                        assert.ifError(err);
+                        assert.deepStrictEqual(res, {
+                            ObjectLockConfiguration: objectLockConfig,
+                        });
+                        done();
                     });
-                    done();
-                });
-            });
+                }
+            );
         });
     });
 });

@@ -56,21 +56,16 @@ const testAcp = new _AccessControlPolicy(ownerParams);
 testAcp.addGrantee('Group', constants.publicId, 'READ');
 
 function putObjectAcl(s3, key, versionId, acp, cb) {
-    s3.putObjectAcl({ Bucket: bucket, Key: key, AccessControlPolicy: acp,
-        VersionId: versionId }, err => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `putting object acl, got error ${err}`);
+    s3.putObjectAcl({ Bucket: bucket, Key: key, AccessControlPolicy: acp, VersionId: versionId }, err => {
+        assert.strictEqual(err, null, 'Expected success ' + `putting object acl, got error ${err}`);
         cb();
     });
 }
 
 function putObjectAndAcl(s3, key, body, acp, cb) {
-    s3.putObject({ Bucket: bucket, Key: key, Body: body },
-    (err, putData) => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `putting object, got error ${err}`);
-        putObjectAcl(s3, key, putData.VersionId, acp, () =>
-            cb(null, putData.VersionId));
+    s3.putObject({ Bucket: bucket, Key: key, Body: body }, (err, putData) => {
+        assert.strictEqual(err, null, 'Expected success ' + `putting object, got error ${err}`);
+        putObjectAcl(s3, key, putData.VersionId, acp, () => cb(null, putData.VersionId));
     });
 }
 
@@ -88,29 +83,29 @@ function putVersionsWithAclToAws(s3, key, data, acps, cb) {
         throw new Error('length of data and acp arrays must be the same');
     }
     enableVersioning(s3, bucket, () => {
-        async.timesLimit(data.length, 1, (i, next) => {
-            putObjectAndAcl(s3, key, data[i], acps[i], next);
-        }, (err, results) => {
-            assert.strictEqual(err, null, 'Expected success ' +
-                `putting versions with acl, got error ${err}`);
-            cb(null, results);
-        });
+        async.timesLimit(
+            data.length,
+            1,
+            (i, next) => {
+                putObjectAndAcl(s3, key, data[i], acps[i], next);
+            },
+            (err, results) => {
+                assert.strictEqual(err, null, 'Expected success ' + `putting versions with acl, got error ${err}`);
+                cb(null, results);
+            }
+        );
     });
 }
 
 function getObjectAndAssertAcl(s3, params, cb) {
-    const { bucket, key, versionId, body, expectedVersionId, expectedResult }
-        = params;
-    getAndAssertResult(s3, { bucket, key, versionId, expectedVersionId, body },
-        () => {
-            s3.getObjectAcl({ Bucket: bucket, Key: key, VersionId: versionId },
-                (err, data) => {
-                    assert.strictEqual(err, null, 'Expected success ' +
-                        `getting object acl, got error ${err}`);
-                    assert.deepEqual(data, expectedResult);
-                    cb();
-                });
+    const { bucket, key, versionId, body, expectedVersionId, expectedResult } = params;
+    getAndAssertResult(s3, { bucket, key, versionId, expectedVersionId, body }, () => {
+        s3.getObjectAcl({ Bucket: bucket, Key: key, VersionId: versionId }, (err, data) => {
+            assert.strictEqual(err, null, 'Expected success ' + `getting object acl, got error ${err}`);
+            assert.deepEqual(data, expectedResult);
+            cb();
         });
+    });
 }
 
 /** getObjectsAndAssertAcls - enable versioning and put multiple versions
@@ -124,23 +119,28 @@ function getObjectAndAssertAcl(s3, params, cb) {
  * @param {function} cb - callback
  * @return {undefined} - and call cb
  */
-function getObjectsAndAssertAcls(s3, key, versionIds, expectedData,
-    expectedAcps, cb) {
-    async.timesLimit(versionIds.length, 1, (i, next) => {
-        const versionId = versionIds[i];
-        const body = expectedData[i];
-        const expectedResult = expectedAcps[i];
-        getObjectAndAssertAcl(s3, { bucket, key, versionId, body,
-            expectedResult, expectedVersionId: versionId }, next);
-    }, err => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `getting object acls, got error ${err}`);
-        cb();
-    });
+function getObjectsAndAssertAcls(s3, key, versionIds, expectedData, expectedAcps, cb) {
+    async.timesLimit(
+        versionIds.length,
+        1,
+        (i, next) => {
+            const versionId = versionIds[i];
+            const body = expectedData[i];
+            const expectedResult = expectedAcps[i];
+            getObjectAndAssertAcl(
+                s3,
+                { bucket, key, versionId, body, expectedResult, expectedVersionId: versionId },
+                next
+            );
+        },
+        err => {
+            assert.strictEqual(err, null, 'Expected success ' + `getting object acls, got error ${err}`);
+            cb();
+        }
+    );
 }
 
-describeSkipIfNotMultiple('AWS backend put/get object acl with versioning',
-function testSuite() {
+describeSkipIfNotMultiple('AWS backend put/get object acl with versioning', function testSuite() {
     this.timeout(30000);
     withV4(sigCfg => {
         let bucketUtil;
@@ -150,106 +150,120 @@ function testSuite() {
             process.stdout.write('Creating bucket');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucket({ Bucket: bucket,
-                CreateBucketConfiguration: {
-                    LocationConstraint: awsLocation,
-                },
-            }).promise()
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
-            });
+            return s3
+                .createBucket({
+                    Bucket: bucket,
+                    CreateBucketConfiguration: {
+                        LocationConstraint: awsLocation,
+                    },
+                })
+                .promise()
+                .catch(err => {
+                    process.stdout.write(`Error creating bucket: ${err}\n`);
+                    throw err;
+                });
         });
 
         afterEach(() => {
             process.stdout.write('Emptying bucket\n');
-            return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write('Error emptying/deleting bucket: ' +
-                `${err}\n`);
-                throw err;
-            });
+            return bucketUtil
+                .empty(bucket)
+                .then(() => {
+                    process.stdout.write('Deleting bucket\n');
+                    return bucketUtil.deleteOne(bucket);
+                })
+                .catch(err => {
+                    process.stdout.write('Error emptying/deleting bucket: ' + `${err}\n`);
+                    throw err;
+                });
         });
 
-        it('versioning not configured: should put/get acl successfully when ' +
-        'versioning not configured', done => {
+        it('versioning not configured: should put/get acl successfully when ' + 'versioning not configured', done => {
             const key = `somekey-${genUniqID()}`;
             putObjectAndAcl(s3, key, someBody, testAcp, (err, versionId) => {
                 assert.strictEqual(versionId, undefined);
-                getObjectAndAssertAcl(s3, { bucket, key, body: someBody,
-                    expectedResult: testAcp }, done);
+                getObjectAndAssertAcl(s3, { bucket, key, body: someBody, expectedResult: testAcp }, done);
             });
         });
 
-        it('versioning suspended then enabled: should put/get acl on null ' +
-        'version successfully even when latest version is not null version',
-        done => {
-            const key = `somekey-${genUniqID()}`;
-            async.waterfall([
-                next => putNullVersionsToAws(s3, bucket, key, [undefined],
-                    err => next(err)),
-                next => putVersionsToAws(s3, bucket, key, [someBody],
-                    err => next(err)),
-                next => putObjectAcl(s3, key, 'null', testAcp, next),
-                next => getObjectAndAssertAcl(s3, { bucket, key, body: '',
-                    versionId: 'null', expectedResult: testAcp,
-                    expectedVersionId: 'null' }, next),
-            ], done);
-        });
+        it(
+            'versioning suspended then enabled: should put/get acl on null ' +
+                'version successfully even when latest version is not null version',
+            done => {
+                const key = `somekey-${genUniqID()}`;
+                async.waterfall(
+                    [
+                        next => putNullVersionsToAws(s3, bucket, key, [undefined], err => next(err)),
+                        next => putVersionsToAws(s3, bucket, key, [someBody], err => next(err)),
+                        next => putObjectAcl(s3, key, 'null', testAcp, next),
+                        next =>
+                            getObjectAndAssertAcl(
+                                s3,
+                                {
+                                    bucket,
+                                    key,
+                                    body: '',
+                                    versionId: 'null',
+                                    expectedResult: testAcp,
+                                    expectedVersionId: 'null',
+                                },
+                                next
+                            ),
+                    ],
+                    done
+                );
+            }
+        );
 
-        it('versioning enabled: should get correct acl using version IDs',
-        done => {
+        it('versioning enabled: should get correct acl using version IDs', done => {
             const key = `somekey-${genUniqID()}`;
-            const acps = ['READ', 'FULL_CONTROL', 'READ_ACP', 'WRITE_ACP']
-            .map(perm => {
+            const acps = ['READ', 'FULL_CONTROL', 'READ_ACP', 'WRITE_ACP'].map(perm => {
                 const acp = new _AccessControlPolicy(ownerParams);
                 acp.addGrantee('Group', constants.publicId, perm);
                 return acp;
             });
             const data = [...Array(acps.length).keys()].map(i => i.toString());
             const versionIds = ['null'];
-            async.waterfall([
-                next => putObjectAndAcl(s3, key, data[0], acps[0],
-                    () => next()),
-                next => putVersionsWithAclToAws(s3, key, data.slice(1),
-                    acps.slice(1), next),
-                (ids, next) => {
-                    versionIds.push(...ids);
-                    next();
-                },
-                next => getObjectsAndAssertAcls(s3, key, versionIds, data, acps,
-                    next),
-            ], done);
+            async.waterfall(
+                [
+                    next => putObjectAndAcl(s3, key, data[0], acps[0], () => next()),
+                    next => putVersionsWithAclToAws(s3, key, data.slice(1), acps.slice(1), next),
+                    (ids, next) => {
+                        versionIds.push(...ids);
+                        next();
+                    },
+                    next => getObjectsAndAssertAcls(s3, key, versionIds, data, acps, next),
+                ],
+                done
+            );
         });
 
-        it('versioning enabled: should get correct acl when getting ' +
-        'without version ID', done => {
+        it('versioning enabled: should get correct acl when getting ' + 'without version ID', done => {
             const key = `somekey-${genUniqID()}`;
-            const acps = ['READ', 'FULL_CONTROL', 'READ_ACP', 'WRITE_ACP']
-            .map(perm => {
+            const acps = ['READ', 'FULL_CONTROL', 'READ_ACP', 'WRITE_ACP'].map(perm => {
                 const acp = new _AccessControlPolicy(ownerParams);
                 acp.addGrantee('Group', constants.publicId, perm);
                 return acp;
             });
             const data = [...Array(acps.length).keys()].map(i => i.toString());
             const versionIds = ['null'];
-            async.waterfall([
-                next => putObjectAndAcl(s3, key, data[0], acps[0],
-                    () => next()),
-                next => putVersionsWithAclToAws(s3, key, data.slice(1),
-                    acps.slice(1), next),
-                (ids, next) => {
-                    versionIds.push(...ids);
-                    next();
-                },
-                next => getObjectAndAssertAcl(s3, { bucket, key,
-                    expectedVersionId: versionIds[3],
-                    expectedResult: acps[3], body: data[3] }, next),
-            ], done);
+            async.waterfall(
+                [
+                    next => putObjectAndAcl(s3, key, data[0], acps[0], () => next()),
+                    next => putVersionsWithAclToAws(s3, key, data.slice(1), acps.slice(1), next),
+                    (ids, next) => {
+                        versionIds.push(...ids);
+                        next();
+                    },
+                    next =>
+                        getObjectAndAssertAcl(
+                            s3,
+                            { bucket, key, expectedVersionId: versionIds[3], expectedResult: acps[3], body: data[3] },
+                            next
+                        ),
+                ],
+                done
+            );
         });
     });
 });

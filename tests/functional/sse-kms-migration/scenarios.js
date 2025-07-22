@@ -46,16 +46,16 @@ async function assertObjectSSE(
     { bkt, bktConf },
     // headers come from the command like putObject, CopyObject, MPUs...
     { arnPrefix = kms.arnPrefix, headers } = { arnPrefix: kms.arnPrefix },
-    testCase,
+    testCase
 ) {
     const head = await helpers.s3.headObject({ Bucket, Key, VersionId }).promise();
     const sseMD = await helpers.getObjectMDSSE(Bucket, Key);
     const arnPrefixReg = new RegExp(`^${arnPrefix}`);
 
-    const expectedAlgo = (objConf.algo || bktConf.algo) ||
-        (testCase === 'after' && helpers.config.globalEncryptionEnabled && !bktConf.deleteSSE
-            ? 'AES256'
-            : undefined);
+    const expectedAlgo =
+        objConf.algo ||
+        bktConf.algo ||
+        (testCase === 'after' && helpers.config.globalEncryptionEnabled && !bktConf.deleteSSE ? 'AES256' : undefined);
 
     // obj precedence over bkt
     assert.strictEqual(head.ServerSideEncryption, expectedAlgo);
@@ -171,7 +171,7 @@ async function copyObjectAndSSE(
     { bktConf, bkt },
     // migration has its own assert object function
     { index, forceBktSSE, assertObjectSSEFct = assertObjectSSE },
-    testCase,
+    testCase
 ) {
     // variables are defined in before hook, can only be accessed inside test
     const tests = [
@@ -207,8 +207,7 @@ async function copyObjectAndSSE(
         const { SSEAlgorithm, KMSMasterKeyID } = await helpers.getBucketSSE(copyBkt);
         assert.strictEqual(headers.ServerSideEncryption, SSEAlgorithm);
         testCase !== 'before' && assert.strictEqual(headers.SSEKMSKeyId, KMSMasterKeyID);
-        const keyArn = `${KMSMasterKeyID && isScalityKmsArn(KMSMasterKeyID)
-            ? '' : kms.arnPrefix}${KMSMasterKeyID}`;
+        const keyArn = `${KMSMasterKeyID && isScalityKmsArn(KMSMasterKeyID) ? '' : kms.arnPrefix}${KMSMasterKeyID}`;
         const kmsKeyInfo = {
             masterKeyId: getKeyIdFromArn(keyArn),
             masterKeyArn: keyArn,
@@ -226,7 +225,7 @@ async function copyObjectAndSSE(
         forcedSSE ? { objConf: {}, obj: {} } : { objConf, obj },
         forcedSSE || { bktConf, bkt },
         { headers: testCase === 'before' ? null : headers, put: true },
-        testCase,
+        testCase
     );
 }
 
@@ -247,13 +246,15 @@ function assertMPUSSEHeaders(actual, expected, algo) {
 
 // before has no headers to assert
 async function mpuUploadPart({ UploadId, Bucket, Key, Body, PartNumber }, mpuOverviewMDSSE, algo, testCase) {
-    const part = await helpers.s3.uploadPart({
-        UploadId,
-        Bucket,
-        Body,
-        Key,
-        PartNumber,
-    }).promise();
+    const part = await helpers.s3
+        .uploadPart({
+            UploadId,
+            Bucket,
+            Body,
+            Key,
+            PartNumber,
+        })
+        .promise();
     testCase !== 'before' && assertMPUSSEHeaders(part, mpuOverviewMDSSE, algo);
     return part;
 }
@@ -261,33 +262,39 @@ async function mpuUploadPart({ UploadId, Bucket, Key, Body, PartNumber }, mpuOve
 // before has no headers to assert
 async function mpuUploadPartCopy(
     { UploadId, Bucket, Key, PartNumber, CopySource, CopySourceRange },
-    mpuOverviewMDSSE, algo, testCase
+    mpuOverviewMDSSE,
+    algo,
+    testCase
 ) {
-    const part = await helpers.s3.uploadPartCopy({
-        UploadId,
-        Bucket,
-        Key,
-        PartNumber,
-        CopySource,
-        CopySourceRange,
-    }).promise();
+    const part = await helpers.s3
+        .uploadPartCopy({
+            UploadId,
+            Bucket,
+            Key,
+            PartNumber,
+            CopySource,
+            CopySourceRange,
+        })
+        .promise();
     testCase !== 'before' && assertMPUSSEHeaders(part, mpuOverviewMDSSE, algo);
     return part;
 }
 
 // before has no headers to assert
 async function mpuComplete({ UploadId, Bucket, Key }, { existingParts, newParts }, mpuOverviewMDSSE, algo, testCase) {
-    const complete = await helpers.s3.completeMultipartUpload({
-        UploadId,
-        Bucket,
-        Key,
-        MultipartUpload: {
-            Parts: [
-                ...existingParts.map(part => ({ PartNumber: part.PartNumber, ETag: part.ETag })),
-                ...newParts.map((part, idx) => ({ PartNumber: existingParts.length + idx + 1, ETag: part.ETag })),
-            ],
-        },
-    }).promise();
+    const complete = await helpers.s3
+        .completeMultipartUpload({
+            UploadId,
+            Bucket,
+            Key,
+            MultipartUpload: {
+                Parts: [
+                    ...existingParts.map(part => ({ PartNumber: part.PartNumber, ETag: part.ETag })),
+                    ...newParts.map((part, idx) => ({ PartNumber: existingParts.length + idx + 1, ETag: part.ETag })),
+                ],
+            },
+        })
+        .promise();
     testCase !== 'before' && assertMPUSSEHeaders(complete, mpuOverviewMDSSE, algo);
     return complete;
 }

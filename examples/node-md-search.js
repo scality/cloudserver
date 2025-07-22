@@ -11,8 +11,7 @@ const config = {
 };
 const s3Client = new S3(config);
 
-const encodedSearch =
-    encodeURIComponent('x-amz-meta-color="blue"');
+const encodedSearch = encodeURIComponent('x-amz-meta-color="blue"');
 const req = s3Client.listObjects({ Bucket: 'bucketname' });
 
 // the build event

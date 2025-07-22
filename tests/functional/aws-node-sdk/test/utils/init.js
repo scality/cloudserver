@@ -4,8 +4,7 @@ const metadata = require('../../../../../lib/metadata/wrapper');
 const { config } = require('../../../../../lib/Config');
 const { DummyRequestLogger } = require('../../../../unit/helpers');
 const log = new DummyRequestLogger();
-const nonVersionedObjId =
-    versionIdUtils.getInfVid(config.replicationGroupId);
+const nonVersionedObjId = versionIdUtils.getInfVid(config.replicationGroupId);
 
 function decodeVersionId(versionId) {
     let decodedVersionId;
@@ -22,21 +21,20 @@ function decodeVersionId(versionId) {
 let metadataInit = false;
 
 function initMetadata(done) {
-	if (metadataInit === true) {
-		return done();
-	}
-	return metadata.setup(err => {
-		if (err) {
-			return done(err);
-		}
-		metadataInit = true;
-		return done();
-	});
+    if (metadataInit === true) {
+        return done();
+    }
+    return metadata.setup(err => {
+        if (err) {
+            return done(err);
+        }
+        metadataInit = true;
+        return done();
+    });
 }
 
 function getMetadata(bucketName, objectName, versionId, cb) {
-    return metadata.getObjectMD(bucketName, objectName, { versionId: decodeVersionId(versionId) },
-        log, cb);
+    return metadata.getObjectMD(bucketName, objectName, { versionId: decodeVersionId(versionId) }, log, cb);
 }
 
 /**
@@ -51,13 +49,19 @@ function getMetadata(bucketName, objectName, versionId, cb) {
 function fakeMetadataTransition(bucketName, objectName, versionId, cb) {
     return getMetadata(bucketName, objectName, versionId, (err, objMD) => {
         if (err) {
-			return cb(err);
-		}
+            return cb(err);
+        }
         /* eslint-disable no-param-reassign */
         objMD['x-amz-scal-transition-in-progress'] = true;
         /* eslint-enable no-param-reassign */
-        return metadata.putObjectMD(bucketName, objectName, objMD, { versionId: decodeVersionId(versionId) },
-            log, err => cb(err));
+        return metadata.putObjectMD(
+            bucketName,
+            objectName,
+            objMD,
+            { versionId: decodeVersionId(versionId) },
+            log,
+            err => cb(err)
+        );
     });
 }
 
@@ -74,21 +78,27 @@ function fakeMetadataTransition(bucketName, objectName, versionId, cb) {
 function fakeMetadataArchive(bucketName, objectName, versionId, archive, cb) {
     return getMetadata(bucketName, objectName, versionId, (err, objMD) => {
         if (err) {
-			return cb(err);
-		}
+            return cb(err);
+        }
         /* eslint-disable no-param-reassign */
         objMD['x-amz-storage-class'] = 'location-dmf-v1';
         objMD.dataStoreName = 'location-dmf-v1';
         objMD.archive = archive;
         /* eslint-enable no-param-reassign */
-        return metadata.putObjectMD(bucketName, objectName, objMD, { versionId: decodeVersionId(versionId) },
-            log, err => cb(err));
+        return metadata.putObjectMD(
+            bucketName,
+            objectName,
+            objMD,
+            { versionId: decodeVersionId(versionId) },
+            log,
+            err => cb(err)
+        );
     });
 }
 
 module.exports = {
-	initMetadata,
-	getMetadata,
-	fakeMetadataArchive,
+    initMetadata,
+    getMetadata,
+    fakeMetadataArchive,
     fakeMetadataTransition,
 };

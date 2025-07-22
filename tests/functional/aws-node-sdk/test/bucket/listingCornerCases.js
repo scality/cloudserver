@@ -51,26 +51,32 @@ describe('Listing corner cases tests', () => {
     before(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new AWS.S3(config);
-        s3.createBucket(
-            { Bucket }, (err, data) => {
-                if (err) {
-                    done(err, data);
-                }
-                async.each(
-                    objects, (o, next) => {
-                        s3.putObject(o, (err, data) => {
-                            next(err, data);
-                        });
-                    }, done);
-            });
+        s3.createBucket({ Bucket }, (err, data) => {
+            if (err) {
+                done(err, data);
+            }
+            async.each(
+                objects,
+                (o, next) => {
+                    s3.putObject(o, (err, data) => {
+                        next(err, data);
+                    });
+                },
+                done
+            );
+        });
     });
     after(done => {
         s3.listObjects({ Bucket }, (err, data) => {
-            async.each(data.Contents, (o, next) => {
-                s3.deleteObject({ Bucket, Key: o.Key }, next);
-            }, () => {
-                s3.deleteBucket({ Bucket }, done);
-            });
+            async.each(
+                data.Contents,
+                (o, next) => {
+                    s3.deleteObject({ Bucket, Key: o.Key }, next);
+                },
+                () => {
+                    s3.deleteBucket({ Bucket }, done);
+                }
+            );
         });
     });
     it('should list everything', done => {
@@ -101,257 +107,194 @@ describe('Listing corner cases tests', () => {
         });
     });
     it('should list with valid marker', done => {
-        s3.listObjects(
-            { Bucket,
-                Delimiter: '/',
+        s3.listObjects({ Bucket, Delimiter: '/', Marker: 'notes/summer/1.txt' }, (err, data) => {
+            assert.strictEqual(err, null);
+            cutAttributes(data);
+            assert.deepStrictEqual(data, {
+                IsTruncated: false,
                 Marker: 'notes/summer/1.txt',
-            },
-            (err, data) => {
-                assert.strictEqual(err, null);
-                cutAttributes(data);
-                assert.deepStrictEqual(data, {
-                    IsTruncated: false,
-                    Marker: 'notes/summer/1.txt',
-                    Contents: [],
-                    Name: Bucket,
-                    Prefix: '',
-                    Delimiter: '/',
-                    MaxKeys: 1000,
-                    CommonPrefixes: [],
-                });
-                done();
+                Contents: [],
+                Name: Bucket,
+                Prefix: '',
+                Delimiter: '/',
+                MaxKeys: 1000,
+                CommonPrefixes: [],
             });
+            done();
+        });
     });
     it('should list with unexpected marker', done => {
-        s3.listObjects(
-            { Bucket,
-                Delimiter: '/',
+        s3.listObjects({ Bucket, Delimiter: '/', Marker: 'zzzz' }, (err, data) => {
+            assert.strictEqual(err, null);
+            assert.deepStrictEqual(data, {
+                IsTruncated: false,
                 Marker: 'zzzz',
-            },
-            (err, data) => {
-                assert.strictEqual(err, null);
-                assert.deepStrictEqual(data, {
-                    IsTruncated: false,
-                    Marker: 'zzzz',
-                    Contents: [],
-                    Name: Bucket,
-                    Prefix: '',
-                    Delimiter: '/',
-                    MaxKeys: 1000,
-                    CommonPrefixes: [],
-                });
-                done();
+                Contents: [],
+                Name: Bucket,
+                Prefix: '',
+                Delimiter: '/',
+                MaxKeys: 1000,
+                CommonPrefixes: [],
             });
+            done();
+        });
     });
     it('should list with unexpected marker and prefix', done => {
-        s3.listObjects(
-            { Bucket,
-                Delimiter: '/',
+        s3.listObjects({ Bucket, Delimiter: '/', Marker: 'notes/summer0', Prefix: 'notes/summer/' }, (err, data) => {
+            assert.strictEqual(err, null);
+            assert.deepStrictEqual(data, {
+                IsTruncated: false,
                 Marker: 'notes/summer0',
+                Contents: [],
+                Name: Bucket,
                 Prefix: 'notes/summer/',
-            },
-            (err, data) => {
-                assert.strictEqual(err, null);
-                assert.deepStrictEqual(data, {
-                    IsTruncated: false,
-                    Marker: 'notes/summer0',
-                    Contents: [],
-                    Name: Bucket,
-                    Prefix: 'notes/summer/',
-                    Delimiter: '/',
-                    MaxKeys: 1000,
-                    CommonPrefixes: [],
-                });
-                done();
+                Delimiter: '/',
+                MaxKeys: 1000,
+                CommonPrefixes: [],
             });
+            done();
+        });
     });
     it('should list with MaxKeys', done => {
-        s3.listObjects(
-            { Bucket,
+        s3.listObjects({ Bucket, MaxKeys: 3 }, (err, data) => {
+            assert.strictEqual(err, null);
+            cutAttributes(data);
+            assert.deepStrictEqual(data, {
+                Marker: '',
+                IsTruncated: true,
+                Contents: [objects[0].Key, objects[1].Key, objects[2].Key],
+                Name: Bucket,
+                Prefix: '',
                 MaxKeys: 3,
-            },
-            (err, data) => {
-                assert.strictEqual(err, null);
-                cutAttributes(data);
-                assert.deepStrictEqual(data, {
-                    Marker: '',
-                    IsTruncated: true,
-                    Contents: [objects[0].Key,
-                        objects[1].Key,
-                        objects[2].Key,
-                    ],
-                    Name: Bucket,
-                    Prefix: '',
-                    MaxKeys: 3,
-                    CommonPrefixes: [],
-                });
-                done();
+                CommonPrefixes: [],
             });
+            done();
+        });
     });
     it('should list with big MaxKeys', done => {
-        s3.listObjects(
-            { Bucket,
+        s3.listObjects({ Bucket, MaxKeys: 15000 }, (err, data) => {
+            assert.strictEqual(err, null);
+            cutAttributes(data);
+            assert.deepStrictEqual(data, {
+                Marker: '',
+                IsTruncated: false,
+                Contents: [
+                    objects[0].Key,
+                    objects[1].Key,
+                    objects[2].Key,
+                    objects[3].Key,
+                    objects[4].Key,
+                    objects[5].Key,
+                    objects[6].Key,
+                    objects[7].Key,
+                    objects[8].Key,
+                    objects[9].Key,
+                ],
+                Name: Bucket,
+                Prefix: '',
                 MaxKeys: 15000,
-            },
-            (err, data) => {
-                assert.strictEqual(err, null);
-                cutAttributes(data);
-                assert.deepStrictEqual(data, {
-                    Marker: '',
-                    IsTruncated: false,
-                    Contents: [objects[0].Key,
-                        objects[1].Key,
-                        objects[2].Key,
-                        objects[3].Key,
-                        objects[4].Key,
-                        objects[5].Key,
-                        objects[6].Key,
-                        objects[7].Key,
-                        objects[8].Key,
-                        objects[9].Key,
-                    ],
-                    Name: Bucket,
-                    Prefix: '',
-                    MaxKeys: 15000,
-                    CommonPrefixes: [],
-                });
-                done();
+                CommonPrefixes: [],
             });
+            done();
+        });
     });
     it('should list with delimiter', done => {
-        s3.listObjects(
-            { Bucket,
+        s3.listObjects({ Bucket, Delimiter: '/' }, (err, data) => {
+            assert.strictEqual(err, null);
+            cutAttributes(data);
+            assert.deepStrictEqual(data, {
+                Marker: '',
+                IsTruncated: false,
+                Contents: [objects[0].Key],
+                Name: Bucket,
+                Prefix: '',
                 Delimiter: '/',
-            },
-            (err, data) => {
-                assert.strictEqual(err, null);
-                cutAttributes(data);
-                assert.deepStrictEqual(data, {
-                    Marker: '',
-                    IsTruncated: false,
-                    Contents: [objects[0].Key],
-                    Name: Bucket,
-                    Prefix: '',
-                    Delimiter: '/',
-                    MaxKeys: 1000,
-                    CommonPrefixes: ['notes/'],
-                });
-                done();
+                MaxKeys: 1000,
+                CommonPrefixes: ['notes/'],
             });
+            done();
+        });
     });
     it('should list with long delimiter', done => {
-        s3.listObjects(
-            { Bucket,
+        s3.listObjects({ Bucket, Delimiter: 'notes/summer' }, (err, data) => {
+            assert.strictEqual(err, null);
+            cutAttributes(data);
+            assert.deepStrictEqual(data, {
+                Marker: '',
+                IsTruncated: false,
+                Contents: [
+                    objects[0].Key,
+                    objects[1].Key,
+                    objects[2].Key,
+                    objects[3].Key,
+                    objects[7].Key,
+                    objects[8].Key,
+                    objects[9].Key,
+                ],
+                Name: Bucket,
+                Prefix: '',
                 Delimiter: 'notes/summer',
-            },
-            (err, data) => {
-                assert.strictEqual(err, null);
-                cutAttributes(data);
-                assert.deepStrictEqual(data, {
-                    Marker: '',
-                    IsTruncated: false,
-                    Contents: [objects[0].Key,
-                        objects[1].Key,
-                        objects[2].Key,
-                        objects[3].Key,
-                        objects[7].Key,
-                        objects[8].Key,
-                        objects[9].Key,
-                    ],
-                    Name: Bucket,
-                    Prefix: '',
-                    Delimiter: 'notes/summer',
-                    MaxKeys: 1000,
-                    CommonPrefixes: ['notes/summer'],
-                });
-                done();
+                MaxKeys: 1000,
+                CommonPrefixes: ['notes/summer'],
             });
+            done();
+        });
     });
     it('should list with delimiter and prefix related to #147', done => {
-        s3.listObjects(
-            { Bucket,
-                Delimiter: '/',
+        s3.listObjects({ Bucket, Delimiter: '/', Prefix: 'notes/' }, (err, data) => {
+            assert.strictEqual(err, null);
+            cutAttributes(data);
+            assert.deepStrictEqual(data, {
+                Marker: '',
+                IsTruncated: false,
+                Contents: [objects[7].Key, objects[8].Key],
+                Name: Bucket,
                 Prefix: 'notes/',
-            },
-            (err, data) => {
-                assert.strictEqual(err, null);
-                cutAttributes(data);
-                assert.deepStrictEqual(data, {
-                    Marker: '',
-                    IsTruncated: false,
-                    Contents: [
-                        objects[7].Key,
-                        objects[8].Key,
-                    ],
-                    Name: Bucket,
-                    Prefix: 'notes/',
-                    Delimiter: '/',
-                    MaxKeys: 1000,
-                    CommonPrefixes: [
-                        'notes/spring/',
-                        'notes/summer/',
-                        'notes/zaphod/',
-                    ],
-                });
-                done();
+                Delimiter: '/',
+                MaxKeys: 1000,
+                CommonPrefixes: ['notes/spring/', 'notes/summer/', 'notes/zaphod/'],
             });
+            done();
+        });
     });
     it('should list with prefix and marker related to #147', done => {
-        s3.listObjects(
-            { Bucket,
-                Delimiter: '/',
-                Prefix: 'notes/',
+        s3.listObjects({ Bucket, Delimiter: '/', Prefix: 'notes/', Marker: 'notes/year.txt' }, (err, data) => {
+            assert.strictEqual(err, null);
+            cutAttributes(data);
+            assert.deepStrictEqual(data, {
                 Marker: 'notes/year.txt',
-            },
-            (err, data) => {
-                assert.strictEqual(err, null);
-                cutAttributes(data);
-                assert.deepStrictEqual(data, {
-                    Marker: 'notes/year.txt',
-                    IsTruncated: false,
-                    Contents: [objects[8].Key],
-                    Name: Bucket,
-                    Prefix: 'notes/',
-                    Delimiter: '/',
-                    MaxKeys: 1000,
-                    CommonPrefixes: ['notes/zaphod/'],
-                });
-                done();
+                IsTruncated: false,
+                Contents: [objects[8].Key],
+                Name: Bucket,
+                Prefix: 'notes/',
+                Delimiter: '/',
+                MaxKeys: 1000,
+                CommonPrefixes: ['notes/zaphod/'],
             });
+            done();
+        });
     });
     it('should list with all parameters 1 of 5', done => {
-        s3.listObjects(
-            { Bucket,
-                Delimiter: '/',
-                Prefix: 'notes/',
+        s3.listObjects({ Bucket, Delimiter: '/', Prefix: 'notes/', Marker: 'notes/', MaxKeys: 1 }, (err, data) => {
+            assert.strictEqual(err, null);
+            cutAttributes(data);
+            assert.deepStrictEqual(data, {
                 Marker: 'notes/',
+                NextMarker: 'notes/spring/',
+                IsTruncated: true,
+                Contents: [],
+                Name: Bucket,
+                Prefix: 'notes/',
+                Delimiter: '/',
                 MaxKeys: 1,
-            },
-            (err, data) => {
-                assert.strictEqual(err, null);
-                cutAttributes(data);
-                assert.deepStrictEqual(data, {
-                    Marker: 'notes/',
-                    NextMarker: 'notes/spring/',
-                    IsTruncated: true,
-                    Contents: [],
-                    Name: Bucket,
-                    Prefix: 'notes/',
-                    Delimiter: '/',
-                    MaxKeys: 1,
-                    CommonPrefixes: ['notes/spring/'],
-                });
-                done();
+                CommonPrefixes: ['notes/spring/'],
             });
+            done();
+        });
     });
     it('should list with all parameters 2 of 5', done => {
         s3.listObjects(
-            { Bucket,
-                Delimiter: '/',
-                Prefix: 'notes/',
-                Marker: 'notes/spring/',
-                MaxKeys: 1,
-            },
+            { Bucket, Delimiter: '/', Prefix: 'notes/', Marker: 'notes/spring/', MaxKeys: 1 },
             (err, data) => {
                 assert.strictEqual(err, null);
                 cutAttributes(data);
@@ -367,16 +310,12 @@ describe('Listing corner cases tests', () => {
                     CommonPrefixes: ['notes/summer/'],
                 });
                 done();
-            });
+            }
+        );
     });
     it('should list with all parameters 3 of 5', done => {
         s3.listObjects(
-            { Bucket,
-                Delimiter: '/',
-                Prefix: 'notes/',
-                Marker: 'notes/summer/',
-                MaxKeys: 1,
-            },
+            { Bucket, Delimiter: '/', Prefix: 'notes/', Marker: 'notes/summer/', MaxKeys: 1 },
             (err, data) => {
                 assert.strictEqual(err, null);
                 cutAttributes(data);
@@ -392,16 +331,12 @@ describe('Listing corner cases tests', () => {
                     CommonPrefixes: [],
                 });
                 done();
-            });
+            }
+        );
     });
     it('should list with all parameters 4 of 5', done => {
         s3.listObjects(
-            { Bucket,
-                Delimiter: '/',
-                Prefix: 'notes/',
-                Marker: 'notes/year.txt',
-                MaxKeys: 1,
-            },
+            { Bucket, Delimiter: '/', Prefix: 'notes/', Marker: 'notes/year.txt', MaxKeys: 1 },
             (err, data) => {
                 assert.strictEqual(err, null);
                 cutAttributes(data);
@@ -417,16 +352,12 @@ describe('Listing corner cases tests', () => {
                     CommonPrefixes: [],
                 });
                 done();
-            });
+            }
+        );
     });
     it('should list with all parameters 5 of 5', done => {
         s3.listObjects(
-            { Bucket,
-                Delimiter: '/',
-                Prefix: 'notes/',
-                Marker: 'notes/yore.rs',
-                MaxKeys: 1,
-            },
+            { Bucket, Delimiter: '/', Prefix: 'notes/', Marker: 'notes/yore.rs', MaxKeys: 1 },
             (err, data) => {
                 assert.strictEqual(err, null);
                 cutAttributes(data);
@@ -441,92 +372,106 @@ describe('Listing corner cases tests', () => {
                     CommonPrefixes: ['notes/zaphod/'],
                 });
                 done();
-            });
+            }
+        );
     });
     it('should ends listing on last common prefix', done => {
-        s3.putObject({
-            Bucket,
-            Key: 'notes/zaphod/TheFourth.txt',
-            Body: '',
-        }, err => {
-            if (!err) {
-                s3.listObjects(
-                    { Bucket,
-                        Delimiter: '/',
-                        Prefix: 'notes/',
-                        Marker: 'notes/yore.rs',
-                        MaxKeys: 1,
-                    },
-                    (err, data) => {
-                        assert.strictEqual(err, null);
-                        cutAttributes(data);
-                        assert.deepStrictEqual(data, {
-                            IsTruncated: false,
-                            Marker: 'notes/yore.rs',
-                            Contents: [],
-                            Name: Bucket,
-                            Prefix: 'notes/',
-                            Delimiter: '/',
-                            MaxKeys: 1,
-                            CommonPrefixes: ['notes/zaphod/'],
-                        });
-                        done();
-                    });
+        s3.putObject(
+            {
+                Bucket,
+                Key: 'notes/zaphod/TheFourth.txt',
+                Body: '',
+            },
+            err => {
+                if (!err) {
+                    s3.listObjects(
+                        { Bucket, Delimiter: '/', Prefix: 'notes/', Marker: 'notes/yore.rs', MaxKeys: 1 },
+                        (err, data) => {
+                            assert.strictEqual(err, null);
+                            cutAttributes(data);
+                            assert.deepStrictEqual(data, {
+                                IsTruncated: false,
+                                Marker: 'notes/yore.rs',
+                                Contents: [],
+                                Name: Bucket,
+                                Prefix: 'notes/',
+                                Delimiter: '/',
+                                MaxKeys: 1,
+                                CommonPrefixes: ['notes/zaphod/'],
+                            });
+                            done();
+                        }
+                    );
+                }
             }
-        });
+        );
     });
 
     it('should not list DeleteMarkers for version suspended buckets', done => {
         const obj = { name: 'testDeleteMarker.txt', value: 'foo' };
         const bucketName = `bucket-test-delete-markers-not-listed${Date.now()}`;
         let objectCount = 0;
-        return async.waterfall([
-            next => s3.createBucket({ Bucket: bucketName }, err => next(err)),
-            next => {
-                const params = {
-                    Bucket: bucketName,
-                    VersioningConfiguration: {
-                        Status: 'Suspended',
-                    },
-                };
-                return s3.putBucketVersioning(params, err =>
-                    next(err));
-            },
-            next => s3.putObject({
-                    Bucket: bucketName,
-                    Key: obj.name,
-                    Body: obj.value,
-                }, err =>
-                next(err)),
-            next => s3.listObjectsV2({ Bucket: bucketName },
-                (err, res) => {
-                    if (err) {
-                        return next(err);
-                    }
-                    objectCount = res.Contents.length;
-                    assert.strictEqual(res.Contents.some(c => c.Key === obj.name), true);
-                    return next();
-                }),
-            next => s3.deleteObject({
-                    Bucket: bucketName,
-                    Key: obj.name,
-                }, function test(err) {
-                    const headers = this.httpResponse.headers;
-                    assert.strictEqual(
-                        headers['x-amz-delete-marker'], 'true');
-                    return next(err);
-                }),
-            next => s3.listObjectsV2({ Bucket: bucketName },
-                (err, res) => {
-                    if (err) {
-                        return next(err);
-                    }
-                    assert.strictEqual(res.Contents.length, objectCount - 1);
-                    assert.strictEqual(res.Contents.some(c => c.Key === obj.name), false);
-                    return next();
-                }),
-            next => s3.deleteObject({ Bucket: bucketName, Key: obj.name, VersionId: 'null' }, err => next(err)),
-            next => s3.deleteBucket({ Bucket: bucketName }, err => next(err))
-        ], err => done(err));
+        return async.waterfall(
+            [
+                next => s3.createBucket({ Bucket: bucketName }, err => next(err)),
+                next => {
+                    const params = {
+                        Bucket: bucketName,
+                        VersioningConfiguration: {
+                            Status: 'Suspended',
+                        },
+                    };
+                    return s3.putBucketVersioning(params, err => next(err));
+                },
+                next =>
+                    s3.putObject(
+                        {
+                            Bucket: bucketName,
+                            Key: obj.name,
+                            Body: obj.value,
+                        },
+                        err => next(err)
+                    ),
+                next =>
+                    s3.listObjectsV2({ Bucket: bucketName }, (err, res) => {
+                        if (err) {
+                            return next(err);
+                        }
+                        objectCount = res.Contents.length;
+                        assert.strictEqual(
+                            res.Contents.some(c => c.Key === obj.name),
+                            true
+                        );
+                        return next();
+                    }),
+                next =>
+                    s3.deleteObject(
+                        {
+                            Bucket: bucketName,
+                            Key: obj.name,
+                        },
+                        function test(err) {
+                            const headers = this.httpResponse.headers;
+                            assert.strictEqual(headers['x-amz-delete-marker'], 'true');
+                            return next(err);
+                        }
+                    ),
+                next =>
+                    s3.listObjectsV2({ Bucket: bucketName }, (err, res) => {
+                        if (err) {
+                            return next(err);
+                        }
+                        assert.strictEqual(res.Contents.length, objectCount - 1);
+                        assert.strictEqual(
+                            res.Contents.some(c => c.Key === obj.name),
+                            false
+                        );
+                        return next();
+                    }),
+                next => s3.deleteObject({ Bucket: bucketName, Key: obj.name, VersionId: 'null' }, err => next(err)),
+                next => s3.deleteBucket({ Bucket: bucketName }, err => next(err)),
+            ],
+            err => done(err)
+        );
     });
 });

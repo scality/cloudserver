@@ -7,9 +7,8 @@ const bucket = 'testunsupportedchecksumsbucket';
 const objectKey = 'key';
 const objData = Buffer.alloc(1024, 'a');
 // note this is not the correct checksum in objDataWithTrailingChecksum
-const objDataWithTrailingChecksum = '10\r\n0123456789abcdef\r\n' +
-                                    '10\r\n0123456789abcdef\r\n' +
-                                    '0\r\nx-amz-checksum-crc64nvme:YeIDuLa7tU0=\r\n';
+const objDataWithTrailingChecksum =
+    '10\r\n0123456789abcdef\r\n' + '10\r\n0123456789abcdef\r\n' + '0\r\nx-amz-checksum-crc64nvme:YeIDuLa7tU0=\r\n';
 const objDataWithoutTrailingChecksum = '0123456789abcdef0123456789abcdef';
 
 const config = require('../../config.json');
@@ -22,33 +21,47 @@ const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
 
 describe('trailing checksum requests:', () => {
     before(done => {
-        makeS3Request({
-            method: 'PUT',
-            authCredentials,
-            bucket,
-        }, err => {
-            assert.ifError(err);
-            done();
-        });
+        makeS3Request(
+            {
+                method: 'PUT',
+                authCredentials,
+                bucket,
+            },
+            err => {
+                assert.ifError(err);
+                done();
+            }
+        );
     });
 
     after(done => {
-        async.series([
-            next => makeS3Request({
-                method: 'DELETE',
-                authCredentials,
-                bucket,
-                objectKey,
-            }, next),
-            next => makeS3Request({
-                method: 'DELETE',
-                authCredentials,
-                bucket,
-            }, next),
-        ], err => {
-            assert.ifError(err);
-            done();
-        });
+        async.series(
+            [
+                next =>
+                    makeS3Request(
+                        {
+                            method: 'DELETE',
+                            authCredentials,
+                            bucket,
+                            objectKey,
+                        },
+                        next
+                    ),
+                next =>
+                    makeS3Request(
+                        {
+                            method: 'DELETE',
+                            authCredentials,
+                            bucket,
+                        },
+                        next
+                    ),
+            ],
+            err => {
+                assert.ifError(err);
+                done();
+            }
+        );
     });
 
     it('should accept unsigned trailing checksum', done => {
@@ -85,18 +98,21 @@ describe('trailing checksum requests:', () => {
     });
 
     it('should have correct object content for unsigned trailing checksum', done => {
-        makeS3Request({
-            method: 'GET',
-            authCredentials,
-            bucket,
-            objectKey,
-        }, (err, res) => {
-            assert.ifError(err);
-            assert.strictEqual(res.statusCode, 200);
-            // check that the object data is the input stripped of the trailing checksum
-            assert.strictEqual(res.body, objDataWithoutTrailingChecksum);
-            return done();
-        });
+        makeS3Request(
+            {
+                method: 'GET',
+                authCredentials,
+                bucket,
+                objectKey,
+            },
+            (err, res) => {
+                assert.ifError(err);
+                assert.strictEqual(res.statusCode, 200);
+                // check that the object data is the input stripped of the trailing checksum
+                assert.strictEqual(res.body, objDataWithoutTrailingChecksum);
+                return done();
+            }
+        );
     });
 
     itSkipIfAWS('should respond with BadRequest for signed trailing checksum', done => {

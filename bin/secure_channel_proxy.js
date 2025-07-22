@@ -1,18 +1,11 @@
 #!/usr/bin/env node
 'use strict';
 
-const {
-    startWSManagementClient,
-    startPushConnectionHealthCheckServer,
-} = require('../lib/management/push');
+const { startWSManagementClient, startPushConnectionHealthCheckServer } = require('../lib/management/push');
 
 const logger = require('../lib/utilities/logger');
 
-const {
-    PUSH_ENDPOINT: pushEndpoint,
-    INSTANCE_ID: instanceId,
-    MANAGEMENT_TOKEN: managementToken,
-} = process.env;
+const { PUSH_ENDPOINT: pushEndpoint, INSTANCE_ID: instanceId, MANAGEMENT_TOKEN: managementToken } = process.env;
 
 if (!pushEndpoint) {
     logger.error('missing push endpoint env var');

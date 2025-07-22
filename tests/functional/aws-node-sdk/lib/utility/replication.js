@@ -1,16 +1,6 @@
 const replicationUtils = {
-    requiredConfigProperties: [
-        'Role',
-        'Rules',
-        'Status',
-        'Prefix',
-        'Destination',
-        'Bucket',
-    ],
-    optionalConfigProperties: [
-        'ID',
-        'StorageClass',
-    ],
+    requiredConfigProperties: ['Role', 'Rules', 'Status', 'Prefix', 'Destination', 'Bucket'],
+    optionalConfigProperties: ['ID', 'StorageClass'],
     invalidRoleARNs: [
         '',
         '*:aws:iam::account-id:role/resource',
@@ -33,7 +23,6 @@ const replicationUtils = {
         'arn:aws:iam::ac:role',
         'arn:aws:iam::a c:role',
         'arn:aws:iam::*:role',
-
     ],
     invalidBucketARNs: [
         '',
@@ -46,18 +35,9 @@ const replicationUtils = {
         'arn:aws:s3:::*',
         'arn:aws:s3:::invalidBucketName',
     ],
-    validStatuses: [
-        'Enabled',
-        'Disabled',
-    ],
-    validStorageClasses: [
-        'STANDARD',
-        'STANDARD_IA',
-        'REDUCED_REDUNDANCY',
-    ],
-    validMultipleStorageClasses: [
-        'zenko,us-east-2',
-    ],
+    validStatuses: ['Enabled', 'Disabled'],
+    validStorageClasses: ['STANDARD', 'STANDARD_IA', 'REDUCED_REDUNDANCY'],
+    validMultipleStorageClasses: ['zenko,us-east-2'],
 };
 
 module.exports = replicationUtils;

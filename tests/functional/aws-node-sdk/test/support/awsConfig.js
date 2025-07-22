@@ -18,14 +18,19 @@ function getAwsCredentials(profile, credFile) {
 }
 
 function getRealAwsConfig(location) {
-    const { awsEndpoint, gcpEndpoint, credentialsProfile,
-        credentials: locCredentials, bucketName, mpuBucketName, pathStyle } =
-        config.locationConstraints[location].details;
+    const {
+        awsEndpoint,
+        gcpEndpoint,
+        credentialsProfile,
+        credentials: locCredentials,
+        bucketName,
+        mpuBucketName,
+        pathStyle,
+    } = config.locationConstraints[location].details;
     const useHTTPS = config.locationConstraints[location].details.https;
     const proto = useHTTPS ? 'https' : 'http';
     const params = {
-        endpoint: gcpEndpoint ?
-            `${proto}://${gcpEndpoint}` : `${proto}://${awsEndpoint}`,
+        endpoint: gcpEndpoint ? `${proto}://${gcpEndpoint}` : `${proto}://${awsEndpoint}`,
         signatureVersion: 'v4',
     };
     if (config.locationConstraints[location].type === 'gcp') {
@@ -42,8 +47,7 @@ function getRealAwsConfig(location) {
         };
     }
     if (credentialsProfile) {
-        const credentials = getAwsCredentials(credentialsProfile,
-            '/.aws/credentials');
+        const credentials = getAwsCredentials(credentialsProfile, '/.aws/credentials');
         params.credentials = credentials;
         return params;
     }

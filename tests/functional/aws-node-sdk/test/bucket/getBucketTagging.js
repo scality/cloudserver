@@ -19,31 +19,43 @@ describe('aws-sdk test get bucket tagging', () => {
     afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
     it('should return accessDenied if expected bucket owner does not match', done => {
-        async.waterfall([
-            next => s3.getBucketTagging({
-                AccountId: s3.AccountId,
-                Bucket: bucket,
-                ExpectedBucketOwner: '944690102203',
-            },
-                (err, res) => {
-                    next(err, res);
-                }),
-        ], err => {
-            assertError(err, 'AccessDenied');
-            done();
-        });
+        async.waterfall(
+            [
+                next =>
+                    s3.getBucketTagging(
+                        {
+                            AccountId: s3.AccountId,
+                            Bucket: bucket,
+                            ExpectedBucketOwner: '944690102203',
+                        },
+                        (err, res) => {
+                            next(err, res);
+                        }
+                    ),
+            ],
+            err => {
+                assertError(err, 'AccessDenied');
+                done();
+            }
+        );
     });
 
     it('should not return accessDenied if expected bucket owner matches', done => {
-        async.series([
-            next => s3.getBucketTagging({ AccountId: s3.AccountId, Bucket: bucket, ExpectedBucketOwner: s3.AccountId },
-                (err, res) => {
-                    next(err, res);
-                }),
-        ], err => {
-            assertError(err, 'NoSuchTagSet');
-            done();
-        });
+        async.series(
+            [
+                next =>
+                    s3.getBucketTagging(
+                        { AccountId: s3.AccountId, Bucket: bucket, ExpectedBucketOwner: s3.AccountId },
+                        (err, res) => {
+                            next(err, res);
+                        }
+                    ),
+            ],
+            err => {
+                assertError(err, 'NoSuchTagSet');
+                done();
+            }
+        );
     });
 
     it('should return the TagSet', done => {
@@ -55,21 +67,32 @@ describe('aws-sdk test get bucket tagging', () => {
                 },
             ],
         };
-        async.series([
-            next => s3.putBucketTagging({
-                AccountId: s3.AccountId,
-                Tagging: tagSet,
-                Bucket: bucket,
-                ExpectedBucketOwner: s3.AccountId
-            }, next),
-            next => s3.getBucketTagging({
-                AccountId: s3.AccountId,
-                Bucket: bucket,
-                ExpectedBucketOwner: s3.AccountId
-            }, next),
-        ], (err, data) => {
-            assert.deepStrictEqual(data[1], tagSet);
-            done();
-        });
+        async.series(
+            [
+                next =>
+                    s3.putBucketTagging(
+                        {
+                            AccountId: s3.AccountId,
+                            Tagging: tagSet,
+                            Bucket: bucket,
+                            ExpectedBucketOwner: s3.AccountId,
+                        },
+                        next
+                    ),
+                next =>
+                    s3.getBucketTagging(
+                        {
+                            AccountId: s3.AccountId,
+                            Bucket: bucket,
+                            ExpectedBucketOwner: s3.AccountId,
+                        },
+                        next
+                    ),
+            ],
+            (err, data) => {
+                assert.deepStrictEqual(data[1], tagSet);
+                done();
+            }
+        );
     });
 });

@@ -7,13 +7,20 @@ describe('Monitoring - getting metrics', () => {
     const conf = require('../config.json');
 
     async function query(path, method = 'GET', token = 'report-token-1') {
-        return new Promise(resolve => http.request({
-            method,
-            host: conf.ipAddress,
-            path,
-            port: 8000,
-            headers: { 'x-scal-report-token': token },
-        }, () => resolve()).end());
+        return new Promise(resolve =>
+            http
+                .request(
+                    {
+                        method,
+                        host: conf.ipAddress,
+                        path,
+                        port: 8000,
+                        headers: { 'x-scal-report-token': token },
+                    },
+                    () => resolve()
+                )
+                .end()
+        );
     }
 
     async function getMetrics() {
@@ -22,14 +29,18 @@ describe('Monitoring - getting metrics', () => {
                 assert.strictEqual(res.statusCode, 200);
 
                 const body = [];
-                res.on('data', chunk => { body.push(chunk); });
+                res.on('data', chunk => {
+                    body.push(chunk);
+                });
                 res.on('end', () => resolve(body.join('')));
             });
         });
     }
 
     function parseMetric(metrics, name, labels) {
-        const labelsString = Object.entries(labels).map(e => `${e[0]}="${e[1]}"`).join(',');
+        const labelsString = Object.entries(labels)
+            .map(e => `${e[0]}="${e[1]}"`)
+            .join(',');
         const metric = metrics.match(new RegExp(`^${name}{${labelsString}} (.*)$`, 'm'));
         return metric ? metric[1] : null;
     }
@@ -51,26 +62,26 @@ describe('Monitoring - getting metrics', () => {
 
     [
         // Check all methods are reported (on unsupported route)
-        ['/_/fooooo',       { method: 'GET', code: '400' }],
-        ['/_/fooooo',       { method: 'PUT', code: '400' }],
-        ['/_/fooooo',       { method: 'POST', code: '400' }],
-        ['/_/fooooo',       { method: 'DELETE', code: '400' }],
+        ['/_/fooooo', { method: 'GET', code: '400' }],
+        ['/_/fooooo', { method: 'PUT', code: '400' }],
+        ['/_/fooooo', { method: 'POST', code: '400' }],
+        ['/_/fooooo', { method: 'DELETE', code: '400' }],
 
         // S3/api routes
-        ['/',               { method: 'GET', code: '403', action: 'serviceGet' }],
-        ['/foo',            { method: 'GET', code: '404', action: 'bucketGet' }],
-        ['/foo/bar',        { method: 'GET', code: '404', action: 'objectGet' }],
+        ['/', { method: 'GET', code: '403', action: 'serviceGet' }],
+        ['/foo', { method: 'GET', code: '404', action: 'bucketGet' }],
+        ['/foo/bar', { method: 'GET', code: '404', action: 'objectGet' }],
 
         // Internal handlers
-        ['/_/report',       { method: 'GET', code: '200', action: 'report' }],
-        ['/_/backbeat',     { method: 'GET', code: '405', action: 'routeBackbeat' }],
-        ['/_/metadata',     { method: 'GET', code: '403', action: 'routeMetadata' }],
-        ['/_/workflow-engine-operator',
-                            { method: 'GET', code: '405', action: 'routeWorkflowEngineOperator' }],
+        ['/_/report', { method: 'GET', code: '200', action: 'report' }],
+        ['/_/backbeat', { method: 'GET', code: '405', action: 'routeBackbeat' }],
+        ['/_/metadata', { method: 'GET', code: '403', action: 'routeMetadata' }],
+        ['/_/workflow-engine-operator', { method: 'GET', code: '405', action: 'routeWorkflowEngineOperator' }],
     ].forEach(([path, labels]) => {
         it(`should count http ${labels.method} requests metrics on ${path}`, async () => {
             const count = parseRequestsCount(await getMetrics(), labels);
-            for (let i = 1; i <= 3; i++) { /* eslint no-await-in-loop: "off" */
+            for (let i = 1; i <= 3; i++) {
+                /* eslint no-await-in-loop: "off" */
                 await query(path, labels.method);
 
                 const c = parseRequestsCount(await getMetrics(), labels);

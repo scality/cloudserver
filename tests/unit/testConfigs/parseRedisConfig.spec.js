@@ -31,8 +31,7 @@ describe('parseRedisConfig', () => {
             input: {
                 host: 'localhost',
                 port: 6479,
-                retry: {
-                },
+                retry: {},
             },
         },
         {
@@ -195,8 +194,7 @@ describe('parseRedisConfig', () => {
                 host: 'localhost',
                 port: 6479,
                 retry: {
-                    connectBackoff: {
-                    },
+                    connectBackoff: {},
                 },
             },
         },

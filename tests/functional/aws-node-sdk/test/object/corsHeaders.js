@@ -15,8 +15,7 @@ const bucket = 'bucketcorsheadertest';
 const objectKey = 'objectKeyName';
 const allowedOrigin = 'http://www.allowedwebsite.com';
 const notAllowedOrigin = 'http://www.notallowedwebsite.com';
-const vary = 'Origin, Access-Control-Request-Headers, ' +
-    'Access-Control-Request-Method';
+const vary = 'Origin, Access-Control-Request-Headers, ' + 'Access-Control-Request-Method';
 const defaultOptions = {
     allowedMethods: ['GET'],
     allowedOrigins: [allowedOrigin],
@@ -119,10 +118,12 @@ const apiMethods = [
         params: {
             Bucket: bucket,
             CORSConfiguration: {
-                CORSRules: [{
-                    AllowedOrigins: [allowedOrigin],
-                    AllowedMethods: ['PUT'],
-                }],
+                CORSRules: [
+                    {
+                        AllowedOrigins: [allowedOrigin],
+                        AllowedMethods: ['PUT'],
+                    },
+                ],
             },
         },
     },
@@ -186,9 +187,7 @@ const apiMethods = [
         params: {
             Bucket: bucket,
             Delete: {
-                Objects: [
-                    { Key: objectKey },
-                ],
+                Objects: [{ Key: objectKey }],
             },
         },
     },
@@ -233,19 +232,19 @@ function _checkHeaders(action, params, origin, expectedHeaders, callback) {
     function _runAssertions(resHeaders, cb) {
         if (expectedHeaders) {
             Object.keys(expectedHeaders).forEach(key => {
-                assert.deepEqual(resHeaders[key], expectedHeaders[key],
-                  `error header: ${key}`);
+                assert.deepEqual(resHeaders[key], expectedHeaders[key], `error header: ${key}`);
             });
         } else {
             // if no headersResponse provided, should not have these headers
             // in the request
-            ['access-control-allow-origin',
+            [
+                'access-control-allow-origin',
                 'access-control-allow-methods',
                 'access-control-allow-credentials',
-                'vary'].forEach(key => {
-                    assert.strictEqual(resHeaders[key], undefined,
-                    `Error: ${key} should not have value`);
-                });
+                'vary',
+            ].forEach(key => {
+                assert.strictEqual(resHeaders[key], undefined, `Error: ${key} should not have value`);
+            });
         }
         cb();
     }
@@ -261,8 +260,10 @@ function _checkHeaders(action, params, origin, expectedHeaders, callback) {
         _runAssertions(resHeaders, () => {
             if (response.data.UploadId) {
                 // abort multipart upload before deleting bucket in afterEach
-                return s3.abortMultipartUpload({ Bucket: bucket, Key: objectKey,
-                    UploadId: response.data.UploadId }, callback);
+                return s3.abortMultipartUpload(
+                    { Bucket: bucket, Key: objectKey, UploadId: response.data.UploadId },
+                    callback
+                );
             }
             return callback();
         });
@@ -297,31 +298,31 @@ describe('Cross Origin Resource Sharing requests', () => {
     });
 
     describe('on non-existing bucket', () => {
-        it('should not respond to request with CORS headers, even ' +
-            'if request was sent with Origin header', done => {
-            _checkHeaders(s3.listObjects, { Bucket: 'nonexistingbucket' },
-            allowedOrigin, null, done);
-        });
+        it(
+            'should not respond to request with CORS headers, even ' + 'if request was sent with Origin header',
+            done => {
+                _checkHeaders(s3.listObjects, { Bucket: 'nonexistingbucket' }, allowedOrigin, null, done);
+            }
+        );
     });
 
     describe('on bucket without CORS configuration', () => {
-        it('should not respond to request with CORS headers, even ' +
-            'if request was sent with Origin header', done => {
-            _checkHeaders(s3.listObjects, { Bucket: bucket },
-            allowedOrigin, null, done);
-        });
+        it(
+            'should not respond to request with CORS headers, even ' + 'if request was sent with Origin header',
+            done => {
+                _checkHeaders(s3.listObjects, { Bucket: bucket }, allowedOrigin, null, done);
+            }
+        );
     });
 
-    describe('on bucket with CORS configuration: ' +
-            'allow one origin and all methods', () => {
+    describe('on bucket with CORS configuration: ' + 'allow one origin and all methods', () => {
         const corsParams = generateCorsParams(bucket, {
             allowedMethods: ['GET', 'PUT', 'HEAD', 'POST', 'DELETE'],
             allowedOrigins: [allowedOrigin],
         });
         const expectedHeaders = {
             'access-control-allow-origin': allowedOrigin,
-            'access-control-allow-methods': corsParams.CORSConfiguration
-                .CORSRules[0].AllowedMethods.join(', '),
+            'access-control-allow-methods': corsParams.CORSConfiguration.CORSRules[0].AllowedMethods.join(', '),
             'access-control-allow-credentials': 'true',
             vary,
         };
@@ -330,8 +331,7 @@ describe('Cross Origin Resource Sharing requests', () => {
 
         afterEach(done => {
             removeAllVersions({ Bucket: bucket }, err => {
-                if (err && err.code !== 'NoSuchKey' &&
-                err.code !== 'NoSuchBucket') {
+                if (err && err.code !== 'NoSuchKey' && err.code !== 'NoSuchBucket') {
                     process.stdout.write(`Unexpected err in afterEach: ${err}`);
                     return done(err);
                 }
@@ -340,45 +340,48 @@ describe('Cross Origin Resource Sharing requests', () => {
         });
 
         describe('when request Origin/method match CORS configuration', () => {
-            it('should not respond with CORS headers to GET service (list ' +
-            'buckets), even if Origin/method match CORS rule', done => {
-                // no bucket specified in this request
-                _checkHeaders(s3.listBuckets, {}, allowedOrigin,
-                    null, done);
-            });
+            it(
+                'should not respond with CORS headers to GET service (list ' +
+                    'buckets), even if Origin/method match CORS rule',
+                done => {
+                    // no bucket specified in this request
+                    _checkHeaders(s3.listBuckets, {}, allowedOrigin, null, done);
+                }
+            );
 
-            it('should not respond with CORS headers after deleting bucket, ' +
-            'even if Origin/method match CORS rule', done => {
-                s3.deleteBucket({ Bucket: bucket }, err => {
-                    assert.strictEqual(err, null, `Unexpected err ${err}`);
-                    _checkHeaders(s3.listObjects, { Bucket: bucket },
-                    allowedOrigin, null, done);
-                });
-            });
+            it(
+                'should not respond with CORS headers after deleting bucket, ' +
+                    'even if Origin/method match CORS rule',
+                done => {
+                    s3.deleteBucket({ Bucket: bucket }, err => {
+                        assert.strictEqual(err, null, `Unexpected err ${err}`);
+                        _checkHeaders(s3.listObjects, { Bucket: bucket }, allowedOrigin, null, done);
+                    });
+                }
+            );
 
             apiMethods.forEach(method => {
-                it(`should respond to ${method.description} with CORS ` +
-                'headers (access-control-allow-origin, access-control-allow-' +
-                'methods, access-control-allow-credentials and vary)', done => {
-                    _checkHeaders(method.action, method.params, allowedOrigin,
-                    expectedHeaders, done);
-                });
+                it(
+                    `should respond to ${method.description} with CORS ` +
+                        'headers (access-control-allow-origin, access-control-allow-' +
+                        'methods, access-control-allow-credentials and vary)',
+                    done => {
+                        _checkHeaders(method.action, method.params, allowedOrigin, expectedHeaders, done);
+                    }
+                );
             });
         });
 
         describe('when request Origin does not match CORS rule', () => {
             apiMethods.forEach(method => {
-                it(`should not respond to ${method.description} with ` +
-                'CORS headers', done => {
-                    _checkHeaders(method.action, method.params,
-                    notAllowedOrigin, null, done);
+                it(`should not respond to ${method.description} with ` + 'CORS headers', done => {
+                    _checkHeaders(method.action, method.params, notAllowedOrigin, null, done);
                 });
             });
         });
     });
 
-    describe('on bucket with CORS configuration: ' +
-            'allow PUT method and one origin', () => {
+    describe('on bucket with CORS configuration: ' + 'allow PUT method and one origin', () => {
         const corsParams = generateCorsParams(bucket, {
             allowedMethods: ['PUT'],
             allowedOrigins: [allowedOrigin],
@@ -392,17 +395,13 @@ describe('Cross Origin Resource Sharing requests', () => {
             s3.deleteBucketCors({ Bucket: bucket }, done);
         });
 
-        it('when request method does not match CORS rule ' +
-        'should not respond with CORS headers', done => {
-            _checkHeaders(s3.listObjects, { Bucket: bucket },
-            allowedOrigin, null, done);
+        it('when request method does not match CORS rule ' + 'should not respond with CORS headers', done => {
+            _checkHeaders(s3.listObjects, { Bucket: bucket }, allowedOrigin, null, done);
         });
     });
 
-    describe('on bucket with CORS configuration and website configuration',
-    () => {
-        const bucket = process.env.AWS_ON_AIR ? 'awsbucketwebsitetester' :
-            'bucketwebsitetester';
+    describe('on bucket with CORS configuration and website configuration', () => {
+        const bucket = process.env.AWS_ON_AIR ? 'awsbucketwebsitetester' : 'bucketwebsitetester';
         const corsParams = generateCorsParams(bucket, {
             allowedMethods: ['GET', 'HEAD'],
             allowedOrigins: [allowedOrigin],
@@ -419,30 +418,38 @@ describe('Cross Origin Resource Sharing requests', () => {
         webConfig.addRoutingRule(redirect, condition);
 
         beforeEach(done =>
-            async.series([
-                next => s3.createBucket({
-                    Bucket: bucket,
-                    ACL: 'public-read',
-                }, next),
-                next => s3.putBucketCors(corsParams, next),
-                next => s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, next),
-                next => s3.putObject({
-                    Bucket: bucket,
-                    Key: 'index.html',
-                    ACL: 'public-read',
-                }, next),
-            ], err => {
-                assert.strictEqual(err, null,
-                    `Unexpected err ${err} in beforeEach`);
-                done(err);
-            })
+            async.series(
+                [
+                    next =>
+                        s3.createBucket(
+                            {
+                                Bucket: bucket,
+                                ACL: 'public-read',
+                            },
+                            next
+                        ),
+                    next => s3.putBucketCors(corsParams, next),
+                    next => s3.putBucketWebsite({ Bucket: bucket, WebsiteConfiguration: webConfig }, next),
+                    next =>
+                        s3.putObject(
+                            {
+                                Bucket: bucket,
+                                Key: 'index.html',
+                                ACL: 'public-read',
+                            },
+                            next
+                        ),
+                ],
+                err => {
+                    assert.strictEqual(err, null, `Unexpected err ${err} in beforeEach`);
+                    done(err);
+                }
+            )
         );
 
         afterEach(done =>
             s3.deleteObject({ Bucket: bucket, Key: 'index.html' }, err => {
-                assert.strictEqual(err, null,
-                    `Unexpected err ${err} in afterEach`);
+                assert.strictEqual(err, null, `Unexpected err ${err} in afterEach`);
                 s3.deleteBucket({ Bucket: bucket }, err => {
                     if (err) {
                         process.stdout.write(`Error in afterEach ${err}`);
@@ -453,47 +460,41 @@ describe('Cross Origin Resource Sharing requests', () => {
             })
         );
 
-        it('should respond with CORS headers at website endpoint (GET)',
-        done => {
+        it('should respond with CORS headers at website endpoint (GET)', done => {
             const headers = { Origin: allowedOrigin };
-            methodRequest({ method: 'GET', bucket, headers, headersResponse,
-                code: 200, isWebsite: true }, done);
+            methodRequest({ method: 'GET', bucket, headers, headersResponse, code: 200, isWebsite: true }, done);
         });
 
-        it('should respond with CORS headers at website endpoint (GET) ' +
-        'even in case of error',
-        done => {
+        it('should respond with CORS headers at website endpoint (GET) ' + 'even in case of error', done => {
             const headers = { Origin: allowedOrigin };
-            methodRequest({ method: 'GET', bucket, objectKey: 'test',
-                headers, headersResponse, code: 404, isWebsite: true }, done);
+            methodRequest(
+                { method: 'GET', bucket, objectKey: 'test', headers, headersResponse, code: 404, isWebsite: true },
+                done
+            );
         });
 
-        it('should respond with CORS headers at website endpoint (GET) ' +
-        'even in case of redirect',
-        done => {
+        it('should respond with CORS headers at website endpoint (GET) ' + 'even in case of redirect', done => {
             const headers = { Origin: allowedOrigin };
-            methodRequest({ method: 'GET', bucket, objectKey: 'redirect',
-                headers, headersResponse, code: 301, isWebsite: true }, done);
+            methodRequest(
+                { method: 'GET', bucket, objectKey: 'redirect', headers, headersResponse, code: 301, isWebsite: true },
+                done
+            );
         });
 
-        it('should respond with CORS headers at website endpoint (HEAD)',
-        done => {
+        it('should respond with CORS headers at website endpoint (HEAD)', done => {
             const headers = { Origin: allowedOrigin };
-            methodRequest({ method: 'HEAD', bucket, headers, headersResponse,
-                code: 200, isWebsite: true }, done);
+            methodRequest({ method: 'HEAD', bucket, headers, headersResponse, code: 200, isWebsite: true }, done);
         });
     });
 
-    describe('on bucket with additional cors configuration',
-    () => {
+    describe('on bucket with additional cors configuration', () => {
         afterEach(done => {
             s3.deleteBucketCors({ Bucket: bucket }, done);
         });
 
         describe('cors configuration : AllowedHeaders', () => {
             const corsParams = generateCorsParams(bucket, defaultOptions);
-            corsParams.CORSConfiguration.CORSRules[0]
-                .AllowedHeaders = ['Content-Type'];
+            corsParams.CORSConfiguration.CORSRules[0].AllowedHeaders = ['Content-Type'];
 
             const headersResponse = {
                 'access-control-allow-origin': allowedOrigin,
@@ -506,30 +507,33 @@ describe('Cross Origin Resource Sharing requests', () => {
                 s3.putBucketCors(corsParams, done);
             });
 
-            it('should not return access-control-allow-headers response ' +
-            'header even if request matches CORS rule and other access-' +
-            'control headers are returned', done => {
-                const headers = {
-                    'Origin': allowedOrigin,
-                    'Content-Type': 'testvalue',
-                };
-                const headersOmitted = ['access-control-allow-headers'];
-                methodRequest({ method: 'GET', bucket, headers, headersResponse,
-                    headersOmitted, code: 200 }, done);
-            });
+            it(
+                'should not return access-control-allow-headers response ' +
+                    'header even if request matches CORS rule and other access-' +
+                    'control headers are returned',
+                done => {
+                    const headers = {
+                        Origin: allowedOrigin,
+                        'Content-Type': 'testvalue',
+                    };
+                    const headersOmitted = ['access-control-allow-headers'];
+                    methodRequest({ method: 'GET', bucket, headers, headersResponse, headersOmitted, code: 200 }, done);
+                }
+            );
 
-            it('Request with matching Origin/method but additional headers ' +
-            'that violate CORS rule:\n\t should still respond with access-' +
-            'control headers (headers are only checked in preflight requests)',
-            done => {
-                const headers = {
-                    Origin: allowedOrigin,
-                    Test: 'test',
-                    Expires: 86400,
-                };
-                methodRequest({ method: 'GET', bucket, headers, headersResponse,
-                    code: 200 }, done);
-            });
+            it(
+                'Request with matching Origin/method but additional headers ' +
+                    'that violate CORS rule:\n\t should still respond with access-' +
+                    'control headers (headers are only checked in preflight requests)',
+                done => {
+                    const headers = {
+                        Origin: allowedOrigin,
+                        Test: 'test',
+                        Expires: 86400,
+                    };
+                    methodRequest({ method: 'GET', bucket, headers, headersResponse, code: 200 }, done);
+                }
+            );
         });
 
         [
@@ -546,15 +550,13 @@ describe('Cross Origin Resource Sharing requests', () => {
         ].forEach(elem => {
             describe(`cors configuration : ${elem.name}`, () => {
                 const corsParams = generateCorsParams(bucket, defaultOptions);
-                corsParams.CORSConfiguration.CORSRules[0][elem.name] =
-                    elem.testValue;
+                corsParams.CORSConfiguration.CORSRules[0][elem.name] = elem.testValue;
 
                 beforeEach(done => {
                     s3.putBucketCors(corsParams, done);
                 });
 
-                it(`should respond with ${elem.header} header ` +
-                'if request matches CORS rule', done => {
+                it(`should respond with ${elem.header} header ` + 'if request matches CORS rule', done => {
                     const headers = { Origin: allowedOrigin };
                     const headersResponse = {
                         'access-control-allow-origin': allowedOrigin,
@@ -562,11 +564,8 @@ describe('Cross Origin Resource Sharing requests', () => {
                         'access-control-allow-credentials': 'true',
                         vary,
                     };
-                    headersResponse[elem.header] =
-                        Array.isArray(elem.testValue) ? elem.testValue[0] :
-                        elem.testValue;
-                    methodRequest({ method: 'GET', bucket, headers,
-                        headersResponse, code: 200 }, done);
+                    headersResponse[elem.header] = Array.isArray(elem.testValue) ? elem.testValue[0] : elem.testValue;
+                    methodRequest({ method: 'GET', bucket, headers, headersResponse, code: 200 }, done);
                 });
             });
         });

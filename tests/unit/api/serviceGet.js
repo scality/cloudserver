@@ -45,35 +45,33 @@ describe('serviceGet API', () => {
             url: '/',
             headers: { host: `${bucketName3}.s3.amazonaws.com` },
         };
-        async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testbucketPutRequest1, log, next);
-            },
-            function waterfall2(corsHeaders, next) {
-                bucketPut(authInfo, testbucketPutRequest2, log, next);
-            },
-            function waterfall3(corsHeaders, next) {
-                bucketPut(authInfo, testbucketPutRequest3, log, next);
-            },
-            function waterfall4(corsHeaders, next) {
-                serviceGet(authInfo, serviceGetRequest, log, next);
-            },
-            function waterfall4(result, next) {
-                parseString(result, next);
-            },
-        ], (err, result) => {
-            assert.strictEqual(result.ListAllMyBucketsResult
-                .Buckets[0].Bucket.length, 3);
-            assert.strictEqual(result.ListAllMyBucketsResult
-                .Buckets[0].Bucket[0].Name[0], bucketName1);
-            assert.strictEqual(result.ListAllMyBucketsResult
-                .Buckets[0].Bucket[1].Name[0], bucketName2);
-            assert.strictEqual(result.ListAllMyBucketsResult
-                .Buckets[0].Bucket[2].Name[0], bucketName3);
-            assert.strictEqual(result.ListAllMyBucketsResult.$.xmlns,
-                'http://s3.amazonaws.com/doc/2006-03-01/');
-            done();
-        });
+        async.waterfall(
+            [
+                function waterfall1(next) {
+                    bucketPut(authInfo, testbucketPutRequest1, log, next);
+                },
+                function waterfall2(corsHeaders, next) {
+                    bucketPut(authInfo, testbucketPutRequest2, log, next);
+                },
+                function waterfall3(corsHeaders, next) {
+                    bucketPut(authInfo, testbucketPutRequest3, log, next);
+                },
+                function waterfall4(corsHeaders, next) {
+                    serviceGet(authInfo, serviceGetRequest, log, next);
+                },
+                function waterfall4(result, next) {
+                    parseString(result, next);
+                },
+            ],
+            (err, result) => {
+                assert.strictEqual(result.ListAllMyBucketsResult.Buckets[0].Bucket.length, 3);
+                assert.strictEqual(result.ListAllMyBucketsResult.Buckets[0].Bucket[0].Name[0], bucketName1);
+                assert.strictEqual(result.ListAllMyBucketsResult.Buckets[0].Bucket[1].Name[0], bucketName2);
+                assert.strictEqual(result.ListAllMyBucketsResult.Buckets[0].Bucket[2].Name[0], bucketName3);
+                assert.strictEqual(result.ListAllMyBucketsResult.$.xmlns, 'http://s3.amazonaws.com/doc/2006-03-01/');
+                done();
+            }
+        );
     });
 
     it('should prevent anonymous user from accessing getService API', done => {

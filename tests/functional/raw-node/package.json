@@ -1,18 +1,18 @@
 {
-  "name": "Test-rawnode",
-  "version": "0.1.0",
-  "description": "Test-rawnode",
-  "main": "tests.js",
-  "repository": "",
-  "keywords": [
-    "test"
-  ],
-  "scripts": {
-    "test-aws": "AWS_ON_AIR=true mocha -t 40000 test/ --exit",
-    "test-gcp": "mocha -t 40000 test/GCP/ --exit",
-    "test-routes": "mocha -t 40000 test/routes/ --exit",
-    "test": "mocha -t 40000 test/ --exit",
-    "test-debug": "_mocha -t 40000 test/ --exit"
-  },
-  "author": ""
+    "name": "Test-rawnode",
+    "version": "0.1.0",
+    "description": "Test-rawnode",
+    "main": "tests.js",
+    "repository": "",
+    "keywords": [
+        "test"
+    ],
+    "scripts": {
+        "test-aws": "AWS_ON_AIR=true mocha -t 40000 test/ --exit",
+        "test-gcp": "mocha -t 40000 test/GCP/ --exit",
+        "test-routes": "mocha -t 40000 test/routes/ --exit",
+        "test": "mocha -t 40000 test/ --exit",
+        "test-debug": "_mocha -t 40000 test/ --exit"
+    },
+    "author": ""
 }

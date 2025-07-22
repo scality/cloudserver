@@ -1,25 +1,19 @@
 const assert = require('assert');
 const { LifecycleDateTime } = require('arsenal').s3middleware.lifecycleHelpers;
 
-
-const {
-    generateExpirationHeaders,
-} = require('../../../../lib/api/apiUtils/object/expirationHeaders');
+const { generateExpirationHeaders } = require('../../../../lib/api/apiUtils/object/expirationHeaders');
 
 const datetime = new LifecycleDateTime();
 const objectDate = 'Fri, 21 Dec 2012 00:00:00 GMT';
 const expectedDaysExpiryDate = 'Sat, 22 Dec 2012 00:00:00 GMT';
 const expectedDateExpiryDate = 'Mon, 24 Dec 2012 00:00:00 GMT';
 
-
 const lifecycleExpirationDays = {
     rules: [
         {
             ruleID: 'test-days',
             ruleStatus: 'Enabled',
-            actions: [
-                { actionName: 'Expiration', days: 1 },
-            ],
+            actions: [{ actionName: 'Expiration', days: 1 }],
             prefix: '',
         },
     ],
@@ -31,13 +25,9 @@ const lifecycleExpirationTags = {
             ruleID: 'test-tags',
             ruleStatus: 'Enabled',
             filters: {
-                tags: [
-                    { key: 'key1', val: 'val1' },
-                ],
+                tags: [{ key: 'key1', val: 'val1' }],
             },
-            actions: [
-                { actionName: 'Expiration', days: 1 },
-            ],
+            actions: [{ actionName: 'Expiration', days: 1 }],
         },
     ],
 };
@@ -47,9 +37,7 @@ const lifecycleExpirationDate = {
         {
             ruleID: 'test-date',
             ruleStatus: 'Enabled',
-            actions: [
-                { actionName: 'Expiration', date: 'Mon, 24 Dec 2012 00:00:00 GMT' },
-            ],
+            actions: [{ actionName: 'Expiration', date: 'Mon, 24 Dec 2012 00:00:00 GMT' }],
             prefix: '',
         },
     ],
@@ -60,9 +48,7 @@ const lifecycleExpirationMPU = {
         {
             ruleID: 'test-mpu',
             ruleStatus: 'Enabled',
-            actions: [
-                { actionName: 'AbortIncompleteMultipartUpload', days: 1 },
-            ],
+            actions: [{ actionName: 'AbortIncompleteMultipartUpload', days: 1 }],
             prefix: '',
         },
     ],
@@ -172,7 +158,9 @@ describe('generateExpirationHeaders', () => {
         ],
     ];
 
-    tests.forEach(([msg, params, expected]) => it(msg, () => {
-        assert.deepStrictEqual(generateExpirationHeaders(params, datetime), expected);
-    }));
+    tests.forEach(([msg, params, expected]) =>
+        it(msg, () => {
+            assert.deepStrictEqual(generateExpirationHeaders(params, datetime), expected);
+        })
+    );
 });

@@ -8,7 +8,6 @@ const assert = require('assert');
 const logger = { info: msg => process.stdout.write(`${msg}\n`) };
 const async = require('async');
 
-
 function _createBucket(name, encrypt, done) {
     const { transport, ipAddress, accessKey, secretKey } = config;
     const verbose = false;
@@ -91,8 +90,7 @@ function _putObject(bucketName, objectName, encrypt, cb) {
     s3.putObject(params, cb);
 }
 
-function _copyObject(sourceBucket, sourceObject, targetBucket, targetObject,
-    encrypt, cb) {
+function _copyObject(sourceBucket, sourceObject, targetBucket, targetObject, encrypt, cb) {
     const params = {
         Bucket: targetBucket,
         CopySource: `/${sourceBucket}/${sourceObject}`,
@@ -134,58 +132,62 @@ describe('KMIP backed server-side encryption', () => {
 
     it('should create an encrypted bucket', done => {
         _createBucket(bucketName, true, err => {
-            assert.equal(err, null, 'Expected success, ' +
-            `got error ${JSON.stringify(err)}`);
+            assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
             done();
         });
     });
 
     it('should create an encrypted bucket and upload an object', done => {
-        async.waterfall([
-            next => _createBucket(bucketName, true, err => next(err)),
-            next => _putObject(bucketName, objectName, false, err => next(err)),
-        ], err => {
-            assert.equal(err, null, 'Expected success, ' +
-            `got error ${JSON.stringify(err)}`);
-            done();
-        });
+        async.waterfall(
+            [
+                next => _createBucket(bucketName, true, err => next(err)),
+                next => _putObject(bucketName, objectName, false, err => next(err)),
+            ],
+            err => {
+                assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                done();
+            }
+        );
     });
 
     it('should allow object PUT with SSE header in encrypted bucket', done => {
-        async.waterfall([
-            next => _createBucket(bucketName, true, err => next(err)),
-            next => _putObject(bucketName, objectName, true, err => next(err)),
-        ], err => {
-            assert.equal(err, null, 'Expected success, ' +
-            `got error ${JSON.stringify(err)}`);
-            done();
-        });
+        async.waterfall(
+            [
+                next => _createBucket(bucketName, true, err => next(err)),
+                next => _putObject(bucketName, objectName, true, err => next(err)),
+            ],
+            err => {
+                assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                done();
+            }
+        );
     });
 
     it('should allow object copy with SSE header in encrypted bucket', done => {
-        async.waterfall([
-            next => _createBucket(bucketName, false, err => next(err)),
-            next => _putObject(bucketName, objectName, false, err => next(err)),
-            next => _createBucket(`${bucketName}2`, true, err => next(err)),
-            next => _copyObject(bucketName, objectName, `${bucketName}2`,
-                `${objectName}2`, true, err => next(err)),
-        ], err => {
-            assert.equal(err, null, 'Expected success, ' +
-            `got error ${JSON.stringify(err)}`);
-            done();
-        });
+        async.waterfall(
+            [
+                next => _createBucket(bucketName, false, err => next(err)),
+                next => _putObject(bucketName, objectName, false, err => next(err)),
+                next => _createBucket(`${bucketName}2`, true, err => next(err)),
+                next => _copyObject(bucketName, objectName, `${bucketName}2`, `${objectName}2`, true, err => next(err)),
+            ],
+            err => {
+                assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                done();
+            }
+        );
     });
 
-    it('should allow creating mpu with SSE header ' +
-        'in encrypted bucket', done => {
-        async.waterfall([
-            next => _createBucket(bucketName, true, err => next(err)),
-            next => _initiateMultipartUpload(bucketName, objectName,
-                true, err => next(err)),
-        ], err => {
-            assert.equal(err, null, 'Expected success, ' +
-            `got error ${JSON.stringify(err)}`);
-            done();
-        });
+    it('should allow creating mpu with SSE header ' + 'in encrypted bucket', done => {
+        async.waterfall(
+            [
+                next => _createBucket(bucketName, true, err => next(err)),
+                next => _initiateMultipartUpload(bucketName, objectName, true, err => next(err)),
+            ],
+            err => {
+                assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                done();
+            }
+        );
     });
 });
