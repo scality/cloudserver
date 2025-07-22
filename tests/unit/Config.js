@@ -1,6 +1,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const sinon = require('sinon');
+const path = require('path');
 const {
     azureGetStorageAccountName,
     azureGetLocationCredentials,
@@ -812,6 +813,84 @@ describe('Config', () => {
             assert.strictEqual(config.port, 8000);
             assert.deepEqual(config.listenOn, [{ ip: '0.0.0.0', port: 8000 }]);
             assert.deepEqual(config.internalListenOn, [{ ip: '127.0.0.1', port: 9000 }]);
+        });
+    });
+
+    describe('instanceId', () => {
+        let defaultConfig;
+
+        before(() => {
+            setEnv('S3_CONFIG_FILE', 'tests/unit/testConfigs/allOptsConfig/config.json');
+            // Import config
+            const defaultConfigPath = path.join(__dirname, './testConfigs/allOptsConfig/config.json');
+            defaultConfig = require(defaultConfigPath);
+        });
+
+        afterEach(() => {
+            sinon.restore();
+        });
+
+        it('should use the instance id set in the config', () => {
+            // Stub fs.readFileSync to return a specific config.json content that includes instanceId
+            const originalReadFileSync = fs.readFileSync;
+            const readFileSyncStub = sinon.stub(fs, 'readFileSync');
+            // Mock only config.json file
+            readFileSyncStub
+                .withArgs(sinon.match(/\/config\.json$/))
+                .returns(JSON.stringify({ ...defaultConfig, instanceId: 'test' }));
+            // For all other files, use the original readFileSync
+            readFileSyncStub
+                .callsFake((filePath, ...args) => originalReadFileSync(filePath, ...args));
+            // Create a new ConfigObject instance
+            const config = new ConfigObject();
+            assert.strictEqual(config.instanceId, 'test');
+        });
+
+        it('should assert if instanceId is not a string', () => {
+            // Stub fs.readFileSync to return a specific config.json content that includes instanceId
+            const originalReadFileSync = fs.readFileSync;
+            const readFileSyncStub = sinon.stub(fs, 'readFileSync');
+            // Mock only config.json file
+            readFileSyncStub
+                .withArgs(sinon.match(/\/config\.json$/))
+                .returns(JSON.stringify({ ...defaultConfig, instanceId: 1234 }));
+            // For all other files, use the original readFileSync
+            readFileSyncStub
+                .callsFake((filePath, ...args) => originalReadFileSync(filePath, ...args));
+            // Create a new ConfigObject instance
+            assert.throws(() => new ConfigObject());
+        });
+
+        it('should use the instance id set in the env var', () => {
+            setEnv('CLOUDSERVER_INSTANCE_ID', '123456');
+            const config = new ConfigObject();
+            assert.strictEqual(config.instanceId, '123456');
+        });
+
+        it('should assert if instanceId is longer than 6 characters', () => {
+            setEnv('CLOUDSERVER_INSTANCE_ID', '1234567');
+            assert.throws(() => new ConfigObject());
+        });
+
+        it('should generate a new instanceId for external cloudserver', () => {
+            setEnv('HOSTNAME', 'connector-cloudserver-69958b4697-bs5pn');
+            const config = new ConfigObject();
+            assert.strictEqual(config.instanceId, 'ebs5pn');
+        });
+
+        it('should generate a new instanceId for internal cloudserver', () => {
+            setEnv('HOSTNAME', 'internal-cloudserver-54dc76b796-48m2x');
+            const config = new ConfigObject();
+            assert.strictEqual(config.instanceId, 'i48m2x');
+        });
+        it('should generate a random instanceId if HOSTNAME has an unexpected format', () => {
+            setEnv('HOSTNAME', 'cldsrv1');
+            const config = new ConfigObject();
+            assert.strictEqual(config.instanceId.length, 6);
+        });
+        it('should generate a random instanceId if HOSTNAME is not set', () => {
+            const config = new ConfigObject();
+            assert.strictEqual(config.instanceId.length, 6);
         });
     });
 });
