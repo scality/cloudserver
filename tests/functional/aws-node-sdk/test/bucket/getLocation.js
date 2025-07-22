@@ -30,6 +30,10 @@ describeSkipAWS('GET bucket location ', () => {
                 // if region location-dmf-v1 should return InvalidLocationConstraint error
                 return;
             }
+            if (locationConstraints[location].isCRR) {
+                // CRR location cannot be used as bucket location
+                return;
+            }
             describe(`with location: ${location}`, () => {
                 before(() => s3.createBucket(
                     {
