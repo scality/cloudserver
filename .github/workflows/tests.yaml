@@ -95,6 +95,8 @@ jobs:
         cache: pip
     - name: Install python deps
       run: pip install flake8
+    - name: Check code formatting
+      run: yarn run --silent check-format
     - name: Lint Javascript
       run: yarn run --silent lint -- --max-warnings 0
     - name: Lint Markdown
