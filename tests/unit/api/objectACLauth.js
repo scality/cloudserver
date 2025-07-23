@@ -95,7 +95,7 @@ describe('object acl authorization for objectGet and objectHead', () => {
         assert.deepStrictEqual(results, [true, true]);
     });
 
-    it('should allow access to bucker owner when object owner is alt account if ' +
+    it('should allow access to bucket owner when object owner is alt account if ' +
         'bucket-owner-read ACL', () => {
         const altAcctObj = {
             'owner-id': accountToVet,
@@ -118,7 +118,7 @@ describe('object acl authorization for objectGet and objectHead', () => {
         assert.deepStrictEqual(authResults, [true, true]);
     });
 
-    it('should allow access to bucker owner when object owner is alt account if ' +
+    it('should allow access to bucket owner when object owner is alt account if ' +
         'bucket-owner-full-control ACL', () => {
         const altAcctObj = {
             'owner-id': accountToVet,
