@@ -11,6 +11,19 @@ const {
     LOCATION_NAME_DMF,
 } = require('../../../../constants');
 
+const isMetadataOrFile = ['file', 'scality'].includes(config.backends.metadata);
+/**
+ * With null version compat mode the null key should look like
+ * 'object1putversion\u000099999999999999999999RG001  '
+ * Without it for BucketFile backends it looks like
+ * 'object1putversion\x00'
+ *
+ * The later case does not support ObjectRestore and needs some tests to be skipped.
+ *
+ * TODO: CLDSRV-721 RING 10 Support ObjectRestore (cold storage) with MD v1
+ */
+const isNullKeyMetadataV1 = isMetadataOrFile && !config.nullVersionCompatMode;
+
 function decodeVersionId(versionId) {
     let decodedVersionId;
     if (versionId) {
@@ -26,16 +39,16 @@ function decodeVersionId(versionId) {
 let metadataInit = false;
 
 function initMetadata(done) {
-	if (metadataInit === true) {
-		return done();
-	}
-	return metadata.setup(err => {
-		if (err) {
-			return done(err);
-		}
-		metadataInit = true;
-		return done();
-	});
+    if (metadataInit === true) {
+        return done();
+    }
+    return metadata.setup(err => {
+        if (err) {
+            return done(err);
+        }
+        metadataInit = true;
+        return done();
+    });
 }
 
 function getMetadata(bucketName, objectName, versionId, cb) {
@@ -55,8 +68,8 @@ function getMetadata(bucketName, objectName, versionId, cb) {
 function fakeMetadataTransition(bucketName, objectName, versionId, cb) {
     return getMetadata(bucketName, objectName, versionId, (err, objMD) => {
         if (err) {
-			return cb(err);
-		}
+            return cb(err);
+        }
         /* eslint-disable no-param-reassign */
         objMD['x-amz-scal-transition-in-progress'] = true;
         /* eslint-enable no-param-reassign */
@@ -78,8 +91,8 @@ function fakeMetadataTransition(bucketName, objectName, versionId, cb) {
 function fakeMetadataArchive(bucketName, objectName, versionId, archive, cb) {
     return getMetadata(bucketName, objectName, versionId, (err, objMD) => {
         if (err) {
-			return cb(err);
-		}
+            return cb(err);
+        }
         /* eslint-disable no-param-reassign */
         objMD['x-amz-storage-class'] = LOCATION_NAME_DMF;
         objMD.dataStoreName = LOCATION_NAME_DMF;
@@ -91,8 +104,9 @@ function fakeMetadataArchive(bucketName, objectName, versionId, archive, cb) {
 }
 
 module.exports = {
-	initMetadata,
-	getMetadata,
-	fakeMetadataArchive,
+    isNullKeyMetadataV1,
+    initMetadata,
+    getMetadata,
+    fakeMetadataArchive,
     fakeMetadataTransition,
 };

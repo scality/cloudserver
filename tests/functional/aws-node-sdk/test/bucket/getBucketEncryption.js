@@ -25,7 +25,7 @@ describe('aws-sdk test get bucket encryption', () => {
     before(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3(config);
-        return metadata.setup(done);
+        metadata.setup(done);
     });
 
     beforeEach(done => s3.createBucket({ Bucket: bucketName }, done));

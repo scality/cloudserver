@@ -55,7 +55,7 @@ describe('PUT object taggings', () => {
             return s3.putObject({ Bucket: bucketName, Key: objectName }, done);
         }));
 
-        afterEach(() => {
+        afterEach(async () => {
             process.stdout.write('Emptying bucket');
             return bucketUtil.empty(bucketName)
             .then(() => {
