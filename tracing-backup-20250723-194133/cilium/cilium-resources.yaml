@@ -1,0 +1,1329 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    annotations:
+      cilium.io/cilium-configmap-checksum: 5829d8094e295aa0d2c167c03d78487eb3abe167905b77b2f89add5cad19497a
+      container.apparmor.security.beta.kubernetes.io/apply-sysctl-overwrites: unconfined
+      container.apparmor.security.beta.kubernetes.io/cilium-agent: unconfined
+      container.apparmor.security.beta.kubernetes.io/clean-cilium-state: unconfined
+      container.apparmor.security.beta.kubernetes.io/config: unconfined
+      container.apparmor.security.beta.kubernetes.io/install-cni-binaries: unconfined
+      container.apparmor.security.beta.kubernetes.io/mount-bpf-fs: unconfined
+      container.apparmor.security.beta.kubernetes.io/mount-cgroup: unconfined
+      kubectl.kubernetes.io/restartedAt: "2025-07-23T17:21:43Z"
+    creationTimestamp: "2025-07-23T17:36:55Z"
+    generateName: cilium-
+    labels:
+      app.kubernetes.io/name: cilium-agent
+      app.kubernetes.io/part-of: cilium
+      controller-revision-hash: 789ccf5d5c
+      k8s-app: cilium
+      pod-template-generation: "8"
+    name: cilium-kl7mp
+    namespace: kube-system
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DaemonSet
+      name: cilium
+      uid: 09e96256-f205-470d-a82f-11bee4ff71ef
+    resourceVersion: "2704921"
+    uid: e8309f79-35c4-4080-94af-a49df886088c
+  spec:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchFields:
+            - key: metadata.name
+              operator: In
+              values:
+              - ip-10-160-103-37.eu-north-1.compute.internal
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              k8s-app: cilium
+          topologyKey: kubernetes.io/hostname
+    automountServiceAccountToken: true
+    containers:
+    - args:
+      - --config-dir=/tmp/cilium/config-map
+      - --api-rate-limit=endpoint-create=rate-limit:200/s,rate-burst:400
+      command:
+      - cilium-agent
+      env:
+      - name: K8S_NODE_NAME
+        valueFrom:
+          fieldRef:
+            apiVersion: v1
+            fieldPath: spec.nodeName
+      - name: CILIUM_K8S_NAMESPACE
+        valueFrom:
+          fieldRef:
+            apiVersion: v1
+            fieldPath: metadata.namespace
+      - name: CILIUM_CLUSTERMESH_CONFIG
+        value: /var/lib/cilium/clustermesh/
+      - name: GOMEMLIMIT
+        valueFrom:
+          resourceFieldRef:
+            divisor: "1"
+            resource: limits.memory
+      - name: KUBERNETES_SERVICE_HOST
+        value: 127.0.0.1
+      - name: KUBERNETES_SERVICE_PORT
+        value: "7443"
+      image: quay.io/cilium/cilium:v1.17.5@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+      imagePullPolicy: IfNotPresent
+      lifecycle:
+        postStart:
+          exec:
+            command:
+            - bash
+            - -c
+            - |
+              set -o errexit
+              set -o pipefail
+              set -o nounset
+
+              # When running in AWS ENI mode, it's likely that 'aws-node' has
+              # had a chance to install SNAT iptables rules. These can result
+              # in dropped traffic, so we should attempt to remove them.
+              # We do it using a 'postStart' hook since this may need to run
+              # for nodes which might have already been init'ed but may still
+              # have dangling rules. This is safe because there are no
+              # dependencies on anything that is part of the startup script
+              # itself, and can be safely run multiple times per node (e.g. in
+              # case of a restart).
+              if [[ "$(iptables-save | grep -E -c 'AWS-SNAT-CHAIN|AWS-CONNMARK-CHAIN')" != "0" ]];
+              then
+                  echo 'Deleting iptables rules created by the AWS CNI VPC plugin'
+                  iptables-save | grep -E -v 'AWS-SNAT-CHAIN|AWS-CONNMARK-CHAIN' | iptables-restore
+              fi
+              echo 'Done!'
+        preStop:
+          exec:
+            command:
+            - /cni-uninstall.sh
+      livenessProbe:
+        failureThreshold: 10
+        httpGet:
+          host: 127.0.0.1
+          httpHeaders:
+          - name: brief
+            value: "true"
+          - name: require-k8s-connectivity
+            value: "false"
+          path: /healthz
+          port: 9879
+          scheme: HTTP
+        periodSeconds: 30
+        successThreshold: 1
+        timeoutSeconds: 5
+      name: cilium-agent
+      ports:
+      - containerPort: 4244
+        hostPort: 4244
+        name: peer-service
+        protocol: TCP
+      - containerPort: 9962
+        hostPort: 9962
+        name: prometheus
+        protocol: TCP
+      - containerPort: 9965
+        hostPort: 9965
+        name: hubble-metrics
+        protocol: TCP
+      readinessProbe:
+        failureThreshold: 3
+        httpGet:
+          host: 127.0.0.1
+          httpHeaders:
+          - name: brief
+            value: "true"
+          path: /healthz
+          port: 9879
+          scheme: HTTP
+        periodSeconds: 30
+        successThreshold: 1
+        timeoutSeconds: 5
+      resources: {}
+      securityContext:
+        capabilities:
+          add:
+          - CHOWN
+          - KILL
+          - NET_ADMIN
+          - NET_RAW
+          - IPC_LOCK
+          - SYS_MODULE
+          - SYS_ADMIN
+          - SYS_RESOURCE
+          - DAC_OVERRIDE
+          - FOWNER
+          - SETGID
+          - SETUID
+          drop:
+          - ALL
+        seLinuxOptions:
+          level: s0
+          type: spc_t
+      startupProbe:
+        failureThreshold: 105
+        httpGet:
+          host: 127.0.0.1
+          httpHeaders:
+          - name: brief
+            value: "true"
+          path: /healthz
+          port: 9879
+          scheme: HTTP
+        initialDelaySeconds: 5
+        periodSeconds: 2
+        successThreshold: 1
+        timeoutSeconds: 1
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: FallbackToLogsOnError
+      volumeMounts:
+      - mountPath: /var/run/cilium/envoy/sockets
+        name: envoy-sockets
+      - mountPath: /host/proc/sys/net
+        name: host-proc-sys-net
+      - mountPath: /host/proc/sys/kernel
+        name: host-proc-sys-kernel
+      - mountPath: /sys/fs/bpf
+        mountPropagation: HostToContainer
+        name: bpf-maps
+      - mountPath: /var/run/cilium
+        name: cilium-run
+      - mountPath: /var/run/cilium/netns
+        mountPropagation: HostToContainer
+        name: cilium-netns
+      - mountPath: /host/etc/cni/net.d
+        name: etc-cni-netd
+      - mountPath: /var/lib/cilium/clustermesh
+        name: clustermesh-secrets
+        readOnly: true
+      - mountPath: /etc/config
+        name: ip-masq-agent
+        readOnly: true
+      - mountPath: /lib/modules
+        name: lib-modules
+        readOnly: true
+      - mountPath: /run/xtables.lock
+        name: xtables-lock
+      - mountPath: /etc/ipsec
+        name: cilium-ipsec-secrets
+      - mountPath: /var/lib/cilium/tls/hubble
+        name: hubble-tls
+        readOnly: true
+      - mountPath: /tmp
+        name: tmp
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-8cxnl
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    hostNetwork: true
+    initContainers:
+    - command:
+      - cilium-dbg
+      - build-config
+      env:
+      - name: K8S_NODE_NAME
+        valueFrom:
+          fieldRef:
+            apiVersion: v1
+            fieldPath: spec.nodeName
+      - name: CILIUM_K8S_NAMESPACE
+        valueFrom:
+          fieldRef:
+            apiVersion: v1
+            fieldPath: metadata.namespace
+      - name: KUBERNETES_SERVICE_HOST
+        value: 127.0.0.1
+      - name: KUBERNETES_SERVICE_PORT
+        value: "7443"
+      image: quay.io/cilium/cilium:v1.17.5@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+      imagePullPolicy: IfNotPresent
+      name: config
+      resources: {}
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: FallbackToLogsOnError
+      volumeMounts:
+      - mountPath: /tmp
+        name: tmp
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-8cxnl
+        readOnly: true
+    - command:
+      - sh
+      - -ec
+      - |
+        cp /usr/bin/cilium-mount /hostbin/cilium-mount;
+        nsenter --cgroup=/hostproc/1/ns/cgroup --mount=/hostproc/1/ns/mnt "${BIN_PATH}/cilium-mount" $CGROUP_ROOT;
+        rm /hostbin/cilium-mount
+      env:
+      - name: CGROUP_ROOT
+        value: /run/cilium/cgroupv2
+      - name: BIN_PATH
+        value: /opt/cni/bin
+      image: quay.io/cilium/cilium:v1.17.5@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+      imagePullPolicy: IfNotPresent
+      name: mount-cgroup
+      resources: {}
+      securityContext:
+        capabilities:
+          add:
+          - SYS_ADMIN
+          - SYS_CHROOT
+          - SYS_PTRACE
+          drop:
+          - ALL
+        seLinuxOptions:
+          level: s0
+          type: spc_t
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: FallbackToLogsOnError
+      volumeMounts:
+      - mountPath: /hostproc
+        name: hostproc
+      - mountPath: /hostbin
+        name: cni-path
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-8cxnl
+        readOnly: true
+    - command:
+      - sh
+      - -ec
+      - |
+        cp /usr/bin/cilium-sysctlfix /hostbin/cilium-sysctlfix;
+        nsenter --mount=/hostproc/1/ns/mnt "${BIN_PATH}/cilium-sysctlfix";
+        rm /hostbin/cilium-sysctlfix
+      env:
+      - name: BIN_PATH
+        value: /opt/cni/bin
+      image: quay.io/cilium/cilium:v1.17.5@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+      imagePullPolicy: IfNotPresent
+      name: apply-sysctl-overwrites
+      resources: {}
+      securityContext:
+        capabilities:
+          add:
+          - SYS_ADMIN
+          - SYS_CHROOT
+          - SYS_PTRACE
+          drop:
+          - ALL
+        seLinuxOptions:
+          level: s0
+          type: spc_t
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: FallbackToLogsOnError
+      volumeMounts:
+      - mountPath: /hostproc
+        name: hostproc
+      - mountPath: /hostbin
+        name: cni-path
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-8cxnl
+        readOnly: true
+    - args:
+      - mount | grep "/sys/fs/bpf type bpf" || mount -t bpf bpf /sys/fs/bpf
+      command:
+      - /bin/bash
+      - -c
+      - --
+      image: quay.io/cilium/cilium:v1.17.5@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+      imagePullPolicy: IfNotPresent
+      name: mount-bpf-fs
+      resources: {}
+      securityContext:
+        privileged: true
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: FallbackToLogsOnError
+      volumeMounts:
+      - mountPath: /sys/fs/bpf
+        mountPropagation: Bidirectional
+        name: bpf-maps
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-8cxnl
+        readOnly: true
+    - command:
+      - /init-container.sh
+      env:
+      - name: CILIUM_ALL_STATE
+        valueFrom:
+          configMapKeyRef:
+            key: clean-cilium-state
+            name: cilium-config
+            optional: true
+      - name: CILIUM_BPF_STATE
+        valueFrom:
+          configMapKeyRef:
+            key: clean-cilium-bpf-state
+            name: cilium-config
+            optional: true
+      - name: WRITE_CNI_CONF_WHEN_READY
+        valueFrom:
+          configMapKeyRef:
+            key: write-cni-conf-when-ready
+            name: cilium-config
+            optional: true
+      - name: KUBERNETES_SERVICE_HOST
+        value: 127.0.0.1
+      - name: KUBERNETES_SERVICE_PORT
+        value: "7443"
+      image: quay.io/cilium/cilium:v1.17.5@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+      imagePullPolicy: IfNotPresent
+      name: clean-cilium-state
+      resources: {}
+      securityContext:
+        capabilities:
+          add:
+          - NET_ADMIN
+          - SYS_MODULE
+          - SYS_ADMIN
+          - SYS_RESOURCE
+          drop:
+          - ALL
+        seLinuxOptions:
+          level: s0
+          type: spc_t
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: FallbackToLogsOnError
+      volumeMounts:
+      - mountPath: /sys/fs/bpf
+        name: bpf-maps
+      - mountPath: /run/cilium/cgroupv2
+        mountPropagation: HostToContainer
+        name: cilium-cgroup
+      - mountPath: /var/run/cilium
+        name: cilium-run
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-8cxnl
+        readOnly: true
+    - command:
+      - /install-plugin.sh
+      image: quay.io/cilium/cilium:v1.17.5@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+      imagePullPolicy: IfNotPresent
+      name: install-cni-binaries
+      resources:
+        requests:
+          cpu: 100m
+          memory: 10Mi
+      securityContext:
+        capabilities:
+          drop:
+          - ALL
+        seLinuxOptions:
+          level: s0
+          type: spc_t
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: FallbackToLogsOnError
+      volumeMounts:
+      - mountPath: /host/opt/cni/bin
+        name: cni-path
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-8cxnl
+        readOnly: true
+    nodeName: ip-10-160-103-37.eu-north-1.compute.internal
+    nodeSelector:
+      kubernetes.io/os: linux
+    preemptionPolicy: PreemptLowerPriority
+    priority: 2000001000
+    priorityClassName: system-node-critical
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext:
+      appArmorProfile:
+        type: Unconfined
+    serviceAccount: cilium
+    serviceAccountName: cilium
+    terminationGracePeriodSeconds: 1
+    tolerations:
+    - operator: Exists
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+    - effect: NoSchedule
+      key: node.kubernetes.io/disk-pressure
+      operator: Exists
+    - effect: NoSchedule
+      key: node.kubernetes.io/memory-pressure
+      operator: Exists
+    - effect: NoSchedule
+      key: node.kubernetes.io/pid-pressure
+      operator: Exists
+    - effect: NoSchedule
+      key: node.kubernetes.io/unschedulable
+      operator: Exists
+    - effect: NoSchedule
+      key: node.kubernetes.io/network-unavailable
+      operator: Exists
+    volumes:
+    - emptyDir: {}
+      name: tmp
+    - hostPath:
+        path: /var/run/cilium
+        type: DirectoryOrCreate
+      name: cilium-run
+    - hostPath:
+        path: /var/run/netns
+        type: DirectoryOrCreate
+      name: cilium-netns
+    - hostPath:
+        path: /sys/fs/bpf
+        type: DirectoryOrCreate
+      name: bpf-maps
+    - hostPath:
+        path: /proc
+        type: Directory
+      name: hostproc
+    - hostPath:
+        path: /run/cilium/cgroupv2
+        type: DirectoryOrCreate
+      name: cilium-cgroup
+    - hostPath:
+        path: /opt/cni/bin
+        type: DirectoryOrCreate
+      name: cni-path
+    - hostPath:
+        path: /etc/cni/net.d
+        type: DirectoryOrCreate
+      name: etc-cni-netd
+    - hostPath:
+        path: /lib/modules
+        type: ""
+      name: lib-modules
+    - hostPath:
+        path: /run/xtables.lock
+        type: FileOrCreate
+      name: xtables-lock
+    - hostPath:
+        path: /var/run/cilium/envoy/sockets
+        type: DirectoryOrCreate
+      name: envoy-sockets
+    - name: clustermesh-secrets
+      projected:
+        defaultMode: 400
+        sources:
+        - secret:
+            name: cilium-clustermesh
+            optional: true
+        - secret:
+            items:
+            - key: tls.key
+              path: common-etcd-client.key
+            - key: tls.crt
+              path: common-etcd-client.crt
+            - key: ca.crt
+              path: common-etcd-client-ca.crt
+            name: clustermesh-apiserver-remote-cert
+            optional: true
+        - secret:
+            items:
+            - key: tls.key
+              path: local-etcd-client.key
+            - key: tls.crt
+              path: local-etcd-client.crt
+            - key: ca.crt
+              path: local-etcd-client-ca.crt
+            name: clustermesh-apiserver-local-cert
+            optional: true
+    - configMap:
+        defaultMode: 420
+        items:
+        - key: config
+          path: ip-masq-agent
+        name: ip-masq-agent
+        optional: true
+      name: ip-masq-agent
+    - name: cilium-ipsec-secrets
+      secret:
+        defaultMode: 420
+        secretName: cilium-ipsec-keys
+    - hostPath:
+        path: /proc/sys/net
+        type: Directory
+      name: host-proc-sys-net
+    - hostPath:
+        path: /proc/sys/kernel
+        type: Directory
+      name: host-proc-sys-kernel
+    - name: hubble-tls
+      projected:
+        defaultMode: 400
+        sources:
+        - secret:
+            items:
+            - key: tls.crt
+              path: server.crt
+            - key: tls.key
+              path: server.key
+            - key: ca.crt
+              path: client-ca.crt
+            name: hubble-server-certs
+            optional: true
+    - name: kube-api-access-8cxnl
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T17:36:57Z"
+      status: "True"
+      type: PodReadyToStartContainers
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T17:37:02Z"
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T17:37:10Z"
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T17:37:10Z"
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T17:36:55Z"
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - containerID: containerd://604da5a32e44a9aa80541e2e33c62f0417f7151c72321bba8986478502e6491f
+      image: sha256:3e67bef8bfc81721a62a0673d8ef98741213db02834568066f26a108c5392bad
+      imageID: quay.io/cilium/cilium@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+      lastState: {}
+      name: cilium-agent
+      ready: true
+      restartCount: 0
+      started: true
+      state:
+        running:
+          startedAt: "2025-07-23T17:37:02Z"
+    hostIP: 10.160.103.37
+    hostIPs:
+    - ip: 10.160.103.37
+    initContainerStatuses:
+    - containerID: containerd://406ce812b897dcec1a76bce34fa8e637fc3c2fe6c342461e56082fd6209bffdd
+      image: sha256:3e67bef8bfc81721a62a0673d8ef98741213db02834568066f26a108c5392bad
+      imageID: quay.io/cilium/cilium@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+      lastState: {}
+      name: config
+      ready: true
+      restartCount: 0
+      started: false
+      state:
+        terminated:
+          containerID: containerd://406ce812b897dcec1a76bce34fa8e637fc3c2fe6c342461e56082fd6209bffdd
+          exitCode: 0
+          finishedAt: "2025-07-23T17:36:56Z"
+          reason: Completed
+          startedAt: "2025-07-23T17:36:56Z"
+    - containerID: containerd://9cf5eb90794bcda205cfc2040bdcd2ddf86954316bb4c0695832235490e66414
+      image: sha256:3e67bef8bfc81721a62a0673d8ef98741213db02834568066f26a108c5392bad
+      imageID: quay.io/cilium/cilium@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+      lastState: {}
+      name: mount-cgroup
+      ready: true
+      restartCount: 0
+      started: false
+      state:
+        terminated:
+          containerID: containerd://9cf5eb90794bcda205cfc2040bdcd2ddf86954316bb4c0695832235490e66414
+          exitCode: 0
+          finishedAt: "2025-07-23T17:36:57Z"
+          reason: Completed
+          startedAt: "2025-07-23T17:36:57Z"
+    - containerID: containerd://79b050d9013d0ab096d5883568be73e467a5e5f0011c3463e7de9f316c952e66
+      image: sha256:3e67bef8bfc81721a62a0673d8ef98741213db02834568066f26a108c5392bad
+      imageID: quay.io/cilium/cilium@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+      lastState: {}
+      name: apply-sysctl-overwrites
+      ready: true
+      restartCount: 0
+      started: false
+      state:
+        terminated:
+          containerID: containerd://79b050d9013d0ab096d5883568be73e467a5e5f0011c3463e7de9f316c952e66
+          exitCode: 0
+          finishedAt: "2025-07-23T17:36:58Z"
+          reason: Completed
+          startedAt: "2025-07-23T17:36:58Z"
+    - containerID: containerd://a5e071e87c80741f900caad7f6974cc067c982c5e94d4755159d531c136714a6
+      image: sha256:3e67bef8bfc81721a62a0673d8ef98741213db02834568066f26a108c5392bad
+      imageID: quay.io/cilium/cilium@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+      lastState: {}
+      name: mount-bpf-fs
+      ready: true
+      restartCount: 0
+      started: false
+      state:
+        terminated:
+          containerID: containerd://a5e071e87c80741f900caad7f6974cc067c982c5e94d4755159d531c136714a6
+          exitCode: 0
+          finishedAt: "2025-07-23T17:36:59Z"
+          reason: Completed
+          startedAt: "2025-07-23T17:36:59Z"
+    - containerID: containerd://6c87b468e490de37c5386595eeb7fa140e9151fc7032f966fdef3773d9b5d9b8
+      image: sha256:3e67bef8bfc81721a62a0673d8ef98741213db02834568066f26a108c5392bad
+      imageID: quay.io/cilium/cilium@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+      lastState: {}
+      name: clean-cilium-state
+      ready: true
+      restartCount: 0
+      started: false
+      state:
+        terminated:
+          containerID: containerd://6c87b468e490de37c5386595eeb7fa140e9151fc7032f966fdef3773d9b5d9b8
+          exitCode: 0
+          finishedAt: "2025-07-23T17:37:00Z"
+          reason: Completed
+          startedAt: "2025-07-23T17:37:00Z"
+    - containerID: containerd://77c949bfaea6579c2b7be57081c38aa41bfc87e3d2bdebde4a1efd754cb9f44f
+      image: sha256:3e67bef8bfc81721a62a0673d8ef98741213db02834568066f26a108c5392bad
+      imageID: quay.io/cilium/cilium@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+      lastState: {}
+      name: install-cni-binaries
+      ready: true
+      restartCount: 0
+      started: false
+      state:
+        terminated:
+          containerID: containerd://77c949bfaea6579c2b7be57081c38aa41bfc87e3d2bdebde4a1efd754cb9f44f
+          exitCode: 0
+          finishedAt: "2025-07-23T17:37:01Z"
+          reason: Completed
+          startedAt: "2025-07-23T17:37:01Z"
+    phase: Running
+    podIP: 10.160.103.37
+    podIPs:
+    - ip: 10.160.103.37
+    qosClass: Burstable
+    startTime: "2025-07-23T17:36:55Z"
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: "2025-07-17T19:09:44Z"
+    labels:
+      app.kubernetes.io/managed-by: salt
+      app.kubernetes.io/name: cilium-agent
+      app.kubernetes.io/part-of: cilium
+      heritage: salt
+      k8s-app: cilium
+      metalk8s.scality.com/version: 130.0.1-dev
+    name: cilium-agent
+    namespace: kube-system
+    resourceVersion: "393"
+    uid: 71e59043-c1ec-438c-9317-afa9030668f5
+  spec:
+    clusterIP: None
+    clusterIPs:
+    - None
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: metrics
+      port: 9962
+      protocol: TCP
+      targetPort: prometheus
+    selector:
+      k8s-app: cilium
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: "2025-07-17T19:09:44Z"
+    labels:
+      app.kubernetes.io/managed-by: salt
+      app.kubernetes.io/name: hubble-peer
+      app.kubernetes.io/part-of: cilium
+      heritage: salt
+      k8s-app: cilium
+      metalk8s.scality.com/version: 130.0.1-dev
+    name: hubble-peer
+    namespace: kube-system
+    resourceVersion: "407"
+    uid: 7337bacb-c0d1-4dff-9536-c1714dccdfbd
+  spec:
+    clusterIP: 10.103.126.61
+    clusterIPs:
+    - 10.103.126.61
+    internalTrafficPolicy: Local
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: peer-service
+      port: 443
+      protocol: TCP
+      targetPort: 4244
+    selector:
+      k8s-app: cilium
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: DaemonSet
+  metadata:
+    annotations:
+      deprecated.daemonset.template.generation: "8"
+    creationTimestamp: "2025-07-17T19:09:44Z"
+    generation: 8
+    labels:
+      app.kubernetes.io/managed-by: salt
+      app.kubernetes.io/name: cilium-agent
+      app.kubernetes.io/part-of: cilium
+      heritage: salt
+      k8s-app: cilium
+      metalk8s.scality.com/version: 130.0.1-dev
+    name: cilium
+    namespace: kube-system
+    resourceVersion: "2704933"
+    uid: 09e96256-f205-470d-a82f-11bee4ff71ef
+  spec:
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        k8s-app: cilium
+    template:
+      metadata:
+        annotations:
+          cilium.io/cilium-configmap-checksum: 5829d8094e295aa0d2c167c03d78487eb3abe167905b77b2f89add5cad19497a
+          kubectl.kubernetes.io/restartedAt: "2025-07-23T17:21:43Z"
+        creationTimestamp: null
+        labels:
+          app.kubernetes.io/name: cilium-agent
+          app.kubernetes.io/part-of: cilium
+          k8s-app: cilium
+      spec:
+        affinity:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  k8s-app: cilium
+              topologyKey: kubernetes.io/hostname
+        automountServiceAccountToken: true
+        containers:
+        - args:
+          - --config-dir=/tmp/cilium/config-map
+          - --api-rate-limit=endpoint-create=rate-limit:200/s,rate-burst:400
+          command:
+          - cilium-agent
+          env:
+          - name: K8S_NODE_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: spec.nodeName
+          - name: CILIUM_K8S_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: CILIUM_CLUSTERMESH_CONFIG
+            value: /var/lib/cilium/clustermesh/
+          - name: GOMEMLIMIT
+            valueFrom:
+              resourceFieldRef:
+                divisor: "1"
+                resource: limits.memory
+          - name: KUBERNETES_SERVICE_HOST
+            value: 127.0.0.1
+          - name: KUBERNETES_SERVICE_PORT
+            value: "7443"
+          image: quay.io/cilium/cilium:v1.17.5@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                - bash
+                - -c
+                - |
+                  set -o errexit
+                  set -o pipefail
+                  set -o nounset
+
+                  # When running in AWS ENI mode, it's likely that 'aws-node' has
+                  # had a chance to install SNAT iptables rules. These can result
+                  # in dropped traffic, so we should attempt to remove them.
+                  # We do it using a 'postStart' hook since this may need to run
+                  # for nodes which might have already been init'ed but may still
+                  # have dangling rules. This is safe because there are no
+                  # dependencies on anything that is part of the startup script
+                  # itself, and can be safely run multiple times per node (e.g. in
+                  # case of a restart).
+                  if [[ "$(iptables-save | grep -E -c 'AWS-SNAT-CHAIN|AWS-CONNMARK-CHAIN')" != "0" ]];
+                  then
+                      echo 'Deleting iptables rules created by the AWS CNI VPC plugin'
+                      iptables-save | grep -E -v 'AWS-SNAT-CHAIN|AWS-CONNMARK-CHAIN' | iptables-restore
+                  fi
+                  echo 'Done!'
+            preStop:
+              exec:
+                command:
+                - /cni-uninstall.sh
+          livenessProbe:
+            failureThreshold: 10
+            httpGet:
+              host: 127.0.0.1
+              httpHeaders:
+              - name: brief
+                value: "true"
+              - name: require-k8s-connectivity
+                value: "false"
+              path: /healthz
+              port: 9879
+              scheme: HTTP
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 5
+          name: cilium-agent
+          ports:
+          - containerPort: 4244
+            hostPort: 4244
+            name: peer-service
+            protocol: TCP
+          - containerPort: 9962
+            hostPort: 9962
+            name: prometheus
+            protocol: TCP
+          - containerPort: 9965
+            hostPort: 9965
+            name: hubble-metrics
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              host: 127.0.0.1
+              httpHeaders:
+              - name: brief
+                value: "true"
+              path: /healthz
+              port: 9879
+              scheme: HTTP
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 5
+          resources: {}
+          securityContext:
+            capabilities:
+              add:
+              - CHOWN
+              - KILL
+              - NET_ADMIN
+              - NET_RAW
+              - IPC_LOCK
+              - SYS_MODULE
+              - SYS_ADMIN
+              - SYS_RESOURCE
+              - DAC_OVERRIDE
+              - FOWNER
+              - SETGID
+              - SETUID
+              drop:
+              - ALL
+            seLinuxOptions:
+              level: s0
+              type: spc_t
+          startupProbe:
+            failureThreshold: 105
+            httpGet:
+              host: 127.0.0.1
+              httpHeaders:
+              - name: brief
+                value: "true"
+              path: /healthz
+              port: 9879
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 2
+            successThreshold: 1
+            timeoutSeconds: 1
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: FallbackToLogsOnError
+          volumeMounts:
+          - mountPath: /var/run/cilium/envoy/sockets
+            name: envoy-sockets
+          - mountPath: /host/proc/sys/net
+            name: host-proc-sys-net
+          - mountPath: /host/proc/sys/kernel
+            name: host-proc-sys-kernel
+          - mountPath: /sys/fs/bpf
+            mountPropagation: HostToContainer
+            name: bpf-maps
+          - mountPath: /var/run/cilium
+            name: cilium-run
+          - mountPath: /var/run/cilium/netns
+            mountPropagation: HostToContainer
+            name: cilium-netns
+          - mountPath: /host/etc/cni/net.d
+            name: etc-cni-netd
+          - mountPath: /var/lib/cilium/clustermesh
+            name: clustermesh-secrets
+            readOnly: true
+          - mountPath: /etc/config
+            name: ip-masq-agent
+            readOnly: true
+          - mountPath: /lib/modules
+            name: lib-modules
+            readOnly: true
+          - mountPath: /run/xtables.lock
+            name: xtables-lock
+          - mountPath: /etc/ipsec
+            name: cilium-ipsec-secrets
+          - mountPath: /var/lib/cilium/tls/hubble
+            name: hubble-tls
+            readOnly: true
+          - mountPath: /tmp
+            name: tmp
+        dnsPolicy: ClusterFirst
+        hostNetwork: true
+        initContainers:
+        - command:
+          - cilium-dbg
+          - build-config
+          env:
+          - name: K8S_NODE_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: spec.nodeName
+          - name: CILIUM_K8S_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: KUBERNETES_SERVICE_HOST
+            value: 127.0.0.1
+          - name: KUBERNETES_SERVICE_PORT
+            value: "7443"
+          image: quay.io/cilium/cilium:v1.17.5@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+          imagePullPolicy: IfNotPresent
+          name: config
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: FallbackToLogsOnError
+          volumeMounts:
+          - mountPath: /tmp
+            name: tmp
+        - command:
+          - sh
+          - -ec
+          - |
+            cp /usr/bin/cilium-mount /hostbin/cilium-mount;
+            nsenter --cgroup=/hostproc/1/ns/cgroup --mount=/hostproc/1/ns/mnt "${BIN_PATH}/cilium-mount" $CGROUP_ROOT;
+            rm /hostbin/cilium-mount
+          env:
+          - name: CGROUP_ROOT
+            value: /run/cilium/cgroupv2
+          - name: BIN_PATH
+            value: /opt/cni/bin
+          image: quay.io/cilium/cilium:v1.17.5@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+          imagePullPolicy: IfNotPresent
+          name: mount-cgroup
+          resources: {}
+          securityContext:
+            capabilities:
+              add:
+              - SYS_ADMIN
+              - SYS_CHROOT
+              - SYS_PTRACE
+              drop:
+              - ALL
+            seLinuxOptions:
+              level: s0
+              type: spc_t
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: FallbackToLogsOnError
+          volumeMounts:
+          - mountPath: /hostproc
+            name: hostproc
+          - mountPath: /hostbin
+            name: cni-path
+        - command:
+          - sh
+          - -ec
+          - |
+            cp /usr/bin/cilium-sysctlfix /hostbin/cilium-sysctlfix;
+            nsenter --mount=/hostproc/1/ns/mnt "${BIN_PATH}/cilium-sysctlfix";
+            rm /hostbin/cilium-sysctlfix
+          env:
+          - name: BIN_PATH
+            value: /opt/cni/bin
+          image: quay.io/cilium/cilium:v1.17.5@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+          imagePullPolicy: IfNotPresent
+          name: apply-sysctl-overwrites
+          resources: {}
+          securityContext:
+            capabilities:
+              add:
+              - SYS_ADMIN
+              - SYS_CHROOT
+              - SYS_PTRACE
+              drop:
+              - ALL
+            seLinuxOptions:
+              level: s0
+              type: spc_t
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: FallbackToLogsOnError
+          volumeMounts:
+          - mountPath: /hostproc
+            name: hostproc
+          - mountPath: /hostbin
+            name: cni-path
+        - args:
+          - mount | grep "/sys/fs/bpf type bpf" || mount -t bpf bpf /sys/fs/bpf
+          command:
+          - /bin/bash
+          - -c
+          - --
+          image: quay.io/cilium/cilium:v1.17.5@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+          imagePullPolicy: IfNotPresent
+          name: mount-bpf-fs
+          resources: {}
+          securityContext:
+            privileged: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: FallbackToLogsOnError
+          volumeMounts:
+          - mountPath: /sys/fs/bpf
+            mountPropagation: Bidirectional
+            name: bpf-maps
+        - command:
+          - /init-container.sh
+          env:
+          - name: CILIUM_ALL_STATE
+            valueFrom:
+              configMapKeyRef:
+                key: clean-cilium-state
+                name: cilium-config
+                optional: true
+          - name: CILIUM_BPF_STATE
+            valueFrom:
+              configMapKeyRef:
+                key: clean-cilium-bpf-state
+                name: cilium-config
+                optional: true
+          - name: WRITE_CNI_CONF_WHEN_READY
+            valueFrom:
+              configMapKeyRef:
+                key: write-cni-conf-when-ready
+                name: cilium-config
+                optional: true
+          - name: KUBERNETES_SERVICE_HOST
+            value: 127.0.0.1
+          - name: KUBERNETES_SERVICE_PORT
+            value: "7443"
+          image: quay.io/cilium/cilium:v1.17.5@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+          imagePullPolicy: IfNotPresent
+          name: clean-cilium-state
+          resources: {}
+          securityContext:
+            capabilities:
+              add:
+              - NET_ADMIN
+              - SYS_MODULE
+              - SYS_ADMIN
+              - SYS_RESOURCE
+              drop:
+              - ALL
+            seLinuxOptions:
+              level: s0
+              type: spc_t
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: FallbackToLogsOnError
+          volumeMounts:
+          - mountPath: /sys/fs/bpf
+            name: bpf-maps
+          - mountPath: /run/cilium/cgroupv2
+            mountPropagation: HostToContainer
+            name: cilium-cgroup
+          - mountPath: /var/run/cilium
+            name: cilium-run
+        - command:
+          - /install-plugin.sh
+          image: quay.io/cilium/cilium:v1.17.5@sha256:baf8541723ee0b72d6c489c741c81a6fdc5228940d66cb76ef5ea2ce3c639ea6
+          imagePullPolicy: IfNotPresent
+          name: install-cni-binaries
+          resources:
+            requests:
+              cpu: 100m
+              memory: 10Mi
+          securityContext:
+            capabilities:
+              drop:
+              - ALL
+            seLinuxOptions:
+              level: s0
+              type: spc_t
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: FallbackToLogsOnError
+          volumeMounts:
+          - mountPath: /host/opt/cni/bin
+            name: cni-path
+        nodeSelector:
+          kubernetes.io/os: linux
+        priorityClassName: system-node-critical
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          appArmorProfile:
+            type: Unconfined
+        serviceAccount: cilium
+        serviceAccountName: cilium
+        terminationGracePeriodSeconds: 1
+        tolerations:
+        - operator: Exists
+        volumes:
+        - emptyDir: {}
+          name: tmp
+        - hostPath:
+            path: /var/run/cilium
+            type: DirectoryOrCreate
+          name: cilium-run
+        - hostPath:
+            path: /var/run/netns
+            type: DirectoryOrCreate
+          name: cilium-netns
+        - hostPath:
+            path: /sys/fs/bpf
+            type: DirectoryOrCreate
+          name: bpf-maps
+        - hostPath:
+            path: /proc
+            type: Directory
+          name: hostproc
+        - hostPath:
+            path: /run/cilium/cgroupv2
+            type: DirectoryOrCreate
+          name: cilium-cgroup
+        - hostPath:
+            path: /opt/cni/bin
+            type: DirectoryOrCreate
+          name: cni-path
+        - hostPath:
+            path: /etc/cni/net.d
+            type: DirectoryOrCreate
+          name: etc-cni-netd
+        - hostPath:
+            path: /lib/modules
+            type: ""
+          name: lib-modules
+        - hostPath:
+            path: /run/xtables.lock
+            type: FileOrCreate
+          name: xtables-lock
+        - hostPath:
+            path: /var/run/cilium/envoy/sockets
+            type: DirectoryOrCreate
+          name: envoy-sockets
+        - name: clustermesh-secrets
+          projected:
+            defaultMode: 400
+            sources:
+            - secret:
+                name: cilium-clustermesh
+                optional: true
+            - secret:
+                items:
+                - key: tls.key
+                  path: common-etcd-client.key
+                - key: tls.crt
+                  path: common-etcd-client.crt
+                - key: ca.crt
+                  path: common-etcd-client-ca.crt
+                name: clustermesh-apiserver-remote-cert
+                optional: true
+            - secret:
+                items:
+                - key: tls.key
+                  path: local-etcd-client.key
+                - key: tls.crt
+                  path: local-etcd-client.crt
+                - key: ca.crt
+                  path: local-etcd-client-ca.crt
+                name: clustermesh-apiserver-local-cert
+                optional: true
+        - configMap:
+            defaultMode: 420
+            items:
+            - key: config
+              path: ip-masq-agent
+            name: ip-masq-agent
+            optional: true
+          name: ip-masq-agent
+        - name: cilium-ipsec-secrets
+          secret:
+            defaultMode: 420
+            secretName: cilium-ipsec-keys
+        - hostPath:
+            path: /proc/sys/net
+            type: Directory
+          name: host-proc-sys-net
+        - hostPath:
+            path: /proc/sys/kernel
+            type: Directory
+          name: host-proc-sys-kernel
+        - name: hubble-tls
+          projected:
+            defaultMode: 400
+            sources:
+            - secret:
+                items:
+                - key: tls.crt
+                  path: server.crt
+                - key: tls.key
+                  path: server.key
+                - key: ca.crt
+                  path: client-ca.crt
+                name: hubble-server-certs
+                optional: true
+    updateStrategy:
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 2
+      type: RollingUpdate
+  status:
+    currentNumberScheduled: 1
+    desiredNumberScheduled: 1
+    numberAvailable: 1
+    numberMisscheduled: 0
+    numberReady: 1
+    observedGeneration: 8
+    updatedNumberScheduled: 1
+kind: List
+metadata:
+  resourceVersion: ""

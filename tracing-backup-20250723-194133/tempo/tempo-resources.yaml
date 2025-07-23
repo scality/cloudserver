@@ -1,0 +1,1544 @@
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: "2025-07-23T13:50:46Z"
+    labels:
+      run: debug-tempo
+    name: debug-tempo
+    namespace: tempo
+    resourceVersion: "2602044"
+    uid: e7198d17-4426-4605-8d90-de6b34704092
+  spec:
+    containers:
+    - args:
+      - sleep
+      - "3600"
+      image: busybox
+      imagePullPolicy: Always
+      name: debug-tempo
+      resources: {}
+      stdin: true
+      stdinOnce: true
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      tty: true
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-8gmgc
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: ip-10-160-103-37.eu-north-1.compute.internal
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Never
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - name: kube-api-access-8gmgc
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+--
+    containerStatuses:
+    - containerID: containerd://23a9589fcda02dd97ab11f9bf0f2a9b8908d6754166476efb4d7b8433306be09
+      image: docker.io/library/busybox:latest
+      imageID: docker.io/library/busybox@sha256:f85340bf132ae937d2c2a763b8335c9bab35d6e8293f70f606b9c6178d84f42b
+      lastState: {}
+      name: debug-tempo
+      ready: false
+      restartCount: 0
+      started: false
+      state:
+        terminated:
+          containerID: containerd://23a9589fcda02dd97ab11f9bf0f2a9b8908d6754166476efb4d7b8433306be09
+          exitCode: 0
+          finishedAt: "2025-07-23T14:50:50Z"
+          reason: Completed
+          startedAt: "2025-07-23T13:50:50Z"
+    hostIP: 10.160.103.37
+    hostIPs:
+    - ip: 10.160.103.37
+    phase: Succeeded
+    podIP: 10.233.0.170
+    podIPs:
+    - ip: 10.233.0.170
+    qosClass: BestEffort
+    startTime: "2025-07-23T13:50:46Z"
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/restartedAt: "2025-07-22T07:33:05Z"
+    creationTimestamp: "2025-07-22T07:33:05Z"
+    generateName: tempo-756d7c5b69-
+    labels:
+      app: tempo
+      pod-template-hash: 756d7c5b69
+    name: tempo-756d7c5b69-88cwt
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: tempo-756d7c5b69
+      uid: cfda24a8-5f55-42f9-8a9b-89dca940bfe2
+    resourceVersion: "1523963"
+    uid: 3e4ce98b-805b-4505-ad9d-2dcf2a1be829
+  spec:
+    containers:
+    - args:
+      - -config.file=/etc/tempo/tempo.yaml
+      image: grafana/tempo:latest
+      imagePullPolicy: Always
+      name: tempo
+      ports:
+      - containerPort: 3200
+        protocol: TCP
+      - containerPort: 4317
+        protocol: TCP
+      - containerPort: 4318
+        protocol: TCP
+      resources: {}
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /etc/tempo
+        name: tempo-config
+      - mountPath: /var/tempo
+        name: tempo-storage
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-s5gg4
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: ip-10-160-103-37.eu-north-1.compute.internal
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - configMap:
+        defaultMode: 420
+        name: tempo-config
+      name: tempo-config
+    - emptyDir: {}
+      name: tempo-storage
+    - name: kube-api-access-s5gg4
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-22T07:33:08Z"
+      status: "True"
+      type: PodReadyToStartContainers
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-22T07:33:05Z"
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-22T07:33:08Z"
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-22T07:33:08Z"
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-22T07:33:05Z"
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - containerID: containerd://96602bf89198a8e8ac305e57f16d4869eb21057f162ae939a1ef29cd05755012
+      image: docker.io/grafana/tempo:latest
+      imageID: docker.io/grafana/tempo@sha256:381d8caf86e8bfb7eeeb63d978b09b6f713460d7e7c960d2892d3053ef79bce7
+      lastState: {}
+      name: tempo
+      ready: true
+      restartCount: 0
+      started: true
+      state:
+        running:
+          startedAt: "2025-07-22T07:33:07Z"
+    hostIP: 10.160.103.37
+    hostIPs:
+    - ip: 10.160.103.37
+    phase: Running
+    podIP: 10.233.0.199
+    podIPs:
+    - ip: 10.233.0.199
+    qosClass: BestEffort
+    startTime: "2025-07-22T07:33:05Z"
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    annotations:
+      scality.com/config_hash: 81210a31ec8e7193a6e21dcfa25f468ae6a4b994245da3e36960815e7817efd6
+    creationTimestamp: "2025-07-17T19:37:49Z"
+    generateName: artesca-storage-service-effbb47b-ds-
+    labels:
+      app.kubernetes.io/instance: artesca-storage-service-effbb47b-ds
+      apps.kubernetes.io/pod-index: "0"
+      controller-revision-hash: artesca-storage-service-effbb47b-ds-5797b45866
+      release: 0.2.0
+      statefulset.kubernetes.io/pod-name: artesca-storage-service-effbb47b-ds-0
+    name: artesca-storage-service-effbb47b-ds-0
+    namespace: xcore
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: StatefulSet
+      name: artesca-storage-service-effbb47b-ds
+      uid: daddf8e9-8ed0-4b6a-a1dd-b34a1bae0c48
+    resourceVersion: "708145"
+    uid: 63ef9fc4-af3b-4d9a-b447-cf19bb234eef
+  spec:
+    containers:
+    - args:
+      - -c
+      - hyperiod -c /etc/hyperdrive/hyperdrive.yaml -H 0:4231 -l -D /mnt/data-01 -D
+        /mnt/data-02 -D /mnt/data-03 -D /mnt/data-04 -D /mnt/data-05 -D /mnt/data-06
+        -D /mnt/data-07 -D /mnt/data-08 -D /mnt/data-09 -D /mnt/data-10 -D /mnt/data-11
+        -D /mnt/data-12
+      command:
+      - /bin/sh
+      image: metalk8s-registry-from-config.invalid/hyperdrive-3.1.9/hyperiod:3.1.9
+--
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"tempo","namespace":"tempo"},"spec":{"ports":[{"name":"http","port":3200,"targetPort":3200},{"name":"otlp-grpc","port":4317,"targetPort":4317},{"name":"otlp-http","port":4318,"targetPort":4318}],"selector":{"app":"tempo"}}}
+    creationTimestamp: "2025-07-17T22:07:22Z"
+    name: tempo
+    namespace: tempo
+    resourceVersion: "113195"
+    uid: c04e0fea-ca98-4578-a092-3e146821fdd7
+  spec:
+    clusterIP: 10.108.226.252
+    clusterIPs:
+    - 10.108.226.252
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: http
+      port: 3200
+      protocol: TCP
+      targetPort: 3200
+    - name: otlp-grpc
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: otlp-http
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
+    selector:
+      app: tempo
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: "2025-07-17T19:37:49Z"
+    labels:
+      app.kubernetes.io/instance: artesca-storage-service-effbb47b
+      xcore.scality.com/node-name: ip-10-160-103-37.eu-north-1.compute.internal
+      xcore.scality.com/resource-type: dataserver
+    name: artesca-storage-service-ds-effbb47b
+    namespace: xcore
+    ownerReferences:
+    - apiVersion: hd.scality.com/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DataService
+      name: artesca-storage-service-effbb47b
+      uid: afac06ab-60c1-45fc-b6e2-5aead82ac544
+    resourceVersion: "16567"
+    uid: c4a185f8-c561-4713-a729-f68a3e290f2f
+  spec:
+    clusterIP: 10.102.66.116
+    clusterIPs:
+    - 10.102.66.116
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: http
+      port: 4231
+      protocol: TCP
+      targetPort: 4231
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/instance: artesca-storage-service-effbb47b-ds
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: "2025-07-17T19:38:06Z"
+    labels:
+      app: artesca-storage-service-hdservice
+      family: hdcontroller
+--
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "8"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"name":"tempo","namespace":"tempo"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"tempo"}},"template":{"metadata":{"labels":{"app":"tempo"}},"spec":{"containers":[{"args":["-config.file=/etc/tempo/tempo.yaml"],"image":"grafana/tempo:latest","name":"tempo","ports":[{"containerPort":3200},{"containerPort":4317},{"containerPort":4318}],"volumeMounts":[{"mountPath":"/etc/tempo","name":"tempo-config"},{"mountPath":"/var/tempo","name":"tempo-storage"}]}],"volumes":[{"configMap":{"name":"tempo-config"},"name":"tempo-config"},{"emptyDir":{},"name":"tempo-storage"}]}}}}
+    creationTimestamp: "2025-07-17T22:07:22Z"
+    generation: 8
+    name: tempo
+    namespace: tempo
+    resourceVersion: "1523978"
+    uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: tempo
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-22T07:33:05Z"
+        creationTimestamp: null
+        labels:
+          app: tempo
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2025-07-22T07:33:08Z"
+      lastUpdateTime: "2025-07-22T07:33:08Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2025-07-17T22:07:22Z"
+      lastUpdateTime: "2025-07-22T07:33:08Z"
+      message: ReplicaSet "tempo-756d7c5b69" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 8
+    readyReplicas: 1
+    replicas: 1
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "1"
+    creationTimestamp: "2025-07-17T19:38:52Z"
+    generation: 1
+    labels:
+      app: hdcontroller-monitor
+      release: 0.2.0
+    name: artesca-storage-service-hdservice-monitor-1
+    namespace: xcore
+    ownerReferences:
+    - apiVersion: hd.scality.com/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: HdService
+      name: artesca-storage-service-hdservice
+      uid: 3b639ddc-e34c-4540-b377-d241df34410a
+    resourceVersion: "17501"
+    uid: 64493e05-1e23-4c67-b316-3bd6d69bc74a
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: hdcontroller-monitor
+        release: 0.2.0
+    strategy:
+      rollingUpdate:
+        maxSurge: 3
+        maxUnavailable: 0
+      type: RollingUpdate
+    template:
+      metadata:
+        annotations:
+          scality.com/config_hash: f71baa9a4c825a74a7ff938d9a6ca86a19bdc2e8571edb9525dde930f5b60549
+        creationTimestamp: null
+        labels:
+          app: hdcontroller-monitor
+          release: 0.2.0
+      spec:
+--
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "1"
+    creationTimestamp: "2025-07-17T22:07:22Z"
+    generation: 2
+    labels:
+      app: tempo
+      pod-template-hash: 55ccb85488
+    name: tempo-55ccb85488
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tempo
+      uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+    resourceVersion: "1518585"
+    uid: 220427fd-8d8b-44f8-a662-626eee78dd7f
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: tempo
+        pod-template-hash: 55ccb85488
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: tempo
+          pod-template-hash: 55ccb85488
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "5"
+    creationTimestamp: "2025-07-22T07:30:06Z"
+    generation: 3
+    labels:
+      app: tempo
+      pod-template-hash: 5674567cc5
+    name: tempo-5674567cc5
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tempo
+      uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+    resourceVersion: "1523244"
+    uid: 3f5d16f1-d72f-4b6f-afd0-7afdce7ddc47
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: tempo
+        pod-template-hash: 5674567cc5
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-22T07:30:06Z"
+        creationTimestamp: null
+        labels:
+          app: tempo
+          pod-template-hash: 5674567cc5
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    observedGeneration: 3
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "7"
+    creationTimestamp: "2025-07-22T07:32:03Z"
+    generation: 3
+    labels:
+      app: tempo
+      pod-template-hash: 5894bdf57d
+    name: tempo-5894bdf57d
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tempo
+      uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+    resourceVersion: "1523976"
+    uid: 61c60cf5-54b9-465a-af3e-aa8904fa6783
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: tempo
+        pod-template-hash: 5894bdf57d
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-22T07:32:03Z"
+        creationTimestamp: null
+        labels:
+          app: tempo
+          pod-template-hash: 5894bdf57d
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    observedGeneration: 3
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "4"
+    creationTimestamp: "2025-07-22T07:29:31Z"
+    generation: 3
+    labels:
+      app: tempo
+      pod-template-hash: 5d4f5b58c
+    name: tempo-5d4f5b58c
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tempo
+      uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+    resourceVersion: "1522025"
+    uid: 20aef6b7-1aa3-40c7-86c1-a5f1136d6928
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: tempo
+        pod-template-hash: 5d4f5b58c
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-22T07:29:31Z"
+        creationTimestamp: null
+        labels:
+          app: tempo
+          pod-template-hash: 5d4f5b58c
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    observedGeneration: 3
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "6"
+    creationTimestamp: "2025-07-22T07:31:29Z"
+    generation: 2
+    labels:
+      app: tempo
+      pod-template-hash: 6fccb5fb7c
+    name: tempo-6fccb5fb7c
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tempo
+      uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+    resourceVersion: "1523911"
+    uid: 9bdbdf84-f513-4ce5-8ccd-f6111de8912e
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: tempo
+        pod-template-hash: 6fccb5fb7c
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-22T07:31:29Z"
+        creationTimestamp: null
+        labels:
+          app: tempo
+          pod-template-hash: 6fccb5fb7c
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "8"
+    creationTimestamp: "2025-07-22T07:33:05Z"
+    generation: 2
+    labels:
+      app: tempo
+      pod-template-hash: 756d7c5b69
+    name: tempo-756d7c5b69
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tempo
+      uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+    resourceVersion: "1523966"
+    uid: cfda24a8-5f55-42f9-8a9b-89dca940bfe2
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: tempo
+        pod-template-hash: 756d7c5b69
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-22T07:33:05Z"
+        creationTimestamp: null
+        labels:
+          app: tempo
+          pod-template-hash: 756d7c5b69
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    availableReplicas: 1
+    fullyLabeledReplicas: 1
+    observedGeneration: 2
+    readyReplicas: 1
+    replicas: 1
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "2"
+    creationTimestamp: "2025-07-22T07:24:11Z"
+    generation: 2
+    labels:
+      app: tempo
+      pod-template-hash: b6cf9695b
+    name: tempo-b6cf9695b
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tempo
+      uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+    resourceVersion: "1522261"
+    uid: a2d10f17-4518-41b2-bdd5-dfc83a2bdb76
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: tempo
+        pod-template-hash: b6cf9695b
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-22T07:24:11Z"
+        creationTimestamp: null
+        labels:
+          app: tempo
+          pod-template-hash: b6cf9695b
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "3"
+    creationTimestamp: "2025-07-22T07:29:11Z"
+    generation: 2
+    labels:
+      app: tempo
+      pod-template-hash: c7fb58b5c
+    name: tempo-c7fb58b5c
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tempo
+      uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+    resourceVersion: "1521620"
+    uid: 6b4684af-66fe-44fa-a3b3-338790a03f83
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: tempo
+        pod-template-hash: c7fb58b5c
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-22T07:29:11Z"
+        creationTimestamp: null
+        labels:
+          app: tempo
+          pod-template-hash: c7fb58b5c
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "4"
+      deployment.kubernetes.io/revision: "1"
+    creationTimestamp: "2025-07-17T19:38:52Z"
+    generation: 1
+    labels:
+      app: hdcontroller-monitor
+      pod-template-hash: 65dcf4f8d4
+      release: 0.2.0
+    name: artesca-storage-service-hdservice-monitor-1-65dcf4f8d4
+    namespace: xcore
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: artesca-storage-service-hdservice-monitor-1
+      uid: 64493e05-1e23-4c67-b316-3bd6d69bc74a
+    resourceVersion: "17498"
+    uid: ae8deb6e-50a3-4cd0-aa09-5a142289bf20
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: hdcontroller-monitor
+        pod-template-hash: 65dcf4f8d4
+        release: 0.2.0
+    template:
+      metadata:
+        annotations:
+          scality.com/config_hash: f71baa9a4c825a74a7ff938d9a6ca86a19bdc2e8571edb9525dde930f5b60549
+        creationTimestamp: null
+        labels:
+          app: hdcontroller-monitor
+          pod-template-hash: 65dcf4f8d4
+          release: 0.2.0
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+--
+      null, \"logBase\": 1, \"max\": null, \"min\": \"0\", \"show\": true }, {\n         \"format\":
+      \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\":
+      true\n       } ], \"yaxis\": { \"align\": false, \"alignLevel\": null } }, {
+      \"aliasColors\": {}, \"bars\": false,\n     \"dashLength\": 10, \"dashes\":
+      false, \"datasource\": \"${DS_PROMETHEUS}\",\n     \"description\": \"Total
+      amount of data written to temporary files by queries in this database. All temporary
+      files are counted, regardless of why the temporary file was created, and regardless
+      of the log_temp_files setting.\", \"fill\": 1, \"gridPos\": { \"h\": 7, \"w\":
+      8, \"x\": 0, \"y\": 43 }, \"id\": 68, \"legend\": { \"alignAsTable\": true,
+      \"avg\": true, \"current\": true, \"max\": false,\n       \"min\": false, \"rightSide\":
+      true, \"show\": true,\n       \"total\": true, \"values\": true }, \"lines\":
+      true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\":
+      {}, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\":
+      \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\":
+      false, \"targets\": [ { \"expr\": \"irate(pg_stat_database_temp_bytes{instance=\\\"$instance\\\",
+      datname=~\\\"$datname\\\"}[5m])\", \"format\": \"time_series\", \"intervalFactor\":
+      1, \"legendFormat\": \"{{datname}}\", \"refId\": \"A\"\n       } ], \"thresholds\":
+      [], \"timeFrom\": null, \"timeShift\": null, \"title\": \"Temp File (Bytes)\",
+      \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\"
+      },\n     \"type\": \"graph\", \"xaxis\": { \"buckets\": null, \"mode\": \"time\",
+      \"name\": null, \"show\": true, \"values\": [] }, \"yaxes\": [ { \"format\":
+      \"bytes\",\n         \"label\": null, \"logBase\": 1, \"max\": null,\n         \"min\":
+      \"0\", \"show\": true }, { \"format\": \"short\", \"label\": null, \"logBase\":
+      1, \"max\": null, \"min\": null, \"show\": true } ],\n     \"yaxis\": { \"align\":
+      false, \"alignLevel\": null\n     } }, { \"aliasColors\": {}, \"bars\": false,
+      \"dashLength\": 10, \"dashes\": false, \"datasource\": \"${DS_PROMETHEUS}\",
+      \"fill\": 1, \"gridPos\": { \"h\": 7, \"w\": 16, \"x\": 8, \"y\": 43 }, \"id\":
+      70, \"legend\": { \"alignAsTable\": true, \"avg\": true, \"current\": true,
+      \"max\": true,\n       \"min\": true, \"show\": true, \"total\": false, \"values\":
+      true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\":
+      \"null\", \"options\": {}, \"percentage\": false, \"pointradius\": 5, \"points\":
+      false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10,
+      \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"irate(pg_stat_bgwriter_checkpoint_write_time{instance=\\\"$instance\\\"}[5m])\",\n
+      \        \"format\": \"time_series\", \"intervalFactor\": 1, \"legendFormat\":
+      \"write_time - Total amount of time that has been spent in the portion of checkpoint
+      processing where files are written to disk.\", \"refId\": \"B\" },\n       {
+      \"expr\": \"irate(pg_stat_bgwriter_checkpoint_sync_time{instance=\\\"$instance\\\"}[5m])\",\n
+      \        \"format\": \"time_series\", \"intervalFactor\": 1, \"legendFormat\":
+      \"sync_time - Total amount of time that has been spent in the portion of checkpoint
+      processing where files are synchronized to disk.\", \"refId\": \"A\"\n       }
+      ], \"thresholds\": [], \"timeFrom\": null, \"timeShift\": null, \"title\": \"Checkpoint
+      Stats\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\"
+      },\n     \"type\": \"graph\", \"xaxis\": { \"buckets\": null, \"mode\": \"time\",
+      \"name\": null, \"show\": true, \"values\": [] }, \"yaxes\": [ { \"format\":
+      \"ms\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\":
+      true }, { \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null,
+      \"min\": null, \"show\": true } ],\n     \"yaxis\": { \"align\": false, \"alignLevel\":
+      null\n     } } ], \"refresh\": \"10s\", \"schemaVersion\": 19, \"style\": \"dark\",
+      \"tags\": [ \"postgres\", \"db\", \"stats\" ],\n \"templating\": { \"list\":
+      [ { \"current\": { \"text\": \"Prometheus\", \"value\": \"Prometheus\" }, \"hide\":
+      0, \"label\": \"datasource\", \"name\": \"DS_PROMETHEUS\",\n       \"options\":
+      [], \"query\": \"prometheus\", \"refresh\": 1, \"regex\": \"\", \"type\": \"datasource\"
+      }, {\n       \"auto\": true, \"auto_count\": 200, \"auto_min\": \"1s\",\n       \"current\":
+      { \"text\": \"auto\", \"value\": \"$__auto_interval_interval\"\n       }, \"hide\":
+      0, \"label\": \"Interval\", \"name\": \"interval\", \"options\": [ { \"selected\":
+      true, \"text\": \"auto\", \"value\": \"$__auto_interval_interval\"\n         },
+      { \"selected\": false, \"text\": \"1s\", \"value\": \"1s\" }, { \"selected\":
+--
+      \"version\": 1 } "
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"postgres.json":"{ \"__inputs\": [ { \"name\": \"DS_PROMETHEUS\",\n     \"label\": \"DS_PROMETHEUS\", \"description\": \"\", \"type\": \"datasource\", \"pluginId\": \"prometheus\", \"pluginName\": \"Prometheus\"\n   } ], \"__requires\": [ { \"type\": \"grafana\", \"id\": \"grafana\", \"name\": \"Grafana\", \"version\": \"6.3.5\" },\n   { \"type\": \"panel\", \"id\": \"graph\", \"name\": \"Graph\",\n     \"version\": \"\" }, { \"type\": \"datasource\", \"id\": \"prometheus\", \"name\": \"Prometheus\", \"version\": \"1.0.0\"\n   }, { \"type\": \"panel\", \"id\": \"singlestat\", \"name\": \"Singlestat\", \"version\": \"\" } ], \"annotations\": {\n   \"list\": [ { \"builtIn\": 1, \"datasource\": \"-- Grafana --\", \"enable\": true, \"hide\": true, \"iconColor\": \"rgba(0, 211, 255, 1)\", \"name\": \"Annotations \u0026 Alerts\", \"type\": \"dashboard\" } ] }, \"description\": \"This dashboard works with postgres_exporter for prometheus\", \"editable\": true, \"gnetId\": 9628, \"graphTooltip\": 0, \"id\": null, \"iteration\": 1568751813814,\n \"links\": [], \"panels\": [ { \"collapsed\": false, \"gridPos\": { \"h\": 1, \"w\": 24, \"x\": 0, \"y\": 0\n     }, \"id\": 34, \"panels\": [], \"title\": \"General Counters, CPU, Memory and File Descriptor Stats\", \"type\": \"row\"\n   }, { \"cacheTimeout\": null, \"colorBackground\": false,\n     \"colorValue\": true, \"colors\": [ \"#299c46\", \"#7eb26d\",\n       \"#d44a3a\" ], \"datasource\": \"${DS_PROMETHEUS}\", \"format\": \"none\", \"gauge\": { \"maxValue\": 100, \"minValue\": 0, \"show\": false, \"thresholdLabels\": false, \"thresholdMarkers\": true }, \"gridPos\": { \"h\": 2, \"w\": 4, \"x\": 0, \"y\": 1 }, \"id\": 36, \"interval\": null,\n     \"links\": [], \"mappingType\": 1, \"mappingTypes\": [ {\n         \"name\": \"value to text\", \"value\": 1 }, {\n         \"name\": \"range to text\", \"value\": 2 } ],\n     \"maxDataPoints\": 100, \"nullPointMode\": \"connected\", \"nullText\": null, \"options\": {}, \"postfix\": \"\", \"postfixFontSize\": \"50%\", \"prefix\": \"\", \"prefixFontSize\": \"50%\", \"rangeMaps\": [ { \"from\": \"null\", \"text\": \"N/A\", \"to\": \"null\" } ], \"sparkline\": { \"fillColor\": \"rgba(31, 118, 189, 0.18)\", \"full\": false, \"lineColor\": \"rgb(31, 120, 193)\", \"show\": false }, \"tableColumn\": \"\", \"targets\": [ { \"expr\": \"pg_static{release=\\\"$release\\\", instance=\\\"$instance\\\"}\", \"format\": \"time_series\", \"instant\": true, \"intervalFactor\": 1, \"legendFormat\": \"{{short_version}}\",\n         \"refId\": \"A\" } ], \"thresholds\": \"\",\n     \"title\": \"Version\", \"type\": \"singlestat\", \"valueFontSize\": \"80%\", \"valueMaps\": [ { \"op\": \"=\", \"text\": \"N/A\", \"value\": \"null\" } ], \"valueName\": \"name\" }, { \"cacheTimeout\": null, \"colorBackground\": false, \"colorValue\": false, \"colors\": [ \"#299c46\",\n       \"rgba(237, 129, 40, 0.89)\", \"#d44a3a\" ], \"datasource\": \"${DS_PROMETHEUS}\", \"description\": \"start time of the process\",\n     \"format\": \"dateTimeFromNow\", \"gauge\": { \"maxValue\": 100, \"minValue\": 0, \"show\": false, \"thresholdLabels\": false, \"thresholdMarkers\": true }, \"gridPos\": { \"h\": 2, \"w\": 4, \"x\": 4, \"y\": 1 }, \"id\": 28, \"interval\": null, \"links\": [], \"mappingType\": 1,\n     \"mappingTypes\": [ { \"name\": \"value to text\",\n         \"value\": 1 }, { \"name\": \"range to text\", \"value\": 2 } ], \"maxDataPoints\": 100, \"nullPointMode\": \"connected\", \"nullText\": null, \"options\": {}, \"postfix\": \"\", \"postfixFontSize\": \"110%\", \"prefix\": \"\", \"prefixFontSize\": \"110%\", \"rangeMaps\": [ {\n         \"from\": \"null\", \"text\": \"N/A\", \"to\": \"null\" } ], \"sparkline\": { \"fillColor\": \"rgba(31, 118, 189, 0.18)\", \"full\": false, \"lineColor\": \"rgb(31, 120, 193)\", \"show\": false }, \"tableColumn\": \"\", \"targets\": [ { \"expr\": \"pg_postmaster_start_time_seconds{release=\\\"$release\\\", instance=\\\"$instance\\\"} * 1000\", \"format\": \"time_series\",\n         \"intervalFactor\": 2, \"legendFormat\": \"\", \"refId\": \"A\" } ], \"thresholds\": \"\", \"title\": \"Start Time\", \"type\": \"singlestat\", \"valueFontSize\": \"70%\",\n     \"valueMaps\": [ { \"op\": \"=\", \"text\": \"N/A\", \"value\": \"null\" } ], \"valueName\": \"avg\" }, { \"cacheTimeout\": null, \"colorBackground\": false, \"colorValue\": false, \"colors\": [ \"rgba(245, 54, 54, 0.9)\", \"rgba(237, 129, 40, 0.89)\", \"rgba(50, 172, 45, 0.97)\" ], \"datasource\": \"${DS_PROMETHEUS}\", \"format\": \"decbytes\", \"gauge\": { \"maxValue\": 100, \"minValue\": 0, \"show\": false, \"thresholdLabels\": false, \"thresholdMarkers\": true }, \"gridPos\": { \"h\": 2, \"w\": 4, \"x\": 8, \"y\": 1 }, \"height\": \"200px\", \"id\": 10,\n     \"interval\": null, \"links\": [], \"mappingType\": 1, \"mappingTypes\": [ { \"name\": \"value to text\", \"value\": 1\n       }, { \"name\": \"range to text\", \"value\": 2 } ], \"maxDataPoints\": 100, \"nullPointMode\": \"connected\", \"nullText\": null, \"options\": {}, \"postfix\": \"\", \"postfixFontSize\": \"50%\", \"prefix\": \"\", \"prefixFontSize\": \"50%\", \"rangeMaps\": [ { \"from\": \"null\", \"text\": \"N/A\", \"to\": \"null\" } ], \"sparkline\": { \"fillColor\": \"rgba(31, 118, 189, 0.18)\", \"full\": false,\n       \"lineColor\": \"rgb(31, 120, 193)\", \"show\": false },\n     \"tableColumn\": \"\", \"targets\": [ { \"expr\": \"SUM(pg_stat_database_tup_fetched{datname=~\\\"$datname\\\", instance=~\\\"$instance\\\"})\",\n         \"format\": \"time_series\", \"intervalFactor\": 2, \"refId\": \"A\", \"step\": 4 } ], \"thresholds\": \"\",\n     \"title\": \"Current fetch data\", \"type\": \"singlestat\", \"valueFontSize\": \"80%\", \"valueMaps\": [ { \"op\": \"=\", \"text\": \"N/A\", \"value\": \"null\" } ], \"valueName\": \"current\" }, { \"cacheTimeout\": null, \"colorBackground\": false, \"colorValue\": false, \"colors\": [ \"rgba(245, 54, 54, 0.9)\", \"rgba(237, 129, 40, 0.89)\", \"rgba(50, 172, 45, 0.97)\" ], \"datasource\": \"${DS_PROMETHEUS}\", \"format\": \"decbytes\", \"gauge\": { \"maxValue\": 100, \"minValue\": 0, \"show\": false, \"thresholdLabels\": false, \"thresholdMarkers\": true }, \"gridPos\": { \"h\": 2, \"w\": 4, \"x\": 12, \"y\": 1 }, \"height\": \"200px\", \"id\": 11,\n     \"interval\": null, \"links\": [], \"mappingType\": 1, \"mappingTypes\": [ { \"name\": \"value to text\", \"value\": 1\n       }, { \"name\": \"range to text\", \"value\": 2 } ], \"maxDataPoints\": 100, \"nullPointMode\": \"connected\", \"nullText\": null, \"options\": {}, \"postfix\": \"\", \"postfixFontSize\": \"50%\", \"prefix\": \"\", \"prefixFontSize\": \"50%\", \"rangeMaps\": [ { \"from\": \"null\", \"text\": \"N/A\", \"to\": \"null\" } ], \"sparkline\": { \"fillColor\": \"rgba(31, 118, 189, 0.18)\", \"full\": false,\n       \"lineColor\": \"rgb(31, 120, 193)\", \"show\": false },\n     \"tableColumn\": \"\", \"targets\": [ { \"expr\": \"SUM(pg_stat_database_tup_inserted{release=\\\"$release\\\", datname=~\\\"$datname\\\", instance=~\\\"$instance\\\"})\", \"format\": \"time_series\", \"intervalFactor\": 2, \"refId\": \"A\", \"step\": 4 } ],\n     \"thresholds\": \"\", \"title\": \"Current insert data\", \"type\": \"singlestat\", \"valueFontSize\": \"80%\", \"valueMaps\": [ {\n         \"op\": \"=\", \"text\": \"N/A\", \"value\": \"null\"\n       } ], \"valueName\": \"current\" }, { \"cacheTimeout\": null, \"colorBackground\": false, \"colorValue\": false, \"colors\": [ \"rgba(245, 54, 54, 0.9)\", \"rgba(237, 129, 40, 0.89)\",\n       \"rgba(50, 172, 45, 0.97)\" ], \"datasource\": \"${DS_PROMETHEUS}\",\n     \"format\": \"decbytes\", \"gauge\": { \"maxValue\": 100,\n       \"minValue\": 0, \"show\": false, \"thresholdLabels\": false, \"thresholdMarkers\": true }, \"gridPos\": { \"h\": 2, \"w\": 4, \"x\": 16, \"y\": 1 }, \"height\": \"200px\", \"id\": 12, \"interval\": null, \"links\": [],\n     \"mappingType\": 1, \"mappingTypes\": [ { \"name\": \"value to text\", \"value\": 1 }, { \"name\": \"range to text\", \"value\": 2 } ], \"maxDataPoints\": 100, \"nullPointMode\": \"connected\", \"nullText\": null, \"options\": {}, \"postfix\": \"\", \"postfixFontSize\": \"50%\", \"prefix\": \"\", \"prefixFontSize\": \"50%\", \"rangeMaps\": [ {\n         \"from\": \"null\", \"text\": \"N/A\", \"to\": \"null\" } ], \"sparkline\": { \"fillColor\": \"rgba(31, 118, 189, 0.18)\", \"full\": false, \"lineColor\": \"rgb(31, 120, 193)\", \"show\": false }, \"tableColumn\": \"\", \"targets\": [ { \"expr\": \"SUM(pg_stat_database_tup_updated{datname=~\\\"$datname\\\", instance=~\\\"$instance\\\"})\", \"format\": \"time_series\", \"intervalFactor\": 2, \"refId\": \"A\", \"step\": 4 } ],\n     \"thresholds\": \"\", \"title\": \"Current update data\", \"type\": \"singlestat\", \"valueFontSize\": \"80%\", \"valueMaps\": [ {\n         \"op\": \"=\", \"text\": \"N/A\", \"value\": \"null\"\n       } ], \"valueName\": \"current\" }, { \"cacheTimeout\": null, \"colorBackground\": false, \"colorValue\": false, \"colors\": [ \"#299c46\", \"rgba(237, 129, 40, 0.89)\", \"#d44a3a\"\n     ], \"datasource\": \"${DS_PROMETHEUS}\", \"format\": \"none\",\n     \"gauge\": { \"maxValue\": 100, \"minValue\": 0, \"show\": false, \"thresholdLabels\": false, \"thresholdMarkers\": true\n     }, \"gridPos\": { \"h\": 2, \"w\": 4, \"x\": 20, \"y\": 1 }, \"id\": 38, \"interval\": null,\n     \"links\": [], \"mappingType\": 1, \"mappingTypes\": [ {\n         \"name\": \"value to text\", \"value\": 1 }, {\n         \"name\": \"range to text\", \"value\": 2 } ],\n     \"maxDataPoints\": 100, \"nullPointMode\": \"connected\", \"nullText\": null, \"options\": {}, \"postfix\": \"\", \"postfixFontSize\": \"50%\", \"prefix\": \"\", \"prefixFontSize\": \"50%\", \"rangeMaps\": [ { \"from\": \"null\", \"text\": \"N/A\", \"to\": \"null\" } ], \"sparkline\": { \"fillColor\": \"rgba(31, 118, 189, 0.18)\", \"full\": false, \"lineColor\": \"rgb(31, 120, 193)\", \"show\": false }, \"tableColumn\": \"\", \"targets\": [ { \"expr\": \"pg_settings_max_connections{release=\\\"$release\\\", instance=\\\"$instance\\\"}\", \"format\": \"time_series\", \"intervalFactor\": 1, \"refId\": \"A\" } ], \"thresholds\": \"\",\n     \"title\": \"Max Connections\", \"type\": \"singlestat\", \"valueFontSize\": \"80%\", \"valueMaps\": [ { \"op\": \"=\", \"text\": \"N/A\", \"value\": \"null\" } ], \"valueName\": \"avg\" }, { \"aliasColors\": {}, \"bars\": false, \"dashLength\": 10, \"dashes\": false, \"datasource\": \"${DS_PROMETHEUS}\", \"description\": \"Average user and system CPU time spent in seconds.\", \"fill\": 1,\n     \"fillGradient\": 0, \"gridPos\": { \"h\": 7, \"w\": 8, \"x\": 0, \"y\": 3 }, \"id\": 22, \"legend\": { \"alignAsTable\": true, \"avg\": true, \"current\": true, \"max\": true, \"min\": true, \"show\": true,\n       \"total\": false, \"values\": true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\": { \"dataLinks\": [] }, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"avg(rate(process_cpu_seconds_total{release=\\\"$release\\\", instance=\\\"$instance\\\"}[5m]) * 1000)\", \"format\": \"time_series\", \"intervalFactor\": 2, \"legendFormat\": \"CPU Time\", \"refId\": \"A\" }\n     ], \"thresholds\": [], \"timeFrom\": null, \"timeRegions\": [], \"timeShift\": null, \"title\": \"Average CPU Usage\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\"\n     }, \"type\": \"graph\", \"xaxis\": { \"buckets\": null, \"mode\": \"time\", \"name\": null, \"show\": true, \"values\": [] }, \"yaxes\": [ { \"format\": \"s\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true }, {\n         \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true\n       } ], \"yaxis\": { \"align\": false, \"alignLevel\": null } }, { \"aliasColors\": {}, \"bars\": false,\n     \"dashLength\": 10, \"dashes\": false, \"datasource\": \"${DS_PROMETHEUS}\",\n     \"description\": \"Virtual and Resident memory size in bytes, averages over 5 min interval\", \"fill\": 1, \"fillGradient\": 0, \"gridPos\": { \"h\": 7, \"w\": 8, \"x\": 8, \"y\": 3\n     }, \"id\": 24, \"legend\": { \"alignAsTable\": true,\n       \"avg\": true, \"current\": true, \"max\": true, \"min\": true, \"show\": true, \"total\": false, \"values\": true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\": { \"dataLinks\": [] }, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"avg(rate(process_resident_memory_bytes{release=\\\"$release\\\", instance=\\\"$instance\\\"}[5m]))\", \"format\": \"time_series\",\n         \"intervalFactor\": 2, \"legendFormat\": \"Resident Mem\",\n         \"refId\": \"A\" }, { \"expr\": \"avg(rate(process_virtual_memory_bytes{release=\\\"$release\\\", instance=\\\"$instance\\\"}[5m]))\", \"format\": \"time_series\",\n         \"intervalFactor\": 2, \"legendFormat\": \"Virtual Mem\",\n         \"refId\": \"B\" } ], \"thresholds\": [], \"timeFrom\": null, \"timeRegions\": [], \"timeShift\": null, \"title\": \"Average Memory Usage\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\" }, \"type\": \"graph\",\n     \"xaxis\": { \"buckets\": null, \"mode\": \"time\",\n       \"name\": null, \"show\": true, \"values\": [] },\n     \"yaxes\": [ { \"decimals\": null, \"format\": \"decbytes\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true }, {\n         \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true\n       } ], \"yaxis\": { \"align\": false, \"alignLevel\": null } }, { \"aliasColors\": {}, \"bars\": false,\n     \"dashLength\": 10, \"dashes\": false, \"datasource\": \"${DS_PROMETHEUS}\",\n     \"description\": \"Number of open file descriptors\", \"fill\": 1,\n     \"fillGradient\": 0, \"gridPos\": { \"h\": 7, \"w\": 8, \"x\": 16, \"y\": 3 }, \"id\": 26, \"legend\": { \"alignAsTable\": true, \"avg\": true, \"current\": true, \"max\": true, \"min\": true, \"show\": true,\n       \"total\": false, \"values\": true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\": { \"dataLinks\": [] }, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"process_open_fds{release=\\\"$release\\\", instance=\\\"$instance\\\"}\",\n         \"format\": \"time_series\", \"intervalFactor\": 2, \"legendFormat\": \"Open FD\", \"refId\": \"A\" } ], \"thresholds\": [], \"timeFrom\": null, \"timeRegions\": [], \"timeShift\": null, \"title\": \"Open File Descriptors\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\" },\n     \"type\": \"graph\", \"xaxis\": { \"buckets\": null, \"mode\": \"time\", \"name\": null, \"show\": true, \"values\": [] }, \"yaxes\": [ { \"decimals\": null, \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true }, {\n         \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true\n       } ], \"yaxis\": { \"align\": false, \"alignLevel\": null } }, { \"collapsed\": false, \"gridPos\": { \"h\": 1, \"w\": 24, \"x\": 0, \"y\": 10\n     }, \"id\": 32, \"panels\": [], \"title\": \"Settings\",\n     \"type\": \"row\" }, { \"cacheTimeout\": null, \"colorBackground\": false, \"colorValue\": false, \"colors\": [ \"#299c46\",\n       \"rgba(237, 129, 40, 0.89)\", \"#d44a3a\" ], \"datasource\": \"${DS_PROMETHEUS}\", \"format\": \"bytes\", \"gauge\": { \"maxValue\": 100, \"minValue\": 0, \"show\": false, \"thresholdLabels\": false, \"thresholdMarkers\": true }, \"gridPos\": { \"h\": 3, \"w\": 3, \"x\": 0, \"y\": 11 }, \"id\": 40, \"interval\": null, \"links\": [], \"mappingType\": 1,\n     \"mappingTypes\": [ { \"name\": \"value to text\",\n         \"value\": 1 }, { \"name\": \"range to text\", \"value\": 2 } ], \"maxDataPoints\": 100, \"nullPointMode\": \"connected\", \"nullText\": null, \"options\": {}, \"postfix\": \"\", \"postfixFontSize\": \"50%\", \"prefix\": \"\", \"prefixFontSize\": \"50%\", \"rangeMaps\": [ {\n         \"from\": \"null\", \"text\": \"N/A\", \"to\": \"null\" } ], \"sparkline\": { \"fillColor\": \"rgba(31, 118, 189, 0.18)\", \"full\": false, \"lineColor\": \"rgb(31, 120, 193)\", \"show\": false }, \"tableColumn\": \"\", \"targets\": [ { \"expr\": \"pg_settings_shared_buffers_bytes{instance=\\\"$instance\\\"}\",\n         \"format\": \"time_series\", \"intervalFactor\": 1, \"refId\": \"A\" } ], \"thresholds\": \"\", \"title\": \"Shared Buffers\", \"type\": \"singlestat\", \"valueFontSize\": \"80%\",\n     \"valueMaps\": [ { \"op\": \"=\", \"text\": \"N/A\", \"value\": \"null\" } ], \"valueName\": \"current\" }, { \"cacheTimeout\": null, \"colorBackground\": false, \"colorValue\": false, \"colors\": [ \"#299c46\",\n       \"rgba(237, 129, 40, 0.89)\", \"#d44a3a\" ], \"datasource\": \"${DS_PROMETHEUS}\", \"format\": \"bytes\", \"gauge\": { \"maxValue\": 100, \"minValue\": 0, \"show\": false, \"thresholdLabels\": false, \"thresholdMarkers\": true }, \"gridPos\": { \"h\": 3, \"w\": 3, \"x\": 3, \"y\": 11 }, \"id\": 42, \"interval\": null, \"links\": [], \"mappingType\": 1,\n     \"mappingTypes\": [ { \"name\": \"value to text\",\n         \"value\": 1 }, { \"name\": \"range to text\", \"value\": 2 } ], \"maxDataPoints\": 100, \"nullPointMode\": \"connected\", \"nullText\": null, \"options\": {}, \"postfix\": \"\", \"postfixFontSize\": \"50%\", \"prefix\": \"\", \"prefixFontSize\": \"50%\", \"rangeMaps\": [ {\n         \"from\": \"null\", \"text\": \"N/A\", \"to\": \"null\" } ], \"sparkline\": { \"fillColor\": \"rgba(31, 118, 189, 0.18)\", \"full\": false, \"lineColor\": \"rgb(31, 120, 193)\", \"show\": false }, \"tableColumn\": \"\", \"targets\": [ { \"expr\": \"pg_settings_effective_cache_size_bytes{instance=\\\"$instance\\\"}\",\n         \"format\": \"time_series\", \"intervalFactor\": 1, \"refId\": \"A\" } ], \"thresholds\": \"\", \"title\": \"Effective Cache\", \"type\": \"singlestat\", \"valueFontSize\": \"80%\",\n     \"valueMaps\": [ { \"op\": \"=\", \"text\": \"N/A\", \"value\": \"null\" } ], \"valueName\": \"current\" }, { \"cacheTimeout\": null, \"colorBackground\": false, \"colorValue\": false, \"colors\": [ \"#299c46\",\n       \"rgba(237, 129, 40, 0.89)\", \"#d44a3a\" ], \"datasource\": \"${DS_PROMETHEUS}\", \"format\": \"bytes\", \"gauge\": { \"maxValue\": 100, \"minValue\": 0, \"show\": false, \"thresholdLabels\": false, \"thresholdMarkers\": true }, \"gridPos\": { \"h\": 3, \"w\": 3, \"x\": 6, \"y\": 11 }, \"id\": 44, \"interval\": null, \"links\": [], \"mappingType\": 1,\n     \"mappingTypes\": [ { \"name\": \"value to text\",\n         \"value\": 1 }, { \"name\": \"range to text\", \"value\": 2 } ], \"maxDataPoints\": 100, \"nullPointMode\": \"connected\", \"nullText\": null, \"options\": {}, \"postfix\": \"\", \"postfixFontSize\": \"50%\", \"prefix\": \"\", \"prefixFontSize\": \"50%\", \"rangeMaps\": [ {\n         \"from\": \"null\", \"text\": \"N/A\", \"to\": \"null\" } ], \"sparkline\": { \"fillColor\": \"rgba(31, 118, 189, 0.18)\", \"full\": false, \"lineColor\": \"rgb(31, 120, 193)\", \"show\": false }, \"tableColumn\": \"\", \"targets\": [ { \"expr\": \"pg_settings_maintenance_work_mem_bytes{instance=\\\"$instance\\\"}\",\n         \"format\": \"time_series\", \"intervalFactor\": 1, \"refId\": \"A\" } ], \"thresholds\": \"\", \"title\": \"Maintenance Work Mem\", \"type\": \"singlestat\", \"valueFontSize\": \"80%\",\n     \"valueMaps\": [ { \"op\": \"=\", \"text\": \"N/A\", \"value\": \"null\" } ], \"valueName\": \"current\" }, { \"cacheTimeout\": null, \"colorBackground\": false, \"colorValue\": false, \"colors\": [ \"#299c46\",\n       \"rgba(237, 129, 40, 0.89)\", \"#d44a3a\" ], \"datasource\": \"${DS_PROMETHEUS}\", \"format\": \"bytes\", \"gauge\": { \"maxValue\": 100, \"minValue\": 0, \"show\": false, \"thresholdLabels\": false, \"thresholdMarkers\": true }, \"gridPos\": { \"h\": 3, \"w\": 3, \"x\": 9, \"y\": 11 }, \"id\": 46, \"interval\": null, \"links\": [], \"mappingType\": 1,\n     \"mappingTypes\": [ { \"name\": \"value to text\",\n         \"value\": 1 }, { \"name\": \"range to text\", \"value\": 2 } ], \"maxDataPoints\": 100, \"nullPointMode\": \"connected\", \"nullText\": null, \"options\": {}, \"postfix\": \"\", \"postfixFontSize\": \"50%\", \"prefix\": \"\", \"prefixFontSize\": \"50%\", \"rangeMaps\": [ {\n         \"from\": \"null\", \"text\": \"N/A\", \"to\": \"null\" } ], \"sparkline\": { \"fillColor\": \"rgba(31, 118, 189, 0.18)\", \"full\": false, \"lineColor\": \"rgb(31, 120, 193)\", \"show\": false }, \"tableColumn\": \"\", \"targets\": [ { \"expr\": \"pg_settings_work_mem_bytes{instance=\\\"$instance\\\"}\",\n         \"format\": \"time_series\", \"intervalFactor\": 1, \"legendFormat\": \"\", \"refId\": \"A\" } ], \"thresholds\": \"\", \"title\": \"Work Mem\", \"type\": \"singlestat\", \"valueFontSize\": \"80%\", \"valueMaps\": [ { \"op\": \"=\", \"text\": \"N/A\", \"value\": \"null\" } ], \"valueName\": \"current\" }, { \"cacheTimeout\": null, \"colorBackground\": false, \"colorValue\": false, \"colors\": [ \"#299c46\",\n       \"rgba(237, 129, 40, 0.89)\", \"#d44a3a\" ], \"datasource\": \"${DS_PROMETHEUS}\", \"decimals\": 1, \"format\": \"bytes\",\n     \"gauge\": { \"maxValue\": 100, \"minValue\": 0, \"show\": false, \"thresholdLabels\": false, \"thresholdMarkers\": true\n     }, \"gridPos\": { \"h\": 3, \"w\": 3, \"x\": 12, \"y\": 11 }, \"id\": 48, \"interval\": null,\n     \"links\": [], \"mappingType\": 1, \"mappingTypes\": [ {\n         \"name\": \"value to text\", \"value\": 1 }, {\n         \"name\": \"range to text\", \"value\": 2 } ],\n     \"maxDataPoints\": 100, \"nullPointMode\": \"connected\", \"nullText\": null, \"options\": {}, \"postfix\": \"\", \"postfixFontSize\": \"50%\", \"prefix\": \"\", \"prefixFontSize\": \"50%\", \"rangeMaps\": [ { \"from\": \"null\", \"text\": \"N/A\", \"to\": \"null\" } ], \"sparkline\": { \"fillColor\": \"rgba(31, 118, 189, 0.18)\", \"full\": false, \"lineColor\": \"rgb(31, 120, 193)\", \"show\": false }, \"tableColumn\": \"\", \"targets\": [ { \"expr\": \"pg_settings_max_wal_size_bytes{instance=\\\"$instance\\\"}\",\n         \"format\": \"time_series\", \"intervalFactor\": 1, \"refId\": \"A\" } ], \"thresholds\": \"\", \"title\": \"Max WAL Size\", \"type\": \"singlestat\", \"valueFontSize\": \"80%\",\n     \"valueMaps\": [ { \"op\": \"=\", \"text\": \"N/A\", \"value\": \"null\" } ], \"valueName\": \"current\" }, { \"cacheTimeout\": null, \"colorBackground\": false, \"colorValue\": false, \"colors\": [ \"#299c46\",\n       \"rgba(237, 129, 40, 0.89)\", \"#d44a3a\" ], \"datasource\": \"${DS_PROMETHEUS}\", \"format\": \"none\", \"gauge\": { \"maxValue\": 100, \"minValue\": 0, \"show\": false, \"thresholdLabels\": false, \"thresholdMarkers\": true }, \"gridPos\": { \"h\": 3, \"w\": 3, \"x\": 15, \"y\": 11 }, \"id\": 50, \"interval\": null, \"links\": [], \"mappingType\": 1,\n     \"mappingTypes\": [ { \"name\": \"value to text\",\n         \"value\": 1 }, { \"name\": \"range to text\", \"value\": 2 } ], \"maxDataPoints\": 100, \"nullPointMode\": \"connected\", \"nullText\": null, \"options\": {}, \"postfix\": \"\", \"postfixFontSize\": \"50%\", \"prefix\": \"\", \"prefixFontSize\": \"50%\", \"rangeMaps\": [ {\n         \"from\": \"null\", \"text\": \"N/A\", \"to\": \"null\" } ], \"sparkline\": { \"fillColor\": \"rgba(31, 118, 189, 0.18)\", \"full\": false, \"lineColor\": \"rgb(31, 120, 193)\", \"show\": false }, \"tableColumn\": \"\", \"targets\": [ { \"expr\": \"pg_settings_random_page_cost{instance=\\\"$instance\\\"}\",\n         \"format\": \"time_series\", \"intervalFactor\": 1, \"refId\": \"A\" } ], \"thresholds\": \"\", \"title\": \"Random Page Cost\", \"type\": \"singlestat\", \"valueFontSize\": \"80%\",\n     \"valueMaps\": [ { \"op\": \"=\", \"text\": \"N/A\", \"value\": \"null\" } ], \"valueName\": \"current\" }, { \"cacheTimeout\": null, \"colorBackground\": false, \"colorValue\": false, \"colors\": [ \"#299c46\",\n       \"rgba(237, 129, 40, 0.89)\", \"#d44a3a\" ], \"datasource\": \"${DS_PROMETHEUS}\", \"format\": \"none\", \"gauge\": { \"maxValue\": 100, \"minValue\": 0, \"show\": false, \"thresholdLabels\": false, \"thresholdMarkers\": true }, \"gridPos\": { \"h\": 3, \"w\": 2, \"x\": 18, \"y\": 11 }, \"id\": 52, \"interval\": null, \"links\": [], \"mappingType\": 1,\n     \"mappingTypes\": [ { \"name\": \"value to text\",\n         \"value\": 1 }, { \"name\": \"range to text\", \"value\": 2 } ], \"maxDataPoints\": 100, \"nullPointMode\": \"connected\", \"nullText\": null, \"options\": {}, \"postfix\": \"\", \"postfixFontSize\": \"50%\", \"prefix\": \"\", \"prefixFontSize\": \"50%\", \"rangeMaps\": [ {\n         \"from\": \"null\", \"text\": \"N/A\", \"to\": \"null\" } ], \"sparkline\": { \"fillColor\": \"rgba(31, 118, 189, 0.18)\", \"full\": false, \"lineColor\": \"rgb(31, 120, 193)\", \"show\": false }, \"tableColumn\": \"\", \"targets\": [ { \"expr\": \"pg_settings_seq_page_cost\",\n         \"format\": \"time_series\", \"intervalFactor\": 1, \"refId\": \"A\" } ], \"thresholds\": \"\", \"title\": \"Seq Page Cost\", \"type\": \"singlestat\", \"valueFontSize\": \"80%\",\n     \"valueMaps\": [ { \"op\": \"=\", \"text\": \"N/A\", \"value\": \"null\" } ], \"valueName\": \"current\" }, { \"cacheTimeout\": null, \"colorBackground\": false, \"colorValue\": false, \"colors\": [ \"#299c46\",\n       \"rgba(237, 129, 40, 0.89)\", \"#d44a3a\" ], \"datasource\": \"${DS_PROMETHEUS}\", \"format\": \"none\", \"gauge\": { \"maxValue\": 100, \"minValue\": 0, \"show\": false, \"thresholdLabels\": false, \"thresholdMarkers\": true }, \"gridPos\": { \"h\": 3, \"w\": 2, \"x\": 20, \"y\": 11 }, \"id\": 54, \"interval\": null, \"links\": [], \"mappingType\": 1,\n     \"mappingTypes\": [ { \"name\": \"value to text\",\n         \"value\": 1 }, { \"name\": \"range to text\", \"value\": 2 } ], \"maxDataPoints\": 100, \"nullPointMode\": \"connected\", \"nullText\": null, \"options\": {}, \"postfix\": \"\", \"postfixFontSize\": \"50%\", \"prefix\": \"\", \"prefixFontSize\": \"50%\", \"rangeMaps\": [ {\n         \"from\": \"null\", \"text\": \"N/A\", \"to\": \"null\" } ], \"sparkline\": { \"fillColor\": \"rgba(31, 118, 189, 0.18)\", \"full\": false, \"lineColor\": \"rgb(31, 120, 193)\", \"show\": false }, \"tableColumn\": \"\", \"targets\": [ { \"expr\": \"pg_settings_max_worker_processes{instance=\\\"$instance\\\"}\",\n         \"format\": \"time_series\", \"intervalFactor\": 1, \"refId\": \"A\" } ], \"thresholds\": \"\", \"title\": \"Max Worker Processes\", \"type\": \"singlestat\", \"valueFontSize\": \"80%\", \"valueMaps\": [ { \"op\": \"=\", \"text\": \"N/A\", \"value\": \"null\" } ], \"valueName\": \"avg\" }, { \"cacheTimeout\": null, \"colorBackground\": false, \"colorValue\": false, \"colors\": [ \"#299c46\",\n       \"rgba(237, 129, 40, 0.89)\", \"#d44a3a\" ], \"datasource\": \"${DS_PROMETHEUS}\", \"format\": \"none\", \"gauge\": { \"maxValue\": 100, \"minValue\": 0, \"show\": false, \"thresholdLabels\": false, \"thresholdMarkers\": true }, \"gridPos\": { \"h\": 3, \"w\": 2, \"x\": 22, \"y\": 11 }, \"id\": 56, \"interval\": null, \"links\": [], \"mappingType\": 1,\n     \"mappingTypes\": [ { \"name\": \"value to text\",\n         \"value\": 1 }, { \"name\": \"range to text\", \"value\": 2 } ], \"maxDataPoints\": 100, \"nullPointMode\": \"connected\", \"nullText\": null, \"options\": {}, \"postfix\": \"\", \"postfixFontSize\": \"50%\", \"prefix\": \"\", \"prefixFontSize\": \"50%\", \"rangeMaps\": [ {\n         \"from\": \"null\", \"text\": \"N/A\", \"to\": \"null\" } ], \"sparkline\": { \"fillColor\": \"rgba(31, 118, 189, 0.18)\", \"full\": false, \"lineColor\": \"rgb(31, 120, 193)\", \"show\": false }, \"tableColumn\": \"\", \"targets\": [ { \"expr\": \"pg_settings_max_parallel_workers{instance=\\\"$instance\\\"}\",\n         \"format\": \"time_series\", \"intervalFactor\": 1, \"refId\": \"A\" } ], \"thresholds\": \"\", \"title\": \"Max Parallel Workers\", \"type\": \"singlestat\", \"valueFontSize\": \"80%\", \"valueMaps\": [ { \"op\": \"=\", \"text\": \"N/A\", \"value\": \"null\" } ], \"valueName\": \"current\" }, { \"collapsed\": false, \"gridPos\": {\n       \"h\": 1, \"w\": 24, \"x\": 0, \"y\": 14\n     }, \"id\": 30, \"panels\": [], \"title\": \"Database Stats\", \"type\": \"row\" }, { \"aliasColors\": {},\n     \"bars\": false, \"dashLength\": 10, \"dashes\": false,\n     \"datasource\": \"${DS_PROMETHEUS}\", \"fill\": 1, \"fillGradient\": 0, \"gridPos\": { \"h\": 7, \"w\": 8, \"x\": 0, \"y\": 15 }, \"id\": 1, \"legend\": { \"alignAsTable\": true, \"avg\": true, \"current\": true, \"max\": true,\n       \"min\": false, \"rightSide\": true, \"show\": true,\n       \"sort\": \"current\", \"sortDesc\": true, \"total\": false, \"values\": true }, \"lines\": false, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"connected\", \"options\": { \"dataLinks\": [] }, \"percentage\": false, \"pointradius\": 3, \"points\": true, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"pg_stat_activity_count{datname=~\\\"$datname\\\", instance=~\\\"$instance\\\", state=\\\"active\\\"} !=0\", \"format\": \"time_series\", \"interval\": \"\", \"intervalFactor\": 2, \"legendFormat\": \"{{datname}}, s: {{state}}\", \"refId\": \"A\", \"step\": 2 } ], \"thresholds\": [],\n     \"timeFrom\": null, \"timeRegions\": [], \"timeShift\": null,\n     \"title\": \"Active sessions\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\" },\n     \"type\": \"graph\", \"xaxis\": { \"buckets\": null, \"mode\": \"time\", \"name\": null, \"show\": true, \"values\": [] }, \"yaxes\": [ { \"decimals\": 0, \"format\": \"none\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true }, {\n         \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true\n       } ], \"yaxis\": { \"align\": false, \"alignLevel\": null } }, { \"aliasColors\": {}, \"bars\": false,\n     \"dashLength\": 10, \"dashes\": false, \"datasource\": \"${DS_PROMETHEUS}\",\n     \"fill\": 1, \"fillGradient\": 0, \"gridPos\": { \"h\": 7, \"w\": 8, \"x\": 8, \"y\": 15 }, \"id\": 60, \"legend\": { \"alignAsTable\": true, \"avg\": true,\n       \"current\": true, \"max\": false, \"min\": false,\n       \"rightSide\": true, \"show\": true, \"total\": true,\n       \"values\": true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\": { \"dataLinks\": [] }, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"irate(pg_stat_database_xact_commit{instance=\\\"$instance\\\", datname=~\\\"$datname\\\"}[5m])\", \"format\": \"time_series\", \"intervalFactor\": 1, \"legendFormat\": \"{{datname}} commits\", \"refId\": \"A\" }, { \"expr\": \"irate(pg_stat_database_xact_rollback{instance=\\\"$instance\\\", datname=~\\\"$datname\\\"}[5m])\", \"format\": \"time_series\", \"intervalFactor\": 1, \"legendFormat\": \"{{datname}} rollbacks\", \"refId\": \"B\" } ], \"thresholds\": [], \"timeFrom\": null,\n     \"timeRegions\": [], \"timeShift\": null, \"title\": \"Transactions\",\n     \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\" }, \"type\": \"graph\", \"xaxis\": { \"buckets\": null, \"mode\": \"time\", \"name\": null, \"show\": true, \"values\": [] }, \"yaxes\": [ { \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true }, {\n         \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true\n       } ], \"yaxis\": { \"align\": false, \"alignLevel\": null } }, { \"aliasColors\": {}, \"bars\": false,\n     \"dashLength\": 10, \"dashes\": false, \"datasource\": \"${DS_PROMETHEUS}\",\n     \"fill\": 1, \"fillGradient\": 0, \"gridPos\": { \"h\": 7, \"w\": 8, \"x\": 16, \"y\": 15 }, \"id\": 8, \"legend\": { \"alignAsTable\": true, \"avg\": true,\n       \"current\": true, \"max\": false, \"min\": false,\n       \"rightSide\": true, \"show\": true, \"sideWidth\": null, \"sort\": \"current\", \"sortDesc\": true, \"total\": true, \"values\": true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\": { \"dataLinks\": [] }, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"pg_stat_database_tup_updated{datname=~\\\"$datname\\\", instance=~\\\"$instance\\\"} != 0\", \"format\": \"time_series\",\n         \"intervalFactor\": 2, \"legendFormat\": \"{{datname}}\",\n         \"refId\": \"A\", \"step\": 2 } ], \"thresholds\": [], \"timeFrom\": null, \"timeRegions\": [], \"timeShift\": null, \"title\": \"Update data\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\" },\n     \"type\": \"graph\", \"xaxis\": { \"buckets\": null, \"mode\": \"time\", \"name\": null, \"show\": true, \"values\": [] }, \"yaxes\": [ { \"format\": \"bytes\",\n         \"label\": null, \"logBase\": 1, \"max\": null,\n         \"min\": null, \"show\": true }, { \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true } ],\n     \"yaxis\": { \"align\": false, \"alignLevel\": null\n     } }, { \"aliasColors\": {}, \"bars\": false, \"dashLength\": 10, \"dashes\": false, \"datasource\": \"${DS_PROMETHEUS}\", \"fill\": 1, \"fillGradient\": 0, \"gridPos\": { \"h\": 7, \"w\": 8, \"x\": 0, \"y\": 22 }, \"id\": 5, \"legend\": { \"alignAsTable\": true, \"avg\": true, \"current\": true, \"max\": false, \"min\": false, \"rightSide\": true, \"show\": true, \"sort\": \"current\", \"sortDesc\": true, \"total\": true, \"values\": true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\": { \"dataLinks\": [] }, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"pg_stat_database_tup_fetched{datname=~\\\"$datname\\\", instance=~\\\"$instance\\\"} != 0\", \"format\": \"time_series\", \"intervalFactor\": 2, \"legendFormat\": \"{{datname}}\", \"refId\": \"A\",\n         \"step\": 2 } ], \"thresholds\": [], \"timeFrom\": null, \"timeRegions\": [], \"timeShift\": null, \"title\": \"Fetch data (SELECT)\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\" }, \"type\": \"graph\",\n     \"xaxis\": { \"buckets\": null, \"mode\": \"time\",\n       \"name\": null, \"show\": true, \"values\": [] },\n     \"yaxes\": [ { \"format\": \"bytes\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true }, { \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true } ],\n     \"yaxis\": { \"align\": false, \"alignLevel\": null\n     } }, { \"aliasColors\": {}, \"bars\": false, \"dashLength\": 10, \"dashes\": false, \"datasource\": \"${DS_PROMETHEUS}\", \"fill\": 1, \"fillGradient\": 0, \"gridPos\": { \"h\": 7, \"w\": 8, \"x\": 8, \"y\": 22 }, \"id\": 6, \"legend\": { \"alignAsTable\": true, \"avg\": true, \"current\": true, \"max\": false, \"min\": false, \"rightSide\": true, \"show\": true, \"sort\": \"current\", \"sortDesc\": true, \"total\": true, \"values\": true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\": { \"dataLinks\": [] }, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"pg_stat_database_tup_inserted{datname=~\\\"$datname\\\", instance=~\\\"$instance\\\"} != 0\", \"format\": \"time_series\", \"intervalFactor\": 2, \"legendFormat\": \"{{datname}}\", \"refId\": \"A\",\n         \"step\": 2 } ], \"thresholds\": [], \"timeFrom\": null, \"timeRegions\": [], \"timeShift\": null, \"title\": \"Insert data\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\" }, \"type\": \"graph\",\n     \"xaxis\": { \"buckets\": null, \"mode\": \"time\",\n       \"name\": null, \"show\": true, \"values\": [] },\n     \"yaxes\": [ { \"format\": \"bytes\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true }, { \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true } ],\n     \"yaxis\": { \"align\": false, \"alignLevel\": null\n     } }, { \"aliasColors\": {}, \"bars\": false, \"dashLength\": 10, \"dashes\": false, \"datasource\": \"${DS_PROMETHEUS}\", \"decimals\": 0, \"fill\": 1, \"fillGradient\": 0, \"gridPos\": { \"h\": 7, \"w\": 8, \"x\": 16, \"y\": 22 }, \"id\": 3, \"legend\": { \"alignAsTable\": true, \"avg\": true,\n       \"current\": true, \"hideEmpty\": false, \"max\": false,\n       \"min\": false, \"rightSide\": true, \"show\": true,\n       \"sort\": \"current\", \"sortDesc\": true, \"total\": true, \"values\": true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\": { \"dataLinks\": [] }, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"pg_locks_count{datname=~\\\"$datname\\\", instance=~\\\"$instance\\\", mode=~\\\"$mode\\\"} != 0\", \"format\": \"time_series\", \"intervalFactor\": 2, \"legendFormat\": \"{{datname}},{{mode}}\", \"refId\": \"A\", \"step\": 2\n       } ], \"thresholds\": [], \"timeFrom\": null, \"timeRegions\": [], \"timeShift\": null, \"title\": \"Lock tables\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\"\n     }, \"type\": \"graph\", \"xaxis\": { \"buckets\": null, \"mode\": \"time\", \"name\": null, \"show\": true, \"values\": [] }, \"yaxes\": [ { \"decimals\": 0, \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": \"0\", \"show\": true\n       }, { \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true } ], \"yaxis\": { \"align\": false, \"alignLevel\": null } }, { \"aliasColors\": {}, \"bars\": false, \"dashLength\": 10, \"dashes\": false,\n     \"datasource\": \"${DS_PROMETHEUS}\", \"fill\": 1, \"fillGradient\": 0, \"gridPos\": { \"h\": 7, \"w\": 8, \"x\": 0, \"y\": 29 }, \"id\": 14, \"legend\": { \"alignAsTable\": true, \"avg\": true, \"current\": true, \"max\": false,\n       \"min\": false, \"rightSide\": true, \"show\": true,\n       \"sort\": \"total\", \"sortDesc\": true, \"total\": true, \"values\": true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\": { \"dataLinks\": [] }, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"pg_stat_database_tup_returned{datname=~\\\"$datname\\\", instance=~\\\"$instance\\\"} != 0\", \"format\": \"time_series\",\n         \"intervalFactor\": 2, \"legendFormat\": \"{{datname}}\",\n         \"refId\": \"A\", \"step\": 2 } ], \"thresholds\": [], \"timeFrom\": null, \"timeRegions\": [], \"timeShift\": null, \"title\": \"Return data\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\" },\n     \"type\": \"graph\", \"xaxis\": { \"buckets\": null, \"mode\": \"time\", \"name\": null, \"show\": true, \"values\": [] }, \"yaxes\": [ { \"format\": \"bytes\",\n         \"label\": null, \"logBase\": 1, \"max\": null,\n         \"min\": null, \"show\": true }, { \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true } ],\n     \"yaxis\": { \"align\": false, \"alignLevel\": null\n     } }, { \"aliasColors\": {}, \"bars\": false, \"dashLength\": 10, \"dashes\": false, \"datasource\": \"${DS_PROMETHEUS}\", \"fill\": 1, \"fillGradient\": 0, \"gridPos\": { \"h\": 7, \"w\": 8, \"x\": 8, \"y\": 29 }, \"id\": 4, \"legend\": { \"alignAsTable\": true, \"avg\": false, \"current\": true, \"max\": true, \"min\": false, \"rightSide\": true, \"show\": true, \"sort\": \"current\", \"sortDesc\": false, \"total\": false, \"values\": true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\": { \"dataLinks\": [] }, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"pg_stat_activity_count{datname=~\\\"$datname\\\", instance=~\\\"$instance\\\", state=~\\\"idle|idle in transaction|idle in transaction (aborted)\\\"}\", \"format\": \"time_series\", \"intervalFactor\": 2, \"legendFormat\": \"{{datname}}, s: {{state}}\", \"refId\": \"A\", \"step\": 2 } ], \"thresholds\": [], \"timeFrom\": null,\n     \"timeRegions\": [], \"timeShift\": null, \"title\": \"Idle sessions\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\" }, \"type\": \"graph\",\n     \"xaxis\": { \"buckets\": null, \"mode\": \"time\",\n       \"name\": null, \"show\": true, \"values\": [] },\n     \"yaxes\": [ { \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": \"0\", \"show\": true }, { \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true } ],\n     \"yaxis\": { \"align\": false, \"alignLevel\": null\n     } }, { \"aliasColors\": {}, \"bars\": false, \"dashLength\": 10, \"dashes\": false, \"datasource\": \"${DS_PROMETHEUS}\", \"fill\": 1, \"fillGradient\": 0, \"gridPos\": { \"h\": 7, \"w\": 8, \"x\": 16, \"y\": 29 }, \"id\": 7, \"legend\": { \"alignAsTable\": true, \"avg\": true, \"current\": true, \"max\": false, \"min\": false, \"rightSide\": true, \"show\": true, \"sort\": \"current\", \"sortDesc\": true, \"total\": true, \"values\": true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\": { \"dataLinks\": [] }, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"pg_stat_database_tup_deleted{datname=~\\\"$datname\\\", instance=~\\\"$instance\\\"} != 0\", \"format\": \"time_series\", \"intervalFactor\": 2, \"legendFormat\": \"{{datname}}\", \"refId\": \"A\",\n         \"step\": 2 } ], \"thresholds\": [], \"timeFrom\": null, \"timeRegions\": [], \"timeShift\": null, \"title\": \"Delete data\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\" }, \"type\": \"graph\",\n     \"xaxis\": { \"buckets\": null, \"mode\": \"time\",\n       \"name\": null, \"show\": true, \"values\": [] },\n     \"yaxes\": [ { \"format\": \"bytes\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true }, { \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true } ],\n     \"yaxis\": { \"align\": false, \"alignLevel\": null\n     } }, { \"aliasColors\": {}, \"bars\": false, \"dashLength\": 10, \"dashes\": false, \"datasource\": \"${DS_PROMETHEUS}\", \"decimals\": 2, \"fill\": 1, \"gridPos\": { \"h\": 7, \"w\": 8, \"x\": 0, \"y\": 36 }, \"id\": 62, \"legend\": { \"alignAsTable\": true, \"avg\": true, \"current\": true, \"max\": false, \"min\": false, \"rightSide\": true, \"show\": true, \"total\": false, \"values\": true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\": {}, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"pg_stat_database_blks_hit{instance=\\\"$instance\\\", datname=~\\\"$datname\\\"} / (pg_stat_database_blks_read{instance=\\\"$instance\\\", datname=~\\\"$datname\\\"} + pg_stat_database_blks_hit{instance=\\\"$instance\\\", datname=~\\\"$datname\\\"})\",\n         \"format\": \"time_series\", \"intervalFactor\": 1, \"legendFormat\": \"{{ datname }}\", \"refId\": \"A\" } ], \"thresholds\": [], \"timeFrom\": null, \"timeShift\": null, \"title\": \"Cache Hit Rate\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\" }, \"type\": \"graph\",\n     \"xaxis\": { \"buckets\": null, \"mode\": \"time\",\n       \"name\": null, \"show\": true, \"values\": [] },\n     \"yaxes\": [ { \"decimals\": 4, \"format\": \"percentunit\", \"label\": \"\", \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true }, {\n         \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true\n       } ], \"yaxis\": { \"align\": false, \"alignLevel\": null } }, { \"aliasColors\": {}, \"bars\": false,\n     \"dashLength\": 10, \"dashes\": false, \"datasource\": \"${DS_PROMETHEUS}\",\n     \"fill\": 1, \"gridPos\": { \"h\": 7, \"w\": 8,\n       \"x\": 8, \"y\": 36 }, \"id\": 64, \"legend\": { \"alignAsTable\": true, \"avg\": true, \"current\": true, \"max\": true, \"min\": true, \"rightSide\": true, \"show\": true, \"total\": false, \"values\": true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\": {}, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"irate(pg_stat_bgwriter_buffers_backend{instance=\\\"$instance\\\"}[5m])\",\n         \"format\": \"time_series\", \"intervalFactor\": 1, \"legendFormat\": \"buffers_backend\", \"refId\": \"A\" }, { \"expr\": \"irate(pg_stat_bgwriter_buffers_alloc{instance=\\\"$instance\\\"}[5m])\", \"format\": \"time_series\", \"intervalFactor\": 1, \"legendFormat\": \"buffers_alloc\", \"refId\": \"B\" }, { \"expr\": \"irate(pg_stat_bgwriter_buffers_backend_fsync{instance=\\\"$instance\\\"}[5m])\",\n         \"format\": \"time_series\", \"intervalFactor\": 1, \"legendFormat\": \"backend_fsync\", \"refId\": \"C\" }, { \"expr\": \"irate(pg_stat_bgwriter_buffers_checkpoint{instance=\\\"$instance\\\"}[5m])\",\n         \"format\": \"time_series\", \"intervalFactor\": 1, \"legendFormat\": \"buffers_checkpoint\", \"refId\": \"D\" }, { \"expr\": \"irate(pg_stat_bgwriter_buffers_clean{instance=\\\"$instance\\\"}[5m])\", \"format\": \"time_series\", \"intervalFactor\": 1, \"legendFormat\": \"buffers_clean\", \"refId\": \"E\" } ], \"thresholds\": [], \"timeFrom\": null, \"timeShift\": null, \"title\": \"Buffers (bgwriter)\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\" }, \"type\": \"graph\",\n     \"xaxis\": { \"buckets\": null, \"mode\": \"time\",\n       \"name\": null, \"show\": true, \"values\": [] },\n     \"yaxes\": [ { \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true }, { \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true } ],\n     \"yaxis\": { \"align\": false, \"alignLevel\": null\n     } }, { \"aliasColors\": {}, \"bars\": false, \"dashLength\": 10, \"dashes\": false, \"datasource\": \"${DS_PROMETHEUS}\", \"decimals\": 0, \"fill\": 1, \"gridPos\": { \"h\": 7, \"w\": 8, \"x\": 16, \"y\": 36 }, \"id\": 66, \"legend\": { \"alignAsTable\": true, \"avg\": true, \"current\": true, \"max\": false, \"min\": false, \"rightSide\": true, \"show\": true, \"total\": true, \"values\": true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\": {}, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"irate(pg_stat_database_conflicts{instance=\\\"$instance\\\", datname=~\\\"$datname\\\"}[5m])\",\n         \"format\": \"time_series\", \"intervalFactor\": 1, \"legendFormat\": \"{{datname}} conflicts\", \"refId\": \"B\" }, {\n         \"expr\": \"irate(pg_stat_database_deadlocks{instance=\\\"$instance\\\", datname=~\\\"$datname\\\"}[5m])\", \"format\": \"time_series\", \"intervalFactor\": 1, \"legendFormat\": \"{{datname}} deadlocks\", \"refId\": \"A\" } ], \"thresholds\": [], \"timeFrom\": null,\n     \"timeShift\": null, \"title\": \"Conflicts/Deadlocks\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\"\n     }, \"type\": \"graph\", \"xaxis\": { \"buckets\": null, \"mode\": \"time\", \"name\": null, \"show\": true, \"values\": [] }, \"yaxes\": [ { \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": \"0\", \"show\": true }, {\n         \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true\n       } ], \"yaxis\": { \"align\": false, \"alignLevel\": null } }, { \"aliasColors\": {}, \"bars\": false,\n     \"dashLength\": 10, \"dashes\": false, \"datasource\": \"${DS_PROMETHEUS}\",\n     \"description\": \"Total amount of data written to temporary files by queries in this database. All temporary files are counted, regardless of why the temporary file was created, and regardless of the log_temp_files setting.\", \"fill\": 1, \"gridPos\": { \"h\": 7, \"w\": 8, \"x\": 0, \"y\": 43 }, \"id\": 68, \"legend\": { \"alignAsTable\": true, \"avg\": true, \"current\": true, \"max\": false,\n       \"min\": false, \"rightSide\": true, \"show\": true,\n       \"total\": true, \"values\": true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\": {}, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"irate(pg_stat_database_temp_bytes{instance=\\\"$instance\\\", datname=~\\\"$datname\\\"}[5m])\", \"format\": \"time_series\", \"intervalFactor\": 1, \"legendFormat\": \"{{datname}}\", \"refId\": \"A\"\n       } ], \"thresholds\": [], \"timeFrom\": null, \"timeShift\": null, \"title\": \"Temp File (Bytes)\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\" },\n     \"type\": \"graph\", \"xaxis\": { \"buckets\": null, \"mode\": \"time\", \"name\": null, \"show\": true, \"values\": [] }, \"yaxes\": [ { \"format\": \"bytes\",\n         \"label\": null, \"logBase\": 1, \"max\": null,\n         \"min\": \"0\", \"show\": true }, { \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true } ],\n     \"yaxis\": { \"align\": false, \"alignLevel\": null\n     } }, { \"aliasColors\": {}, \"bars\": false, \"dashLength\": 10, \"dashes\": false, \"datasource\": \"${DS_PROMETHEUS}\", \"fill\": 1, \"gridPos\": { \"h\": 7, \"w\": 16, \"x\": 8, \"y\": 43 }, \"id\": 70, \"legend\": { \"alignAsTable\": true, \"avg\": true, \"current\": true, \"max\": true,\n       \"min\": true, \"show\": true, \"total\": false, \"values\": true }, \"lines\": true, \"linewidth\": 1, \"links\": [], \"nullPointMode\": \"null\", \"options\": {}, \"percentage\": false, \"pointradius\": 5, \"points\": false, \"renderer\": \"flot\", \"seriesOverrides\": [], \"spaceLength\": 10, \"stack\": false, \"steppedLine\": false, \"targets\": [ { \"expr\": \"irate(pg_stat_bgwriter_checkpoint_write_time{instance=\\\"$instance\\\"}[5m])\",\n         \"format\": \"time_series\", \"intervalFactor\": 1, \"legendFormat\": \"write_time - Total amount of time that has been spent in the portion of checkpoint processing where files are written to disk.\", \"refId\": \"B\" },\n       { \"expr\": \"irate(pg_stat_bgwriter_checkpoint_sync_time{instance=\\\"$instance\\\"}[5m])\",\n         \"format\": \"time_series\", \"intervalFactor\": 1, \"legendFormat\": \"sync_time - Total amount of time that has been spent in the portion of checkpoint processing where files are synchronized to disk.\", \"refId\": \"A\"\n       } ], \"thresholds\": [], \"timeFrom\": null, \"timeShift\": null, \"title\": \"Checkpoint Stats\", \"tooltip\": { \"shared\": true, \"sort\": 0, \"value_type\": \"individual\" },\n     \"type\": \"graph\", \"xaxis\": { \"buckets\": null, \"mode\": \"time\", \"name\": null, \"show\": true, \"values\": [] }, \"yaxes\": [ { \"format\": \"ms\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true }, { \"format\": \"short\", \"label\": null, \"logBase\": 1, \"max\": null, \"min\": null, \"show\": true } ],\n     \"yaxis\": { \"align\": false, \"alignLevel\": null\n     } } ], \"refresh\": \"10s\", \"schemaVersion\": 19, \"style\": \"dark\", \"tags\": [ \"postgres\", \"db\", \"stats\" ],\n \"templating\": { \"list\": [ { \"current\": { \"text\": \"Prometheus\", \"value\": \"Prometheus\" }, \"hide\": 0, \"label\": \"datasource\", \"name\": \"DS_PROMETHEUS\",\n       \"options\": [], \"query\": \"prometheus\", \"refresh\": 1, \"regex\": \"\", \"type\": \"datasource\" }, {\n       \"auto\": true, \"auto_count\": 200, \"auto_min\": \"1s\",\n       \"current\": { \"text\": \"auto\", \"value\": \"$__auto_interval_interval\"\n       }, \"hide\": 0, \"label\": \"Interval\", \"name\": \"interval\", \"options\": [ { \"selected\": true, \"text\": \"auto\", \"value\": \"$__auto_interval_interval\"\n         }, { \"selected\": false, \"text\": \"1s\", \"value\": \"1s\" }, { \"selected\": false, \"text\": \"5s\", \"value\": \"5s\" },\n         { \"selected\": false, \"text\": \"1m\",\n           \"value\": \"1m\" }, { \"selected\": false, \"text\": \"5m\", \"value\": \"5m\" },\n         { \"selected\": false, \"text\": \"1h\",\n           \"value\": \"1h\" }, { \"selected\": false, \"text\": \"6h\", \"value\": \"6h\" },\n         { \"selected\": false, \"text\": \"1d\",\n           \"value\": \"1d\" } ], \"query\": \"1s,5s,1m,5m,1h,6h,1d\",\n       \"refresh\": 2, \"skipUrlSync\": false, \"type\": \"interval\"\n     }, { \"allValue\": null, \"current\": {}, \"datasource\": \"${DS_PROMETHEUS}\", \"definition\": \"\", \"hide\": 0, \"includeAll\": false, \"label\": \"Namespace\", \"multi\": false, \"name\": \"namespace\", \"options\": [], \"query\": \"query_result(pg_exporter_last_scrape_duration_seconds)\",\n       \"refresh\": 2, \"regex\": \"/.*kubernetes_namespace=\\\"([^\\\"]+).*/\",\n       \"skipUrlSync\": false, \"sort\": 1, \"tagValuesQuery\": \"\", \"tags\": [], \"tagsQuery\": \"\", \"type\": \"query\", \"useTags\": false }, { \"allValue\": null, \"current\": {}, \"datasource\": \"${DS_PROMETHEUS}\",\n       \"definition\": \"\", \"hide\": 0, \"includeAll\": false,\n       \"label\": \"Release\", \"multi\": false, \"name\": \"release\", \"options\": [], \"query\": \"query_result(pg_exporter_last_scrape_duration_seconds{kubernetes_namespace=\\\"$namespace\\\"})\",\n       \"refresh\": 2, \"regex\": \"/.*release=\\\"([^\\\"]+)/\",\n       \"skipUrlSync\": false, \"sort\": 1, \"tagValuesQuery\": \"\", \"tags\": [], \"tagsQuery\": \"\", \"type\": \"query\", \"useTags\": false }, { \"allValue\": null, \"current\": {}, \"datasource\": \"${DS_PROMETHEUS}\",\n       \"definition\": \"\", \"hide\": 0, \"includeAll\": false,\n       \"label\": \"Instance\", \"multi\": false, \"name\": \"instance\", \"options\": [], \"query\": \"query_result(pg_up{release=\\\"$release\\\"})\",\n       \"refresh\": 1, \"regex\": \"/.*instance=\\\"([^\\\"]+).*/\",\n       \"skipUrlSync\": false, \"sort\": 1, \"tagValuesQuery\": \"\", \"tags\": [], \"tagsQuery\": \"\", \"type\": \"query\", \"useTags\": false }, { \"allValue\": null, \"current\": {}, \"datasource\": \"${DS_PROMETHEUS}\",\n       \"definition\": \"\", \"hide\": 0, \"includeAll\": true,\n       \"label\": \"Database\", \"multi\": true, \"name\": \"datname\", \"options\": [], \"query\": \"label_values(datname)\",\n       \"refresh\": 1, \"regex\": \"\", \"skipUrlSync\": false,\n       \"sort\": 1, \"tagValuesQuery\": \"\", \"tags\": [],\n       \"tagsQuery\": \"\", \"type\": \"query\", \"useTags\": false }, { \"allValue\": null, \"current\": {},\n       \"datasource\": \"${DS_PROMETHEUS}\", \"definition\": \"\",\n       \"hide\": 0, \"includeAll\": true, \"label\": \"Lock table\", \"multi\": true, \"name\": \"mode\", \"options\": [], \"query\": \"label_values({mode=~\\\"accessexclusivelock|accesssharelock|exclusivelock|rowexclusivelock|rowsharelock|sharelock|sharerowexclusivelock|shareupdateexclusivelock\\\"}, mode)\", \"refresh\": 1, \"regex\": \"\", \"skipUrlSync\": false, \"sort\": 0, \"tagValuesQuery\": \"\", \"tags\": [], \"tagsQuery\": \"\", \"type\": \"query\", \"useTags\": false } ] }, \"time\": { \"from\": \"now-6h\", \"to\": \"now\" }, \"timepicker\": { \"refresh_intervals\": [ \"5s\",\n     \"10s\", \"30s\", \"1m\", \"5m\", \"15m\",\n     \"30m\", \"1h\", \"2h\", \"1d\" ], \"time_options\": [ \"5m\", \"15m\", \"1h\", \"6h\", \"12h\",\n     \"24h\", \"2d\", \"7d\", \"30d\" ] }, \"timezone\": \"\", \"title\": \"PostgreSQL Database\", \"uid\": \"000000039\", \"version\": 1 } "},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/managed-by":"artesca-installer","app.kubernetes.io/part-of":"artesca","grafana_dashboard":"1"},"name":"postgres-dashboard","namespace":"artesca-auth"}}
+    creationTimestamp: "2025-07-17T19:28:54Z"
+    labels:
+      app.kubernetes.io/managed-by: artesca-installer
+      app.kubernetes.io/part-of: artesca
+      grafana_dashboard: "1"
+    name: postgres-dashboard
+    namespace: artesca-auth
+    resourceVersion: "11829"
+    uid: b57af04b-999c-4e46-9869-f69ff9964825
+- apiVersion: v1
+  data:
+    api_port: "8080"
+    aws_region: eu-central-1
+    cluster_domain: cluster.local
+    cluster_history_entries: "1000"
+    cluster_labels: app.kubernetes.io/name:postgres-operator
+    cluster_name_label: cluster-name
+    connection_pooler_default_cpu_limit: "1"
+    connection_pooler_default_cpu_request: 500m
+    connection_pooler_default_memory_limit: 100Mi
+    connection_pooler_default_memory_request: 100Mi
+    connection_pooler_max_db_connections: "60"
+    connection_pooler_mode: transaction
+    connection_pooler_number_of_instances: "2"
+    connection_pooler_schema: pooler
+    connection_pooler_user: pooler
+    crd_categories: all
+    db_hosted_zone: db.example.com
+    debug_logging: "true"
+    default_cpu_limit: "1"
+    default_cpu_request: 100m
+    default_memory_limit: 500Mi
+    default_memory_request: 100Mi
+    docker_image: metalk8s-registry-from-config.invalid/artesca-base-3.1.1/spilo-16:3.3-p1
+    enable_admin_role_for_users: "true"
+    enable_crd_registration: "true"
+    enable_crd_validation: "true"
+    enable_cross_namespace_secret: "false"
+    enable_database_access: "true"
+    enable_ebs_gp3_migration: "false"
+    enable_ebs_gp3_migration_max_size: "1000"
+    enable_finalizers: "false"
+    enable_init_containers: "true"
+    enable_lazy_spilo_upgrade: "false"
+    enable_master_load_balancer: "false"
+    enable_master_pooler_load_balancer: "false"
+    enable_owner_references: "false"
+    enable_password_rotation: "false"
+    enable_patroni_failsafe_mode: "false"
+    enable_persistent_volume_claim_deletion: "true"
+--
+          endpoint: 0.0.0.0:8889
+          enable_open_metrics: true
+        debug:
+          verbosity: detailed
+        otlp:
+          endpoint: tempo.tempo:4317
+          tls:
+            insecure: true
+      service:
+        pipelines:
+          traces:
+            receivers: [otlp]
+            processors: [batch]
+            exporters: [otlp, spanmetrics, debug]
+          metrics:
+            receivers: [otlp, spanmetrics]
+            processors: [batch]
+            exporters: [prometheus]
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"config.yaml":"receivers:\n  otlp:\n    protocols:\n      http:\n        endpoint: 0.0.0.0:4318\nconnectors:\n  spanmetrics:\n    exemplars:\n      enabled: true\n    histogram:\n      explicit:\n        buckets: [10ms, 50ms, 100ms, 200ms, 500ms, 1s, 5s, 10s]\nprocessors:\n  batch:\nexporters:\n  prometheus:\n    endpoint: 0.0.0.0:8889\n    enable_open_metrics: true\n  debug:\n    verbosity: detailed\n  otlp:\n    endpoint: tempo.tempo:4317\n    tls:\n      insecure: true\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: [batch]\n      exporters: [otlp, spanmetrics, debug]\n    metrics:\n      receivers: [otlp, spanmetrics]\n      processors: [batch]\n      exporters: [prometheus]\n"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"otel-collector-config","namespace":"default"}}
+    creationTimestamp: "2025-07-17T21:29:53Z"
+    name: otel-collector-config
+    namespace: default
+    resourceVersion: "2573075"
+    uid: ebc16b6c-e202-40fc-addb-4f500a505e5c
+- apiVersion: v1
+  data:
+    ca.crt: |
+      -----BEGIN CERTIFICATE-----
+      MIIEzzCCAregAwIBAgIIRAKiMOXeF0owDQYJKoZIhvcNAQELBQAwFTETMBEGA1UE
+      AwwKa3ViZXJuZXRlczAeFw0yNTA3MTcxOTA0NTVaFw0zNTA3MTUxOTA0NTVaMBUx
+      EzARBgNVBAMMCmt1YmVybmV0ZXMwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIK
+      AoICAQCwqYjuLpE3/6N0y0KK2dGbZrJ+f+eoRtssyEcYnJ6RCNQfIpbn/mDL2l5F
+      qmADHWaOVayRZwrcLeZStcMgr04Ez9wqvEVyMX1MMdfoG1YRFpenCcac6ZshXKGC
+      V/HzZAn37KAVt2EwVdNe5MDUEms78zE+QxdzWnX746ASuNTR59rbj/8a1gkATLMS
+      F+/ncg1D35WUtWU0Hk1VtRXj8WqzVY0eNF71gy5VLLs1rIHv+fxrnkf/bwQOFdHy
+      QjK6KsyPHFeOy/B2Kov8C8z4CF07dzsr2trXq8kLvHkulYfs61qxgt+Mtgi8Zjcw
+      ltBSLtNDp1brhFLqno4rcMuueWPaiI1mcP7aR96S5UCdEYUtu5LNfr/+VkAqgQ7c
+      7pP3s2fsZW8uIXygfMv8hjq4SzQfSV9/1LYqjaUh9kC9n4QvC/iHyzuQZx3G69+V
+      pOq956P7L2gRNsbox7AK/IZMmAh+vUW0vyfCT/wBPY40mAv+qq/RX1IcXheMnB79
+      5sz5rYBte7QpmcMcl+3Who34lPHm0HNArhjz39+/UgkYGnw0qJ8HpgZIMheB/4D1
+      ipu+83MH0BAmcoq+x31OfKvGc8vRoIxkRY7D4BocdO5NQDcg/LhzsSuYmUAgymMX
+      Dg2bY3L3NC7bBFor2+KDk84oN3sH7QxICLFOB2OCdrWD5H6omwIDAQABoyMwITAP
+      BgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwICpDANBgkqhkiG9w0BAQsFAAOC
+      AgEAsBwNyIKDYIbWGifg550k0I9vlSKgO7UUtm0J8t8qyvOICXkM8pKT98IkuzXy
+      c6jwMXzoOUyM4OM/8ULvqsnVa/J08j7AUw1LhKD0vOJiDKCh72GeOTSVJ+nhnWee
+      4LS/bBks34NF4WGXQlohA3Kk8Fzl1UvJaKNP5iETu9WG8FvNiPb3VhjBed5KmW9v
+      UNuK6tSwexcHr0VmO9RXwfaZDJDv6PCBgsEo3h21+9VF0/E9cu80VZhL+IS2hAST
+      KnNc5y9t09XUpbIlbx9WY7wzEiLqZHiVDE28Cb9QNL+v6rVrCyQcU80Fq6QDHpEK
+      qb17de6ufwpm67GQ60GES4kqFZCM8swF2HWJHQGAHt8IBVe/l5L2MKOcLJyfTHmU
+      LtDAWtIxaBkazs1Vu8BDpy2qX5GKk7jyIwswQEE0ZODnmwAnlqPWuNlTZkPJSHGg
+      S0AphkwtAmsfX/V5x7oVql0wtDeXJ8MpVs5ralVfbXWCodrza8Ga+mR91gn/9jCX
+      BCuebhmQSd/J6Gz+wF7Sz/8/qITGuyxHTuyCoy/va6qqgRTLvHIOdzTvz/MIYONN
+      PPERwd5uVSRA3CcS97tN7N68Ub/P+kYxGaGYoUySTNAK0D7KjYrZAxlpMefkf5Zh
+      6VHJr7euRzvVswleDaAV9UN0aCIe64flOTHBrwhhpHD5oHM=
+      -----END CERTIFICATE-----
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubernetes.io/description: Contains a CA bundle that can be used to verify the
+        kube-apiserver when using internal endpoints such as the internal service
+        IP or kubernetes.default.svc. No other usage is guaranteed across distributions
+        of Kubernetes clusters.
+    creationTimestamp: "2025-07-17T19:09:48Z"
+    name: kube-root-ca.crt
+    namespace: kube-node-lease
+    resourceVersion: "519"
+    uid: 6e1e7de0-97bd-40a3-bd3f-a0fe73ba7567
+- apiVersion: v1
+  data:
+--
+      "uid": "${datasource}"}, "expr": "node_memory_Writeback_bytes{instance=\"$node\",job=\"$job\"}",
+      "format": "time_series", "intervalFactor": 1, "legendFormat": "Writeback - Memory
+      which is actively being written back to disk", "refId": "A", "step": 240}, {"datasource":
+      {"type": "prometheus", "uid": "${datasource}"}, "expr": "node_memory_WritebackTmp_bytes{instance=\"$node\",job=\"$job\"}",
+      "format": "time_series", "intervalFactor": 1, "legendFormat": "WritebackTmp
+      - Memory used by FUSE for temporary writeback buffers", "refId": "B", "step":
+      240}, {"datasource": {"type": "prometheus", "uid": "${datasource}"}, "expr":
+      "node_memory_Dirty_bytes{instance=\"$node\",job=\"$job\"}", "format": "time_series",
+      "intervalFactor": 1, "legendFormat": "Dirty - Memory which is waiting to get
+      written back to the disk", "refId": "C", "step": 240}], "title": "Memory Writeback
+      and Dirty", "type": "timeseries"}, {"datasource": {"type": "prometheus", "uid":
+      "${datasource}"}, "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"},
+      "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel":
+      "bytes", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity":
+      20, "gradientMode": "none", "hideFrom": {"legend": false, "tooltip": false,
+      "viz": false}, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5,
+      "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls":
+      false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode":
+      "off"}}, "links": [], "mappings": [], "min": 0, "thresholds": {"mode": "absolute",
+      "steps": [{"color": "green"}, {"color": "red", "value": 80}]}, "unit": "bytes"},
+      "overrides": [{"matcher": {"id": "byName", "options": "Apps"}, "properties":
+      [{"id": "color", "value": {"fixedColor": "#629E51", "mode": "fixed"}}]}, {"matcher":
+      {"id": "byName", "options": "Buffers"}, "properties": [{"id": "color", "value":
+      {"fixedColor": "#614D93", "mode": "fixed"}}]}, {"matcher": {"id": "byName",
+      "options": "Cache"}, "properties": [{"id": "color", "value": {"fixedColor":
+      "#6D1F62", "mode": "fixed"}}]}, {"matcher": {"id": "byName", "options": "Cached"},
+      "properties": [{"id": "color", "value": {"fixedColor": "#511749", "mode": "fixed"}}]},
+      {"matcher": {"id": "byName", "options": "Committed"}, "properties": [{"id":
+      "color", "value": {"fixedColor": "#508642", "mode": "fixed"}}]}, {"matcher":
+      {"id": "byName", "options": "Free"}, "properties": [{"id": "color", "value":
+      {"fixedColor": "#0A437C", "mode": "fixed"}}]}, {"matcher": {"id": "byName",
+      "options": "Hardware Corrupted - Amount of RAM that the kernel identified as
+      corrupted / not working"}, "properties": [{"id": "color", "value": {"fixedColor":
+      "#CFFAFF", "mode": "fixed"}}]}, {"matcher": {"id": "byName", "options": "Inactive"},
+      "properties": [{"id": "color", "value": {"fixedColor": "#584477", "mode": "fixed"}}]},
+      {"matcher": {"id": "byName", "options": "PageTables"}, "properties": [{"id":
+      "color", "value": {"fixedColor": "#0A50A1", "mode": "fixed"}}]}, {"matcher":
+      {"id": "byName", "options": "Page_Tables"}, "properties": [{"id": "color", "value":
+      {"fixedColor": "#0A50A1", "mode": "fixed"}}]}, {"matcher": {"id": "byName",
+      "options": "RAM_Free"}, "properties": [{"id": "color", "value": {"fixedColor":
+      "#E0F9D7", "mode": "fixed"}}]}, {"matcher": {"id": "byName", "options": "Slab"},
+      "properties": [{"id": "color", "value": {"fixedColor": "#806EB7", "mode": "fixed"}}]},
+      {"matcher": {"id": "byName", "options": "Slab_Cache"}, "properties": [{"id":
+      "color", "value": {"fixedColor": "#E0752D", "mode": "fixed"}}]}, {"matcher":
+      {"id": "byName", "options": "Swap"}, "properties": [{"id": "color", "value":
+      {"fixedColor": "#BF1B00", "mode": "fixed"}}]}, {"matcher": {"id": "byName",
+      "options": "Swap_Cache"}, "properties": [{"id": "color", "value": {"fixedColor":
+      "#C15C17", "mode": "fixed"}}]}, {"matcher": {"id": "byName", "options": "Swap_Free"},
+      "properties": [{"id": "color", "value": {"fixedColor": "#2F575E", "mode": "fixed"}}]},
+      {"matcher": {"id": "byName", "options": "Unused"}, "properties": [{"id": "color",
+      "value": {"fixedColor": "#EAB839", "mode": "fixed"}}]}, {"matcher": {"id": "byName",
+      "options": "ShmemHugePages - Memory used by shared memory (shmem) and tmpfs
+      allocated  with huge pages"}, "properties": [{"id": "custom.fillOpacity", "value":
+      0}]}, {"matcher": {"id": "byName", "options": "ShmemHugePages - Memory used
+      by shared memory (shmem) and tmpfs allocated  with huge pages"}, "properties":
+      [{"id": "custom.fillOpacity", "value": 0}]}]}, "gridPos": {"h": 10, "w": 12,
+--
+          timeInterval: 30s
+          # This section links traces found in Prometheus to the Tempo datasource
+          exemplarTraceIdDestinations:
+            - name: trace_id
+              # It's more robust to link by UID than by name
+              datasourceUid: tempo
+
+      # --- NEW TEMPO DATASOURCE ADDED BELOW ---
+      - name: Tempo
+        type: tempo
+        access: proxy
+        uid: tempo # This UID is used by Prometheus to find Tempo
+        url: http://tempo.tempo:3200 # The internal service URL for Tempo
+        jsonData:
+          # This section enables the Service Graph feature
+          serviceMap:
+            # This tells Tempo to use your Prometheus datasource for service graph data
+            datasourceUid: 'metalk8s-prometheus'
+  kind: ConfigMap
+  metadata:
+    creationTimestamp: "2025-07-17T19:11:01Z"
+    labels:
+      app: prometheus-operator-grafana
+      app.kubernetes.io/instance: prometheus-operator
+      app.kubernetes.io/managed-by: salt
+      app.kubernetes.io/name: prometheus-operator-grafana
+      app.kubernetes.io/part-of: metalk8s
+      app.kubernetes.io/version: 65.5.1
+      chart: kube-prometheus-stack-65.5.1
+      grafana_datasource: "1"
+      heritage: salt
+      metalk8s.scality.com/monitor: ""
+      metalk8s.scality.com/version: 130.0.1-dev
+      release: prometheus-operator
+    name: prometheus-operator-grafana-datasource
+    namespace: metalk8s-monitoring
+    resourceVersion: "1527727"
+    uid: 424b3cdf-107d-43a4-a194-434e6077d775
+- apiVersion: v1
+  data:
+    grafana-overview.json: '{"annotations":{"list":[{"builtIn":1,"datasource":"--
+      Grafana --","enable":true,"hide":true,"iconColor":"rgba(0, 211, 255, 1)","name":"Annotations
+      & Alerts","target":{"limit":100,"matchAny":false,"tags":[],"type":"dashboard"},"type":"dashboard"}]},"editable":true,"gnetId":null,"graphTooltip":0,"id":3085,"iteration":1631554945276,"links":[],"panels":[{"datasource":"$datasource","fieldConfig":{"defaults":{"mappings":[],"noValue":"0","thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"red","value":80}]}},"overrides":[]},"gridPos":{"h":5,"w":6,"x":0,"y":0},"id":6,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","reduceOptions":{"calcs":["mean"],"fields":"","values":false},"text":{},"textMode":"auto"},"pluginVersion":"8.1.3","targets":[{"expr":"grafana_alerting_result_total{job=~\"$job\",
+      instance=~\"$instance\", state=\"alerting\"}","instant":true,"interval":"","legendFormat":"","refId":"A"}],"timeFrom":null,"timeShift":null,"title":"Firing
+      Alerts","type":"stat"},{"datasource":"$datasource","fieldConfig":{"defaults":{"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"red","value":80}]}},"overrides":[]},"gridPos":{"h":5,"w":6,"x":6,"y":0},"id":8,"options":{"colorMode":"value","graphMode":"area","justifyMode":"auto","orientation":"auto","reduceOptions":{"calcs":["mean"],"fields":"","values":false},"text":{},"textMode":"auto"},"pluginVersion":"8.1.3","targets":[{"expr":"sum(grafana_stat_totals_dashboard{job=~\"$job\",
+      instance=~\"$instance\"})","interval":"","legendFormat":"","refId":"A"}],"timeFrom":null,"timeShift":null,"title":"Dashboards","type":"stat"},{"datasource":"$datasource","fieldConfig":{"defaults":{"custom":{"align":null,"displayMode":"auto"},"mappings":[],"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"red","value":80}]}},"overrides":[]},"gridPos":{"h":5,"w":12,"x":12,"y":0},"id":10,"options":{"showHeader":true},"pluginVersion":"8.1.3","targets":[{"expr":"grafana_build_info{job=~\"$job\",
+      instance=~\"$instance\"}","instant":true,"interval":"","legendFormat":"","refId":"A"}],"timeFrom":null,"timeShift":null,"title":"Build
+      Info","transformations":[{"id":"labelsToFields","options":{}},{"id":"organize","options":{"excludeByName":{"Time":true,"Value":true,"branch":true,"container":true,"goversion":true,"namespace":true,"pod":true,"revision":true},"indexByName":{"Time":7,"Value":11,"branch":4,"container":8,"edition":2,"goversion":6,"instance":1,"job":0,"namespace":9,"pod":10,"revision":5,"version":3},"renameByName":{}}}],"type":"table"},{"aliasColors":{},"bars":false,"dashLength":10,"dashes":false,"datasource":"$datasource","fieldConfig":{"defaults":{"links":[]},"overrides":[]},"fill":1,"fillGradient":0,"gridPos":{"h":8,"w":12,"x":0,"y":5},"hiddenSeries":false,"id":2,"legend":{"avg":false,"current":false,"max":false,"min":false,"show":true,"total":false,"values":false},"lines":true,"linewidth":1,"nullPointMode":"null","options":{"alertThreshold":true},"percentage":false,"pluginVersion":"8.1.3","pointradius":2,"points":false,"renderer":"flot","seriesOverrides":[],"spaceLength":10,"stack":true,"steppedLine":false,"targets":[{"expr":"sum
+      by (status_code) (irate(grafana_http_request_duration_seconds_count{job=~\"$job\",
+      instance=~\"$instance\"}[1m])) ","interval":"","legendFormat":"{{status_code}}","refId":"A"}],"thresholds":[],"timeFrom":null,"timeRegions":[],"timeShift":null,"title":"RPS","tooltip":{"shared":true,"sort":0,"value_type":"individual"},"type":"graph","xaxis":{"buckets":null,"mode":"time","name":null,"show":true,"values":[]},"yaxes":[{"$$hashKey":"object:157","format":"reqps","label":null,"logBase":1,"max":null,"min":null,"show":true},{"$$hashKey":"object:158","format":"short","label":null,"logBase":1,"max":null,"min":null,"show":false}],"yaxis":{"align":false,"alignLevel":null}},{"aliasColors":{},"bars":false,"dashLength":10,"dashes":false,"datasource":"$datasource","fieldConfig":{"defaults":{"links":[]},"overrides":[]},"fill":1,"fillGradient":0,"gridPos":{"h":8,"w":12,"x":12,"y":5},"hiddenSeries":false,"id":4,"legend":{"avg":false,"current":false,"max":false,"min":false,"show":true,"total":false,"values":false},"lines":true,"linewidth":1,"nullPointMode":"null","options":{"alertThreshold":true},"percentage":false,"pluginVersion":"8.1.3","pointradius":2,"points":false,"renderer":"flot","seriesOverrides":[],"spaceLength":10,"stack":false,"steppedLine":false,"targets":[{"exemplar":true,"expr":"histogram_quantile(0.99,
+      sum(irate(grafana_http_request_duration_seconds_bucket{instance=~\"$instance\",
+      job=~\"$job\"}[$__rate_interval])) by (le)) * 1","interval":"","legendFormat":"99th
+      Percentile","refId":"A"},{"exemplar":true,"expr":"histogram_quantile(0.50, sum(irate(grafana_http_request_duration_seconds_bucket{instance=~\"$instance\",
+      job=~\"$job\"}[$__rate_interval])) by (le)) * 1","interval":"","legendFormat":"50th
+      Percentile","refId":"B"},{"exemplar":true,"expr":"sum(irate(grafana_http_request_duration_seconds_sum{instance=~\"$instance\",
+      job=~\"$job\"}[$__rate_interval])) * 1 / sum(irate(grafana_http_request_duration_seconds_count{instance=~\"$instance\",
+      job=~\"$job\"}[$__rate_interval]))","interval":"","legendFormat":"Average","refId":"C"}],"thresholds":[],"timeFrom":null,"timeRegions":[],"timeShift":null,"title":"Request
+      Latency","tooltip":{"shared":true,"sort":0,"value_type":"individual"},"type":"graph","xaxis":{"buckets":null,"mode":"time","name":null,"show":true,"values":[]},"yaxes":[{"$$hashKey":"object:210","format":"ms","label":null,"logBase":1,"max":null,"min":null,"show":true},{"$$hashKey":"object:211","format":"short","label":null,"logBase":1,"max":null,"min":null,"show":true}],"yaxis":{"align":false,"alignLevel":null}}],"schemaVersion":30,"style":"dark","tags":[],"templating":{"list":[{"current":{"selected":true,"text":"dev-cortex","value":"dev-cortex"},"description":null,"error":null,"hide":0,"includeAll":false,"label":null,"multi":false,"name":"datasource","options":[],"query":"prometheus","queryValue":"","refresh":1,"regex":"","skipUrlSync":false,"type":"datasource"},{"allValue":".*","current":{"selected":false,"text":["default/grafana"],"value":["default/grafana"]},"datasource":"$datasource","definition":"label_values(grafana_build_info,
+      job)","description":null,"error":null,"hide":0,"includeAll":true,"label":null,"multi":true,"name":"job","options":[],"query":{"query":"label_values(grafana_build_info,
+      job)","refId":"Billing Admin-job-Variable-Query"},"refresh":1,"regex":"","skipUrlSync":false,"sort":0,"tagValuesQuery":"","tagsQuery":"","type":"query","useTags":false},{"allValue":".*","current":{"selected":false,"text":"All","value":"$__all"},"datasource":"$datasource","definition":"label_values(grafana_build_info,
+      instance)","description":null,"error":null,"hide":0,"includeAll":true,"label":null,"multi":true,"name":"instance","options":[],"query":{"query":"label_values(grafana_build_info,
+      instance)","refId":"Billing Admin-instance-Variable-Query"},"refresh":1,"regex":"","skipUrlSync":false,"sort":0,"tagValuesQuery":"","tagsQuery":"","type":"query","useTags":false}]},"time":{"from":"now-6h","to":"now"},"timepicker":{"refresh_intervals":["10s","30s","1m","5m","15m","30m","1h","2h","1d"]},"timezone":
+      "utc","title":"Grafana Overview","uid":"6be0s85Mk","version":2}'
+--
+        kube-apiserver when using internal endpoints such as the internal service
+        IP or kubernetes.default.svc. No other usage is guaranteed across distributions
+        of Kubernetes clusters.
+    creationTimestamp: "2025-07-17T22:07:22Z"
+    name: kube-root-ca.crt
+    namespace: tempo
+    resourceVersion: "113177"
+    uid: ac6f07e7-24c1-47e4-83a9-b2afa9895729
+- apiVersion: v1
+  data:
+    tempo.yaml: |
+      # Server configuration
+      server:
+        http_listen_port: 3200
+
+      # Distributor configuration for receiving spans
+      distributor:
+        receivers:
+          otlp:
+            protocols:
+              grpc:
+                endpoint: 0.0.0.0:4317
+              http:
+                endpoint: 0.0.0.0:4318
+
+      # Storage configuration for TRACES
+      storage:
+        trace:
+          backend: local
+          wal:
+            path: /var/tempo/wal      # WAL for incoming spans
+          local:
+            path: /var/tempo/traces  # Long-term storage for trace blocks
+
+      # Compactor configuration
+      compactor:
+        compaction:
+          block_retention: 24h
+
+      # Metrics Generator configuration
+      metrics_generator:
+        # Storage configuration for METRICS (Service Graphs, Span Metrics)
+        storage:
+          path: /var/tempo/generator/wal # Path for the generator's Write-Ahead Log
+          remote_write:
+            - url: http://prometheus-operator-prometheus.metalk8s-monitoring.svc.cluster.local:9090/api/v1/write
+
+        # Registry for labeling generated metrics
+        registry:
+          external_labels:
+            source: tempo
+
+        # Processor configuration defines which metrics to generate
+        processor:
+          # Enable the service_graphs processor with default settings
+          service_graphs: {}
+          # Enable the span_metrics processor with custom dimensions
+          span_metrics:
+            dimensions: ['correlation_id', 'start_time_ms', 'end_time_ms']
+
+      # Overrides to enable the desired processors for the metrics generator
+      overrides:
+        metrics_generator_processors: [ 'service-graphs', 'span-metrics' ]
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"tempo.yaml":"server:\n  http_listen_port: 3200\ndistributor:\n  receivers:\n    otlp:\n      protocols:\n        grpc:\n          endpoint: 0.0.0.0:4317\n        http:\n          endpoint: 0.0.0.0:4318\nstorage:\n  trace:\n    backend: local\n    local:\n      path: /var/tempo/traces\ncompactor:\n  compaction:\n    block_retention: 24h\n"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"tempo-config","namespace":"tempo"}}
+    creationTimestamp: "2025-07-17T22:07:22Z"
+    name: tempo-config
+    namespace: tempo
+    resourceVersion: "1523866"
+    uid: e352643a-a36d-4869-b597-e2a9e9d88b46
+- apiVersion: v1
+  data:
+    hyperdrive.yaml: "# All options related to Hyperdrive.\nglobal:\n\n  # There are
+      four mains modes for the hypedrive:\n  #\n  # 1. async:\n  #      It is the
+      default mode, data protection is done asynchronously with\n  #      an Erasure
+      Coding by Extent. In that case, nr_data will be the number of\n  #      extent
+      storing data and nr_coding the parity counterpart.\n  #\n  # 2. sync:\n  #      Let
+      synchronous protection with an Erasure Coding by Block.\n  #      In that case,
+      nr_data will be the number of data chunk and coding the number\n  #      of
+      parity chunk.\n  #\n  # 3. no-protection:\n  #      Implies no protection.\n
+      \ #\n  mode: sync\n\n  # Universally unique identifier for an Hyperdrive instance.\n
+      \ # Maximum length is 36.\n  uuid: \"d86bea2f-1485-4beb-a49f-3485504c9766\"\n\n
+      \ # Directory path of the database.\n  dbname_path: \"/mnt/index\"\n\n  # Directory
+      path of the database backup.\n  dbname_backup_path: \"/tmp/hd-index.bak\"\n\n
+      \ # Defines the log level by module.\n  # Grammar: [module:level,]*default_level\n
+      \ # module: http/hyperiod/common/dataland/ece/engine/erasure/\n  #         extentset/index/relocation/scrubber/worker/config\n
+      \ # level: debug/info/notice/warning/error\n  # Example: dataland:info,debug\n
+      \ # Example: relocation:warning,ece:error,info\n  log: \"http:info,info\"\n\n
+      \ # Enable/Disable write sync (for data and index).\n  # Values: none / both
+      / data / index\n  write_sync: \"both\"\n\n  # Datasync gathering period (in
+      us).\n  # Use a sync for each write, else try to batch.\n  sync_period: 10\n\n
+      \ # Total size used on disk by an extent (header and footer included).\n  #
+      Default to 128 MiB.\n  extent_total_size: 4194304\n\n  # Number of buffer allocated
+      to read data from socket\n  extent_pool_len: 0\n\n  # Should use O_DIRECT write
+      access (coding, all, none)\n  extent_direct_io: none\n\n  # Number of threads
+      writer in ECE(async mode) or ECB(sync mode)\n  nr_erasure_writer: 1\n\n  # Number
+      of threads involve in doing IO on get/put/del\n  # this is used only in sync
+      mode\n  nr_iothread: 64\n\n  # Number of location allocated at init for the
+      threads.\n  # After this threshold each location will be allocated on the fly.\n
+      \ nr_stats_location: 128\n\n  # Number of workers (threads) for hyperiod.\n
+      \ nr_worker: 128\n\n  # Number of tasks (threads) for hyperiod.\n  nr_task:
+      128\n\n  # The minimum number of extents that can be created on a disk\n  #
+      so that it is not considerated as a disk full.\n  nr_minimal_extent: 10\n\n
+      \ # Number of preallocated extents at init\n  # set to 0 in order to disable
+      extent preallocation.\n  nr_preallocated_extent: 10\n\n  # Number of preallocated
+      groups.\n  # set to 0 in order to disable group preallocation.\n  nr_preallocated_group:
+      10\n\n  # If the option is set to true, the index will restore from backup at
+      start.\n  # warning: obsolete option, do not use anymore.\n  repair_index: False\n\n
+      \ # Percentage of used size to reach on index's disk to flag it as full for
+      the\n  # put operation.\n  # fdi: full disk index\n  fdi_percent_put: 90\n\n
+      \ # Percentage of used size to reach on index's disk to flag it as full for
+      the\n  # put and delete operations.\n  # fdi: full disk index\n  fdi_percent:
+      96\n\n  # Enable/disable debug/test HTTP routes '/debug/...'\n  # Also enable/disable
+      fuzzing lookup for the syscalls\n  # and the core dump generation\n  enable_test_mode:
+      false\n\n  # Enable/disable the tracer\n  # The tracer module is linked to backend
+      that provided the implementation\n  # and respsects the opentracing interface.
+      The current backend is `jaegertracing`.\n  enable_tracer: False\n\n  # Number
+      of seconds between each index backup.\n  # default to 0 s (no backup)\n  index_backup_period:

@@ -1,0 +1,471 @@
+const async = require('async');
+const { errors, errorInstances, versioning, s3middleware } = require('arsenal');
+const validateHeaders = s3middleware.validateConditionalHeaders;
+
+const collectCorsHeaders = require('../utilities/collectCorsHeaders');
+const constants = require('../../constants');
+const { data } = require('../data/wrapper');
+const locationConstraintCheck =
+    require('./apiUtils/object/locationConstraintCheck');
+const metadata = require('../metadata/wrapper');
+const { pushMetric } = require('../utapi/utilities');
+const services = require('../services');
+const setUpCopyLocator = require('./apiUtils/object/setUpCopyLocator');
+const { standardMetadataValidateBucketAndObj } = require('../metadata/metadataUtils');
+const monitoring = require('../utilities/monitoringHandler');
+const { verifyColdObjectAvailable } = require('./apiUtils/object/coldStorage');
+const { validateQuotas } = require('./apiUtils/quotas/quotaUtils');
+const { setSSEHeaders } = require('./apiUtils/object/sseHeaders');
+
+const versionIdUtils = versioning.VersionID;
+
+const skipError = new Error('skip');
+
+/**
+ * PUT Part Copy during a multipart upload.
+ * @param {AuthInfo} authInfo - Instance of AuthInfo class with
+ * requester's info
+ * @param {request} request - request object given by router,
+ *                            includes normalized headers
+ * @param {string} sourceBucket - name of source bucket for object copy
+ * @param {string} sourceObject - name of source object for object copy
+ * @param {string} reqVersionId - versionId of the source object for copy
+ * @param {object} log - the request logger
+ * @param {function} callback - final callback to call with the result
+ * @return {undefined}
+ */
+function objectPutCopyPart(authInfo, request, sourceBucket,
+    sourceObject, reqVersionId, log, callback) {
+    log.debug('processing request', { method: 'objectPutCopyPart' });
+    const destBucketName = request.bucketName;
+    const destObjectKey = request.objectKey;
+    const mpuBucketName = `${constants.mpuBucketPrefix}${destBucketName}`;
+    const valGetParams = {
+        authInfo,
+        bucketName: sourceBucket,
+        objectKey: sourceObject,
+        versionId: reqVersionId,
+        getDeleteMarker: true,
+        requestType: 'objectGet',
+        /**
+         * Authorization will first check the target object, with an objectPut
+         * action. But in this context, the source object metadata is still
+         * unknown. In the context of quotas, to know the number of bytes that
+         * are being written, we explicitly enable the quota evaluation logic
+         * during the objectGet action instead.
+         */
+        checkQuota: true,
+        request,
+    };
+
+    const partNumber = Number.parseInt(request.query.partNumber, 10);
+    // AWS caps partNumbers at 10,000
+    if (partNumber > 10000 || !Number.isInteger(partNumber) || partNumber < 1) {
+        monitoring.promMetrics('PUT', destBucketName, 400,
+            'putObjectCopyPart');
+        return callback(errors.InvalidArgument);
+    }
+    // We pad the partNumbers so that the parts will be sorted
+    // in numerical order
+    const paddedPartNumber = `000000${partNumber}`.substr(-5);
+    // Note that keys in the query object retain their case, so
+    // request.query.uploadId must be called with that exact
+    // capitalization
+    const { query: { uploadId } } = request;
+
+    const valPutParams = {
+        authInfo,
+        bucketName: destBucketName,
+        objectKey: destObjectKey,
+        requestType: 'objectPutPart',
+        checkQuota: false,
+        request,
+    };
+
+    // For validating the request at the MPU, the params are the same
+    // as validating for the destination bucket except additionally need
+    // the uploadId and splitter.
+    // Also, requestType is 'putPart or complete'
+    const valMPUParams = Object.assign({
+        uploadId,
+        splitter: constants.splitter,
+    }, valPutParams);
+    valMPUParams.requestType = 'putPart or complete';
+
+    const dataStoreContext = {
+        bucketName: destBucketName,
+        owner: authInfo.getCanonicalID(),
+        namespace: request.namespace,
+        objectKey: destObjectKey,
+        partNumber: paddedPartNumber,
+        uploadId,
+        enableQuota: true,
+    };
+
+    return async.waterfall([
+        function checkDestAuth(next) {
+            return standardMetadataValidateBucketAndObj(valPutParams, request.actionImplicitDenies, log,
+                (err, destBucketMD) => {
+                    if (err) {
+                        log.debug('error validating authorization for ' +
+                        'destination bucket',
+                        { error: err });
+                        return next(err, destBucketMD);
+                    }
+                    const flag = destBucketMD.hasDeletedFlag()
+                        || destBucketMD.hasTransientFlag();
+                    if (flag) {
+                        log.trace('deleted flag or transient flag ' +
+                        'on destination bucket', { flag });
+                        return next(errors.NoSuchBucket);
+                    }
+                    return next(null, destBucketMD);
+                });
+        },
+        function checkSourceAuthorization(destBucketMD, next) {
+            return standardMetadataValidateBucketAndObj(valGetParams, request.actionImplicitDenies, log,
+                (err, sourceBucketMD, sourceObjMD) => {
+                    if (err) {
+                        log.debug('error validating get part of request',
+                            { error: err });
+                        return next(err, destBucketMD);
+                    }
+                    if (!sourceObjMD) {
+                        log.debug('no source object', { sourceObject });
+                        const err = reqVersionId ? errors.NoSuchVersion :
+                            errors.NoSuchKey;
+                        return next(err, destBucketMD);
+                    }
+                    let sourceLocationConstraintName =
+                        sourceObjMD.dataStoreName;
+                    // for backwards compatibility before storing dataStoreName
+                    // TODO: handle in objectMD class
+                    if (!sourceLocationConstraintName &&
+                        sourceObjMD.location[0] &&
+                        sourceObjMD.location[0].dataStoreName) {
+                        sourceLocationConstraintName =
+                            sourceObjMD.location[0].dataStoreName;
+                    }
+                    // check if object data is in a cold storage
+                    const coldErr = verifyColdObjectAvailable(sourceObjMD);
+                    if (coldErr) {
+                        return next(coldErr, null);
+                    }
+                    if (sourceObjMD.isDeleteMarker) {
+                        log.debug('delete marker on source object',
+                        { sourceObject });
+                        if (reqVersionId) {
+                            const err = errorInstances.InvalidRequest
+                            .customizeDescription('The source of a copy ' +
+                            'request may not specifically refer to a delete' +
+                            'marker by version id.');
+                            return next(err, destBucketMD);
+                        }
+                        // if user specifies a key in a versioned source bucket
+                        // without specifying a version, and the object has a
+                        // delete marker, return NoSuchKey
+                        return next(errors.NoSuchKey, destBucketMD);
+                    }
+                    const headerValResult =
+                        validateHeaders(request.headers,
+                        sourceObjMD['last-modified'],
+                        sourceObjMD['content-md5']);
+                    if (headerValResult.error) {
+                        return next(errors.PreconditionFailed, destBucketMD);
+                    }
+                    const copyLocator = setUpCopyLocator(sourceObjMD,
+                        request.headers['x-amz-copy-source-range'], log);
+                    if (copyLocator.error) {
+                        return next(copyLocator.error, destBucketMD);
+                    }
+                    let sourceVerId;
+                    // If specific version requested, include copy source
+                    // version id in response. Include in request by default
+                    // if versioning is enabled or suspended.
+                    if (sourceBucketMD.getVersioningConfiguration() ||
+                    reqVersionId) {
+                        if (sourceObjMD.isNull || !sourceObjMD.versionId) {
+                            sourceVerId = 'null';
+                        } else {
+                            sourceVerId =
+                                versionIdUtils.encode(sourceObjMD.versionId);
+                        }
+                    }
+                    return next(null, copyLocator.dataLocator, destBucketMD,
+                        copyLocator.copyObjectSize, sourceVerId,
+                        sourceLocationConstraintName, sourceObjMD);
+                });
+        },
+        function _validateQuotas(dataLocator, destBucketMD,
+            copyObjectSize, sourceVerId,
+            sourceLocationConstraintName, sourceObjMD, next) {
+            return validateQuotas(request, destBucketMD, request.accountQuotas, valPutParams.requestType,
+                request.apiMethod, sourceObjMD?.['content-length'] || 0, false, log, err =>
+                next(err, dataLocator, destBucketMD, copyObjectSize, sourceVerId, sourceLocationConstraintName));
+        },
+        // get MPU shadow bucket to get splitter based on MD version
+        function getMpuShadowBucket(dataLocator, destBucketMD,
+            copyObjectSize, sourceVerId,
+            sourceLocationConstraintName, next) {
+            return metadata.getBucket(mpuBucketName, log,
+                (err, mpuBucket) => {
+                    // TODO: move to `.is` once BKTCLT-9 is done and bumped in Cloudserver
+                    if (err && err.NoSuchBucket) {
+                        return next(errors.NoSuchUpload);
+                    }
+                    if (err) {
+                        log.error('error getting the shadow mpu bucket', {
+                            error: err,
+                            method: 'objectPutCopyPart::metadata.getBucket',
+                        });
+                        return next(err);
+                    }
+                    let splitter = constants.splitter;
+                    if (mpuBucket.getMdBucketModelVersion() < 2) {
+                        splitter = constants.oldSplitter;
+                    }
+                    return next(null, dataLocator, destBucketMD,
+                        copyObjectSize, sourceVerId, splitter,
+                        sourceLocationConstraintName);
+                });
+        },
+        // Get MPU overview object to check authorization to put a part
+        // and to get any object location constraint info
+        function getMpuOverviewObject(dataLocator, destBucketMD,
+            copyObjectSize, sourceVerId, splitter,
+            sourceLocationConstraintName, next) {
+            const mpuOverviewKey =
+                `overview${splitter}${destObjectKey}${splitter}${uploadId}`;
+            return metadata.getObjectMD(mpuBucketName, mpuOverviewKey,
+                    null, log, (err, res) => {
+                        if (err) {
+                            // TODO: move to `.is` once BKTCLT-9 is done and bumped in Cloudserver
+                            if (err.NoSuchKey) {
+                                return next(errors.NoSuchUpload);
+                            }
+                            log.error('error getting overview object from ' +
+                                'mpu bucket', {
+                                    error: err,
+                                    method: 'objectPutCopyPart::' +
+                                        'metadata.getObjectMD',
+                                });
+                            return next(err);
+                        }
+                        const initiatorID = res.initiator.ID;
+                        const requesterID = authInfo.isRequesterAnIAMUser() ?
+                            authInfo.getArn() : authInfo.getCanonicalID();
+                        if (initiatorID !== requesterID) {
+                            return next(errors.AccessDenied);
+                        }
+                        const destObjLocationConstraint =
+                            res.controllingLocationConstraint;
+                        const sseAlgo = res['x-amz-server-side-encryption'];
+                        const sse = sseAlgo ? {
+                            algorithm: sseAlgo,
+                            masterKeyId: res['x-amz-server-side-encryption-aws-kms-key-id'],
+                        } : null;
+                        return next(null, dataLocator, destBucketMD,
+                            destObjLocationConstraint, copyObjectSize,
+                            sourceVerId, sourceLocationConstraintName, sse, splitter);
+                    });
+        },
+        function goGetData(
+            dataLocator,
+            destBucketMD,
+            destObjLocationConstraint,
+            copyObjectSize,
+            sourceVerId,
+            sourceLocationConstraintName,
+            sse,
+            splitter,
+            next,
+        ) {
+            const originalIdentityAuthzResults = request.actionImplicitDenies;
+            // eslint-disable-next-line no-param-reassign
+            delete request.actionImplicitDenies;
+            data.uploadPartCopy(
+                request,
+                log,
+                destBucketMD,
+                sourceLocationConstraintName,
+                destObjLocationConstraint,
+                dataLocator,
+                dataStoreContext,
+                locationConstraintCheck,
+                sse,
+                (error, eTag, lastModified, serverSideEncryption, locations) => {
+                    // eslint-disable-next-line no-param-reassign
+                    request.actionImplicitDenies = originalIdentityAuthzResults;
+                    if (error) {
+                        if (error.message === 'skip') {
+                            return next(skipError, destBucketMD, eTag,
+                            lastModified, sourceVerId,
+                            serverSideEncryption);
+                        }
+                        return next(error, destBucketMD);
+                    }
+                    return next(null, destBucketMD, locations, eTag,
+                copyObjectSize, sourceVerId, serverSideEncryption,
+                lastModified, splitter);
+                });
+        },
+        function getExistingPartInfo(destBucketMD, locations, totalHash,
+            copyObjectSize, sourceVerId, serverSideEncryption, lastModified,
+            splitter, next) {
+            const partKey =
+                `${uploadId}${constants.splitter}${paddedPartNumber}`;
+            metadata.getObjectMD(mpuBucketName, partKey, {}, log,
+                (err, result) => {
+                    // If there is nothing being overwritten just move on
+                    // TODO: move to `.is` once BKTCLT-9 is done and bumped in Cloudserver
+                    if (err && !err.NoSuchKey) {
+                        log.debug('error getting current part (if any)',
+                        { error: err });
+                        return next(err);
+                    }
+                    let oldLocations;
+                    let prevObjectSize = null;
+                    if (result) {
+                        oldLocations = result.partLocations;
+                        prevObjectSize = result['content-length'];
+                        // Pull locations to clean up any potential orphans
+                        // in data if object put is an overwrite of
+                        // already existing object with same key and part number
+                        oldLocations = Array.isArray(oldLocations) ?
+                            oldLocations : [oldLocations];
+                    }
+                    return next(null, destBucketMD, locations, totalHash,
+                        prevObjectSize, copyObjectSize, sourceVerId,
+                        serverSideEncryption, lastModified, oldLocations, splitter);
+                });
+        },
+        function storeNewPartMetadata(destBucketMD, locations, totalHash,
+            prevObjectSize, copyObjectSize, sourceVerId, serverSideEncryption,
+            lastModified, oldLocations, splitter, next) {
+            const metaStoreParams = {
+                partNumber: paddedPartNumber,
+                contentMD5: totalHash,
+                size: copyObjectSize,
+                uploadId,
+                splitter: constants.splitter,
+                lastModified,
+                overheadField: constants.overheadField,
+                ownerId: destBucketMD.getOwner(),
+            };
+            return services.metadataStorePart(mpuBucketName,
+                locations, metaStoreParams, log, err => {
+                    if (err) {
+                        log.debug('error storing new metadata',
+                        { error: err, method: 'storeNewPartMetadata' });
+                        return next(err);
+                    }
+                    return next(null, locations, oldLocations, destBucketMD, totalHash,
+                        lastModified, sourceVerId, serverSideEncryption,
+                        prevObjectSize, copyObjectSize, splitter);
+                });
+        },
+        function checkCanDeleteOldLocations(partLocations, oldLocations, destBucketMD,
+            totalHash, lastModified, sourceVerId, serverSideEncryption,
+            prevObjectSize, copyObjectSize, splitter, next) {
+            if (!oldLocations) {
+                return next(null, oldLocations, destBucketMD, totalHash,
+                    lastModified, sourceVerId, serverSideEncryption,
+                    prevObjectSize, copyObjectSize);
+            }
+            return services.isCompleteMPUInProgress({
+                bucketName: destBucketName,
+                objectKey: destObjectKey,
+                uploadId,
+                splitter,
+            }, log, (err, completeInProgress) => {
+                if (err) {
+                    return next(err, destBucketMD);
+                }
+                let oldLocationsToDelete = oldLocations;
+                // Prevent deletion of old data if a completeMPU
+                // is already in progress because then there is no
+                // guarantee that the old location will not be the
+                // committed one.
+                if (completeInProgress) {
+                    log.warn('not deleting old locations because CompleteMPU is in progress', {
+                        method: 'objectPutCopyPart::checkCanDeleteOldLocations',
+                        bucketName: destBucketName,
+                        objectKey: destObjectKey,
+                        uploadId,
+                        partLocations,
+                        oldLocations,
+                    });
+                    oldLocationsToDelete = null;
+                }
+                return next(null, oldLocationsToDelete, destBucketMD, totalHash,
+                    lastModified, sourceVerId, serverSideEncryption,
+                    prevObjectSize, copyObjectSize);
+            });
+        },
+        function cleanupExistingData(oldLocationsToDelete, destBucketMD, totalHash,
+            lastModified, sourceVerId, serverSideEncryption,
+            prevObjectSize, copyObjectSize, next) {
+            // Clean up the old data now that new metadata (with new
+            // data locations) has been stored
+            if (oldLocationsToDelete) {
+                return data.batchDelete(oldLocationsToDelete, request.method, null,
+                    log, err => {
+                        if (err) {
+                            // if error, log the error and move on as it is not
+                            // relevant to the client as the client's
+                            // object already succeeded putting data, metadata
+                            log.error('error deleting existing data',
+                                { error: err });
+                        }
+                        return next(null, destBucketMD, totalHash,
+                            lastModified, sourceVerId, serverSideEncryption,
+                            prevObjectSize, copyObjectSize);
+                    });
+            }
+            return next(null, destBucketMD, totalHash,
+                lastModified, sourceVerId, serverSideEncryption,
+                prevObjectSize, copyObjectSize);
+        },
+    ], (err, destBucketMD, totalHash, lastModified, sourceVerId,
+        serverSideEncryption, prevObjectSize, copyObjectSize) => {
+        const corsHeaders = collectCorsHeaders(request.headers.origin,
+            request.method, destBucketMD);
+        if (err && err !== skipError) {
+            log.trace('error from copy part waterfall',
+            { error: err });
+            monitoring.promMetrics('PUT', destBucketName, err.code,
+                'putObjectCopyPart');
+            return callback(err, null, corsHeaders);
+        }
+        const xml = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<CopyPartResult>',
+            '<LastModified>', new Date(lastModified)
+                .toISOString(), '</LastModified>',
+            '<ETag>&quot;', totalHash, '&quot;</ETag>',
+            '</CopyPartResult>',
+        ].join('');
+
+        const additionalHeaders = corsHeaders || {};
+        if (serverSideEncryption) {
+            setSSEHeaders(additionalHeaders,
+                serverSideEncryption.algorithm,
+                serverSideEncryption.masterKeyId);
+        }
+        additionalHeaders['x-amz-copy-source-version-id'] = sourceVerId;
+        pushMetric('uploadPartCopy', log, {
+            authInfo,
+            canonicalID: destBucketMD.getOwner(),
+            bucket: destBucketName,
+            keys: [destObjectKey],
+            newByteLength: copyObjectSize,
+            oldByteLength: prevObjectSize,
+            location: destBucketMD.getLocationConstraint(),
+        });
+        monitoring.promMetrics(
+            'PUT', destBucketName, '200', 'putObjectCopyPart');
+        return callback(null, xml, additionalHeaders);
+    });
+}
+
+module.exports = objectPutCopyPart;

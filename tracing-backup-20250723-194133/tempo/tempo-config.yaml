@@ -1,0 +1,65 @@
+apiVersion: v1
+data:
+  tempo.yaml: |
+    # Server configuration
+    server:
+      http_listen_port: 3200
+
+    # Distributor configuration for receiving spans
+    distributor:
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+            http:
+              endpoint: 0.0.0.0:4318
+
+    # Storage configuration for TRACES
+    storage:
+      trace:
+        backend: local
+        wal:
+          path: /var/tempo/wal      # WAL for incoming spans
+        local:
+          path: /var/tempo/traces  # Long-term storage for trace blocks
+
+    # Compactor configuration
+    compactor:
+      compaction:
+        block_retention: 24h
+
+    # Metrics Generator configuration
+    metrics_generator:
+      # Storage configuration for METRICS (Service Graphs, Span Metrics)
+      storage:
+        path: /var/tempo/generator/wal # Path for the generator's Write-Ahead Log
+        remote_write:
+          - url: http://prometheus-operator-prometheus.metalk8s-monitoring.svc.cluster.local:9090/api/v1/write
+
+      # Registry for labeling generated metrics
+      registry:
+        external_labels:
+          source: tempo
+
+      # Processor configuration defines which metrics to generate
+      processor:
+        # Enable the service_graphs processor with default settings
+        service_graphs: {}
+        # Enable the span_metrics processor with custom dimensions
+        span_metrics:
+          dimensions: ['correlation_id', 'start_time_ms', 'end_time_ms']
+
+    # Overrides to enable the desired processors for the metrics generator
+    overrides:
+      metrics_generator_processors: [ 'service-graphs', 'span-metrics' ]
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"tempo.yaml":"server:\n  http_listen_port: 3200\ndistributor:\n  receivers:\n    otlp:\n      protocols:\n        grpc:\n          endpoint: 0.0.0.0:4317\n        http:\n          endpoint: 0.0.0.0:4318\nstorage:\n  trace:\n    backend: local\n    local:\n      path: /var/tempo/traces\ncompactor:\n  compaction:\n    block_retention: 24h\n"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"tempo-config","namespace":"tempo"}}
+  creationTimestamp: "2025-07-17T22:07:22Z"
+  name: tempo-config
+  namespace: tempo
+  resourceVersion: "1523866"
+  uid: e352643a-a36d-4869-b597-e2a9e9d88b46

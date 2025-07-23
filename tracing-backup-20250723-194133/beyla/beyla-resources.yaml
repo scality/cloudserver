@@ -1,0 +1,252 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/restartedAt: "2025-07-23T17:05:31Z"
+    creationTimestamp: "2025-07-23T17:06:06Z"
+    generateName: beyla-
+    labels:
+      app: beyla
+      controller-revision-hash: 6ddcd74594
+      pod-template-generation: "88"
+    name: beyla-h2rd5
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DaemonSet
+      name: beyla
+      uid: 2d950fc2-8e19-4c62-9d12-10ae72342101
+    resourceVersion: "2683979"
+    uid: 40b91dd2-9886-4d05-96fd-55284f9240a8
+  spec:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchFields:
+            - key: metadata.name
+              operator: In
+              values:
+              - ip-10-160-103-37.eu-north-1.compute.internal
+    containers:
+    - env:
+      - name: BEYLA_TRACES_SAMPLER
+        value: parentbased_traceidratio
+      - name: BEYLA_LOG_LEVEL
+        value: INFO
+      - name: BEYLA_KUBE_METADATA_ENABLE
+        value: "true"
+      - name: BEYLA_OPEN_PORT
+        value: 1-65535
+      - name: BEYLA_CONFIG_PATH
+        value: /config/beyla-config.yml
+      - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+        value: http://otel-collector.default.svc.cluster.local:4318/v1/metrics
+      - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+        value: http://otel-collector.default.svc.cluster.local:4318/v1/traces
+      image: grafana/beyla:latest
+      imagePullPolicy: Always
+      name: beyla
+      resources: {}
+      securityContext:
+        privileged: true
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /config
+        name: beyla-config-volume
+        readOnly: true
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-v4jhv
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    hostPID: true
+    nodeName: ip-10-160-103-37.eu-north-1.compute.internal
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: beyla
+    serviceAccountName: beyla
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoSchedule
+      operator: Exists
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+    - effect: NoSchedule
+      key: node.kubernetes.io/disk-pressure
+      operator: Exists
+    - effect: NoSchedule
+      key: node.kubernetes.io/memory-pressure
+      operator: Exists
+    - effect: NoSchedule
+      key: node.kubernetes.io/pid-pressure
+      operator: Exists
+    - effect: NoSchedule
+      key: node.kubernetes.io/unschedulable
+      operator: Exists
+    volumes:
+    - configMap:
+        defaultMode: 420
+        name: beyla-config
+      name: beyla-config-volume
+    - name: kube-api-access-v4jhv
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T17:06:09Z"
+      status: "True"
+      type: PodReadyToStartContainers
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T17:06:06Z"
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T17:06:09Z"
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T17:06:09Z"
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T17:06:06Z"
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - containerID: containerd://6a0c3fb41b77b9df8a745e10987035d283016ee176f005fa366f4935ac861757
+      image: docker.io/grafana/beyla:latest
+      imageID: docker.io/grafana/beyla@sha256:d00f7c7d3783c0f9cf8a945bad6265227a45444f60e536982c08d0bbca40dc3a
+      lastState: {}
+      name: beyla
+      ready: true
+      restartCount: 0
+      started: true
+      state:
+        running:
+          startedAt: "2025-07-23T17:06:08Z"
+    hostIP: 10.160.103.37
+    hostIPs:
+    - ip: 10.160.103.37
+    phase: Running
+    podIP: 10.233.0.112
+    podIPs:
+    - ip: 10.233.0.112
+    qosClass: BestEffort
+    startTime: "2025-07-23T17:06:06Z"
+- apiVersion: apps/v1
+  kind: DaemonSet
+  metadata:
+    annotations:
+      deprecated.daemonset.template.generation: "88"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"DaemonSet","metadata":{"annotations":{},"labels":{"app":"beyla"},"name":"beyla","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"beyla"}},"template":{"metadata":{"labels":{"app":"beyla"}},"spec":{"containers":[{"env":[{"name":"BEYLA_LOG_LEVEL","value":"INFO"},{"name":"BEYLA_KUBE_METADATA_ENABLE","value":"true"},{"name":"BEYLA_OPEN_PORT","value":"1-65535"},{"name":"BEYLA_KUBE_METADATA_EXCLUDE_NAMESPACES","value":"default,kube-system,metalk8s-ingress,artesca-auth,artesca-license,artesca-monitoring,artesca-system,metalk8s-monitoring"},{"name":"OTEL_EXPORTER_OTLP_METRICS_ENDPOINT","value":"http://otel-collector.default.svc.cluster.local:4318/v1/metrics"},{"name":"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT","value":"http://otel-collector.default.svc.cluster.local:4318/v1/traces"}],"image":"grafana/beyla:latest","name":"beyla","ports":[],"securityContext":{"privileged":true}}],"hostPID":true,"serviceAccountName":"beyla","tolerations":[{"effect":"NoSchedule","operator":"Exists"}]}}}}
+    creationTimestamp: "2025-07-17T21:29:54Z"
+    generation: 88
+    labels:
+      app: beyla
+    name: beyla
+    namespace: default
+    resourceVersion: "2683980"
+    uid: 2d950fc2-8e19-4c62-9d12-10ae72342101
+  spec:
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: beyla
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-23T17:05:31Z"
+        creationTimestamp: null
+        labels:
+          app: beyla
+      spec:
+        containers:
+        - env:
+          - name: BEYLA_TRACES_SAMPLER
+            value: parentbased_traceidratio
+          - name: BEYLA_LOG_LEVEL
+            value: INFO
+          - name: BEYLA_KUBE_METADATA_ENABLE
+            value: "true"
+          - name: BEYLA_OPEN_PORT
+            value: 1-65535
+          - name: BEYLA_CONFIG_PATH
+            value: /config/beyla-config.yml
+          - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+            value: http://otel-collector.default.svc.cluster.local:4318/v1/metrics
+          - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+            value: http://otel-collector.default.svc.cluster.local:4318/v1/traces
+          image: grafana/beyla:latest
+          imagePullPolicy: Always
+          name: beyla
+          resources: {}
+          securityContext:
+            privileged: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /config
+            name: beyla-config-volume
+            readOnly: true
+        dnsPolicy: ClusterFirst
+        hostPID: true
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: beyla
+        serviceAccountName: beyla
+        terminationGracePeriodSeconds: 30
+        tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: beyla-config
+          name: beyla-config-volume
+    updateStrategy:
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+      type: RollingUpdate
+  status:
+    currentNumberScheduled: 1
+    desiredNumberScheduled: 1
+    numberAvailable: 1
+    numberMisscheduled: 0
+    numberReady: 1
+    observedGeneration: 88
+    updatedNumberScheduled: 1
+kind: List
+metadata:
+  resourceVersion: ""

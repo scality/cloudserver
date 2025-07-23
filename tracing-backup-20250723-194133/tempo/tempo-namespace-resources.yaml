@@ -1,0 +1,1080 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: "2025-07-23T13:50:46Z"
+    labels:
+      run: debug-tempo
+    name: debug-tempo
+    namespace: tempo
+    resourceVersion: "2602044"
+    uid: e7198d17-4426-4605-8d90-de6b34704092
+  spec:
+    containers:
+    - args:
+      - sleep
+      - "3600"
+      image: busybox
+      imagePullPolicy: Always
+      name: debug-tempo
+      resources: {}
+      stdin: true
+      stdinOnce: true
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      tty: true
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-8gmgc
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: ip-10-160-103-37.eu-north-1.compute.internal
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Never
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - name: kube-api-access-8gmgc
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T14:50:52Z"
+      status: "False"
+      type: PodReadyToStartContainers
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T13:50:46Z"
+      reason: PodCompleted
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T14:50:51Z"
+      reason: PodCompleted
+      status: "False"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T14:50:51Z"
+      reason: PodCompleted
+      status: "False"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T13:50:46Z"
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - containerID: containerd://23a9589fcda02dd97ab11f9bf0f2a9b8908d6754166476efb4d7b8433306be09
+      image: docker.io/library/busybox:latest
+      imageID: docker.io/library/busybox@sha256:f85340bf132ae937d2c2a763b8335c9bab35d6e8293f70f606b9c6178d84f42b
+      lastState: {}
+      name: debug-tempo
+      ready: false
+      restartCount: 0
+      started: false
+      state:
+        terminated:
+          containerID: containerd://23a9589fcda02dd97ab11f9bf0f2a9b8908d6754166476efb4d7b8433306be09
+          exitCode: 0
+          finishedAt: "2025-07-23T14:50:50Z"
+          reason: Completed
+          startedAt: "2025-07-23T13:50:50Z"
+    hostIP: 10.160.103.37
+    hostIPs:
+    - ip: 10.160.103.37
+    phase: Succeeded
+    podIP: 10.233.0.170
+    podIPs:
+    - ip: 10.233.0.170
+    qosClass: BestEffort
+    startTime: "2025-07-23T13:50:46Z"
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/restartedAt: "2025-07-22T07:33:05Z"
+    creationTimestamp: "2025-07-22T07:33:05Z"
+    generateName: tempo-756d7c5b69-
+    labels:
+      app: tempo
+      pod-template-hash: 756d7c5b69
+    name: tempo-756d7c5b69-88cwt
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: tempo-756d7c5b69
+      uid: cfda24a8-5f55-42f9-8a9b-89dca940bfe2
+    resourceVersion: "1523963"
+    uid: 3e4ce98b-805b-4505-ad9d-2dcf2a1be829
+  spec:
+    containers:
+    - args:
+      - -config.file=/etc/tempo/tempo.yaml
+      image: grafana/tempo:latest
+      imagePullPolicy: Always
+      name: tempo
+      ports:
+      - containerPort: 3200
+        protocol: TCP
+      - containerPort: 4317
+        protocol: TCP
+      - containerPort: 4318
+        protocol: TCP
+      resources: {}
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /etc/tempo
+        name: tempo-config
+      - mountPath: /var/tempo
+        name: tempo-storage
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-s5gg4
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: ip-10-160-103-37.eu-north-1.compute.internal
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - configMap:
+        defaultMode: 420
+        name: tempo-config
+      name: tempo-config
+    - emptyDir: {}
+      name: tempo-storage
+    - name: kube-api-access-s5gg4
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-22T07:33:08Z"
+      status: "True"
+      type: PodReadyToStartContainers
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-22T07:33:05Z"
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-22T07:33:08Z"
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-22T07:33:08Z"
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-22T07:33:05Z"
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - containerID: containerd://96602bf89198a8e8ac305e57f16d4869eb21057f162ae939a1ef29cd05755012
+      image: docker.io/grafana/tempo:latest
+      imageID: docker.io/grafana/tempo@sha256:381d8caf86e8bfb7eeeb63d978b09b6f713460d7e7c960d2892d3053ef79bce7
+      lastState: {}
+      name: tempo
+      ready: true
+      restartCount: 0
+      started: true
+      state:
+        running:
+          startedAt: "2025-07-22T07:33:07Z"
+    hostIP: 10.160.103.37
+    hostIPs:
+    - ip: 10.160.103.37
+    phase: Running
+    podIP: 10.233.0.199
+    podIPs:
+    - ip: 10.233.0.199
+    qosClass: BestEffort
+    startTime: "2025-07-22T07:33:05Z"
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"tempo","namespace":"tempo"},"spec":{"ports":[{"name":"http","port":3200,"targetPort":3200},{"name":"otlp-grpc","port":4317,"targetPort":4317},{"name":"otlp-http","port":4318,"targetPort":4318}],"selector":{"app":"tempo"}}}
+    creationTimestamp: "2025-07-17T22:07:22Z"
+    name: tempo
+    namespace: tempo
+    resourceVersion: "113195"
+    uid: c04e0fea-ca98-4578-a092-3e146821fdd7
+  spec:
+    clusterIP: 10.108.226.252
+    clusterIPs:
+    - 10.108.226.252
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: http
+      port: 3200
+      protocol: TCP
+      targetPort: 3200
+    - name: otlp-grpc
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: otlp-http
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
+    selector:
+      app: tempo
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "8"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"name":"tempo","namespace":"tempo"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"tempo"}},"template":{"metadata":{"labels":{"app":"tempo"}},"spec":{"containers":[{"args":["-config.file=/etc/tempo/tempo.yaml"],"image":"grafana/tempo:latest","name":"tempo","ports":[{"containerPort":3200},{"containerPort":4317},{"containerPort":4318}],"volumeMounts":[{"mountPath":"/etc/tempo","name":"tempo-config"},{"mountPath":"/var/tempo","name":"tempo-storage"}]}],"volumes":[{"configMap":{"name":"tempo-config"},"name":"tempo-config"},{"emptyDir":{},"name":"tempo-storage"}]}}}}
+    creationTimestamp: "2025-07-17T22:07:22Z"
+    generation: 8
+    name: tempo
+    namespace: tempo
+    resourceVersion: "1523978"
+    uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: tempo
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-22T07:33:05Z"
+        creationTimestamp: null
+        labels:
+          app: tempo
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2025-07-22T07:33:08Z"
+      lastUpdateTime: "2025-07-22T07:33:08Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2025-07-17T22:07:22Z"
+      lastUpdateTime: "2025-07-22T07:33:08Z"
+      message: ReplicaSet "tempo-756d7c5b69" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 8
+    readyReplicas: 1
+    replicas: 1
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "1"
+    creationTimestamp: "2025-07-17T22:07:22Z"
+    generation: 2
+    labels:
+      app: tempo
+      pod-template-hash: 55ccb85488
+    name: tempo-55ccb85488
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tempo
+      uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+    resourceVersion: "1518585"
+    uid: 220427fd-8d8b-44f8-a662-626eee78dd7f
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: tempo
+        pod-template-hash: 55ccb85488
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: tempo
+          pod-template-hash: 55ccb85488
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "5"
+    creationTimestamp: "2025-07-22T07:30:06Z"
+    generation: 3
+    labels:
+      app: tempo
+      pod-template-hash: 5674567cc5
+    name: tempo-5674567cc5
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tempo
+      uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+    resourceVersion: "1523244"
+    uid: 3f5d16f1-d72f-4b6f-afd0-7afdce7ddc47
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: tempo
+        pod-template-hash: 5674567cc5
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-22T07:30:06Z"
+        creationTimestamp: null
+        labels:
+          app: tempo
+          pod-template-hash: 5674567cc5
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    observedGeneration: 3
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "7"
+    creationTimestamp: "2025-07-22T07:32:03Z"
+    generation: 3
+    labels:
+      app: tempo
+      pod-template-hash: 5894bdf57d
+    name: tempo-5894bdf57d
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tempo
+      uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+    resourceVersion: "1523976"
+    uid: 61c60cf5-54b9-465a-af3e-aa8904fa6783
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: tempo
+        pod-template-hash: 5894bdf57d
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-22T07:32:03Z"
+        creationTimestamp: null
+        labels:
+          app: tempo
+          pod-template-hash: 5894bdf57d
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    observedGeneration: 3
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "4"
+    creationTimestamp: "2025-07-22T07:29:31Z"
+    generation: 3
+    labels:
+      app: tempo
+      pod-template-hash: 5d4f5b58c
+    name: tempo-5d4f5b58c
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tempo
+      uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+    resourceVersion: "1522025"
+    uid: 20aef6b7-1aa3-40c7-86c1-a5f1136d6928
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: tempo
+        pod-template-hash: 5d4f5b58c
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-22T07:29:31Z"
+        creationTimestamp: null
+        labels:
+          app: tempo
+          pod-template-hash: 5d4f5b58c
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    observedGeneration: 3
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "6"
+    creationTimestamp: "2025-07-22T07:31:29Z"
+    generation: 2
+    labels:
+      app: tempo
+      pod-template-hash: 6fccb5fb7c
+    name: tempo-6fccb5fb7c
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tempo
+      uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+    resourceVersion: "1523911"
+    uid: 9bdbdf84-f513-4ce5-8ccd-f6111de8912e
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: tempo
+        pod-template-hash: 6fccb5fb7c
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-22T07:31:29Z"
+        creationTimestamp: null
+        labels:
+          app: tempo
+          pod-template-hash: 6fccb5fb7c
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "8"
+    creationTimestamp: "2025-07-22T07:33:05Z"
+    generation: 2
+    labels:
+      app: tempo
+      pod-template-hash: 756d7c5b69
+    name: tempo-756d7c5b69
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tempo
+      uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+    resourceVersion: "1523966"
+    uid: cfda24a8-5f55-42f9-8a9b-89dca940bfe2
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: tempo
+        pod-template-hash: 756d7c5b69
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-22T07:33:05Z"
+        creationTimestamp: null
+        labels:
+          app: tempo
+          pod-template-hash: 756d7c5b69
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    availableReplicas: 1
+    fullyLabeledReplicas: 1
+    observedGeneration: 2
+    readyReplicas: 1
+    replicas: 1
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "2"
+    creationTimestamp: "2025-07-22T07:24:11Z"
+    generation: 2
+    labels:
+      app: tempo
+      pod-template-hash: b6cf9695b
+    name: tempo-b6cf9695b
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tempo
+      uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+    resourceVersion: "1522261"
+    uid: a2d10f17-4518-41b2-bdd5-dfc83a2bdb76
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: tempo
+        pod-template-hash: b6cf9695b
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-22T07:24:11Z"
+        creationTimestamp: null
+        labels:
+          app: tempo
+          pod-template-hash: b6cf9695b
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "3"
+    creationTimestamp: "2025-07-22T07:29:11Z"
+    generation: 2
+    labels:
+      app: tempo
+      pod-template-hash: c7fb58b5c
+    name: tempo-c7fb58b5c
+    namespace: tempo
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: tempo
+      uid: 2956d37f-6790-4bc6-9022-1d4c888da0fc
+    resourceVersion: "1521620"
+    uid: 6b4684af-66fe-44fa-a3b3-338790a03f83
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: tempo
+        pod-template-hash: c7fb58b5c
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-22T07:29:11Z"
+        creationTimestamp: null
+        labels:
+          app: tempo
+          pod-template-hash: c7fb58b5c
+      spec:
+        containers:
+        - args:
+          - -config.file=/etc/tempo/tempo.yaml
+          image: grafana/tempo:latest
+          imagePullPolicy: Always
+          name: tempo
+          ports:
+          - containerPort: 3200
+            protocol: TCP
+          - containerPort: 4317
+            protocol: TCP
+          - containerPort: 4318
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/tempo
+            name: tempo-config
+          - mountPath: /var/tempo
+            name: tempo-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: tempo-config
+          name: tempo-config
+        - emptyDir: {}
+          name: tempo-storage
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: v1
+  data:
+    ca.crt: |
+      -----BEGIN CERTIFICATE-----
+      MIIEzzCCAregAwIBAgIIRAKiMOXeF0owDQYJKoZIhvcNAQELBQAwFTETMBEGA1UE
+      AwwKa3ViZXJuZXRlczAeFw0yNTA3MTcxOTA0NTVaFw0zNTA3MTUxOTA0NTVaMBUx
+      EzARBgNVBAMMCmt1YmVybmV0ZXMwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIK
+      AoICAQCwqYjuLpE3/6N0y0KK2dGbZrJ+f+eoRtssyEcYnJ6RCNQfIpbn/mDL2l5F
+      qmADHWaOVayRZwrcLeZStcMgr04Ez9wqvEVyMX1MMdfoG1YRFpenCcac6ZshXKGC
+      V/HzZAn37KAVt2EwVdNe5MDUEms78zE+QxdzWnX746ASuNTR59rbj/8a1gkATLMS
+      F+/ncg1D35WUtWU0Hk1VtRXj8WqzVY0eNF71gy5VLLs1rIHv+fxrnkf/bwQOFdHy
+      QjK6KsyPHFeOy/B2Kov8C8z4CF07dzsr2trXq8kLvHkulYfs61qxgt+Mtgi8Zjcw
+      ltBSLtNDp1brhFLqno4rcMuueWPaiI1mcP7aR96S5UCdEYUtu5LNfr/+VkAqgQ7c
+      7pP3s2fsZW8uIXygfMv8hjq4SzQfSV9/1LYqjaUh9kC9n4QvC/iHyzuQZx3G69+V
+      pOq956P7L2gRNsbox7AK/IZMmAh+vUW0vyfCT/wBPY40mAv+qq/RX1IcXheMnB79
+      5sz5rYBte7QpmcMcl+3Who34lPHm0HNArhjz39+/UgkYGnw0qJ8HpgZIMheB/4D1
+      ipu+83MH0BAmcoq+x31OfKvGc8vRoIxkRY7D4BocdO5NQDcg/LhzsSuYmUAgymMX
+      Dg2bY3L3NC7bBFor2+KDk84oN3sH7QxICLFOB2OCdrWD5H6omwIDAQABoyMwITAP
+      BgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwICpDANBgkqhkiG9w0BAQsFAAOC
+      AgEAsBwNyIKDYIbWGifg550k0I9vlSKgO7UUtm0J8t8qyvOICXkM8pKT98IkuzXy
+      c6jwMXzoOUyM4OM/8ULvqsnVa/J08j7AUw1LhKD0vOJiDKCh72GeOTSVJ+nhnWee
+      4LS/bBks34NF4WGXQlohA3Kk8Fzl1UvJaKNP5iETu9WG8FvNiPb3VhjBed5KmW9v
+      UNuK6tSwexcHr0VmO9RXwfaZDJDv6PCBgsEo3h21+9VF0/E9cu80VZhL+IS2hAST
+      KnNc5y9t09XUpbIlbx9WY7wzEiLqZHiVDE28Cb9QNL+v6rVrCyQcU80Fq6QDHpEK
+      qb17de6ufwpm67GQ60GES4kqFZCM8swF2HWJHQGAHt8IBVe/l5L2MKOcLJyfTHmU
+      LtDAWtIxaBkazs1Vu8BDpy2qX5GKk7jyIwswQEE0ZODnmwAnlqPWuNlTZkPJSHGg
+      S0AphkwtAmsfX/V5x7oVql0wtDeXJ8MpVs5ralVfbXWCodrza8Ga+mR91gn/9jCX
+      BCuebhmQSd/J6Gz+wF7Sz/8/qITGuyxHTuyCoy/va6qqgRTLvHIOdzTvz/MIYONN
+      PPERwd5uVSRA3CcS97tN7N68Ub/P+kYxGaGYoUySTNAK0D7KjYrZAxlpMefkf5Zh
+      6VHJr7euRzvVswleDaAV9UN0aCIe64flOTHBrwhhpHD5oHM=
+      -----END CERTIFICATE-----
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubernetes.io/description: Contains a CA bundle that can be used to verify the
+        kube-apiserver when using internal endpoints such as the internal service
+        IP or kubernetes.default.svc. No other usage is guaranteed across distributions
+        of Kubernetes clusters.
+    creationTimestamp: "2025-07-17T22:07:22Z"
+    name: kube-root-ca.crt
+    namespace: tempo
+    resourceVersion: "113177"
+    uid: ac6f07e7-24c1-47e4-83a9-b2afa9895729
+- apiVersion: v1
+  data:
+    tempo.yaml: |
+      # Server configuration
+      server:
+        http_listen_port: 3200
+
+      # Distributor configuration for receiving spans
+      distributor:
+        receivers:
+          otlp:
+            protocols:
+              grpc:
+                endpoint: 0.0.0.0:4317
+              http:
+                endpoint: 0.0.0.0:4318
+
+      # Storage configuration for TRACES
+      storage:
+        trace:
+          backend: local
+          wal:
+            path: /var/tempo/wal      # WAL for incoming spans
+          local:
+            path: /var/tempo/traces  # Long-term storage for trace blocks
+
+      # Compactor configuration
+      compactor:
+        compaction:
+          block_retention: 24h
+
+      # Metrics Generator configuration
+      metrics_generator:
+        # Storage configuration for METRICS (Service Graphs, Span Metrics)
+        storage:
+          path: /var/tempo/generator/wal # Path for the generator's Write-Ahead Log
+          remote_write:
+            - url: http://prometheus-operator-prometheus.metalk8s-monitoring.svc.cluster.local:9090/api/v1/write
+
+        # Registry for labeling generated metrics
+        registry:
+          external_labels:
+            source: tempo
+
+        # Processor configuration defines which metrics to generate
+        processor:
+          # Enable the service_graphs processor with default settings
+          service_graphs: {}
+          # Enable the span_metrics processor with custom dimensions
+          span_metrics:
+            dimensions: ['correlation_id', 'start_time_ms', 'end_time_ms']
+
+      # Overrides to enable the desired processors for the metrics generator
+      overrides:
+        metrics_generator_processors: [ 'service-graphs', 'span-metrics' ]
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"tempo.yaml":"server:\n  http_listen_port: 3200\ndistributor:\n  receivers:\n    otlp:\n      protocols:\n        grpc:\n          endpoint: 0.0.0.0:4317\n        http:\n          endpoint: 0.0.0.0:4318\nstorage:\n  trace:\n    backend: local\n    local:\n      path: /var/tempo/traces\ncompactor:\n  compaction:\n    block_retention: 24h\n"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"tempo-config","namespace":"tempo"}}
+    creationTimestamp: "2025-07-17T22:07:22Z"
+    name: tempo-config
+    namespace: tempo
+    resourceVersion: "1523866"
+    uid: e352643a-a36d-4869-b597-e2a9e9d88b46
+kind: List
+metadata:
+  resourceVersion: ""

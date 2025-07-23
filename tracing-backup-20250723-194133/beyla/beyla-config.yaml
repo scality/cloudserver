@@ -1,0 +1,40 @@
+apiVersion: v1
+data:
+  beyla-config.yml: |
+    ebpf:
+      cni_mode: cilium
+      context_propagation: "all"
+    attributes:
+      kubernetes:
+        enable: true
+    discovery:
+      instrument:
+        - namespace: zenko
+          open_ports: "1-65535"
+        - namespace: xcore
+          open_ports: "1-65535"
+        - namespace: metalk8s-ingress
+          open_ports: "80,443"
+    routes:
+      "data-db-mongodb-sharded-mongos-0.data-db-mongodb-sharded.zenko.svc:27017":
+        protocol: mongo
+      "data-db-mongodb-sharded-shard0-data-0.data-db-mongodb-sharded.zenko.svc:27017":
+        protocol: mongo
+      "/live":
+        unmatched: ignore
+      "/ready":
+        unmatched: ignore
+      "/metrics":
+        unmatched: ignore
+    otel_traces_export:
+      endpoint: http://otel-collector.default.svc.cluster.local:4318
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"beyla-config.yml":"log_level: debug\nebpf:\n  context_propagation: \"all\"\nattributes:\n  kubernetes:\n    enable: true\ndiscovery:\n  instrument:\n    - namespace: zenko\n      open_ports: \"1-65535\"\n    - namespace: xcore  \n      open_ports: \"1-65535\"\n    - namespace: metalk8s-ingress\n      open_ports: \"80,443\"\nroutes:\n  \"data-db-mongodb-sharded-mongos-0.data-db-mongodb-sharded.zenko.svc:27017\":\n    protocol: mongo\n  \"/live\":\n    unmatched: ignore\n  \"/ready\":\n    unmatched: ignore\n  \"/metrics\":\n    unmatched: ignore\notel_traces_export:\n  endpoint: http://otel-collector.default.svc.cluster.local:4318\n"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"beyla-config","namespace":"default"}}
+  creationTimestamp: "2025-07-23T15:34:53Z"
+  name: beyla-config
+  namespace: default
+  resourceVersion: "2698995"
+  uid: 60194b57-54f1-4351-a5eb-1fd9d0416726

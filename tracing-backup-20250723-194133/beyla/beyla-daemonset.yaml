@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    deprecated.daemonset.template.generation: "88"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"DaemonSet","metadata":{"annotations":{},"labels":{"app":"beyla"},"name":"beyla","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"beyla"}},"template":{"metadata":{"labels":{"app":"beyla"}},"spec":{"containers":[{"env":[{"name":"BEYLA_LOG_LEVEL","value":"INFO"},{"name":"BEYLA_KUBE_METADATA_ENABLE","value":"true"},{"name":"BEYLA_OPEN_PORT","value":"1-65535"},{"name":"BEYLA_KUBE_METADATA_EXCLUDE_NAMESPACES","value":"default,kube-system,metalk8s-ingress,artesca-auth,artesca-license,artesca-monitoring,artesca-system,metalk8s-monitoring"},{"name":"OTEL_EXPORTER_OTLP_METRICS_ENDPOINT","value":"http://otel-collector.default.svc.cluster.local:4318/v1/metrics"},{"name":"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT","value":"http://otel-collector.default.svc.cluster.local:4318/v1/traces"}],"image":"grafana/beyla:latest","name":"beyla","ports":[],"securityContext":{"privileged":true}}],"hostPID":true,"serviceAccountName":"beyla","tolerations":[{"effect":"NoSchedule","operator":"Exists"}]}}}}
+  creationTimestamp: "2025-07-17T21:29:54Z"
+  generation: 88
+  labels:
+    app: beyla
+  name: beyla
+  namespace: default
+  resourceVersion: "2683980"
+  uid: 2d950fc2-8e19-4c62-9d12-10ae72342101
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: beyla
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2025-07-23T17:05:31Z"
+      creationTimestamp: null
+      labels:
+        app: beyla
+    spec:
+      containers:
+      - env:
+        - name: BEYLA_TRACES_SAMPLER
+          value: parentbased_traceidratio
+        - name: BEYLA_LOG_LEVEL
+          value: INFO
+        - name: BEYLA_KUBE_METADATA_ENABLE
+          value: "true"
+        - name: BEYLA_OPEN_PORT
+          value: 1-65535
+        - name: BEYLA_CONFIG_PATH
+          value: /config/beyla-config.yml
+        - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+          value: http://otel-collector.default.svc.cluster.local:4318/v1/metrics
+        - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+          value: http://otel-collector.default.svc.cluster.local:4318/v1/traces
+        image: grafana/beyla:latest
+        imagePullPolicy: Always
+        name: beyla
+        resources: {}
+        securityContext:
+          privileged: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /config
+          name: beyla-config-volume
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      hostPID: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: beyla
+      serviceAccountName: beyla
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: beyla-config
+        name: beyla-config-volume
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+status:
+  currentNumberScheduled: 1
+  desiredNumberScheduled: 1
+  numberAvailable: 1
+  numberMisscheduled: 0
+  numberReady: 1
+  observedGeneration: 88
+  updatedNumberScheduled: 1

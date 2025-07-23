@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: artesca-data-connector-cloudserver
+  namespace: zenko
+spec:
+  template:
+    spec:
+      containers:
+      - name: connector-cloudserver
+        env:
+        # Restore working OpenTelemetry configuration
+        - name: OTEL_SERVICE_NAME
+          value: "connector-cloudserver"
+        - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+          value: "http://otel-collector.default.svc.cluster.local:4318/v1/traces"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.name=connector-cloudserver,service.version=1.0.0"
+        - name: OTEL_PROPAGATORS
+          value: "tracecontext,baggage,b3"
+        # Disable debugger
+        - name: NODE_OPTIONS
+          value: "" 

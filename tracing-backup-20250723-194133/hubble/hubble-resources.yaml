@@ -1,0 +1,39 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: "2025-07-17T19:09:44Z"
+    labels:
+      app.kubernetes.io/managed-by: salt
+      app.kubernetes.io/name: hubble
+      app.kubernetes.io/part-of: cilium
+      heritage: salt
+      k8s-app: hubble
+      metalk8s.scality.com/version: 130.0.1-dev
+    name: hubble-metrics
+    namespace: kube-system
+    resourceVersion: "405"
+    uid: ec680a8b-3ec6-43c6-a873-b31fd7ac1bbb
+  spec:
+    clusterIP: None
+    clusterIPs:
+    - None
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: hubble-metrics
+      port: 9965
+      protocol: TCP
+      targetPort: hubble-metrics
+    selector:
+      k8s-app: cilium
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+kind: List
+metadata:
+  resourceVersion: ""

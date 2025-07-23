@@ -1,0 +1,944 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/restartedAt: "2025-07-21T22:34:27Z"
+    creationTimestamp: "2025-07-23T14:00:13Z"
+    generateName: otel-collector-6fd6d4d95b-
+    labels:
+      app: otel-collector
+      pod-template-hash: 6fd6d4d95b
+    name: otel-collector-6fd6d4d95b-sznlm
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: otel-collector-6fd6d4d95b
+      uid: 8b2f36ab-5ec3-46ee-a7ce-ec72bcaf4541
+    resourceVersion: "2573281"
+    uid: 2538459a-051e-4a9b-b5d2-d789c9e8df70
+  spec:
+    containers:
+    - args:
+      - --config=/etc/otelcol-contrib/config.yaml
+      image: otel/opentelemetry-collector-contrib:latest
+      imagePullPolicy: Always
+      name: otel-collector
+      ports:
+      - containerPort: 4318
+        name: otlp-http
+        protocol: TCP
+      - containerPort: 8889
+        name: prometheus
+        protocol: TCP
+      resources: {}
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /etc/otelcol-contrib
+        name: config-volume
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-54grw
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: ip-10-160-103-37.eu-north-1.compute.internal
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - configMap:
+        defaultMode: 420
+        name: otel-collector-config
+      name: config-volume
+    - name: kube-api-access-54grw
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T14:00:20Z"
+      status: "True"
+      type: PodReadyToStartContainers
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T14:00:13Z"
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T14:00:20Z"
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T14:00:20Z"
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2025-07-23T14:00:13Z"
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - containerID: containerd://7d9c0eeb19c1252a705520edd8cf2b549bea905c81ef085c19c72a70210a234b
+      image: docker.io/otel/opentelemetry-collector-contrib:latest
+      imageID: docker.io/otel/opentelemetry-collector-contrib@sha256:9c247564e65ca19f97d891cca19a1a8d291ce631b890885b44e3503c5fdb3895
+      lastState: {}
+      name: otel-collector
+      ready: true
+      restartCount: 0
+      started: true
+      state:
+        running:
+          startedAt: "2025-07-23T14:00:20Z"
+    hostIP: 10.160.103.37
+    hostIPs:
+    - ip: 10.160.103.37
+    phase: Running
+    podIP: 10.233.0.171
+    podIPs:
+    - ip: 10.233.0.171
+    qosClass: BestEffort
+    startTime: "2025-07-23T14:00:13Z"
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"app":"otel-collector"},"name":"otel-collector","namespace":"default"},"spec":{"ports":[{"name":"otlp-http","port":4318,"targetPort":4318},{"name":"prometheus","port":8889,"targetPort":8889}],"selector":{"app":"otel-collector"}}}
+    creationTimestamp: "2025-07-17T21:29:53Z"
+    labels:
+      app: otel-collector
+    name: otel-collector
+    namespace: default
+    resourceVersion: "91265"
+    uid: 1c88400a-3d18-4f59-977c-1481ec2b8afc
+  spec:
+    clusterIP: 10.107.139.73
+    clusterIPs:
+    - 10.107.139.73
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: otlp-http
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
+    - name: prometheus
+      port: 8889
+      protocol: TCP
+      targetPort: 8889
+    selector:
+      app: otel-collector
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "16"
+    creationTimestamp: "2025-07-21T22:24:19Z"
+    generation: 3
+    labels:
+      app: otel-collector
+      pod-template-hash: 55df5ff48b
+    name: otel-collector-55df5ff48b
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: otel-collector
+      uid: 65045544-b34a-4db3-a96a-7f14003ecad9
+    resourceVersion: "1210820"
+    uid: 36ac72c2-9299-4023-bf85-9ae87a73dbe0
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: otel-collector
+        pod-template-hash: 55df5ff48b
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-21T22:24:19Z"
+        creationTimestamp: null
+        labels:
+          app: otel-collector
+          pod-template-hash: 55df5ff48b
+      spec:
+        containers:
+        - args:
+          - --config=/etc/otelcol-contrib/config.yaml
+          image: otel/opentelemetry-collector-contrib:latest
+          imagePullPolicy: Always
+          name: otel-collector
+          ports:
+          - containerPort: 4318
+            name: otlp-http
+            protocol: TCP
+          - containerPort: 8889
+            name: prometheus
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/otelcol-contrib
+            name: config-volume
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: otel-collector-config
+          name: config-volume
+  status:
+    observedGeneration: 3
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "24"
+    creationTimestamp: "2025-07-21T22:32:48Z"
+    generation: 2
+    labels:
+      app: otel-collector
+      pod-template-hash: 655cb6b6f9
+    name: otel-collector-655cb6b6f9
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: otel-collector
+      uid: 65045544-b34a-4db3-a96a-7f14003ecad9
+    resourceVersion: "1216466"
+    uid: 92fb7c31-4f8f-499b-ab65-698e2d10f629
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: otel-collector
+        pod-template-hash: 655cb6b6f9
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-21T22:32:48Z"
+        creationTimestamp: null
+        labels:
+          app: otel-collector
+          pod-template-hash: 655cb6b6f9
+      spec:
+        containers:
+        - args:
+          - --config=/etc/otelcol-contrib/config.yaml
+          image: otel/opentelemetry-collector-contrib:latest
+          imagePullPolicy: Always
+          name: otel-collector
+          ports:
+          - containerPort: 4318
+            name: otlp-http
+            protocol: TCP
+          - containerPort: 8889
+            name: prometheus
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/otelcol-contrib
+            name: config-volume
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: otel-collector-config
+          name: config-volume
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "25"
+    creationTimestamp: "2025-07-21T22:34:27Z"
+    generation: 1
+    labels:
+      app: otel-collector
+      pod-template-hash: 6fd6d4d95b
+    name: otel-collector-6fd6d4d95b
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: otel-collector
+      uid: 65045544-b34a-4db3-a96a-7f14003ecad9
+    resourceVersion: "2573284"
+    uid: 8b2f36ab-5ec3-46ee-a7ce-ec72bcaf4541
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: otel-collector
+        pod-template-hash: 6fd6d4d95b
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-21T22:34:27Z"
+        creationTimestamp: null
+        labels:
+          app: otel-collector
+          pod-template-hash: 6fd6d4d95b
+      spec:
+        containers:
+        - args:
+          - --config=/etc/otelcol-contrib/config.yaml
+          image: otel/opentelemetry-collector-contrib:latest
+          imagePullPolicy: Always
+          name: otel-collector
+          ports:
+          - containerPort: 4318
+            name: otlp-http
+            protocol: TCP
+          - containerPort: 8889
+            name: prometheus
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/otelcol-contrib
+            name: config-volume
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: otel-collector-config
+          name: config-volume
+  status:
+    availableReplicas: 1
+    fullyLabeledReplicas: 1
+    observedGeneration: 1
+    readyReplicas: 1
+    replicas: 1
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "18"
+    creationTimestamp: "2025-07-21T22:26:03Z"
+    generation: 2
+    labels:
+      app: otel-collector
+      pod-template-hash: 75979894b5
+    name: otel-collector-75979894b5
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: otel-collector
+      uid: 65045544-b34a-4db3-a96a-7f14003ecad9
+    resourceVersion: "1211484"
+    uid: 1634f034-8840-480d-a05d-b98ff6610338
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: otel-collector
+        pod-template-hash: 75979894b5
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-21T22:26:03Z"
+        creationTimestamp: null
+        labels:
+          app: otel-collector
+          pod-template-hash: 75979894b5
+      spec:
+        containers:
+        - args:
+          - --config=/etc/otelcol-contrib/config.yaml
+          image: otel/opentelemetry-collector-contrib:latest
+          imagePullPolicy: Always
+          name: otel-collector
+          ports:
+          - containerPort: 4318
+            name: otlp-http
+            protocol: TCP
+          - containerPort: 8889
+            name: prometheus
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/otelcol-contrib
+            name: config-volume
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: otel-collector-config
+          name: config-volume
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "23"
+    creationTimestamp: "2025-07-21T22:31:00Z"
+    generation: 2
+    labels:
+      app: otel-collector
+      pod-template-hash: 788d45d54
+    name: otel-collector-788d45d54
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: otel-collector
+      uid: 65045544-b34a-4db3-a96a-7f14003ecad9
+    resourceVersion: "1215454"
+    uid: 6baf127e-7e26-41c7-be2b-42c9e51f4c3a
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: otel-collector
+        pod-template-hash: 788d45d54
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-21T22:31:00Z"
+        creationTimestamp: null
+        labels:
+          app: otel-collector
+          pod-template-hash: 788d45d54
+      spec:
+        containers:
+        - args:
+          - --config=/etc/otelcol-contrib/config.yaml
+          image: otel/opentelemetry-collector-contrib:latest
+          imagePullPolicy: Always
+          name: otel-collector
+          ports:
+          - containerPort: 4318
+            name: otlp-http
+            protocol: TCP
+          - containerPort: 8889
+            name: prometheus
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/otelcol-contrib
+            name: config-volume
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: otel-collector-config
+          name: config-volume
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "19"
+    creationTimestamp: "2025-07-21T22:26:31Z"
+    generation: 2
+    labels:
+      app: otel-collector
+      pod-template-hash: 7c9dbfdffd
+    name: otel-collector-7c9dbfdffd
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: otel-collector
+      uid: 65045544-b34a-4db3-a96a-7f14003ecad9
+    resourceVersion: "1211880"
+    uid: 967f722b-463c-4055-b11e-559ec21ce361
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: otel-collector
+        pod-template-hash: 7c9dbfdffd
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-21T22:26:31Z"
+        creationTimestamp: null
+        labels:
+          app: otel-collector
+          pod-template-hash: 7c9dbfdffd
+      spec:
+        containers:
+        - args:
+          - --config=/etc/otelcol-contrib/config.yaml
+          image: otel/opentelemetry-collector-contrib:latest
+          imagePullPolicy: Always
+          name: otel-collector
+          ports:
+          - containerPort: 4318
+            name: otlp-http
+            protocol: TCP
+          - containerPort: 8889
+            name: prometheus
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/otelcol-contrib
+            name: config-volume
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: otel-collector-config
+          name: config-volume
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "22"
+    creationTimestamp: "2025-07-21T22:29:29Z"
+    generation: 3
+    labels:
+      app: otel-collector
+      pod-template-hash: 7f85cc4588
+    name: otel-collector-7f85cc4588
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: otel-collector
+      uid: 65045544-b34a-4db3-a96a-7f14003ecad9
+    resourceVersion: "1214823"
+    uid: 8a6a71e8-f3ac-4fab-ae38-1157f90e8bc8
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: otel-collector
+        pod-template-hash: 7f85cc4588
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-21T22:29:29Z"
+        creationTimestamp: null
+        labels:
+          app: otel-collector
+          pod-template-hash: 7f85cc4588
+      spec:
+        containers:
+        - args:
+          - --config=/etc/otelcol-contrib/config.yaml
+          image: otel/opentelemetry-collector-contrib:latest
+          imagePullPolicy: Always
+          name: otel-collector
+          ports:
+          - containerPort: 4318
+            name: otlp-http
+            protocol: TCP
+          - containerPort: 8889
+            name: prometheus
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/otelcol-contrib
+            name: config-volume
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: otel-collector-config
+          name: config-volume
+  status:
+    observedGeneration: 3
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "15"
+    creationTimestamp: "2025-07-21T22:23:01Z"
+    generation: 2
+    labels:
+      app: otel-collector
+      pod-template-hash: 7f9644c68d
+    name: otel-collector-7f9644c68d
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: otel-collector
+      uid: 65045544-b34a-4db3-a96a-7f14003ecad9
+    resourceVersion: "1209988"
+    uid: 2c506744-8869-4ace-951a-6a71b21949e2
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: otel-collector
+        pod-template-hash: 7f9644c68d
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-21T22:23:01Z"
+        creationTimestamp: null
+        labels:
+          app: otel-collector
+          pod-template-hash: 7f9644c68d
+      spec:
+        containers:
+        - args:
+          - --config=/etc/otelcol-contrib/config.yaml
+          image: otel/opentelemetry-collector-contrib:latest
+          imagePullPolicy: Always
+          name: otel-collector
+          ports:
+          - containerPort: 4318
+            name: otlp-http
+            protocol: TCP
+          - containerPort: 8889
+            name: prometheus
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/otelcol-contrib
+            name: config-volume
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: otel-collector-config
+          name: config-volume
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "17"
+    creationTimestamp: "2025-07-21T22:25:33Z"
+    generation: 2
+    labels:
+      app: otel-collector
+      pod-template-hash: 846c9f997c
+    name: otel-collector-846c9f997c
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: otel-collector
+      uid: 65045544-b34a-4db3-a96a-7f14003ecad9
+    resourceVersion: "1211170"
+    uid: 16ce83bc-6f63-4c4a-9613-4022ab43203e
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: otel-collector
+        pod-template-hash: 846c9f997c
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-21T22:25:33Z"
+        creationTimestamp: null
+        labels:
+          app: otel-collector
+          pod-template-hash: 846c9f997c
+      spec:
+        containers:
+        - args:
+          - --config=/etc/otelcol-contrib/config.yaml
+          image: otel/opentelemetry-collector-contrib:latest
+          imagePullPolicy: Always
+          name: otel-collector
+          ports:
+          - containerPort: 4318
+            name: otlp-http
+            protocol: TCP
+          - containerPort: 8889
+            name: prometheus
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/otelcol-contrib
+            name: config-volume
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: otel-collector-config
+          name: config-volume
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "20"
+    creationTimestamp: "2025-07-21T22:27:06Z"
+    generation: 2
+    labels:
+      app: otel-collector
+      pod-template-hash: d84d59fbc
+    name: otel-collector-d84d59fbc
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: otel-collector
+      uid: 65045544-b34a-4db3-a96a-7f14003ecad9
+    resourceVersion: "1213326"
+    uid: 8c707ef6-8a04-431b-a7ee-e2fb03bfabdf
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: otel-collector
+        pod-template-hash: d84d59fbc
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-21T22:27:06Z"
+        creationTimestamp: null
+        labels:
+          app: otel-collector
+          pod-template-hash: d84d59fbc
+      spec:
+        containers:
+        - args:
+          - --config=/etc/otelcol-contrib/config.yaml
+          image: otel/opentelemetry-collector-contrib:latest
+          imagePullPolicy: Always
+          name: otel-collector
+          ports:
+          - containerPort: 4318
+            name: otlp-http
+            protocol: TCP
+          - containerPort: 8889
+            name: prometheus
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/otelcol-contrib
+            name: config-volume
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: otel-collector-config
+          name: config-volume
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "21"
+    creationTimestamp: "2025-07-21T22:27:37Z"
+    generation: 2
+    labels:
+      app: otel-collector
+      pod-template-hash: f98c956c5
+    name: otel-collector-f98c956c5
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: otel-collector
+      uid: 65045544-b34a-4db3-a96a-7f14003ecad9
+    resourceVersion: "1213393"
+    uid: 993ae2cc-9ce0-4a5a-a382-ad60edff4467
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        app: otel-collector
+        pod-template-hash: f98c956c5
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/restartedAt: "2025-07-21T22:27:37Z"
+        creationTimestamp: null
+        labels:
+          app: otel-collector
+          pod-template-hash: f98c956c5
+      spec:
+        containers:
+        - args:
+          - --config=/etc/otelcol-contrib/config.yaml
+          image: otel/opentelemetry-collector-contrib:latest
+          imagePullPolicy: Always
+          name: otel-collector
+          ports:
+          - containerPort: 4318
+            name: otlp-http
+            protocol: TCP
+          - containerPort: 8889
+            name: prometheus
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/otelcol-contrib
+            name: config-volume
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: otel-collector-config
+          name: config-volume
+  status:
+    observedGeneration: 2
+    replicas: 0
+kind: List
+metadata:
+  resourceVersion: ""

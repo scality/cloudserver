@@ -1,0 +1,1028 @@
+apiVersion: v1
+items:
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/proxy-body-size":"0"},"labels":{"app.kubernetes.io/component":"artifact","app.kubernetes.io/instance":"artesca-artifact","app.kubernetes.io/name":"uploadsapiserverd","app.kubernetes.io/part-of":"artesca"},"name":"uploadsapiserverd","namespace":"artesca-artifact"},"spec":{"ingressClassName":"nginx-control-plane","rules":[{"http":{"paths":[{"backend":{"service":{"name":"uploadsapiserverd","port":{"number":8443}}},"path":"/api/v1/uploads","pathType":"Prefix"}]}}]}}
+      nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+      nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    creationTimestamp: "2025-07-17T19:33:36Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/component: artifact
+      app.kubernetes.io/instance: artesca-artifact
+      app.kubernetes.io/name: uploadsapiserverd
+      app.kubernetes.io/part-of: artesca
+    name: uploadsapiserverd
+    namespace: artesca-artifact
+    resourceVersion: "2623615"
+    uid: a96b9a99-f62f-43cd-804c-281c0c15a96f
+  spec:
+    ingressClassName: nginx-control-plane
+    rules:
+    - http:
+        paths:
+        - backend:
+            service:
+              name: uploadsapiserverd
+              port:
+                number: 8443
+          path: /api/v1/uploads
+          pathType: Prefix
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.100.125.6
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"nginx.ingress.kubernetes.io/affinity":"cookie","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.ingress.kubernetes.io/proxy-buffer-size":"16k","nginx.ingress.kubernetes.io/server-snippet":"location ~* /auth/realms/[^/]+/metrics { return 403; } "},"labels":{"app.kubernetes.io/instance":"keycloak","app.kubernetes.io/managed-by":"artesca","app.kubernetes.io/name":"keycloak"},"name":"keycloak","namespace":"artesca-auth"},"spec":{"ingressClassName":"nginx-control-plane","rules":[{"http":{"paths":[{"backend":{"service":{"name":"artesca-keycloak-service","port":{"number":8443}}},"path":"/auth","pathType":"Prefix"}]}}]}}
+      nginx.ingress.kubernetes.io/affinity: cookie
+      nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+      nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+      nginx.ingress.kubernetes.io/server-snippet: 'location ~* /auth/realms/[^/]+/metrics
+        { return 403; } '
+    creationTimestamp: "2025-07-17T19:28:09Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/instance: keycloak
+      app.kubernetes.io/managed-by: artesca
+      app.kubernetes.io/name: keycloak
+    name: keycloak
+    namespace: artesca-auth
+    resourceVersion: "2623601"
+    uid: d22396ed-7c11-4f22-b4e9-c2bcfca4dd68
+  spec:
+    ingressClassName: nginx-control-plane
+    rules:
+    - http:
+        paths:
+        - backend:
+            service:
+              name: artesca-keycloak-service
+              port:
+                number: 8443
+          path: /auth
+          pathType: Prefix
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.100.125.6
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      cert-manager.io/cluster-issuer: artesca-root-ca-issuer
+      cert-manager.io/renew-before: 1h
+      cert-manager.io/usages: key encipherment,digital signature,server auth
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"cert-manager.io/cluster-issuer":"artesca-root-ca-issuer","cert-manager.io/renew-before":"1h","cert-manager.io/usages":"key encipherment,digital signature,server auth","nginx.ingress.kubernetes.io/affinity":"cookie","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/proxy-buffer-size":"16k","nginx.ingress.kubernetes.io/server-snippet":"location ~* /auth/realms/[^/]+/metrics { return 403; } "},"labels":{"app.kubernetes.io/instance":"keycloak","app.kubernetes.io/managed-by":"artesca","app.kubernetes.io/name":"keycloak"},"name":"keycloak-public","namespace":"artesca-auth"},"spec":{"ingressClassName":"nginx","rules":[{"host":"ui.sm.com","http":{"paths":[{"backend":{"service":{"name":"artesca-keycloak-service","port":{"number":8443}}},"path":"/auth/realms/artesca","pathType":"Prefix"},{"backend":{"service":{"name":"artesca-keycloak-service","port":{"number":8443}}},"path":"/auth/resources","pathType":"Prefix"}]}}],"tls":[{"hosts":["ui.sm.com"],"secretName":"sso-crt-secret"}]}}
+      nginx.ingress.kubernetes.io/affinity: cookie
+      nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+      nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+      nginx.ingress.kubernetes.io/server-snippet: 'location ~* /auth/realms/[^/]+/metrics
+        { return 403; } '
+    creationTimestamp: "2025-07-17T19:28:09Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/instance: keycloak
+      app.kubernetes.io/managed-by: artesca
+      app.kubernetes.io/name: keycloak
+    name: keycloak-public
+    namespace: artesca-auth
+    resourceVersion: "2647549"
+    uid: 185bb568-a816-488c-8af5-03fb21abf1a9
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: ui.sm.com
+      http:
+        paths:
+        - backend:
+            service:
+              name: artesca-keycloak-service
+              port:
+                number: 8443
+          path: /auth/realms/artesca
+          pathType: Prefix
+        - backend:
+            service:
+              name: artesca-keycloak-service
+              port:
+                number: 8443
+          path: /auth/resources
+          pathType: Prefix
+    tls:
+    - hosts:
+      - ui.sm.com
+      secretName: sso-crt-secret
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.105.16.112
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      artesca.scality.com/version: 3.1.1
+      cert-manager.io/cluster-issuer: artesca-root-ca-issuer
+      cert-manager.io/renew-before: 1h
+      cert-manager.io/usages: key encipherment,digital signature,server auth
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"artesca.scality.com/version":"3.1.1","cert-manager.io/cluster-issuer":"artesca-root-ca-issuer","cert-manager.io/renew-before":"1h","cert-manager.io/usages":"key encipherment,digital signature,server auth","nginx.ingress.kubernetes.io/backend-protocol":"HTTP","nginx.ingress.kubernetes.io/rewrite-target":"/artesca/navbar/$1","nginx.ingress.kubernetes.io/use-regex":"true"},"labels":{"app.kubernetes.io/component":"ui","app.kubernetes.io/name":"artesca-ui","app.kubernetes.io/part-of":"artesca"},"name":"artesca-logos","namespace":"artesca-ui"},"spec":{"ingressClassName":"nginx","rules":[{"host":"ui.sm.com","http":{"paths":[{"backend":{"service":{"name":"artesca-ui","port":{"number":80}}},"path":"/artesca/navbar/(.*)","pathType":"Prefix"}]}}],"tls":[{"hosts":["ui.sm.com"],"secretName":"logos-crt-secret"}]}}
+      nginx.ingress.kubernetes.io/backend-protocol: HTTP
+      nginx.ingress.kubernetes.io/rewrite-target: /artesca/navbar/$1
+      nginx.ingress.kubernetes.io/use-regex: "true"
+    creationTimestamp: "2025-07-17T19:33:07Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/component: ui
+      app.kubernetes.io/name: artesca-ui
+      app.kubernetes.io/part-of: artesca
+    name: artesca-logos
+    namespace: artesca-ui
+    resourceVersion: "2647535"
+    uid: db099a5a-0184-4d7a-a81a-b86611169798
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: ui.sm.com
+      http:
+        paths:
+        - backend:
+            service:
+              name: artesca-ui
+              port:
+                number: 80
+          path: /artesca/navbar/(.*)
+          pathType: Prefix
+    tls:
+    - hosts:
+      - ui.sm.com
+      secretName: logos-crt-secret
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.105.16.112
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      artesca.scality.com/version: 3.1.1
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"artesca.scality.com/version":"3.1.1","nginx.ingress.kubernetes.io/backend-protocol":"HTTP"},"labels":{"app.kubernetes.io/component":"ui","app.kubernetes.io/name":"artesca-ui","app.kubernetes.io/part-of":"artesca"},"name":"artesca-ui","namespace":"artesca-ui"},"spec":{"ingressClassName":"nginx-control-plane","rules":[{"http":{"paths":[{"backend":{"service":{"name":"artesca-ui","port":{"number":80}}},"path":"/artesca","pathType":"Prefix"},{"backend":{"service":{"name":"artesca-ui","port":{"number":80}}},"path":"/identity/.well-known","pathType":"Prefix"},{"backend":{"service":{"name":"artesca-ui","port":{"number":80}}},"path":"/identity/static","pathType":"Prefix"},{"backend":{"service":{"name":"artesca-ui","port":{"number":80}}},"path":"/identity/mf-manifest.json","pathType":"Prefix"},{"backend":{"service":{"name":"artesca-ui","port":{"number":80}}},"path":"/docs","pathType":"Prefix"},{"backend":{"service":{"name":"metalk8s-ui","port":{"number":80}}},"path":"/","pathType":"Prefix"}]}}]}}
+      nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    creationTimestamp: "2025-07-17T19:33:07Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/component: ui
+      app.kubernetes.io/name: artesca-ui
+      app.kubernetes.io/part-of: artesca
+    name: artesca-ui
+    namespace: artesca-ui
+    resourceVersion: "2623622"
+    uid: 078d5258-3d6c-4274-a165-eef293103bb5
+  spec:
+    ingressClassName: nginx-control-plane
+    rules:
+    - http:
+        paths:
+        - backend:
+            service:
+              name: artesca-ui
+              port:
+                number: 80
+          path: /artesca
+          pathType: Prefix
+        - backend:
+            service:
+              name: artesca-ui
+              port:
+                number: 80
+          path: /identity/.well-known
+          pathType: Prefix
+        - backend:
+            service:
+              name: artesca-ui
+              port:
+                number: 80
+          path: /identity/static
+          pathType: Prefix
+        - backend:
+            service:
+              name: artesca-ui
+              port:
+                number: 80
+          path: /identity/mf-manifest.json
+          pathType: Prefix
+        - backend:
+            service:
+              name: artesca-ui
+              port:
+                number: 80
+          path: /docs
+          pathType: Prefix
+        - backend:
+            service:
+              name: metalk8s-ui
+              port:
+                number: 80
+          path: /
+          pathType: Prefix
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.100.125.6
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    creationTimestamp: "2025-07-17T19:09:44Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: salt
+      app.kubernetes.io/name: hubble-ui
+      app.kubernetes.io/part-of: cilium
+      heritage: salt
+      k8s-app: hubble-ui
+      metalk8s.scality.com/version: 130.0.1-dev
+    name: hubble-ui
+    namespace: kube-system
+    resourceVersion: "730"
+    uid: caad1f6c-20fb-4632-b410-120ac54fec34
+  spec:
+    ingressClassName: cilium
+    rules:
+    - host: hubble.localhost
+      http:
+        paths:
+        - backend:
+            service:
+              name: hubble-ui
+              port:
+                name: http
+          path: /
+          pathType: Prefix
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 172.31.25.100
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /$2
+    creationTimestamp: "2025-07-17T19:11:02Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/instance: prometheus-operator
+      app.kubernetes.io/managed-by: salt
+      app.kubernetes.io/name: grafana
+      app.kubernetes.io/part-of: metalk8s
+      app.kubernetes.io/version: 11.2.2-security-01
+      helm.sh/chart: grafana-8.5.8
+      heritage: salt
+      metalk8s.scality.com/version: 130.0.1-dev
+    name: prometheus-operator-grafana
+    namespace: metalk8s-monitoring
+    resourceVersion: "2623592"
+    uid: c96368ac-468b-4cb3-8249-b58228207f30
+  spec:
+    ingressClassName: nginx-control-plane
+    rules:
+    - http:
+        paths:
+        - backend:
+            service:
+              name: prometheus-operator-grafana
+              port:
+                number: 80
+          path: /grafana(/|$)(.*)
+          pathType: Prefix
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.100.125.6
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: HTTP
+      nginx.ingress.kubernetes.io/rewrite-target: /docs/$2
+      nginx.ingress.kubernetes.io/use-regex: "true"
+    creationTimestamp: "2025-07-17T19:11:09Z"
+    generation: 2
+    labels:
+      app: metalk8s-docs
+      app.kubernetes.io/managed-by: salt
+      app.kubernetes.io/name: metalk8s-docs
+      app.kubernetes.io/part-of: metalk8s
+      heritage: salt
+      metalk8s.scality.com/version: 130.0.1-dev
+    name: metalk8s-docs
+    namespace: metalk8s-ui
+    resourceVersion: "2623610"
+    uid: a429ace7-f1fe-40ff-89e2-6e4062b6a46c
+  spec:
+    ingressClassName: nginx-control-plane
+    rules:
+    - http:
+        paths:
+        - backend:
+            service:
+              name: metalk8s-ui
+              port:
+                number: 80
+          path: /docs/platform(/|$)(.*)
+          pathType: Prefix
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.100.125.6
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: HTTP
+      nginx.ingress.kubernetes.io/rewrite-target: /$1
+    creationTimestamp: "2025-07-17T19:11:09Z"
+    generation: 2
+    labels:
+      app: metalk8s-ui
+      app.kubernetes.io/managed-by: salt
+      app.kubernetes.io/name: metalk8s-ui
+      app.kubernetes.io/part-of: metalk8s
+      heritage: salt
+      metalk8s.scality.com/version: 130.0.1-dev
+    name: metalk8s-ui
+    namespace: metalk8s-ui
+    resourceVersion: "2623619"
+    uid: 83ec0161-25ca-4997-82c9-283f9c8b865b
+  spec:
+    ingressClassName: nginx-control-plane
+    rules:
+    - http:
+        paths:
+        - backend:
+            service:
+              name: metalk8s-ui
+              port:
+                number: 80
+          path: /(brand.*)
+          pathType: Prefix
+        - backend:
+            service:
+              name: metalk8s-ui
+              port:
+                number: 80
+          path: /(config.json)
+          pathType: Prefix
+        - backend:
+            service:
+              name: metalk8s-ui
+              port:
+                number: 80
+          path: /(manifest.json)
+          pathType: Prefix
+        - backend:
+            service:
+              name: metalk8s-ui
+              port:
+                number: 80
+          path: /(shell.*)
+          pathType: Prefix
+        - backend:
+            service:
+              name: metalk8s-ui
+              port:
+                number: 80
+          path: /(static.*)
+          pathType: Prefix
+        - backend:
+            service:
+              name: metalk8s-ui
+              port:
+                number: 80
+          path: /platform/(.well-known.*)
+          pathType: Prefix
+        - backend:
+            service:
+              name: metalk8s-ui
+              port:
+                number: 80
+          path: /platform/(static.*)
+          pathType: Prefix
+        - backend:
+            service:
+              name: metalk8s-ui
+              port:
+                number: 80
+          path: /platform/(mf-manifest.*)
+          pathType: Prefix
+        - backend:
+            service:
+              name: metalk8s-ui
+              port:
+                number: 80
+          path: /(platform.*)
+          pathType: Prefix
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.100.125.6
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: HTTP
+      nginx.ingress.kubernetes.io/cors-allow-headers: Access-Control-Allow-Origin
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+      nginx.ingress.kubernetes.io/rewrite-target: /$2
+      nginx.ingress.kubernetes.io/use-regex: "true"
+    creationTimestamp: "2025-07-17T19:11:09Z"
+    generation: 1
+    labels:
+      app: metalk8s-ui
+      app.kubernetes.io/managed-by: salt
+      app.kubernetes.io/name: metalk8s-ui
+      app.kubernetes.io/part-of: metalk8s
+      heritage: salt
+      metalk8s.scality.com/version: 130.0.1-dev
+    name: metalk8s-ui-proxies-http
+    namespace: metalk8s-ui
+    resourceVersion: "2623626"
+    uid: ba783b56-8cd5-45a9-ade4-91cac9e1bd44
+  spec:
+    ingressClassName: nginx-control-plane
+    rules:
+    - http:
+        paths:
+        - backend:
+            service:
+              name: thanos-api
+              port:
+                number: 10902
+          path: /api/prometheus(/|$)(.*)
+          pathType: Prefix
+        - backend:
+            service:
+              name: alertmanager-api
+              port:
+                number: 9093
+          path: /api/alertmanager(/|$)(.*)
+          pathType: Prefix
+        - backend:
+            service:
+              name: loki-api
+              port:
+                number: 3100
+          path: /api/loki(/|$)(.*)
+          pathType: Prefix
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.100.125.6
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+      nginx.ingress.kubernetes.io/rewrite-target: /$2
+      nginx.ingress.kubernetes.io/use-regex: "true"
+    creationTimestamp: "2025-07-17T19:11:09Z"
+    generation: 1
+    labels:
+      app: metalk8s-ui
+      app.kubernetes.io/managed-by: salt
+      app.kubernetes.io/name: metalk8s-ui
+      app.kubernetes.io/part-of: metalk8s
+      heritage: salt
+      metalk8s.scality.com/version: 130.0.1-dev
+    name: metalk8s-ui-proxies-https
+    namespace: metalk8s-ui
+    resourceVersion: "2623598"
+    uid: 18b3b36f-5634-4581-b3d5-e00dc8505cda
+  spec:
+    ingressClassName: nginx-control-plane
+    rules:
+    - http:
+        paths:
+        - backend:
+            service:
+              name: kubernetes-api
+              port:
+                number: 443
+          path: /api/kubernetes(/|$)(.*)
+          pathType: Prefix
+        - backend:
+            service:
+              name: salt-api
+              port:
+                number: 4507
+          path: /api/salt(/|$)(.*)
+          pathType: Prefix
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.100.125.6
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    creationTimestamp: "2025-07-17T19:37:49Z"
+    generation: 1
+    labels:
+      app: hdui
+      app.kubernetes.io/component: ui
+      app.kubernetes.io/name: hdui
+      app.kubernetes.io/part-of: xcore
+      heritage: xcore
+    name: artesca-storage-service-ui-hdui
+    namespace: xcore
+    ownerReferences:
+    - apiVersion: hd.scality.com/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: UIService
+      name: artesca-storage-service-ui
+      uid: 5fc79e99-a6dc-40d4-bf10-41f25231a334
+    resourceVersion: "2623603"
+    uid: a1a46629-1a43-4527-bdd3-660e3b50369c
+  spec:
+    ingressClassName: nginx-control-plane
+    rules:
+    - http:
+        paths:
+        - backend:
+            service:
+              name: artesca-storage-service-ui-hdui
+              port:
+                number: 80
+          path: /xcore
+          pathType: Prefix
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.100.125.6
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      cert-manager.io/cluster-issuer: artesca-root-ca-issuer
+      cert-manager.io/renew-before: 1h
+      cert-manager.io/usages: key encipherment,digital signature,server auth
+      nginx.ingress.kubernetes.io/proxy-body-size: 0m
+      nginx.ingress.kubernetes.io/proxy-buffering: "off"
+      nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+      operator.zenko.io/configuration-version: "1"
+      operator.zenko.io/dependencies: ""
+      operator.zenko.io/dependency-hash: "0"
+      operator.zenko.io/deploy-version: 2.11.6
+      operator.zenko.io/operator-version: 0.0.0-dev
+      operator.zenko.io/self-hash: "3083272942537632787"
+    creationTimestamp: "2025-07-17T19:49:58Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/instance: artesca-data
+      app.kubernetes.io/managed-by: zenko-operator
+      app.kubernetes.io/name: connector-cloudserver
+    name: artesca-data-connector-cloudserver
+    namespace: zenko
+    ownerReferences:
+    - apiVersion: zenko.io/v1alpha2
+      blockOwnerDeletion: true
+      controller: true
+      kind: Zenko
+      name: artesca-data
+      uid: 45483f2b-792d-4abe-a218-dde47c6b9189
+    resourceVersion: "2647545"
+    uid: 508659b5-0bdc-4d66-acb8-b09026a77112
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: s3.sm.com
+      http:
+        paths:
+        - backend:
+            service:
+              name: artesca-data-connector-s3api
+              port:
+                name: http
+          path: /
+          pathType: Prefix
+    - host: '*.s3.sm.com'
+      http:
+        paths:
+        - backend:
+            service:
+              name: artesca-data-connector-s3api
+              port:
+                name: http
+          path: /
+          pathType: Prefix
+    tls:
+    - hosts:
+      - '*.s3.sm.com'
+      - s3.sm.com
+      secretName: s3-sm-com-crt-secret
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.105.16.112
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      cert-manager.io/cluster-issuer: artesca-root-ca-issuer
+      cert-manager.io/renew-before: 1h
+      cert-manager.io/usages: key encipherment,digital signature,server auth
+      nginx.ingress.kubernetes.io/proxy-body-size: 0m
+      nginx.ingress.kubernetes.io/proxy-buffering: "off"
+      nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+      operator.zenko.io/dependencies: ""
+      operator.zenko.io/dependency-hash: "0"
+      operator.zenko.io/deploy-version: 2.11.6
+      operator.zenko.io/operator-version: 0.0.0-dev
+      operator.zenko.io/self-hash: "15306144967939189503"
+    creationTimestamp: "2025-07-17T19:49:12Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/instance: artesca-data
+      app.kubernetes.io/managed-by: zenko-operator
+      app.kubernetes.io/name: connector-vault
+    name: artesca-data-connector-vault
+    namespace: zenko
+    ownerReferences:
+    - apiVersion: zenko.io/v1alpha2
+      blockOwnerDeletion: true
+      controller: true
+      kind: Zenko
+      name: artesca-data
+      uid: 45483f2b-792d-4abe-a218-dde47c6b9189
+    resourceVersion: "2647530"
+    uid: 976d3a4b-3940-446d-a9d3-ee450a7481c9
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: iam.sm.com
+      http:
+        paths:
+        - backend:
+            service:
+              name: artesca-data-management-vault-iam-admin-api
+              port:
+                name: http
+          path: /
+          pathType: Prefix
+    tls:
+    - hosts:
+      - ui.sm.com
+      - management.sm.com
+      - sts.sm.com
+      - iam.sm.com
+      secretName: zenko-crt-secret
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.105.16.112
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      cert-manager.io/cluster-issuer: artesca-root-ca-issuer
+      cert-manager.io/renew-before: 1h
+      cert-manager.io/usages: key encipherment,digital signature,server auth
+      nginx.ingress.kubernetes.io/proxy-body-size: 0m
+      nginx.ingress.kubernetes.io/proxy-buffering: "off"
+      nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+      operator.zenko.io/dependencies: ""
+      operator.zenko.io/dependency-hash: "0"
+      operator.zenko.io/deploy-version: 2.11.6
+      operator.zenko.io/operator-version: 0.0.0-dev
+      operator.zenko.io/self-hash: "2719285627993927032"
+    creationTimestamp: "2025-07-17T19:49:12Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/instance: artesca-data
+      app.kubernetes.io/managed-by: zenko-operator
+      app.kubernetes.io/name: connector-vault-sts
+    name: artesca-data-connector-vault-sts
+    namespace: zenko
+    ownerReferences:
+    - apiVersion: zenko.io/v1alpha2
+      blockOwnerDeletion: true
+      controller: true
+      kind: Zenko
+      name: artesca-data
+      uid: 45483f2b-792d-4abe-a218-dde47c6b9189
+    resourceVersion: "2647554"
+    uid: 354e1a9c-9121-4108-a88a-0d9a130ea8e4
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: sts.sm.com
+      http:
+        paths:
+        - backend:
+            service:
+              name: artesca-data-connector-vault-sts-api
+              port:
+                name: http
+          path: /
+          pathType: Prefix
+    tls:
+    - hosts:
+      - ui.sm.com
+      - management.sm.com
+      - sts.sm.com
+      - iam.sm.com
+      secretName: zenko-crt-secret
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.105.16.112
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      cert-manager.io/cluster-issuer: artesca-root-ca-issuer
+      cert-manager.io/renew-before: 1h
+      cert-manager.io/usages: key encipherment,digital signature,server auth
+      nginx.ingress.kubernetes.io/proxy-body-size: 0m
+      nginx.ingress.kubernetes.io/proxy-buffering: "off"
+      nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+      operator.zenko.io/dependencies: ""
+      operator.zenko.io/dependency-hash: "0"
+      operator.zenko.io/deploy-version: 2.11.6
+      operator.zenko.io/operator-version: 0.0.0-dev
+      operator.zenko.io/self-hash: "10072414489204654703"
+    creationTimestamp: "2025-07-17T19:49:17Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/instance: artesca-data
+      app.kubernetes.io/managed-by: zenko-operator
+      app.kubernetes.io/name: management-orbit-api
+    name: artesca-data-management-orbit-api
+    namespace: zenko
+    ownerReferences:
+    - apiVersion: zenko.io/v1alpha2
+      blockOwnerDeletion: true
+      controller: true
+      kind: Zenko
+      name: artesca-data
+      uid: 45483f2b-792d-4abe-a218-dde47c6b9189
+    resourceVersion: "2647540"
+    uid: 0d09d3a1-1f5e-4742-a88e-d70bd5cdaf1b
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: management.sm.com
+      http:
+        paths:
+        - backend:
+            service:
+              name: artesca-data-management-orbit-api
+              port:
+                name: http
+          path: /
+          pathType: Prefix
+    tls:
+    - hosts:
+      - ui.sm.com
+      - management.sm.com
+      - sts.sm.com
+      - iam.sm.com
+      secretName: zenko-crt-secret
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.105.16.112
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      cert-manager.io/cluster-issuer: artesca-root-ca-issuer
+      cert-manager.io/renew-before: 1h
+      cert-manager.io/usages: key encipherment,digital signature,server auth
+      nginx.ingress.kubernetes.io/proxy-body-size: 0m
+      nginx.ingress.kubernetes.io/proxy-buffering: "off"
+      nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+      nginx.ingress.kubernetes.io/rewrite-target: /$1$2
+      nginx.ingress.kubernetes.io/use-regex: "true"
+      operator.zenko.io/configuration-version: "1"
+      operator.zenko.io/dependencies: ""
+      operator.zenko.io/dependency-hash: "0"
+      operator.zenko.io/deploy-version: 2.11.6
+      operator.zenko.io/operator-version: 0.0.0-dev
+      operator.zenko.io/self-hash: "16303019185061770174"
+    creationTimestamp: "2025-07-17T19:51:51Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/instance: artesca-data
+      app.kubernetes.io/managed-by: zenko-operator
+      app.kubernetes.io/name: management-ui
+    name: artesca-data-management-ui
+    namespace: zenko
+    ownerReferences:
+    - apiVersion: zenko.io/v1alpha2
+      blockOwnerDeletion: true
+      controller: true
+      kind: Zenko
+      name: artesca-data
+      uid: 45483f2b-792d-4abe-a218-dde47c6b9189
+    resourceVersion: "2647543"
+    uid: 15818aa9-298b-49bd-ab4a-be16d7d56eff
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: ui.sm.com
+      http:
+        paths:
+        - backend:
+            service:
+              name: artesca-data-management-ui
+              port:
+                name: http
+          path: /(js|vs|fonts|s3|iam|sts|api|.well-known/micro-app-configuration|mf-manifest.json)(/?.*)
+          pathType: Prefix
+    - host: ui.sm.com
+      http:
+        paths:
+        - backend:
+            service:
+              name: artesca-data-management-ui
+              port:
+                name: http
+          path: /data/(js|static)(/?.*)
+          pathType: Prefix
+    tls:
+    - hosts:
+      - ui.sm.com
+      - management.sm.com
+      - sts.sm.com
+      - iam.sm.com
+      secretName: zenko-crt-secret
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.105.16.112
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      cert-manager.io/cluster-issuer: artesca-root-ca-issuer
+      cert-manager.io/renew-before: 1h
+      cert-manager.io/usages: key encipherment,digital signature,server auth
+      nginx.ingress.kubernetes.io/proxy-body-size: 0m
+      nginx.ingress.kubernetes.io/proxy-buffering: "off"
+      nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+      nginx.ingress.kubernetes.io/rewrite-target: /$1$2
+      nginx.ingress.kubernetes.io/use-regex: "true"
+      operator.zenko.io/configuration-version: "1"
+      operator.zenko.io/dependencies: ""
+      operator.zenko.io/dependency-hash: "0"
+      operator.zenko.io/deploy-version: 2.11.6
+      operator.zenko.io/operator-version: 0.0.0-dev
+      operator.zenko.io/self-hash: "2503571189478034793"
+    creationTimestamp: "2025-07-17T19:51:51Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/instance: artesca-data
+      app.kubernetes.io/managed-by: zenko-operator
+      app.kubernetes.io/name: management-ui-config-cp
+    name: artesca-data-management-ui-config-cp
+    namespace: zenko
+    ownerReferences:
+    - apiVersion: zenko.io/v1alpha2
+      blockOwnerDeletion: true
+      controller: true
+      kind: Zenko
+      name: artesca-data
+      uid: 45483f2b-792d-4abe-a218-dde47c6b9189
+    resourceVersion: "2623607"
+    uid: 15f42c78-13d4-43eb-986c-9c168ba8f182
+  spec:
+    ingressClassName: nginx-control-plane
+    rules:
+    - http:
+        paths:
+        - backend:
+            service:
+              name: artesca-data-management-ui
+              port:
+                name: http
+          path: /data/(js|vs|fonts|s3|iam|sts|api|.well-known|static|mf-manifest.json)(/?.*)
+          pathType: Prefix
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.100.125.6
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      cert-manager.io/cluster-issuer: artesca-root-ca-issuer
+      cert-manager.io/renew-before: 1h
+      cert-manager.io/usages: key encipherment,digital signature,server auth
+      nginx.ingress.kubernetes.io/proxy-body-size: 0m
+      nginx.ingress.kubernetes.io/proxy-buffering: "off"
+      nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+      nginx.ingress.kubernetes.io/rewrite-target: /wp/.well-known/runtime-app-configuration
+      nginx.ingress.kubernetes.io/use-regex: "true"
+      operator.zenko.io/configuration-version: "1"
+      operator.zenko.io/dependencies: ""
+      operator.zenko.io/dependency-hash: "0"
+      operator.zenko.io/deploy-version: 2.11.6
+      operator.zenko.io/operator-version: 0.0.0-dev
+      operator.zenko.io/self-hash: "222420303731617406"
+    creationTimestamp: "2025-07-17T19:51:51Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/instance: artesca-data
+      app.kubernetes.io/managed-by: zenko-operator
+      app.kubernetes.io/name: management-ui-config-wp
+    name: artesca-data-management-ui-config-wp
+    namespace: zenko
+    ownerReferences:
+    - apiVersion: zenko.io/v1alpha2
+      blockOwnerDeletion: true
+      controller: true
+      kind: Zenko
+      name: artesca-data
+      uid: 45483f2b-792d-4abe-a218-dde47c6b9189
+    resourceVersion: "2647561"
+    uid: 90623106-996e-4307-8afa-63f8b0830ba3
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: ui.sm.com
+      http:
+        paths:
+        - backend:
+            service:
+              name: artesca-data-management-ui
+              port:
+                name: http
+          path: /.well-known/runtime-app-configuration
+          pathType: Prefix
+    tls:
+    - hosts:
+      - ui.sm.com
+      - management.sm.com
+      - sts.sm.com
+      - iam.sm.com
+      secretName: zenko-crt-secret
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.105.16.112
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      cert-manager.io/cluster-issuer: artesca-root-ca-issuer
+      cert-manager.io/renew-before: 1h
+      cert-manager.io/usages: key encipherment,digital signature,server auth
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"cert-manager.io/cluster-issuer":"artesca-root-ca-issuer","cert-manager.io/renew-before":"1h","cert-manager.io/usages":"key encipherment,digital signature,server auth","kubernetes.io/ingress.class":"nginx","nginx.ingress.kubernetes.io/backend-protocol":"HTTP","nginx.ingress.kubernetes.io/rewrite-target":"/wp/$1","nginx.ingress.kubernetes.io/use-regex":"true"},"name":"shell-ui-public","namespace":"zenko"},"spec":{"rules":[{"host":"ui.sm.com","http":{"paths":[{"backend":{"service":{"name":"metalk8s-ui","port":{"number":80}}},"path":"/shell/(config.json|deployed-ui-apps.json.*)","pathType":"Prefix"}]}}],"tls":[{"hosts":["ui.sm.com","management.sm.com","sts.sm.com","iam.sm.com"],"secretName":"zenko-crt-secret"}]}}
+      kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/backend-protocol: HTTP
+      nginx.ingress.kubernetes.io/rewrite-target: /wp/$1
+      nginx.ingress.kubernetes.io/use-regex: "true"
+    creationTimestamp: "2025-07-17T19:47:43Z"
+    generation: 1
+    name: shell-ui-public
+    namespace: zenko
+    resourceVersion: "2647558"
+    uid: 25f2bd76-6719-4c06-ac13-e9be4c5c6067
+  spec:
+    rules:
+    - host: ui.sm.com
+      http:
+        paths:
+        - backend:
+            service:
+              name: metalk8s-ui
+              port:
+                number: 80
+          path: /shell/(config.json|deployed-ui-apps.json.*)
+          pathType: Prefix
+    tls:
+    - hosts:
+      - ui.sm.com
+      - management.sm.com
+      - sts.sm.com
+      - iam.sm.com
+      secretName: zenko-crt-secret
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 10.105.16.112
+kind: List
+metadata:
+  resourceVersion: ""

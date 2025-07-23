@@ -1,0 +1,40 @@
+apiVersion: v1
+data:
+  allow-snippet-annotations: "true"
+  annotations-risk-level: Critical
+  configuration-snippet: |-
+    # Generate basic trace headers
+    set $trace_id $request_id$request_id;
+    set $span_id $request_id;
+    proxy_set_header traceparent "00-$trace_id-$span_id-01";
+    proxy_set_header X-Trace-ID $request_id;
+  hide-headers: Server,X-Powered-By
+  otel-sampler: AlwaysOn
+  otel-service-name: ingress-nginx
+  otel-trace-header: "true"
+  otlp-collector-host: otel-collector.default.svc.cluster.local
+  otlp-collector-port: "4318"
+  proxy-pass-request-headers: "on"
+  ssl-ciphers: EECDH+AESGCM:EDH+AESGCM
+  ssl-protocols: TLSv1.2 TLSv1.3
+  upstream-keepalive-timeout: "4"
+  use-http2: "false"
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"configuration-snippet":"proxy_set_header traceparent $opentelemetry_traceparent;\nproxy_set_header tracestate  $opentelemetry_tracestate;\n","enable-opentelemetry":"true","opentelemetry-config":"{\n  \"service_name\": \"ingress-nginx\",\n  \"exporter\": {\n    \"endpoint\": \"http://otel-collector.default:4318\",\n    \"protocol\": \"http/protobuf\"\n  },\n  \"sampler\": \"always_on\"\n}\n","opentelemetry-trust-incoming-span":"true"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/name":"ingress-nginx","managed-by":"o3-assistant"},"name":"ingress-nginx-controller","namespace":"metalk8s-ingress"}}
+  creationTimestamp: "2025-07-17T19:11:08Z"
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/managed-by: salt
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: metalk8s
+    heritage: salt
+    managed-by: o3-assistant
+    metalk8s.scality.com/version: 130.0.1-dev
+  name: ingress-nginx-controller
+  namespace: metalk8s-ingress
+  resourceVersion: "2646889"
+  uid: fa640598-89e1-4036-b875-245ca684b5d2

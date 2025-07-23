@@ -1,0 +1,54 @@
+const { errorInstances, models } = require('arsenal');
+const { BackendInfo } = models;
+const { config } = require('../../../Config');
+const constants = require('../../../../constants');
+
+/**
+ * locationConstraintCheck - if new config, on object put, object copy,
+ * or initiate MPU request, gathers object location constraint,
+ * bucket locationconstraint, and request endpoint  and checks their validity
+ * @param {request} request - normalized request object
+ * @param {object} metaHeaders - headers of metadata storage params used in
+ * objectCopy api
+ * @param {BucketInfo} bucket - metadata BucketInfo instance
+ * @param {object} log - Werelogs instance
+ * @return {object} - consists of three keys: error, controllingLC, and
+ * backendInfo. backendInfo only has value if new config
+ */
+function locationConstraintCheck(request, metaHeaders, bucket, log) {
+    let backendInfoObj = {};
+
+    let objectLocationConstraint;
+    if (metaHeaders) {
+        objectLocationConstraint =
+        metaHeaders[constants.objectLocationConstraintHeader];
+    } else {
+        objectLocationConstraint = request
+        .headers[constants.objectLocationConstraintHeader];
+    }
+    const bucketLocationConstraint = bucket.getLocationConstraint();
+    const requestEndpoint = request.parsedHost;
+
+    const controllingBackend = BackendInfo.controllingBackendParam(config,
+        objectLocationConstraint, bucketLocationConstraint,
+        requestEndpoint, log);
+    if (!controllingBackend.isValid) {
+        backendInfoObj = {
+            err: errorInstances.InvalidArgument.customizeDescription(controllingBackend.
+              description),
+        };
+        return backendInfoObj;
+    }
+    const backendInfo = new BackendInfo(config, objectLocationConstraint,
+        bucketLocationConstraint, requestEndpoint,
+        controllingBackend.legacyLocationConstraint);
+    backendInfoObj = {
+        err: null,
+        controllingLC: backendInfo.getControllingLocationConstraint(),
+        defaultedToDataBackend: controllingBackend.defaultedToDataBackend,
+        backendInfo,
+    };
+    return backendInfoObj;
+}
+
+module.exports = locationConstraintCheck;

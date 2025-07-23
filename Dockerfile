@@ -25,8 +25,9 @@ ENV PYTHON=python3
 RUN npm install -g \
     node-gyp \
     typescript@4.9.5
-COPY package.json yarn.lock /usr/src/app/
 
+# Copy package files first (rarely change)
+COPY package.json yarn.lock /usr/src/app/
 RUN yarn install --production --ignore-optional --frozen-lockfile --ignore-engines --network-concurrency 1
 
 ################################################################################
@@ -46,9 +47,17 @@ RUN apt-get update && \
 
 WORKDIR /usr/src/app
 
-# Keep the .git directory in order to properly report version
-COPY . /usr/src/app
+# Copy dependencies first (cached)
 COPY --from=builder /usr/src/app/node_modules ./node_modules/
+
+# Copy static files that rarely change
+COPY package.json yarn.lock index.js docker-entrypoint.sh constants.js config.json /usr/src/app/
+COPY .git /usr/src/app/.git
+COPY conf/ /usr/src/app/conf/
+
+# Copy your source code last (changes most frequently)
+COPY lib/ /usr/src/app/lib/
+COPY bin/ /usr/src/app/bin/
 
 VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 
