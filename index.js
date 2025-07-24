@@ -7,4 +7,7 @@ require('werelogs').stderrUtils.catchAndTimestampStderr(
     require('cluster').isPrimary ? 1 : null,
 );
 
+// Initialize OpenTelemetry SDK before everything else
+require('./lib/otel.js');
+
 require('./lib/server.js')();
