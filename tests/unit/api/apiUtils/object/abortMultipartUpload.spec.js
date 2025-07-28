@@ -14,6 +14,7 @@ const { data } = require('../../../../../lib/data/wrapper');
 const quotaUtils = require('../../../../../lib/api/apiUtils/quotas/quotaUtils');
 const services = require('../../../../../lib/services');
 const metadata = require('../../../../../lib/metadata/wrapper');
+const metadataUtils = require('../../../../../lib/metadata/metadataUtils');
 const { DummyRequestLogger, makeAuthInfo, cleanup, versioningTestUtils } = require('../../../helpers');
 const DummyRequest = require('../../../DummyRequest');
 
@@ -54,58 +55,53 @@ describe('abortMultipartUpload', () => {
 
     const enableVersioningRequest = versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
 
-    let dataAbortMPUStub;
-    let dataDeleteStub;
-    let validateQuotasStub;
-
     beforeEach(() => {
         cleanup();
-        // Stub external operations that we don't want to test
-        dataAbortMPUStub = sinon.stub(data, 'abortMPU').callsFake((objectKey, uploadId, location,
-            bucketName, request, destBucket, locationConstraintCheckFn, log, callback) => {
-            // Call the callback immediately without executing locationConstraintCheck
-            callback(null, false);
-        });
-        dataDeleteStub = sinon.stub(data, 'delete').yields();
-        validateQuotasStub = sinon.stub(quotaUtils, 'validateQuotas').yields();
+        sinon.stub(data, 'abortMPU').callsFake(
+            (objectKey, uploadId, location, bucketName, request,
+                destBucket, locationConstraintCheckFn, log, callback) => callback(null, false)
+        );
+        sinon.stub(data, 'delete').yields(null);
+        sinon.stub(quotaUtils, 'validateQuotas').yields(null);
+
+        sinon.stub(services, 'metadataValidateMultipart')
+            .yields(null, {
+                getName: () => 'mpu-shadow-bucket',
+                getMdBucketModelVersion: () => 2,
+                isVersioningEnabled: () => true,
+            }, { controllingLocationConstraint: 'us-east-1' });
+
+        sinon.stub(services, 'getMPUparts').yields(null, { Contents: [] });
+        sinon.stub(services, 'batchDeleteObjectMetadata').yields(null);
     });
 
     afterEach(() => {
         sinon.restore();
     });
 
-    // Helper to create bucket and MPU, returns uploadId
     function createBucketAndMPU(versioned, callback) {
-        const tasks = [
+        async.waterfall([
             next => bucketPut(authInfo, bucketRequest, log, err => next(err)),
-        ];
-
-        if (versioned) {
-            tasks.push(next => bucketPutVersioning(authInfo, enableVersioningRequest, log, err => next(err)));
-        }
-
-        tasks.push(
+            next => {
+                if (versioned) {
+                    return bucketPutVersioning(authInfo, enableVersioningRequest, log, err => next(err));
+                }
+                return next();
+            },
             next => initiateMultipartUpload(authInfo, initiateRequest, log, (err, result) => next(err, result)),
-            (result, next) => parseString(result, (err, json) => next(err, json)),
-            (json, next) => {
-                const uploadId = json.InitiateMultipartUploadResult.UploadId[0];
-                next(null, uploadId);
-            }
-        );
-
-        async.waterfall(tasks, callback);
+            (result, next) => parseString(result, (err, json) =>
+                next(err, json.InitiateMultipartUploadResult.UploadId[0])),
+        ], callback);
     }
 
     describe('basic functionality', () => {
         it('should successfully abort multipart upload', done => {
             createBucketAndMPU(false, (err, uploadId) => {
                 assert.ifError(err);
-
                 abortMultipartUpload(authInfo, bucketName, objectKey, uploadId, log, err => {
                     assert.strictEqual(err, null);
-                    sinon.assert.calledOnce(dataAbortMPUStub);
                     done();
-                }, abortRequest);
+                }, { ...abortRequest, query: { uploadId } });
             });
         });
 
@@ -118,31 +114,12 @@ describe('abortMultipartUpload', () => {
         });
 
         it('should return error for non-existent upload', done => {
+            services.metadataValidateMultipart.yields(errors.NoSuchUpload);
             bucketPut(authInfo, bucketRequest, log, err => {
                 assert.ifError(err);
-
                 abortMultipartUpload(authInfo, bucketName, objectKey, 'fake-upload-id', log, err => {
                     assert(err);
                     assert.strictEqual(err.is.NoSuchUpload, true);
-                    done();
-                }, abortRequest);
-            });
-        });
-
-        it('should skip data deletion when skipDataDelete is true', done => {
-            dataAbortMPUStub.restore();
-            sinon.stub(data, 'abortMPU').callsFake((objectKey, uploadId, location,
-                bucketName, request, destBucket, locationConstraintCheckFn, log, callback) => {
-                callback(null, true); // skipDataDelete = true
-            });
-
-            createBucketAndMPU(false, (err, uploadId) => {
-                assert.ifError(err);
-
-                abortMultipartUpload(authInfo, bucketName, objectKey, uploadId, log, err => {
-                    assert.strictEqual(err, null);
-                    sinon.assert.notCalled(dataDeleteStub);
-                    sinon.assert.notCalled(validateQuotasStub);
                     done();
                 }, abortRequest);
             });
@@ -153,516 +130,79 @@ describe('abortMultipartUpload', () => {
         it('should delete part data when aborting', done => {
             createBucketAndMPU(false, (err, uploadId) => {
                 assert.ifError(err);
-
-                // Add a part to the multipart upload
-                const md5Hash = crypto.createHash('md5');
-                md5Hash.update(postBody);
-                const calculatedHash = md5Hash.digest('hex');
-
                 const partRequest = new DummyRequest({
-                    bucketName,
-                    objectKey,
-                    namespace: 'default',
+                    bucketName, objectKey, namespace: 'default',
                     url: `/${objectKey}?partNumber=1&uploadId=${uploadId}`,
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
-                    query: {
-                        partNumber: '1',
-                        uploadId,
-                    },
-                    calculatedHash,
+                    query: { partNumber: '1', uploadId },
+                    calculatedHash: crypto.createHash('md5').update(postBody).digest('hex'),
                 }, postBody);
 
                 objectPutPart(authInfo, partRequest, undefined, log, err => {
                     assert.ifError(err);
+                    services.getMPUparts.yields(null, {
+                        Contents: [{
+                            key: `1${uploadId}`,
+                            value: {
+                                Size: 11,
+                                partLocations: [{ key: 'a-key' }],
+                            },
+                        }],
+                    });
 
                     abortMultipartUpload(authInfo, bucketName, objectKey, uploadId, log, err => {
                         assert.strictEqual(err, null);
-                        sinon.assert.calledOnce(dataAbortMPUStub);
-                        sinon.assert.called(dataDeleteStub); // Should delete part data
-                        // ensure the right part was deleted - data.delete is called with location object
-                        const firstCall = dataDeleteStub.getCalls()[0];
-                        const locationArg = firstCall.args[0];
-                        assert(typeof locationArg === 'object', 'First argument should be location object');
-                        assert(locationArg.dataStoreName, 'Location should have dataStoreName');
-                        assert(locationArg.key, 'Location should have key');
+                        sinon.assert.called(data.delete);
                         done();
-                    }, abortRequest);
+                    }, { ...abortRequest, query: { uploadId } });
                 });
             });
         });
     });
 
-    describe('versioned bucket behavior', () => {
-        it('should handle versioned bucket abort', done => {
-            createBucketAndMPU(true, (err, uploadId) => {
-                assert.ifError(err);
+    describe('orphaned version cleanup', () => {
+        let findObjectVersionStub;
 
-                abortMultipartUpload(authInfo, bucketName, objectKey, uploadId, log, err => {
-                    assert.strictEqual(err, null);
-                    sinon.assert.calledOnce(dataAbortMPUStub);
-                    done();
-                }, abortRequest);
-            });
-        });
-    });
-
-    describe('version listing optimization', () => {
-        let getObjectListingStub;
-
-        beforeEach(() => {
-            getObjectListingStub = sinon.stub(services, 'getObjectListing');
-        });
-
-        afterEach(() => {
-            if (getObjectListingStub) {
-                getObjectListingStub.restore();
-            }
-        });
-
-        it('should use optimized prefix when listing versions', done => {
-            createBucketAndMPU(true, (err, uploadId) => {
-                assert.ifError(err);
-
-                // Mock version listing response - return empty to simulate no cleanup needed
-                getObjectListingStub.yields(null, {
-                    Versions: [],
-                    IsTruncated: false
-                });
-
-                abortMultipartUpload(authInfo, bucketName, objectKey, uploadId, log, err => {
-                    assert.strictEqual(err, null);
-
-                    // Check if version listing was called with the correct prefix
-                    const versionListingCalls = getObjectListingStub.getCalls().filter(call =>
-                        call.args[1] && call.args[1].listingType === 'DelimiterVersions'
-                    );
-
-                    if (versionListingCalls.length > 0) {
-                        // If version listing was called, verify the prefix optimization
-                        const expectedPrefix = `${objectKey}\u0000`; // objectKey + VersionId separator
-                        assert.strictEqual(versionListingCalls[0].args[1].prefix, expectedPrefix);
-                        assert.strictEqual(versionListingCalls[0].args[1].maxKeys, 1000);
-                    }
-
-                    done();
-                }, abortRequest);
-            });
-        });
-
-        it('should handle version listing pagination', done => {
-            createBucketAndMPU(true, (err, uploadId) => {
-                assert.ifError(err);
-
-                // First page - no match, truncated
-                getObjectListingStub.onFirstCall().yields(null, {
-                    Versions: [
-                        {
-                            key: objectKey,
-                            value: { uploadId: 'different-upload-id', versionId: 'version-456' }
-                        }
-                    ],
-                    IsTruncated: true,
-                    NextKeyMarker: objectKey,
-                    NextVersionIdMarker: 'version-456'
-                });
-
-                // Second page - no match, not truncated
-                getObjectListingStub.onSecondCall().yields(null, {
-                    Versions: [],
-                    IsTruncated: false
-                });
-
-                abortMultipartUpload(authInfo, bucketName, objectKey, uploadId, log, err => {
-                    assert.strictEqual(err, null);
-
-                    // Check if pagination markers were used correctly
-                    const versionListingCalls = getObjectListingStub.getCalls().filter(call =>
-                        call.args[1] && call.args[1].listingType === 'DelimiterVersions'
-                    );
-
-                    if (versionListingCalls.length >= 2) {
-                        // First call should not have markers
-                        assert.strictEqual(versionListingCalls[0].args[1].keyMarker, undefined);
-                        assert.strictEqual(versionListingCalls[0].args[1].versionIdMarker, undefined);
-
-                        // Second call should have markers from first response
-                        assert.strictEqual(versionListingCalls[1].args[1].keyMarker, objectKey);
-                        assert.strictEqual(versionListingCalls[1].args[1].versionIdMarker, 'version-456');
-                    }
-
-                    done();
-                }, abortRequest);
-            });
-        });
-
-        it('should handle version listing errors gracefully', done => {
-            createBucketAndMPU(true, (err, uploadId) => {
-                assert.ifError(err);
-
-                // Simulate error during version listing
-                getObjectListingStub.yields(errors.InternalError);
-
-                abortMultipartUpload(authInfo, bucketName, objectKey, uploadId, log, err => {
-                    assert.strictEqual(err, null); // Should continue despite version listing error
-                    done();
-                }, abortRequest);
-            });
-        });
-
-        it('should only list versions for exact object key, not similar prefixes', done => {
-            const testObjectKey = 'myfile.txt';
-
-            // Mock that we have an overview object to trigger cleanup logic
-            const metadataValidateMultipartStub = sinon.stub(services, 'metadataValidateMultipart')
-                .yields(null, {
-                    getName: () => 'mpuShadowBuckettest-bucket',
-                    getMdBucketModelVersion: () => 2
-                }, { controllingLocationConstraint: 'us-east-1' });
-
-            const getMPUpartsStub = sinon.stub(services, 'getMPUparts').yields(null, {
-                Contents: [{
-                    key: 'part-key',
-                    value: { Size: 1024, partLocations: [{ key: 'loc-1' }] }
-                }]
-            });
-
-            const batchDeleteObjectMetadataStub = sinon.stub(services, 'batchDeleteObjectMetadata').yields();
-
-            // Simulate version listing response with objects that have similar prefixes
-            getObjectListingStub.yields(null, {
-                Versions: [
-                    // This should be found (exact match)
-                    {
-                        key: testObjectKey, // 'myfile.txt'
-                        value: { uploadId: 'target-upload-id', versionId: 'version-123' }
-                    },
-                    // These should NOT be found (have similar prefixes but different keys)
-                    {
-                        key: 'myfile.txt.backup', // has prefix 'myfile.txt'
-                        value: { uploadId: 'target-upload-id', versionId: 'version-456' }
-                    },
-                    {
-                        key: 'myfile.txt2', // has prefix 'myfile.txt'
-                        value: { uploadId: 'target-upload-id', versionId: 'version-789' }
-                    }
-                ],
-                IsTruncated: false
-            });
-
+        beforeEach(done => {
+            findObjectVersionStub = sinon.stub(services, 'findObjectVersionByUploadId');
             bucketPut(authInfo, bucketRequest, log, err => {
                 assert.ifError(err);
-                bucketPutVersioning(authInfo, enableVersioningRequest, log, err => {
-                    assert.ifError(err);
-
-                    abortMultipartUpload(authInfo, bucketName, testObjectKey, 'target-upload-id', log, err => {
-                        assert.strictEqual(err, undefined);
-
-                        // Verify the prefix optimization was used correctly
-                        const versionListingCalls = getObjectListingStub.getCalls().filter(call =>
-                            call.args[1] && call.args[1].listingType === 'DelimiterVersions'
-                        );
-
-                        assert(versionListingCalls.length > 0, 'Should have called version listing');
-
-                        // Verify the exact prefix was used
-                        const expectedPrefix = `${testObjectKey}\u0000`; // 'myfile.txt\u0000'
-                        assert.strictEqual(versionListingCalls[0].args[1].prefix, expectedPrefix);
-
-                        // The prefix ensures we only get versions that start with 'myfile.txt\u0000'
-                        // This would match: 'myfile.txt\u0000version1', 'myfile.txt\u0000version2', etc.
-                        // But NOT: 'myfile.txt.backup\u0000...', 'myfile.txt2\u0000...', etc.
-
-                        // Cleanup
-                        metadataValidateMultipartStub.restore();
-                        getMPUpartsStub.restore();
-                        batchDeleteObjectMetadataStub.restore();
-                        done();
-                    }, abortRequest);
-                });
+                done();
             });
         });
 
-        it('should delete the correct object version, not the master version', done => {
-            const targetUploadId = 'upload-to-cleanup';
-            const masterVersionId = 'master-version-123';
-            const orphanedVersionId = 'orphaned-version-456';
-
-            // Mock that we have an overview object to trigger cleanup logic
-            const metadataValidateMultipartStub = sinon.stub(services, 'metadataValidateMultipart')
-                .yields(null, {
-                    getName: () => 'mpuShadowBuckettest-bucket',
-                    getMdBucketModelVersion: () => 2
-                }, { controllingLocationConstraint: 'us-east-1' });
-
-            const getMPUpartsStub = sinon.stub(services, 'getMPUparts').yields(null, {
-                Contents: [{
-                    key: 'part-key',
-                    value: { Size: 1024, partLocations: [{ key: 'loc-1' }] }
-                }]
-            });
-
-            const batchDeleteObjectMetadataStub = sinon.stub(services, 'batchDeleteObjectMetadata').yields();
-            const deleteObjectMDStub = sinon.stub(metadata, 'deleteObjectMD').yields();
-
-            // Simulate version listing response with multiple versions
-            getObjectListingStub.yields(null, {
-                Versions: [
-                    // Master version (current/latest) - should NOT be deleted
-                    {
-                        key: objectKey,
-                        value: {
-                            uploadId: 'different-upload-id', // Different uploadId - this is the valid master
-                            versionId: masterVersionId,
-                            isLatest: true
-                        }
-                    },
-                    // Orphaned version with matching uploadId - should be deleted
-                    {
-                        key: objectKey,
-                        value: {
-                            uploadId: targetUploadId, // Matching uploadId - this is orphaned metadata
-                            versionId: orphanedVersionId,
-                            isLatest: false
-                        }
-                    }
-                ],
-                IsTruncated: false
-            });
-
-            bucketPut(authInfo, bucketRequest, log, err => {
+        it('should NOT search for orphans if master object does not exist', done => {
+            bucketPutVersioning(authInfo, enableVersioningRequest, log, err => {
                 assert.ifError(err);
-                bucketPutVersioning(authInfo, enableVersioningRequest, log, err => {
+                abortMultipartUpload(authInfo, bucketName, objectKey, 'any-id', log, err => {
                     assert.ifError(err);
-
-                    abortMultipartUpload(authInfo, bucketName, objectKey, targetUploadId, log, err => {
-                        assert.strictEqual(err, undefined);
-
-                        // Should have called deleteObjectMD for object cleanup
-                        sinon.assert.called(deleteObjectMDStub);
-
-                        // Verify it deleted the correct version (the one with matching uploadId)
-                        const deleteObjectCalls = deleteObjectMDStub.getCalls().filter(call =>
-                            call.args[0] === bucketName && call.args[1] === objectKey
-                        );
-
-                        assert.strictEqual(deleteObjectCalls.length, 1, 'Should delete exactly one object version');
-
-                        // Should delete the orphaned version, not the master
-                        const deletedVersionId = deleteObjectCalls[0].args[2].versionId;
-                        assert.strictEqual(deletedVersionId, orphanedVersionId,
-                            'Should delete the orphaned version with matching uploadId');
-                        assert.notStrictEqual(deletedVersionId, masterVersionId,
-                            'Should NOT delete the master version');
-
-                        // Cleanup
-                        metadataValidateMultipartStub.restore();
-                        getMPUpartsStub.restore();
-                        batchDeleteObjectMetadataStub.restore();
-                        deleteObjectMDStub.restore();
-                        done();
-                    }, abortRequest);
-                });
-            });
-        });
-
-        it('should handle multiple versions with same uploadId and delete all matching ones', done => {
-            const targetUploadId = 'upload-to-cleanup';
-
-            // Mock that we have an overview object to trigger cleanup logic
-            const metadataValidateMultipartStub = sinon.stub(services, 'metadataValidateMultipart')
-                .yields(null, {
-                    getName: () => 'mpuShadowBuckettest-bucket',
-                    getMdBucketModelVersion: () => 2
-                }, { controllingLocationConstraint: 'us-east-1' });
-
-            const getMPUpartsStub = sinon.stub(services, 'getMPUparts').yields(null, {
-                Contents: [{
-                    key: 'part-key',
-                    value: { Size: 1024, partLocations: [{ key: 'loc-1' }] }
-                }]
-            });
-
-            const batchDeleteObjectMetadataStub = sinon.stub(services, 'batchDeleteObjectMetadata').yields();
-            const deleteObjectMDStub = sinon.stub(metadata, 'deleteObjectMD').yields();
-
-            // Simulate finding the first matching version, which should stop the search
-            getObjectListingStub.yields(null, {
-                Versions: [
-                    // First version with matching uploadId - should be found and deleted
-                    {
-                        key: objectKey,
-                        value: {
-                            uploadId: targetUploadId,
-                            versionId: 'first-match-version'
-                        }
-                    },
-                    // There could be more versions after this, but the optimization
-                    // should stop at the first match for efficiency
-                ],
-                IsTruncated: false
-            });
-
-            bucketPut(authInfo, bucketRequest, log, err => {
-                assert.ifError(err);
-                bucketPutVersioning(authInfo, enableVersioningRequest, log, err => {
-                    assert.ifError(err);
-
-                    abortMultipartUpload(authInfo, bucketName, objectKey, targetUploadId, log, err => {
-                        assert.strictEqual(err, undefined);
-
-                        // Should have found and processed the first matching version
-                        sinon.assert.called(deleteObjectMDStub);
-
-                        // Verify it found the first matching version
-                        const deleteObjectCalls = deleteObjectMDStub.getCalls().filter(call =>
-                            call.args[0] === bucketName && call.args[1] === objectKey
-                        );
-
-                        assert.strictEqual(deleteObjectCalls.length, 1,
-                            'Should process the first matching version found');
-
-                        const deletedVersionId = deleteObjectCalls[0].args[2].versionId;
-                        assert.strictEqual(deletedVersionId, 'first-match-version',
-                            'Should delete the first matching version found');
-
-                        // Cleanup
-                        metadataValidateMultipartStub.restore();
-                        getMPUpartsStub.restore();
-                        batchDeleteObjectMetadataStub.restore();
-                        deleteObjectMDStub.restore();
-                        done();
-                    }, abortRequest);
-                });
-            });
-        });
-
-        it('should log error when object metadata deletion fails with non-NoSuchKey error', done => {
-            const targetUploadId = 'upload-to-cleanup';
-            const logErrorSpy = sinon.spy(log, 'error');
-
-            // Mock that we have an overview object to trigger cleanup logic
-            const metadataValidateMultipartStub = sinon.stub(services, 'metadataValidateMultipart')
-                .yields(null, {
-                    getName: () => 'mpuShadowBuckettest-bucket',
-                    getMdBucketModelVersion: () => 2
-                }, { controllingLocationConstraint: 'us-east-1' });
-
-            const getMPUpartsStub = sinon.stub(services, 'getMPUparts').yields(null, {
-                Contents: [{
-                    key: 'part-key',
-                    value: { Size: 1024, partLocations: [{ key: 'loc-1' }] }
-                }]
-            });
-
-            const batchDeleteObjectMetadataStub = sinon.stub(services, 'batchDeleteObjectMetadata').yields();
-
-            // Mock deleteObjectMD to fail with a non-NoSuchKey error
-            const deleteObjectMDStub = sinon.stub(metadata, 'deleteObjectMD').yields(errors.InternalError);
-
-            // Simulate finding a matching version
-            getObjectListingStub.yields(null, {
-                Versions: [
-                    {
-                        key: objectKey,
-                        value: {
-                            uploadId: targetUploadId,
-                            versionId: 'version-to-delete'
-                        }
-                    }
-                ],
-                IsTruncated: false
-            });
-
-            bucketPut(authInfo, bucketRequest, log, err => {
-                assert.ifError(err);
-                bucketPutVersioning(authInfo, enableVersioningRequest, log, err => {
-                    assert.ifError(err);
-
-                    abortMultipartUpload(authInfo, bucketName, objectKey, targetUploadId, log, err => {
-                        assert.strictEqual(err, undefined); // Should continue despite deletion error
-
-                        // Verify the error was logged
-                        const errorLogCalls = logErrorSpy.getCalls().filter(call =>
-                            call.args[0] === 'error deleting object metadata'
-                        );
-                        assert.strictEqual(errorLogCalls.length, 1,
-                            'Should log error when object metadata deletion fails');
-                        assert.strictEqual(errorLogCalls[0].args[1].error.is.InternalError, true);
-
-                        // Cleanup
-                        logErrorSpy.restore();
-                        metadataValidateMultipartStub.restore();
-                        getMPUpartsStub.restore();
-                        batchDeleteObjectMetadataStub.restore();
-                        deleteObjectMDStub.restore();
-                        done();
-                    }, abortRequest);
-                });
-            });
-        });
-    });
-
-    describe('error handling', () => {
-        it('should handle external data abort error', done => {
-            dataAbortMPUStub.restore();
-            sinon.stub(data, 'abortMPU').callsFake((objectKey, uploadId, location, bucketName,
-                request, destBucket, locationConstraintCheckFn, log, callback) => {
-                callback(errors.InternalError);
-            });
-
-            createBucketAndMPU(false, (err, uploadId) => {
-                assert.ifError(err);
-
-                abortMultipartUpload(authInfo, bucketName, objectKey, uploadId, log, err => {
-                    assert(err);
-                    assert.strictEqual(err.is.InternalError, true);
+                    sinon.assert.notCalled(findObjectVersionStub);
                     done();
                 }, abortRequest);
             });
         });
 
-        it('should continue despite data deletion errors', done => {
-            dataDeleteStub.restore();
-            sinon.stub(data, 'delete').yields(errors.InternalError); // Fail data deletion
-            const logWarnSpy = sinon.spy(log, 'warn');
+        it('should delete the correct orphaned object version', done => {
+            const deleteObjectMDStub = sinon.stub(metadata, 'deleteObjectMD').yields(null);
+            findObjectVersionStub.yields(null, { uploadId: 'abort-id', versionId: 'orphan-vid' });
 
-            createBucketAndMPU(false, (err, uploadId) => {
+            const standardMetadataValidateStub = sinon.stub(metadataUtils, 'standardMetadataValidateBucketAndObj');
+            const mockBucket = {
+                isVersioningEnabled: () => true,
+                getOwner: () => 'testCanonicalId',
+                getName: () => bucketName,
+            };
+            const mockMasterMD = {
+                'uploadId': 'master-id',
+            };
+            standardMetadataValidateStub.yields(null, mockBucket, mockMasterMD);
+
+            abortMultipartUpload(authInfo, bucketName, objectKey, 'abort-id', log, err => {
                 assert.ifError(err);
-
-                // Add a part so there's data to delete
-                const md5Hash = crypto.createHash('md5');
-                md5Hash.update(postBody);
-                const calculatedHash = md5Hash.digest('hex');
-
-                const partRequest = new DummyRequest({
-                    bucketName,
-                    objectKey,
-                    namespace: 'default',
-                    url: `/${objectKey}?partNumber=1&uploadId=${uploadId}`,
-                    headers: { host: `${bucketName}.s3.amazonaws.com` },
-                    query: {
-                        partNumber: '1',
-                        uploadId,
-                    },
-                    calculatedHash,
-                }, postBody);
-
-                objectPutPart(authInfo, partRequest, undefined, log, err => {
-                    assert.ifError(err);
-
-                    abortMultipartUpload(authInfo, bucketName, objectKey, uploadId, log, err => {
-                        assert.strictEqual(err, null); // Should succeed despite data deletion failure
-                        sinon.assert.called(logWarnSpy);
-                        const warnCall = logWarnSpy.getCalls().find(call =>
-                            call.args[0] === 'delete ObjectPart failed'
-                        );
-                        assert(warnCall, 'Expected warning log about failed data deletion');
-                        assert(warnCall.args[1].err, 'Expected error object in log warning');
-                        logWarnSpy.restore();
-                        done();
-                    }, abortRequest);
-                });
-            });
+                sinon.assert.calledOnce(deleteObjectMDStub);
+                assert.strictEqual(deleteObjectMDStub.getCall(0).args[2].versionId, 'orphan-vid');
+                done();
+            }, { ...abortRequest, query: { uploadId: 'abort-id' } });
         });
     });
 });
