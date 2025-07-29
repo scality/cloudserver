@@ -96,10 +96,6 @@
         "name": "zenko",
         "sentinels": "localhost:6379"
     },
-    "redis": {
-        "name": "zenko",
-        "sentinels": "localhost:6379"
-    },
     "scuba": {
         "host": "localhost",
         "port": 8100

@@ -633,10 +633,6 @@ describe('Config', () => {
             const config = new ConfigObject();
 
             assert.deepStrictEqual(
-                config.redis,
-                { name: 'zenko', sentinels: [{ host: 'localhost', port: 6379 }] },
-            );
-            assert.deepStrictEqual(
                 config.utapi.redis,
                 {
                     host: 'localhost',

@@ -120,15 +120,15 @@ if [[ "$REDIS_PORT" ]] && [[ ! "$REDIS_SENTINELS" ]]; then
 fi
 
 if [[ "$REDIS_SENTINELS" ]]; then
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.name=\"$REDIS_HA_NAME\""
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.sentinels=\"$REDIS_SENTINELS\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .utapi.redis.name=\"$REDIS_HA_NAME\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .utapi.redis.sentinels=\"$REDIS_SENTINELS\""
 elif [[ "$REDIS_HA_HOST" ]]; then
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.host=\"$REDIS_HA_HOST\""
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.port=6379"
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .utapi.redis.host=\"$REDIS_HA_HOST\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .utapi.redis.port=6379"
 fi
 
 if [[ "$REDIS_HA_PORT" ]] && [[ ! "$REDIS_SENTINELS" ]]; then
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.port=$REDIS_HA_PORT"
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .utapi.redis.port=$REDIS_HA_PORT"
 fi
 
 if [[ "$RECORDLOG_ENABLED" ]]; then
