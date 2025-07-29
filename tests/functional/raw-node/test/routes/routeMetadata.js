@@ -44,18 +44,22 @@ describe('metadata routes with metadata', () => {
 
     // E2E tests use S3C metadata, whereas functional tests use mocked metadata.
     if (process.env.S3_END_TO_END) {
-        before(done => s3.createBucket({ Bucket: bucket1 }).promise()
+        before(done => {
+            s3.createBucket({ Bucket: bucket1 }).promise()
             .then(() => s3.putObject({ Bucket: bucket1, Key: keyName, Body: '' }).promise())
             .then(() => s3.createBucket({ Bucket: bucket2 }).promise())
-            .then(() => done(), err => done(err))
-        );
+            .then(() => done())
+            .catch(err => done(err));
+        });
 
-        after(done => bucketUtil.empty(bucket1)
+        after(done => {
+            bucketUtil.empty(bucket1)
             .then(() => s3.deleteBucket({ Bucket: bucket1 }).promise())
             .then(() => bucketUtil.empty(bucket2))
             .then(() => s3.deleteBucket({ Bucket: bucket2 }).promise())
-            .then(() => done(), err => done(err))
-        );
+            .then(() => done())
+            .catch(err => done(err));
+        });
     } else {
         let httpServer;
 
