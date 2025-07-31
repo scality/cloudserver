@@ -91,23 +91,24 @@ describe('services', () => {
                 IsTruncated: false,
             });
 
-            services.findObjectVersionByUploadId(bucketName, objectKey, 'non-existent-upload-id', log, (err, foundVersion) => {
-                assert.ifError(err);
-                sinon.assert.calledTwice(getObjectListingStub);
+            services.findObjectVersionByUploadId(bucketName, objectKey, 'non-existent-upload-id',
+                log, (err, foundVersion) => {
+                    assert.ifError(err);
+                    sinon.assert.calledTwice(getObjectListingStub);
 
-                const secondCallParams = getObjectListingStub.getCall(1).args[1];
-                assert.strictEqual(secondCallParams.keyMarker, 'key-marker');
-                assert.strictEqual(secondCallParams.versionIdMarker, 'version-marker');
-                assert.strictEqual(foundVersion, null);
-                done();
-            });
+                    const secondCallParams = getObjectListingStub.getCall(1).args[1];
+                    assert.strictEqual(secondCallParams.keyMarker, 'key-marker');
+                    assert.strictEqual(secondCallParams.versionIdMarker, 'version-marker');
+                    assert.strictEqual(foundVersion, null);
+                    done();
+                });
         });
 
         it('should find a version on the first page of many and stop listing', done => {
             const uploadIdToFind = 'the-correct-upload-id';
             const correctVersionValue = { uploadId: uploadIdToFind, data: 'this is it' };
             const versions = [{ key: objectKey, value: correctVersionValue }];
-            
+
             getObjectListingStub.onFirstCall().yields(null, {
                 Versions: versions,
                 IsTruncated: true,
