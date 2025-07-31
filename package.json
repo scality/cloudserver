@@ -37,7 +37,7 @@
     "@opentelemetry/sdk-node": "^0.55.0",
     "@opentelemetry/sdk-trace-base": "^2.0.1",
     "@opentelemetry/semantic-conventions": "^1.36.0",
-    "arsenal": "git+https://github.com/scality/Arsenal#d80e793390ffc1b21b508a7259a080f469e91ea2",
+    "arsenal": "git+https://github.com/scality/Arsenal#d581f4a8f6883334c8f28a03382bc0fcc530d5bc",
     "async": "2.6.4",
     "aws-sdk": "^2.1692.0",
     "bucketclient": "scality/bucketclient#8.2.4",
@@ -88,6 +88,7 @@
     "tv4": "^1.3.0"
   },
   "resolutions": {
+    "werelogs": "scality/werelogs#0bea4b3c8754219a1fc9b9e50d9dfb2797258d32",
     "string-width": "4.2.3",
     "jsonwebtoken": "^9.0.0",
     "nan": "v2.22.0"
