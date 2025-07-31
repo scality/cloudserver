@@ -259,8 +259,7 @@ describe('objectGet API', () => {
                 (json, next) => {
                     const testUploadId =
                     json.InitiateMultipartUploadResult.UploadId[0];
-                    const md5Hash = crypto.createHash('md5').update(partBody);
-                    const calculatedHash = md5Hash.digest('hex');
+                    const partHash = crypto.createHash('md5').update(partBody).digest('hex');
                     const partRequest = new DummyRequest({
                         bucketName,
                         namespace,
@@ -277,13 +276,13 @@ describe('objectGet API', () => {
                             partNumber: '1',
                             uploadId: testUploadId,
                         },
-                        calculatedHash,
+                        partHash,
                     }, partBody);
                     objectPutPart(authInfo, partRequest, undefined, log, () => {
-                        next(null, testUploadId, calculatedHash);
+                        next(null, testUploadId, partHash);
                     });
                 },
-                (testUploadId, calculatedHash, next) => {
+                (testUploadId, partHash, next) => {
                     const part2Request = new DummyRequest({
                         bucketName,
                         namespace,
@@ -299,22 +298,22 @@ describe('objectGet API', () => {
                             partNumber: '2',
                             uploadId: testUploadId,
                         },
-                        calculatedHash,
+                        partHash,
                     }, partBody);
                     objectPutPart(authInfo, part2Request, undefined,
                         log, () => {
-                            next(null, testUploadId, calculatedHash);
+                            next(null, testUploadId, partHash);
                         });
                 },
-                (testUploadId, calculatedHash, next) => {
+                (testUploadId, partHash, next) => {
                     const completeBody = '<CompleteMultipartUpload>' +
                         '<Part>' +
                         '<PartNumber>1</PartNumber>' +
-                        `<ETag>"${calculatedHash}"</ETag>` +
+                        `<ETag>"${partHash}"</ETag>` +
                         '</Part>' +
                         '<Part>' +
                         '<PartNumber>2</PartNumber>' +
-                        `<ETag>"${calculatedHash}"</ETag>` +
+                        `<ETag>"${partHash}"</ETag>` +
                         '</Part>' +
                         '</CompleteMultipartUpload>';
                     const completeRequest = {
@@ -330,11 +329,11 @@ describe('objectGet API', () => {
                     };
                     completeMultipartUpload(authInfo, completeRequest,
                                             log, err => {
-                                                next(err, calculatedHash);
+                                                next(err, partHash);
                                             });
                 },
             ],
-            (err, calculatedHash) => {
+            (err, partHash) => {
                 assert.ifError(err);
                 objectGet(authInfo, testGetRequest, false, log,
                 (err, dataGetInfo) => {
@@ -343,14 +342,14 @@ describe('objectGet API', () => {
                         [{
                             key: 1,
                             dataStoreName: 'mem',
-                            dataStoreETag: `1:${calculatedHash}`,
+                            dataStoreETag: `1:${partHash}`,
                             size: 5242880,
                             start: 0,
                         },
                         {
                             key: 2,
                             dataStoreName: 'mem',
-                            dataStoreETag: `2:${calculatedHash}`,
+                            dataStoreETag: `2:${partHash}`,
                             size: 12,
                             start: 5242880,
                         }]);
@@ -372,7 +371,7 @@ describe('objectGet API', () => {
             },
             parsedContentLength: 0,
             url: `/${bucketName}/${objectName}`,
-            calculatedHash: 'd41d8cd98f00b204e9800998ecf8427e',
+            partHash: 'd41d8cd98f00b204e9800998ecf8427e',
         }, postBody);
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
