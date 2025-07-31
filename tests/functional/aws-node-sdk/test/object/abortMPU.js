@@ -293,7 +293,7 @@ describe('Abort MPU - No Such Upload', () => {
 });
 
 describe('Abort MPU - Versioned Bucket Cleanup', function testSuite() {
-    this.timeout(120000);
+    this.timeout(30000);
 
     withV4(sigCfg => {
         let bucketUtil;
