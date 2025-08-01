@@ -4,6 +4,7 @@ const { S3 } = require('aws-sdk');
 
 const getConfig = require('../support/config');
 const BucketUtility = require('../../lib/utility/bucket-util');
+const { config } = require('../../../../../lib/Config');
 
 const MAX_DAYS = 2147483647; // Max 32-bit signed binary integer.
 
@@ -483,7 +484,63 @@ describe('aws-sdk test put bucket lifecycle', () => {
             });
         });
 
-        describe('with Transitions', () => {
+        // use env S3_CONFIG_FILE with tests (needed in S3C Integration tests)
+        const isTransitionSupported = config.supportedLifecycleRules.includes('Transition');
+
+        (isTransitionSupported ? describe.skip : describe)('with Transitions NOT supported', () => {
+            it('should return NotImplemented if Transitions rule', done => {
+                const params = {
+                    Bucket: bucket,
+                    LifecycleConfiguration: {
+                        Rules: [{
+                            ID: 'test',
+                            Status: 'Enabled',
+                            Prefix: '',
+                            Transitions: [{
+                                Days: 2,
+                                StorageClass: 'us-east-2',
+                            }],
+                        }],
+                    },
+                };
+                s3.putBucketLifecycleConfiguration(params, err => {
+                    assert.strictEqual(err.statusCode, 501);
+                    assert.strictEqual(err.code, 'NotImplemented');
+                    done();
+                });
+            });
+
+            it('should return NotImplemented if rules include Transitions', done => {
+                const params = {
+                    Bucket: bucket,
+                    LifecycleConfiguration: {
+                        Rules: [{
+                            ID: 'id2',
+                            Status: 'Enabled',
+                            Prefix: '',
+                            Expiration: {
+                                Days: 1,
+                            },
+                        }, {
+                            ID: 'id1',
+                            Status: 'Enabled',
+                            Prefix: '',
+                            Transitions: [{
+                                Days: 2,
+                                StorageClass: 'us-east-2',
+                            }],
+                        }],
+                    },
+                };
+                s3.putBucketLifecycleConfiguration(params, err => {
+                    assert.strictEqual(err.statusCode, 501);
+                    assert.strictEqual(err.code, 'NotImplemented');
+                    done();
+                });
+            });
+        });
+
+        (isTransitionSupported ? describe : describe.skip)('with Transitions', () => {
             // Get lifecycle request params with Transitions.
             function getParams(transitions) {
                 const rule = {
