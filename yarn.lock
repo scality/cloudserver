@@ -2634,9 +2634,9 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#d581f4a8f6883334c8f28a03382bc0fcc530d5bc":
+"arsenal@git+https://github.com/scality/Arsenal#d429e094b217e3f1459ac66bc0513cad52af8258":
   version "8.2.29"
-  resolved "git+https://github.com/scality/Arsenal#d581f4a8f6883334c8f28a03382bc0fcc530d5bc"
+  resolved "git+https://github.com/scality/Arsenal#d429e094b217e3f1459ac66bc0513cad52af8258"
   dependencies:
     "@azure/identity" "^4.10.2"
     "@azure/storage-blob" "^12.27.0"
@@ -2673,9 +2673,9 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#e85b2e06a8b2a86540f14837adee10ad8c554fea":
-  version "8.2.28"
-  resolved "git+https://github.com/scality/Arsenal#e85b2e06a8b2a86540f14837adee10ad8c554fea"
+"arsenal@git+https://github.com/scality/Arsenal#d581f4a8f6883334c8f28a03382bc0fcc530d5bc":
+  version "8.2.29"
+  resolved "git+https://github.com/scality/Arsenal#d581f4a8f6883334c8f28a03382bc0fcc530d5bc"
   dependencies:
     "@azure/identity" "^4.10.2"
     "@azure/storage-blob" "^12.27.0"
