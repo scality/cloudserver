@@ -451,6 +451,114 @@ jobs:
         source: /tmp/artifacts
       if: always()
 
+  # Configure and run as Integration run S3C tests
+  s3c-ft-tests:
+    runs-on: ubuntu-24.04
+    needs: build
+    env:
+      S3BACKEND: file
+      S3DATA: scality
+      S3METADATA: scality
+      S3VAULT: scality
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      MPU_TESTING: "yes"
+      ENABLE_NULL_VERSION_COMPAT_MODE: true
+      COMPOSE_FILE: docker-compose.yaml:docker-compose.sse.yaml
+      S3_VERSION_ID_ENCODING_TYPE: hex
+      JOB_NAME: ${{ github.job }}
+      VAULT_IMAGE: ghcr.io/scality/vault:7.76.0
+      S3_END_TO_END: true
+      S3_TESTVAL_OWNERCANONICALID: 79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Login to Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ github.token }}
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
+    - name: Copy S3C config
+      run: cp .github/docker/config.s3c.json tests/functional/sse-kms-migration/config.json
+    - name: Setup CI services
+      run: docker compose up -d --quiet-pull redis sproxyd metadata-standalone vault-sse-before-migration cloudserver-sse-before-migration
+      working-directory: .github/docker
+    - name: Wait for services to be ready
+      run: |-
+        set -o pipefail;
+        bash wait_for_local_port.bash 81 40
+        bash wait_for_local_port.bash 9000 40
+        bash wait_for_local_port.bash 8000 40
+    - name: Setup vault credentials like S3C Integration
+      run: ./setup-s3c.sh
+      working-directory: .github/docker
+    - name: Run cloudserver-object tests
+      env:
+        S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
+        S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
+      run: |-
+        set -o pipefail;
+        yarn run ft_awssdk_objects_misc | tee /tmp/artifacts/${{ github.job }}/ft_awssdk_objects_misc.log
+    - name: Run cloudserver-version tests
+      env:
+        S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
+        S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
+      run: |-
+        set -o pipefail;
+        yarn run ft_awssdk_versioning | tee /tmp/artifacts/${{ github.job }}/ft_awssdk_versioning.log
+    - name: Run cloudserver-bucket tests
+      env:
+        S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
+        S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
+      run: |-
+        set -o pipefail;
+        yarn run ft_awssdk_buckets | tee /tmp/artifacts/${{ github.job }}/ft_awssdk_buckets.log
+    - name: Run cloudserver-routes (metadata) tests
+      env:
+        S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
+        S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
+      run: |-
+        set -o pipefail;
+        yarn run ft_node_routes | tee /tmp/artifacts/${{ github.job }}/ft_node_routes.log
+    - name: Run backbeat route tests
+      env:
+        S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
+        S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
+      run: |-
+        set -o pipefail;
+        yarn run ft_route_backbeat | tee /tmp/artifacts/${{ github.job }}/ft_route_backbeat.log
+    - name: Run backbeat tests
+      env:
+        S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
+        S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
+      run: |-
+        set -o pipefail;
+        yarn run ft_backbeat | tee /tmp/artifacts/${{ github.job }}/ft_backbeat.log
+    - name: Cleanup and upload coverage
+      uses: ./.github/actions/cleanup-and-coverage
+      with:
+        codecov-token: ${{ secrets.CODECOV_TOKEN }}
+        flags: s3c-ft-tests
+      if: always()
+    - name: Upload test results to Codecov
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: '**/junit/*junit*.xml'
+        flags: s3c-ft-tests
+      if: always() && !cancelled()
+    - name: Upload logs to artifacts
+      uses: scality/action-artifacts@v4
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: /tmp/artifacts
+      if: always()
+
   utapi-v2-tests:
     runs-on: ubuntu-24.04
     needs: build

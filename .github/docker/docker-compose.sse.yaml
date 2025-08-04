@@ -34,9 +34,18 @@ services:
       - ../../localData:/usr/src/app/localData
       - ../../localMetadata:/usr/src/app/localMetadata
       - ../../tests/functional/sse-kms-migration/config.json:/conf/config.json
+      - ../../tests/locationConfig/locationConfigS3C.json:/conf/locationConfig.json
     environment:
       - S3_CONFIG_FILE=/conf/config.json
+      - S3_LOCATION_FILE=/conf/locationConfig.json
   cloudserver-sse-migration:
     extends: cloudserver-sse-before-migration
     profiles: [sse-migration]
     command: sh -c "yarn start > /artifacts/s3.migration.log 2> /artifacts/s3-stderr.migration.log"
+  metadata-standalone:
+    image: ghcr.io/scality/metadata:8.11.0-standalone
+    profiles: ['metadata-standalone']
+    network_mode: 'host'
+    volumes:
+      - ./md-config-v0.json:/mnt/standalone_workdir/config.json:ro
+      - /tmp/artifacts/${JOB_NAME}/md:/mnt/standalone_workdir/log
