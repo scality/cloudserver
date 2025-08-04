@@ -1296,9 +1296,9 @@ arraybuffer.prototype.slice@^1.0.4:
     get-intrinsic "^1.2.6"
     is-array-buffer "^3.0.4"
 
-"arsenal@git+https://github.com/scality/Arsenal#8.2.27":
-  version "8.2.27"
-  resolved "git+https://github.com/scality/Arsenal#55b442593c1ecdae69529084c43549104732fe21"
+"arsenal@git+https://github.com/scality/Arsenal#8.2.28":
+  version "8.2.28"
+  resolved "git+https://github.com/scality/Arsenal#7df5088715bb26a62ff1db2045e611029ff17de1"
   dependencies:
     "@azure/identity" "^4.10.2"
     "@azure/storage-blob" "^12.27.0"
@@ -1643,6 +1643,14 @@ bson@^6.10.4:
 bucketclient@scality/bucketclient#8.2.4:
   version "8.2.4"
   resolved "https://codeload.github.com/scality/bucketclient/tar.gz/99ce471a7e665547317e0103a1ba38d75e331a63"
+  dependencies:
+    arsenal "git+https://github.com/scality/Arsenal#8.2.4"
+    httpagent "git+https://github.com/scality/httpagent#1.1.0"
+    werelogs scality/werelogs#8.2.2
+
+bucketclient@scality/bucketclient#8.2.5:
+  version "8.2.5"
+  resolved "https://codeload.github.com/scality/bucketclient/tar.gz/aeb2655ef82fdacc56968e92367f01d09f0e09a2"
   dependencies:
     arsenal "git+https://github.com/scality/Arsenal#8.2.4"
     httpagent "git+https://github.com/scality/httpagent#1.1.0"
@@ -6937,9 +6945,9 @@ vaultclient@scality/vaultclient#8.5.1:
     werelogs scality/werelogs#8.2.0
     xml2js "^0.6.2"
 
-vaultclient@scality/vaultclient#8.5.2:
-  version "8.5.2"
-  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/aecd14f9663ce8e4bde9d50305eb90cd4838d2ab"
+vaultclient@scality/vaultclient#8.5.3:
+  version "8.5.3"
+  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/24e33cfe2a98cc4545ddc615371bfd8d2f2e98d1"
   dependencies:
     "@aws-crypto/sha256-universal" "^5.2.0"
     "@smithy/signature-v4" "^4.1.0"
