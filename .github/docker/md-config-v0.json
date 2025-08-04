@@ -1,0 +1,29 @@
+{
+    "raftSessions": 1,
+    "raftMembers": 5,
+    "bucketdCount": 1,
+    "bucketdWorkers": 1,
+    "basePorts": {
+        "bucketd": 9000,
+        "repd": 4200,
+        "repdAdmin": 4250
+    },
+    "logLevel": "info",
+    "env": {
+        "METADATA_NEW_BUCKETS_VFORMAT": "v0",
+        "S3_VERSION_ID_ENCODING_TYPE":"hex"
+    },
+    "migration": {
+        "deploy": false,
+        "raftSessions": 0,
+        "raftMembers": 5,
+        "bucketdCount": 1,
+        "bucketdWorkers": 1,
+        "basePorts": {
+            "bucketd": 9001,
+            "repd": 4700,
+            "repdAdmin": 4750
+        },
+        "logLevel": "info"
+    }
+}

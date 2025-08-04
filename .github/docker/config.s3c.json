@@ -1,0 +1,63 @@
+{
+    "port": 8000,
+    "maxScannedLifecycleListingEntries": 10000,
+    "metricsPort": 8001,
+    "internalPort": 8004,
+    "replicationGroupId": "RG001",
+    "restEndpoints": {
+        "s3.amazonaws.com": "dc-1",
+        "localhost": "dc-1",
+        "scality.scality.com": "dc-1",
+        "127.0.0.1": "dc-1",
+        "node1.scality.com": "dc-1"
+    },
+    "websiteEndpoints": ["s3-website-us-east-1.scality.com"],
+    "bucketd": {
+        "bootstrap": ["0.0.0.0:9000"]
+    },
+    "vaultd": {
+        "host": "127.0.0.1",
+        "port": 8500
+    },
+    "clusters": 10,
+    "kmsHideScalityArn": true,
+    "healthChecks": {
+        "allowFrom": ["127.0.0.1", "::1"]
+    },
+    "localCache": {
+        "host": "localhost",
+        "port": 6479,
+        "password": ""
+    },
+    "log": {
+        "logLevel": "info",
+        "dumpLevel": "error"
+    },
+    "replicationEndpoints": [
+        {"site": "zenko", "servers": ["127.0.0.1:9080"], "echo": false, "default": true}, 
+        {"site": "us-east-2", "servers": ["127.0.0.1:9080"]}
+    ],
+    "requests": {
+        "extractClientIPFromHeader": "x-forwarded-for",
+        "extractProtocolFromHeader": "x-forwarded-proto",
+        "trustedProxyCIDRs": [
+            "127.0.0.1/32",
+            "::ffff:127.0.0.1/128",
+            "127.0.0.1"
+        ],
+        "viaProxy": true
+    },
+    "multiObjectDeleteEnableOptimizations": false,
+    "supportedLifecycleRules": [
+        "Expiration",
+        "NoncurrentVersionExpiration",
+        "AbortIncompleteMultipartUpload"
+    ],
+    "bucketNotificationDestinations": [
+        {
+            "resource": "target1",
+            "type": "dummy",
+            "host": "localhost:6000"
+        }
+    ]
+}
