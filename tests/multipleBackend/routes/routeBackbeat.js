@@ -10,9 +10,8 @@ const { makeid } = require('../../unit/helpers');
 const { makeRequest, makeBackbeatRequest } = require('../../functional/raw-node/utils/makeRequest');
 const BucketUtility =
       require('../../functional/aws-node-sdk/lib/utility/bucket-util');
+const { describeSkipIfNotMultipleOrCeph, itSkipCeph } = require('../../functional/aws-node-sdk/lib/utility/test-utils');
 const {
-    describeSkipIfNotMultipleOrCeph,
-    itSkipCeph,
     awsLocation,
     azureLocation,
     getAzureContainerName,

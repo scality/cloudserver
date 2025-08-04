@@ -7,7 +7,7 @@ const assert = require('assert');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
-const { describeSkipIfCeph } = require('../multipleBackend/utils');
+const { describeSkipIfCeph } = require('../../lib/utility/test-utils');
 
 const bucket = 'bucket-for-range-test';
 const key = 'key-for-range-test';

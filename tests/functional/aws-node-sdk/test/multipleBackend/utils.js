@@ -14,6 +14,14 @@ const { getRealAwsConfig } = require('../support/awsConfig');
 const { config } = require('../../../../../lib/Config');
 const authdata = require('../../../../../conf/authdata.json');
 
+const {
+    describeSkipIfNotMultiple,
+    describeSkipIfNotMultipleOrCeph,
+    describeSkipIfCeph,
+    isCEPH,
+    itSkipCeph,
+} = require('../../lib/utility/test-utils');
+
 const memLocation = 'scality-internal-mem';
 const fileLocation = 'scality-internal-file';
 const awsLocation = 'awsbackend';
@@ -31,8 +39,6 @@ const versioningEnabled = { Status: 'Enabled' };
 const versioningSuspended = { Status: 'Suspended' };
 const awsFirstTimeout = 10000;
 const awsSecondTimeout = 30000;
-let describeSkipIfNotMultiple = describe.skip;
-let describeSkipIfNotMultipleOrCeph = describe.skip;
 let awsS3;
 let awsBucket;
 
@@ -40,13 +46,7 @@ let gcpClient;
 let gcpBucket;
 let gcpBucketMPU;
 
-const isCEPH = process.env.CI_CEPH !== undefined;
-const itSkipCeph = isCEPH ? it.skip : it;
-const describeSkipIfCeph = isCEPH ? describe.skip : describe.skip; // always skip
-
 if (config.backends.data === 'multiple') {
-    describeSkipIfNotMultiple = describe;
-    describeSkipIfNotMultipleOrCeph = isCEPH ? describe.skip : describe.skip; // always skip
     const awsConfig = getRealAwsConfig(awsLocation);
     awsS3 = new AWS.S3(awsConfig);
     awsBucket = config.locationConstraints[awsLocation].details.bucketName;
