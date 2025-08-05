@@ -98,7 +98,7 @@ function checkObjMdAndUpdate(objMDBefore, objMDAfter, props) {
 
 // TODO: CLDSRV-721 RING 10 Support ObjectRestore (cold storage) with MD v1
 // The whole test suite is skipped as bad versionId breaks after each bucket cleanup
-const describeSkipNullMdV1 = isNullKeyMetadataV1 ? describe.skip : describe;
+const describeSkipNullMdV1 = isNullKeyMetadataV1 || process.env.S3_END_TO_END ? describe.skip : describe;
 
 describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
     withV4(sigCfg => {

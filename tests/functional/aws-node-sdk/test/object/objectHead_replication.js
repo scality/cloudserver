@@ -45,10 +45,13 @@ describe("Head object 'ReplicationStatus' value", () => {
             done => checkHeadObj(`${keyPrefix}-foobar`, undefined, done));
 
         describe('With bucket replication config', () => {
+            const role = process.env.S3_END_TO_END
+            ? 'arn:aws:iam::123456789012:role/src-resource,arn:aws:iam::123456789012:role/dest-resource'
+            : 'arn:aws:iam::123456789012:role/src-resource';
             beforeEach(done => s3.putBucketReplication({
                 Bucket: sourceBucket,
                 ReplicationConfiguration: {
-                    Role: 'arn:aws:iam::123456789012:role/src-resource',
+                    Role: role,
                     Rules: [
                         {
                             Destination: { StorageClass: 'us-east-2',

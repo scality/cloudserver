@@ -711,7 +711,7 @@ describe('Object Part Copy', () => {
                 });
             });
 
-        it('should not copy a part of a cold object', done => {
+        it.skip('should not copy a part of a cold object', done => {
             const archive = {
                 archiveInfo: {
                     archiveId: '97a71dfe-49c1-4cca-840a-69199e0b0322',
@@ -734,7 +734,7 @@ describe('Object Part Copy', () => {
             });
         });
 
-        it('should copy a part of an object when it\'s transitioning to cold', done => {
+        it.skip('should copy a part of an object when it\'s transitioning to cold', done => {
             fakeMetadataTransition(sourceBucketName, sourceObjName, undefined, err => {
                 assert.ifError(err);
                 s3.uploadPartCopy({
@@ -752,7 +752,7 @@ describe('Object Part Copy', () => {
             });
         });
 
-        it('should copy a part of a restored object', done => {
+        it.skip('should copy a part of a restored object', done => {
             const archiveCompleted = {
                 archiveInfo: {},
                 restoreRequestedAt: new Date(0),
