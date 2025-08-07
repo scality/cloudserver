@@ -57,7 +57,7 @@ function _createBucket(name, encrypt, done) {
     });
     auth.client.generateV4Headers(request, '', accessKey, secretKey, 's3');
     if (verbose) {
-        logger.info('request headers', { headers: request._headers });
+        logger.info('request headers', { headers: request.getHeaders() });
     }
     request.end();
 }

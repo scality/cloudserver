@@ -65,7 +65,7 @@ function _performSearch(host,
     auth.client.generateV4Headers(request, requestData, accessKey, secretKey, 's3');
     request.path = `/${bucketName}?search=${escapedSearch}${listVersions ? '&&versions' : ''}`;
     if (verbose) {
-        logger.info('request headers', { headers: request._headers });
+        logger.info('request headers', { headers: request.getHeaders() });
     }
     request.end();
 }
