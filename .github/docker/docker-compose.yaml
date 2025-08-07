@@ -113,4 +113,6 @@ services:
     image: sproxyd-standalone
     build: ./sproxyd
     user: 0:0
-    privileged: yes
+    privileged: yes # for setxattr on local filesystem
+    volumes:
+      - /tmp/artifacts/${JOB_NAME}/sproxyd:/logs
