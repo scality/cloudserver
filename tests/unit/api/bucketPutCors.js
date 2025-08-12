@@ -55,7 +55,7 @@ describe('putBucketCORS API', () => {
             .createBucketCorsRequest('PUT', bucketName);
         bucketPutCors(authInfo, testBucketPutCorsRequest, log, err => {
             if (err) {
-                process.stdout.write(`Err putting website config ${err}`);
+                process.stdout.write(`Err putting bucket cors ${err}`);
                 return done(err);
             }
             return metadata.getBucket(bucketName, log, (err, bucket) => {
@@ -70,11 +70,33 @@ describe('putBucketCORS API', () => {
         });
     });
 
-    it('should return BadDigest if md5 is omitted', done => {
+    it('should accept request if md5 is omitted', done => {
         const corsUtil = new CorsConfigTester();
         const testBucketPutCorsRequest = corsUtil
             .createBucketCorsRequest('PUT', bucketName);
         testBucketPutCorsRequest.headers['content-md5'] = undefined;
+        bucketPutCors(authInfo, testBucketPutCorsRequest, log, err => {
+            if (err) {
+                process.stdout.write(`Err putting bucket cors ${err}`);
+                return done(err);
+            }
+            return metadata.getBucket(bucketName, log, (err, bucket) => {
+                if (err) {
+                    process.stdout.write(`Err retrieving bucket MD ${err}`);
+                    return done(err);
+                }
+                const uploadedCors = bucket.getCors();
+                assert.deepStrictEqual(uploadedCors, corsUtil.getCors());
+                return done();
+            });
+        });
+    });
+
+    it('should reject request if md5 is mismatch', done => {
+        const corsUtil = new CorsConfigTester();
+        const testBucketPutCorsRequest = corsUtil
+            .createBucketCorsRequest('PUT', bucketName);
+        testBucketPutCorsRequest.headers['content-md5'] = 'wrong md5';
         _testPutBucketCors(authInfo, testBucketPutCorsRequest,
             log, 'BadDigest', done);
     });
