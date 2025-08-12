@@ -1,6 +1,9 @@
 const assert = require('assert');
 const { errors } = require('arsenal');
 const sinon = require('sinon');
+const crypto = require('crypto');
+
+const metadataWrapper = require('../../../lib/metadata/wrapper');
 
 const { decodeObjectVersion, getObjMetadataAndDelete, initializeMultiObjectDeleteWithBatchingSupport }
     = require('../../../lib/api/multiObjectDelete');
@@ -23,6 +26,7 @@ const objectKey1 = 'objectName1';
 const objectKey2 = 'objectName2';
 const metadataUtils = require('../../../lib/metadata/metadataUtils');
 const services = require('../../../lib/services');
+const { BucketInfo } = require('arsenal/build/lib/models');
 const testBucketPutRequest = new DummyRequest({
     bucketName,
     namespace,
@@ -368,7 +372,7 @@ describe('multiObjectDelete function', () => {
             objectKey: 'objectname',
             parsedHost: 'localhost',
             headers: {
-                'content-md5': crypto.createHash('md5').update(post, 'utf8').digest('base64')
+                'content-md5': crypto.createHash('md5').update(post, 'utf8').digest('base64'),
             },
             post,
             socket: {
@@ -402,7 +406,6 @@ describe('multiObjectDelete function', () => {
         const post = '<Delete><Object><Key>objectname</Key></Object></Delete>';
         const testObjectKey = 'objectname';
         const testBucketName = 'test-bucket';
-        
         const request = new DummyRequest({
             bucketName: testBucketName,
             objectKey: testObjectKey,
@@ -416,7 +419,7 @@ describe('multiObjectDelete function', () => {
             },
             url: `/${testBucketName}`,
         });
-        
+
         // Use the same canonicalID for both authInfo and bucket owner to avoid AccessDenied
         const testAuthInfo = makeAuthInfo(canonicalID);
 
@@ -427,7 +430,7 @@ describe('multiObjectDelete function', () => {
             headers: {},
             url: `/${testBucketName}`,
         });
-        
+
         // Create object to delete
         const testObjectRequest = new DummyRequest({
             bucketName: testBucketName,
@@ -454,13 +457,13 @@ describe('multiObjectDelete function', () => {
     it('should reject request with BadDigest error when content-md5 header mismatches', done => {
         const post = '<Delete><Object><Key>objectname</Key></Object></Delete>';
         const incorrectMd5 = 'incorrectMd5Hash';
-        
+
         const request = new DummyRequest({
             bucketName: 'bucketname',
             objectKey: 'objectname',
             parsedHost: 'localhost',
             headers: {
-                'content-md5': incorrectMd5
+                'content-md5': incorrectMd5,
             },
             post,
             socket: {
