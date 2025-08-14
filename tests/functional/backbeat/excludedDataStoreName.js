@@ -8,21 +8,17 @@ const testBucket = 'bucket-for-list-lifecycle-current-tests';
 const location1 = 'us-east-1';
 const location2 = 'us-east-2';
 
+const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+const s3 = bucketUtil.s3;
 const credentials = {
-    accessKey: 'accessKey1',
-    secretKey: 'verySecretKey1',
+    accessKey: s3.config.credentials.accessKeyId,
+    secretKey: s3.config.credentials.secretAccessKey,
 };
 
 describe('excludedDataStoreName', () => {
-    let bucketUtil;
-    let s3;
     const expectedVersions = [];
 
-    before(done => {
-        bucketUtil = new BucketUtility('account1', { signatureVersion: 'v4' });
-        s3 = bucketUtil.s3;
-
-        return async.series([
+    before(done => async.series([
             next => s3.createBucket({ Bucket: testBucket }, next),
             next => s3.putBucketVersioning({
                 Bucket: testBucket,
@@ -58,8 +54,7 @@ describe('excludedDataStoreName', () => {
                     next);
             }),
             next => s3.putObject({ Bucket: testBucket, Key: 'key2' }, next),
-        ], done);
-    });
+        ], done));
 
     after(done => async.series([
         next => removeAllVersions({ Bucket: testBucket }, next),

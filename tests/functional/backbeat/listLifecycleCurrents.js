@@ -5,9 +5,11 @@ const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-ut
 const { makeBackbeatRequest } = require('./utils');
 const { config } = require('../../../lib/Config');
 
+const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+const s3 = bucketUtil.s3;
 const credentials = {
-    accessKey: 'accessKey1',
-    secretKey: 'verySecretKey1',
+    accessKey: s3.config.credentials.accessKeyId,
+    secretKey: s3.config.credentials.secretAccessKey,
 };
 
 function checkContents(contents, expectedKeyVersions) {
@@ -41,16 +43,10 @@ function checkContents(contents, expectedKeyVersions) {
         const testBucket = `bucket-for-list-lifecycle-current-tests-${versioning.toLowerCase()}`;
         const emptyBucket = `empty-bucket-for-list-lifecycle-current-tests-${versioning.toLowerCase()}`;
 
-        let bucketUtil;
-        let s3;
         let date;
         const expectedKeyVersions = {};
 
-        before(done => {
-            bucketUtil = new BucketUtility('account1', { signatureVersion: 'v4' });
-            s3 = bucketUtil.s3;
-
-            return async.series([
+        before(done => async.series([
                 next => s3.createBucket({ Bucket: testBucket }, next),
                 next => s3.createBucket({ Bucket: emptyBucket }, next),
                 next => {
@@ -96,8 +92,7 @@ function checkContents(contents, expectedKeyVersions) {
                         });
                     }, next);
                 },
-            ], done);
-        });
+            ], done));
 
         after(done => async.series([
             next => removeAllVersions({ Bucket: testBucket }, next),
@@ -409,15 +404,9 @@ function checkContents(contents, expectedKeyVersions) {
 
 describe('listLifecycleCurrents with bucket versioning enabled and maxKeys', () => {
     const testBucket = 'bucket-for-list-lifecycle-current-tests-truncated';
-    let bucketUtil;
-    let s3;
     const expectedKeyVersions = {};
 
-    before(done => {
-        bucketUtil = new BucketUtility('account1', { signatureVersion: 'v4' });
-        s3 = bucketUtil.s3;
-
-        return async.series([
+    before(done => async.series([
             next => s3.createBucket({ Bucket: testBucket }, next),
             next => s3.putBucketVersioning({
                 Bucket: testBucket,
@@ -456,8 +445,7 @@ describe('listLifecycleCurrents with bucket versioning enabled and maxKeys', () 
                     return cb();
                 });
             }, next),
-        ], done);
-    });
+        ], done));
 
     after(done => async.series([
         next => removeAllVersions({ Bucket: testBucket }, next),
@@ -556,15 +544,9 @@ describe('listLifecycleCurrents with bucket versioning enabled and delete object
     const keyName0 = 'key0';
     const keyName1 = 'key1';
     const keyName2 = 'key2';
-    let bucketUtil;
-    let s3;
     const expectedKeyVersions = {};
 
-    before(done => {
-        bucketUtil = new BucketUtility('account1', { signatureVersion: 'v4' });
-        s3 = bucketUtil.s3;
-
-        return async.series([
+    before(done => async.series([
             next => s3.createBucket({ Bucket: testBucket }, next),
             next => s3.putBucketVersioning({
                 Bucket: testBucket,
@@ -597,8 +579,7 @@ describe('listLifecycleCurrents with bucket versioning enabled and delete object
                     }
                     return s3.deleteObject({ Bucket: testBucket, Key: keyName2, VersionId: data.VersionId }, next);
                 }),
-        ], done);
-    });
+        ], done));
 
     after(done => async.series([
         next => removeAllVersions({ Bucket: testBucket }, next),

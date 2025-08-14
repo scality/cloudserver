@@ -6,21 +6,17 @@ const { makeBackbeatRequest } = require('./utils');
 
 const testBucket = 'bucket-for-list-lifecycle-null-tests';
 
+const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+const s3 = bucketUtil.s3;
 const credentials = {
-    accessKey: 'accessKey1',
-    secretKey: 'verySecretKey1',
+    accessKey: s3.config.credentials.accessKeyId,
+    secretKey: s3.config.credentials.secretAccessKey,
 };
 
 describe('listLifecycle if null version', () => {
-    let bucketUtil;
-    let s3;
     let versionForKey2;
 
-    before(done => {
-        bucketUtil = new BucketUtility('account1', { signatureVersion: 'v4' });
-        s3 = bucketUtil.s3;
-
-        return async.series([
+    before(done => async.series([
             next => s3.createBucket({ Bucket: testBucket }, next),
             next => s3.putObject({ Bucket: testBucket, Key: 'key1', Body: '123' }, next),
             next => s3.putObject({ Bucket: testBucket, Key: 'key2', Body: '123' }, next),
@@ -42,8 +38,7 @@ describe('listLifecycle if null version', () => {
                 versionForKey2 = data.VersionId;
                 return next();
             }),
-        ], done);
-    });
+        ], done));
 
     after(done => async.series([
         next => removeAllVersions({ Bucket: testBucket }, next),
@@ -104,17 +99,11 @@ describe('listLifecycle if null version', () => {
 });
 
 describe('listLifecycle with null current version after versioning suspended', () => {
-    let bucketUtil;
-    let s3;
     let expectedVersionId;
     const nullObjectBucket = 'bucket-for-list-lifecycle-current-null-tests';
     const keyName = 'key0';
 
-    before(done => {
-        bucketUtil = new BucketUtility('account1', { signatureVersion: 'v4' });
-        s3 = bucketUtil.s3;
-
-        return async.series([
+    before(done => async.series([
             next => s3.createBucket({ Bucket: nullObjectBucket }, next),
             next => s3.putBucketVersioning({
                 Bucket: nullObjectBucket,
@@ -132,8 +121,7 @@ describe('listLifecycle with null current version after versioning suspended', (
                 VersioningConfiguration: { Status: 'Suspended' },
             }, next),
             next => s3.putObject({ Bucket: nullObjectBucket, Key: keyName }, next),
-        ], done);
-    });
+        ], done));
 
     after(done => async.series([
         next => removeAllVersions({ Bucket: nullObjectBucket }, next),
