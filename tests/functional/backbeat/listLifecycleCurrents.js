@@ -12,6 +12,9 @@ const credentials = {
     secretKey: s3.config.credentials.secretAccessKey,
 };
 
+// for S3C it is dc-1, otherwise us-east-1
+const location = config.restEndpoints.localhost;
+
 function checkContents(contents, expectedKeyVersions) {
     contents.forEach(d => {
         assert(d.Key);
@@ -32,7 +35,7 @@ function checkContents(contents, expectedKeyVersions) {
             Value: 'myvalue',
         }]);
         assert.strictEqual(d.IsLatest, true);
-        assert.strictEqual(d.DataStoreName, 'us-east-1');
+        assert.strictEqual(d.DataStoreName, location);
         assert.strictEqual(d.ListType, 'current');
         assert.strictEqual(d.Size, 3);
     });

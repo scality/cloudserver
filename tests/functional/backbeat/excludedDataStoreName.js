@@ -3,9 +3,12 @@ const async = require('async');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
 const { makeBackbeatRequest, updateMetadata } = require('./utils');
+const { config } = require('../../../lib/Config');
 
 const testBucket = 'bucket-for-list-lifecycle-current-tests';
-const location1 = 'us-east-1';
+
+// for S3C it is dc-1, otherwise us-east-1
+const location1 = config.restEndpoints.localhost;
 const location2 = 'us-east-2';
 
 const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
