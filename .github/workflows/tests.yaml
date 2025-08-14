@@ -514,13 +514,20 @@ jobs:
       run: |-
         set -o pipefail;
         yarn run ft_awssdk_buckets | tee /tmp/artifacts/${{ github.job }}/ft_awssdk_buckets.log
-    - name: Run cloudserver-routes tests
+    - name: Run cloudserver-routes (metadata) tests
       env:
         S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
         S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
       run: |-
         set -o pipefail;
         yarn run ft_node_routes | tee /tmp/artifacts/${{ github.job }}/ft_node_routes.log
+    - name: Run backbeat route tests
+      env:
+        S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
+        S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
+      run: |-
+        set -o pipefail;
+        yarn run ft_route_backbeat | tee /tmp/artifacts/${{ github.job }}/ft_route_backbeat.log
     - name: Cleanup and upload coverage
       uses: ./.github/actions/cleanup-and-coverage
       with:
