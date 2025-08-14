@@ -47,15 +47,25 @@ let gcpBucket;
 let gcpBucketMPU;
 
 if (config.backends.data === 'multiple') {
-    const awsConfig = getRealAwsConfig(awsLocation);
-    awsS3 = new AWS.S3(awsConfig);
-    awsBucket = config.locationConstraints[awsLocation].details.bucketName;
+    if (config.locationConstraints[awsLocation]) {
+        const awsConfig = getRealAwsConfig(awsLocation);
+        awsS3 = new AWS.S3(awsConfig);
+        awsBucket = config.locationConstraints[awsLocation].details.bucketName;
+    } else {
+        process.stdout.write(`LocationConstraint for aws '${awsLocation}' not found in ${
+        Object.keys(config.locationConstraints)}\n`);
+    }
 
-    const gcpConfig = getRealAwsConfig(gcpLocation);
-    gcpClient = new GCP(gcpConfig);
-    gcpBucket = config.locationConstraints[gcpLocation].details.bucketName;
-    gcpBucketMPU =
-        config.locationConstraints[gcpLocation].details.mpuBucketName;
+    if (config.locationConstraints[gcpLocation]) {
+        const gcpConfig = getRealAwsConfig(gcpLocation);
+        gcpClient = new GCP(gcpConfig);
+        gcpBucket = config.locationConstraints[gcpLocation].details.bucketName;
+        gcpBucketMPU =
+            config.locationConstraints[gcpLocation].details.mpuBucketName;
+    } else {
+        process.stdout.write(`LocationConstraint for gcp '${gcpLocation}' not found in ${
+        Object.keys(config.locationConstraints)}\n`);
+    }
 }
 
 
