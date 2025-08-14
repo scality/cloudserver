@@ -9,9 +9,11 @@ const testBucket = 'bucket-for-list-lifecycle-noncurrent-tests';
 const emptyBucket = 'empty-bucket-for-list-lifecycle-noncurrent-tests';
 const nonVersionedBucket = 'non-versioned-bucket-for-list-lifecycle-noncurrent-tests';
 
+const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+const s3 = bucketUtil.s3;
 const credentials = {
-    accessKey: 'accessKey1',
-    secretKey: 'verySecretKey1',
+    accessKey: s3.config.credentials.accessKeyId,
+    secretKey: s3.config.credentials.secretAccessKey,
 };
 
 function checkContents(contents) {
@@ -37,17 +39,11 @@ function checkContents(contents) {
 }
 
 describe('listLifecycleNonCurrents', () => {
-    let bucketUtil;
-    let s3;
     let date;
     let expectedKey1VersionIds = [];
     let expectedKey2VersionIds = [];
 
-    before(done => {
-        bucketUtil = new BucketUtility('account1', { signatureVersion: 'v4' });
-        s3 = bucketUtil.s3;
-
-        return async.series([
+    before(done => async.series([
             next => s3.createBucket({ Bucket: testBucket }, next),
             next => s3.createBucket({ Bucket: emptyBucket }, next),
             next => s3.createBucket({ Bucket: nonVersionedBucket }, next),
@@ -88,8 +84,7 @@ describe('listLifecycleNonCurrents', () => {
             next => async.times(5, (n, cb) => {
                 s3.putObject({ Bucket: testBucket, Key: 'key2', Body: '123', Tagging: 'mykey=myvalue' }, cb);
             }, next),
-        ], done);
-    });
+        ], done));
 
     after(done => async.series([
         next => removeAllVersions({ Bucket: testBucket }, next),
