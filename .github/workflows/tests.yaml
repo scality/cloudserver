@@ -466,8 +466,9 @@ jobs:
       COMPOSE_FILE: docker-compose.yaml:docker-compose.sse.yaml
       S3_VERSION_ID_ENCODING_TYPE: hex
       JOB_NAME: ${{ github.job }}
-      VAULT_IMAGE: ghcr.io/scality/vault:7.75.1
+      VAULT_IMAGE: ghcr.io/scality/vault:7.76.0
       S3_END_TO_END: true
+      S3_TESTVAL_OWNERCANONICALID: 79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be
     steps:
     - name: Checkout
       uses: actions/checkout@v4

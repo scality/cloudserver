@@ -21,7 +21,8 @@ $VAULTCLIENT --config $CONFIG delete-account --name Bart || true
 $VAULTCLIENT --config $CONFIG create-account \
     --name Bart \
     --email sampleaccount1@sampling.com \
-    --accountid 123456789012
+    --accountid 123456789012 \
+    --canonicalid 79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be
 $VAULTCLIENT --config $CONFIG generate-account-access-key \
     --name Bart \
     --accesskey ACC1AK00000000000000 \
@@ -31,7 +32,8 @@ $VAULTCLIENT --config $CONFIG delete-account --name Lisa || true
 $VAULTCLIENT --config $CONFIG create-account \
     --name Lisa \
     --email sampleaccount2@sampling.com \
-    --accountid 123456789013
+    --accountid 123456789013 \
+    --canonicalid 79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf
 $VAULTCLIENT --config $CONFIG generate-account-access-key \
     --name Lisa \
     --accesskey ACC2AK00000000000000 \
@@ -39,10 +41,12 @@ $VAULTCLIENT --config $CONFIG generate-account-access-key \
 
 # Replication account for backbeat replication tests
 $VAULTCLIENT --config $CONFIG delete-account --name Replication || true
+# Cannot use url as canonicalid for service account
 $VAULTCLIENT --config $CONFIG create-account \
     --name Replication \
     --email inspector@replication.info \
-    --accountid 123456789015
+    --accountid 123456789015 \
+    --canonicalid 79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2ba
 $VAULTCLIENT --config $CONFIG generate-account-access-key \
     --name Replication \
     --accesskey ACCREPAK000000000000 \
@@ -57,9 +61,6 @@ echo "Update conf/authdata.json account Replication canonicalID"
 REP_CANONICAL_ID=$(
     $VAULTCLIENT --config $CONFIG get-account --account-name Replication | jq -r .canonicalId
 )
-BART_CANONICAL_ID=$(
-    $VAULTCLIENT --config $CONFIG get-account --account-name Bart | jq -r .canonicalId
-)
 
 # jq reformats the whole json file so use sed instead
 # jq \
@@ -71,9 +72,3 @@ BART_CANONICAL_ID=$(
 # might need to undo changes if script was already ran before
 git checkout -- $SCRIPT_DIR/../../conf/authdata.json
 sed -i "s/http:\/\/acs.zenko.io\/accounts\/service\/replication/$REP_CANONICAL_ID/g" $SCRIPT_DIR/../../conf/authdata.json
-sed -i "s/79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be/$BART_CANONICAL_ID/g" $SCRIPT_DIR/../../conf/authdata.json
-
-# For S3C tests
-set -x
-
-export S3_TESTVAL_OWNERCANONICALID=$($VAULTCLIENT --config $CONFIG get-account --account-name Bart | jq -r .canonicalId)
