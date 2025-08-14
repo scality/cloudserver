@@ -1,5 +1,4 @@
 const assert = require('assert');
-const AWS = require('aws-sdk');
 const async = require('async');
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
@@ -8,23 +7,26 @@ const versionIdUtils = versioning.VersionID;
 
 const { makeid } = require('../../unit/helpers');
 const { makeRequest, makeBackbeatRequest } = require('../../functional/raw-node/utils/makeRequest');
-const BucketUtility =
-      require('../../functional/aws-node-sdk/lib/utility/bucket-util');
-const { describeSkipIfNotMultipleOrCeph, itSkipCeph } = require('../../functional/aws-node-sdk/lib/utility/test-utils');
+const BucketUtility = require('../../functional/aws-node-sdk/lib/utility/bucket-util');
+const {
+    describeSkipIfNotMultipleOrCeph,
+    describeSkipIfAWS,
+    describeSkipIfS3C,
+    itSkipCeph,
+    itSkipS3C,
+    itSkipCephS3C,
+} = require('../../functional/aws-node-sdk/lib/utility/test-utils');
 const {
     awsLocation,
+    awsS3: awsClient,
+    awsBucket,
     azureLocation,
     getAzureContainerName,
     getAzureClient,
 } = require('../../functional/aws-node-sdk/test/multipleBackend/utils');
-const { getRealAwsConfig } =
-      require('../../functional/aws-node-sdk/test/support/awsConfig');
 const { getCredentials } = require('../../functional/aws-node-sdk/test/support/credentials');
 const { config } = require('../../../lib/Config');
 
-const awsConfig = getRealAwsConfig(awsLocation);
-const awsClient = new AWS.S3(awsConfig);
-const awsBucket = config.locationConstraints[awsLocation].details.bucketName;
 const azureClient = getAzureClient();
 const containerName = getAzureContainerName(azureLocation);
 
@@ -84,6 +86,11 @@ const testMd = {
         storageClass: 'STANDARD',
     },
 };
+
+// S3_TESTVAL_OWNERCANONICALID variable is used by Integration that runs E2E tests with real Vault account.
+if (process.env.S3_TESTVAL_OWNERCANONICALID) {
+    testMd['owner-id'] = process.env.S3_TESTVAL_OWNERCANONICALID;
+}
 
 const nonVersionedTestMd = {
     'owner-display-name': 'Bart',
@@ -223,7 +230,7 @@ function getMetadataToPut(putDataResponse) {
     return mdToPut;
 }
 
-describe('backbeat routes', () => {
+describeSkipIfAWS('backbeat routes', () => {
     let bucketUtil;
     let s3;
 
@@ -270,7 +277,7 @@ describe('backbeat routes', () => {
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
+                done(err);
             });
     });
 
@@ -633,7 +640,8 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should update metadata of a non-version object', done => {
+        // S3C Skipping is necessary because non-versioned buckets are not supported by S3C backbeat routes.
+        itSkipS3C('should update metadata of a non-version object', done => {
             let objMD;
             return async.series([
                 next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
@@ -692,7 +700,7 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should create a new null version if versioning suspended and no version', done => {
+        itSkipS3C('should create a new null version if versioning suspended and no version', done => {
             let objMD;
             return async.series([
                 next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } },
@@ -755,7 +763,7 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should create a new null version if versioning suspended and delete marker null version', done => {
+        itSkipS3C('should create a new null version if versioning suspended and delete marker null version', done => {
             let objMD;
             return async.series([
                 next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } },
@@ -816,7 +824,7 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should create a new null version if versioning suspended and version has version id', done => {
+        itSkipS3C('should create a new null version if versioning suspended and version has version id', done => {
             let expectedVersionId;
             let objMD;
             return async.series([
@@ -892,7 +900,7 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should update null version with no version id and versioning suspended', done => {
+        itSkipS3C('should update null version with no version id and versioning suspended', done => {
             let objMD;
             return async.series([
                 next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
@@ -952,7 +960,7 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should update null version if versioning suspended and null version has a version id', done => {
+        itSkipS3C('should update null version if versioning suspended and null version has a version id', done => {
             let objMD;
             return async.series([
                 next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } },
@@ -1012,7 +1020,7 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should update null version if versioning suspended and null version has a version id and' +
+        itSkipS3C('should update null version if versioning suspended and null version has a version id and' +
         'put object afterward', done => {
             let objMD;
             return async.series([
@@ -1074,7 +1082,7 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should update null version if versioning suspended and null version has a version id and' +
+        itSkipS3C('should update null version if versioning suspended and null version has a version id and' +
         'put version afterward', done => {
             let objMD;
             let expectedVersionId;
@@ -1146,7 +1154,7 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should update non-current null version if versioning suspended', done => {
+        itSkipS3C('should update non-current null version if versioning suspended', done => {
             let expectedVersionId;
             let objMD;
             return async.series([
@@ -1220,7 +1228,7 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should update current null version if versioning suspended', done => {
+        itSkipS3C('should update current null version if versioning suspended', done => {
             let objMD;
             let expectedVersionId;
             return async.series([
@@ -1291,7 +1299,7 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should update current null version if versioning suspended and put a null version ' +
+        itSkipS3C('should update current null version if versioning suspended and put a null version ' +
         'afterwards', done => {
             let objMD;
             let deletedVersionId;
@@ -1365,7 +1373,7 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should update current null version if versioning suspended and put a version afterwards', done => {
+        itSkipS3C('should update current null version if versioning suspended and put a version afterwards', done => {
             let objMD;
             let deletedVersionId;
             let expectedVersionId;
@@ -1529,6 +1537,9 @@ describe('backbeat routes', () => {
                                 TEST_ENCRYPTED_BUCKET : TEST_BUCKET,
                             objectKey: testCase.encodedKey,
                             resourceType: 'metadata',
+                            queryObj: {
+                                versionId: versionIdUtils.encode(testMd.versionId),
+                            },
                             authCredentials: backbeatAuthCredentials,
                             requestBody: JSON.stringify(newMd),
                         }, next);
@@ -1545,7 +1556,8 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should PUT metadata for a non-versioned bucket', done => {
+        // S3CSkipping is necessary because non-versioned buckets are not supported by S3C backbeat routes.
+        itSkipS3C('should PUT metadata for a non-versioned bucket', done => {
             const bucket = NONVERSIONED_BUCKET;
             const objectKey = 'non-versioned-key';
             async.waterfall([
@@ -1618,6 +1630,9 @@ describe('backbeat routes', () => {
                     method: 'PUT', bucket: TEST_ENCRYPTED_BUCKET,
                     objectKey: 'test-updatemd-key',
                     resourceType: 'metadata',
+                    queryObj: {
+                        versionId: versionIdUtils.encode(testMd.versionId),
+                    },
                     authCredentials: backbeatAuthCredentials,
                     requestBody: JSON.stringify(newMd),
                 }, next);
@@ -1632,6 +1647,9 @@ describe('backbeat routes', () => {
                     method: 'PUT', bucket: TEST_ENCRYPTED_BUCKET,
                     objectKey: 'test-updatemd-key',
                     resourceType: 'metadata',
+                    queryObj: {
+                        versionId: versionIdUtils.encode(testMd.versionId),
+                    },
                     headers: { 'x-scal-replication-content': 'METADATA' },
                     authCredentials: backbeatAuthCredentials,
                     requestBody: JSON.stringify(newMd),
@@ -1646,7 +1664,8 @@ describe('backbeat routes', () => {
             });
         });
 
-        itSkipCeph('should PUT tags for a non-versioned bucket', function test(done) {
+        // S3C skipped non-versioned + external aws location
+        itSkipCephS3C('should PUT tags for a non-versioned bucket', function test(done) {
             this.timeout(10000);
             const bucket = NONVERSIONED_BUCKET;
             const awsKey = uuidv4();
@@ -1815,6 +1834,9 @@ describe('backbeat routes', () => {
                     method: 'PUT', bucket: TEST_BUCKET,
                     objectKey: 'does-not-exist',
                     resourceType: 'metadata',
+                    queryObj: {
+                        versionId: versionIdUtils.encode(testMd.versionId),
+                    },
                     headers: { 'x-scal-replication-content': 'METADATA' },
                     authCredentials: backbeatAuthCredentials,
                     requestBody: JSON.stringify(newMd),
@@ -2154,6 +2176,8 @@ describe('backbeat routes', () => {
         });
     });
     describe('backbeat authorization checks', () => {
+        const { accessKeyId: accessKeyLisa, secretAccessKey: secretAccessKeyLisa } = getCredentials('lisa');
+
         [{ method: 'PUT', resourceType: 'metadata' },
          { method: 'PUT', resourceType: 'data' }].forEach(test => {
              const queryObj = test.resourceType === 'data' ? { v2: '' } : {};
@@ -2200,8 +2224,8 @@ describe('backbeat routes', () => {
                         objectKey: TEST_KEY, resourceType: test.resourceType,
                         queryObj,
                         authCredentials: {
-                            accessKey: 'accessKey2',
-                            secretKey: 'verySecretKey2',
+                            accessKey: accessKeyLisa,
+                            secretKey: secretAccessKeyLisa,
                         },
                     },
                     err => {
@@ -2231,44 +2255,59 @@ describe('backbeat routes', () => {
                     });
                 });
          });
-        it('GET  /_/backbeat/api/... should respond with ' +
-           '503 on authenticated requests (API server down)',
-           done => {
-               const options = {
-                   authCredentials: {
-                       accessKey: 'accessKey2',
-                       secretKey: 'verySecretKey2',
-                   },
-                   hostname: ipAddress,
-                   port: 8000,
-                   method: 'GET',
-                   path: '/_/backbeat/api/crr/failed',
-                   jsonResponse: true,
-               };
-               makeRequest(options, err => {
-                   assert(err);
-                   assert.strictEqual(err.statusCode, 503);
-                   assert.strictEqual(err.code, 'ServiceUnavailable');
-                   done();
-               });
-           });
-        it('GET  /_/backbeat/api/... should respond with ' +
-           '403 Forbidden if the request is unauthenticated',
-           done => {
-               const options = {
-                   hostname: ipAddress,
-                   port: 8000,
-                   method: 'GET',
-                   path: '/_/backbeat/api/crr/failed',
-                   jsonResponse: true,
-               };
-               makeRequest(options, err => {
-                   assert(err);
-                   assert.strictEqual(err.statusCode, 403);
-                   assert.strictEqual(err.code, 'AccessDenied');
-                   done();
-               });
-           });
+
+        const apiProxy = !!config.backbeat;
+        describe(`when api proxy is ${apiProxy ? '' : 'NOT '}configured`, () => {
+            const errors = {
+                403: 'AccessDenied',
+                405: 'MethodNotAllowed',
+                503: 'ServiceUnavailable',
+            };
+
+            it(`GET /_/backbeat/api/... should respond with ${
+                apiProxy ? 503 : 405
+            } on authenticated requests (API server down)`,
+                done => {
+                    const options = {
+                        authCredentials: {
+                            accessKey: accessKeyLisa,
+                            secretKey: secretAccessKeyLisa,
+                        },
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'GET',
+                        path: '/_/backbeat/api/crr/failed',
+                        jsonResponse: true,
+                    };
+                    makeRequest(options, err => {
+                        assert(err);
+                        const expected = apiProxy ? 503 : 405;
+                        assert.strictEqual(err.statusCode, expected);
+                        assert.strictEqual(err.code, errors[expected]);
+                        done();
+                    });
+                });
+
+            it(`GET /_/backbeat/api/... should respond with ${
+                apiProxy ? 403 : 405
+            } if the request is unauthenticated`,
+                done => {
+                    const options = {
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'GET',
+                        path: '/_/backbeat/api/crr/failed',
+                        jsonResponse: true,
+                    };
+                    makeRequest(options, err => {
+                        assert(err);
+                        const expected = apiProxy ? 403 : 405;
+                        assert.strictEqual(err.statusCode, expected);
+                        assert.strictEqual(err.code, errors[expected]);
+                        done();
+                    });
+                });
+        });
     });
 
     describe('GET Metadata route', () => {
@@ -2292,6 +2331,7 @@ describe('backbeat routes', () => {
                     versionId: versionIdUtils.encode(testMd.versionId),
                 },
             }, (err, data) => {
+                assert.ifError(err);
                 const parsedBody = JSON.parse(JSON.parse(data.body).Body);
                 assert.strictEqual(data.statusCode, 200);
                 assert.deepStrictEqual(parsedBody, testMd);
@@ -2309,7 +2349,10 @@ describe('backbeat routes', () => {
                 },
             }, (err, data) => {
                 assert.strictEqual(data.statusCode, 404);
-                assert.strictEqual(JSON.parse(data.body).code, 'NoSuchBucket');
+                const body = JSON.parse(data.body);
+                assert.strictEqual(body.code, 'NoSuchBucket');
+                // err is parsed data.body + statusCode
+                assert.deepStrictEqual(err, { ...body, statusCode: data.statusCode });
                 done();
             });
         });
@@ -2324,12 +2367,15 @@ describe('backbeat routes', () => {
                 },
             }, (err, data) => {
                 assert.strictEqual(data.statusCode, 404);
-                assert.strictEqual(JSON.parse(data.body).code, 'ObjNotFound');
+                const body = JSON.parse(data.body);
+                assert.strictEqual(body.code, 'ObjNotFound');
+                // err is parsed data.body + statusCode
+                assert.deepStrictEqual(err, { ...body, statusCode: data.statusCode });
                 done();
             });
         });
     });
-    describe('backbeat multipart upload operations', function test() {
+    describeSkipIfS3C('backbeat multipart upload operations (external location)', function test() {
         this.timeout(10000);
 
         // The ceph image does not support putting tags during initiate MPU.
@@ -2540,12 +2586,13 @@ describe('backbeat routes', () => {
                 }, err => {
                     // should error out as location shall no longer exist
                     assert(err);
+                    assert.strictEqual(err.statusCode, 503);
                     done();
                 }),
             ], done);
         });
 
-        itSkipCeph('should batch delete a versioned AWS location', done => {
+        itSkipCephS3C('should batch delete a versioned AWS location', done => {
             let versionId;
             const awsKey = `${TEST_BUCKET}/batch-delete-test-key-${makeid(8)}`;
 
@@ -2607,7 +2654,8 @@ describe('backbeat routes', () => {
                 done();
             });
         });
-        it('should skip batch delete of a non-existent location', done => {
+        // TODO: unskip test when S3C-9123 is fixed
+        itSkipS3C('should skip batch delete of a non-existent location', done => {
             async.series([
                 done => {
                     const options = {
@@ -2642,7 +2690,7 @@ describe('backbeat routes', () => {
             ], done);
         });
 
-        it('should not put delete tags if the source is not Azure and ' +
+        itSkipS3C('should not put delete tags if the source is not Azure and ' +
         'if-unmodified-since header is not provided', done => {
             const awsKey = uuidv4();
             async.series([
@@ -2685,7 +2733,7 @@ describe('backbeat routes', () => {
             ], done);
         });
 
-        itSkipCeph('should not put tags if the source is not Azure and ' +
+        itSkipCephS3C('should not put tags if the source is not Azure and ' +
         'if-unmodified-since condition is not met', done => {
             const awsKey = uuidv4();
             async.series([
@@ -2730,7 +2778,7 @@ describe('backbeat routes', () => {
             ], done);
         });
 
-        itSkipCeph('should put tags if the source is not Azure and ' +
+        itSkipCephS3C('should put tags if the source is not Azure and ' +
         'if-unmodified-since condition is met', done => {
             const awsKey = uuidv4();
             let lastModified;
@@ -2800,7 +2848,7 @@ describe('backbeat routes', () => {
             ], done);
         });
 
-        it('should not delete the object if the source is Azure and ' +
+        itSkipS3C('should not delete the object if the source is Azure and ' +
         'if-unmodified-since condition is not met', done => {
             const blob = uuidv4();
             async.series([
@@ -2846,7 +2894,7 @@ describe('backbeat routes', () => {
             ], done);
         });
 
-        it('should delete the object if the source is Azure and ' +
+        itSkipS3C('should delete the object if the source is Azure and ' +
         'if-unmodified-since condition is met', done => {
             const blob = uuidv4();
             let lastModified;
