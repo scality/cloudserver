@@ -6330,9 +6330,9 @@ url@0.10.3:
     punycode "1.3.2"
     querystring "0.2.0"
 
-"utapi@github:scality/utapi#8.1.17":
-  version "8.1.17"
-  resolved "https://codeload.github.com/scality/utapi/tar.gz/149379fae80f9f702ce630f5d95ff227e3f3dddd"
+"utapi@github:scality/utapi#8.1.18":
+  version "8.1.18"
+  resolved "https://codeload.github.com/scality/utapi/tar.gz/63dee5315c23ceea52443a106b691d02b3c0f0c9"
   dependencies:
     "@hapi/joi" "^17.1.1"
     "@senx/warp10" "^1.0.14"
