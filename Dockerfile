@@ -9,7 +9,10 @@ COPY ./package.json yarn.lock ./
 ENV PYTHON=python3.9
 ENV PY_VERSION=3.9.7
 
-RUN apt-get update \
+RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list \
+    && sed -i 's/security.debian.org/archive.debian.org/g' /etc/apt/sources.list \
+    && sed -i '/buster-updates/d' /etc/apt/sources.list \
+    && apt-get update \
     && apt-get install -y --no-install-recommends \
     jq \
     python \
