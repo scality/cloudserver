@@ -52,6 +52,6 @@ COPY --from=builder /usr/src/app/node_modules ./node_modules/
 
 VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 
-ENTRYPOINT ["tini", "--", "/usr/src/app/docker-entrypoint.sh"]
+ENTRYPOINT ["tini", "-g", "--", "/usr/src/app/docker-entrypoint.sh"]
 
 CMD [ "yarn", "start" ]
