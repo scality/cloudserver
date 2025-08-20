@@ -1,15 +1,23 @@
 const assert = require('assert');
 const sinon = require('sinon');
+const async = require('async');
 const { promisify } = require('util');
 const metadataUtils = require('../../../lib/metadata/metadataUtils');
 const storeObject = require('../../../lib/api/apiUtils/object/storeObject');
 const metadata = require('../../../lib/metadata/wrapper');
-const { DummyRequestLogger } = require('../helpers');
+const { routeBackbeat } = require('../../../lib/routes/routeBackbeat');
+const { DummyRequestLogger, versioningTestUtils, makeAuthInfo } = require('../helpers');
 const dataWrapper = require('../../../lib/data/wrapper');
 const DummyRequest = require('../DummyRequest');
-const { auth } = require('arsenal');
+const { auth, errors } = require('arsenal');
+const AuthInfo = auth.AuthInfo;
 const { config } = require('../../../lib/Config');
 const quotaUtils = require('../../../lib/api/apiUtils/quotas/quotaUtils');
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketDelete = require('../../../lib/api/bucketDelete');
+const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
+const objectPut = require('../../../lib/api/objectPut');
+const { objectDelete } = require('../../../lib/api/objectDelete');
 
 const log = new DummyRequestLogger();
 
@@ -67,7 +75,7 @@ describe('routeBackbeat', () => {
 
         // Clear require cache for routeBackbeat to make sure fresh module with stubbed dependencies
         delete require.cache[require.resolve('../../../lib/routes/routeBackbeat')];
-        routeBackbeat = require('../../../lib/routes/routeBackbeat');
+        routeBackbeat = require('../../../lib/routes/routeBackbeat').routeBackbeat;
     });
 
     afterEach(() => {
@@ -692,5 +700,340 @@ describe('routeBackbeat', () => {
         assert.strictEqual(mockResponse.statusCode, 200);
         assert.deepStrictEqual(mockResponse.body, null);
     });
+    });
+});
+
+describe('routeBackbeat authorization', () => {
+    let endPromise;
+    let resolveEnd;
+    const bucketName = 'bucketname';
+    const authInfo = makeAuthInfo('cannonicalID',);
+    const namespace = 'default';
+    const objectName = 'objectName';
+
+    const testBucket = {
+        bucketName,
+        namespace,
+        headers: {
+            'host': `${bucketName}.s3.amazonaws.com`,
+        },
+        url: `/${bucketName}`,
+        actionImplicitDenies: false,
+    };
+
+    const testObject = new DummyRequest({
+        bucketName,
+        namespace,
+        objectKey: objectName,
+        headers: {
+            'x-amz-meta-test': 'some metadata',
+            'content-length': '12',
+        },
+        parsedContentLength: 12,
+        url: `/${bucketName}/${objectName}`,
+    }, Buffer.from('I am a body', 'utf8'));
+
+    let request;
+    let response;
+
+    beforeEach(() => {
+        // create a Promise that resolves when response.end is called
+        endPromise = new Promise(resolve => { resolveEnd = resolve; });
+
+        request = new DummyRequest(
+            {
+                method: 'GET',
+                headers: { 'content-length': '123' },
+                url: '/_/backbeat/multiplebackendmetadata/bucketName/objectKey?operation=putobject',
+            },
+            'body'
+        );
+        response = {
+            setHeader: sinon.stub(),
+            writeHead: sinon.stub(),
+            end: sinon.stub().callsFake((body, encoding, callback) => {
+                resolveEnd();
+                callback();
+            })
+        };
+    });
+
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    it('should reject if the request is invalid', done => {
+        request.url = '/_/backbeat//bucketName/objectKey?operation=putobject';
+        response.end.callsFake((body, format, cb) => {
+            const err = JSON.parse(response.end.getCall(0).args[0]);
+            assert.strictEqual(err.code, 'MethodNotAllowed');
+            cb();
+            return done();
+        });
+        // Cover the case invalidRequest === true
+        routeBackbeat('127.0.0.1', request, response, log);
+    });
+
+    it('should reject if the route is invalid', done => {
+        request.url = '/_/backbeat/wrong/bucketName/objectKey?operation=putobject';
+        response.end.callsFake((body, format, cb) => {
+            const err = JSON.parse(response.end.getCall(0).args[0]);
+            assert.strictEqual(err.code, 'MethodNotAllowed');
+            cb();
+            return done();
+        });
+        // Cover the case invalidRoute === true
+        routeBackbeat('127.0.0.1', request, response, log);
+    });
+
+    [
+        {
+            method: 'PUT',
+            resourceType: 'metadata',
+            target: `${bucketName}/${objectName}`,
+            operation: null,
+            versionId: false,
+            expect: errors.MalformedPOSTRequest,
+        },
+        {
+            method: 'GET',
+            resourceType: 'metadata',
+            target: `${bucketName}/${objectName}`,
+            operation: null,
+            versionId: true,
+        },
+        {
+            method: 'PUT',
+            resourceType: 'data',
+            target: `${bucketName}/${objectName}`,
+            operation: null,
+            versionId: false,
+            expect: errors.BadRequest,
+        },
+        {
+            method: 'PUT',
+            resourceType: 'multiplebackenddata',
+            target: `${bucketName}/${objectName}`,
+            operation: 'putobject',
+            versionId: false,
+            expect: errors.BadRequest,
+        },
+        {
+            method: 'PUT',
+            resourceType: 'multiplebackenddata',
+            target: `${bucketName}/${objectName}`,
+            operation: 'putpart',
+            versionId: false,
+            expect: errors.BadRequest,
+        },
+        {
+            method: 'DELETE',
+            resourceType: 'multiplebackenddata',
+            target: `${bucketName}/${objectName}`,
+            operation: 'deleteobject',
+            versionId: false,
+            expect: errors.BadRequest,
+        },
+        {
+            method: 'DELETE',
+            resourceType: 'multiplebackenddata',
+            target: `${bucketName}/${objectName}`,
+            operation: 'abortmpu',
+            versionId: false,
+            expect: errors.BadRequest,
+        },
+        {
+            method: 'DELETE',
+            resourceType: 'multiplebackenddata',
+            target: `${bucketName}/${objectName}`,
+            operation: 'deleteobjecttagging',
+            versionId: false,
+            expect: errors.BadRequest,
+        },
+        {
+            method: 'POST',
+            resourceType: 'multiplebackenddata',
+            target: `${bucketName}/${objectName}`,
+            operation: 'initiatempu',
+            versionId: false,
+            expect: errors.BadRequest,
+        },
+        {
+            method: 'POST',
+            resourceType: 'multiplebackenddata',
+            target: `${bucketName}/${objectName}`,
+            operation: 'completempu',
+            versionId: false,
+            expect: errors.BadRequest,
+        },
+        {
+            method: 'POST',
+            resourceType: 'multiplebackenddata',
+            target: `${bucketName}/${objectName}`,
+            operation: 'puttagging',
+            versionId: false,
+            expect: errors.BadRequest,
+        },
+        {
+            method: 'GET',
+            resourceType: 'multiplebackendmetadata',
+            target: `${bucketName}/${objectName}`,
+            operation: null,
+            versionId: false,
+            expect: errors.BadRequest,
+        },
+        {
+            method: 'POST',
+            resourceType: 'batchdelete',
+            target: null,
+            operation: null,
+            versionId: false,
+            expect: errors.MalformedPOSTRequest,
+        },
+        {
+            method: 'GET',
+            resourceType: 'lifecycle',
+            target: `${bucketName}?list-type=wrong`,
+            operation: null,
+            versionId: false,
+            expect: errors.BadRequest,
+        },
+        {
+            method: 'POST',
+            resourceType: 'index',
+            target: bucketName,
+            operation: 'add',
+            versionId: false,
+            expect: errors.BadRequest,
+        },
+        {
+            method: 'POST',
+            resourceType: 'index',
+            target: bucketName,
+            operation: 'delete',
+            versionId: false,
+            expect: errors.BadRequest,
+        },
+        {
+            method: 'GET',
+            resourceType: 'index',
+            target: null,
+            operation: 'delete',
+            versionId: false,
+            expect: errors.NotImplemented,
+        }
+    ].forEach(testCase => {
+        describe(`${testCase.method} ${testCase.resourceType}`, () => {
+            let versionIdParsed = null;
+            let hasQuery = false;
+
+            beforeEach(done => {
+                hasQuery = false;
+                versionIdParsed = null;
+                request.method = testCase.method;
+                request.url = `/_/backbeat/${testCase.resourceType}/${testCase.target}`;
+                if (testCase.operation) {
+                    request.url += `?operation=${testCase.operation}`;
+                    hasQuery = true;
+                }
+
+                const enableVersioningRequest =
+                    versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
+
+                return async.series([
+                    next => bucketPut(authInfo, testBucket, log, next),
+                    next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
+                    next => objectPut(authInfo, testObject, undefined, log, (err, res) => {
+                        if (!err && res) {
+                            versionIdParsed = res['x-amz-version-id'];
+                            if (testCase.versionId) {
+                                request.url += `${(hasQuery ? '&' : '?')}&versionId=${versionIdParsed}`;
+                            }
+                        }
+                        next(err);
+                    }),
+                ], done);
+            });
+
+            afterEach(done => {
+                async.series([
+                    next => {
+                        const deleteRequest = {
+                            bucketName,
+                            objectKey: objectName,
+                            headers: {},
+                            query: versionIdParsed ? { versionId: versionIdParsed } : {},
+                        };
+                        objectDelete(authInfo, deleteRequest, log, next);
+                    },
+                    next => {
+                        bucketDelete(authInfo, testBucket, log, next);
+                    }
+                ], done);
+            });
+
+            it('should call method successfully', async () => {
+                // Mock auth server to ignore auth in this test
+                sinon.stub(auth.server, 'doAuth').yields(null, new AuthInfo({
+                    canonicalID: 'abcdef/lifecycle',
+                    accountDisplayName: 'Lifecycle Service Account',
+                }), undefined, undefined, {
+                    accountQuota: 1000,
+                });
+
+                routeBackbeat('127.0.0.1', request, response, log);
+
+                void await endPromise;
+
+                if (testCase.expect) {
+                    const errCode = response.writeHead.getCall(0).args[0];
+                    assert.strictEqual(errCode, testCase.expect.code);
+                }
+                assert.strictEqual(Array.isArray(request.finalizerHooks), true);
+                assert.strictEqual(request.apiMethods[0], 'objectReplicate');
+                assert.strictEqual(request.apiMethods.length, 1);
+                assert.strictEqual(request.accountQuotas, 1000);
+            });
+
+            it('should return access denied user is not authorized', async () => {
+                sinon.stub(auth.server, 'doAuth').yields(null, new AuthInfo({
+                    canonicalID: '123456789',
+                    accountDisplayName: 'user1',
+                }), [{
+                    isAllowed: false,
+                    implicitDeny: true,
+                    action: 'objectReplicate',
+                }], undefined, undefined);
+
+                routeBackbeat('127.0.0.1', request, response, log);
+
+                void await endPromise;
+
+                const err = JSON.parse(response.end.getCall(0).args[0]);
+                assert.strictEqual(err.code, 'AccessDenied');
+            });
+
+            it('should bypass policy evaluation', async () => {
+                sinon.stub(auth.server, 'doAuth').yields(null, new AuthInfo({
+                    canonicalID: 'abcdef/lifecycle',
+                    accountDisplayName: 'Lifecycle Service Account',
+                }), [{
+                    isAllowed: false,
+                    implicitDeny: true,
+                    action: 'objectReplicate',
+                }], undefined, undefined);
+
+                request.bypassUserBucketPolicies = true;
+
+                routeBackbeat('127.0.0.1', request, response, log);
+
+                void await endPromise;
+
+                if (testCase.expect) {
+                    const errCode = response.writeHead.getCall(0).args[0];
+                    assert.strictEqual(errCode, testCase.expect.code);
+                }
+            });
+        });
     });
 });
