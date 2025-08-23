@@ -7,16 +7,17 @@ const { config } = require('../../../lib/Config');
 
 const testBucket = 'bucket-for-list-lifecycle-current-tests';
 
-// for S3C it is dc-1, otherwise us-east-1
-const location1 = config.restEndpoints.localhost;
-const location2 = 'us-east-2';
-
 const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
 const s3 = bucketUtil.s3;
 const credentials = {
     accessKey: s3.config.credentials.accessKeyId,
     secretKey: s3.config.credentials.secretAccessKey,
 };
+
+// for S3C it is dc-1, in Integration it's node1.scality.com, otherwise us-east-1
+const s3Hostname = s3.endpoint.hostname;
+const location1 = config.restEndpoints[s3Hostname] || config.restEndpoints.localhost;
+const location2 = 'us-east-2';
 
 describe('excludedDataStoreName', () => {
     const expectedVersions = [];

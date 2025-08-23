@@ -108,7 +108,7 @@ runIfMongo('Indexing Routes', () => {
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
+                done(err);
             });
     });
 
