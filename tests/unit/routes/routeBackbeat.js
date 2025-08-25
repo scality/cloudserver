@@ -229,8 +229,11 @@ describe('routeBackbeat', () => {
 
         it('should put metadata after updating account info', async () => {
             mockRequest.url = '/_/backbeat/metadata/bucket0/key0?accountId=123456789012';
-
-            sandbox.stub(metadata, 'putObjectMD').callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+            const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
+            putObjectMDStub.onCall(0).callsFake(
+                (_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {})
+            );
+            putObjectMDStub.onCall(1).callsFake((_bucketName, _objectKey, omVal, _options, _logParam, cb) => {
                 assert.strictEqual(omVal['owner-display-name'], 'Bart');
                 assert.strictEqual(omVal['owner-id'],
                     '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be');
@@ -291,7 +294,11 @@ describe('routeBackbeat', () => {
         });
 
         it('should handle error when putting metadata', async () => {
-            sandbox.stub(metadata, 'putObjectMD').callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+            const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
+            putObjectMDStub.onCall(0).callsFake(
+                (_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {})
+            );
+            putObjectMDStub.onCall(1).callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
                 cb(new Error('error'));
             });
 
@@ -321,7 +328,11 @@ describe('routeBackbeat', () => {
                 callback(null, bucketInfo, existingMd);
             });
 
-            sandbox.stub(metadata, 'putObjectMD').callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+            const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
+            putObjectMDStub.onCall(0).callsFake(
+                (_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {})
+            );
+            putObjectMDStub.onCall(1).callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
                 assert.deepStrictEqual(omVal.location, undefined);
                 cb(null, {});
             });
@@ -390,7 +401,11 @@ describe('routeBackbeat', () => {
                 callback(null, bucketInfo, existingMd);
             });
 
-            sandbox.stub(metadata, 'putObjectMD').callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+            const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
+            putObjectMDStub.onCall(0).callsFake(
+                (_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {})
+            );
+            putObjectMDStub.onCall(1).callsFake((_bucketName, _objectKey, omVal, _options, _logParam, cb) => {
                 // Verify that the location array is empty, indicating data deletion
                 assert.deepStrictEqual(omVal.location, []);
                 cb(null, {});
@@ -433,7 +448,11 @@ describe('routeBackbeat', () => {
             mockRequest = preparePutMetadataRequest(reqBody);
             mockRequest.url += '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
-            sandbox.stub(metadata, 'putObjectMD').callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+            const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
+            putObjectMDStub.onCall(0).callsFake(
+                (_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {})
+            );
+            putObjectMDStub.onCall(1).callsFake((_bucketName, __objectKey, omVal, _options, _logParam, cb) => {
                 // Verify that the location array contains the new location
                 assert.deepStrictEqual(omVal.location, reqBody.location);
                 cb(null, {});
@@ -481,7 +500,11 @@ describe('routeBackbeat', () => {
             mockRequest = preparePutMetadataRequest(reqBody);
             mockRequest.url += '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
-            sandbox.stub(metadata, 'putObjectMD').callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+            const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
+            putObjectMDStub.onCall(0).callsFake(
+                (_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {})
+            );
+            putObjectMDStub.onCall(1).callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
                 // Verify that the location array contains the new location
                 assert.deepStrictEqual(omVal.location, reqBody.location);
                 cb(null, {});
@@ -516,7 +539,11 @@ describe('routeBackbeat', () => {
             }));
             mockRequest.url += '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
-            sandbox.stub(metadata, 'putObjectMD').callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+            const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
+            putObjectMDStub.onCall(0).callsFake(
+                (_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {})
+            );
+            putObjectMDStub.onCall(1).callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
                 // Verify that the location array is empty
                 assert.deepStrictEqual(omVal.location, undefined);
                 // Content length should be preserved
