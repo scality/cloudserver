@@ -295,10 +295,7 @@ describe('routeBackbeat', () => {
 
         it('should handle error when putting metadata', async () => {
             const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
-            putObjectMDStub.onCall(0).callsFake(
-                (_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {})
-            );
-            putObjectMDStub.onCall(1).callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+            putObjectMDStub.onCall(0).callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
                 cb(new Error('error'));
             });
 
