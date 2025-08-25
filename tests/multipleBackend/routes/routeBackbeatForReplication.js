@@ -76,6 +76,7 @@ const scenarios = [
     { name: 'same account', src, dst: src },
     { name: 'cross account', src, dst },
 ];
+const itSkipIfNotS3C = process.env.S3_END_TO_END ? it : it.skip;
 
 scenarios.forEach(({ name, src, dst }) => {
 describe(`backbeat routes for replication (${name})`, () => {
@@ -1017,7 +1018,7 @@ describe(`backbeat routes for replication (${name})`, () => {
         });
     });
 
-    it('should replicate/put metadata to a destination that has a suspended null version', done => {
+    itSkipIfNotS3C('should replicate/put metadata to a destination that has a suspended null version', done => {
         let objMD;
         let versionId;
 
@@ -1193,7 +1194,7 @@ describe(`backbeat routes for replication (${name})`, () => {
         });
     });
 
-    it(
+    itSkipIfNotS3C(
         'should replicate/put metadata to a destination that has a suspended null version with internal version',
     done => {
         const tagSet = [
