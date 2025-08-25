@@ -18,6 +18,7 @@ const bucketDelete = require('../../../lib/api/bucketDelete');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 const objectPut = require('../../../lib/api/objectPut');
 const { objectDelete } = require('../../../lib/api/objectDelete');
+const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');
 
 const log = new DummyRequestLogger();
 
@@ -707,9 +708,10 @@ describe('routeBackbeat authorization', () => {
     let endPromise;
     let resolveEnd;
     const bucketName = 'bucketname';
-    const authInfo = makeAuthInfo('cannonicalID',);
+    const authInfo = makeAuthInfo('cannonicalID');
     const namespace = 'default';
     const objectName = 'objectName';
+    const bucketPutPolicyPromise = promisify(bucketPutPolicy);
 
     const testBucket = {
         bucketName,
@@ -801,6 +803,7 @@ describe('routeBackbeat authorization', () => {
             target: `${bucketName}/${objectName}`,
             operation: null,
             versionId: true,
+            expect: { code: 200 },
         },
         {
             method: 'PUT',
@@ -1013,26 +1016,57 @@ describe('routeBackbeat authorization', () => {
                 assert.strictEqual(err.code, 'AccessDenied');
             });
 
-            it('should bypass policy evaluation', async () => {
-                sinon.stub(auth.server, 'doAuth').yields(null, new AuthInfo({
-                    canonicalID: 'abcdef/lifecycle',
-                    accountDisplayName: 'Lifecycle Service Account',
-                }), [{
-                    isAllowed: false,
-                    implicitDeny: true,
-                    action: 'objectReplicate',
-                }], undefined, undefined);
-
-                request.bypassUserBucketPolicies = true;
-
-                routeBackbeat('127.0.0.1', request, response, log);
-
-                void await endPromise;
-
-                if (testCase.expect) {
-                    const errCode = response.writeHead.getCall(0).args[0];
-                    assert.strictEqual(errCode, testCase.expect.code);
+            [true, false].forEach(bypass => {
+                // Bucket policies only affect APIs that call standardMetadataValidateBucketAndObj
+                if (testCase.resourceType !== 'metadata' && testCase.resourceType !== 'data') {
+                    return;
                 }
+                it(`should ${bypass ? '' : 'not '}bypass bucket policy evaluation`, async () => {
+                    const policyRequest = {
+                    bucketName,
+                    headers: {
+                        host: `${bucketName}.s3.amazonaws.com`,
+                    },
+                    post: JSON.stringify({
+                        Version: '2012-10-17',
+                        Statement: [{
+                            Effect: 'Deny',
+                            Principal: '*',
+                            Action: '*',
+                            Resource: `arn:aws:s3:::${bucketName}/*`,
+                        }],
+                    }),
+                    actionImplicitDenies: false,
+                    };
+                    await bucketPutPolicyPromise(authInfo, policyRequest, log);
+
+                    // simulate assume role session user
+                    const sessionAuthInfo = new AuthInfo({
+                        arn: 'arn:aws:sts::000000000000:assumed-role/session',
+                        canonicalID: authInfo.getCanonicalID(),
+                        accountDisplayName: authInfo.getAccountDisplayName(),
+                    });
+
+                    sinon.stub(auth.server, 'doAuth').yields(null, sessionAuthInfo, [{
+                        isAllowed: true,
+                        implicitDeny: false,
+                        action: 'objectReplicate',
+                    }], undefined, undefined);
+
+                    request.bypassUserBucketPolicies = bypass;
+
+                    routeBackbeat('127.0.0.1', request, response, log);
+
+                    void await endPromise;
+
+                    if (bypass) {
+                        const errCode = response.writeHead.getCall(0).args[0];
+                        assert.strictEqual(errCode, testCase.expect.code);
+                    } else {
+                        const err = JSON.parse(response.end.getCall(0).args[0]);
+                        assert.strictEqual(err.code, 'AccessDenied');
+                    }
+                });
             });
         });
     });
