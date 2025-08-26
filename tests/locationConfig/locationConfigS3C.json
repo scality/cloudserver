@@ -1,0 +1,80 @@
+{
+    "dc-1": {
+        "type": "scality",
+        "objectId": "dc-1",
+        "legacyAwsBehavior": true,
+        "details": {
+            "connector": {
+                "sproxyd": {
+                    "bootstrap": ["localhost:81"],
+                    "path": "/proxy/dc1/"
+                }
+            }
+        }
+    },
+    "sproxyd": {
+        "type": "scality",
+        "objectId": "legacy",
+        "legacyAwsBehavior": false,
+        "details": {
+            "connector": {
+                "sproxyd": {
+                    "bootstrap": ["localhost:81"],
+                    "path": "/proxy/dc1/"
+                }
+            }
+        }
+    },
+    "us-east-1": {
+        "type": "scality",
+        "objectId": "us-east-1",
+        "legacyAwsBehavior": true,
+        "details": {
+            "connector": {
+                "sproxyd": {
+                    "bootstrap": ["localhost:81"],
+                    "path": "/proxy/dc1/"
+                }
+            }
+        }
+    },
+    "us-east-2": {
+        "type": "scality",
+        "objectId": "us-east-2",
+        "legacyAwsBehavior": true,
+        "details": {
+            "connector": {
+                "sproxyd": {
+                    "bootstrap": ["localhost:81"],
+                    "path": "/proxy/dc1/"
+                }
+            }
+        }
+    },
+    "scality-us-west-1": {
+        "type": "scality",
+        "objectId": "scality-us-west-1",
+        "legacyAwsBehavior": false,
+        "details": {
+            "connector": {
+                "sproxyd": {
+                    "bootstrap": ["localhost:81"],
+                    "path": "/proxy/dc1/"
+                }
+            }
+        }
+    },
+    "STANDARD": {
+        "type": "scality",
+        "objectId": "STANDARD",
+        "legacyAwsBehavior": false,
+        "details": {
+            "connector": {
+                "sproxyd": {
+                    "bootstrap": ["localhost:81"],
+                    "path": "/proxy/dc1/"
+                }
+            }
+        }
+    }
+}

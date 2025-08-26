@@ -9,6 +9,7 @@ runs:
       shell: bash
       run: |
         sudo echo "127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com" | sudo tee -a /etc/hosts
+        sudo echo "127.0.0.1 bucketwebsitetester.s3-website-us-east-1.scality.com" | sudo tee -a /etc/hosts
         sudo echo "127.0.0.1 pykmip.local" | sudo tee -a /etc/hosts
         for i in `seq 1 50`; do sudo echo "127.0.0.$i $i.pykmip.local" | sudo tee -a /etc/hosts ; done
     - name: Setup Credentials
