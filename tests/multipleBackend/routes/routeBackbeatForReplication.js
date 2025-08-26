@@ -1628,7 +1628,7 @@ describe('backbeat routes for replication', () => {
                 bucket: bucketSource,
                 objectKey: keyName,
                 queryObj: { versionId: 'null' },
-                authCredentials: destinationAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
