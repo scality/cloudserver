@@ -20,8 +20,31 @@ const destinationAuthCredentials = {
     secretKey: destinationCreds.secretAccessKey,
 };
 
+// Note: for S3C tests, those conf files needs to be modified beforehand
 const dstAccountInfo = require('../../../conf/authdata.json')
     .accounts.find(acc => acc.name === 'Replication');
+const srcAccountInfo = require('../../../conf/authdata.json')
+    .accounts.find(acc => acc.name === 'Bart');
+
+const srcBucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+const srcS3 = srcBucketUtil.s3;
+
+const dstBucketUtil = new BucketUtility('replication', { signatureVersion: 'v4' });
+const dstS3 = dstBucketUtil.s3;
+
+const src = {
+    credentials: sourceAuthCredentials,
+    bucketUtil: srcBucketUtil,
+    s3: srcS3,
+    accountInfo: srcAccountInfo,
+};
+
+const dst = {
+    credentials: destinationAuthCredentials,
+    bucketUtil: dstBucketUtil,
+    s3: dstS3,
+    accountInfo: dstAccountInfo,
+};
 
 const testData = 'testkey data';
 
@@ -48,12 +71,17 @@ function objectMDWithUpdatedAccountInfo(data, dstAccountInfo = null) {
     return objMD.getSerialized();
 }
 
-describe('backbeat routes for replication', () => {
-    const srcBucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
-    const srcS3 = srcBucketUtil.s3;
+const scenarios = [
+    // S3C Integration can replicate to the same account
+    { name: 'same account', src, dst: src },
+    { name: 'cross account', src, dst },
+];
 
-    const dstBucketUtil = new BucketUtility('replication', { signatureVersion: 'v4' });
-    const dstS3 = dstBucketUtil.s3;
+scenarios.forEach(({ name, src, dst }) => {
+describe(`backbeat routes for replication (${name})`, () => {
+    const { s3: srcS3, bucketUtil: srcBucketUtil, credentials: sourceAuthCredentials } = src;
+    const { s3: dstS3, bucketUtil: dstBucketUtil, credentials: destinationAuthCredentials } = dst;
+    const { accountInfo: dstAccountInfo } = dst;
 
     let bucketSource;
     let bucketDestination;
@@ -106,7 +134,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMD = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -171,7 +199,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMD = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -392,7 +420,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMDNonCurrent = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMDNonCurrent = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             getMetadataCurrent: next => makeBackbeatRequest({
@@ -408,7 +436,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMDCurrent = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMDCurrent = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             // replicating the objects in the reverse order
@@ -494,7 +522,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMDVersion = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMDVersion = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadataVersion: next => makeBackbeatRequest({
@@ -521,7 +549,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMDDeleteMarker = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMDDeleteMarker = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadataDeleteMarker: next => makeBackbeatRequest({
@@ -580,7 +608,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMD = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -642,7 +670,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMD = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -702,7 +730,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMD = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -783,7 +811,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMD = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -867,7 +895,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMD = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -947,7 +975,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMD = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -1023,7 +1051,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMD = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -1124,7 +1152,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMD = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -1209,7 +1237,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMD = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -1309,7 +1337,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMDNullReplicated = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMDNullReplicated = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             putReplicatedNullVersion: next => makeBackbeatRequest({
@@ -1344,7 +1372,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMDVersion = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMDVersion = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             listObjectVersionsBeforeReplicate: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
@@ -1432,7 +1460,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMD = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -1523,7 +1551,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMD = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -1636,7 +1664,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMDReplicated = objectMDWithUpdatedAccountInfo(data, dstAccountInfo);
+                objMDReplicated = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             putReplicatedNullVersion: next => makeBackbeatRequest({
@@ -1687,4 +1715,5 @@ describe('backbeat routes for replication', () => {
             return done();
         });
     });
+});
 });
