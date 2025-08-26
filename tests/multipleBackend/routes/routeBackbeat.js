@@ -37,12 +37,12 @@ const backbeatAuthCredentials = {
     accessKey: accessKeyId,
     secretKey: secretAccessKey,
 };
-const TEST_BUCKET = 'backbeatbucket';
-const TEST_ENCRYPTED_BUCKET = 'backbeatbucket-encrypted';
+const TEST_BUCKET_PREFIX = 'backbeatbucket';
+const TEST_ENCRYPTED_BUCKET_PREFIX = 'backbeatbucket-encrypted';
 const TEST_KEY = 'fookey';
-const NONVERSIONED_BUCKET = 'backbeatbucket-non-versioned';
-const VERSION_SUSPENDED_BUCKET = 'backbeatbucket-version-suspended';
-const BUCKET_FOR_NULL_VERSION = 'backbeatbucket-null-version';
+const NONVERSIONED_BUCKET_PREFIX = 'backbeatbucket-non-versioned';
+const VERSION_SUSPENDED_BUCKET_PREFIX = 'backbeatbucket-version-suspended';
+const BUCKET_FOR_NULL_VERSION_PREFIX = 'backbeatbucket-null-version';
 
 const testArn = 'aws::iam:123456789012:user/bart';
 const testKey = 'testkey';
@@ -162,6 +162,10 @@ function updateStorageClass(data, storageClass) {
     return { result };
 }
 
+function generateUniqueBucketName(prefix, suffix = uuidv4()) {
+    return `${prefix}-${suffix.substring(0, 8)}`.substring(0, 63);
+}
+
 // FIXME: does not pass for Ceph, see CLDSRV-443
 describeSkipIfNotMultipleOrCeph('backbeat DELETE routes', () => {
     it('abort MPU', done => {
@@ -226,6 +230,12 @@ function getMetadataToPut(putDataResponse) {
 describe('backbeat routes', () => {
     let bucketUtil;
     let s3;
+    const suffix = uuidv4();
+    // These buckets are created once before tests
+    const TEST_BUCKET = generateUniqueBucketName(TEST_BUCKET_PREFIX, suffix);
+    const TEST_ENCRYPTED_BUCKET = generateUniqueBucketName(TEST_ENCRYPTED_BUCKET_PREFIX, suffix);
+    const NONVERSIONED_BUCKET = generateUniqueBucketName(NONVERSIONED_BUCKET_PREFIX, suffix);
+    const VERSION_SUSPENDED_BUCKET = generateUniqueBucketName(VERSION_SUSPENDED_BUCKET_PREFIX, suffix);
 
     before(done => {
         bucketUtil = new BucketUtility(
@@ -288,7 +298,7 @@ describe('backbeat routes', () => {
     );
 
     describe('null version', () => {
-        const bucket = BUCKET_FOR_NULL_VERSION;
+        let bucket;
         const keyName = 'key0';
         const storageClass = 'foo';
 
@@ -306,14 +316,15 @@ describe('backbeat routes', () => {
             assert.strictEqual(StorageClass, 'STANDARD');
         }
 
-        beforeEach(() =>
-            bucketUtil.emptyIfExists(BUCKET_FOR_NULL_VERSION)
-                .then(() => s3.createBucket({ Bucket: BUCKET_FOR_NULL_VERSION }).promise())
-        );
+        beforeEach(() => {
+            bucket = generateUniqueBucketName(BUCKET_FOR_NULL_VERSION_PREFIX);
+            return bucketUtil.emptyIfExists(bucket)
+                .then(() => s3.createBucket({ Bucket: bucket }).promise());
+        });
 
         afterEach(() =>
-            bucketUtil.empty(BUCKET_FOR_NULL_VERSION)
-                .then(() => s3.deleteBucket({ Bucket: BUCKET_FOR_NULL_VERSION }).promise())
+            bucketUtil.empty(bucket)
+                .then(() => s3.deleteBucket({ Bucket: bucket }).promise())
         );
 
         it('should update metadata of a current null version', done => {
