@@ -958,6 +958,7 @@ describe(`backbeat routes for replication (${name})`, () => {
                 if (err) {
                     return next(err);
                 }
+
                 versionId = data.VersionId;
                 return next();
             }),
@@ -974,6 +975,7 @@ describe(`backbeat routes for replication (${name})`, () => {
                 if (err) {
                     return next(err);
                 }
+
                 objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
