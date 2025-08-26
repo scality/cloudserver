@@ -178,9 +178,25 @@ jobs:
         with:
           push: true
           context: .
+          target: production
           provenance: false
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.sha }}
+          labels: |
+            git.repository=${{ github.repository }}
+            git.commit-sha=${{ github.sha }}
+          cache-from: type=gha,scope=cloudserver
+          cache-to: type=gha,mode=max,scope=cloudserver
+
+      - name: Build and push cloudserver image test coverage
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          context: .
+          target: testcoverage
+          provenance: false
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
           labels: |
             git.repository=${{ github.repository }}
             git.commit-sha=${{ github.sha }}
@@ -229,7 +245,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: build
     env:
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       S3BACKEND: mem
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
@@ -295,7 +311,7 @@ jobs:
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
       DEFAULT_BUCKET_KEY_FORMAT: v0
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
@@ -348,7 +364,7 @@ jobs:
       DEFAULT_BUCKET_KEY_FORMAT: v1
       METADATA_MAX_CACHED_BUCKETS: 1
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
@@ -405,7 +421,7 @@ jobs:
     env:
       S3BACKEND: file
       S3VAULT: mem
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       MPU_TESTING: "yes"
       ENABLE_NULL_VERSION_COMPAT_MODE: "${{ matrix.enable-null-compat }}"
@@ -575,7 +591,7 @@ jobs:
       ENABLE_UTAPI_V2: t
       S3BACKEND: mem
       BUCKET_DENY_FILTER: utapi-event-filter-deny-bucket
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
     steps:
@@ -631,7 +647,7 @@ jobs:
       SCUBA_HOST: localhost
       SCUBA_PORT: 8100
       SCUBA_HEALTHCHECK_FREQUENCY: 100
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
     steps:
@@ -678,7 +694,7 @@ jobs:
       S3BACKEND: file
       S3VAULT: mem
       MPU_TESTING: "yes" 
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       PYKMIP_IMAGE: ghcr.io/${{ github.repository }}/pykmip:${{ github.sha }}
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
@@ -738,7 +754,7 @@ jobs:
       S3BACKEND: file
       S3VAULT: mem
       MPU_TESTING: true
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       PYKMIP_IMAGE: ghcr.io/${{ github.repository }}/pykmip:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
       COMPOSE_FILE: docker-compose.yaml:docker-compose.sse.yaml
@@ -804,7 +820,7 @@ jobs:
       MPU_TESTING: "yes" 
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigCeph.json
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       JOB_NAME: ${{ github.job }}
       ENABLE_NULL_VERSION_COMPAT_MODE: true # needed with mongodb backend
     steps:
@@ -925,7 +941,7 @@ jobs:
       VAULT_VERSION_CURRENT: 7.70.32
       CLOUDSERVER_IMAGE_BEFORE_SSE_MIGRATION: ghcr.io/${{ github.repository }}:9.0.8
       VAULT_IMAGE_BEFORE_SSE_MIGRATION: ghcr.io/scality/vault:7.70.31
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       VAULT_IMAGE: ghcr.io/scality/vault:7.70.32
       KMS_IMAGE: nsmithuk/local-kms:3.11.7
       MPU_TESTING: "yes"
