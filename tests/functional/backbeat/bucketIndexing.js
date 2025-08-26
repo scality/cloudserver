@@ -8,9 +8,11 @@ const { runIfMongo } = require('./utils');
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 
+const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+const s3 = bucketUtil.s3;
 const backbeatAuthCredentials = {
-    accessKey: 'accessKey1',
-    secretKey: 'verySecretKey1',
+    accessKey: s3.config.credentials.accessKeyId,
+    secretKey: s3.config.credentials.secretAccessKey,
 };
 
 const TEST_BUCKET = 'backbeatbucket';
@@ -101,18 +103,12 @@ const indexRespObject = [
 ];
 
 runIfMongo('Indexing Routes', () => {
-    let bucketUtil;
-    let s3;
-
     before(done => {
-        bucketUtil = new BucketUtility(
-            'default', { signatureVersion: 'v4' });
-        s3 = bucketUtil.s3;
         s3.createBucket({ Bucket: TEST_BUCKET }).promise()
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
+                done(err);
             });
     });
 

@@ -9,9 +9,11 @@ const testBucket = 'bucket-for-list-lifecycle-orphans-tests';
 const emptyBucket = 'empty-bucket-for-list-lifecycle-orphans-tests';
 const nonVersionedBucket = 'non-versioned-bucket-for-list-lifecycle-orphans-tests';
 
+const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+const s3 = bucketUtil.s3;
 const credentials = {
-    accessKey: 'accessKey1',
-    secretKey: 'verySecretKey1',
+    accessKey: s3.config.credentials.accessKeyId,
+    secretKey: s3.config.credentials.secretAccessKey,
 };
 
 function checkContents(contents) {
@@ -55,15 +57,9 @@ function createOrphanDeleteMarker(s3, bucketName, keyName, cb) {
 }
 
 describe('listLifecycleOrphanDeleteMarkers', () => {
-    let bucketUtil;
-    let s3;
     let date;
 
-    before(done => {
-        bucketUtil = new BucketUtility('account1', { signatureVersion: 'v4' });
-        s3 = bucketUtil.s3;
-
-        return async.series([
+    before(done => async.series([
             next => s3.createBucket({ Bucket: testBucket }, next),
             next => s3.createBucket({ Bucket: emptyBucket }, next),
             next => s3.createBucket({ Bucket: nonVersionedBucket }, next),
@@ -85,8 +81,7 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
                     createOrphanDeleteMarker(s3, testBucket, `key${n}`, cb);
                 }, next);
             },
-        ], done);
-    });
+        ], done));
 
     after(done => async.series([
         next => removeAllVersions({ Bucket: testBucket }, next),
