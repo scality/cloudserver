@@ -913,7 +913,9 @@ describe('backbeat routes for replication', () => {
         });
     });
 
-    it.skip('should replicate/put metadata to a destination that has a null version', done => {
+    // TODO fix and unskip by CLDSRV-632
+    const itSkipNotS3C = process.env.S3_END_TO_END ? it : it.skip;
+    itSkipNotS3C('should replicate/put metadata to a destination that has a null version', done => {
         let objMD;
         let versionId;
 
@@ -987,7 +989,7 @@ describe('backbeat routes for replication', () => {
         });
     });
 
-    it.skip('should replicate/put metadata to a destination that has a suspended null version', done => {
+    itSkipNotS3C('should replicate/put metadata to a destination that has a suspended null version', done => {
         let objMD;
         let versionId;
 
@@ -1062,7 +1064,7 @@ describe('backbeat routes for replication', () => {
         });
     });
 
-    it.skip('should replicate/put metadata to a destination that has a previously updated null version', done => {
+    itSkipNotS3C('should replicate/put metadata to a destination that has a previously updated null version', done => {
         let objMD;
         let objMDNull;
         let versionId;
@@ -1163,7 +1165,8 @@ describe('backbeat routes for replication', () => {
         });
     });
 
-    it.skip('should replicate/put metadata to a destination that has a suspended null version with internal version',
+    itSkipNotS3C(
+        'should replicate/put metadata to a destination that has a suspended null version with internal version',
     done => {
         const tagSet = [
             {
@@ -1252,7 +1255,7 @@ describe('backbeat routes for replication', () => {
         });
     });
 
-    it.skip('should mimic null version replication by crrExistingObjects, then replicate version', done => {
+    itSkipNotS3C('should mimic null version replication by crrExistingObjects, then replicate version', done => {
         let objMDNull;
         let objMDNullReplicated;
         let objMDVersion;
