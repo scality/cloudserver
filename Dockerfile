@@ -30,7 +30,7 @@ COPY package.json yarn.lock /usr/src/app/
 RUN yarn install --production --ignore-optional --frozen-lockfile --ignore-engines --network-concurrency 1
 
 ################################################################################
-FROM node:${NODE_VERSION}
+FROM node:${NODE_VERSION} AS production
 
 ENV NO_PROXY=localhost,127.0.0.1
 ENV no_proxy=localhost,127.0.0.1
@@ -55,3 +55,10 @@ VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 ENTRYPOINT ["tini", "-g", "--", "/usr/src/app/docker-entrypoint.sh"]
 
 CMD [ "yarn", "start" ]
+
+################################################################################
+FROM production AS testcoverage
+
+RUN yarn global add nyc
+
+CMD [ "./docker-test-with-coverage.sh" ]

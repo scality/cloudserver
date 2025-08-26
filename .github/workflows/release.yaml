@@ -48,7 +48,18 @@ jobs:
         with:
           context: .
           push: true
+          target: production
           tags: ghcr.io/${{ github.repository }}:${{ github.event.inputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push test coverage image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          target: testcoverage
+          tags: ghcr.io/${{ github.repository }}:${{ github.event.inputs.tag }}-testcoverage
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
