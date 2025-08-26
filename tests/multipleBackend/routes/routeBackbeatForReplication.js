@@ -343,13 +343,13 @@ describe('backbeat routes for replication', () => {
                 objectKey: keyName,
                 queryObj: {
                     versionId,
-                    accountId: 'invalid',
+                    accountId: '888888888888', // Vault v1 differentiate InvalidAccountId from NoSuchEntity
                 },
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
         }, err => {
-            assert.strictEqual(err.code, 'AccountNotFound');
+            assert.strictEqual(err.code, process.env.S3_END_TO_END ? 'NoSuchEntity' : 'AccountNotFound');
             return done();
         });
     });
