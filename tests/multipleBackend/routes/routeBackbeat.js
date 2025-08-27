@@ -2165,6 +2165,8 @@ describe('backbeat routes', () => {
         });
     });
     describe('backbeat authorization checks', () => {
+        const { accessKeyId: accessKeyLisa, secretAccessKey: secretAccessKeyLisa } = getCredentials('lisa');
+
         [{ method: 'PUT', resourceType: 'metadata' },
          { method: 'PUT', resourceType: 'data' }].forEach(test => {
              const queryObj = test.resourceType === 'data' ? { v2: '' } : {};
@@ -2211,8 +2213,8 @@ describe('backbeat routes', () => {
                         objectKey: TEST_KEY, resourceType: test.resourceType,
                         queryObj,
                         authCredentials: {
-                            accessKey: 'accessKey2',
-                            secretKey: 'verySecretKey2',
+                            accessKey: accessKeyLisa,
+                            secretKey: secretAccessKeyLisa,
                         },
                     },
                     err => {
