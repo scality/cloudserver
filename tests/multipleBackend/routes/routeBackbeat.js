@@ -84,6 +84,11 @@ const testMd = {
     },
 };
 
+// S3_TESTVAL_OWNERCANONICALID variable is used by Integration that runs E2E tests with real Vault account.
+if (process.env.S3_TESTVAL_OWNERCANONICALID) {
+    testMd['owner-id'] = process.env.S3_TESTVAL_OWNERCANONICALID;
+}
+
 const nonVersionedTestMd = {
     'owner-display-name': 'Bart',
     'owner-id': ('79a59df900b949e55d96a1e698fbaced' +
@@ -168,6 +173,7 @@ const describeIfLocationAws = hasLocation(awsLocation) ? describe : describe.ski
 const itIfLocationAwsSkipCeph = hasLocation(awsLocation) ? itSkipCeph : it.skip;
 const itIfLocationAws = hasLocation(awsLocation) ? it : it.skip;
 const itIfLocationAzure = hasLocation(azureLocation) ? it : it.skip;
+const itSkipS3C = process.env.S3_END_TO_END ? it.skip : it;
 
 // FIXME: does not pass for Ceph, see CLDSRV-443
 describeSkipIfNotMultipleOrCeph('backbeat DELETE routes', () => {
@@ -2647,7 +2653,8 @@ describe('backbeat routes', () => {
                 done();
             });
         });
-        it('should skip batch delete of a non-existent location', done => {
+        // TODO: unskip test when S3C-9123 is fixed
+        itSkipS3C('should skip batch delete of a non-existent location', done => {
             async.series([
                 done => {
                     const options = {
