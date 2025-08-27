@@ -2244,44 +2244,59 @@ describe('backbeat routes', () => {
                     });
                 });
          });
-        it('GET  /_/backbeat/api/... should respond with ' +
-           '503 on authenticated requests (API server down)',
-           done => {
-               const options = {
-                   authCredentials: {
-                       accessKey: 'accessKey2',
-                       secretKey: 'verySecretKey2',
-                   },
-                   hostname: ipAddress,
-                   port: 8000,
-                   method: 'GET',
-                   path: '/_/backbeat/api/crr/failed',
-                   jsonResponse: true,
-               };
-               makeRequest(options, err => {
-                   assert(err);
-                   assert.strictEqual(err.statusCode, 503);
-                   assert.strictEqual(err.code, 'ServiceUnavailable');
-                   done();
-               });
-           });
-        it('GET  /_/backbeat/api/... should respond with ' +
-           '403 Forbidden if the request is unauthenticated',
-           done => {
-               const options = {
-                   hostname: ipAddress,
-                   port: 8000,
-                   method: 'GET',
-                   path: '/_/backbeat/api/crr/failed',
-                   jsonResponse: true,
-               };
-               makeRequest(options, err => {
-                   assert(err);
-                   assert.strictEqual(err.statusCode, 403);
-                   assert.strictEqual(err.code, 'AccessDenied');
-                   done();
-               });
-           });
+
+        const apiProxy = !!config.backbeat;
+        describe(`when api proxy is ${apiProxy ? '' : 'NOT '}configured`, () => {
+            const errors = {
+                403: 'AccessDenied',
+                405: 'MethodNotAllowed',
+                503: 'ServiceUnavailable',
+            };
+
+            it(`GET /_/backbeat/api/... should respond with ${
+                apiProxy ? 503 : 405
+            } on authenticated requests (API server down)`,
+                done => {
+                    const options = {
+                        authCredentials: {
+                            accessKey: accessKeyLisa,
+                            secretKey: secretAccessKeyLisa,
+                        },
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'GET',
+                        path: '/_/backbeat/api/crr/failed',
+                        jsonResponse: true,
+                    };
+                    makeRequest(options, err => {
+                        assert(err);
+                        const expected = apiProxy ? 503 : 405;
+                        assert.strictEqual(err.statusCode, expected);
+                        assert.strictEqual(err.code, errors[expected]);
+                        done();
+                    });
+                });
+
+            it(`GET /_/backbeat/api/... should respond with ${
+                apiProxy ? 403 : 405
+            } if the request is unauthenticated`,
+                done => {
+                    const options = {
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'GET',
+                        path: '/_/backbeat/api/crr/failed',
+                        jsonResponse: true,
+                    };
+                    makeRequest(options, err => {
+                        assert(err);
+                        const expected = apiProxy ? 403 : 405;
+                        assert.strictEqual(err.statusCode, expected);
+                        assert.strictEqual(err.code, errors[expected]);
+                        done();
+                    });
+                });
+        });
     });
 
     describe('GET Metadata route', () => {
