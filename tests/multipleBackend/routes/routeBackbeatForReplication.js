@@ -1606,6 +1606,7 @@ describe(`backbeat routes for replication (${name})`, () => {
         let versionId;
 
         async.series({
+            // === SETUP PHASE ===
             enableVersioningDestination: next => dstS3.putBucketVersioning({
                 Bucket: bucketDestination,
                 VersioningConfiguration: { Status: 'Enabled' },
@@ -1630,7 +1631,9 @@ describe(`backbeat routes for replication (${name})`, () => {
                 Bucket: bucketSource,
                 VersioningConfiguration: { Status: 'Enabled' },
             }, next),
-            simulateLifecycleNullVersion: next => makeBackbeatRequest({
+            // === LIFECYCLE SIMULATION PHASE ===
+            // Lifecycle Simulation: GET current null version metadata
+            getSourceNullVersionForLifecycle: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
                 bucket: bucketSource,
@@ -1644,7 +1647,12 @@ describe(`backbeat routes for replication (${name})`, () => {
                 objMDUpdated = JSON.parse(data.body).Body;
                 return next();
             }),
-            updateMetadataSource: next => makeBackbeatRequest({
+            // Lifecycle Simulation: Apply lifecycle changes to null version metadata
+            // Lifecycle changes can consist of:
+            // - storage class transitions (STANDARD -> IA -> GLACIER)
+            // - data location changes (different storage backend)
+            // Here metadata is unchanged for the simulation
+            applyLifecycleToSourceNullVersion: next => makeBackbeatRequest({
                 method: 'PUT',
                 resourceType: 'metadata',
                 bucket: bucketSource,
@@ -1653,7 +1661,9 @@ describe(`backbeat routes for replication (${name})`, () => {
                 authCredentials: sourceAuthCredentials,
                 requestBody: objMDUpdated,
             }, next),
-            getReplicatedNullVersion: next => makeBackbeatRequest({
+            // === REPLICATION PHASE ===
+            // Replication: GET lifecycled metadata from source for replication
+            getSourceLifecycledNullVersionForReplication: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
                 bucket: bucketSource,
@@ -1667,7 +1677,8 @@ describe(`backbeat routes for replication (${name})`, () => {
                 objMDReplicated = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
-            putReplicatedNullVersion: next => makeBackbeatRequest({
+            // Replication: PUT lifecycled null version to destination
+            replicateLifecycledNullVersionToDestination: next => makeBackbeatRequest({
                 method: 'PUT',
                 resourceType: 'metadata',
                 bucket: bucketDestination,
@@ -1676,6 +1687,7 @@ describe(`backbeat routes for replication (${name})`, () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMDReplicated,
             }, next),
+            // === VALIDATION PHASE ===
             headObjectByVersionId: next => dstS3.headObject({
                 Bucket: bucketDestination,
                 Key: keyName,
