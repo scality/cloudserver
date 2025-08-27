@@ -280,7 +280,7 @@ describe('backbeat routes', () => {
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
+                done(err);
             });
     });
 
@@ -2320,6 +2320,7 @@ describe('backbeat routes', () => {
                     versionId: versionIdUtils.encode(testMd.versionId),
                 },
             }, (err, data) => {
+                assert.ifError(err);
                 const parsedBody = JSON.parse(JSON.parse(data.body).Body);
                 assert.strictEqual(data.statusCode, 200);
                 assert.deepStrictEqual(parsedBody, testMd);
@@ -2337,7 +2338,10 @@ describe('backbeat routes', () => {
                 },
             }, (err, data) => {
                 assert.strictEqual(data.statusCode, 404);
-                assert.strictEqual(JSON.parse(data.body).code, 'NoSuchBucket');
+                const body = JSON.parse(data.body);
+                assert.strictEqual(body.code, 'NoSuchBucket');
+                // err is parsed data.body + statusCode
+                assert.deepStrictEqual(err, { ...body, statusCode: data.statusCode });
                 done();
             });
         });
@@ -2352,7 +2356,10 @@ describe('backbeat routes', () => {
                 },
             }, (err, data) => {
                 assert.strictEqual(data.statusCode, 404);
-                assert.strictEqual(JSON.parse(data.body).code, 'ObjNotFound');
+                const body = JSON.parse(data.body);
+                assert.strictEqual(body.code, 'ObjNotFound');
+                // err is parsed data.body + statusCode
+                assert.deepStrictEqual(err, { ...body, statusCode: data.statusCode });
                 done();
             });
         });
