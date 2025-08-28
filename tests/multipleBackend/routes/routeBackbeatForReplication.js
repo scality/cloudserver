@@ -20,8 +20,31 @@ const destinationAuthCredentials = {
     secretKey: destinationCreds.secretAccessKey,
 };
 
+// Note: for S3C tests, those conf files needs to be modified beforehand
 const dstAccountInfo = require('../../../conf/authdata.json')
     .accounts.find(acc => acc.name === 'Replication');
+const srcAccountInfo = require('../../../conf/authdata.json')
+    .accounts.find(acc => acc.name === 'Bart');
+
+const srcBucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+const srcS3 = srcBucketUtil.s3;
+
+const dstBucketUtil = new BucketUtility('replication', { signatureVersion: 'v4' });
+const dstS3 = dstBucketUtil.s3;
+
+const src = {
+    credentials: sourceAuthCredentials,
+    bucketUtil: srcBucketUtil,
+    s3: srcS3,
+    accountInfo: srcAccountInfo,
+};
+
+const dst = {
+    credentials: destinationAuthCredentials,
+    bucketUtil: dstBucketUtil,
+    s3: dstS3,
+    accountInfo: dstAccountInfo,
+};
 
 const testData = 'testkey data';
 
@@ -35,12 +58,30 @@ function objectMDFromRequestBody(data) {
     return new ObjectMD(JSON.parse(bodyStr));
 }
 
-describe('backbeat routes for replication', () => {
-    const srcBucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
-    const srcS3 = srcBucketUtil.s3;
+// Backbeat updates account info in metadata to the destination account info
+function objectMDWithUpdatedAccountInfo(data, dstAccountInfo = null) {
+    const objMD = objectMDFromRequestBody(data);
 
-    const dstBucketUtil = new BucketUtility('replication', { signatureVersion: 'v4' });
-    const dstS3 = dstBucketUtil.s3;
+    if (dstAccountInfo) {
+        objMD
+            .setOwnerDisplayName(dstAccountInfo.name)
+            .setOwnerId(dstAccountInfo.canonicalID);
+    }
+
+    return objMD.getSerialized();
+}
+
+const scenarios = [
+    // S3C Integration can replicate to the same account
+    { name: 'same account', src, dst: src },
+    { name: 'cross account', src, dst },
+];
+
+scenarios.forEach(({ name, src, dst }) => {
+describe(`backbeat routes for replication (${name})`, () => {
+    const { s3: srcS3, bucketUtil: srcBucketUtil, credentials: sourceAuthCredentials } = src;
+    const { s3: dstS3, bucketUtil: dstBucketUtil, credentials: destinationAuthCredentials } = dst;
+    const { accountInfo: dstAccountInfo } = dst;
 
     let bucketSource;
     let bucketDestination;
@@ -93,12 +134,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMD = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -163,12 +199,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMD = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -252,8 +283,8 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMD = objectMDFromRequestBody(data)
-                    .getSerialized();
+                // AccountInfo not provided here as the replicateMetadata request should do it
+                objMD = objectMDWithUpdatedAccountInfo(data, null);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -329,8 +360,8 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                objMD = objectMDFromRequestBody(data)
-                    .getSerialized();
+                // AccountInfo not provided here as the replicateMetadata request should do it
+                objMD = objectMDWithUpdatedAccountInfo(data, null);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -340,13 +371,13 @@ describe('backbeat routes for replication', () => {
                 objectKey: keyName,
                 queryObj: {
                     versionId,
-                    accountId: 'invalid',
+                    accountId: '888888888888', // Vault v1 differentiate InvalidAccountId from NoSuchEntity
                 },
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
         }, err => {
-            assert.strictEqual(err.code, 'AccountNotFound');
+            assert.strictEqual(err.code, process.env.S3_END_TO_END ? 'NoSuchEntity' : 'AccountNotFound');
             return done();
         });
     });
@@ -389,12 +420,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMDNonCurrent = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMDNonCurrent = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             getMetadataCurrent: next => makeBackbeatRequest({
@@ -410,12 +436,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMDCurrent = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMDCurrent = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             // replicating the objects in the reverse order
@@ -501,12 +522,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMDVersion = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMDVersion = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadataVersion: next => makeBackbeatRequest({
@@ -533,12 +549,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMDDeleteMarker = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMDDeleteMarker = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadataDeleteMarker: next => makeBackbeatRequest({
@@ -597,12 +608,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMD = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -664,12 +670,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMD = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -729,12 +730,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMD = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -815,12 +811,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMD = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -904,12 +895,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMD = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -955,7 +941,9 @@ describe('backbeat routes for replication', () => {
         });
     });
 
-    it.skip('should replicate/put metadata to a destination that has a null version', done => {
+    // TODO fix and unskip by CLDSRV-632
+    const itSkipNotS3C = process.env.S3_END_TO_END ? it : it.skip;
+    itSkipNotS3C('should replicate/put metadata to a destination that has a null version', done => {
         let objMD;
         let versionId;
 
@@ -987,12 +975,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMD = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -1034,7 +1017,7 @@ describe('backbeat routes for replication', () => {
         });
     });
 
-    it.skip('should replicate/put metadata to a destination that has a suspended null version', done => {
+    itSkipNotS3C('should replicate/put metadata to a destination that has a suspended null version', done => {
         let objMD;
         let versionId;
 
@@ -1068,12 +1051,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMD = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -1114,7 +1092,7 @@ describe('backbeat routes for replication', () => {
         });
     });
 
-    it.skip('should replicate/put metadata to a destination that has a previously updated null version', done => {
+    itSkipNotS3C('should replicate/put metadata to a destination that has a previously updated null version', done => {
         let objMD;
         let objMDNull;
         let versionId;
@@ -1174,12 +1152,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMD = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -1220,7 +1193,8 @@ describe('backbeat routes for replication', () => {
         });
     });
 
-    it.skip('should replicate/put metadata to a destination that has a suspended null version with internal version',
+    itSkipNotS3C(
+        'should replicate/put metadata to a destination that has a suspended null version with internal version',
     done => {
         const tagSet = [
             {
@@ -1263,12 +1237,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMD = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -1314,7 +1283,7 @@ describe('backbeat routes for replication', () => {
         });
     });
 
-    it.skip('should mimic null version replication by crrExistingObjects, then replicate version', done => {
+    itSkipNotS3C('should mimic null version replication by crrExistingObjects, then replicate version', done => {
         let objMDNull;
         let objMDNullReplicated;
         let objMDVersion;
@@ -1368,12 +1337,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMDNullReplicated = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMDNullReplicated = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             putReplicatedNullVersion: next => makeBackbeatRequest({
@@ -1408,12 +1372,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMDVersion = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMDVersion = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             listObjectVersionsBeforeReplicate: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
@@ -1501,12 +1460,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMD = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -1597,12 +1551,7 @@ describe('backbeat routes for replication', () => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMD = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
             replicateMetadata: next => makeBackbeatRequest({
@@ -1657,6 +1606,7 @@ describe('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
+            // === SETUP PHASE ===
             enableVersioningDestination: next => dstS3.putBucketVersioning({
                 Bucket: bucketDestination,
                 VersioningConfiguration: { Status: 'Enabled' },
@@ -1681,7 +1631,9 @@ describe('backbeat routes for replication', () => {
                 Bucket: bucketSource,
                 VersioningConfiguration: { Status: 'Enabled' },
             }, next),
-            simulateLifecycleNullVersion: next => makeBackbeatRequest({
+            // === LIFECYCLE SIMULATION PHASE ===
+            // Lifecycle Simulation: GET current null version metadata
+            getSourceNullVersionForLifecycle: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
                 bucket: bucketSource,
@@ -1695,7 +1647,12 @@ describe('backbeat routes for replication', () => {
                 objMDUpdated = JSON.parse(data.body).Body;
                 return next();
             }),
-            updateMetadataSource: next => makeBackbeatRequest({
+            // Lifecycle Simulation: Apply lifecycle changes to null version metadata
+            // Lifecycle changes can consist of:
+            // - storage class transitions (STANDARD -> IA -> GLACIER)
+            // - data location changes (different storage backend)
+            // Here metadata is unchanged for the simulation
+            applyLifecycleToSourceNullVersion: next => makeBackbeatRequest({
                 method: 'PUT',
                 resourceType: 'metadata',
                 bucket: bucketSource,
@@ -1704,26 +1661,24 @@ describe('backbeat routes for replication', () => {
                 authCredentials: sourceAuthCredentials,
                 requestBody: objMDUpdated,
             }, next),
-            getReplicatedNullVersion: next => makeBackbeatRequest({
+            // === REPLICATION PHASE ===
+            // Replication: GET lifecycled metadata from source for replication
+            getSourceLifecycledNullVersionForReplication: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
                 bucket: bucketSource,
                 objectKey: keyName,
                 queryObj: { versionId: 'null' },
-                authCredentials: destinationAuthCredentials,
+                authCredentials: sourceAuthCredentials,
             }, (err, data) => {
                 if (err) {
                     return next(err);
                 }
-                // Backbeat updates account info in metadata
-                // to the destination account info
-                objMDReplicated = objectMDFromRequestBody(data)
-                    .setOwnerDisplayName(dstAccountInfo.name)
-                    .setOwnerId(dstAccountInfo.canonicalID)
-                    .getSerialized();
+                objMDReplicated = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
-            putReplicatedNullVersion: next => makeBackbeatRequest({
+            // Replication: PUT lifecycled null version to destination
+            replicateLifecycledNullVersionToDestination: next => makeBackbeatRequest({
                 method: 'PUT',
                 resourceType: 'metadata',
                 bucket: bucketDestination,
@@ -1732,6 +1687,7 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMDReplicated,
             }, next),
+            // === VALIDATION PHASE ===
             headObjectByVersionId: next => dstS3.headObject({
                 Bucket: bucketDestination,
                 Key: keyName,
@@ -1771,4 +1727,5 @@ describe('backbeat routes for replication', () => {
             return done();
         });
     });
+});
 });
