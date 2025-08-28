@@ -11,10 +11,15 @@ if (config.backends.data === 'multiple') {
     describeSkipIfNotMultipleOrCeph = isCEPH ? describe.skip : describe.skip; // always skip
 }
 
+function hasLocation(lc) {
+    return config.locationConstraints[lc] !== undefined;
+}
+
 module.exports = {
     isCEPH,
     itSkipCeph,
     describeSkipIfCeph,
     describeSkipIfNotMultiple,
     describeSkipIfNotMultipleOrCeph,
+    hasLocation,
 };
