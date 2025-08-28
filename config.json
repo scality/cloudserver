@@ -52,6 +52,13 @@
         "logLevel": "info",
         "dumpLevel": "error"
     },
+    "apiLog": {
+        "enabled": true,
+        "logLevel": "info",
+        "dumpLevel": "error",
+        "outputFile": "/home/dvasilas/Federation/poc-fluentbit/logs/s3-access.log",
+        "enabledBuckets": ["test-bucket-a", "test-bucket-b", "test-bucket-c", "test-bucket-d", "test-bucket-e"]
+    },
     "healthChecks": {
         "allowFrom": ["127.0.0.1/8", "::1"]
     },
@@ -91,7 +98,7 @@
     "kmsHideScalityArn": false,
     "kmsAWS": {
         "providerName": "aws",
-        "region": "us-east-1", 
+        "region": "us-east-1",
         "endpoint": "http://127.0.0.1:8080",
         "ak": "tbd",
         "sk": "tbd"
