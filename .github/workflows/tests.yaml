@@ -469,10 +469,8 @@ jobs:
 
   # Configure and run as Integration run S3C tests
   s3c-ft-tests:
-    # This job for now ignore errors until all unification and backbeat tests are fixed
     runs-on: ubuntu-24.04
     needs: build
-    continue-on-error: true
     env:
       S3BACKEND: file
       S3DATA: scality
@@ -513,7 +511,6 @@ jobs:
       run: ./setup-s3c.sh
       working-directory: .github/docker
     - name: Run cloudserver-object tests
-      continue-on-error: true
       env:
         S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
         S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
@@ -521,7 +518,6 @@ jobs:
         set -o pipefail;
         yarn run ft_awssdk_objects_misc | tee /tmp/artifacts/${{ github.job }}/ft_awssdk_objects_misc.log
     - name: Run cloudserver-version tests
-      continue-on-error: true
       env:
         S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
         S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
@@ -529,7 +525,6 @@ jobs:
         set -o pipefail;
         yarn run ft_awssdk_versioning | tee /tmp/artifacts/${{ github.job }}/ft_awssdk_versioning.log
     - name: Run cloudserver-bucket tests
-      continue-on-error: true
       env:
         S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
         S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
@@ -537,7 +532,6 @@ jobs:
         set -o pipefail;
         yarn run ft_awssdk_buckets | tee /tmp/artifacts/${{ github.job }}/ft_awssdk_buckets.log
     - name: Run cloudserver-routes (metadata) tests
-      continue-on-error: true
       env:
         S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
         S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
@@ -545,7 +539,6 @@ jobs:
         set -o pipefail;
         yarn run ft_node_routes | tee /tmp/artifacts/${{ github.job }}/ft_node_routes.log
     - name: Run backbeat route tests
-      continue-on-error: true
       env:
         S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
         S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
@@ -553,7 +546,6 @@ jobs:
         set -o pipefail;
         yarn run ft_route_backbeat | tee /tmp/artifacts/${{ github.job }}/ft_route_backbeat.log
     - name: Run backbeat tests
-      continue-on-error: true
       env:
         S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
         S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
