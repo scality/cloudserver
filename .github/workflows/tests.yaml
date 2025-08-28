@@ -552,6 +552,9 @@ jobs:
       run: |-
         set -o pipefail;
         yarn run ft_backbeat | tee /tmp/artifacts/${{ github.job }}/ft_backbeat.log
+    - name: Teardown CI services
+      run: docker compose down redis sproxyd metadata-standalone vault-sse-before-migration cloudserver-sse-before-migration
+      working-directory: .github/docker
     - name: Cleanup and upload coverage
       uses: ./.github/actions/cleanup-and-coverage
       with:
