@@ -112,7 +112,7 @@ describe(`backbeat routes for replication (${name})`, () => {
             enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
             putObject: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
                     if (err) {
                         return next(err);
                     }
@@ -177,7 +177,7 @@ describe(`backbeat routes for replication (${name})`, () => {
             enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
             putObject: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
                     if (err) {
                         return next(err);
                     }
@@ -261,7 +261,7 @@ describe(`backbeat routes for replication (${name})`, () => {
             enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
             putObject: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
                     if (err) {
                         return next(err);
                     }
@@ -338,7 +338,7 @@ describe(`backbeat routes for replication (${name})`, () => {
             enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
             putObject: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
                     if (err) {
                         return next(err);
                     }
@@ -390,7 +390,7 @@ describe(`backbeat routes for replication (${name})`, () => {
             enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
             putObjectNonCurrent: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
                     if (err) {
                         return next(err);
                     }
@@ -398,7 +398,7 @@ describe(`backbeat routes for replication (${name})`, () => {
                     return next();
                 }),
             putObjectCurrent: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
                     if (err) {
                         return next(err);
                     }
@@ -492,7 +492,7 @@ describe(`backbeat routes for replication (${name})`, () => {
             enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
             putObject: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
                     if (err) {
                         return next(err);
                     }
@@ -590,7 +590,7 @@ describe(`backbeat routes for replication (${name})`, () => {
 
         async.series({
             putObject: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, next),
+                { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, next),
             enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
             enableVersioningDestination: next => dstS3.putBucketVersioning(
@@ -652,7 +652,7 @@ describe(`backbeat routes for replication (${name})`, () => {
             suspendVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Suspended' } }, next),
             putObject: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, next),
+                { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, next),
             enableVersioningSource: next => srcS3.putBucketVersioning(
                 { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
             enableVersioningDestination: next => dstS3.putBucketVersioning(
