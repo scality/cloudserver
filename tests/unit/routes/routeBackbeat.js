@@ -261,14 +261,18 @@ describe('routeBackbeat', () => {
             mockRequest.url = '/_/backbeat/metadata/bucket0/key0' +
                 '?accountId=123456789012&versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
-            sandbox.stub(metadata, 'putObjectMD').callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+            const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
+            putObjectMDStub.onCall(0).callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+                assert.strictEqual(options.repairMaster, undefined);
+                cb(null, {});
+            });
+            putObjectMDStub.onCall(1).callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
                 assert.strictEqual(options.repairMaster, true);
                 cb(null, {});
             });
 
-            // Override default callback to return undefined for objMd to simulate new version
-            metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
-                callback(null, bucketInfo, undefined);
+            metadataUtils.standardMetadataValidateBucketAndObj.onCall(1).callsFake((params, denies, log, callback) => {
+                callback(null, bucketInfo, {});
             });
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
