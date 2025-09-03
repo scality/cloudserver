@@ -469,6 +469,19 @@ jobs:
 
   # Configure and run as Integration run S3C tests
   s3c-ft-tests:
+    strategy:
+      matrix:
+        include:
+          - vformat: v0
+            enable-null-compat: ''
+            job-name: s3c-ft-tests-v0
+          - vformat: v0
+            enable-null-compat: 'true'
+            job-name: s3c-ft-tests-v0-null-compat
+          - vformat: v1
+            enable-null-compat: ''
+            job-name: s3c-ft-tests-v1
+    name: ${{ matrix.job-name }}
     runs-on: ubuntu-24.04
     needs: build
     env:
@@ -478,10 +491,11 @@ jobs:
       S3VAULT: scality
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
       MPU_TESTING: "yes"
-      ENABLE_NULL_VERSION_COMPAT_MODE: true
+      DEFAULT_BUCKET_KEY_FORMAT: ${{ matrix.vformat }}
+      ENABLE_NULL_VERSION_COMPAT_MODE: ${{ matrix.enable-null-compat }}
       COMPOSE_FILE: docker-compose.yaml:docker-compose.sse.yaml
       S3_VERSION_ID_ENCODING_TYPE: hex
-      JOB_NAME: ${{ github.job }}
+      JOB_NAME: ${{ matrix.job-name }}
       VAULT_IMAGE: ghcr.io/scality/vault:7.76.0
       S3_END_TO_END: true
       S3_TESTVAL_OWNERCANONICALID: 79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be
@@ -496,6 +510,14 @@ jobs:
         password: ${{ github.token }}
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
+    - name: Setup matrix job artifacts directory
+      shell: bash
+      run: |
+        set -exu
+        mkdir -p /tmp/artifacts/${{ matrix.job-name }}/
+    - name: Modify md-config.json for vformat
+      run: |
+        sed -i 's/\("METADATA_NEW_BUCKETS_VFORMAT":\s*\)"[^"]*"/\1"${{ matrix.vformat }}"/' .github/docker/md-config.json
     - name: Copy S3C config
       run: cp .github/docker/config.s3c.json tests/functional/sse-kms-migration/config.json
     - name: Setup CI services
@@ -516,42 +538,42 @@ jobs:
         S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
       run: |-
         set -o pipefail;
-        yarn run ft_awssdk_objects_misc | tee /tmp/artifacts/${{ github.job }}/ft_awssdk_objects_misc.log
+        yarn run ft_awssdk_objects_misc | tee /tmp/artifacts/${{ matrix.job-name }}/ft_awssdk_objects_misc.log
     - name: Run cloudserver-version tests
       env:
         S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
         S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
       run: |-
         set -o pipefail;
-        yarn run ft_awssdk_versioning | tee /tmp/artifacts/${{ github.job }}/ft_awssdk_versioning.log
+        yarn run ft_awssdk_versioning | tee /tmp/artifacts/${{ matrix.job-name }}/ft_awssdk_versioning.log
     - name: Run cloudserver-bucket tests
       env:
         S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
         S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
       run: |-
         set -o pipefail;
-        yarn run ft_awssdk_buckets | tee /tmp/artifacts/${{ github.job }}/ft_awssdk_buckets.log
+        yarn run ft_awssdk_buckets | tee /tmp/artifacts/${{ matrix.job-name }}/ft_awssdk_buckets.log
     - name: Run cloudserver-routes (metadata) tests
       env:
         S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
         S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
       run: |-
         set -o pipefail;
-        yarn run ft_node_routes | tee /tmp/artifacts/${{ github.job }}/ft_node_routes.log
+        yarn run ft_node_routes | tee /tmp/artifacts/${{ matrix.job-name }}/ft_node_routes.log
     - name: Run backbeat route tests
       env:
         S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
         S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
       run: |-
         set -o pipefail;
-        yarn run ft_route_backbeat | tee /tmp/artifacts/${{ github.job }}/ft_route_backbeat.log
+        yarn run ft_route_backbeat | tee /tmp/artifacts/${{ matrix.job-name }}/ft_route_backbeat.log
     - name: Run backbeat tests
       env:
         S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
         S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
       run: |-
         set -o pipefail;
-        yarn run ft_backbeat | tee /tmp/artifacts/${{ github.job }}/ft_backbeat.log
+        yarn run ft_backbeat | tee /tmp/artifacts/${{ matrix.job-name }}/ft_backbeat.log
     - name: Teardown CI services
       run: docker compose down redis sproxyd metadata-standalone vault-sse-before-migration cloudserver-sse-before-migration
       working-directory: .github/docker
@@ -559,14 +581,14 @@ jobs:
       uses: ./.github/actions/cleanup-and-coverage
       with:
         codecov-token: ${{ secrets.CODECOV_TOKEN }}
-        flags: s3c-ft-tests
+        flags: ${{ matrix.job-name }}
       if: always()
     - name: Upload test results to Codecov
       uses: codecov/test-results-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: '**/junit/*junit*.xml'
-        flags: s3c-ft-tests
+        flags: ${{ matrix.job-name }}
       if: always() && !cancelled()
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v4

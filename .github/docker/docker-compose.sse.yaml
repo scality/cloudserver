@@ -47,5 +47,5 @@ services:
     profiles: ['metadata-standalone']
     network_mode: 'host'
     volumes:
-      - ./md-config-v0.json:/mnt/standalone_workdir/config.json:ro
+      - ./md-config.json:/mnt/standalone_workdir/config.json:ro
       - /tmp/artifacts/${JOB_NAME}/md:/mnt/standalone_workdir/log
