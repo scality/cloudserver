@@ -2466,6 +2466,7 @@ describe('backbeat routes', () => {
                     }),
             ], done);
         });
+
         it('should put tags if the source is Azure and tags are provided ' +
         'when completing the multipart upload', done => {
             const containerName = getAzureContainerName(azureLocation);
