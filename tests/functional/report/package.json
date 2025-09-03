@@ -1,5 +1,6 @@
 {
     "name": "report-tests",
+    "private": true,
     "scripts": {
         "test": "mocha -t 40000 *.js"
     }
