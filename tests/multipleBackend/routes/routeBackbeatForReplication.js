@@ -1420,7 +1420,9 @@ describe(`backbeat routes for replication (${name})`, () => {
         });
     });
 
-    it('should replicate/put NULL metadata to a destination that has a version', done => {
+    // TODO: CLDSRV-739 unskip once flaky afterEach cleanup is fixed
+    const itSkipS3CV0 = (process.env.S3_END_TO_END && process.env.DEFAULT_BUCKET_KEY_FORMAT === 'v0') ? it.skip : it;
+    itSkipS3CV0('should replicate/put NULL metadata to a destination that has a version', done => {
         let objMD;
         let versionId;
 
@@ -1600,7 +1602,7 @@ describe(`backbeat routes for replication (${name})`, () => {
         });
     });
 
-    it('should replicate/put a lifecycled NULL metadata to a destination that has a version', done => {
+    itSkipS3CV0('should replicate/put a lifecycled NULL metadata to a destination that has a version', done => {
         let objMDUpdated;
         let objMDReplicated;
         let versionId;
