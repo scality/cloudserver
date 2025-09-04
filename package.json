@@ -30,7 +30,7 @@
     "cron-parser": "^4.9.0",
     "diskusage": "^1.2.0",
     "google-auto-auth": "^0.10.1",
-    "http-proxy": "^1.18.1",
+    "http-proxy": "npm:http-proxy-3@^1.21.0",
     "http-proxy-agent": "^7.0.2",
     "https-proxy-agent": "^7.0.5",
     "level-mem": "^5.0.1",
