@@ -9,6 +9,26 @@ describe('Middleware: Collect Response Headers', () => {
         assert.deepStrictEqual(headers['x-amz-replication-status'], 'REPLICA');
     });
 
+    it('should set the replication status of each site', () => {
+        const objectMD = {
+            replicationInfo: {
+                status: 'COMPLETED',
+                backends: [
+                    { site: 'us-east-1', status: 'COMPLETED', dataStoreVersionId: '123' },
+                    { site: 'us-west-2', status: 'COMPLETED', dataStoreVersionId: '' },
+                ],
+            },
+        };
+        const headers = collectResponseHeaders(objectMD);
+        assert.deepStrictEqual(headers['x-amz-replication-status'], 'COMPLETED');
+        assert.deepStrictEqual(headers['x-amz-meta-us-east-1-replication-status'],
+            'COMPLETED');
+        assert.deepStrictEqual(headers['x-amz-meta-us-east-1-version-id'], '123');
+        assert.deepStrictEqual(headers['x-amz-meta-us-west-2-replication-status'],
+            'COMPLETED');
+        assert.deepStrictEqual(headers['x-amz-meta-us-west-2-version-id'], undefined);
+    });
+    
     [
         { md: { replicationInfo: null }, test: 'when config is not set' },
         { md: {}, test: 'for older objects' },
