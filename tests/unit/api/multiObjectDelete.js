@@ -486,3 +486,122 @@ describe('multiObjectDelete function', () => {
         });
     });
 });
+
+describe('multiObjectDelete function', () => {
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    it('should not authorize the bucket and initial IAM authorization results', done => {
+        const post = '<Delete><Object><Key>objectname</Key></Object></Delete>';
+        const request = new DummyRequest({
+            bucketName: 'bucketname',
+            objectKey: 'objectname',
+            parsedHost: 'localhost',
+            headers: {
+                'content-md5': crypto.createHash('md5').update(post, 'utf8').digest('base64'),
+            },
+            post,
+            socket: {
+                remoteAddress: '127.0.0.1',
+            },
+            url: '/bucketname',
+        });
+        const authInfo = makeAuthInfo('123456');
+
+        sinon.stub(metadataWrapper, 'getBucket').callsFake((bucketName, log, cb) =>
+            cb(null, new BucketInfo(
+                'bucketname',
+                '123456',
+                'accountA',
+                new Date().toISOString(),
+                15,
+            )));
+
+        multiObjectDelete.multiObjectDelete(authInfo, request, log, (err, res) => {
+            // Expected result is an access denied on the object, and no error, as the API was authorized
+            assert.strictEqual(err, null);
+            assert.strictEqual(
+                res.includes('<Error><Key>objectname</Key><Code>AccessDenied</Code>'),
+                true
+            );
+            done();
+        });
+    });
+
+    it('should accept request when content-md5 header is missing', done => {
+        const post = '<Delete><Object><Key>objectname</Key></Object></Delete>';
+        const testObjectKey = 'objectname';
+        const testBucketName = 'test-bucket';
+        const request = new DummyRequest({
+            bucketName: testBucketName,
+            objectKey: testObjectKey,
+            parsedHost: 'localhost',
+            headers: {
+                // No content-md5 header
+            },
+            post,
+            socket: {
+                remoteAddress: '127.0.0.1',
+            },
+            url: `/${testBucketName}`,
+        });
+        // Use the same canonicalID for both authInfo and bucket owner to avoid AccessDenied
+        const testAuthInfo = makeAuthInfo(canonicalID);
+
+        // Create bucket with proper ownership
+        const testBucketRequest = new DummyRequest({
+            bucketName: testBucketName,
+            namespace,
+            headers: {},
+            url: `/${testBucketName}`,
+        });
+        // Create object to delete
+        const testObjectRequest = new DummyRequest({
+            bucketName: testBucketName,
+            namespace,
+            objectKey: testObjectKey,
+            headers: {},
+            url: `/${testBucketName}/${testObjectKey}`,
+        }, postBody);
+
+        bucketPut(testAuthInfo, testBucketRequest, log, () => {
+            objectPut(testAuthInfo, testObjectRequest, undefined, log, () => {
+                multiObjectDelete.multiObjectDelete(testAuthInfo, request, log, (err, res) => {
+                    // Request should succeed even without content-md5 header
+                    assert.strictEqual(err, null);
+                    assert.strictEqual(typeof res, 'string');
+                    // Should contain successful deletion response
+                    assert.strictEqual(res.includes('<Deleted><Key>objectname</Key></Deleted>'), true);
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should reject request with BadDigest error when content-md5 header mismatches', done => {
+        const post = '<Delete><Object><Key>objectname</Key></Object></Delete>';
+        const incorrectMd5 = 'incorrectMd5Hash';
+        const request = new DummyRequest({
+            bucketName: 'bucketname',
+            objectKey: 'objectname',
+            parsedHost: 'localhost',
+            headers: {
+                'content-md5': incorrectMd5,
+            },
+            post,
+            socket: {
+                remoteAddress: '127.0.0.1',
+            },
+            url: '/bucketname',
+        });
+        const authInfo = makeAuthInfo('123456');
+
+        multiObjectDelete.multiObjectDelete(authInfo, request, log, (err, res) => {
+            // Should return BadDigest error for mismatched content-md5
+            assert.strictEqual(err.is.BadDigest, true);
+            assert.strictEqual(res, undefined);
+            done();
+        });
+    });
+});
