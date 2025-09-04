@@ -22,7 +22,8 @@
     "clusters": 5,
     "kmsHideScalityArn": true,
     "healthChecks": {
-        "allowFrom": ["127.0.0.1", "::1"]
+        "allowFrom": ["127.0.0.1", "::1"],
+        "enableInternalRoute": true
     },
     "localCache": {
         "host": "localhost",

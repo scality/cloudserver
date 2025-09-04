@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Test-healthcheck",
   "main": "tests.js",
+  "private": true,
   "repository": "",
   "keywords": [
     "test"
