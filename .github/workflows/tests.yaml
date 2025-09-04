@@ -532,52 +532,35 @@ jobs:
     - name: Setup vault credentials like S3C Integration
       run: ./setup-s3c.sh
       working-directory: .github/docker
+    - name: Set config files env variables
+      run: |-
+        echo "S3_CONFIG_FILE=${{ github.workspace }}/.github/docker/config.s3c.json" >> $GITHUB_ENV
+        echo "S3_LOCATION_FILE=${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json" >> $GITHUB_ENV
     - name: Run cloudserver-object tests
-      env:
-        S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
-        S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
       run: |-
         set -o pipefail;
         yarn run ft_awssdk_objects_misc | tee /tmp/artifacts/${{ matrix.job-name }}/ft_awssdk_objects_misc.log
     - name: Run cloudserver-version tests
-      env:
-        S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
-        S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
       run: |-
         set -o pipefail;
         yarn run ft_awssdk_versioning | tee /tmp/artifacts/${{ matrix.job-name }}/ft_awssdk_versioning.log
     - name: Run cloudserver-bucket tests
-      env:
-        S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
-        S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
       run: |-
         set -o pipefail;
         yarn run ft_awssdk_buckets | tee /tmp/artifacts/${{ matrix.job-name }}/ft_awssdk_buckets.log
     - name: Run cloudserver-routes (metadata) tests
-      env:
-        S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
-        S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
       run: |-
         set -o pipefail;
         yarn run ft_node_routes | tee /tmp/artifacts/${{ matrix.job-name }}/ft_node_routes.log
     - name: Run backbeat route tests
-      env:
-        S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
-        S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
       run: |-
         set -o pipefail;
         yarn run ft_route_backbeat | tee /tmp/artifacts/${{ matrix.job-name }}/ft_route_backbeat.log
     - name: Run backbeat tests
-      env:
-        S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
-        S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
       run: |-
         set -o pipefail;
         yarn run ft_backbeat | tee /tmp/artifacts/${{ matrix.job-name }}/ft_backbeat.log
     - name: Run healthchecks tests
-      env:
-        S3_CONFIG_FILE: ${{ github.workspace }}/.github/docker/config.s3c.json
-        S3_LOCATION_FILE: ${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json
       run: |-
         set -o pipefail;
         yarn run ft_healthchecks | tee /tmp/artifacts/${{ matrix.job-name }}/ft_healthchecks.log
