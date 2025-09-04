@@ -8,10 +8,11 @@ const async = require('async');
 const Redis = require('ioredis');
 
 const conf = require('../../config.json');
+const { config } = require('../../../../lib/Config');
 
 const redis = new Redis({
-    host: conf.localCache.host,
-    port: conf.localCache.port,
+    host: config.localCache.host,
+    port: config.localCache.port,
     // disable offline queue
     enableOfflineQueue: false,
 });
@@ -23,7 +24,7 @@ const transport = transportStr === 'http' ? http : https;
 const options = {
     host: conf.ipAddress,
     path: '/live',
-    port: 8002,
+    port: config.metricsPort || 8002,
 };
 
 function checkResult(expectedStatus, res) {
@@ -55,7 +56,7 @@ function makeDummyS3Request(cb) {
     const getOptions = deepCopy(options);
     getOptions.path = '/foo/bar';
     getOptions.method = 'GET';
-    getOptions.port = 8000;
+    getOptions.port = config.port || 8000;
     getOptions.agent = makeAgent();
     const req = transport.request(getOptions);
     req.end(() => cb());
@@ -105,6 +106,30 @@ describe('Healthcheck routes', () => {
         req.end();
     });
 });
+
+if (config.healthChecks.enableInternalRoute) {
+    describe('Healthcheck s3 port internal routes', () => {
+        it('should return 200 OK on GET request', done => {
+            const getOptions = deepCopy(options);
+            getOptions.method = 'GET';
+            getOptions.path = '/_/healthcheck';
+            getOptions.port = config.port || 8000;
+            getOptions.agent = makeAgent();
+            const req = transport.request(getOptions, makeChecker(200, done));
+            req.end();
+        });
+
+        it('should return 200 on deep GET request', done => {
+            const deepOptions = deepCopy(options);
+            deepOptions.method = 'GET';
+            deepOptions.path = '/_/healthcheck/deep';
+            deepOptions.port = config.port || 8000;
+            deepOptions.agent = makeAgent();
+            const req = transport.request(deepOptions, makeChecker(200, done));
+            req.end();
+        });
+    });
+}
 
 describe('Healthcheck stats', () => {
     const totalReqs = 5;
