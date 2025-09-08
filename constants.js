@@ -178,6 +178,7 @@ const constants = {
         'objectPutTagging',
         'objectPutLegalHold',
         'objectPutRetention',
+        'bypassGovernanceRetention',
     ],
     // response header to be sent when there are invalid
     // user metadata in the object's metadata
