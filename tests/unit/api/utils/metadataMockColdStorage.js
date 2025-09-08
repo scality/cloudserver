@@ -182,12 +182,32 @@ function getExpiredObjectMD() {
     return getRestoredObjectMD(Date.now() - 10000);
 }
 
+/**
+ * Creates the object MD for a delete marker
+ * @param {string} [versionId] - optional version ID to set
+ * @returns {ObjectMD} the MD object
+ */
+function getDeleteMarkerObjectMD(versionId) {
+    const objectMD = new ObjectMD()
+        .setOwnerId(defaultOwnerId)
+        .setOwnerDisplayName('accessKey1displayName')
+        .setContentLength(0)
+        .setContentMd5('')
+        .setKey('objectName')
+        .setVersionId(versionId || 'deleteMarkerVersionId')
+        .setDataStoreName('mem');
+
+    objectMD.isDeleteMarker = true;
+    return objectMD;
+}
+
 module.exports = {
     putObjectMock,
     getArchivedObjectMD,
     getRestoringObjectMD,
     getRestoredObjectMD,
     getExpiredObjectMD,
+    getDeleteMarkerObjectMD,
     getTransitionInProgressObjectMD,
     putBucketMock,
     defaultLocation,

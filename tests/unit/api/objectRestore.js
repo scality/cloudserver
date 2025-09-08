@@ -1,4 +1,5 @@
 const assert = require('assert');
+const sinon = require('sinon');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
@@ -7,6 +8,7 @@ const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const mdColdHelper = require('./utils/metadataMockColdStorage');
 const DummyRequest = require('../DummyRequest');
 const metadata = require('../metadataswitch');
+const metadataUtils = require('../../../lib/metadata/metadataUtils');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
@@ -155,6 +157,59 @@ describe('restoreObject API', () => {
                     assert.strictEqual(err.is.InvalidObjectState, true);
                 });
             });
+        });
+    });
+
+    it('should return NoSuchKey error when object is delete marker without versionId', done => {
+        const requestWithoutVersionId = objectRestoreRequest(objectRestoreXml);
+        const mockBucket = {
+            getName: () => bucketName,
+            getOwner: () => 'testCanonicalId',
+        };
+        const mockDeleteMarkerMD = mdColdHelper.getDeleteMarkerObjectMD();
+        const stub = sinon.stub(metadataUtils, 'standardMetadataValidateBucketAndObj');
+        stub.callsFake((params, denies, log, callback) => {
+            callback(null, mockBucket, mockDeleteMarkerMD);
+        });
+        objectRestore(authInfo, requestWithoutVersionId, log, err => {
+            stub.restore();
+            try {
+                assert(err, 'Expected an error');
+                assert.strictEqual(err.is.NoSuchKey, true);
+                assert.strictEqual(typeof err.customizeDescription, 'function',
+                    'Error should be from errorInstances which has customizeDescription method');
+                done();
+            } catch (assertionError) {
+                done(assertionError);
+            }
+        });
+    });
+
+    it('should return MethodNotAllowed error when object is delete marker with versionId', done => {
+        const requestWithVersionId = {
+            ...objectRestoreRequest(objectRestoreXml),
+            query: { versionId: 'null' },
+        };
+        const mockBucket = {
+            getName: () => bucketName,
+            getOwner: () => 'testCanonicalId',
+        };
+        const mockDeleteMarkerMD = mdColdHelper.getDeleteMarkerObjectMD();
+        const stub = sinon.stub(metadataUtils, 'standardMetadataValidateBucketAndObj');
+        stub.callsFake((params, denies, log, callback) => {
+            callback(null, mockBucket, mockDeleteMarkerMD);
+        });
+        objectRestore(authInfo, requestWithVersionId, log, err => {
+            stub.restore();
+            try {
+                assert(err, 'Expected an error');
+                assert.strictEqual(err.is.MethodNotAllowed, true);
+                assert.strictEqual(typeof err.customizeDescription, 'function',
+                    'Error should be from errorInstances which has customizeDescription method');
+                done();
+            } catch (assertionError) {
+                done(assertionError);
+            }
         });
     });
 });
