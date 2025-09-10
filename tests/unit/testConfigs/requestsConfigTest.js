@@ -131,4 +131,15 @@ describe('requestsConfigAssert', () => {
         'extractProtocolFromHeader must be set if viaProxy is ' +
         'set to true and must be a string/');
     });
+    it('should lowercase the extractClientIPFromHeader and extractProtocolFromHeader values', () => {
+        const config = {
+            viaProxy: true,
+            trustedProxyCIDRs: ['127.0.0.1/32'],
+            extractClientIPFromHeader: 'X-Forwarded-For',
+            extractProtocolFromHeader: 'X-Forwarded-Proto',
+        };
+        requestsConfigAssert(config);
+        assert.strictEqual(config.extractClientIPFromHeader, 'x-forwarded-for');
+        assert.strictEqual(config.extractProtocolFromHeader, 'x-forwarded-proto');
+    });
 });
