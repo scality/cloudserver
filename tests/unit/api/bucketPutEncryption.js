@@ -1,4 +1,5 @@
 const assert = require('assert');
+const { errors } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutEncryption = require('../../../lib/api/bucketPutEncryption');
@@ -254,6 +255,70 @@ describe('bucketPutEncryption API', () => {
                         });
                     });
                 });
+            });
+        });
+    });
+
+    describe('checksum validation', () => {
+        const encryptionXml = `
+    <?xml version="1.0" encoding="UTF-8"?>
+    <ServerSideEncryptionConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+        <Rule>
+            <ApplyServerSideEncryptionByDefault><SSEAlgorithm>AES256</SSEAlgorithm></ApplyServerSideEncryptionByDefault>
+        </Rule>
+    </ServerSideEncryptionConfiguration>`;
+
+        it('should not return an error when Content-MD5 header is missing', done => {
+            const testEncryptionRequest = {
+                bucketName,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                post: encryptionXml,
+                url: '/?encryption',
+                query: { encryption: '' },
+                actionImplicitDenies: false,
+            };
+
+            bucketPutEncryption(authInfo, testEncryptionRequest, log, err => {
+                assert.ifError(err);
+                done();
+            });
+        });
+
+        it('should return BadDigest error when Content-MD5 header mismatches', done => {
+            const testEncryptionRequest = {
+                bucketName,
+                headers: {
+                    'host': `${bucketName}.s3.amazonaws.com`,
+                    'content-md5': '+5yj3kZsXledyKr18eaUDg==', // incorrect MD5
+                },
+                post: encryptionXml,
+                url: '/?encryption',
+                query: { encryption: '' },
+                actionImplicitDenies: false,
+            };
+
+            bucketPutEncryption(authInfo, testEncryptionRequest, log, err => {
+                assert.deepStrictEqual(err, errors.BadDigest);
+                done();
+            });
+        });
+
+        it('should not return an error when Content-MD5 header matches', done => {
+            const testEncryptionRequest = {
+                bucketName,
+                headers: {
+                    'host': `${bucketName}.s3.amazonaws.com`,
+                    'content-md5': 'V5wJT/Iw7czHvcoFV+zZ1Q==', // correct MD5
+                },
+                post: encryptionXml,
+                url: '/?encryption',
+                query: { encryption: '' },
+                actionImplicitDenies: false,
+            };
+
+            bucketPutEncryption(authInfo, testEncryptionRequest, log, err => {
+                assert.ifError(err);
+                done();
             });
         });
     });

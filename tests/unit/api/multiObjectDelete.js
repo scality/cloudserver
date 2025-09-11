@@ -310,4 +310,55 @@ describe('multiObjectDelete function', () => {
             done();
         });
     });
+
+    it('should not return an error when Content-MD5 header matches', done => {
+        const post = '<Delete><Object><Key>objectname</Key></Object></Delete>';
+        const correctMd5 = crypto.createHash('md5').update(post, 'utf8').digest('base64');
+        const testObjectKey = 'objectname';
+        const testBucketName = 'test-bucket';
+        const request = new DummyRequest({
+            bucketName: testBucketName,
+            objectKey: testObjectKey,
+            parsedHost: 'localhost',
+            headers: {
+                'content-md5': correctMd5, // correct MD5
+            },
+            post,
+            socket: {
+                remoteAddress: '127.0.0.1',
+            },
+            url: `/${testBucketName}`,
+        });
+        // Use the same canonicalID for both authInfo and bucket owner to avoid AccessDenied
+        const testAuthInfo = makeAuthInfo(canonicalID);
+
+        // Create bucket with proper ownership
+        const testBucketRequest = new DummyRequest({
+            bucketName: testBucketName,
+            namespace,
+            headers: {},
+            url: `/${testBucketName}`,
+        });
+        // Create object to delete
+        const testObjectRequest = new DummyRequest({
+            bucketName: testBucketName,
+            namespace,
+            objectKey: testObjectKey,
+            headers: {},
+            url: `/${testBucketName}/${testObjectKey}`,
+        }, postBody);
+
+        bucketPut(testAuthInfo, testBucketRequest, log, () => {
+            objectPut(testAuthInfo, testObjectRequest, undefined, log, () => {
+                multiObjectDelete.multiObjectDelete(testAuthInfo, request, log, (err, res) => {
+                    // Request should succeed with correct content-md5 header
+                    assert.strictEqual(err, null);
+                    assert.strictEqual(typeof res, 'string');
+                    // Should contain successful deletion response
+                    assert.strictEqual(res.includes('<Deleted><Key>objectname</Key></Deleted>'), true);
+                    done();
+                });
+            });
+        });
+    });
 });

@@ -1,4 +1,5 @@
 const assert = require('assert');
+const { errors } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutObjectLock = require('../../../lib/api/bucketPutObjectLock');
@@ -73,6 +74,70 @@ describe('putBucketObjectLock API', () => {
                     assert.deepStrictEqual(
                         bucketObjectLockConfig, expectedObjectLockConfig);
                     return done();
+                });
+            });
+        });
+
+        describe('checksum validation', () => {
+            const objectLockXmlTest = '<ObjectLockConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+                '<ObjectLockEnabled>Enabled</ObjectLockEnabled>' +
+                '<Rule><DefaultRetention>' +
+                '<Mode>GOVERNANCE</Mode>' +
+                '<Days>1</Days>' +
+                '</DefaultRetention></Rule>' +
+                '</ObjectLockConfiguration>';
+
+            it('should not return an error when Content-MD5 header is missing', done => {
+                const testObjectLockRequest = {
+                    bucketName,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    post: objectLockXmlTest,
+                    url: '/?object-lock',
+                    query: { 'object-lock': '' },
+                    actionImplicitDenies: false,
+                };
+
+                bucketPutObjectLock(authInfo, testObjectLockRequest, log, err => {
+                    assert.ifError(err);
+                    done();
+                });
+            });
+
+            it('should return BadDigest error when Content-MD5 header mismatches', done => {
+                const testObjectLockRequest = {
+                    bucketName,
+                    headers: {
+                        'host': `${bucketName}.s3.amazonaws.com`,
+                        'content-md5': '+5yj3kZsXledyKr18eaUDg==', // incorrect MD5
+                    },
+                    post: objectLockXmlTest,
+                    url: '/?object-lock',
+                    query: { 'object-lock': '' },
+                    actionImplicitDenies: false,
+                };
+
+                bucketPutObjectLock(authInfo, testObjectLockRequest, log, err => {
+                    assert.deepStrictEqual(err, errors.BadDigest);
+                    done();
+                });
+            });
+
+            it('should not return an error when Content-MD5 header matches', done => {
+                const testObjectLockRequest = {
+                    bucketName,
+                    headers: {
+                        'host': `${bucketName}.s3.amazonaws.com`,
+                        'content-md5': 'KX8zVPpu4gleE1JHJvOt6w==', // correct MD5
+                    },
+                    post: objectLockXmlTest,
+                    url: '/?object-lock',
+                    query: { 'object-lock': '' },
+                    actionImplicitDenies: false,
+                };
+
+                bucketPutObjectLock(authInfo, testObjectLockRequest, log, err => {
+                    assert.ifError(err);
+                    done();
                 });
             });
         });

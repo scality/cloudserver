@@ -1,5 +1,6 @@
 const assert = require('assert');
 const { parseString } = require('xml2js');
+const { errors } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutWebsite = require('../../../lib/api/bucketPutWebsite');
@@ -174,6 +175,78 @@ describe('putBucketWebsite API', () => {
                 assert.strictEqual(containsRes, true);
                 return done();
             });
+        });
+    });
+});
+
+describe('bucketPutWebsite API - Content-MD5 validation', () => {
+    const websiteXML = `
+    <WebsiteConfiguration>
+    <IndexDocument><Suffix>index.html</Suffix></IndexDocument>
+    <ErrorDocument><Key>error.html</Key></ErrorDocument>
+    </WebsiteConfiguration>
+    `;
+
+    before(() => cleanup());
+    beforeEach(done => {
+        bucketPut(authInfo, testBucketPutRequest, log, done);
+    });
+    afterEach(() => cleanup());
+
+    it('should not return an error when Content-MD5 header is missing', done => {
+        const testWebsiteRequest = {
+            bucketName,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            post: websiteXML,
+            url: '/?website',
+            query: { website: '' },
+            actionImplicitDenies: false,
+        };
+
+        bucketPutWebsite(authInfo, testWebsiteRequest, log, err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+
+    it('should return BadDigest error when Content-MD5 header mismatches', done => {
+        const testWebsiteRequest = {
+            bucketName,
+            headers: {
+                'host': `${bucketName}.s3.amazonaws.com`,
+                'content-md5': '+5yj3kZsXledyKr18eaUDg==', // incorrect MD5
+            },
+            post: websiteXML,
+            url: '/?website',
+            query: { website: '' },
+            actionImplicitDenies: false,
+        };
+
+        bucketPutWebsite(authInfo, testWebsiteRequest, log, err => {
+            assert.deepStrictEqual(err, errors.BadDigest);
+            done();
+        });
+    });
+
+    it('should not return an error when Content-MD5 header matches', done => {
+        const crypto = require('crypto');
+        const correctMd5 = crypto.createHash('md5').update(websiteXML, 'utf8').digest('base64');
+
+        const testWebsiteRequest = {
+            bucketName,
+            headers: {
+                'host': `${bucketName}.s3.amazonaws.com`,
+                'content-md5': correctMd5, // correct MD5
+            },
+            post: websiteXML,
+            url: '/?website',
+            query: { website: '' },
+            actionImplicitDenies: false,
+        };
+
+        bucketPutWebsite(authInfo, testWebsiteRequest, log, err => {
+            assert.ifError(err);
+            done();
         });
     });
 });

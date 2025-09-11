@@ -1,4 +1,5 @@
 const assert = require('assert');
+const { errors } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutLifecycle = require('../../../lib/api/bucketPutLifecycle');
@@ -100,6 +101,71 @@ describe('putBucketLifecycle API', () => {
                 assert.deepStrictEqual(
                     bucketLifecycleConfig, expectedLifecycleConfig);
                 return done();
+            });
+        });
+    });
+
+    describe('checksum validation', () => {
+        const lifecycleXml = '<LifecycleConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+            '<Rule>' +
+            '<ID>test-rule</ID>' +
+            '<Status>Enabled</Status>' +
+            '<Prefix>test/</Prefix>' +
+            '<Expiration><Days>30</Days></Expiration>' +
+            '</Rule>' +
+            '</LifecycleConfiguration>';
+
+        it('should not return an error when Content-MD5 header is missing', done => {
+            const testLifecycleRequest = {
+                bucketName,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                post: lifecycleXml,
+                url: '/?lifecycle',
+                query: { lifecycle: '' },
+                actionImplicitDenies: false,
+            };
+
+            bucketPutLifecycle(authInfo, testLifecycleRequest, log, err => {
+                assert.ifError(err);
+                done();
+            });
+        });
+
+        it('should return BadDigest error when Content-MD5 header mismatches', done => {
+            const testLifecycleRequest = {
+                bucketName,
+                headers: {
+                    'host': `${bucketName}.s3.amazonaws.com`,
+                    'content-md5': '+5yj3kZsXledyKr18eaUDg==', // incorrect MD5
+                },
+                post: lifecycleXml,
+                url: '/?lifecycle',
+                query: { lifecycle: '' },
+                actionImplicitDenies: false,
+            };
+
+            bucketPutLifecycle(authInfo, testLifecycleRequest, log, err => {
+                assert.deepStrictEqual(err, errors.BadDigest);
+                done();
+            });
+        });
+
+        it('should not return an error when Content-MD5 header matches', done => {
+            const testLifecycleRequest = {
+                bucketName,
+                headers: {
+                    'host': `${bucketName}.s3.amazonaws.com`,
+                    'content-md5': 'atetz1xBS6pZndwhthYINg==', // correct MD5
+                },
+                post: lifecycleXml,
+                url: '/?lifecycle',
+                query: { lifecycle: '' },
+                actionImplicitDenies: false,
+            };
+
+            bucketPutLifecycle(authInfo, testLifecycleRequest, log, err => {
+                assert.ifError(err);
+                done();
             });
         });
     });

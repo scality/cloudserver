@@ -1,11 +1,24 @@
 const assert = require('assert');
+const { errors } = require('arsenal');
 
-const { DummyRequestLogger } = require('../helpers');
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutReplication = require('../../../lib/api/bucketPutReplication');
+const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const { getReplicationConfiguration } =
     require('../../../lib/api/apiUtils/bucket/getReplicationConfiguration');
 const replicationUtils =
     require('../../functional/aws-node-sdk/lib/utility/replication');
 const log = new DummyRequestLogger();
+
+const authInfo = makeAuthInfo('accessKey1');
+const bucketName = 'bucketname';
+const testBucketPutRequest = {
+    bucketName,
+    headers: { host: `${bucketName}.s3.amazonaws.com` },
+    url: '/',
+    actionImplicitDenies: false,
+};
 
 // Check for the expected error response code and status code.
 function checkError(xml, expectedErr, cb) {
@@ -102,5 +115,84 @@ describe('\'getReplicationConfiguration\' function', () => {
     it('should create an \'ID\' if rule ID is \'\'', done => {
         const xml = createReplicationXML(undefined, { ID: '' });
         return checkGeneratedID(xml, done);
+    });
+});
+
+describe('bucketPutReplication API - Content-MD5 validation', () => {
+    const replicationXML = createReplicationXML();
+
+    before(() => cleanup());
+    beforeEach(done => {
+        // Create bucket first
+        bucketPut(authInfo, testBucketPutRequest, log, err => {
+            if (err) {
+                return done(err);
+            }
+            // Enable versioning (required for replication)
+            const versioningRequest = {
+                bucketName,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                post: '<VersioningConfiguration><Status>Enabled</Status></VersioningConfiguration>',
+                url: '/?versioning',
+                query: { versioning: '' },
+                actionImplicitDenies: false,
+            };
+            return bucketPutVersioning(authInfo, versioningRequest, log, done);
+        });
+    });
+    afterEach(() => cleanup());
+
+    it('should not return an error when Content-MD5 header is missing', done => {
+        const testReplicationRequest = {
+            bucketName,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            post: replicationXML,
+            url: '/?replication',
+            query: { replication: '' },
+            actionImplicitDenies: false,
+        };
+
+        bucketPutReplication(authInfo, testReplicationRequest, log, err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+
+    it('should return BadDigest error when Content-MD5 header mismatches', done => {
+        const testReplicationRequest = {
+            bucketName,
+            headers: {
+                'host': `${bucketName}.s3.amazonaws.com`,
+                'content-md5': '+5yj3kZsXledyKr18eaUDg==', // incorrect MD5
+            },
+            post: replicationXML,
+            url: '/?replication',
+            query: { replication: '' },
+            actionImplicitDenies: false,
+        };
+
+        bucketPutReplication(authInfo, testReplicationRequest, log, err => {
+            assert.deepStrictEqual(err, errors.BadDigest);
+            done();
+        });
+    });
+
+    it('should not return an error when Content-MD5 header matches', done => {
+        const testReplicationRequest = {
+            bucketName,
+            headers: {
+                'host': `${bucketName}.s3.amazonaws.com`,
+                'content-md5': 'IKwQ83x91j3jaIvsiKstUQ==', // correct MD5
+            },
+            post: replicationXML,
+            url: '/?replication',
+            query: { replication: '' },
+            actionImplicitDenies: false,
+        };
+
+        bucketPutReplication(authInfo, testReplicationRequest, log, err => {
+            assert.ifError(err);
+            done();
+        });
     });
 });

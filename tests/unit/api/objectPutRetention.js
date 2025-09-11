@@ -225,3 +225,77 @@ describe('putObjectRetention API', () => {
         });
     });
 });
+
+describe('objectPutRetention API - Content-MD5 validation', () => {
+    // Use a fixed date for consistent MD5 calculation
+    const testDate = '2025-09-13T00:00:00.000Z';
+    const retentionXML = '<Retention xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+        '<Mode>GOVERNANCE</Mode>' +
+        `<RetainUntilDate>${testDate}</RetainUntilDate>` +
+        '</Retention>';
+
+    const bucketObjLockRequest = Object.assign({}, bucketPutRequest,
+        { headers: { 'x-amz-bucket-object-lock-enabled': 'true' } });
+
+    beforeEach(done => {
+        bucketPut(authInfo, bucketObjLockRequest, log, err => {
+            assert.ifError(err);
+            objectPut(authInfo, putObjectRequest, undefined, log, done);
+        });
+    });
+    afterEach(() => cleanup());
+
+    it('should not return an error when Content-MD5 header is missing', done => {
+        const testRetentionRequest = {
+            bucketName,
+            objectKey: objectName,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            post: retentionXML,
+            actionImplicitDenies: false,
+        };
+
+        objectPutRetention(authInfo, testRetentionRequest, log, err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+
+    it('should return BadDigest error when Content-MD5 header mismatches', done => {
+        const testRetentionRequest = {
+            bucketName,
+            objectKey: objectName,
+            headers: {
+                'host': `${bucketName}.s3.amazonaws.com`,
+                'content-md5': '+5yj3kZsXledyKr18eaUDg==', // incorrect MD5
+            },
+            post: retentionXML,
+            actionImplicitDenies: false,
+        };
+
+        objectPutRetention(authInfo, testRetentionRequest, log, err => {
+            assert.deepStrictEqual(err, errors.BadDigest);
+            done();
+        });
+    });
+
+    it('should not return an error when Content-MD5 header matches', done => {
+        const crypto = require('crypto');
+        const correctMd5 = crypto.createHash('md5').update(retentionXML, 'utf8').digest('base64');
+
+        const testRetentionRequest = {
+            bucketName,
+            objectKey: objectName,
+            headers: {
+                'host': `${bucketName}.s3.amazonaws.com`,
+                'content-md5': correctMd5, // correct MD5
+            },
+            post: retentionXML,
+            actionImplicitDenies: false,
+        };
+
+        objectPutRetention(authInfo, testRetentionRequest, log, err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+});

@@ -723,4 +723,73 @@ describe('putBucketACL API', () => {
             done();
         });
     });
+
+    describe('checksum validation', () => {
+        const aclXml = '<AccessControlPolicy xmlns=' +
+                '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+              '<Owner>' +
+                '<ID>79a59df900b949e55d96a1e698fbaced' +
+                'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
+                '<DisplayName>OwnerDisplayName</DisplayName>' +
+              '</Owner>' +
+              '<AccessControlList></AccessControlList>' +
+            '</AccessControlPolicy>';
+
+        it('should not return an error when Content-MD5 header is missing', done => {
+            const testACLRequest = {
+                bucketName,
+                namespace,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                post: aclXml,
+                url: '/?acl',
+                query: { acl: '' },
+                actionImplicitDenies: false,
+            };
+
+            bucketPutACL(authInfo, testACLRequest, log, err => {
+                assert.strictEqual(err, undefined);
+                done();
+            });
+        });
+
+        it('should return BadDigest error when Content-MD5 header mismatches', done => {
+            const testACLRequest = {
+                bucketName,
+                namespace,
+                headers: {
+                    'host': `${bucketName}.s3.amazonaws.com`,
+                    'content-md5': '+5yj3kZsXledyKr18eaUDg==', // incorrect MD5
+                },
+                post: aclXml,
+                url: '/?acl',
+                query: { acl: '' },
+                actionImplicitDenies: false,
+            };
+
+            bucketPutACL(authInfo, testACLRequest, log, err => {
+                assert.deepStrictEqual(err, errors.BadDigest);
+                done();
+            });
+        });
+
+        it('should not return an error when Content-MD5 header matches', done => {
+            const testACLRequest = {
+                bucketName,
+                namespace,
+                headers: {
+                    'host': `${bucketName}.s3.amazonaws.com`,
+                    'content-md5': 'df9VsEmHzngoooOMzLBPQA==', // correct MD5
+                },
+                post: aclXml,
+                url: '/?acl',
+                query: { acl: '' },
+                actionImplicitDenies: false,
+            };
+
+            bucketPutACL(authInfo, testACLRequest, log, err => {
+                assert.strictEqual(err, undefined);
+                done();
+            });
+        });
+    });
 });

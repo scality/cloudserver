@@ -592,3 +592,86 @@ describe('putObjectACL API', () => {
         });
     });
 });
+
+describe('objectPutACL API - Content-MD5 validation', () => {
+    // Use the AccessControlPolicy helper that matches the existing test pattern
+    const acp = new AccessControlPolicy(defaultAcpParams);
+    acp.addGrantee('CanonicalUser', ownerID, 'FULL_CONTROL', 'OwnerDisplayName');
+    const aclXML = acp.getXml();
+
+    beforeEach(done => {
+        cleanup();
+        testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+        }, postBody);
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log, done);
+        });
+    });
+
+    it('should not return an error when Content-MD5 header is missing', done => {
+        const testObjACLRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            post: Buffer.from(aclXML, 'utf8'),
+            url: `/${bucketName}/${objectName}?acl`,
+            query: { acl: '' },
+            actionImplicitDenies: false,
+        };
+
+        objectPutACL(authInfo, testObjACLRequest, log, err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+
+    it('should return BadDigest error when Content-MD5 header mismatches', done => {
+        const testObjACLRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                'content-md5': '+5yj3kZsXledyKr18eaUDg==', // incorrect MD5
+            },
+            post: Buffer.from(aclXML, 'utf8'),
+            url: `/${bucketName}/${objectName}?acl`,
+            query: { acl: '' },
+            actionImplicitDenies: false,
+        };
+
+        objectPutACL(authInfo, testObjACLRequest, log, err => {
+            assert.deepStrictEqual(err, errors.BadDigest);
+            done();
+        });
+    });
+
+    it('should not return an error when Content-MD5 header matches', done => {
+        const crypto = require('crypto');
+        const correctMd5 = crypto.createHash('md5').update(aclXML, 'utf8').digest('base64');
+
+        const testObjACLRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                'content-md5': correctMd5, // correct MD5
+            },
+            post: Buffer.from(aclXML, 'utf8'),
+            url: `/${bucketName}/${objectName}?acl`,
+            query: { acl: '' },
+            actionImplicitDenies: false,
+        };
+
+        objectPutACL(authInfo, testObjACLRequest, log, err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+});

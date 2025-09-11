@@ -1,4 +1,5 @@
 const assert = require('assert');
+const { errors } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
@@ -97,6 +98,74 @@ describe('putObjectLegalHold API', () => {
                     return done();
                 });
             });
+        });
+    });
+});
+
+describe('objectPutLegalHold API - Content-MD5 validation', () => {
+    const legalHoldXML = objectLegalHoldXml('ON');
+    const bucketObjLockRequest = Object.assign({}, putBucketRequest,
+        { headers: { 'x-amz-bucket-object-lock-enabled': 'true' } });
+
+    beforeEach(done => {
+        bucketPut(authInfo, bucketObjLockRequest, log, err => {
+            assert.ifError(err);
+            objectPut(authInfo, putObjectRequest, undefined, log, done);
+        });
+    });
+    afterEach(cleanup);
+
+    it('should not return an error when Content-MD5 header is missing', done => {
+        const testLegalHoldRequest = {
+            bucketName,
+            objectKey: objectName,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            post: legalHoldXML,
+            actionImplicitDenies: false,
+        };
+
+        objectPutLegalHold(authInfo, testLegalHoldRequest, log, err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+
+    it('should return BadDigest error when Content-MD5 header mismatches', done => {
+        const testLegalHoldRequest = {
+            bucketName,
+            objectKey: objectName,
+            headers: {
+                'host': `${bucketName}.s3.amazonaws.com`,
+                'content-md5': '+5yj3kZsXledyKr18eaUDg==', // incorrect MD5
+            },
+            post: legalHoldXML,
+            actionImplicitDenies: false,
+        };
+
+        objectPutLegalHold(authInfo, testLegalHoldRequest, log, err => {
+            assert.deepStrictEqual(err, errors.BadDigest);
+            done();
+        });
+    });
+
+    it('should not return an error when Content-MD5 header matches', done => {
+        const crypto = require('crypto');
+        const correctMd5 = crypto.createHash('md5').update(legalHoldXML, 'utf8').digest('base64');
+
+        const testLegalHoldRequest = {
+            bucketName,
+            objectKey: objectName,
+            headers: {
+                'host': `${bucketName}.s3.amazonaws.com`,
+                'content-md5': correctMd5, // correct MD5
+            },
+            post: legalHoldXML,
+            actionImplicitDenies: false,
+        };
+
+        objectPutLegalHold(authInfo, testLegalHoldRequest, log, err => {
+            assert.ifError(err);
+            done();
         });
     });
 });

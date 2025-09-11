@@ -70,35 +70,67 @@ describe('putBucketCORS API', () => {
         });
     });
 
-    it('should accept request if md5 is omitted', done => {
-        const corsUtil = new CorsConfigTester();
-        const testBucketPutCorsRequest = corsUtil
-            .createBucketCorsRequest('PUT', bucketName);
-        testBucketPutCorsRequest.headers['content-md5'] = undefined;
-        bucketPutCors(authInfo, testBucketPutCorsRequest, log, err => {
-            if (err) {
-                process.stdout.write(`Err putting bucket cors ${err}`);
-                return done(err);
-            }
-            return metadata.getBucket(bucketName, log, (err, bucket) => {
-                if (err) {
-                    process.stdout.write(`Err retrieving bucket MD ${err}`);
-                    return done(err);
-                }
-                const uploadedCors = bucket.getCors();
-                assert.deepStrictEqual(uploadedCors, corsUtil.getCors());
-                return done();
+    describe('checksum validation', () => {
+        const corsXml = '<CORSConfiguration>' +
+            '<CORSRule>' +
+            '<AllowedMethod>PUT</AllowedMethod>' +
+            '<AllowedOrigin>www.example.com</AllowedOrigin>' +
+            '</CORSRule>' +
+            '</CORSConfiguration>';
+
+        it('should not return an error when Content-MD5 header is missing', done => {
+            const testBucketPutCorsRequest = {
+                bucketName,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                post: corsXml,
+                url: '/?cors',
+                query: { cors: '' },
+                actionImplicitDenies: false,
+            };
+
+            bucketPutCors(authInfo, testBucketPutCorsRequest, log, err => {
+                assert.strictEqual(err, undefined);
+                done();
             });
         });
-    });
 
-    it('should reject request if md5 is mismatch', done => {
-        const corsUtil = new CorsConfigTester();
-        const testBucketPutCorsRequest = corsUtil
-            .createBucketCorsRequest('PUT', bucketName);
-        testBucketPutCorsRequest.headers['content-md5'] = 'wrong md5';
-        _testPutBucketCors(authInfo, testBucketPutCorsRequest,
-            log, 'BadDigest', done);
+        it('should return BadDigest error when Content-MD5 header mismatches', done => {
+            const testBucketPutCorsRequest = {
+                bucketName,
+                headers: {
+                    'host': `${bucketName}.s3.amazonaws.com`,
+                    'content-md5': '+5yj3kZsXledyKr18eaUDg==', // incorrect MD5
+                },
+                post: corsXml,
+                url: '/?cors',
+                query: { cors: '' },
+                actionImplicitDenies: false,
+            };
+
+            bucketPutCors(authInfo, testBucketPutCorsRequest, log, err => {
+                assert.deepStrictEqual(err, errors.BadDigest);
+                done();
+            });
+        });
+
+        it('should not return an error when Content-MD5 header matches', done => {
+            const testBucketPutCorsRequest = {
+                bucketName,
+                headers: {
+                    'host': `${bucketName}.s3.amazonaws.com`,
+                    'content-md5': 'Fohe2S924ZfZyb6byNYGwA==', // correct MD5
+                },
+                post: corsXml,
+                url: '/?cors',
+                query: { cors: '' },
+                actionImplicitDenies: false,
+            };
+
+            bucketPutCors(authInfo, testBucketPutCorsRequest, log, err => {
+                assert.strictEqual(err, undefined);
+                done();
+            });
+        });
     });
 
     it('should return MalformedXML if body greater than 64KB', done => {
