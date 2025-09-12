@@ -24,6 +24,7 @@ const {
 } = require('../../../constants');
 const mpuUtils = require('../utils/mpuUtils');
 const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
+const { config } = require('../../../lib/Config');
 
 const { ds } = storage.data.inMemory.datastore;
 
@@ -1217,5 +1218,72 @@ describe('objectPut API in ingestion bucket', () => {
                 next(err);
             }),
         ], done);
+    });
+});
+
+describe('objectPut with objectKeyByteLimit', () => {
+    const originalObjectKeyByteLimit = config.objectKeyByteLimit;
+
+    beforeEach(() => {
+        cleanup();
+    });
+
+    afterEach(() => {
+        config.objectKeyByteLimit = originalObjectKeyByteLimit;
+    });
+
+    const createTestPutObjectRequest = longKey => new DummyRequest({
+        bucketName,
+        namespace,
+        objectKey: longKey,
+        headers: {},
+        url: `/${bucketName}/${longKey}`,
+    }, postBody);
+
+    it('should reject object key longer than 915 bytes by default', done => {
+        const longKey = 'a'.repeat(916);
+        const testPutObjectRequest = createTestPutObjectRequest(longKey);
+
+        bucketPut(authInfo, testPutBucketRequest, log, err => {
+            assert.ifError(err);
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert(err);
+                assert.strictEqual(err.KeyTooLong, true);
+                assert.match(err.description, /915/);
+                done();
+            });
+        });
+    });
+
+    it('should accept object key longer than 915 bytes with objectKeyByteLimit', done => {
+        config.objectKeyByteLimit = 1024;
+
+        const longKey = 'a'.repeat(1024);
+        const testPutObjectRequest = createTestPutObjectRequest(longKey);
+
+        bucketPut(authInfo, testPutBucketRequest, log, err => {
+            assert.ifError(err);
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert.ifError(err);
+                done();
+            });
+        });
+    });
+
+    it('should reject object key exceeding objectKeyByteLimit', done => {
+        config.objectKeyByteLimit = 1024;
+
+        const longKey = 'a'.repeat(1025);
+        const testPutObjectRequest = createTestPutObjectRequest(longKey);
+
+        bucketPut(authInfo, testPutBucketRequest, log, err => {
+            assert.ifError(err);
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert(err);
+                assert.strictEqual(err.KeyTooLong, true);
+                assert.match(err.description, /1024/);
+                done();
+            });
+        });
     });
 });

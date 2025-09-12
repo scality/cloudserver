@@ -27,6 +27,7 @@ const DummyRequest = require('../DummyRequest');
 const changeObjectLock = require('../../utilities/objectLock-util');
 const metadataswitch = require('../metadataswitch');
 const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
+const { config } = require('../../../lib/Config');
 
 const { data } = require('../../../lib/data/wrapper');
 const { metadata } = storage.metadata.inMemory.metadata;
@@ -3137,5 +3138,74 @@ describe('multipart upload in ingestion bucket', () => {
         });
         assert.strictEqual(headers['x-amz-version-id'], versionID);
         assert.strictEqual(dataClient.createMPU.lastCall.args[1]['x-amz-meta-scal-version-id'], undefined);
+    });
+});
+
+describe('initiateMultipartUpload with objectKeyByteLimit', () => {
+    const originalObjectKeyByteLimit = config.objectKeyByteLimit;
+
+    beforeEach(() => {
+        cleanup();
+    });
+
+    afterEach(() => {
+        config.objectKeyByteLimit = originalObjectKeyByteLimit;
+    });
+
+    const createTestInitiateRequest = longKey => new DummyRequest({
+        bucketName,
+        namespace,
+        objectKey: longKey,
+        headers: {},
+        url: `/${bucketName}/${longKey}?uploads`,
+        query: { uploads: '' },
+    });
+
+    it('should reject object key longer than 915 bytes by default', done => {
+        const longKey = 'a'.repeat(916);
+        const testInitiateRequest = createTestInitiateRequest(longKey);
+
+        bucketPut(authInfo, bucketPutRequest, log, err => {
+            assert.ifError(err);
+            initiateMultipartUpload(authInfo, testInitiateRequest, log, err => {
+                assert(err);
+                assert.strictEqual(err.KeyTooLong, true);
+                assert.match(err.description, /915/);
+                done();
+            });
+        });
+    });
+
+    it('should accept object key longer than 915 bytes with objectKeyByteLimit', done => {
+        config.objectKeyByteLimit = 1024;
+
+        const longKey = 'a'.repeat(1024);
+        const testInitiateRequest = createTestInitiateRequest(longKey);
+
+        bucketPut(authInfo, bucketPutRequest, log, err => {
+            assert.ifError(err);
+            initiateMultipartUpload(authInfo, testInitiateRequest, log, (err, xml) => {
+                assert.ifError(err);
+                assert(xml);
+                done();
+            });
+        });
+    });
+
+    it('should reject object key exceeding objectKeyByteLimit', done => {
+        config.objectKeyByteLimit = 1024;
+
+        const longKey = 'a'.repeat(1025);
+        const testInitiateRequest = createTestInitiateRequest(longKey);
+
+        bucketPut(authInfo, bucketPutRequest, log, err => {
+            assert.ifError(err);
+            initiateMultipartUpload(authInfo, testInitiateRequest, log, err => {
+                assert(err);
+                assert.strictEqual(err.KeyTooLong, true);
+                assert.match(err.description, /1024/);
+                done();
+            });
+        });
     });
 });
