@@ -227,6 +227,16 @@ describe('GET object', () => {
                 });
             });
 
+        it('should return NoSuchKey error when no such object even with key longer than 915 bytes',
+            done => {
+                s3.getObject({ Bucket: bucketName, Key: 'a'.repeat(2000) }, err => {
+                    assert.notEqual(err, null,
+                        'Expected failure but got success');
+                    assert.strictEqual(err.code, 'NoSuchKey');
+                    return done();
+                });
+            });
+
         describe('Additional headers: [Cache-Control, Content-Disposition, ' +
             'Content-Encoding, Expires, Accept-Ranges]', () => {
             describe('if specified in put object request', () => {

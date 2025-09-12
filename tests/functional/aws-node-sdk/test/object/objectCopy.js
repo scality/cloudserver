@@ -208,6 +208,15 @@ describe('Object Copy', () => {
                 });
         });
 
+        it('should return 400 KeyTooLong if key is longer than 915 bytes', done => {
+            s3.copyObject({ Bucket: destBucketName, Key: 'a'.repeat(916),
+                CopySource: `${sourceBucketName}/${sourceObjName}` },
+                err => {
+                    checkError(err, 'KeyTooLong');
+                    done();
+                });
+        });
+
         it('should copy an object from a source bucket to a different ' +
             'destination bucket and copy the tag set if COPY tagging ' +
             'directive header provided', done => {
