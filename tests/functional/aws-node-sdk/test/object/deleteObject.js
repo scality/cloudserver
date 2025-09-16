@@ -324,5 +324,146 @@ describe('DELETE object', () => {
                      }
                 ));
         });
+
+        describe('with conditional headers (unofficial, for backbeat)', () => {
+            const bucketName = 'testconditionaldelete';
+            const testObjectKey = 'conditional-test-object';
+            const testObjectBody = 'body';
+            let objectLastModified;
+
+            before(async () => {
+                await s3.createBucket({ Bucket: bucketName }).promise();
+            });
+
+            beforeEach(async () => {
+                // Re-create the object for each test since some tests will delete it
+                await s3.putObject({
+                    Bucket: bucketName,
+                    Key: testObjectKey,
+                    Body: testObjectBody,
+                }).promise();
+                const head = await s3.headObject({
+                    Bucket: bucketName,
+                    Key: testObjectKey,
+                }).promise();
+                objectLastModified = head.LastModified;
+            });
+
+            after(async () => {
+                await bucketUtil.empty(bucketName);
+                await bucketUtil.deleteOne(bucketName);
+            });
+
+            function deleteObjectConditional(s3, params, headers, next) {
+                const request = s3.deleteObject(params);
+                request.on('build', () => {
+                    for (const [key, value] of Object.entries(headers)) {
+                        request.httpRequest.headers[key] = value;
+                    }
+                });
+                return request.send(next);
+            }
+
+            describe('If-Unmodified-Since header tests', () => {
+                it('should delete when condition is true (date after object modification)', done => {
+                    const futureDate = new Date(objectLastModified.getTime() + 60_000); // 1 minute later
+
+                    deleteObjectConditional(s3, {
+                        Bucket: bucketName,
+                        Key: testObjectKey,
+                    }, {
+                        'If-Unmodified-Since': futureDate.toUTCString(),
+                    }, (err, data) => {
+                        assert.ifError(err);
+                        assert.deepStrictEqual(data, {});
+                        s3.headObject({
+                            Bucket: bucketName,
+                            Key: testObjectKey,
+                        }, err => {
+                            assert.strictEqual(err.code, 'NotFound');
+                            done();
+                        });
+                    });
+                });
+
+                it('should fail (412) to delete when condition is false (date before object modification)', done => {
+                    const pastDate = new Date(objectLastModified.getTime() - 60_000); // 1 minute earlier
+
+                    deleteObjectConditional(s3, {
+                        Bucket: bucketName,
+                        Key: testObjectKey,
+                    }, {
+                        'If-Unmodified-Since': pastDate.toUTCString(),
+                    }, err => {
+                        assert.strictEqual(err.code, 'PreconditionFailed');
+                        assert.strictEqual(err.statusCode, 412);
+                        done();
+                    });
+                });
+            });
+
+            describe('If-Modified-Since header tests', () => {
+                it('should delete when condition is true (date before object modification)', done => {
+                    const pastDate = new Date(objectLastModified.getTime() - 60_000); // 1 minute earlier
+
+                    deleteObjectConditional(s3, {
+                        Bucket: bucketName,
+                        Key: testObjectKey,
+                    }, {
+                        'If-Modified-Since': pastDate.toUTCString(),
+                    }, (err, data) => {
+                        assert.ifError(err);
+                        assert.deepStrictEqual(data, {});
+                        s3.headObject({
+                            Bucket: bucketName,
+                            Key: testObjectKey,
+                        }, err => {
+                            assert.strictEqual(err.code, 'NotFound');
+                            done();
+                        });
+                    });
+                });
+
+                it('should fail (304) to delete when condition is false (date after object modification)', done => {
+                    const futureDate = new Date(objectLastModified.getTime() + 60_000); // 1 minute later
+
+                    deleteObjectConditional(s3, {
+                        Bucket: bucketName,
+                        Key: testObjectKey,
+                    }, {
+                        'If-Modified-Since': futureDate.toUTCString(),
+                    }, err => {
+                        assert.strictEqual(err.code, 'NotModified');
+                        assert.strictEqual(err.statusCode, 304);
+                        done();
+                    });
+                });
+            });
+
+            describe('combined conditional headers', () => {
+                it('should delete when both If-Modified-Since and If-Unmodified-Since conditions are true', done => {
+                    const pastDate = new Date(objectLastModified.getTime() - 60_000); // 1 minute earlier
+                    const futureDate = new Date(objectLastModified.getTime() + 60_000); // 1 minute later
+
+                    deleteObjectConditional(s3, {
+                        Bucket: bucketName,
+                        Key: testObjectKey,
+                    }, {
+                        'If-Modified-Since': pastDate.toUTCString(),
+                        'If-Unmodified-Since': futureDate.toUTCString(),
+                    }, (err, data) => {
+                        assert.ifError(err);
+                        assert.deepStrictEqual(data, {});
+                        s3.headObject({
+                            Bucket: bucketName,
+                            Key: testObjectKey,
+                        }, err => {
+                            assert.strictEqual(err.code, 'NotFound');
+                            done();
+                        });
+                    });
+                });
+            });
+        });
     });
 });
