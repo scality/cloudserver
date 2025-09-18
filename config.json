@@ -142,5 +142,8 @@
     },
     "kmip": {
         "providerName": "thales"
+    },
+    "integrityChecks": {
+        "objectPutRetention": true
     }
 }
