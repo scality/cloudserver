@@ -1475,7 +1475,7 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#revert/azure-upgrade":
+"arsenal@git+https://github.com/scality/Arsenal#feature/ARSN-525/upgrade-azure-package":
   version "8.2.29"
   resolved "git+https://github.com/scality/Arsenal#4d34ff34fe9ab219ea767da23ebb67144c3fbdb9"
   dependencies:
