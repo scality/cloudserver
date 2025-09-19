@@ -4,7 +4,6 @@ const async = require('async');
 const { makeRequest } = require('../../functional/raw-node/utils/makeRequest');
 const BucketUtility =
       require('../../functional/aws-node-sdk/lib/utility/bucket-util');
-const { runIfMongo } = require('./utils');
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 
@@ -15,7 +14,7 @@ const backbeatAuthCredentials = {
     secretKey: s3.config.credentials.secretAccessKey,
 };
 
-const TEST_BUCKET = 'backbeatbucket';
+const TEST_BUCKET = 'bucket-for-bucket-indexing';
 
 function indexDeleteRequest(payload, bucket, cb) {
     makeRequest({
@@ -102,7 +101,10 @@ const indexRespObject = [
     },
 ];
 
-runIfMongo('Indexing Routes', () => {
+const describeIfMongo = process.env.S3METADATA === 'mongodb' ? describe : describe.skip;
+const describeIfNotMongo = process.env.S3METADATA !== 'mongodb' ? describe : describe.skip;
+
+describe('Indexing Routes', () => {
     before(done => {
         s3.createBucket({ Bucket: TEST_BUCKET }).promise()
             .then(() => done())
@@ -112,11 +114,11 @@ runIfMongo('Indexing Routes', () => {
             });
     });
 
-    // after(done => {
-    //     bucketUtil.empty(TEST_BUCKET)
-    //         .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
-    //         .then(() => done());
-    // });
+    after(done => {
+        bucketUtil.empty(TEST_BUCKET)
+            .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
+            .then(() => done());
+    });
 
     it('should reject non-authenticated requests', done => {
         makeRequest({
@@ -158,61 +160,92 @@ runIfMongo('Indexing Routes', () => {
         });
     });
 
-    it('should successfully add indexes', done => {
-        async.series([
-            next => {
-                indexPutRequest(indexReqObject, TEST_BUCKET, err => {
-                    assert.ifError(err);
-                    next();
-                });
-            },
-            next => {
-                indexGetRequest(TEST_BUCKET, (err, data) => {
-                    assert.ifError(err);
-                    const res = JSON.parse(data.body);
-                    assert.deepStrictEqual(res.Indexes, indexRespObject);
-                    next();
-                });
-            },
-        ], done);
+    describeIfMongo('with mongodb metadata', () => {
+        it('should successfully add indexes', done => {
+            async.series([
+                next => {
+                    indexPutRequest(indexReqObject, TEST_BUCKET, err => {
+                        assert.ifError(err);
+                        next();
+                    });
+                },
+                next => {
+                    indexGetRequest(TEST_BUCKET, (err, data) => {
+                        assert.ifError(err);
+                        const res = JSON.parse(data.body);
+                        assert.deepStrictEqual(res.Indexes, indexRespObject);
+                        next();
+                    });
+                },
+            ], done);
+        });
+
+        it('should successfully delete indexes', done => {
+            async.series([
+                next => {
+                    indexPutRequest(indexReqObject, TEST_BUCKET, err => {
+                        assert.ifError(err);
+                        next();
+                    });
+                },
+                next => {
+                    indexGetRequest(TEST_BUCKET, (err, data) => {
+                        assert.ifError(err);
+                        const res = JSON.parse(data.body);
+                        assert.deepStrictEqual(res.Indexes, indexRespObject);
+                        next();
+                    });
+                },
+                next => {
+                    indexDeleteRequest(indexReqObject, TEST_BUCKET, err => {
+                        assert.ifError(err);
+                        next();
+                    });
+                },
+                next => {
+                    indexGetRequest(TEST_BUCKET, (err, data) => {
+                        assert.ifError(err);
+                        const res = JSON.parse(data.body);
+                        assert.deepStrictEqual(res.Indexes, [
+                            {
+                                name: '_id_',
+                                keys: [{ key: '_id', order: 1 }],
+                            }
+                        ]);
+                        next();
+                    });
+                },
+            ], done);
+        });
     });
 
-    it('should successfully delete indexes', done => {
-        async.series([
-            next => {
-                indexPutRequest(indexReqObject, TEST_BUCKET, err => {
-                    assert.ifError(err);
-                    next();
-                });
-            },
-            next => {
-                indexGetRequest(TEST_BUCKET, (err, data) => {
-                    assert.ifError(err);
-                    const res = JSON.parse(data.body);
-                    assert.deepStrictEqual(res.Indexes, indexRespObject);
-                    next();
-                });
-            },
-            next => {
-                indexDeleteRequest(indexReqObject, TEST_BUCKET, err => {
-                    assert.ifError(err);
-                    next();
-                });
-            },
-            next => {
-                indexGetRequest(TEST_BUCKET, (err, data) => {
-                    assert.ifError(err);
-                    const res = JSON.parse(data.body);
-                    assert.deepStrictEqual(res.Indexes, [
-                        {
-                            name: '_id_',
-                            keys: [{ key: '_id', order: 1 }],
-                        }
-                    ]);
-                    next();
-                });
-            },
-        ], done);
+    describeIfNotMongo('without mongodb metadata', () => {
+        it('should return NotImplemented add indexes', done => {
+            indexPutRequest(indexReqObject, TEST_BUCKET, err => {
+                assert(err);
+                assert.strictEqual(err.code, 'NotImplemented');
+                assert.strictEqual(err.statusCode, 501);
+                done();
+            });
+        });
+
+        it('should return NotImplemented get indexes', done => {
+            indexGetRequest(TEST_BUCKET, err => {
+                assert(err);
+                assert.strictEqual(err.code, 'NotImplemented');
+                assert.strictEqual(err.statusCode, 501);
+                done();
+            });
+        });
+
+        it('should return NotImplemented delete indexes', done => {
+            indexDeleteRequest(indexReqObject, TEST_BUCKET, err => {
+                assert(err);
+                assert.strictEqual(err.code, 'NotImplemented');
+                assert.strictEqual(err.statusCode, 501);
+                done();
+            });
+        });
     });
 });
 
