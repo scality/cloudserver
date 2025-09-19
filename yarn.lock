@@ -202,24 +202,7 @@
     fast-xml-parser "^5.0.7"
     tslib "^2.8.1"
 
-"@azure/identity@^4.10.2":
-  version "4.10.2"
-  resolved "https://registry.yarnpkg.com/@azure/identity/-/identity-4.10.2.tgz#6609ce398824ff0bb53f1ad1043a9f1cc93e56b8"
-  integrity sha512-Uth4vz0j+fkXCkbvutChUj03PDCokjbC6Wk9JT8hHEUtpy/EurNKAseb3+gO6Zi9VYBvwt61pgbzn1ovk942Qg==
-  dependencies:
-    "@azure/abort-controller" "^2.0.0"
-    "@azure/core-auth" "^1.9.0"
-    "@azure/core-client" "^1.9.2"
-    "@azure/core-rest-pipeline" "^1.17.0"
-    "@azure/core-tracing" "^1.0.0"
-    "@azure/core-util" "^1.11.0"
-    "@azure/logger" "^1.0.0"
-    "@azure/msal-browser" "^4.2.0"
-    "@azure/msal-node" "^3.5.0"
-    open "^10.1.0"
-    tslib "^2.2.0"
-
-"@azure/identity@^4.12.0", "@azure/identity@^4.5.0":
+"@azure/identity@^4.10.2", "@azure/identity@^4.12.0", "@azure/identity@^4.5.0":
   version "4.12.0"
   resolved "https://registry.yarnpkg.com/@azure/identity/-/identity-4.12.0.tgz#272e39a8742191aac0b9f5ec683984bf4d88e7cb"
   integrity sha512-6vuh2R3Cte6SD6azNalLCjIDoryGdcvDVEV7IDRPtm5lHX5ffkDlIalaoOp5YJU08e4ipjJENel20kSMDLAcug==
