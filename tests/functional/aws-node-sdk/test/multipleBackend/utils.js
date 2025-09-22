@@ -146,6 +146,7 @@ utils.getAzureClient = () => {
             params[key] = envVariable;
             return true;
         }
+
         if (config.locationConstraints[azureLocation] &&
             config.locationConstraints[azureLocation].details &&
             config.locationConstraints[azureLocation].details[key]) {
