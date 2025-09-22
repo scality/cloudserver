@@ -83,10 +83,7 @@ function makeBackbeatRequest(params, callback) {
     makeRequest(options, callback);
 }
 
-const runIfMongo = process.env.S3METADATA === 'mongodb' ? describe : describe.skip;
-
 module.exports = {
     makeBackbeatRequest,
-    runIfMongo,
     updateMetadata,
 };
