@@ -15,6 +15,27 @@ function checkError(err, code, message) {
     assert.strictEqual(err.message, message);
 }
 
+async function cleanupVersionedBucket(bucketUtil, bucketName) {
+    // Clean up all multipart uploads
+    const listMPUResponse = await bucketUtil.s3.listMultipartUploads({ Bucket: bucketName }).promise();
+    await Promise.all(listMPUResponse.Uploads.map(upload =>
+        bucketUtil.s3.abortMultipartUpload({
+            Bucket: bucketName,
+            Key: upload.Key,
+            UploadId: upload.UploadId,
+        }).promise().catch(err => {
+            if (err.code !== 'NoSuchUpload') {
+                throw err;
+            }
+            // If NoSuchUpload, swallow error
+        }),
+    ));
+
+    // Clean up all object versions
+    await bucketUtil.empty(bucketName);
+    await bucketUtil.deleteOne(bucketName);
+}
+
 describe('Abort MPU', () => {
     withV4(sigCfg => {
         let bucketUtil;
@@ -88,24 +109,7 @@ describe('Abort MPU with existing object', function AbortMPUExistingObject() {
         });
 
         afterEach(async () => {
-            const data = await s3.listMultipartUploads({ Bucket: bucketName }).promise();
-            const uploads = data.Uploads;
-            await Promise.all(uploads.map(async upload => {
-                try {
-                    await s3.abortMultipartUpload({
-                        Bucket: bucketName,
-                        Key: upload.Key,
-                        UploadId: upload.UploadId,
-                    }).promise();
-                } catch (err) {
-                    if (err.code !== 'NoSuchUpload') {
-                        throw err;
-                    }
-                    // If NoSuchUpload, swallow error
-                }
-            }));
-            await bucketUtil.empty(bucketName);
-            await bucketUtil.deleteOne(bucketName);
+            await cleanupVersionedBucket(bucketUtil, bucketName);
         });
 
         it('should not delete existing object data when aborting another MPU for same key', done => {
@@ -315,35 +319,7 @@ describe('Abort MPU - Versioned Bucket Cleanup', function testSuite() {
         });
 
         afterEach(async () => {
-            // Clean up all multipart uploads
-            const listMPUResponse = await s3.listMultipartUploads({ Bucket: bucketName }).promise();
-            await Promise.all(listMPUResponse.Uploads.map(upload =>
-                s3.abortMultipartUpload({
-                    Bucket: bucketName,
-                    Key: upload.Key,
-                    UploadId: upload.UploadId,
-                }).promise().catch(err => {
-                    if (err.code !== 'NoSuchUpload') {
-                        throw err;
-                    }
-                }),
-            ));
-
-            // Clean up all object versions
-            const listVersionsResponse = await s3.listObjectVersions({ Bucket: bucketName }).promise();
-            const allObjects = [
-                ...listVersionsResponse.Versions,
-                ...listVersionsResponse.DeleteMarkers,
-            ];
-            await Promise.all(allObjects.map(obj =>
-                s3.deleteObject({
-                    Bucket: bucketName,
-                    Key: obj.Key,
-                    VersionId: obj.VersionId,
-                }).promise()
-            ));
-
-            await bucketUtil.deleteOne(bucketName);
+            await cleanupVersionedBucket(bucketUtil, bucketName);
         });
 
         it('should handle aborting MPU with many versions of same object', done => {
