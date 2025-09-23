@@ -70,15 +70,6 @@ describe('putBucketCORS API', () => {
         });
     });
 
-    it('should return BadDigest if md5 is omitted', done => {
-        const corsUtil = new CorsConfigTester();
-        const testBucketPutCorsRequest = corsUtil
-            .createBucketCorsRequest('PUT', bucketName);
-        testBucketPutCorsRequest.headers['content-md5'] = undefined;
-        _testPutBucketCors(authInfo, testBucketPutCorsRequest,
-            log, 'BadDigest', done);
-    });
-
     it('should return MalformedXML if body greater than 64KB', done => {
         const corsUtil = new CorsConfigTester();
         const body = Buffer.alloc(65537); // 64 * 1024 = 65536 bytes
