@@ -38,7 +38,9 @@ function methodRequest(params, callback) {
         rejectUnauthorized: false,
     };
     if (isWebsite) {
-        options.hostname = websiteHostname;
+        options.hostname = hostname;
+        options.headers = options.headers || {};
+        options.headers.Host = websiteHostname;
         options.path = objectKey ? `/${objectKey}` : '/';
     } else {
         options.hostname = hostname;
