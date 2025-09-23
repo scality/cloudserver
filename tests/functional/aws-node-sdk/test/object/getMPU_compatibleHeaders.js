@@ -1,4 +1,11 @@
 const assert = require('assert');
+const {
+    CreateBucketCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    CompleteMultipartUploadCommand,
+    GetObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -36,18 +43,18 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
                 return bucketUtil.deleteOne(bucketName);
             })
             .catch(err => {
-                if (err.code !== 'NoSuchBucket') {
+                if (err.Code !== 'NoSuchBucket') {
                     process.stdout.write(`${err}\n`);
                     throw err;
                 }
             })
             .then(() => {
                 process.stdout.write('creating bucket\n');
-                return s3.createBucket({ Bucket: bucketName }).promise();
+                return s3.send(new CreateBucketCommand({ Bucket: bucketName }));
             })
             .then(() => {
                 process.stdout.write('initiating multipart upload\n');
-                return s3.createMultipartUpload(params).promise();
+                return s3.send(new CreateMultipartUploadCommand(params));
             })
             .then(res => {
                 uploadId = res.UploadId;
@@ -58,6 +65,7 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
                 throw err;
             });
         });
+
         after(() => {
             process.stdout.write('Emptying bucket\n');
             return bucketUtil.empty(bucketName)
@@ -70,19 +78,20 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
                 throw err;
             });
         });
+
         it('should return additional headers when get request is performed ' +
         'on MPU, when they are specified in creation of MPU',
         () => {
             const params = { Bucket: bucketName, Key: 'key', PartNumber: 1,
                 UploadId: uploadId };
-            return s3.uploadPart(params).promise()
+            return s3.send(new UploadPartCommand(params))
             .catch(err => {
                 process.stdout.write(`Error in uploadPart ${err}\n`);
                 throw err;
             })
             .then(res => {
                 process.stdout.write('about to complete multipart upload\n');
-                return s3.completeMultipartUpload({
+                return s3.send(new CompleteMultipartUploadCommand({
                     Bucket: bucketName,
                     Key: objectName,
                     UploadId: uploadId,
@@ -91,7 +100,7 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
                             { ETag: res.ETag, PartNumber: 1 },
                         ],
                     },
-                }).promise();
+                }));
             })
             .catch(err => {
                 process.stdout.write(`Error completing upload ${err}\n`);
@@ -99,9 +108,9 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
             })
             .then(() => {
                 process.stdout.write('about to get object\n');
-                return s3.getObject({
+                return s3.send(new GetObjectCommand({
                     Bucket: bucketName, Key: objectName,
-                }).promise();
+                }));
             })
             .catch(err => {
                 process.stdout.write(`Error getting object ${err}\n`);

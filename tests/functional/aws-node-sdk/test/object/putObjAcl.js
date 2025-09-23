@@ -1,4 +1,8 @@
 const assert = require('assert');
+const {
+    PutObjectCommand,
+    PutObjectAclCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -45,23 +49,18 @@ describe('PUT Object ACL', () => {
         const s3 = bucketUtil.s3;
         const Key = 'aclTest';
 
-        before(done => {
-            bucketUtil.createRandom(1)
-                      .then(created => {
-                          bucketName = created;
-                          done();
-                      })
-                      .catch(done);
+        before(async () => {
+            bucketName = await bucketUtil.createRandom(1);
         });
 
-        afterEach(() => {
+        afterEach(async () => {
             process.stdout.write('emptying bucket');
-            return bucketUtil.empty(bucketName);
+            await bucketUtil.empty(bucketName);
         });
 
-        after(() => {
+        after(async () => {
             process.stdout.write('deleting bucket');
-            return bucketUtil.deleteOne(bucketName);
+            await bucketUtil.deleteOne(bucketName);
         });
 
         it('should put object ACLs', async () => {
@@ -71,38 +70,49 @@ describe('PUT Object ACL', () => {
                 { Bucket, Key },
             ];
             for (const param of objects) {
-                await s3.putObject(param).promise();
+                await s3.send(new PutObjectCommand(param));
             }
-            const data = await s3.putObjectAcl({ Bucket, Key, ACL: 'public-read' }).promise();
+            const data = await s3.send(new PutObjectAclCommand({ 
+                Bucket, 
+                Key, 
+                ACL: 'public-read' 
+            }));
             assert(data);
         });        
 
         it('should return NoSuchKey if try to put object ACLs ' +
-            'for nonexistent object', done => {
+            'for nonexistent object', async () => {
             const s3 = bucketUtil.s3;
             const Bucket = bucketName;
 
-            s3.putObjectAcl({
-                Bucket,
-                Key,
-                ACL: 'public-read' }, err => {
+            try {
+                await s3.send(new PutObjectAclCommand({
+                    Bucket,
+                    Key,
+                    ACL: 'public-read' 
+                }));
+                throw new Error('Expected NoSuchKey error');
+            } catch (err) {
                 assert(err);
-                assert.strictEqual(err.statusCode, 404);
-                assert.strictEqual(err.code, 'NoSuchKey');
-                done();
-            });
+                assert.strictEqual(err.$metadata.httpStatusCode, 404);
+                assert.strictEqual(err.name, 'NoSuchKey');
+            }
         });
 
         describe('on an object', () => {
-            before(done => s3.putObject({ Bucket: bucketName, Key }, done));
-            after(() => {
-                process.stdout.write('deleting bucket');
-                return bucketUtil.empty(bucketName);
+            before(async () => {
+                await s3.send(new PutObjectCommand({ Bucket: bucketName, Key }));
             });
+            
+            after(async () => {
+                process.stdout.write('deleting bucket');
+                await bucketUtil.empty(bucketName);
+            });
+            
             // The supplied canonical ID is not associated with a real AWS
             // account, so AWS_ON_AIR will raise a 400 InvalidArgument
             itSkipIfAWS('should return AccessDenied if try to change owner ' +
-                'ID in ACL request body', done => {
+                'ID in ACL request body', async () => {
                 const acp = new _AccessControlPolicy(
                     { ownerID: notOwnerCanonicalID });
                 acp.addGrantee('Group', constants.publicId, 'READ');
@@ -111,12 +121,15 @@ describe('PUT Object ACL', () => {
                     Key,
                     AccessControlPolicy: acp,
                 };
-                s3.putObjectAcl(putAclParams, err => {
+                
+                try {
+                    await s3.send(new PutObjectAclCommand(putAclParams));
+                    throw new Error('Expected AccessDenied error');
+                } catch (err) {
                     assert(err);
-                    assert.strictEqual(err.statusCode, 403);
-                    assert.strictEqual(err.code, 'AccessDenied');
-                    done();
-                });
+                    assert.strictEqual(err.$metadata.httpStatusCode, 403);
+                    assert.strictEqual(err.name, 'AccessDenied');
+                }
             });
         });
     });

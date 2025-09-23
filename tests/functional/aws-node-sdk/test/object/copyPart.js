@@ -1,7 +1,16 @@
-const { promisify } = require('util');
 const assert = require('assert');
 const crypto = require('crypto');
 
+const { CreateBucketCommand,
+    PutObjectCommand,
+    GetObjectCommand,
+    HeadObjectCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    UploadPartCopyCommand,
+    CompleteMultipartUploadCommand,
+    AbortMultipartUploadCommand
+ } = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -28,7 +37,7 @@ function checkNoError(err) {
 
 function checkError(err, code) {
     assert.notEqual(err, null, 'Expected failure but got success');
-    assert.strictEqual(err.code, code);
+    assert.strictEqual(err.Code, code);
 }
 
 describe('Object Part Copy', () => {
@@ -41,7 +50,7 @@ describe('Object Part Copy', () => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            s3.createBucketPromise = promisify(s3.createBucket);
+            s3.createBucketPromise = params => s3.send(new CreateBucketCommand(params));
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
                 s3.createBucketPromise = createEncryptedBucketPromise;
             }
@@ -56,24 +65,24 @@ describe('Object Part Copy', () => {
                 throw err;
             })
             .then(() =>
-                s3.putObject({
+                s3.send(new PutObjectCommand({
                     Bucket: sourceBucketName,
                     Key: sourceObjName,
                     Body: content,
-                }).promise())
+                })))
             .then(res => {
                 etag = res.ETag;
-                return s3.headObject({
+                return s3.send(new HeadObjectCommand({
                     Bucket: sourceBucketName,
                     Key: sourceObjName,
-                }).promise();
+                }));
             }).then(() =>
-            s3.createMultipartUpload({
+            s3.send(new CreateMultipartUploadCommand({
                 Bucket: destBucketName,
                 Key: destObjName,
-            }).promise()).then(iniateRes => {
-                uploadId = iniateRes.UploadId;
-            }).catch(err => {
+            })).then(initiateRes => {
+                uploadId = initiateRes.UploadId;
+            })).catch(err => {
                 process.stdout.write(`Error in outer beforeEach: ${err}\n`);
                 throw err;
             });
@@ -81,13 +90,12 @@ describe('Object Part Copy', () => {
 
         afterEach(() => bucketUtil.empty(sourceBucketName)
             .then(() => bucketUtil.empty(destBucketName))
-            .then(() => s3.abortMultipartUpload({
+            .then(() => s3.send(new AbortMultipartUploadCommand({
                 Bucket: destBucketName,
                 Key: destObjName,
                 UploadId: uploadId,
-            }).promise())
-            .catch(err => {
-                if (err.code !== 'NoSuchUpload') {
+            }))).catch(err => {
+                if (err.Code !== 'NoSuchUpload') {
                     process.stdout.write(`Error in afterEach: ${err}\n`);
                     throw err;
                 }
@@ -98,225 +106,193 @@ describe('Object Part Copy', () => {
 
 
         it('should copy a part from a source bucket to a different ' +
-            'destination bucket', done => {
-            s3.uploadPartCopy({ Bucket: destBucketName,
+            'destination bucket', () => {
+            s3.send(new UploadPartCopyCommand({ Bucket: destBucketName,
                 Key: destObjName,
                 CopySource: `${sourceBucketName}/${sourceObjName}`,
                 PartNumber: 1,
                 UploadId: uploadId,
-            },
-                (err, res) => {
-                    checkNoError(err);
-                    assert.strictEqual(res.ETag, etag);
-                    assert(res.LastModified);
-                    done();
-                });
+            })).then(res => {
+                assert.strictEqual(res.CopyPartResult.ETag, etag);
+                assert(res.CopyPartResult.LastModified);
+            });
         });
 
         it('should copy a part from a source bucket to a different ' +
-            'destination bucket and complete the MPU', done => {
-            s3.uploadPartCopy({ Bucket: destBucketName,
+            'destination bucket and complete the MPU', async () => {
+            await s3.send(new UploadPartCopyCommand({ Bucket: destBucketName,
                 Key: destObjName,
                 CopySource: `${sourceBucketName}/${sourceObjName}`,
                 PartNumber: 1,
                 UploadId: uploadId,
-            },
-                (err, res) => {
-                    checkNoError(err);
-                    assert.strictEqual(res.ETag, etag);
-                    assert(res.LastModified);
-                    s3.completeMultipartUpload({
-                        Bucket: destBucketName,
-                        Key: destObjName,
+            })).then(res => {
+                assert.strictEqual(res.CopyPartResult.ETag, etag);
+                assert(res.CopyPartResult.LastModified);
+                return s3.send(new CompleteMultipartUploadCommand({
+                    Bucket: destBucketName,
+                    Key: destObjName,
                         UploadId: uploadId,
                         MultipartUpload: {
                             Parts: [
                                 { ETag: etag, PartNumber: 1 },
                             ],
                         },
-                    }, (err, res) => {
-                        checkNoError(err);
+                    })).then(res => {
                         assert.strictEqual(res.Bucket, destBucketName);
                         assert.strictEqual(res.Key, destObjName);
                         // AWS confirmed final ETag for MPU
                         assert.strictEqual(res.ETag,
                             '"db77ebbae9e9f5a244a26b86193ad818-1"');
-                        done();
                     });
                 });
         });
 
-        it('should return InvalidArgument error given invalid range', done => {
-            s3.putObject({
+        it('should return InvalidArgument error given invalid range', async () => {
+            await s3.send(new PutObjectCommand({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
                 Body: Buffer.alloc(oneHundredMBPlus11, 'packing'),
-            }, err => {
-                checkNoError(err);
-                s3.uploadPartCopy({ Bucket: destBucketName,
+            })).then(() => s3.send(new UploadPartCopyCommand({
+                    Bucket: destBucketName,
                     Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
                     CopySourceRange: 'bad-range-parameter',
-                },
-                err => {
+                })).catch(err => {
                     checkError(err, 'InvalidArgument');
-                    done();
-                });
-            });
+                }));
         });
 
         it('should return EntityTooLarge error if attempt to copy ' +
             'object larger than max and do not specify smaller ' +
-            'range in request', done => {
-            s3.putObject({
+            'range in request', async () => {
+            await s3.send(new PutObjectCommand({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
                 Body: Buffer.alloc(oneHundredMBPlus11, 'packing'),
-            }, err => {
-                checkNoError(err);
-                s3.uploadPartCopy({ Bucket: destBucketName,
+            })).then(() => s3.send(new UploadPartCopyCommand({
+                    Bucket: destBucketName,
                     Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-                },
-                    err => {
-                        checkError(err, 'EntityTooLarge');
-                        done();
-                    });
+                }))).catch(err => {
+                checkError(err, 'EntityTooLarge');
             });
         });
 
         it('should return EntityTooLarge error if attempt to copy ' +
             'object larger than max and specify too large ' +
-            'range in request', done => {
-            s3.putObject({
+            'range in request', async () => {
+            await s3.send(new PutObjectCommand({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
                 Body: Buffer.alloc(oneHundredMBPlus11, 'packing'),
-            }, err => {
-                checkNoError(err);
-                s3.uploadPartCopy({ Bucket: destBucketName,
+            })).then(() => s3.send(new UploadPartCopyCommand({
+                    Bucket: destBucketName,
                     Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
                     CopySourceRange: `bytes=0-${oneHundredMBPlus11}`,
-                },
-                    err => {
-                        checkError(err, 'EntityTooLarge');
-                        done();
-                    });
+                }))).catch(err => {
+                checkError(err, 'EntityTooLarge');
             });
         });
 
         it('should succeed if attempt to copy ' +
             'object larger than max but specify acceptable ' +
-            'range in request', done => {
-            s3.putObject({
+            'range in request', async () => {
+            await s3.send(new PutObjectCommand({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
                 Body: Buffer.alloc(oneHundredMBPlus11, 'packing'),
-            }, err => {
-                checkNoError(err);
-                s3.uploadPartCopy({ Bucket: destBucketName,
+            })).then(() => s3.send(new UploadPartCopyCommand({
+                    Bucket: destBucketName,
                     Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-                    CopySourceRange: 'bytes=0-100',
-                },
-                    err => {
-                        checkNoError(err);
-                        done();
-                    });
+                    CopySourceRange: `bytes=0-${oneHundredMBPlus11}`,
+                }))).catch(err => {
+                checkNoError(err);
             });
         });
 
         it('should copy a 0 byte object part from a source bucket to a ' +
-            'different destination bucket and complete the MPU', done => {
+            'different destination bucket and complete the MPU', () => {
             const emptyFileETag = '"d41d8cd98f00b204e9800998ecf8427e"';
-            s3.putObject({
+            return s3.send(new PutObjectCommand({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
                 Body: '',
-            }, () => {
-                s3.uploadPartCopy({ Bucket: destBucketName,
+            })).then(() => s3.send(new UploadPartCopyCommand({
+                    Bucket: destBucketName,
                     Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-                },
-                    (err, res) => {
-                        checkNoError(err);
-                        assert.strictEqual(res.ETag, emptyFileETag);
-                        assert(res.LastModified);
-                        s3.completeMultipartUpload({
-                            Bucket: destBucketName,
-                            Key: destObjName,
-                            UploadId: uploadId,
-                            MultipartUpload: {
-                                Parts: [
-                                    { ETag: emptyFileETag, PartNumber: 1 },
-                                ],
-                            },
-                        }, (err, res) => {
-                            checkNoError(err);
-                            assert.strictEqual(res.Bucket, destBucketName);
-                            assert.strictEqual(res.Key, destObjName);
-                            // AWS confirmed final ETag for MPU
-                            assert.strictEqual(res.ETag,
-                                '"59adb24ef3cdbe0297f05b395827453f-1"');
-                            done();
-                        });
-                    });
-            });
-        });
-
-        it('should copy a part using a range header from a source bucket ' +
-            'to a different destination bucket and complete the MPU', done => {
-            const rangeETag = '"ac1be00f1f162e20d58099eec2ea1c70"';
-            // AWS confirmed final ETag for MPU
-            const finalMpuETag = '"bff2a6af3adfd8e107a06de01d487176-1"';
-            s3.uploadPartCopy({ Bucket: destBucketName,
-                Key: destObjName,
-                CopySource: `${sourceBucketName}/${sourceObjName}`,
-                PartNumber: 1,
-                CopySourceRange: 'bytes=0-3',
-                UploadId: uploadId,
-            },
-                (err, res) => {
-                    checkNoError(err);
-                    assert.strictEqual(res.ETag, rangeETag);
-                    assert(res.LastModified);
-                    s3.completeMultipartUpload({
+                })).then(res => {
+                    assert.strictEqual(res.CopyPartResult.ETag, emptyFileETag);
+                    assert(res.CopyPartResult.LastModified);
+                    return s3.send(new CompleteMultipartUploadCommand({
                         Bucket: destBucketName,
                         Key: destObjName,
                         UploadId: uploadId,
                         MultipartUpload: {
                             Parts: [
-                                { ETag: rangeETag, PartNumber: 1 },
+                                { ETag: emptyFileETag, PartNumber: 1 },
                             ],
                         },
-                    }, (err, res) => {
-                        checkNoError(err);
+                    })).then(res => {
                         assert.strictEqual(res.Bucket, destBucketName);
                         assert.strictEqual(res.Key, destObjName);
+                            // AWS confirmed final ETag for MPU
+                        assert.strictEqual(res.ETag,'"59adb24ef3cdbe0297f05b395827453f-1"');
+                    });
+                }));
+        });
+
+        it('should copy a part using a range header from a source bucket ' +
+            'to a different destination bucket and complete the MPU', async () => {
+            const rangeETag = '"ac1be00f1f162e20d58099eec2ea1c70"';
+            // AWS confirmed final ETag for MPU
+            const finalMpuETag = '"bff2a6af3adfd8e107a06de01d487176-1"';
+            await s3.send(new UploadPartCopyCommand({
+                Bucket: destBucketName,
+                Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                PartNumber: 1,
+                CopySourceRange: 'bytes=0-3',
+                UploadId: uploadId,
+            })).then(res => {
+                assert.strictEqual(res.CopyPartResult.ETag, rangeETag);
+                assert(res.CopyPartResult.LastModified);
+                return s3.send(new CompleteMultipartUploadCommand({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    UploadId: uploadId,
+                    MultipartUpload: {
+                        Parts: [
+                            { ETag: rangeETag, PartNumber: 1 },
+                        ],
+                    },
+                })).then(res => {
+                    assert.strictEqual(res.Bucket, destBucketName);
+                    assert.strictEqual(res.Key, destObjName);
+                    assert.strictEqual(res.ETag, finalMpuETag);
+                    return s3.send(new GetObjectCommand({
+                        Bucket: destBucketName,
+                        Key: destObjName,
+                    })).then(async res => {
                         assert.strictEqual(res.ETag, finalMpuETag);
-                        s3.getObject({
-                            Bucket: destBucketName,
-                            Key: destObjName,
-                        }, (err, res) => {
-                            checkNoError(err);
-                            assert.strictEqual(res.ETag, finalMpuETag);
-                            assert.strictEqual(res.ContentLength, 4);
-                            assert.strictEqual(res.Body.toString(), 'I am');
-                            done();
-                        });
+                        assert.strictEqual(res.ContentLength, 4);
+                        const body = await res.Body.transformToString();
+                        assert.strictEqual(body, 'I am');
                     });
                 });
+            });
         });
 
         describe('When copy source was put by MPU', () => {
@@ -337,11 +313,11 @@ describe('Object Part Copy', () => {
                 const otherPartBuff = Buffer.alloc(5242880, 1);
                 otherMd5HashPart.update(otherPartBuff);
                 const otherPartHash = otherMd5HashPart.digest('hex');
-                return s3.createMultipartUpload({
+                return s3.send(new CreateMultipartUploadCommand({
                     Bucket: sourceBucketName,
                     Key: sourceMpuKey,
-                }).promise().then(iniateRes => {
-                    sourceMpuId = iniateRes.UploadId;
+                })).then(initiateRes => {
+                    sourceMpuId = initiateRes.UploadId;
                 }).catch(err => {
                     process.stdout.write(`Error initiating MPU ' +
                     'in MPU beforeEach: ${err}\n`);
@@ -351,13 +327,13 @@ describe('Object Part Copy', () => {
                     for (let i = 1; i < 10; i++) {
                         const partBuffHere = i % 2 ? partBuff : otherPartBuff;
                         const partHashHere = i % 2 ? partHash : otherPartHash;
-                        partUploads.push(s3.uploadPart({
+                        partUploads.push(s3.send(new UploadPartCommand({
                             Bucket: sourceBucketName,
                             Key: sourceMpuKey,
                             PartNumber: i,
                             UploadId: sourceMpuId,
                             Body: partBuffHere,
-                        }).promise());
+                        })));
                         parts.push({
                             ETag: partHashHere,
                             PartNumber: i,
@@ -371,14 +347,14 @@ describe('Object Part Copy', () => {
                     throw err;
                 }).then(() => {
                     process.stdout.write('completing mpu');
-                    return s3.completeMultipartUpload({
+                    return s3.send(new CompleteMultipartUploadCommand({
                         Bucket: sourceBucketName,
                         Key: sourceMpuKey,
                         UploadId: sourceMpuId,
                         MultipartUpload: {
                             Parts: parts,
                         },
-                    }).promise();
+                    }));
                 }).then(() => {
                     process.stdout.write('finished completing mpu');
                 }).catch(err => {
@@ -387,60 +363,60 @@ describe('Object Part Copy', () => {
                 });
             });
 
-            afterEach(() => s3.abortMultipartUpload({
+            afterEach(() => s3.send(new AbortMultipartUploadCommand({
                 Bucket: sourceBucketName,
                 Key: sourceMpuKey,
                 UploadId: sourceMpuId,
-            }).promise().catch(err => {
-                if (err.code !== 'NoSuchUpload'
-                && err.code !== 'NoSuchBucket') {
+            })).catch(err => {
+                if (err.Code !== 'NoSuchUpload'
+                && err.Code !== 'NoSuchBucket') {
                     process.stdout.write(`Error in afterEach: ${err}\n`);
                     throw err;
                 }
             }));
 
             it('should copy a part from a source bucket to a different ' +
-                'destination bucket', done => {
+                'destination bucket', async () => {
                 process.stdout.write('Entered first mpu test');
-                return s3.uploadPartCopy({ Bucket: destBucketName,
+                await s3.send(new UploadPartCopyCommand({
+                    Bucket: destBucketName,
                     Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceMpuKey}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-                },
-                    (err, res) => {
-                        checkNoError(err);
-                        assert.strictEqual(res.ETag,
-                            totalMpuObjectHash);
-                        assert(res.LastModified);
-                        done();
-                    });
+                })).then(res => {
+                    assert.strictEqual(res.CopyPartResult.ETag,
+                        totalMpuObjectHash);
+                    assert(res.CopyPartResult.LastModified);
+                });
             });
 
             it('should copy two parts from a source bucket to a different ' +
                 'destination bucket and complete the MPU', () => {
                 process.stdout.write('Putting first part in MPU test');
-                return s3.uploadPartCopy({ Bucket: destBucketName,
+                return s3.send(new UploadPartCopyCommand({
+                    Bucket: destBucketName,
                     Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceMpuKey}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-                }).promise().then(res => {
-                    assert.strictEqual(res.ETag, totalMpuObjectHash);
-                    assert(res.LastModified);
+                })).then(res => {
+                    assert.strictEqual(res.CopyPartResult.ETag, totalMpuObjectHash);
+                    assert(res.CopyPartResult.LastModified);
                 }).then(() => {
                     process.stdout.write('Putting second part in MPU test');
-                    return s3.uploadPartCopy({ Bucket: destBucketName,
+                    return s3.send(new UploadPartCopyCommand({
+                        Bucket: destBucketName,
                         Key: destObjName,
                         CopySource: `${sourceBucketName}/${sourceMpuKey}`,
                         PartNumber: 2,
                         UploadId: uploadId,
-                    }).promise().then(res => {
-                        assert.strictEqual(res.ETag, totalMpuObjectHash);
-                        assert(res.LastModified);
+                    })).then(res => {
+                        assert.strictEqual(res.CopyPartResult.ETag, totalMpuObjectHash);
+                        assert(res.CopyPartResult.LastModified);
                     }).then(() => {
                         process.stdout.write('Completing MPU');
-                        return s3.completeMultipartUpload({
+                        return s3.send(new CompleteMultipartUploadCommand({
                             Bucket: destBucketName,
                             Key: destObjName,
                             UploadId: uploadId,
@@ -450,16 +426,16 @@ describe('Object Part Copy', () => {
                                 { ETag: totalMpuObjectHash, PartNumber: 2 },
                                 ],
                             },
-                        }).promise();
-                    }).then(res => {
-                        assert.strictEqual(res.Bucket, destBucketName);
-                        assert.strictEqual(res.Key, destObjName);
-                    // combined ETag returned by AWS (combination of part ETags
-                    // with number of parts at the end)
+                        })).then(res => {
+                            assert.strictEqual(res.Bucket, destBucketName);
+                            assert.strictEqual(res.Key, destObjName);
+                        // combined ETag returned by AWS (combination of part ETags
+                        // with number of parts at the end)
                         assert.strictEqual(res.ETag,
                         '"5bba96810ff449d94aa8f5c5a859b0cb-2"');
-                    }).catch(err => {
-                        checkNoError(err);
+                        }).catch(err => {
+                            checkNoError(err);
+                        });
                     });
                 });
             });
@@ -474,29 +450,31 @@ describe('Object Part Copy', () => {
                 // with number of parts at the end)
                 const finalCombinedETag =
                     '"e08ede4e8b942e18537cb2289f613ae3-2"';
-                return s3.uploadPartCopy({ Bucket: destBucketName,
+                return s3.send(new UploadPartCopyCommand({
+                    Bucket: destBucketName,
                     Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceMpuKey}`,
                     PartNumber: 1,
                     UploadId: uploadId,
                     CopySourceRange: 'bytes=5242890-15242880',
-                }).promise().then(res => {
-                    assert.strictEqual(res.ETag, part1ETag);
-                    assert(res.LastModified);
+                })).then(res => {
+                    assert.strictEqual(res.CopyPartResult.ETag, part1ETag);
+                    assert(res.CopyPartResult.LastModified);
                 }).then(() => {
                     process.stdout.write('Putting second part in MPU test');
-                    return s3.uploadPartCopy({ Bucket: destBucketName,
+                    return s3.send(new UploadPartCopyCommand({
+                        Bucket: destBucketName,
                         Key: destObjName,
                         CopySource: `${sourceBucketName}/${sourceMpuKey}`,
                         PartNumber: 2,
                         UploadId: uploadId,
                         CopySourceRange: 'bytes=15242891-30242991',
-                    }).promise().then(res => {
-                        assert.strictEqual(res.ETag, part2ETag);
-                        assert(res.LastModified);
+                    })).then(res => {
+                        assert.strictEqual(res.CopyPartResult.ETag, part2ETag);
+                        assert(res.CopyPartResult.LastModified);
                     }).then(() => {
                         process.stdout.write('Completing MPU');
-                        return s3.completeMultipartUpload({
+                        return s3.send(new CompleteMultipartUploadCommand({
                             Bucket: destBucketName,
                             Key: destObjName,
                             UploadId: uploadId,
@@ -506,24 +484,24 @@ describe('Object Part Copy', () => {
                                 { ETag: part2ETag, PartNumber: 2 },
                                 ],
                             },
-                        }).promise();
-                    }).then(res => {
-                        assert.strictEqual(res.Bucket, destBucketName);
-                        assert.strictEqual(res.Key, destObjName);
-                        assert.strictEqual(res.ETag, finalCombinedETag);
-                    }).then(() => {
-                        process.stdout.write('Getting new object');
-                        return s3.getObject({
-                            Bucket: destBucketName,
-                            Key: destObjName,
-                        }).promise();
-                    }).then(res => {
-                        assert.strictEqual(res.ContentLength, 25000092);
-                        assert.strictEqual(res.ETag, finalCombinedETag);
-                    })
-                .catch(err => {
-                    checkNoError(err);
-                });
+                        })).then(res => {
+                            assert.strictEqual(res.Bucket, destBucketName);
+                            assert.strictEqual(res.Key, destObjName);
+                            assert.strictEqual(res.ETag, finalCombinedETag);
+                        }).then(() => {
+                            process.stdout.write('Getting new object');
+                            return s3.send(new GetObjectCommand({
+                                Bucket: destBucketName,
+                                Key: destObjName,
+                            })).then(res => {
+                                assert.strictEqual(res.ContentLength, 25000092);
+                                assert.strictEqual(res.ETag, finalCombinedETag);
+                            })
+                            .catch(err => {
+                                checkNoError(err);
+                            });
+                        });
+                    });
                 });
             });
 
@@ -531,27 +509,29 @@ describe('Object Part Copy', () => {
                 // AWS response etag for this completed MPU
                 const finalObjETag = '"db77ebbae9e9f5a244a26b86193ad818-1"';
                 process.stdout.write('Putting first part in MPU test');
-                return s3.uploadPartCopy({ Bucket: destBucketName,
+                return s3.send(new UploadPartCopyCommand({
+                    Bucket: destBucketName,
                     Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceMpuKey}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-                }).promise().then(res => {
-                    assert.strictEqual(res.ETag, totalMpuObjectHash);
-                    assert(res.LastModified);
+                })).then(res => {
+                    assert.strictEqual(res.CopyPartResult.ETag, totalMpuObjectHash);
+                    assert(res.CopyPartResult.LastModified);
                 }).then(() => {
                     process.stdout.write('Overwriting first part in MPU test');
-                    return s3.uploadPartCopy({ Bucket: destBucketName,
+                    return s3.send(new UploadPartCopyCommand({
+                        Bucket: destBucketName,
                         Key: destObjName,
                         CopySource: `${sourceBucketName}/${sourceObjName}`,
                         PartNumber: 1,
-                        UploadId: uploadId }).promise();
-                }).then(res => {
-                    assert.strictEqual(res.ETag, etag);
-                    assert(res.LastModified);
-                }).then(() => {
+                        UploadId: uploadId
+                    })
+                ).then(res => {
+                    assert.strictEqual(res.CopyPartResult.ETag, etag);
+                    assert(res.CopyPartResult.LastModified);
                     process.stdout.write('Completing MPU');
-                    return s3.completeMultipartUpload({
+                    return s3.send(new CompleteMultipartUploadCommand({
                         Bucket: destBucketName,
                         Key: destObjName,
                         UploadId: uploadId,
@@ -560,158 +540,158 @@ describe('Object Part Copy', () => {
                                 { ETag: etag, PartNumber: 1 },
                             ],
                         },
-                    }).promise();
-                }).then(res => {
-                    assert.strictEqual(res.Bucket, destBucketName);
-                    assert.strictEqual(res.Key, destObjName);
-                    assert.strictEqual(res.ETag, finalObjETag);
-                }).then(() => {
-                    process.stdout.write('Getting object put by MPU with ' +
-                    'overwrite part');
-                    return s3.getObject({
-                        Bucket: destBucketName,
-                        Key: destObjName,
-                    }).promise();
-                }).then(res => {
-                    assert.strictEqual(res.ETag, finalObjETag);
-                }).catch(err => {
-                    checkNoError(err);
-                });
-            });
-
-            it('should not corrupt object if overwriting an existing part by copying a part ' +
-            'while the MPU is being completed', () => {
-                // AWS response etag for this completed MPU
-                const finalObjETag = '"db77ebbae9e9f5a244a26b86193ad818-1"';
-                process.stdout.write('Putting first part in MPU test');
-                return s3.uploadPartCopy({ Bucket: destBucketName,
-                    Key: destObjName,
-                    CopySource: `${sourceBucketName}/${sourceObjName}`,
-                    PartNumber: 1,
-                    UploadId: uploadId,
-                }).promise().then(res => {
-                    assert.strictEqual(res.ETag, etag);
-                    assert(res.LastModified);
-                }).then(() => {
-                    process.stdout.write('Overwriting first part in MPU test and completing MPU ' +
-                                         'at the same time');
-                    return Promise.all([
-                        s3.uploadPartCopy({
+                    })
+                    ).then(res => {
+                        assert.strictEqual(res.Bucket, destBucketName);
+                        assert.strictEqual(res.Key, destObjName);
+                        assert.strictEqual(res.ETag, finalObjETag);
+                    }).then(() => {
+                        process.stdout.write('Getting object put by MPU with ' +
+                        'overwrite part');
+                        return s3.send(new GetObjectCommand({
                             Bucket: destBucketName,
                             Key: destObjName,
-                            CopySource: `${sourceBucketName}/${sourceObjName}`,
-                            PartNumber: 1,
-                            UploadId: uploadId,
-                        }).promise().catch(err => {
-                            // in case the CompleteMPU finished
-                            // earlier, we may get a NoSuchKey error,
-                            // so just ignore it and resolve with a
-                            // special value, otherwise re-throw the
-                            // error
-                            if (err && err.code === 'NoSuchKey') {
-                                return Promise.resolve(null);
-                            }
-                            throw err;
-                        }),
-                        s3.completeMultipartUpload({
-                            Bucket: destBucketName,
-                            Key: destObjName,
-                            UploadId: uploadId,
-                            MultipartUpload: {
-                                Parts: [
-                                    { ETag: etag, PartNumber: 1 },
-                                ],
-                            },
-                        }).promise(),
-                    ]);
-                }).then(([uploadRes, completeRes]) => {
-                    // if upload succeeded before CompleteMPU finished
-                    if (uploadRes !== null) {
-                        assert.strictEqual(uploadRes.ETag, etag);
-                        assert(uploadRes.LastModified);
-                    }
-                    assert.strictEqual(completeRes.Bucket, destBucketName);
-                    assert.strictEqual(completeRes.Key, destObjName);
-                    assert.strictEqual(completeRes.ETag, finalObjETag);
-                }).then(() => {
-                    process.stdout.write('Getting object put by MPU with ' +
-                    'overwrite part');
-                    return s3.getObject({
-                        Bucket: destBucketName,
-                        Key: destObjName,
-                    }).promise();
-                }).then(res => {
-                    assert.strictEqual(res.ETag, finalObjETag);
+                        })).then(res => {
+                            assert.strictEqual(res.ETag, finalObjETag);
+                        }).catch(err => {
+                            checkNoError(err);
+                        });
+                    });
                 });
             });
         });
 
+            it('should not corrupt object if overwriting an existing part by copying a part ' +
+            'while the MPU is being completed', async () => {
+                    const finalObjETag = '"db77ebbae9e9f5a244a26b86193ad818-1"';
+                    process.stdout.write('Putting first part in MPU test"');
+                    const randomDestObjName = `copycatobject${Math.floor(Math.random() * 100000)}`;
+
+                    const initiateRes = await s3.send(new CreateMultipartUploadCommand({
+                        Bucket: destBucketName,
+                        Key: randomDestObjName,
+                    }));
+                    const uploadId = initiateRes.UploadId;
+
+                    const res = await s3.send(new UploadPartCopyCommand({
+                        Bucket: destBucketName,
+                        Key: randomDestObjName,
+                        CopySource: `${sourceBucketName}/${sourceObjName}`,
+                        PartNumber: 1,
+                        UploadId: uploadId,
+                    }));
+                    assert.strictEqual(res.CopyPartResult.ETag, etag);
+                    assert(res.CopyPartResult.LastModified);
+
+                    process.stdout.write(
+                      'Overwriting first part in MPU test and completing MPU at the same time',
+                    );
+                    const [completeRes, uploadRes] = await Promise.all([
+                      s3.send(new CompleteMultipartUploadCommand({
+                          Bucket: destBucketName,
+                          Key: randomDestObjName,
+                          UploadId: uploadId,
+                          MultipartUpload: {
+                            Parts: [{ ETag: etag, PartNumber: 1 }],
+                          },
+                        })).catch(err => {
+                          throw err;
+                        }),
+                      s3.send(new UploadPartCopyCommand({
+                          Bucket: destBucketName,
+                          Key: randomDestObjName,
+                          CopySource: `${sourceBucketName}/${sourceObjName}`,
+                          PartNumber: 1,
+                          UploadId: uploadId,
+                        }))
+                        .catch(err => {
+                          const completeMPUFinishedEarlier =
+                            err && err.Code === 'NoSuchKey';
+                          if (completeMPUFinishedEarlier) {
+                            return Promise.resolve(null);
+                          }
+
+                          throw err;
+                        }),
+                    ]);
+
+                    if (uploadRes !== null) {
+                      assert.strictEqual(uploadRes.CopyPartResult.ETag, etag);
+                      assert(uploadRes.CopyPartResult.LastModified);
+                    }
+                    assert.strictEqual(completeRes.Bucket, destBucketName);
+                    assert.strictEqual(completeRes.Key, randomDestObjName);
+                    assert.strictEqual(completeRes.ETag, finalObjETag);
+                    process.stdout.write(
+                      'Getting object put by MPU with ' + 'overwrite part',
+                    );
+                    const resGet = await s3
+                      .send(new GetObjectCommand({
+                        Bucket: destBucketName,
+                        Key: randomDestObjName,
+                      }));
+                    assert.strictEqual(resGet.ETag, finalObjETag);
+            });
+        });
+
         it('should return an error if no such upload initiated',
-            done => {
-                s3.uploadPartCopy({ Bucket: destBucketName, Key: destObjName,
+            () => {
+                s3.send(new UploadPartCopyCommand({ Bucket: destBucketName, Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: 'madeupuploadid444233232',
-                },
-                err => {
+                })).catch(err => {
                     checkError(err, 'NoSuchUpload');
-                    done();
                 });
             });
 
         it('should return an error if attempt to copy from nonexistent bucket',
-            done => {
-                s3.uploadPartCopy({ Bucket: destBucketName, Key: destObjName,
+            () => {
+                s3.send(new UploadPartCopyCommand({ Bucket: destBucketName, Key: destObjName,
                     CopySource: `nobucket453234/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-                },
-                err => {
+                })).catch(err => {
                     checkError(err, 'NoSuchBucket');
-                    done();
                 });
             });
 
         it('should return an error if attempt to copy to nonexistent bucket',
-            done => {
-                s3.uploadPartCopy({ Bucket: 'nobucket453234', Key: destObjName,
+            () => {
+                s3.send(new UploadPartCopyCommand({ Bucket: 'nobucket453234', Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-                },
-                err => {
+                })).catch(err => {
                     checkError(err, 'NoSuchBucket');
-                    done();
                 });
             });
 
         it('should return an error if attempt to copy nonexistent object',
-            done => {
-                s3.uploadPartCopy({ Bucket: destBucketName, Key: destObjName,
+            () => {
+                s3.send(new UploadPartCopyCommand({ Bucket: destBucketName, Key: destObjName,
                     CopySource: `${sourceBucketName}/nokey`,
                     PartNumber: 1,
                     UploadId: uploadId,
-                },
-                err => {
+                })).catch(err => {
                     checkError(err, 'NoSuchKey');
-                    done();
                 });
             });
 
         it('should return an error if use invalid part number',
-            done => {
-                s3.uploadPartCopy({ Bucket: destBucketName, Key: destObjName,
+            () => {
+                s3.send(new UploadPartCopyCommand({ Bucket: destBucketName, Key: destObjName,
                     CopySource: `${sourceBucketName}/nokey`,
                     PartNumber: 10001,
                     UploadId: uploadId,
-                },
-                err => {
+                })).catch(err => {
                     checkError(err, 'InvalidArgument');
-                    done();
                 });
             });
 
-        it('should not copy a part of a cold object', done => {
+        // S3C doesn't support cold storage and restore
+        const itSkipS3C = process.env.S3_END_TO_END ? it.skip : it;
+        itSkipS3C('should not copy a part of a cold object', () => {
             const archive = {
                 archiveInfo: {
                     archiveId: '97a71dfe-49c1-4cca-840a-69199e0b0322',
@@ -720,39 +700,36 @@ describe('Object Part Copy', () => {
             };
             fakeMetadataArchive(sourceBucketName, sourceObjName, undefined, archive, err => {
                 assert.ifError(err);
-                s3.uploadPartCopy({
+                s3.send(new UploadPartCopyCommand({
                     Bucket: destBucketName,
                     Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-                }, err => {
-                        assert.strictEqual(err.code, 'InvalidObjectState');
-                        assert.strictEqual(err.statusCode, 403);
-                        done();
-                    });
-            });
-        });
-
-        it('should copy a part of an object when it\'s transitioning to cold', done => {
-            fakeMetadataTransition(sourceBucketName, sourceObjName, undefined, err => {
-                assert.ifError(err);
-                s3.uploadPartCopy({
-                    Bucket: destBucketName,
-                    Key: destObjName,
-                    CopySource: `${sourceBucketName}/${sourceObjName}`,
-                    PartNumber: 1,
-                    UploadId: uploadId,
-                }, (err, res) => {
-                    checkNoError(err);
-                    assert.strictEqual(res.ETag, etag);
-                    assert(res.LastModified);
-                    done();
+                })).catch(err => {
+                        assert.strictEqual(err.Code, 'InvalidObjectState');
+                        assert.strictEqual(err.$metadata.httpStatusCode, 403);
                 });
             });
         });
 
-        it('should copy a part of a restored object', done => {
+        itSkipS3C('should copy a part of an object when it\'s transitioning to cold', () => {
+            fakeMetadataTransition(sourceBucketName, sourceObjName, undefined, err => {
+                assert.ifError(err);
+                s3.send(new UploadPartCopyCommand({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    PartNumber: 1,
+                    UploadId: uploadId,
+                })).then(res => {
+                    assert.strictEqual(res.ETag, etag);
+                    assert(res.LastModified);
+                });
+            });
+        });
+
+        itSkipS3C('should copy a part of a restored object', () => {
             const archiveCompleted = {
                 archiveInfo: {},
                 restoreRequestedAt: new Date(0),
@@ -762,17 +739,15 @@ describe('Object Part Copy', () => {
             };
             fakeMetadataArchive(sourceBucketName, sourceObjName, undefined, archiveCompleted, err => {
                 assert.ifError(err);
-                s3.uploadPartCopy({
+                s3.send(new UploadPartCopyCommand({
                     Bucket: destBucketName,
                     Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-                }, (err, res) => {
-                    checkNoError(err);
+                })).then(res => {
                     assert.strictEqual(res.ETag, etag);
                     assert(res.LastModified);
-                    done();
                 });
             });
         });
@@ -784,20 +759,20 @@ describe('Object Part Copy', () => {
 
             beforeEach(() => {
                 process.stdout.write('In other account before each');
-                return otherAccountS3.createBucket({ Bucket:
-                otherAccountBucket }).promise()
+                return otherAccountS3.send(new CreateBucketCommand({ Bucket:
+                otherAccountBucket }))
                 .catch(err => {
                     process.stdout.write('Error creating other account ' +
                     `bucket: ${err}\n`);
                     throw err;
                 }).then(() => {
                     process.stdout.write('Initiating other account MPU');
-                    return otherAccountS3.createMultipartUpload({
+                    return otherAccountS3.send(new CreateMultipartUploadCommand({
                         Bucket: otherAccountBucket,
                         Key: otherAccountKey,
-                    }).promise();
-                }).then(iniateRes => {
-                    otherAccountUploadId = iniateRes.UploadId;
+                    }));
+                }).then(initiateRes => {
+                    otherAccountUploadId = initiateRes.UploadId;
                 }).catch(err => {
                     process.stdout.write('Error in other account ' +
                     `beforeEach: ${err}\n`);
@@ -806,13 +781,13 @@ describe('Object Part Copy', () => {
             });
 
             afterEach(() => otherAccountBucketUtility.empty(otherAccountBucket)
-                .then(() => otherAccountS3.abortMultipartUpload({
+                .then(() => otherAccountS3.send(new AbortMultipartUploadCommand({
                     Bucket: otherAccountBucket,
                     Key: otherAccountKey,
                     UploadId: otherAccountUploadId,
-                }).promise())
+                })))
                 .catch(err => {
-                    if (err.code !== 'NoSuchUpload') {
+                    if (err.Code !== 'NoSuchUpload') {
                         process.stdout.write('Error in other account ' +
                         `afterEach: ${err}\n`);
                         throw err;
@@ -822,51 +797,49 @@ describe('Object Part Copy', () => {
             );
 
             it('should not allow an account without read persmission on the ' +
-                'source object to copy the object', done => {
-                otherAccountS3.uploadPartCopy({ Bucket: otherAccountBucket,
+                'source object to copy the object',  () => {
+                otherAccountS3.send(new UploadPartCopyCommand({ Bucket: otherAccountBucket,
                     Key: otherAccountKey,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: otherAccountUploadId,
-                },
+                })).catch(
                     err => {
                         checkError(err, 'AccessDenied');
-                        done();
                     });
             });
 
             it('should not allow an account without write persmission on the ' +
-                'destination bucket to upload part copy the object', done => {
-                otherAccountS3.putObject({ Bucket: otherAccountBucket,
-                    Key: otherAccountKey, Body: '' }, () => {
-                    otherAccountS3.uploadPartCopy({ Bucket: destBucketName,
+                'destination bucket to upload part copy the object', () => {
+                otherAccountS3.send(new PutObjectCommand({ Bucket: otherAccountBucket,
+                    Key: otherAccountKey, Body: '' })).then(() => {
+                    otherAccountS3.send(new UploadPartCopyCommand({ Bucket: destBucketName,
                         Key: destObjName,
                         CopySource: `${otherAccountBucket}/${otherAccountKey}`,
                         PartNumber: 1,
                         UploadId: uploadId,
-                    },
+                    })).catch(
                         err => {
                             checkError(err, 'AccessDenied');
-                            done();
                         });
                 });
             });
 
             it('should allow an account with read permission on the ' +
                 'source object and write permission on the destination ' +
-                'bucket to upload part copy the object', done => {
+                'bucket to upload part copy the object', () => {
                 s3.putObjectAcl({ Bucket: sourceBucketName,
                     Key: sourceObjName, ACL: 'public-read' }, () => {
-                    otherAccountS3.uploadPartCopy({ Bucket: otherAccountBucket,
+                    otherAccountS3.send(new UploadPartCopyCommand({ Bucket: otherAccountBucket,
                         Key: otherAccountKey,
                         CopySource: `${sourceBucketName}/${sourceObjName}`,
                         PartNumber: 1,
                         UploadId: otherAccountUploadId,
-                    },
+                    })).catch(
                         err => {
                             checkNoError(err);
-                            done();
-                        });
+                        }
+                    );
                 });
             });
         });

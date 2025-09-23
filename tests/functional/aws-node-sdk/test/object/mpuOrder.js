@@ -1,5 +1,13 @@
 const assert = require('assert');
-const async = require('async');
+const {
+    CreateBucketCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    CompleteMultipartUploadCommand,
+    AbortMultipartUploadCommand,
+    DeleteObjectCommand,
+    DeleteBucketCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -8,13 +16,8 @@ const bucket = 'bucketlistparts';
 const object = 'toto';
 
 function checkError(err, statusCode, code) {
-    assert.strictEqual(err.statusCode, statusCode);
-    assert.strictEqual(err.code, code);
-}
-
-function checkNoError(err) {
-    assert.equal(err, null,
-        `Expected success, got error ${JSON.stringify(err)}`);
+    assert.strictEqual(err.$metadata.httpStatusCode, statusCode);
+    assert.strictEqual(err.Code, code);
 }
 
 const body = Buffer.alloc(1024 * 1024 * 5, 'a');
@@ -34,54 +37,63 @@ describe('More MPU tests', () => {
         let bucketUtil;
         let s3;
 
-        beforeEach(function beforeEachF(done) {
+        beforeEach(async function beforeEachF() {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            async.waterfall([
-                next => s3.createBucket({ Bucket: bucket }, err => next(err)),
-                next => s3.createMultipartUpload({ Bucket: bucket,
-                    Key: object }, (err, data) => {
-                    checkNoError(err);
-                    this.currentTest.UploadId = data.UploadId;
-                    return next();
-                }),
-                next => s3.uploadPart({
+            
+            try {
+                await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+                
+                const mpuRes = await s3.send(new CreateMultipartUploadCommand({ 
+                    Bucket: bucket,
+                    Key: object 
+                }));
+                this.currentTest.UploadId = mpuRes.UploadId;
+                
+                const part1000Res = await s3.send(new UploadPartCommand({
                     Bucket: bucket,
                     Key: object,
                     PartNumber: 1000,
                     Body: body,
-                    UploadId: this.currentTest.UploadId }, (err, data) => {
-                    checkNoError(err);
-                    this.currentTest.Etag = data.ETag;
-                    return next();
-                }),
-                next => s3.uploadPart({
+                    UploadId: this.currentTest.UploadId 
+                }));
+                this.currentTest.Etag = part1000Res.ETag;
+                
+                await s3.send(new UploadPartCommand({
                     Bucket: bucket,
                     Key: object,
                     PartNumber: 3,
                     Body: body,
-                    UploadId: this.currentTest.UploadId }, err => next(err)),
-                next => s3.uploadPart({
+                    UploadId: this.currentTest.UploadId 
+                }));
+                
+                await s3.send(new UploadPartCommand({
                     Bucket: bucket,
                     Key: object,
                     PartNumber: 8,
                     Body: body,
-                    UploadId: this.currentTest.UploadId }, err => next(err)),
-            ], done);
+                    UploadId: this.currentTest.UploadId 
+                }));
+            } catch (err) {
+                process.stdout.write('Error in beforeEach\n');
+                throw err;
+            }
         });
 
-        afterEach(done => {
-            async.waterfall([
-                next => s3.deleteObject({ Bucket: bucket, Key: object },
-                  err => next(err)),
-                next => s3.deleteBucket({ Bucket: bucket }, err => next(err)),
-            ], done);
+        afterEach(async () => {
+            try {
+                await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: object }));
+                await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+            } catch (err) {
+                process.stdout.write('Error in afterEach\n');
+                throw err;
+            }
         });
         testsOrder.forEach(testOrder => {
             it('should complete MPU by concatenating the parts in ' +
-            `the following order: ${testOrder.values}`, function itF(done) {
-                async.waterfall([
-                    next => s3.completeMultipartUpload({
+            `the following order: ${testOrder.values}`, async function itF() {
+                try {
+                    await s3.send(new CompleteMultipartUploadCommand({
                         Bucket: bucket,
                         Key: object,
                         MultipartUpload: {
@@ -100,19 +112,24 @@ describe('More MPU tests', () => {
                                 },
                             ],
                         },
-                        UploadId: this.test.UploadId }, next),
-                ], err => {
+                        UploadId: this.test.UploadId 
+                    }));
+                    
+                    if (testOrder.err) {
+                        throw new Error('Expected InvalidPartOrder error but operation succeeded');
+                    }
+                } catch (err) {
                     if (testOrder.err) {
                         checkError(err, 400, 'InvalidPartOrder');
-                        return s3.abortMultipartUpload({
+                        await s3.send(new AbortMultipartUploadCommand({
                             Bucket: bucket,
                             Key: object,
                             UploadId: this.test.UploadId,
-                        }, done);
+                        }));
+                    } else {
+                        throw err;
                     }
-                    checkNoError(err);
-                    return done();
-                });
+                }
             });
         });
     });

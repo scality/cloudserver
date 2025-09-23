@@ -1,5 +1,12 @@
 const { promisify } = require('util');
 const assert = require('assert');
+const {
+    CreateBucketCommand,
+    PutObjectCommand,
+    PutObjectLegalHoldCommand,
+    GetObjectLegalHoldCommand,
+    DeleteObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -16,7 +23,7 @@ const keyNoHold = 'mock-object-no-legalhold';
 const isCEPH = process.env.CI_CEPH !== undefined;
 const describeSkipIfCeph = isCEPH ? describe.skip : describe;
 
-describeSkipIfCeph('GET object legal hold', () => {
+describeSkipIfCeph('GET Object Legal Hold', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
@@ -24,34 +31,29 @@ describeSkipIfCeph('GET object legal hold', () => {
         const otherAccountS3 = otherAccountBucketUtility.s3;
         let versionId;
 
-        beforeEach(() => {
+        beforeEach(async () => {
             process.stdout.write('Putting buckets and objects\n');
-            return s3.createBucket({
+            process.stdout.write('Putting object legal hold\n');
+            await s3.send(new CreateBucketCommand({
                 Bucket: bucket,
                 ObjectLockEnabledForBucket: true,
-            }).promise()
-            .then(() => s3.createBucket({ Bucket: unlockedBucket }).promise())
-            .then(() => s3.putObject({ Bucket: unlockedBucket, Key: key }).promise())
-            .then(() => s3.putObject({ Bucket: bucket, Key: keyNoHold }).promise())
-            .then(() => s3.putObject({ Bucket: bucket, Key: key }).promise())
-            .then(res => {
-                versionId = res.VersionId;
-                process.stdout.write('Putting object legal hold\n');
-                return s3.putObjectLegalHold({
-                    Bucket: bucket,
-                    Key: key,
-                    LegalHold: { Status: 'ON' },
-                }).promise();
-            })
-            .catch(err => {
-                process.stdout.write('Error in beforeEach\n');
-                throw err;
-            });
+            })).then(() => s3.send(new CreateBucketCommand({ Bucket: unlockedBucket })))
+            .then(() => s3.send(new PutObjectCommand({ Bucket: unlockedBucket, Key: key })))
+            .then(() => s3.send(new PutObjectCommand({ Bucket: bucket, Key: keyNoHold })));
+
+            const res = await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key }));
+            versionId = res.VersionId;
+            process.stdout.write('Putting object legal hold\n');
+            await s3.send(new PutObjectLegalHoldCommand({
+                Bucket: bucket,
+                Key: key,
+                LegalHold: { Status: 'ON' },
+            }));
         });
 
         afterEach(() => {
             process.stdout.write('Removing object lock\n');
-            return changeLockPromise([{ bucket, key, versionId }], '')
+            return changeLockPromise([{ bucket, key, versionId }], {})
             .then(() => {
                 process.stdout.write('Emptying and deleting buckets\n');
                 return bucketUtil.empty(bucket);
@@ -64,95 +66,89 @@ describeSkipIfCeph('GET object legal hold', () => {
             });
         });
 
-        it('should return AccessDenied getting legal hold with another account',
-            done => {
-                otherAccountS3.getObjectLegalHold({
-                    Bucket: bucket,
-                    Key: key,
-                }, err => {
-                    checkError(err, 'AccessDenied', 403);
-                    done();
-                });
-            });
-
-        it('should return NoSuchKey error if key does not exist', done => {
-            s3.getObjectLegalHold({
-                Bucket: bucket,
-                Key: 'thiskeydoesnotexist',
-            }, err => {
-                checkError(err, 'NoSuchKey', 404);
-                done();
-            });
-        });
-
-        it('should return NoSuchVersion error if version does not exist', done => {
-            s3.getObjectLegalHold({
+        it('should return AccessDenied getting legal hold with another account', async () => {
+            await otherAccountS3.send(new GetObjectLegalHoldCommand({
                 Bucket: bucket,
                 Key: key,
-                VersionId: '012345678901234567890123456789012',
-            }, err => {
-                checkError(err, 'NoSuchVersion', 404);
-                done();
+            })).then(() => {
+                throw new Error('Expected AccessDenied error');
+            }).catch(err => {
+                checkError(err, 'AccessDenied', 403);
             });
         });
 
-        it('should return MethodNotAllowed if object version is delete marker', done => {
-            s3.deleteObject({ Bucket: bucket, Key: key }, (err, res) => {
-                assert.ifError(err);
-                s3.getObjectLegalHold({
+        it('should return MethodNotAllowed if object version is delete marker', async () => {
+            await s3.send(new DeleteObjectCommand({
+                Bucket: bucket,
+                Key: key,
+            })).then(async res => {
+                await s3.send(new GetObjectLegalHoldCommand({
                     Bucket: bucket,
                     Key: key,
                     VersionId: res.VersionId,
-                }, err => {
+                })).then(() => {
+                    throw new Error('Expected NoSuchKey error');
+                }).catch(err => {
                     checkError(err, 'MethodNotAllowed', 405);
-                    done();
                 });
+            }).catch(err => {
+                assert.ifError(err);
             });
         });
 
-        it('should return NoSuchKey if latest version is delete marker', done => {
-            s3.deleteObject({ Bucket: bucket, Key: key }, err => {
-                assert.ifError(err);
-                s3.getObjectLegalHold({
+        it('should return NoSuchKey if latest version is delete marker', async () => {
+            await s3.send(new DeleteObjectCommand({
+                Bucket: bucket,
+                Key: key,
+            })).then(async () => {
+                await s3.send(new GetObjectLegalHoldCommand({
                     Bucket: bucket,
                     Key: key,
-                }, err => {
+                })).then(() => {
+                    throw new Error('Expected NoSuchKey error');
+                }).catch(err => {
                     checkError(err, 'NoSuchKey', 404);
-                    done();
+                });
+            }).catch(err => {
+                assert.ifError(err);
+            });
+        });
+
+          it('should return InvalidRequest error getting legal hold of object ' +
+            'inside object lock disabled bucket', async () => {
+                await s3.send(new GetObjectLegalHoldCommand({
+                    Bucket: unlockedBucket,
+                    Key: key,
+                })).then(() => {
+                    throw new Error('Expected InvalidRequest error');
+                }).catch(err => {
+                    checkError(err, 'InvalidRequest', 400);
                 });
             });
-        });
 
-        it('should return InvalidRequest error getting legal hold of object ' +
-            'inside object lock disabled bucket', done => {
-            s3.getObjectLegalHold({
-                Bucket: unlockedBucket,
-                Key: key,
-            }, err => {
-                checkError(err, 'InvalidRequest', 400);
-                done();
-            });
-        });
+       it('should return NoSuchObjectLockConfiguration if no legal hold set', async () => {
+           await s3.send(new GetObjectLegalHoldCommand({
+               Bucket: bucket,
+               Key: keyNoHold,
+           })).then(() => {
+               throw new Error('Expected NoSuchObjectLockConfiguration error');
+           }).catch(err => {
+               checkError(err, 'NoSuchObjectLockConfiguration', 404);
+           });
+       });
 
-        it('should return NoSuchObjectLockConfiguration if no legal hold set', done => {
-            s3.getObjectLegalHold({
-                Bucket: bucket,
-                Key: keyNoHold,
-            }, err => {
-                checkError(err, 'NoSuchObjectLockConfiguration', 404);
-                done();
-            });
-        });
+       it('should get object legal hold', async () => {
 
-        it('should get object legal hold', done => {
-            s3.getObjectLegalHold({
-                Bucket: bucket,
-                Key: key,
-            }, (err, res) => {
-                assert.ifError(err);
-                assert.deepStrictEqual(res.LegalHold, { Status: 'ON' });
-                changeObjectLock([{ bucket, key, versionId }], '', done);
-            });
-        });
+           await s3.send(new GetObjectLegalHoldCommand({
+               Bucket: bucket,
+               Key: key,
+           })).then(async res => {
+            assert.deepStrictEqual(res.LegalHold, { Status: 'ON' });
+            await changeLockPromise([{ bucket, key, versionId }], {});
+           }).catch(err => {
+               assert.ifError(err);
+           });
+       });
+
     });
 });

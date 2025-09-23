@@ -1,10 +1,18 @@
-const { S3 } = require('aws-sdk');
+const {
+    S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketCorsCommand,
+    DeleteBucketCorsCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const getConfig = require('../support/config');
 const { methodRequest } = require('../../lib/utility/cors-util');
 
-const config = getConfig('default', { signatureVersion: 'v4' });
-const s3 = new S3(config);
+const config = getConfig('default');
+const s3 = new S3Client(config);
 
 const bucket = 'bucketcorstester';
 
@@ -53,14 +61,14 @@ describe('Preflight CORS request on non-existing bucket', () => {
 
 describe('Preflight CORS request with existing bucket', () => {
     beforeEach(done => {
-        s3.createBucket({ Bucket: bucket, ACL: 'public-read' }, err => {
-            _waitForAWS(done, err);
-        });
+        s3.send(new CreateBucketCommand({ Bucket: bucket, ACL: 'public-read' }))
+            .then(() => _waitForAWS(done))
+            .catch(err => _waitForAWS(done, err));
     });
     afterEach(done => {
-        s3.deleteBucket({ Bucket: bucket }, err => {
-            _waitForAWS(done, err);
-        });
+        s3.send(new DeleteBucketCommand({ Bucket: bucket }))
+            .then(() => _waitForAWS(done))
+            .catch(err => _waitForAWS(done, err));
     });
 
     it('should allow GET on bucket without cors configuration even if ' +
@@ -107,11 +115,15 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         };
         beforeEach(done => {
-            s3.putBucketCors(corsParams, done);
+            s3.send(new PutBucketCorsCommand(corsParams))
+                .then(() => done())
+                .catch(done);
         });
 
         afterEach(done => {
-            s3.deleteBucketCors({ Bucket: bucket }, done);
+            s3.send(new DeleteBucketCorsCommand({ Bucket: bucket }))
+                .then(() => done())
+                .catch(done);
         });
 
         methods.forEach(method => {
@@ -171,11 +183,15 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         };
         beforeEach(done => {
-            s3.putBucketCors(corsParams, done);
+            s3.send(new PutBucketCorsCommand(corsParams))
+                .then(() => done())
+                .catch(done);
         });
 
         afterEach(done => {
-            s3.deleteBucketCors({ Bucket: bucket }, done);
+            s3.send(new DeleteBucketCorsCommand({ Bucket: bucket }))
+                .then(() => done())
+                .catch(done);
         });
 
         it('should respond with 200 and access control headers to OPTIONS ' +
@@ -242,11 +258,15 @@ describe('Preflight CORS request with existing bucket', () => {
         describe(`CORS allows method "${allowedMethod}" and allows all origins`,
         () => {
             beforeEach(done => {
-                s3.putBucketCors(corsParams, done);
+                s3.send(new PutBucketCorsCommand(corsParams))
+                    .then(() => done())
+                    .catch(done);
             });
 
             afterEach(done => {
-                s3.deleteBucketCors({ Bucket: bucket }, done);
+                s3.send(new DeleteBucketCorsCommand({ Bucket: bucket }))
+                    .then(() => done())
+                    .catch(done);
             });
 
             it('should respond with 200 and access control headers to ' +
@@ -308,11 +328,15 @@ describe('Preflight CORS request with existing bucket', () => {
 
         describe(`CORS allows method GET and origin "${origin}"`, () => {
             beforeEach(done => {
-                s3.putBucketCors(corsParams, done);
+                s3.send(new PutBucketCorsCommand(corsParams))
+                    .then(() => done())
+                    .catch(done);
             });
 
             afterEach(done => {
-                s3.deleteBucketCors({ Bucket: bucket }, done);
+                s3.send(new DeleteBucketCorsCommand({ Bucket: bucket }))
+                    .then(() => done())
+                    .catch(done);
             });
 
             [originWithoutWildcard, originReplaceWildcard]
@@ -390,11 +414,15 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         };
         beforeEach(done => {
-            s3.putBucketCors(corsParams, done);
+            s3.send(new PutBucketCorsCommand(corsParams))
+                .then(() => done())
+                .catch(done);
         });
 
         afterEach(done => {
-            s3.deleteBucketCors({ Bucket: bucket }, done);
+            s3.send(new DeleteBucketCorsCommand({ Bucket: bucket }))
+                .then(() => done())
+                .catch(done);
         });
 
         it('if OPTIONS request matches rule with multiple origins, response ' +
@@ -468,11 +496,15 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         };
         beforeEach(done => {
-            s3.putBucketCors(corsParams, done);
+            s3.send(new PutBucketCorsCommand(corsParams))
+                .then(() => done())
+                .catch(done);
         });
 
         afterEach(done => {
-            s3.deleteBucketCors({ Bucket: bucket }, done);
+            s3.send(new DeleteBucketCorsCommand({ Bucket: bucket }))
+                .then(() => done())
+                .catch(done);
         });
 
         it('should respond with 200 and access control headers to OPTIONS ' +
@@ -554,11 +586,15 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         };
         beforeEach(done => {
-            s3.putBucketCors(corsParams, done);
+            s3.send(new PutBucketCorsCommand(corsParams))
+                .then(() => done())
+                .catch(done);
         });
 
         afterEach(done => {
-            s3.deleteBucketCors({ Bucket: bucket }, done);
+            s3.send(new DeleteBucketCorsCommand({ Bucket: bucket }))
+                .then(() => done())
+                .catch(done);
         });
 
         it('should return request access-control-request-headers value, ' +
@@ -657,23 +693,20 @@ describe('Preflight CORS request with existing bucket', () => {
         };
         const objectKey = 'testobject';
         beforeEach(done => {
-            s3.putObject({ Key: objectKey, Bucket: bucket }, err => {
-                if (err) {
-                    process.stdout.write(`err in beforeEach ${err}`);
-                    done(err);
-                }
-                s3.putBucketCors(corsParams, done);
-            });
+            s3.send(new PutObjectCommand({ Key: objectKey, Bucket: bucket }))
+                .then(() => s3.send(new PutBucketCorsCommand(corsParams)))
+                .then(() => done())
+                .catch(done);
         });
 
         afterEach(done => {
-            s3.deleteBucketCors({ Bucket: bucket }, err => {
-                if (err) {
-                    process.stdout.write(`err in afterEach ${err}`);
-                    done(err);
-                }
-                s3.deleteObject({ Key: objectKey, Bucket: bucket }, done);
-            });
+            s3.send(new DeleteBucketCorsCommand({ Bucket: bucket }))
+                .then(() => s3.send(new DeleteObjectCommand({
+                    Key: objectKey,
+                    Bucket: bucket,
+                })))
+                .then(() => done())
+                .catch(done);
         });
 
         it('should respond with 200 and access control headers to OPTIONS ' +
@@ -723,11 +756,15 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         };
         beforeEach(done => {
-            s3.putBucketCors(corsParams, done);
+            s3.send(new PutBucketCorsCommand(corsParams))
+                .then(() => done())
+                .catch(done);
         });
 
         afterEach(done => {
-            s3.deleteBucketCors({ Bucket: bucket }, done);
+            s3.send(new DeleteBucketCorsCommand({ Bucket: bucket }))
+                .then(() => done())
+                .catch(done);
         });
 
         it('with fake auth credentials: should respond with 200 and access ' +
@@ -785,11 +822,15 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         };
         beforeEach(done => {
-            s3.putBucketCors(corsParams, done);
+            s3.send(new PutBucketCorsCommand(corsParams))
+                .then(() => done())
+                .catch(done);
         });
 
         afterEach(done => {
-            s3.deleteBucketCors({ Bucket: bucket }, done);
+            s3.send(new DeleteBucketCorsCommand({ Bucket: bucket }))
+                .then(() => done())
+                .catch(done);
         });
 
         it('if OPTIONS request matches CORS rule with ExposeHeader\'s, ' +
@@ -829,11 +870,15 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         };
         beforeEach(done => {
-            s3.putBucketCors(corsParams, done);
+            s3.send(new PutBucketCorsCommand(corsParams))
+                .then(() => done())
+                .catch(done);
         });
 
         afterEach(done => {
-            s3.deleteBucketCors({ Bucket: bucket }, done);
+            s3.send(new DeleteBucketCorsCommand({ Bucket: bucket }))
+                .then(() => done())
+                .catch(done);
         });
 
         it('if OPTIONS request matches CORS rule with max age seconds, ' +

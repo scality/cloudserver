@@ -1,6 +1,37 @@
-const { S3 } = require('aws-sdk');
+const { S3Client,
+    ListObjectsCommand, 
+    GetBucketAclCommand, 
+    GetBucketCorsCommand, 
+    GetBucketVersioningCommand, 
+    GetBucketLocationCommand, 
+    GetBucketWebsiteCommand, 
+    ListMultipartUploadsCommand, 
+    GetObjectCommand, 
+    GetObjectAclCommand, 
+    ListPartsCommand, 
+    HeadBucketCommand, 
+    HeadObjectCommand, 
+    CreateBucketCommand, 
+    PutBucketAclCommand, 
+    PutBucketVersioningCommand, 
+    PutBucketWebsiteCommand, 
+    PutBucketCorsCommand, 
+    PutObjectCommand, 
+    PutObjectAclCommand, 
+    CopyObjectCommand, 
+    UploadPartCommand, 
+    UploadPartCopyCommand, 
+    CreateMultipartUploadCommand, 
+    CompleteMultipartUploadCommand, 
+    DeleteObjectsCommand, 
+    DeleteBucketCommand, 
+    DeleteBucketWebsiteCommand, 
+    DeleteBucketCorsCommand, 
+    DeleteObjectCommand, 
+    AbortMultipartUploadCommand, 
+    ListBucketsCommand } = require('@aws-sdk/client-s3');
+const { promisify } = require('util');
 const assert = require('assert');
-const async = require('async');
 
 const getConfig = require('../support/config');
 const { methodRequest } = require('../../lib/utility/cors-util');
@@ -8,15 +39,16 @@ const { generateCorsParams } = require('../../lib/utility/cors-util');
 const { WebsiteConfigTester } = require('../../lib/utility/website-util');
 const { removeAllVersions } = require('../../lib/utility/versioning-util');
 
+const methodRequestPromise = promisify(methodRequest);
+
 const config = getConfig('default', { signatureVersion: 'v4' });
-const s3 = new S3(config);
+const s3 = new S3Client(config);
 
 const bucket = 'bucketcorsheadertest';
 const objectKey = 'objectKeyName';
 const allowedOrigin = 'http://www.allowedwebsite.com';
 const notAllowedOrigin = 'http://www.notallowedwebsite.com';
-const vary = 'Origin, Access-Control-Request-Headers, ' +
-    'Access-Control-Request-Method';
+const vary = 'Origin, Access-Control-Request-Headers, Access-Control-Request-Method';
 const defaultOptions = {
     allowedMethods: ['GET'],
     allowedOrigins: [allowedOrigin],
@@ -25,77 +57,77 @@ const defaultOptions = {
 const apiMethods = [
     {
         description: 'GET bucket (list objects)',
-        action: s3.listObjects,
+        action: ListObjectsCommand,
         params: { Bucket: bucket },
     },
     {
         description: 'GET bucket ACL',
-        action: s3.getBucketAcl,
+        action: GetBucketAclCommand,
         params: { Bucket: bucket },
     },
     {
         description: 'GET bucket CORS',
-        action: s3.getBucketCors,
+        action: GetBucketCorsCommand,
         params: { Bucket: bucket },
     },
     {
         description: 'GET bucket versioning',
-        action: s3.getBucketVersioning,
+        action: GetBucketVersioningCommand,
         params: { Bucket: bucket },
     },
     {
         description: 'GET bucket location',
-        action: s3.getBucketLocation,
+        action: GetBucketLocationCommand,
         params: { Bucket: bucket },
     },
     {
         description: 'GET bucket website',
-        action: s3.getBucketWebsite,
+        action: GetBucketWebsiteCommand,
         params: { Bucket: bucket },
     },
     {
         description: 'GET bucket uploads (list multipart uploads)',
-        action: s3.listMultipartUploads,
+        action: ListMultipartUploadsCommand,
         params: { Bucket: bucket },
     },
     {
         description: 'GET object',
-        action: s3.getObject,
+        action: GetObjectCommand,
         params: { Bucket: bucket, Key: objectKey },
     },
     {
         description: 'GET object ACL',
-        action: s3.getObjectAcl,
+        action: GetObjectAclCommand,
         params: { Bucket: bucket, Key: objectKey },
     },
     {
         description: 'GET object uploadId (list multipart upload parts)',
-        action: s3.listParts,
+        action: ListPartsCommand,
         params: { Bucket: bucket, Key: objectKey, UploadId: 'testId' },
     },
     {
         description: 'HEAD bucket',
-        action: s3.headBucket,
+        action: HeadBucketCommand,
         params: { Bucket: bucket },
     },
     {
         description: 'HEAD object',
-        action: s3.headObject,
+        action: HeadObjectCommand,
         params: { Bucket: bucket, Key: objectKey },
     },
     {
         description: 'PUT bucket (create bucket)',
-        action: s3.createBucket,
+        action: CreateBucketCommand,
         params: { Bucket: bucket },
     },
     {
         description: 'PUT bucket ACL',
-        action: s3.putBucketAcl,
+        action: PutBucketAclCommand,
         params: { Bucket: bucket, ACL: 'private' },
     },
     {
         description: 'PUT bucket versioning',
-        action: s3.putBucketVersioning,
+        action: PutBucketVersioningCommand,
         params: {
             Bucket: bucket,
             VersioningConfiguration: {
@@ -105,7 +137,7 @@ const apiMethods = [
     },
     {
         description: 'PUT bucket website',
-        action: s3.putBucketWebsite,
+        action: PutBucketWebsiteCommand,
         params: {
             Bucket: bucket,
             WebsiteConfiguration: {
@@ -115,7 +147,7 @@ const apiMethods = [
     },
     {
         description: 'PUT bucket CORS',
-        action: s3.putBucketCors,
+        action: PutBucketCorsCommand,
         params: {
             Bucket: bucket,
             CORSConfiguration: {
@@ -128,12 +160,12 @@ const apiMethods = [
     },
     {
         description: 'PUT object',
-        action: s3.putObject,
+        action: PutObjectCommand,
         params: { Bucket: bucket, Key: objectKey },
     },
     {
         description: 'PUT object ACL',
-        action: s3.putObjectAcl,
+        action: PutObjectAclCommand,
         params: {
             Bucket: bucket,
             Key: objectKey,
@@ -142,16 +174,16 @@ const apiMethods = [
     },
     {
         description: 'PUT object copy (copy object)',
-        action: s3.copyObject,
+        action: CopyObjectCommand,
         params: {
             Bucket: bucket,
-            CopySource: `${bucket}/${objectKey}`, // 'sourceBucket/testSource',
+            CopySource: `${bucket}/${objectKey}`,
             Key: objectKey,
         },
     },
     {
         description: 'PUT object part (upload part)',
-        action: s3.uploadPart,
+        action: UploadPartCommand,
         params: {
             Bucket: bucket,
             Key: objectKey,
@@ -161,10 +193,10 @@ const apiMethods = [
     },
     {
         description: 'PUT object part copy (upload part copy)',
-        action: s3.uploadPartCopy,
+        action: UploadPartCopyCommand,
         params: {
             Bucket: bucket,
-            CopySource: `${bucket}/${objectKey}`, // 'sourceBucket/testSource',
+            CopySource: `${bucket}/${objectKey}`,
             Key: objectKey,
             PartNumber: 1,
             UploadId: 'testId',
@@ -172,17 +204,17 @@ const apiMethods = [
     },
     {
         description: 'POST uploads (create multipart upload)',
-        action: s3.createMultipartUpload,
+        action: CreateMultipartUploadCommand,
         params: { Bucket: bucket, Key: objectKey },
     },
     {
         description: 'POST uploadId (complete multipart upload)',
-        action: s3.completeMultipartUpload,
+        action: CompleteMultipartUploadCommand,
         params: { Bucket: bucket, Key: objectKey, UploadId: 'testId' },
     },
     {
         description: 'POST delete (multi object delete)',
-        action: s3.deleteObjects,
+        action: DeleteObjectsCommand,
         params: {
             Bucket: bucket,
             Delete: {
@@ -194,215 +226,236 @@ const apiMethods = [
     },
     {
         description: 'DELETE bucket',
-        action: s3.deleteBucket,
+        action: DeleteBucketCommand,
         params: { Bucket: bucket },
     },
     {
         description: 'DELETE bucket website',
-        action: s3.deleteBucketWebsite,
+        action: DeleteBucketWebsiteCommand,
         params: { Bucket: bucket },
     },
     {
         description: 'DELETE bucket CORS',
-        action: s3.deleteBucketCors,
+        action: DeleteBucketCorsCommand,
         params: { Bucket: bucket },
     },
     {
         description: 'DELETE object',
-        action: s3.deleteObject,
+        action: DeleteObjectCommand,
         params: { Bucket: bucket, Key: objectKey },
     },
     {
         description: 'DELETE object uploadId (abort multipart upload)',
-        action: s3.abortMultipartUpload,
+        action: AbortMultipartUploadCommand,
         params: { Bucket: bucket, Key: objectKey, UploadId: 'testId' },
     },
 ];
 
-// AWS seems to take a bit long so sometimes by the time we send the request
-// the bucket has not yet been created or the bucket has been deleted.
-function _waitForAWS(callback, err) {
-    if (process.env.AWS_ON_AIR) {
-        setTimeout(() => callback(err), 1000);
-    } else {
-        callback(err);
-    }
-}
-
-function _checkHeaders(action, params, origin, expectedHeaders, callback) {
-    function _runAssertions(resHeaders, cb) {
+async function _checkHeaders(action, params, origin, expectedHeaders) {
+    function _runAssertions(resHeaders) {
         if (expectedHeaders) {
             Object.keys(expectedHeaders).forEach(key => {
-                assert.deepEqual(resHeaders[key], expectedHeaders[key],
-                  `error header: ${key}`);
+                assert.deepEqual(resHeaders[key], expectedHeaders[key], `error header: ${key}`);
             });
         } else {
-            // if no headersResponse provided, should not have these headers
-            // in the request
-            ['access-control-allow-origin',
-                'access-control-allow-methods',
-                'access-control-allow-credentials',
-                'vary'].forEach(key => {
-                    assert.strictEqual(resHeaders[key], undefined,
-                    `Error: ${key} should not have value`);
-                });
+            // if no expectedHeaders provided, should not have these headers in the response
+            ['access-control-allow-origin', 
+            'access-control-allow-methods', 
+            'access-control-allow-credentials', 
+            'vary'].forEach(key => {
+                assert.strictEqual(resHeaders[key], undefined, `Error: ${key} should not have value`);
+            });
         }
-        cb();
     }
-    const method = action.bind(s3);
-    const request = method(params);
-    // modify underlying http request object created by aws sdk to add
-    // origin header
-    request.on('build', () => {
-        request.httpRequest.headers.origin = origin;
-    });
-    request.on('success', response => {
-        const resHeaders = response.httpResponse.headers;
-        _runAssertions(resHeaders, () => {
-            if (response.data.UploadId) {
-                // abort multipart upload before deleting bucket in afterEach
-                return s3.abortMultipartUpload({ Bucket: bucket, Key: objectKey,
-                    UploadId: response.data.UploadId }, callback);
+
+    // Create a new S3 client for each request to avoid middleware conflicts
+    const testS3 = new S3Client(config);
+
+    // Store captured headers
+    let capturedHeaders = {};
+
+    // Add middleware to capture response headers (similar to AWS SDK v2's event approach)
+    testS3.middlewareStack.add(
+        next => async args => {
+            // Add origin header to request (equivalent to request.on('build'))
+            if (origin) {
+                if (!args.request.headers) {
+                    // eslint-disable-next-line no-param-reassign
+                    args.request.headers = {};
+                }
+                // eslint-disable-next-line no-param-reassign
+                args.request.headers['origin'] = origin;
             }
-            return callback();
-        });
-    });
-    // CORS headers should still be sent in case of errors as long as
-    // request matches CORS configuration
-    request.on('error', () => {
-        const resHeaders = request.response.httpResponse.headers;
-        _runAssertions(resHeaders, callback);
-    });
-    request.send();
+
+            try {
+                const result = await next(args);
+
+                // Capture response headers (equivalent to request.on('success'))
+                if (result.response && result.response.headers) {
+                    capturedHeaders = result.response.headers;
+                } else if (result.output && result.output.$metadata && result.output.$metadata.httpHeaders) {
+                    capturedHeaders = result.output.$metadata.httpHeaders;
+                }
+
+                return result;
+            } catch (error) {
+                // Capture headers from error response (equivalent to request.on('error'))
+                if (error.$response && error.$response.headers) {
+                    capturedHeaders = error.$response.headers;
+                } else if (error.$metadata && error.$metadata.httpHeaders) {
+                    capturedHeaders = error.$metadata.httpHeaders;
+                }
+                throw error;
+            }
+        },
+        {
+            step: 'finalizeRequest',
+            name: 'captureHeaders',
+            priority: 'high'
+        }
+    );
+
+    try {
+        // eslint-disable-next-line new-cap
+        const command = new action(params);
+        const response = await testS3.send(command);
+
+        // Clean up multipart upload if needed (equivalent to the original cleanup logic)
+        if (response.UploadId) {
+            await testS3.send(new AbortMultipartUploadCommand({
+                Bucket: bucket,
+                Key: objectKey,
+                UploadId: response.UploadId
+            }));
+        }
+
+        _runAssertions(capturedHeaders);
+
+    } catch {
+        // CORS headers should still be sent in case of errors as long as
+        // request matches CORS configuration
+        _runAssertions(capturedHeaders);
+    }
 }
 
 describe('Cross Origin Resource Sharing requests', () => {
-    beforeEach(done => {
-        s3.createBucket({ Bucket: bucket, ACL: 'public-read-write' }, err => {
-            if (err) {
-                process.stdout.write(`Error in beforeEach ${err}`);
+    beforeEach(async () => {
+        try {
+            await s3.send(new CreateBucketCommand({ Bucket: bucket, ACL: 'public-read-write' }));
+            if (process.env.AWS_ON_AIR) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
-            return _waitForAWS(done, err);
-        });
+        } catch (err) {
+            process.stdout.write(`Error in beforeEach ${err}`);
+            throw err;
+        }
     });
 
-    afterEach(done => {
-        s3.deleteBucket({ Bucket: bucket }, err => {
-            if (err && err.code !== 'NoSuchBucket') {
-                process.stdout.write(`Error in afterEach ${err}`);
-                return _waitForAWS(done, err);
+    afterEach(async () => {
+        try {
+            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+            if (process.env.AWS_ON_AIR) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
-            return _waitForAWS(done);
-        });
+        } catch (err) {
+            if (err.Code !== 'NoSuchBucket') {
+                process.stdout.write(`Error in afterEach ${err}`);
+                throw err;
+            }
+        }
     });
 
     describe('on non-existing bucket', () => {
-        it('should not respond to request with CORS headers, even ' +
-            'if request was sent with Origin header', done => {
-            _checkHeaders(s3.listObjects, { Bucket: 'nonexistingbucket' },
-            allowedOrigin, null, done);
+        it('should not respond to request with CORS headers, even if request was sent with Origin header',
+            async () => {
+            await _checkHeaders(ListObjectsCommand, { Bucket: 'nonexistingbucket' }, allowedOrigin, null);
         });
     });
 
     describe('on bucket without CORS configuration', () => {
-        it('should not respond to request with CORS headers, even ' +
-            'if request was sent with Origin header', done => {
-            _checkHeaders(s3.listObjects, { Bucket: bucket },
-            allowedOrigin, null, done);
+        it('should not respond to request with CORS headers,' +
+            ' even if request was sent with Origin header', async () => {
+            await _checkHeaders(ListObjectsCommand, { Bucket: bucket }, allowedOrigin, null);
         });
     });
 
-    describe('on bucket with CORS configuration: ' +
-            'allow one origin and all methods', () => {
+    describe('on bucket with CORS configuration: allow one origin and all methods', () => {
         const corsParams = generateCorsParams(bucket, {
             allowedMethods: ['GET', 'PUT', 'HEAD', 'POST', 'DELETE'],
             allowedOrigins: [allowedOrigin],
         });
         const expectedHeaders = {
             'access-control-allow-origin': allowedOrigin,
-            'access-control-allow-methods': corsParams.CORSConfiguration
-                .CORSRules[0].AllowedMethods.join(', '),
+            'access-control-allow-methods': corsParams.CORSConfiguration.CORSRules[0].AllowedMethods.join(', '),
             'access-control-allow-credentials': 'true',
             vary,
         };
 
-        beforeEach(done => s3.putBucketCors(corsParams, done));
+        beforeEach(async () => {
+            await s3.send(new PutBucketCorsCommand(corsParams));
+        });
 
-        afterEach(done => {
-            removeAllVersions({ Bucket: bucket }, err => {
-                if (err && err.code !== 'NoSuchKey' &&
-                err.code !== 'NoSuchBucket') {
+        afterEach(async () => {
+            try {
+                await removeAllVersions({ Bucket: bucket });
+            } catch (err) {
+                if (err.name !== 'NoSuchKey' && err.name !== 'NoSuchBucket') {
                     process.stdout.write(`Unexpected err in afterEach: ${err}`);
-                    return done(err);
+                    throw err;
                 }
-                return done();
-            });
+            }
         });
 
         describe('when request Origin/method match CORS configuration', () => {
-            it('should not respond with CORS headers to GET service (list ' +
-            'buckets), even if Origin/method match CORS rule', done => {
-                // no bucket specified in this request
-                _checkHeaders(s3.listBuckets, {}, allowedOrigin,
-                    null, done);
+            it('should not respond with CORS headers to GET service (list buckets), ' +
+                'even if Origin/method match CORS rule', async () => {
+                await _checkHeaders(ListBucketsCommand, {}, allowedOrigin, null);
             });
 
             it('should not respond with CORS headers after deleting bucket, ' +
-            'even if Origin/method match CORS rule', done => {
-                s3.deleteBucket({ Bucket: bucket }, err => {
-                    assert.strictEqual(err, null, `Unexpected err ${err}`);
-                    _checkHeaders(s3.listObjects, { Bucket: bucket },
-                    allowedOrigin, null, done);
-                });
+                'even if Origin/method match CORS rule', async () => {
+                await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+                await _checkHeaders(ListObjectsCommand, { Bucket: bucket }, allowedOrigin, null);
             });
 
             apiMethods.forEach(method => {
-                it(`should respond to ${method.description} with CORS ` +
-                'headers (access-control-allow-origin, access-control-allow-' +
-                'methods, access-control-allow-credentials and vary)', done => {
-                    _checkHeaders(method.action, method.params, allowedOrigin,
-                    expectedHeaders, done);
+                it(`should respond to ${method.description} with CORS headers (access-control-allow-origin, 
+                    access-control-allow-methods, access-control-allow-credentials and vary)`, async () => {
+                    await _checkHeaders(method.action, method.params, allowedOrigin, expectedHeaders);
                 });
             });
         });
 
         describe('when request Origin does not match CORS rule', () => {
             apiMethods.forEach(method => {
-                it(`should not respond to ${method.description} with ` +
-                'CORS headers', done => {
-                    _checkHeaders(method.action, method.params,
-                    notAllowedOrigin, null, done);
+                it(`should not respond to ${method.description} with CORS headers`, async () => {
+                    await _checkHeaders(method.action, method.params, notAllowedOrigin, null);
                 });
             });
         });
     });
 
-    describe('on bucket with CORS configuration: ' +
-            'allow PUT method and one origin', () => {
+    describe('on bucket with CORS configuration: allow PUT method and one origin', () => {
         const corsParams = generateCorsParams(bucket, {
             allowedMethods: ['PUT'],
             allowedOrigins: [allowedOrigin],
         });
 
-        beforeEach(done => {
-            s3.putBucketCors(corsParams, done);
+        beforeEach(async () => {
+            await s3.send(new PutBucketCorsCommand(corsParams));
         });
 
-        afterEach(done => {
-            s3.deleteBucketCors({ Bucket: bucket }, done);
+        afterEach(async () => {
+            await s3.send(new DeleteBucketCorsCommand({ Bucket: bucket }));
         });
 
-        it('when request method does not match CORS rule ' +
-        'should not respond with CORS headers', done => {
-            _checkHeaders(s3.listObjects, { Bucket: bucket },
-            allowedOrigin, null, done);
+        it('when request method does not match CORS rule should not respond with CORS headers', async () => {
+            await _checkHeaders(ListObjectsCommand, { Bucket: bucket }, allowedOrigin, null);
         });
     });
 
-    describe('on bucket with CORS configuration and website configuration',
-    () => {
-        const bucket = process.env.AWS_ON_AIR ? 'awsbucketwebsitetester' :
-            'bucketwebsitetester';
+    describe('on bucket with CORS configuration and website configuration', () => {
+        const bucket = process.env.AWS_ON_AIR ? 'awsbucketwebsitetester' : 'bucketwebsitetester';
         const corsParams = generateCorsParams(bucket, {
             allowedMethods: ['GET', 'HEAD'],
             allowedOrigins: [allowedOrigin],
@@ -418,82 +471,64 @@ describe('Cross Origin Resource Sharing requests', () => {
         const redirect = { HostName: 'www.google.com' };
         webConfig.addRoutingRule(redirect, condition);
 
-        beforeEach(done =>
-            async.series([
-                next => s3.createBucket({
-                    Bucket: bucket,
-                    ACL: 'public-read',
-                }, next),
-                next => s3.putBucketCors(corsParams, next),
-                next => s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, next),
-                next => s3.putObject({
-                    Bucket: bucket,
-                    Key: 'index.html',
-                    ACL: 'public-read',
-                }, next),
-            ], err => {
-                assert.strictEqual(err, null,
-                    `Unexpected err ${err} in beforeEach`);
-                done(err);
-            })
-        );
-
-        afterEach(done =>
-            s3.deleteObject({ Bucket: bucket, Key: 'index.html' }, err => {
-                assert.strictEqual(err, null,
-                    `Unexpected err ${err} in afterEach`);
-                s3.deleteBucket({ Bucket: bucket }, err => {
-                    if (err) {
-                        process.stdout.write(`Error in afterEach ${err}`);
-                        return _waitForAWS(done, err);
-                    }
-                    return _waitForAWS(done);
-                });
-            })
-        );
-
-        it('should respond with CORS headers at website endpoint (GET)',
-        done => {
-            const headers = { Origin: allowedOrigin };
-            methodRequest({ method: 'GET', bucket, headers, headersResponse,
-                code: 200, isWebsite: true }, done);
+        beforeEach(async () => {
+            await s3.send(new CreateBucketCommand({ Bucket: bucket, ACL: 'public-read' }));
+            await s3.send(new PutBucketCorsCommand(corsParams));
+            await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket, WebsiteConfiguration: webConfig }));
+            await s3.send(new PutObjectCommand({ Bucket: bucket, Key: 'index.html', 
+                ACL: 'public-read', 
+                Body: 'test content' }));
+            if (process.env.AWS_ON_AIR) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
         });
 
-        it('should respond with CORS headers at website endpoint (GET) ' +
-        'even in case of error',
-        done => {
-            const headers = { Origin: allowedOrigin };
-            methodRequest({ method: 'GET', bucket, objectKey: 'test',
-                headers, headersResponse, code: 404, isWebsite: true }, done);
+        afterEach(async () => {
+            try {
+                await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'index.html' }));
+                await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+                if (process.env.AWS_ON_AIR) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            } catch (err) {
+                process.stdout.write(`Error in afterEach ${err}`);
+                throw err;
+            }
         });
 
-        it('should respond with CORS headers at website endpoint (GET) ' +
-        'even in case of redirect',
-        done => {
+        it('should respond with CORS headers at website endpoint (GET)', async () => {
             const headers = { Origin: allowedOrigin };
-            methodRequest({ method: 'GET', bucket, objectKey: 'redirect',
-                headers, headersResponse, code: 301, isWebsite: true }, done);
+            await methodRequestPromise({ method: 'GET', bucket, 
+                headers, headersResponse, code: 200, isWebsite: true });
         });
 
-        it('should respond with CORS headers at website endpoint (HEAD)',
-        done => {
+        it('should respond with CORS headers at website endpoint (GET) even in case of error', async () => {
             const headers = { Origin: allowedOrigin };
-            methodRequest({ method: 'HEAD', bucket, headers, headersResponse,
-                code: 200, isWebsite: true }, done);
+            await methodRequestPromise({ method: 'GET', bucket, objectKey: 'test', 
+                headers, headersResponse, code: 404, isWebsite: true });
+        });
+
+        it('should respond with CORS headers at website endpoint (GET) even in case of redirect', async () => {
+            const headers = { Origin: allowedOrigin };
+            await methodRequestPromise({ method: 'GET', bucket, objectKey: 'redirect', 
+                headers, headersResponse, code: 301, isWebsite: true });
+        });
+
+        it('should respond with CORS headers at website endpoint (HEAD)', async () => {
+            const headers = { Origin: allowedOrigin };
+            await methodRequestPromise({ method: 'HEAD', bucket, headers, headersResponse, 
+                code: 200, isWebsite: true });
         });
     });
 
-    describe('on bucket with additional cors configuration',
-    () => {
-        afterEach(done => {
-            s3.deleteBucketCors({ Bucket: bucket }, done);
+    describe('on bucket with additional cors configuration', () => {
+        afterEach(async () => {
+            await s3.send(new DeleteBucketCorsCommand({ Bucket: bucket }));
         });
 
         describe('cors configuration : AllowedHeaders', () => {
             const corsParams = generateCorsParams(bucket, defaultOptions);
-            corsParams.CORSConfiguration.CORSRules[0]
-                .AllowedHeaders = ['Content-Type'];
+            corsParams.CORSConfiguration.CORSRules[0].AllowedHeaders = ['Content-Type'];
 
             const headersResponse = {
                 'access-control-allow-origin': allowedOrigin,
@@ -502,33 +537,30 @@ describe('Cross Origin Resource Sharing requests', () => {
                 vary,
             };
 
-            beforeEach(done => {
-                s3.putBucketCors(corsParams, done);
+            beforeEach(async () => {
+                await s3.send(new PutBucketCorsCommand(corsParams));
             });
 
-            it('should not return access-control-allow-headers response ' +
-            'header even if request matches CORS rule and other access-' +
-            'control headers are returned', done => {
+            it('should not return access-control-allow-headers response header ' +
+                'even if request matches CORS rule and other access-control headers are returned', async () => {
                 const headers = {
                     'Origin': allowedOrigin,
                     'Content-Type': 'testvalue',
                 };
                 const headersOmitted = ['access-control-allow-headers'];
-                methodRequest({ method: 'GET', bucket, headers, headersResponse,
-                    headersOmitted, code: 200 }, done);
+                await methodRequestPromise({ method: 'GET', bucket, headers, headersResponse, 
+                    headersOmitted, code: 200 });
             });
 
-            it('Request with matching Origin/method but additional headers ' +
-            'that violate CORS rule:\n\t should still respond with access-' +
-            'control headers (headers are only checked in preflight requests)',
-            done => {
+            it('Request with matching Origin/method but additional headers that violate CORS rule:\n\t should still ' +
+                'respond with access-control headers (headers are only checked in preflight requests)', async () => {
                 const headers = {
                     Origin: allowedOrigin,
                     Test: 'test',
                     Expires: 86400,
                 };
-                methodRequest({ method: 'GET', bucket, headers, headersResponse,
-                    code: 200 }, done);
+                await methodRequestPromise({ method: 'GET', bucket, headers, 
+                    headersResponse, code: 200 });
             });
         });
 
@@ -546,15 +578,13 @@ describe('Cross Origin Resource Sharing requests', () => {
         ].forEach(elem => {
             describe(`cors configuration : ${elem.name}`, () => {
                 const corsParams = generateCorsParams(bucket, defaultOptions);
-                corsParams.CORSConfiguration.CORSRules[0][elem.name] =
-                    elem.testValue;
+                corsParams.CORSConfiguration.CORSRules[0][elem.name] = elem.testValue;
 
-                beforeEach(done => {
-                    s3.putBucketCors(corsParams, done);
+                beforeEach(async () => {
+                    await s3.send(new PutBucketCorsCommand(corsParams));
                 });
 
-                it(`should respond with ${elem.header} header ` +
-                'if request matches CORS rule', done => {
+                it(`should respond with ${elem.header} header if request matches CORS rule`, async () => {
                     const headers = { Origin: allowedOrigin };
                     const headersResponse = {
                         'access-control-allow-origin': allowedOrigin,
@@ -562,11 +592,8 @@ describe('Cross Origin Resource Sharing requests', () => {
                         'access-control-allow-credentials': 'true',
                         vary,
                     };
-                    headersResponse[elem.header] =
-                        Array.isArray(elem.testValue) ? elem.testValue[0] :
-                        elem.testValue;
-                    methodRequest({ method: 'GET', bucket, headers,
-                        headersResponse, code: 200 }, done);
+                    headersResponse[elem.header] = Array.isArray(elem.testValue) ? elem.testValue[0] : elem.testValue;
+                    await methodRequestPromise({ method: 'GET', bucket, headers, headersResponse, code: 200 });
                 });
             });
         });

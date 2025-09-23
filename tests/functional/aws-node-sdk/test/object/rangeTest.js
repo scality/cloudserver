@@ -3,6 +3,15 @@ const { exec, execFile } = require('child_process');
 const { writeFile, createReadStream } = require('fs');
 
 const assert = require('assert');
+const {
+    CreateBucketCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    CompleteMultipartUploadCommand,
+    AbortMultipartUploadCommand,
+    PutObjectCommand,
+    GetObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -37,11 +46,11 @@ function getOuterRange(range, bytes) {
 // Get the ranged object from a bucket. Write the response body to a file, then
 // use getRangeExec to check that all the bytes are in the correct location.
 function checkRanges(range, bytes) {
-    return s3.getObject({
+    return s3.send(new GetObjectCommand({
         Bucket: bucket,
         Key: key,
         Range: `bytes=${range}`,
-    }).promise()
+    }))
     .then(res => {
         const { begin, end } = getOuterRange(range, bytes);
         const total = (end - begin) + 1;
@@ -75,13 +84,13 @@ async function uploadParts(bytes, uploadId) {
                 `skip=${part - 1}`,
                 'count=1',
             ]);
-            await s3.uploadPart({
+            await s3.send(new UploadPartCommand({
                 Bucket: bucket,
                 Key: key,
                 PartNumber: part,
                 UploadId: uploadId,
                 Body: createReadStream(`${name}.mpuPart${part}`),
-            }).promise();
+            }));
         } catch (error) {
             throw new Error(`Error uploading part ${part}: ${error.message}`);
         }
@@ -107,17 +116,17 @@ describeSkipIfCeph('aws-node-sdk range tests', () => {
             let uploadId;
 
             beforeEach(() =>
-                s3.createBucket({ Bucket: bucket }).promise()
-                .then(() => s3.createMultipartUpload({
+                s3.send(new CreateBucketCommand({ Bucket: bucket }))
+                .then(() => s3.send(new CreateMultipartUploadCommand({
                     Bucket: bucket,
                     Key: key,
-                }).promise())
+                })))
                 .then(res => {
                     uploadId = res.UploadId;
                 })
                 .then(() => createHashedFile(fileSize))
                 .then(() => uploadParts(fileSize, uploadId))
-                .then(res => s3.completeMultipartUpload({
+                .then(res => s3.send(new CompleteMultipartUploadCommand({
                     Bucket: bucket,
                     Key: key,
                     UploadId: uploadId,
@@ -133,15 +142,15 @@ describeSkipIfCeph('aws-node-sdk range tests', () => {
                             },
                         ],
                     },
-                }).promise())
+                })))
             );
 
             afterEach(() => bucketUtil.empty(bucket)
-                .then(() => s3.abortMultipartUpload({
+                .then(() => s3.send(new AbortMultipartUploadCommand({
                     Bucket: bucket,
                     Key: key,
                     UploadId: uploadId,
-                }).promise())
+                })))
                 .catch(err => new Promise((resolve, reject) => {
                     if (err.code !== 'NoSuchUpload') {
                         reject(err);
@@ -174,13 +183,13 @@ describeSkipIfCeph('aws-node-sdk range tests', () => {
             const fileSize = 2000;
 
             beforeEach(() =>
-                s3.createBucket({ Bucket: bucket }).promise()
+                s3.send(new CreateBucketCommand({ Bucket: bucket }))
                 .then(() => createHashedFile(fileSize))
-                .then(() => s3.putObject({
+                .then(() => s3.send(new PutObjectCommand({
                     Bucket: bucket,
                     Key: key,
                     Body: createReadStream(`hashedFile.${fileSize}`),
-                }).promise()));
+                }))));
 
             afterEach(() =>
                 bucketUtil.empty(bucket)
@@ -231,13 +240,13 @@ describeSkipIfCeph('aws-node-sdk range tests', () => {
             const fileSize = 2900;
 
             beforeEach(() =>
-                s3.createBucket({ Bucket: bucket }).promise()
+                s3.send(new CreateBucketCommand({ Bucket: bucket }))
                 .then(() => createHashedFile(fileSize))
-                .then(() => s3.putObject({
+                .then(() => s3.send(new PutObjectCommand({
                     Bucket: bucket,
                     Key: key,
                     Body: createReadStream(`hashedFile.${fileSize}`),
-                }).promise()));
+                }))));
 
             afterEach(() =>
                 bucketUtil.empty(bucket)

@@ -3,6 +3,18 @@ const { v4: uuidv4 } = require('uuid');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const async = require('async');
+const { 
+    CreateBucketCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    CompleteMultipartUploadCommand,
+    AbortMultipartUploadCommand,
+    GetObjectCommand,
+    ListMultipartUploadsCommand,
+    ListObjectVersionsCommand,
+    DeleteObjectCommand,
+    PutBucketVersioningCommand
+} = require('@aws-sdk/client-s3');
 
 const date = Date.now();
 const bucket = `abortmpu${date}`;
@@ -11,7 +23,7 @@ const bodyFirstPart = Buffer.allocUnsafe(10).fill(0);
 
 function checkError(err, code, message) {
     assert.notEqual(err, null, 'Expected failure but got success');
-    assert.strictEqual(err.code, code);
+    assert.strictEqual(err.Code, code);
     assert.strictEqual(err.message, message);
 }
 
@@ -21,47 +33,49 @@ describe('Abort MPU', () => {
         let s3;
         let uploadId;
 
-        beforeEach(() => {
+        beforeEach(async () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucket({ Bucket: bucket }).promise()
-                .then(() => s3.createMultipartUpload({
+            try {
+                await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+                const mpu = await s3.send(new CreateMultipartUploadCommand({
                     Bucket: bucket,
                     Key: key,
-                }).promise())
-                .then(res => {
-                    uploadId = res.UploadId;
-                    return s3.uploadPart({
-                        Bucket: bucket, Key: key,
-                        PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart,
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write(`Error in beforeEach: ${err}\n`);
-                    throw err;
-                });
+                }));
+                uploadId = mpu.UploadId;
+                await s3.send(new UploadPartCommand({
+                    Bucket: bucket, Key: key,
+                    PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart,
+                }));
+            } catch (err) {
+                process.stdout.write(`Error in beforeEach: ${err}\n`);
+                throw err;
+            }
         });
 
-        afterEach(() =>
-            s3.abortMultipartUpload({
+        afterEach(async () => {
+            await s3.send(new AbortMultipartUploadCommand({
                 Bucket: bucket,
                 Key: key,
                 UploadId: uploadId,
-            }).promise()
-                .then(() => bucketUtil.empty(bucket))
-                .then(() => bucketUtil.deleteOne(bucket))
-        );
+            }));
+            await bucketUtil.empty(bucket);
+            await bucketUtil.deleteOne(bucket);
+        });
 
         // aws-sdk now (v2.363.0) returns 'UriParameterError' error
         // this test was not replaced in any other suite
         it.skip('should return InvalidRequest error if aborting without key',
             done => {
-                s3.abortMultipartUpload({
+                s3.send(new AbortMultipartUploadCommand({
                     Bucket: bucket,
                     Key: '',
                     UploadId: uploadId
-                },
-                    err => {
+                }))
+                    .then(() => {
+                        done(new Error('Expected failure but got success'));
+                    })
+                    .catch(err => {
                         checkError(err, 'InvalidRequest', 'A key must be specified');
                         done();
                     });
@@ -78,30 +92,31 @@ describe('Abort MPU with existing object', function AbortMPUExistingObject() {
         const bucketName = `abortmpu-test-bucket-${Date.now()}`;
         const objectKey = 'my-object';
 
-        beforeEach(done => {
+        beforeEach(async () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            s3.createBucket({ Bucket: bucketName }, err => {
-                assert.ifError(err, `Error creating bucket: ${err}`);
-                done();
-            });
+            await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
         });
 
         afterEach(async () => {
-            const data = await s3.listMultipartUploads({ Bucket: bucketName }).promise();
-            const uploads = data.Uploads;
+            // Clean up all multipart uploads
+            const listMPUResponse = await s3.send(new ListMultipartUploadsCommand({ Bucket: bucketName }));
+            // eslint-disable-next-line no-console
+            console.log('listMPUResponse', listMPUResponse);
+            const uploads = listMPUResponse.Uploads || [];
             await Promise.all(uploads.map(async upload => {
                 try {
-                    await s3.abortMultipartUpload({
+                    await s3.send(new AbortMultipartUploadCommand({
                         Bucket: bucketName,
                         Key: upload.Key,
                         UploadId: upload.UploadId,
-                    }).promise();
+                    }));
                 } catch (err) {
-                    if (err.code !== 'NoSuchUpload') {
+                    // eslint-disable-next-line no-console
+                    console.log('Error aborting MPU', err);
+                    if (err.Code !== 'NoSuchUpload') {
                         throw err;
                     }
-                    // If NoSuchUpload, swallow error
                 }
             }));
             await bucketUtil.empty(bucketName);
@@ -116,65 +131,94 @@ describe('Abort MPU with existing object', function AbortMPUExistingObject() {
             let etag1;
             async.waterfall([
                 next => {
-                    s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey }, (err, data) => {
-                        assert.ifError(err, `error creating MPU 1: ${err}`);
-                        uploadId1 = data.UploadId;
-                        s3.uploadPart({
-                            Bucket: bucketName,
-                            Key: objectKey,
-                            PartNumber: 1,
-                            UploadId: uploadId1,
-                            Body: part1,
-                        }, (err, data) => {
-                            assert.ifError(err, `error uploading part for MPU 1: ${err}`);
+                    s3.send(new CreateMultipartUploadCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                    }))
+                        .then(data => {
+                            uploadId1 = data.UploadId;
+                            // eslint-disable-next-line no-console
+                            console.log('uploadId1', uploadId1);
+                            return s3.send(new UploadPartCommand({
+                                Bucket: bucketName,
+                                Key: objectKey,
+                                PartNumber: 1,
+                                UploadId: uploadId1,
+                                Body: part1,
+                            }));
+                        })
+                        .then(data => {
                             etag1 = data.ETag;
-                            s3.completeMultipartUpload({
+                            // eslint-disable-next-line no-console
+                            console.log('etag1', etag1);
+                            return s3.send(new CompleteMultipartUploadCommand({
                                 Bucket: bucketName,
                                 Key: objectKey,
                                 UploadId: uploadId1,
                                 MultipartUpload: { Parts: [{ ETag: etag1, PartNumber: 1 }] },
-                            }, err => {
-                                assert.ifError(err, `error completing MPU 1: ${err}`);
-                                next();
-                            });
-                        });
-                    });
+                            }));
+                        })
+                        .then(() => next())
+                        .catch(err => next(err));
                 },
                 next => {
-                    s3.getObject({ Bucket: bucketName, Key: objectKey }, (err, data) => {
-                        assert.ifError(err, `error getting object after MPU 1: ${err}`);
-                        assert.strictEqual(data.Body.toString(), part1.toString());
-                        next();
-                    });
-                },
-                next => {
-                    s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey }, (err, data) => {
-                        assert.ifError(err, `error creating MPU 2: ${err}`);
-                        uploadId2 = data.UploadId;
-                        s3.uploadPart({
-                            Bucket: bucketName,
-                            Key: objectKey,
-                            PartNumber: 1,
-                            UploadId: uploadId2,
-                            Body: part2,
-                        }, err => {
-                            assert.ifError(err, `error uploading part for MPU 2: ${err}`);
+                    s3.send(new GetObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                    }))
+                        .then(async data => {
+                            const bodyText = await data.Body.transformToString();
+                            // eslint-disable-next-line no-console
+                            console.log('data.Body.toString()', bodyText);
+                            // eslint-disable-next-line no-console
+                            console.log('part1.toString()',  part1.toString());
+                            assert.strictEqual(bodyText, part1.toString());
                             next();
-                        });
-                    });
+                        })
+                        .catch(err => next(err));
                 },
                 next => {
-                    s3.abortMultipartUpload({ Bucket: bucketName, Key: objectKey, UploadId: uploadId2 }, err => {
-                        assert.ifError(err, `error aborting MPU 2: ${err}`);
-                        next();
-                    });
+                    s3.send(new CreateMultipartUploadCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                    }))
+                        .then(data => {
+                            // eslint-disable-next-line no-console
+                            console.log('uploadId2', data);
+                            uploadId2 = data.UploadId;
+                            return s3.send(new UploadPartCommand({
+                                Bucket: bucketName,
+                                Key: objectKey,
+                                PartNumber: 1,
+                                UploadId: uploadId2,
+                                Body: part2,
+                            }));
+                        })
+                        .then(() => next())
+                        .catch(err => next(err));
                 },
                 next => {
-                    s3.getObject({ Bucket: bucketName, Key: objectKey }, (err, data) => {
-                        assert.ifError(err, `error getting object after aborting MPU 2: ${err}`);
-                        assert.strictEqual(data.Body.toString(), part1.toString());
-                        next();
-                    });
+                    s3.send(new AbortMultipartUploadCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                        UploadId: uploadId2,
+                    }))
+                        .then(() => next())
+                        .catch(err => next(err));
+                },
+                next => {
+                    s3.send(new GetObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                    }))
+                        .then(async data => {
+                            const bodyText = await data.Body.transformToString();
+                            // eslint-disable-next-line no-console
+                            console.log('data.Body.toString()', bodyText);
+                            assert.strictEqual(bodyText, part1.toString());
+                            next();
+                        })
+                        .catch(err => next(err));
                 },
             ], done);
         });
@@ -187,76 +231,82 @@ describe('Abort MPU with existing object', function AbortMPUExistingObject() {
             let etag2;
             async.waterfall([
                 next => {
-                    s3.createMultipartUpload({
-                        Bucket: bucketName, Key: objectKey,
-                    }, (err, data) => {
-                        assert.ifError(err, `error creating MPU 1: ${err}`);
-                        uploadId1 = data.UploadId;
-                        s3.uploadPart({
-                            Bucket: bucketName,
-                            Key: objectKey,
-                            PartNumber: 1,
-                            UploadId: uploadId1,
-                            Body: part1,
-                        }, err => {
-                            assert.ifError(err, `error uploading part for MPU 1: ${err}`);
-                            next();
-                        });
-                    });
+                    s3.send(new CreateMultipartUploadCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                    }))
+                        .then(data => {
+                            uploadId1 = data.UploadId;
+                            return s3.send(new UploadPartCommand({
+                                Bucket: bucketName,
+                                Key: objectKey,
+                                PartNumber: 1,
+                                UploadId: uploadId1,
+                                Body: part1,
+                            }));
+                        })
+                        .then(() => next())
+                        .catch(err => next(err));
                 },
                 next => {
-                    s3.createMultipartUpload({
-                        Bucket: bucketName, Key: objectKey,
-                    }, (err, data) => {
-                        assert.ifError(err, `error creating MPU 2: ${err}`);
-                        uploadId2 = data.UploadId;
-                        s3.uploadPart({
-                            Bucket: bucketName,
-                            Key: objectKey,
-                            PartNumber: 1,
-                            UploadId: uploadId2,
-                            Body: part2,
-                        }, (err, data) => {
-                            assert.ifError(err, `error uploading part for MPU 2: ${err}`);
+                    s3.send(new CreateMultipartUploadCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                    }))
+                        .then(data => {
+                            uploadId2 = data.UploadId;
+                            return s3.send(new UploadPartCommand({
+                                Bucket: bucketName,
+                                Key: objectKey,
+                                PartNumber: 1,
+                                UploadId: uploadId2,
+                                Body: part2,
+                            }));
+                        })
+                        .then(data => {
                             etag2 = data.ETag;
-                            s3.completeMultipartUpload({
+                            return s3.send(new CompleteMultipartUploadCommand({
                                 Bucket: bucketName,
                                 Key: objectKey,
                                 UploadId: uploadId2,
                                 MultipartUpload: { Parts: [{ ETag: etag2, PartNumber: 1 }] },
-                            }, err => {
-                                assert.ifError(err, `error completing MPU 2: ${err}`);
-                                next();
-                            });
-                        });
-                    });
+                            }));
+                        })
+                        .then(() => next())
+                        .catch(err => next(err));
                 },
                 next => {
-                    s3.getObject({
+                    s3.send(new GetObjectCommand({
                         Bucket: bucketName,
                         Key: objectKey,
-                    }, (err, data) => {
-                        assert.ifError(err, `error getting object after MPU 2: ${err}`);
-                        assert.strictEqual(data.Body.toString(), part2.toString());
-                        next();
-                    });
+                    }))
+                        .then(async data => {
+                            const bodyText = await data.Body.transformToString();
+                            assert.strictEqual(bodyText, part2.toString());
+                            next();
+                        })
+                        .catch(err => next(err));
                 },
                 next => {
-                    s3.abortMultipartUpload({
+                    s3.send(new AbortMultipartUploadCommand({
                         Bucket: bucketName,
                         Key: objectKey,
                         UploadId: uploadId1,
-                    }, err => {
-                        assert.ifError(err, `error aborting MPU 1: ${err}`);
-                        next();
-                    });
+                    }))
+                        .then(() => next())
+                        .catch(err => next(err));
                 },
                 next => {
-                    s3.getObject({ Bucket: bucketName, Key: objectKey }, (err, data) => {
-                        assert.ifError(err, `error getting object after aborting MPU 1: ${err}`);
-                        assert.strictEqual(data.Body.toString(), part2.toString());
-                        next();
-                    });
+                    s3.send(new GetObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                    }))
+                        .then(async data => {
+                            const bodyText = await data.Body.transformToString();
+                            assert.strictEqual(bodyText, part2.toString());
+                            next();
+                        })
+                        .catch(err => next(err));
                 },
             ], done);
         });
@@ -268,24 +318,27 @@ describe('Abort MPU - No Such Upload', () => {
         let bucketUtil;
         let s3;
 
-        beforeEach(() => {
+        beforeEach(async () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucket({ Bucket: bucket }).promise();
+            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
         });
 
         afterEach(() => bucketUtil.deleteOne(bucket));
 
         it('should return NoSuchUpload error when aborting non-existent mpu',
             done => {
-                s3.abortMultipartUpload({
+                s3.send(new AbortMultipartUploadCommand({
                     Bucket: bucket,
                     Key: key,
                     UploadId: uuidv4().replace(/-/g, '')
-                },
-                    err => {
+                }))
+                    .then(() => {
+                        done(new Error('Expected failure but got success'));
+                    })
+                    .catch(err => {
                         assert.notEqual(err, null, 'Expected failure but got success');
-                        assert.strictEqual(err.code, 'NoSuchUpload');
+                        assert.strictEqual(err.Code, 'NoSuchUpload');
                         done();
                     });
             });
@@ -301,49 +354,80 @@ describe('Abort MPU - Versioned Bucket Cleanup', function testSuite() {
         const bucketName = `abort-mpu-versioned-${Date.now()}`;
         const objectKey = 'test-object-with-versions';
 
-        beforeEach(done => {
+        beforeEach(async () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
 
-            async.series([
-                next => s3.createBucket({ Bucket: bucketName }, next),
-                next => s3.putBucketVersioning({
-                    Bucket: bucketName,
-                    VersioningConfiguration: { Status: 'Enabled' },
-                }, next),
-            ], done);
+            await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
+            await s3.send(new PutBucketVersioningCommand({
+                Bucket: bucketName,
+                VersioningConfiguration: { Status: 'Enabled' },
+            }));
         });
 
         afterEach(async () => {
-            // Clean up all multipart uploads
-            const listMPUResponse = await s3.listMultipartUploads({ Bucket: bucketName }).promise();
-            await Promise.all(listMPUResponse.Uploads.map(upload =>
-                s3.abortMultipartUpload({
-                    Bucket: bucketName,
-                    Key: upload.Key,
-                    UploadId: upload.UploadId,
-                }).promise().catch(err => {
-                    if (err.code !== 'NoSuchUpload') {
-                        throw err;
-                    }
-                }),
-            ));
-
-            // Clean up all object versions
-            const listVersionsResponse = await s3.listObjectVersions({ Bucket: bucketName }).promise();
-            const allObjects = [
-                ...listVersionsResponse.Versions,
-                ...listVersionsResponse.DeleteMarkers,
-            ];
-            await Promise.all(allObjects.map(obj =>
-                s3.deleteObject({
-                    Bucket: bucketName,
-                    Key: obj.Key,
-                    VersionId: obj.VersionId,
-                }).promise()
-            ));
-
-            await bucketUtil.deleteOne(bucketName);
+            try {
+                // Clean up all multipart uploads first
+                const listMPUResponse = await s3.send(new ListMultipartUploadsCommand({ Bucket: bucketName }));
+                if (listMPUResponse.Uploads && listMPUResponse.Uploads.length > 0) {
+                    await Promise.all(listMPUResponse.Uploads.map(async upload => {
+                        try {
+                            await s3.send(new AbortMultipartUploadCommand({
+                                Bucket: bucketName,
+                                Key: upload.Key,
+                                UploadId: upload.UploadId,
+                            }));
+                        } catch (err) {
+                            // Ignore if upload doesn't exist anymore
+                            if (err.Code !== 'NoSuchUpload') {
+                                // eslint-disable-next-line no-console
+                                console.error(`Error aborting upload ${upload.UploadId}:`, 
+                                    err);
+                            }
+                        }
+                    }));
+                }
+        
+                // Clean up all object versions
+                const listVersionsResponse = await s3.send(new ListObjectVersionsCommand({ Bucket: bucketName }));
+                const allObjects = [
+                    ...(listVersionsResponse.Versions || []),
+                    ...(listVersionsResponse.DeleteMarkers || [])
+                ];
+        
+                if (allObjects.length > 0) {
+                    await Promise.all(allObjects.map(async obj => {
+                        try {
+                            await s3.send(new DeleteObjectCommand({
+                                Bucket: bucketName,
+                                Key: obj.Key,
+                                VersionId: obj.VersionId,
+                            }));
+                        } catch (err) {
+                            // esl
+                            // Ignore if object version doesn't exist anymore
+                            if (err.Code !== 'NoSuchKey' && err.name !== 'NoSuchKey') {
+                                // eslint-disable-next-line no-console
+                                console.error(`Error deleting object ${obj.Key} version ${obj.VersionId}:`, 
+                                    err);
+                            }
+                        }
+                    }));
+                }
+        
+                // Finally delete the bucket
+                await bucketUtil.deleteOne(bucketName);
+            } catch (err) {
+                // eslint-disable-next-line no-console
+                console.error('Error in afterEach cleanup:', err);
+                // Don't fail the test due to cleanup issues, but try basic cleanup
+                try {
+                    await bucketUtil.deleteOne(bucketName);
+                } catch (deleteErr) {
+                    // eslint-disable-next-line no-console
+                    console.error('Failed to delete bucket in fallback cleanup:', deleteErr);
+                }
+            }
         });
 
         it('should handle aborting MPU with many versions of same object', done => {
@@ -360,28 +444,28 @@ describe('Abort MPU - Versioned Bucket Cleanup', function testSuite() {
 
                     async.waterfall([
                         next => {
-                            s3.createMultipartUpload({
+                            s3.send(new CreateMultipartUploadCommand({
                                 Bucket: bucketName,
                                 Key: objectKey,
-                            }, (err, result) => {
-                                assert.ifError(err);
-                                if (currentVersion === numberOfVersions) {
-                                    finalUploadId = result.UploadId; // Save the last one for aborting
-                                }
-                                next(null, result.UploadId);
-                            });
+                            }))
+                                .then(result => {
+                                    if (currentVersion === numberOfVersions) {
+                                        finalUploadId = result.UploadId; // Save the last one for aborting
+                                    }
+                                    next(null, result.UploadId);
+                                })
+                                .catch(err => next(err));
                         },
                         (uploadId, next) => {
-                            s3.uploadPart({
+                            s3.send(new UploadPartCommand({
                                 Bucket: bucketName,
                                 Key: objectKey,
                                 PartNumber: 1,
                                 UploadId: uploadId,
                                 Body: data,
-                            }, (err, result) => {
-                                assert.ifError(err);
-                                next(null, uploadId, result.ETag);
-                            });
+                            }))
+                                .then(result => next(null, uploadId, result.ETag))
+                                .catch(err => next(err));
                         },
                         (uploadId, etag, next) => {
                             if (currentVersion === numberOfVersions) {
@@ -389,14 +473,16 @@ describe('Abort MPU - Versioned Bucket Cleanup', function testSuite() {
                                 return next();
                             }
 
-                            return s3.completeMultipartUpload({
+                            return s3.send(new CompleteMultipartUploadCommand({
                                 Bucket: bucketName,
                                 Key: objectKey,
                                 UploadId: uploadId,
                                 MultipartUpload: {
                                     Parts: [{ ETag: etag, PartNumber: 1 }],
                                 },
-                            }, next);
+                            }))
+                                .then(() => next())
+                                .catch(err => next(err));
                         },
                     ], callback);
                 },
@@ -404,24 +490,19 @@ describe('Abort MPU - Versioned Bucket Cleanup', function testSuite() {
                     assert.ifError(err);
 
                     // Now abort the final MPU
-                    s3.abortMultipartUpload({
+                    s3.send(new AbortMultipartUploadCommand({
                         Bucket: bucketName,
                         Key: objectKey,
                         UploadId: finalUploadId,
-                    }, err => {
-                        assert.ifError(err);
-
-                        // Verify we still have the correct number of completed versions
-                        s3.listObjectVersions({ Bucket: bucketName }, (err, data) => {
-                            assert.ifError(err);
-
+                    }))
+                        .then(() => s3.send(new ListObjectVersionsCommand({ Bucket: bucketName })))
+                        .then(data => {
                             const objectVersions = data.Versions.filter(v => v.Key === objectKey);
                             assert.strictEqual(objectVersions.length, numberOfVersions - 1,
                                 `Expected ${numberOfVersions - 1} versions after abort, got ${objectVersions.length}`);
-
                             done();
-                        });
-                    });
+                        })
+                        .catch(err => done(err));
                 }
             );
         });
@@ -433,62 +514,68 @@ describe('Abort MPU - Versioned Bucket Cleanup', function testSuite() {
             async.waterfall([
                 // Create and upload part for MPU
                 next => {
-                    s3.createMultipartUpload({
+                    s3.send(new CreateMultipartUploadCommand({
                         Bucket: bucketName,
                         Key: objectKey,
-                    }, (err, result) => {
-                        assert.ifError(err);
-                        uploadId = result.UploadId;
-                        next();
-                    });
+                    }))
+                        .then(result => {
+                            uploadId = result.UploadId;
+                            next();
+                        })
+                        .catch(err => next(err));
                 },
                 next => {
-                    s3.uploadPart({
+                    s3.send(new UploadPartCommand({
                         Bucket: bucketName,
                         Key: objectKey,
                         PartNumber: 1,
                         UploadId: uploadId,
                         Body: data,
-                    }, err => {
-                        assert.ifError(err);
-                        next();
-                    });
+                    }))
+                        .then(() => next())
+                        .catch(err => next(err));
                 },
 
                 // Abort the MPU
                 next => {
-                    s3.abortMultipartUpload({
+                    s3.send(new AbortMultipartUploadCommand({
                         Bucket: bucketName,
                         Key: objectKey,
                         UploadId: uploadId,
-                    }, err => {
-                        assert.ifError(err);
-                        next();
-                    });
+                    }))
+                        .then(() => next())
+                        .catch(err => next(err));
                 },
 
                 // Verify no object exists
                 next => {
-                    s3.getObject({ Bucket: bucketName, Key: objectKey }, err => {
-                        assert.notEqual(err, null, 'Expected NoSuchKey error');
-                        assert.strictEqual(err.code, 'NoSuchKey');
-                        next();
-                    });
+                    s3.send(new GetObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                    }))
+                        .then(() => {
+                            next(new Error('Expected NoSuchKey error'));
+                        })
+                        .catch(err => {
+                            assert.strictEqual(err.Code, 'NoSuchKey');
+                            next();
+                        });
                 },
 
                 // Verify no versions exist
                 next => {
-                    s3.listObjectVersions({ Bucket: bucketName }, (err, data) => {
-                        assert.ifError(err);
-
-                        const objectVersions = data.Versions.filter(v => v.Key === objectKey);
-                        assert.strictEqual(objectVersions.length, 0,
-                            `Expected 0 versions after abort, got ${objectVersions.length}`);
-
-                        next();
-                    });
+                    s3.send(new ListObjectVersionsCommand({ Bucket: bucketName }))
+                        .then(data => {
+                            // eslint-disable-next-line no-console
+                            console.log('ListObjectVersionsCommand data:', data);
+                            const objectVersions = data.Versions?.filter(v => v.Key === objectKey) || [];
+                            assert.strictEqual(objectVersions.length, 0,
+                                `Expected 0 versions after abort, got ${objectVersions.length}`);
+                            next();
+                        })
+                        .catch(err => next(err));
                 },
             ], done);
         });
     });
-});
+}); 
