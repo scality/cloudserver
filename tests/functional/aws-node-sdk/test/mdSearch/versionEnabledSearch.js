@@ -1,3 +1,9 @@
+const {
+    CreateBucketCommand,
+    PutBucketVersioningCommand,
+    PutObjectCommand,
+    DeleteBucketCommand,
+} = require('@aws-sdk/client-s3');
 const s3Client = require('./utils/s3SDK');
 const { runAndCheckSearch, removeAllVersions, runIfMongo } =
     require('./utils/helpers');
@@ -12,57 +18,68 @@ runIfMongo('Search in version enabled bucket', () => {
         MFADelete: 'Disabled',
         Status: 'Enabled',
     };
-    before(done => {
-        s3Client.createBucket({ Bucket: bucketName }, err => {
-            if (err) {
-                return done(err);
-            }
-            return s3Client.putBucketVersioning({ Bucket: bucketName,
-                VersioningConfiguration }, err => {
-                if (err) {
-                    return done(err);
-                }
-                return s3Client.putObject({ Bucket: bucketName,
-                    Key: masterKey, Metadata: userMetadata }, done);
-            });
-        });
+    before(async () => {
+        await s3Client.send(new CreateBucketCommand({ Bucket: bucketName }));
+        await s3Client.send(new PutBucketVersioningCommand({ 
+            Bucket: bucketName,
+            VersioningConfiguration 
+        }));
+        await s3Client.send(new PutObjectCommand({ 
+            Bucket: bucketName,
+            Key: masterKey, 
+            Metadata: userMetadata 
+        }));
     });
 
-    after(done => {
-        removeAllVersions(s3Client, bucketName,
-            err => {
-                if (err) {
-                    return done(err);
-                }
-                return s3Client.deleteBucket({ Bucket: bucketName }, done);
-            });
+    after(async () => {
+        try {
+            await removeAllVersions(s3Client, bucketName);
+            await s3Client.send(new DeleteBucketCommand({ Bucket: bucketName }));
+        } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('Error in cleanup:', err);
+            throw err;
+        }
     });
 
     it('should list just master object with searched for metadata by default', done => {
         const encodedSearch =
         encodeURIComponent(`x-amz-meta-food="${userMetadata.food}"`);
-        return runAndCheckSearch(s3Client, bucketName,
-            encodedSearch, false, masterKey, done);
+        runAndCheckSearch(s3Client, bucketName, encodedSearch, false, masterKey)
+            .then(() => {
+                done();
+            })
+            .catch(done);
     });
 
     describe('New version overwrite', () => {
-        before(done => {
-            s3Client.putObject({ Bucket: bucketName,
-                Key: masterKey, Metadata: updatedMetadata }, done);
+        before(async () => {
+            await s3Client.send(new PutObjectCommand({ 
+                Bucket: bucketName,
+                Key: masterKey, 
+                Metadata: updatedMetadata 
+            }));
         });
 
         it('should list just master object with updated metadata by default', done => {
             const encodedSearch =
             encodeURIComponent(`x-amz-meta-food="${updatedMetadata.food}"`);
-            return runAndCheckSearch(s3Client, bucketName,
-                encodedSearch, false, masterKey, done);
+            runAndCheckSearch(s3Client, bucketName, encodedSearch, false, masterKey)
+                .then(() => {
+                    done();
+                })
+                .catch(done);
         });
 
         it('should list all object versions that met search query while specifying versions param', done => {
             const encodedSearch =
                 encodeURIComponent('x-amz-meta-food LIKE "pi.*"');
-            return runAndCheckSearch(s3Client, bucketName,
-                encodedSearch, true, [masterKey, masterKey], done);
+            runAndCheckSearch(s3Client, bucketName,
+                encodedSearch, true, [masterKey, masterKey])
+                .then(() => {
+                    done();
+                })
+                .catch(done);
         });
     });
 });
