@@ -1,5 +1,16 @@
 const assert = require('assert');
 const async = require('async');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketVersioningCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+    UploadPartCopyCommand,
+    CreateMultipartUploadCommand,
+    AbortMultipartUploadCommand,
+    ListObjectVersionsCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -31,16 +42,16 @@ describe('Object Part Copy with Versioning', () => {
             sourceBucket = `copypartsourcebucket-${Date.now()}`;
             destBucket = `copypartdestbucket-${Date.now()}`;
             async.forEach([sourceBucket, destBucket], (bucket, cb) => {
-                s3.createBucket({ Bucket: bucket }, cb);
+                s3.send(new CreateBucketCommand({ Bucket: bucket }), cb);
             }, done);
         });
 
         afterEach(done => {
-            s3.abortMultipartUpload({
+            s3.send(new AbortMultipartUploadCommand({
                 Bucket: destBucket,
                 Key: destKey,
                 UploadId: uploadId,
-            }, err => {
+            }), err => {
                 if (err) {
                     return done(err);
                 }
@@ -49,7 +60,7 @@ describe('Object Part Copy with Versioning', () => {
                         if (err) {
                             return cb(err);
                         }
-                        return s3.deleteBucket({ Bucket: bucket }, cb);
+                        return s3.send(new DeleteBucketCommand({ Bucket: bucket }), cb);
                     });
                 }, done);
             });
@@ -60,12 +71,17 @@ describe('Object Part Copy with Versioning', () => {
 
             beforeEach(done => {
                 async.waterfall([
-                    next => s3.putObject({ Bucket: sourceBucket, Key: sourceKey,
-                        Body: 'foobar' }, next),
+                    next => s3.send(new PutObjectCommand({ 
+                        Bucket: sourceBucket, 
+                        Key: sourceKey,
+                        Body: 'foobar' 
+                    }), next),
                     (data, next) => {
                         eTags.push(data.ETag);
-                        s3.createMultipartUpload({ Bucket: destBucket,
-                            Key: destKey }, next);
+                        s3.send(new CreateMultipartUploadCommand({ 
+                            Bucket: destBucket,
+                            Key: destKey 
+                        }), next);
                     },
                 ], (err, data) => {
                     if (err) {
@@ -83,13 +99,13 @@ describe('Object Part Copy with Versioning', () => {
 
             it('should not return a version id when put part by copying ' +
             'without specifying version id', done => {
-                s3.uploadPartCopy({
+                s3.send(new UploadPartCopyCommand({
                     Bucket: destBucket,
                     CopySource: `${sourceBucket}/${sourceKey}`,
                     Key: destKey,
                     PartNumber: 1,
                     UploadId: uploadId,
-                }, (err, data) => {
+                }), (err, data) => {
                     _assertNoError(err, 'uploading part copy w/o version id');
                     assert.strictEqual(data.CopySourceVersionId, undefined);
                     assert.strictEqual(data.CopyPartResult.ETag, eTags[0]);
@@ -99,14 +115,13 @@ describe('Object Part Copy with Versioning', () => {
 
             it('should return NoSuchKey if copy source version id is invalid ' +
             'id', done => {
-                s3.uploadPartCopy({
+                s3.send(new UploadPartCopyCommand({
                     Bucket: destBucket,
-                    CopySource: `${sourceBucket}/${sourceKey}?` +
-                    `versionId=${invalidId}`,
+                    CopySource: `${sourceBucket}/${sourceKey}?versionId=${invalidId}`,
                     Key: destKey,
                     PartNumber: 1,
                     UploadId: uploadId,
-                }, err => {
+                }), err => {
                     assert(err, `Expected err but got ${err}`);
                     assert.strictEqual(err.code, 'InvalidArgument');
                     assert.strictEqual(err.statusCode, 400);
@@ -116,13 +131,13 @@ describe('Object Part Copy with Versioning', () => {
 
             it('should allow specific version "null" for copy source ' +
             'and return version id "null" in response headers', done => {
-                s3.uploadPartCopy({
+                s3.send(new UploadPartCopyCommand({
                     Bucket: destBucket,
                     CopySource: `${sourceBucket}/${sourceKey}?versionId=null`,
                     Key: destKey,
                     PartNumber: 1,
                     UploadId: uploadId,
-                }, (err, data) => {
+                }), (err, data) => {
                     _assertNoError(err,
                         'using specific version "null" for copy source');
                     assert.strictEqual(data.CopySourceVersionId, 'null');
@@ -140,25 +155,30 @@ describe('Object Part Copy with Versioning', () => {
             beforeEach(done => {
                 const params = { Bucket: sourceBucket, Key: sourceKey };
                 async.waterfall([
-                    next => s3.putObject(params, next),
+                    next => s3.send(new PutObjectCommand(params), next),
                     (data, next) => {
                         eTags.push(data.ETag);
                         versionIds.push('null');
-                        s3.putBucketVersioning({
+                        s3.send(new PutBucketVersioningCommand({
                             Bucket: sourceBucket,
                             VersioningConfiguration: versioningEnabled,
-                        }, err => next(err));
+                        }), err => next(err));
                     },
                     next => async.timesSeries(counter, (i, cb) =>
-                        s3.putObject({ Bucket: sourceBucket, Key: sourceKey,
-                            Body: `foo${i}` }, (err, data) => {
+                        s3.send(new PutObjectCommand({ 
+                            Bucket: sourceBucket, 
+                            Key: sourceKey,
+                            Body: `foo${i}` 
+                        }), (err, data) => {
                             _assertNoError(err, `putting version #${i}`);
                             eTags.push(data.ETag);
                             versionIds.push(data.VersionId);
                             cb(err);
                         }), err => next(err)),
-                    next => s3.createMultipartUpload({ Bucket: destBucket,
-                        Key: destKey }, next),
+                    next => s3.send(new CreateMultipartUploadCommand({ 
+                        Bucket: destBucket,
+                        Key: destKey 
+                    }), next),
                 ], (err, data) => {
                     if (err) {
                         return done(err);
@@ -178,13 +198,13 @@ describe('Object Part Copy with Versioning', () => {
             'version id of latest version', done => {
                 const lastVersion = versionIds[versionIds.length - 1];
                 const lastETag = eTags[eTags.length - 1];
-                s3.uploadPartCopy({
+                s3.send(new UploadPartCopyCommand({
                     Bucket: destBucket,
                     CopySource: `${sourceBucket}/${sourceKey}`,
                     Key: destKey,
                     PartNumber: 1,
                     UploadId: uploadId,
-                }, (err, data) => {
+                }), (err, data) => {
                     _assertNoError(err, 'uploading part copy w/o version id');
                     assert.strictEqual(data.CopySourceVersionId, lastVersion);
                     assert.strictEqual(data.CopyPartResult.ETag, lastETag);
@@ -194,43 +214,46 @@ describe('Object Part Copy with Versioning', () => {
 
             it('copy part without specifying version should return NoSuchKey ' +
             'if latest version has a delete marker', done => {
-                s3.deleteObject({ Bucket: sourceBucket, Key: sourceKey },
-                    err => {
-                        _assertNoError(err, 'deleting latest version');
-                        s3.uploadPartCopy({
-                            Bucket: destBucket,
-                            CopySource: `${sourceBucket}/${sourceKey}`,
-                            Key: destKey,
-                            PartNumber: 1,
-                            UploadId: uploadId,
-                        }, err => {
-                            assert(err, 'Expected err but did not find one');
-                            assert.strictEqual(err.code, 'NoSuchKey');
-                            assert.strictEqual(err.statusCode, 404);
-                            done();
-                        });
+                s3.send(new DeleteObjectCommand({ 
+                    Bucket: sourceBucket, 
+                    Key: sourceKey 
+                }), err => {
+                    _assertNoError(err, 'deleting latest version');
+                    s3.send(new UploadPartCopyCommand({
+                        Bucket: destBucket,
+                        CopySource: `${sourceBucket}/${sourceKey}`,
+                        Key: destKey,
+                        PartNumber: 1,
+                        UploadId: uploadId,
+                    }), err => {
+                        assert(err, 'Expected err but did not find one');
+                        assert.strictEqual(err.code, 'NoSuchKey');
+                        assert.strictEqual(err.statusCode, 404);
+                        done();
                     });
+                });
             });
 
             it('copy part with specific version id should return ' +
             'InvalidRequest if that id is a delete marker', done => {
                 async.waterfall([
-                    next => s3.deleteObject({
+                    next => s3.send(new DeleteObjectCommand({
                         Bucket: sourceBucket,
                         Key: sourceKey,
-                    }, err => next(err)),
-                    next => s3.listObjectVersions({ Bucket: sourceBucket },
-                        next),
+                    }), err => next(err)),
+                    next => s3.send(new ListObjectVersionsCommand({ 
+                        Bucket: sourceBucket 
+                    }), next),
                     (data, next) => {
                         const deleteMarkerId = data.DeleteMarkers[0].VersionId;
-                        return s3.uploadPartCopy({
+                        return s3.send(new UploadPartCopyCommand({
                             Bucket: destBucket,
                             CopySource: `${sourceBucket}/${sourceKey}` +
                             `?versionId=${deleteMarkerId}`,
                             Key: destKey,
                             PartNumber: 1,
                             UploadId: uploadId,
-                        }, next);
+                        }), next);
                     },
                 ], err => {
                     assert(err, 'Expected err but did not find one');
@@ -243,18 +266,21 @@ describe('Object Part Copy with Versioning', () => {
             it('copy part with specific version should return NoSuchVersion ' +
             'if version does not exist', done => {
                 const versionId = versionIds[1];
-                s3.deleteObject({ Bucket: sourceBucket, Key: sourceKey,
-                    VersionId: versionId }, (err, data) => {
+                s3.send(new DeleteObjectCommand({ 
+                    Bucket: sourceBucket, 
+                    Key: sourceKey,
+                    VersionId: versionId 
+                }), (err, data) => {
                     _assertNoError(err, `deleting version ${versionId}`);
                     assert.strictEqual(data.VersionId, versionId);
-                    s3.uploadPartCopy({
+                    s3.send(new UploadPartCopyCommand({
                         Bucket: destBucket,
                         CopySource: `${sourceBucket}/${sourceKey}` +
                          `?versionId=${versionId}`,
                         Key: destKey,
                         PartNumber: 1,
                         UploadId: uploadId,
-                    }, err => {
+                    }), err => {
                         assert(err, 'Expected err but did not find one');
                         assert.strictEqual(err.code, 'NoSuchVersion');
                         assert.strictEqual(err.statusCode, 404);
@@ -266,14 +292,14 @@ describe('Object Part Copy with Versioning', () => {
             it('copy part with specific version should return copy source ' +
             'version id if it exists', done => {
                 const versionId = versionIds[1];
-                s3.uploadPartCopy({
+                s3.send(new UploadPartCopyCommand({
                     Bucket: destBucket,
                     CopySource: `${sourceBucket}/${sourceKey}` +
                      `?versionId=${versionId}`,
                     Key: destKey,
                     PartNumber: 1,
                     UploadId: uploadId,
-                }, (err, data) => {
+                }), (err, data) => {
                     _assertNoError(err, 'copy part from specific version');
                     assert.strictEqual(data.CopySourceVersionId, versionId);
                     assert.strictEqual(data.CopyPartResult.ETag, eTags[1]);
@@ -283,13 +309,13 @@ describe('Object Part Copy with Versioning', () => {
 
             it('copy part with specific version "null" should return copy ' +
             'source version id "null" if it exists', done => {
-                s3.uploadPartCopy({
+                s3.send(new UploadPartCopyCommand({
                     Bucket: destBucket,
                     CopySource: `${sourceBucket}/${sourceKey}?versionId=null`,
                     Key: destKey,
                     PartNumber: 1,
                     UploadId: uploadId,
-                }, (err, data) => {
+                }), (err, data) => {
                     _assertNoError(err, 'copy part from specific version');
                     assert.strictEqual(data.CopySourceVersionId, 'null');
                     assert.strictEqual(data.CopyPartResult.ETag, eTags[0]);
@@ -306,31 +332,36 @@ describe('Object Part Copy with Versioning', () => {
             beforeEach(done => {
                 const params = { Bucket: sourceBucket, Key: sourceKey };
                 async.waterfall([
-                    next => s3.putObject(params, next),
+                    next => s3.send(new PutObjectCommand(params), next),
                     (data, next) => {
                         eTags.push(data.ETag);
                         versionIds.push('null');
-                        s3.putBucketVersioning({
+                        s3.send(new PutBucketVersioningCommand({
                             Bucket: sourceBucket,
                             VersioningConfiguration: versioningEnabled,
-                        }, err => next(err));
+                        }), err => next(err));
                     },
                     next => async.timesSeries(counter, (i, cb) =>
-                        s3.putObject({ Bucket: sourceBucket, Key: sourceKey,
-                            Body: `foo${i}` }, (err, data) => {
+                        s3.send(new PutObjectCommand({ 
+                            Bucket: sourceBucket, 
+                            Key: sourceKey,
+                            Body: `foo${i}` 
+                        }), (err, data) => {
                             _assertNoError(err, `putting version #${i}`);
                             eTags.push(data.ETag);
                             versionIds.push(data.VersionId);
                             cb(err);
                         }), err => next(err)),
                     next => {
-                        s3.putBucketVersioning({
+                        s3.send(new PutBucketVersioningCommand({
                             Bucket: sourceBucket,
                             VersioningConfiguration: versioningSuspended,
-                        }, err => next(err));
+                        }), err => next(err));
                     },
-                    next => s3.createMultipartUpload({ Bucket: destBucket,
-                        Key: destKey }, next),
+                    next => s3.send(new CreateMultipartUploadCommand({ 
+                        Bucket: destBucket,
+                        Key: destKey 
+                    }), next),
                 ], (err, data) => {
                     if (err) {
                         return done(err);
@@ -350,13 +381,13 @@ describe('Object Part Copy with Versioning', () => {
             'version id of latest version', done => {
                 const lastVersion = versionIds[versionIds.length - 1];
                 const lastETag = eTags[eTags.length - 1];
-                s3.uploadPartCopy({
+                s3.send(new UploadPartCopyCommand({
                     Bucket: destBucket,
                     CopySource: `${sourceBucket}/${sourceKey}`,
                     Key: destKey,
                     PartNumber: 1,
                     UploadId: uploadId,
-                }, (err, data) => {
+                }), (err, data) => {
                     _assertNoError(err, 'uploading part copy w/o version id');
                     assert.strictEqual(data.CopySourceVersionId, lastVersion);
                     assert.strictEqual(data.CopyPartResult.ETag, lastETag);
@@ -367,14 +398,14 @@ describe('Object Part Copy with Versioning', () => {
             it('copy part with specific version should still return copy ' +
             'source version id if it exists', done => {
                 const versionId = versionIds[1];
-                s3.uploadPartCopy({
+                s3.send(new UploadPartCopyCommand({
                     Bucket: destBucket,
                     CopySource: `${sourceBucket}/${sourceKey}` +
                      `?versionId=${versionId}`,
                     Key: destKey,
                     PartNumber: 1,
                     UploadId: uploadId,
-                }, (err, data) => {
+                }), (err, data) => {
                     _assertNoError(err, 'copy part from specific version');
                     assert.strictEqual(data.CopySourceVersionId, versionId);
                     assert.strictEqual(data.CopyPartResult.ETag, eTags[1]);
@@ -384,13 +415,13 @@ describe('Object Part Copy with Versioning', () => {
 
             it('copy part with specific version "null" should still return ' +
             'copy source version id "null" if it exists', done => {
-                s3.uploadPartCopy({
+                s3.send(new UploadPartCopyCommand({
                     Bucket: destBucket,
                     CopySource: `${sourceBucket}/${sourceKey}?versionId=null`,
                     Key: destKey,
                     PartNumber: 1,
                     UploadId: uploadId,
-                }, (err, data) => {
+                }), (err, data) => {
                     _assertNoError(err, 'copy part from specific version');
                     assert.strictEqual(data.CopySourceVersionId, 'null');
                     assert.strictEqual(data.CopyPartResult.ETag, eTags[0]);

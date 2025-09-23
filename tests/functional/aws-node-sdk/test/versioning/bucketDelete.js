@@ -1,5 +1,11 @@
 const assert = require('assert');
-const async = require('async');
+const {
+    CreateBucketCommand,
+    PutBucketVersioningCommand,
+    DeleteBucketCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -12,11 +18,7 @@ const key = 'anObject';
 
 function checkError(err, code) {
     assert.notEqual(err, null, 'Expected failure but got success');
-    assert.strictEqual(err.code, code);
-}
-
-function checkNoError(err) {
-    assert.ifError(err, `Expected success, got error ${JSON.stringify(err)}`);
+    assert.strictEqual(err.Code, code);
 }
 
 describe('aws-node-sdk test delete bucket', () => {
@@ -25,72 +27,68 @@ describe('aws-node-sdk test delete bucket', () => {
         const s3 = bucketUtil.s3;
 
         // setup test
-        beforeEach(done => {
-            async.waterfall([
-                next => s3.createBucket({ Bucket: bucketName },
-                    err => next(err)),
-                next => s3.putBucketVersioning({
-                    Bucket: bucketName,
-                    VersioningConfiguration: {
-                        Status: 'Enabled',
-                    },
-                }, err => next(err)),
-            ], done);
+        beforeEach(async () => {
+            await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
+            await s3.send(new PutBucketVersioningCommand({
+                Bucket: bucketName,
+                VersioningConfiguration: {
+                    Status: 'Enabled',
+                },
+            }));
         });
 
         // empty and delete bucket after testing if bucket exists
-        afterEach(done => {
-            removeAllVersions({ Bucket: bucketName }, err => {
-                if (err && err.code === 'NoSuchBucket') {
-                    return done();
-                } else if (err) {
-                    return done(err);
+        afterEach(async () => {
+            try {
+                await removeAllVersions({ Bucket: bucketName });
+                await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
+            } catch (err) {
+                if (err && err.Code === 'NoSuchBucket') {
+                    return;
+                } else {
+                    throw err;
                 }
-                return s3.deleteBucket({ Bucket: bucketName }, done);
-            });
+            }
         });
 
         it('should be able to delete empty bucket with version enabled',
-        done => {
-            s3.deleteBucket({ Bucket: bucketName }, err => {
-                checkNoError(err);
-                return done();
-            });
+        async () => {
+            await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
         });
 
         it('should return error 409 BucketNotEmpty if trying to delete bucket' +
-        ' containing delete marker', done => {
-            s3.deleteObject({ Bucket: bucketName, Key: key }, err => {
-                if (err) {
-                    return done(err);
-                }
-                return s3.deleteBucket({ Bucket: bucketName }, err => {
-                    checkError(err, 'BucketNotEmpty');
-                    return done();
-                });
-            });
+        ' containing delete marker', async () => {
+            await s3.send(new DeleteObjectCommand({ Bucket: bucketName, Key: key }));
+            
+            try {
+                await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
+                assert.fail('Expected BucketNotEmpty error but got success');
+            } catch (err) {
+                checkError(err, 'BucketNotEmpty');
+            }
         });
 
         it('should return error 409 BucketNotEmpty if trying to delete bucket' +
-        ' containing version and delete marker', done => {
-            async.waterfall([
-                next => s3.putObject({ Bucket: bucketName, Key: key },
-                  err => next(err)),
-                next => s3.deleteObject({ Bucket: bucketName, Key: key },
-                  err => next(err)),
-                next => s3.deleteBucket({ Bucket: bucketName }, err => {
-                    checkError(err, 'BucketNotEmpty');
-                    return next();
-                }),
-            ], done);
+        ' containing version and delete marker', async () => {
+            await s3.send(new PutObjectCommand({ Bucket: bucketName, Key: key }));
+            await s3.send(new DeleteObjectCommand({ Bucket: bucketName, Key: key }));
+            
+            try {
+                await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
+                assert.fail('Expected BucketNotEmpty error but got success');
+            } catch (err) {
+                checkError(err, 'BucketNotEmpty');
+            }
         });
 
         it('should return error 404 NoSuchBucket if the bucket name is invalid',
-        done => {
-            s3.deleteBucket({ Bucket: 'bucketA' }, err => {
+        async () => {
+            try {
+                await s3.send(new DeleteBucketCommand({ Bucket: 'bucketA' }));
+                assert.fail('Expected NoSuchBucket error but got success');
+            } catch (err) {
                 checkError(err, 'NoSuchBucket');
-                return done();
-            });
+            }
         });
     });
 });

@@ -1,5 +1,13 @@
 const assert = require('assert');
-const async = require('async');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketVersioningCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+    PutObjectTaggingCommand,
+    DeleteObjectTaggingCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -17,8 +25,8 @@ const {
 
 function _checkError(err, code, statusCode) {
     assert(err, 'Expected error but found none');
-    assert.strictEqual(err.code, code);
-    assert.strictEqual(err.statusCode, statusCode);
+    assert.strictEqual(err.Code, code);
+    assert.strictEqual(err.$metadata?.httpStatusCode, statusCode);
 }
 
 
@@ -26,150 +34,183 @@ describe('Delete object tagging with versioning', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
-        beforeEach(done => s3.createBucket({ Bucket: bucketName }, done));
-        afterEach(done => {
-            removeAllVersions({ Bucket: bucketName }, err => {
-                if (err) {
-                    return done(err);
-                }
-                return s3.deleteBucket({ Bucket: bucketName }, done);
-            });
+        
+        beforeEach(async () => {
+            await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
+        });
+        
+        afterEach(async () => {
+            await removeAllVersions({ Bucket: bucketName });
+            await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
         });
 
-        it('should be able to delete tag set with versioning', done => {
-            async.waterfall([
-                next => s3.putBucketVersioning({ Bucket: bucketName,
-                    VersioningConfiguration: versioningEnabled },
-                  err => next(err)),
-                next => s3.putObject({ Bucket: bucketName, Key: objectName },
-                  (err, data) => next(err, data.VersionId)),
-                (versionId, next) => s3.putObjectTagging({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    VersionId: versionId,
-                    Tagging: { TagSet: [
-                        {
-                            Key: 'key1',
-                            Value: 'value1',
-                        }] },
-                }, err => next(err, versionId)),
-                (versionId, next) => s3.deleteObjectTagging({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    VersionId: versionId,
-                }, (err, data) => next(err, data, versionId)),
-            ], (err, data, versionId) => {
-                assert.ifError(err, `Found unexpected err ${err}`);
-                assert.strictEqual(data.VersionId, versionId);
-                done();
-            });
+        it('should be able to delete tag set with versioning', async () => {
+            await s3.send(new PutBucketVersioningCommand({
+                Bucket: bucketName,
+                VersioningConfiguration: versioningEnabled
+            }));
+
+            const putObjectResult = await s3.send(new PutObjectCommand({
+                Bucket: bucketName,
+                Key: objectName
+            }));
+            const versionId = putObjectResult.VersionId;
+
+            await s3.send(new PutObjectTaggingCommand({
+                Bucket: bucketName,
+                Key: objectName,
+                VersionId: versionId,
+                Tagging: {
+                    TagSet: [{
+                        Key: 'key1',
+                        Value: 'value1',
+                    }]
+                },
+            }));
+
+            const deleteResult = await s3.send(new DeleteObjectTaggingCommand({
+                Bucket: bucketName,
+                Key: objectName,
+                VersionId: versionId,
+            }));
+
+            assert.strictEqual(deleteResult.VersionId, versionId);
         });
 
         it('should not create version deleting object tags on a ' +
-        ' version-enabled bucket where no version id is specified ', done => {
-            async.waterfall([
-                next => s3.putBucketVersioning({ Bucket: bucketName,
-                    VersioningConfiguration: versioningEnabled },
-                  err => next(err)),
-                next => s3.putObject({ Bucket: bucketName, Key: objectName },
-                  (err, data) => next(err, data.VersionId)),
-                (versionId, next) => s3.putObjectTagging({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    VersionId: versionId,
-                    Tagging: { TagSet: [
-                        {
-                            Key: 'key1',
-                            Value: 'value1',
-                        }] },
-                }, err => next(err, versionId)),
-                (versionId, next) => s3.deleteObjectTagging({
-                    Bucket: bucketName,
-                    Key: objectName,
-                }, err => next(err, versionId)),
-                (versionId, next) =>
-                    checkOneVersion(s3, bucketName, versionId, next),
-            ], done);
+        ' version-enabled bucket where no version id is specified ', async () => {
+            await s3.send(new PutBucketVersioningCommand({
+                Bucket: bucketName,
+                VersioningConfiguration: versioningEnabled
+            }));
+
+            const putObjectResult = await s3.send(new PutObjectCommand({
+                Bucket: bucketName,
+                Key: objectName
+            }));
+            const versionId = putObjectResult.VersionId;
+
+            await s3.send(new PutObjectTaggingCommand({
+                Bucket: bucketName,
+                Key: objectName,
+                VersionId: versionId,
+                Tagging: {
+                    TagSet: [{
+                        Key: 'key1',
+                        Value: 'value1',
+                    }]
+                },
+            }));
+
+            await s3.send(new DeleteObjectTaggingCommand({
+                Bucket: bucketName,
+                Key: objectName,
+            }));
+
+            await checkOneVersion(s3, bucketName, versionId);
         });
 
         it('should be able to delete tag set with a version of id "null"',
-        done => {
-            async.waterfall([
-                next => s3.putObject({ Bucket: bucketName, Key: objectName },
-                err => next(err)),
-                next => s3.putBucketVersioning({ Bucket: bucketName,
-                    VersioningConfiguration: versioningEnabled },
-                  err => next(err)),
-                next => s3.deleteObjectTagging({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    VersionId: 'null',
-                }, (err, data) => next(err, data)),
-            ], (err, data) => {
-                assert.ifError(err, `Found unexpected err ${err}`);
-                assert.strictEqual(data.VersionId, 'null');
-                done();
-            });
+        async () => {
+            await s3.send(new PutObjectCommand({
+                Bucket: bucketName,
+                Key: objectName
+            }));
+
+            await s3.send(new PutBucketVersioningCommand({
+                Bucket: bucketName,
+                VersioningConfiguration: versioningEnabled
+            }));
+
+            const deleteResult = await s3.send(new DeleteObjectTaggingCommand({
+                Bucket: bucketName,
+                Key: objectName,
+                VersionId: 'null',
+            }));
+
+            assert.strictEqual(deleteResult.VersionId, 'null');
         });
 
         it('should return InvalidArgument deleting tag set with a non ' +
-        'existing version id', done => {
-            async.waterfall([
-                next => s3.putObject({ Bucket: bucketName, Key: objectName },
-                err => next(err)),
-                next => s3.putBucketVersioning({ Bucket: bucketName,
-                    VersioningConfiguration: versioningEnabled },
-                  err => next(err)),
-                next => s3.deleteObjectTagging({
+        'existing version id', async () => {
+            await s3.send(new PutObjectCommand({
+                Bucket: bucketName,
+                Key: objectName
+            }));
+
+            await s3.send(new PutBucketVersioningCommand({
+                Bucket: bucketName,
+                VersioningConfiguration: versioningEnabled
+            }));
+
+            try {
+                await s3.send(new DeleteObjectTaggingCommand({
                     Bucket: bucketName,
                     Key: objectName,
                     VersionId: invalidId,
-                }, (err, data) => next(err, data)),
-            ], err => {
+                }));
+                assert.fail('Expected InvalidArgument error');
+            } catch (err) {
                 _checkError(err, 'InvalidArgument', 400);
-                done();
-            });
+            }
         });
 
         it('should return 405 MethodNotAllowed deleting tag set without ' +
-         'version id if version specified is a delete marker', done => {
-            async.waterfall([
-                next => s3.putBucketVersioning({ Bucket: bucketName,
-                    VersioningConfiguration: versioningEnabled },
-                  err => next(err)),
-                next => s3.putObject({ Bucket: bucketName, Key: objectName },
-                  err => next(err)),
-                next => s3.deleteObject({ Bucket: bucketName, Key: objectName },
-                  err => next(err)),
-                next => s3.deleteObjectTagging({
+         'version id if version specified is a delete marker', async () => {
+            await s3.send(new PutBucketVersioningCommand({
+                Bucket: bucketName,
+                VersioningConfiguration: versioningEnabled
+            }));
+
+            await s3.send(new PutObjectCommand({
+                Bucket: bucketName,
+                Key: objectName
+            }));
+
+            await s3.send(new DeleteObjectCommand({
+                Bucket: bucketName,
+                Key: objectName
+            }));
+
+            try {
+                await s3.send(new DeleteObjectTaggingCommand({
                     Bucket: bucketName,
                     Key: objectName,
-                }, (err, data) => next(err, data)),
-            ], err => {
+                }));
+                assert.fail('Expected MethodNotAllowed error');
+            } catch (err) {
                 _checkError(err, 'MethodNotAllowed', 405);
-                done();
-            });
+            }
         });
 
         it('should return 405 MethodNotAllowed deleting tag set with ' +
-         'version id if version specified is a delete marker', done => {
-            async.waterfall([
-                next => s3.putBucketVersioning({ Bucket: bucketName,
-                    VersioningConfiguration: versioningEnabled },
-                  err => next(err)),
-                next => s3.putObject({ Bucket: bucketName, Key: objectName },
-                  err => next(err)),
-                next => s3.deleteObject({ Bucket: bucketName, Key: objectName },
-                  (err, data) => next(err, data.VersionId)),
-                (versionId, next) => s3.deleteObjectTagging({
+         'version id if version specified is a delete marker', async () => {
+            await s3.send(new PutBucketVersioningCommand({
+                Bucket: bucketName,
+                VersioningConfiguration: versioningEnabled
+            }));
+
+            await s3.send(new PutObjectCommand({
+                Bucket: bucketName,
+                Key: objectName
+            }));
+
+            const deleteResult = await s3.send(new DeleteObjectCommand({
+                Bucket: bucketName,
+                Key: objectName
+            }));
+            const versionId = deleteResult.VersionId;
+
+            try {
+                await s3.send(new DeleteObjectTaggingCommand({
                     Bucket: bucketName,
                     Key: objectName,
                     VersionId: versionId,
-                }, (err, data) => next(err, data)),
-            ], err => {
+                }));
+                assert.fail('Expected MethodNotAllowed error');
+            } catch (err) {
                 _checkError(err, 'MethodNotAllowed', 405);
-                done();
-            });
+            }
         });
     });
 });
