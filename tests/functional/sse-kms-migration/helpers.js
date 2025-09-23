@@ -1,5 +1,28 @@
 const getConfig = require('../aws-node-sdk/test/support/config');
-const { S3 } = require('aws-sdk');
+const { S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketEncryptionCommand,
+    GetBucketEncryptionCommand,
+    CopyObjectCommand,
+    ListObjectVersionsCommand,
+    HeadObjectCommand,
+    ListBucketsCommand,
+    ListMultipartUploadsCommand,
+    ListPartsCommand,
+    GetObjectCommand,
+    PutObjectCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    UploadPartCopyCommand,
+    CompleteMultipartUploadCommand,
+    PutBucketVersioningCommand,
+    HeadBucketCommand,
+} = require('@aws-sdk/client-s3');
+const { NodeHttpHandler } = require('@smithy/node-http-handler');
+const { StandardRetryStrategy } = require('@aws-sdk/middleware-retry');
+const { Agent: HttpAgent } = require('http');
+const { Agent: HttpsAgent } = require('https');
 const kms = require('../../../lib/kms/wrapper');
 const { promisify } = require('util');
 const { DummyRequestLogger } = require('../../unit/helpers');
@@ -14,20 +37,145 @@ function getKey(key) {
     return config.kmsHideScalityArn ? getKeyIdFromArn(key) : key;
 }
 
-// for Integration use default profile, in cloudserver use vault profile
+// For Integration use default profile, in cloudserver use vault profile
 const credsProfile = process.env.S3_END_TO_END === 'true' ? 'default' : 'vault';
-const s3config = getConfig(credsProfile, { signatureVersion: 'v4' });
-const s3 = new S3(s3config);
+
+// Create custom agents with specific pooling settings
+const httpAgent = new HttpAgent({
+    keepAlive: true,
+    keepAliveMsecs: 30000, // Keep connections alive for 30 seconds
+    maxSockets: 50, // Maximum concurrent sockets
+    maxFreeSockets: 10, // Maximum free sockets to keep
+    timeout: 120000, // Connection timeout
+});
+
+const httpsAgent = new HttpsAgent({
+    keepAlive: true,
+    keepAliveMsecs: 30000, // Keep connections alive for 30 seconds
+    maxSockets: 50, // Reduced to avoid overwhelming the server
+    maxFreeSockets: 10, // Reduced to match maxSockets reduction
+    timeout: 120000, // Increased from 60s to 120s
+});
+
+const s3config = {
+    ...getConfig(credsProfile, {}),
+    requestHandler: new NodeHttpHandler({
+        connectionTimeout: 120000, // Increased from 60s to 120s
+        socketTimeout: 120000, // Increased from 60s to 120s
+        httpAgent,
+        httpsAgent,
+    }),
+    maxAttempts: 8,
+    retryStrategy: new StandardRetryStrategy({
+        maxAttempts: 8,
+        retryDecider: error => 
+            // Retry on common network and AWS-specific errors
+             (
+                error.code === 'ECONNREFUSED' ||
+                error.code === 'ECONNRESET' ||
+                error.name === 'TimeoutError' ||
+                error.message?.includes('socket hang up') ||
+                error.code === 'ThrottlingException' ||
+                error.code === 'RequestTimeout'
+            )
+        ,
+        delayDecider: attempts => Math.min(1000 * Math.pow(2, attempts), 30000), // Exponential backoff
+    }),
+};
+
+const s3Client = new S3Client(s3config);
+// eslint-disable-next-line no-console
+console.log('s3 client config', s3Client.config);
+
+// Remove logger middleware if present
+if (s3Client.middlewareStack.identify().includes('loggerMiddleware')) {
+    s3Client.middlewareStack.remove('loggerMiddleware');
+}
+
 const bucketUtil = new BucketUtility(credsProfile);
 
-function hydrateSSEConfig({ algo: SSEAlgorithm, masterKeyId: KMSMasterKeyID }) {
-    // stringify and parse to strip undefined values
-    return JSON.parse(JSON.stringify({ Rules: [{
-        ApplyServerSideEncryptionByDefault: {
-            SSEAlgorithm,
-            KMSMasterKeyID,
+// Helper function to convert response Body to string
+async function getBodyAsString(response) {
+    if (!response?.Body) {
+        throw new Error('No Body found in response');
+    }
+    try {
+        const chunks = [];
+        for await (const chunk of response.Body) {
+            chunks.push(chunk);
+        }
+        return Buffer.concat(chunks).toString();
+    } catch (error) {
+        throw new Error(`Failed to read response body: ${error.message}`);
+    }
+}
+
+// Wrapper for SDK v3 commands to return promises directly
+const wrap = exec => exec();
+const s3 = {
+    createBucket: params => wrap(() => s3Client.send(new CreateBucketCommand(params))),
+    putBucketEncryption: params => wrap(() => s3Client.send(new PutBucketEncryptionCommand(params))),
+    getBucketEncryption: params => wrap(() => s3Client.send(new GetBucketEncryptionCommand(params))),
+    putObject: params => wrap(() => s3Client.send(new PutObjectCommand(params))),
+    getObject: params => wrap(async () => {
+        const response = await s3Client.send(new GetObjectCommand(params));
+        const body = await getBodyAsString(response);
+        return { ...response, Body: body };
+    }),
+    listBuckets: params => wrap(() => s3Client.send(new ListBucketsCommand(params || {}))),
+    copyObject: params => wrap(() => s3Client.send(new CopyObjectCommand(params))),
+    listObjectVersions: params => wrap(async () => {
+        const response = await s3Client.send(new ListObjectVersionsCommand(params));
+        // eslint-disable-next-line no-console
+        console.log('here is the listObjectVersions response', response);
+        return {
+            ...response,
+            Versions: response.Versions || [],
+            DeleteMarkers: response.DeleteMarkers || [],
+            CommonPrefixes: response.CommonPrefixes || []
+        };
+    }),
+    headObject: params => wrap(() => s3Client.send(new HeadObjectCommand(params))),
+    createMultipartUpload: params => wrap(() => s3Client.send(new CreateMultipartUploadCommand(params))),
+    uploadPart: params => wrap(() => s3Client.send(new UploadPartCommand(params))),
+    uploadPartCopy: params => wrap(() => s3Client.send(new UploadPartCopyCommand(params))),
+    completeMultipartUpload: params => wrap(() => s3Client.send(new CompleteMultipartUploadCommand(params))),
+    putBucketVersioning: params => wrap(() => s3Client.send(new PutBucketVersioningCommand(params))),
+    headBucket: params => wrap(() => s3Client.send(new HeadBucketCommand(params))),
+    listMultipartUploads: params => wrap(async () => {
+        const response = await s3Client.send(new ListMultipartUploadsCommand(params));
+        // eslint-disable-next-line no-console
+        console.log('here is the  listMultipartUploads response', response);
+        return {
+            ...response,
+            Uploads: response.Uploads || [], // Ensure Uploads is always an array
+            CommonPrefixes: response.CommonPrefixes || []
+        };
+    }),
+    listParts: params => wrap(() => s3Client.send(new ListPartsCommand(params))),
+    _compat: bucketUtil.s3,
+    config: {
+        credentials: s3config.credentials || {
+            accessKeyId: s3config.accessKeyId,
+            secretAccessKey: s3config.secretAccessKey,
         },
-    }] }));
+        endpoint: {
+            hostname: s3config.endpoint.hostname,
+            port: s3config.port,
+        },
+    },
+};
+
+function hydrateSSEConfig({ algo: SSEAlgorithm, masterKeyId: KMSMasterKeyID }) {
+    // Stringify and parse to strip undefined values
+    return JSON.parse(JSON.stringify({
+        Rules: [{
+            ApplyServerSideEncryptionByDefault: {
+                SSEAlgorithm,
+                KMSMasterKeyID,
+            },
+        }],
+    }));
 }
 
 function putObjParams(Bucket, Key, sseConfig, kmsKeyId) {
@@ -51,29 +199,29 @@ const MD = {
 };
 
 async function getBucketSSE(Bucket) {
-    const sse = await s3.getBucketEncryption({ Bucket }).promise();
-    return sse
-        .ServerSideEncryptionConfiguration
-        .Rules[0]
-        .ApplyServerSideEncryptionByDefault;
+    try {
+        const sse = await s3Client.send(new GetBucketEncryptionCommand({ Bucket }));
+        return sse.ServerSideEncryptionConfiguration.Rules[0].ApplyServerSideEncryptionByDefault;
+    } catch (error) {
+        if (error.name === 'ServerSideEncryptionConfigurationNotFoundError') {
+            return null;
+        }
+        throw error;
+    }
 }
 
 async function putEncryptedObject(Bucket, Key, sseConfig, kmsKeyId, Body) {
-    return s3.putObject({
+    return s3Client.send(new PutObjectCommand({
         ...putObjParams(Bucket, Key, sseConfig, kmsKeyId),
         Body,
-    }).promise();
+    }));
 }
 
 async function getObjectMDSSE(Bucket, Key) {
     const objMD = await MD.getObject(Bucket, Key, {}, log);
-
-    const sse = objMD['x-amz-server-side-encryption'];
-    const key = objMD['x-amz-server-side-encryption-aws-kms-key-id'];
-
     return {
-        ServerSideEncryption: sse,
-        SSEKMSKeyId: key,
+        ServerSideEncryption: objMD['x-amz-server-side-encryption'],
+        SSEKMSKeyId: objMD['x-amz-server-side-encryption-aws-kms-key-id'],
     };
 }
 
@@ -96,8 +244,15 @@ async function createKmsKey(log) {
 const destroyKmsKey = promisify(kms.destroyBucketKey);
 
 async function cleanup(Bucket) {
-    await bucketUtil.empty(Bucket);
-    await s3.deleteBucket({ Bucket }).promise();
+    try {
+        await bucketUtil.empty(Bucket);
+        await s3Client.send(new DeleteBucketCommand({ Bucket }));
+    }
+    catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`Cleanup failed for bucket ${Bucket}: ${error.message}`);
+        throw error;
+    }
 }
 
 module.exports = {
@@ -105,6 +260,7 @@ module.exports = {
     getKey,
     credsProfile,
     s3,
+    s3Client,
     bucketUtil,
     hydrateSSEConfig,
     putObjParams,

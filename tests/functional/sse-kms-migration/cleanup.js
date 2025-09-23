@@ -18,7 +18,8 @@ describe('SSE KMS Cleanup', () => {
     it('Empty and delete buckets for SSE KMS Migration', async () => {
         console.log('Run cleanup',
             { profile: helpers.credsProfile, accessKeyId: helpers.s3.config.credentials.accessKeyId });
-        const allBuckets = (await helpers.s3.listBuckets().promise()).Buckets.map(b => b.Name);
+        const listBucketsResponse = await helpers.s3.listBuckets();
+        const allBuckets = (listBucketsResponse.Buckets || []).map(b => b.Name);
         console.log('List buckets:', allBuckets);
 
         await helpers.MD.setup();
