@@ -57,6 +57,10 @@ function removeObjects(createdObjects, callback) {
 
 describe('GCP: GET Bucket', function testSuite() {
     this.timeout(180000);
+    // eslint-disable-next-line no-console
+    console.log('Running tests for GCP backend - GET Bucket');
+    // eslint-disable-next-line no-console
+    console.log(`Bucket name: ${config.credentials}`);
 
     before(done => {
         gcpRequestRetry({
