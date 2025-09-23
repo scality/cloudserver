@@ -30,7 +30,7 @@ const DEFAULT_MEM_OPTIONS = {
     maxAttempts: 3,
     requestHandler: new NodeHttpHandler({
         connectionTimeout: 5000,
-        socketTimeout: 5000,
+        requestTimeout: 5000,
         httpAgent: new (ssl ? https : http).Agent({
             maxSockets: 200,
             keepAlive: true,

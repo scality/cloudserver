@@ -1,11 +1,11 @@
-const { S3 } = require('aws-sdk');
+const { S3Client } = require('@aws-sdk/client-s3');
 
 const conf = require('../../../../../lib/Config').config;
 const getConfig = require('../support/config');
 const { WebsiteConfigTester } = require('../../lib/utility/website-util');
 
 const config = getConfig('default', { signatureVersion: 'v4' });
-const s3 = new S3(config);
+const s3 = new S3Client(config);
 
 // Note: To run these tests locally, you may need to edit the machine's
 // /etc/hosts file to include the following line:
