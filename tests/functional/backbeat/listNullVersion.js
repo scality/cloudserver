@@ -1,49 +1,78 @@
 const assert = require('assert');
 const async = require('async');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketVersioningCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+} = require('@aws-sdk/client-s3');
+
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
 const { makeBackbeatRequest } = require('./utils');
 
 const testBucket = 'bucket-for-list-lifecycle-null-tests';
 
-const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+const bucketUtil = new BucketUtility('default', {});
 const s3 = bucketUtil.s3;
-const credentials = {
-    accessKey: s3.config.credentials.accessKeyId,
-    secretKey: s3.config.credentials.secretAccessKey,
-};
+let credentials = null;
+
+async function getCredentials() {
+    const creds = await s3.config.credentials();
+    credentials = {
+        accessKey: creds.accessKeyId,
+        secretKey: creds.secretAccessKey,
+    };
+    return credentials;
+}
 
 describe('listLifecycle if null version', () => {
     let versionForKey2;
 
     before(done => async.series([
-            next => s3.createBucket({ Bucket: testBucket }, next),
-            next => s3.putObject({ Bucket: testBucket, Key: 'key1', Body: '123' }, next),
-            next => s3.putObject({ Bucket: testBucket, Key: 'key2', Body: '123' }, next),
-            next => s3.putBucketVersioning({
+            next => getCredentials().then(creds => {
+                credentials = creds;
+                next();
+            }).catch(next),
+            next => s3.send(new CreateBucketCommand({ Bucket: testBucket }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutObjectCommand({ Bucket: testBucket, Key: 'key1', Body: '123' }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutObjectCommand({ Bucket: testBucket, Key: 'key2', Body: '123' }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutBucketVersioningCommand({
                 Bucket: testBucket,
                 VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
-            next => s3.putObject({ Bucket: testBucket, Key: 'key1', Body: '123' }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                // delete version to create a null current version for key1.
-                return s3.deleteObject({ Bucket: testBucket, Key: 'key1', VersionId: data.VersionId }, next);
-            }),
-            next => s3.putObject({ Bucket: testBucket, Key: 'key2', Body: '123' }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                versionForKey2 = data.VersionId;
-                return next();
-            }),
+            }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutObjectCommand({ Bucket: testBucket, Key: 'key1', Body: '123' }))
+                .then(data => {
+                    // delete version to create a null current version for key1.
+                    return s3.send(new DeleteObjectCommand({ 
+                        Bucket: testBucket, 
+                        Key: 'key1', 
+                        VersionId: data.VersionId 
+                    }));
+                })
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutObjectCommand({ Bucket: testBucket, Key: 'key2', Body: '123' }))
+                .then(data => {
+                    versionForKey2 = data.VersionId;
+                    next();
+                })
+                .catch(next),
         ], done));
 
-    after(done => async.series([
-        next => removeAllVersions({ Bucket: testBucket }, next),
-        next => s3.deleteBucket({ Bucket: testBucket }, next),
-    ], done));
+    after(async() => {
+        await removeAllVersions({ Bucket: testBucket });
+        await s3.send(new DeleteBucketCommand({ Bucket: testBucket }));
+    });
 
     it('should return the null noncurrent versions', done => {
         makeBackbeatRequest({
@@ -104,29 +133,36 @@ describe('listLifecycle with null current version after versioning suspended', (
     const keyName = 'key0';
 
     before(done => async.series([
-            next => s3.createBucket({ Bucket: nullObjectBucket }, next),
-            next => s3.putBucketVersioning({
+            next => s3.send(new CreateBucketCommand({ Bucket: nullObjectBucket }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutBucketVersioningCommand({
                 Bucket: nullObjectBucket,
                 VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
-            next => s3.putObject({ Bucket: nullObjectBucket, Key: keyName }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                expectedVersionId = data.VersionId;
-                return next();
-            }),
-            next => s3.putBucketVersioning({
+            }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutObjectCommand({ Bucket: nullObjectBucket, Key: keyName }))
+                .then(data => {
+                    expectedVersionId = data.VersionId;
+                    next();
+                })
+                .catch(next),
+            next => s3.send(new PutBucketVersioningCommand({
                 Bucket: nullObjectBucket,
                 VersioningConfiguration: { Status: 'Suspended' },
-            }, next),
-            next => s3.putObject({ Bucket: nullObjectBucket, Key: keyName }, next),
+            }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutObjectCommand({ Bucket: nullObjectBucket, Key: keyName }))
+                .then(() => next())
+                .catch(next),
         ], done));
 
-    after(done => async.series([
-        next => removeAllVersions({ Bucket: nullObjectBucket }, next),
-        next => s3.deleteBucket({ Bucket: nullObjectBucket }, next),
-    ], done));
+    after(async () => {
+        await removeAllVersions({ Bucket: nullObjectBucket });
+        await s3.send(new DeleteBucketCommand({ Bucket: nullObjectBucket }));
+    });
 
     it('should return list of current versions when bucket has a null current version', done => {
         makeBackbeatRequest({
