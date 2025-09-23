@@ -1,6 +1,10 @@
 const assert = require('assert');
 const async = require('async');
-const AWS = require('aws-sdk');
+// AWS SDK v3 imports
+const { S3Client,
+    HeadObjectCommand,
+    AbortMultipartUploadCommand,
+    ListPartsCommand } = require('@aws-sdk/client-s3');
 const { parseString } = require('xml2js');
 const { models } = require('arsenal');
 
@@ -34,7 +38,7 @@ const fileLocation = 'scality-internal-file';
 const awsLocation = 'awsbackend';
 const awsLocationMismatch = 'awsbackendmismatch';
 const awsConfig = getRealAwsConfig(awsLocation);
-const s3 = new AWS.S3(awsConfig);
+const s3 = new S3Client(awsConfig);
 const log = new DummyRequestLogger();
 
 const fakeUploadId = 'fakeuploadid';
@@ -237,20 +241,29 @@ function _getZenkoObjectKey(objectKey) {
     return objectKey;
 }
 
-function assertObjOnBackend(expectedBackend, objectKey, cb) {
+async function assertObjOnBackend(expectedBackend, objectKey, cb) {
     const zenkoObjectKey = _getZenkoObjectKey(objectKey);
     return objectGet(authInfo, getObjectGetRequest(zenkoObjectKey), false, log,
-    (err, result, metaHeaders) => {
+    async (err, result, metaHeaders) => {
         assert.equal(err, null, `Error getting object on S3: ${err}`);
         assert.strictEqual(metaHeaders[`x-amz-meta-${locMetaHeader}`], expectedBackend);
         if (expectedBackend === awsLocation) {
-            return s3.headObject({ Bucket: awsBucket, Key: objectKey },
-            (err, result) => {
-                assert.equal(err, null, 'Error on headObject call to AWS: ' +
-                    `${err}`);
+            try {
+                const result = await s3.send(new HeadObjectCommand({ Bucket: awsBucket, Key: objectKey }));
+                // eslint-disable-next-line no-console
+                console.log('HeadObject on AWS result', result);
+                // eslint-disable-next-line no-console
+                console.log('Metadata on AWS', result.Metadata);
+                // eslint-disable-next-line no-console
+                console.log('result.Metadata[locMetaHeader]', result.Metadata[locMetaHeader]);
+                // eslint-disable-next-line no-console
+                console.log('Expected location', awsLocation);
                 assert.strictEqual(result.Metadata[locMetaHeader], awsLocation);
                 return cb();
-            });
+            } catch (err) {
+                assert.equal(err, null, 'Error on headObject call to AWS: ' + `${err}`);
+                return cb();
+            }
         }
         return process.nextTick(cb);
     });
@@ -308,12 +321,15 @@ function putObject(putBackend, objectKey, cb) {
     });
 }
 
-function abortMPU(uploadId, awsParams, cb) {
+async function abortMPU(uploadId, awsParams, cb) {
     const abortParams = Object.assign({ UploadId: uploadId }, awsParams);
-    s3.abortMultipartUpload(abortParams, err => {
+    try {
+        await s3.send(new AbortMultipartUploadCommand(abortParams));
+        cb();
+    } catch (err) {
         assert.equal(err, null, `Error aborting MPU: ${err}`);
         cb();
-    });
+    }
 }
 
 function abortMultipleMpus(backendsInfo, callback) {
@@ -492,17 +508,19 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocation, objectKey, uploadId => {
             const delParams = getDeleteParams(objectKey, uploadId);
-            multipartDelete(authInfo, delParams, log, err => {
+            multipartDelete(authInfo, delParams, log, async err => {
                 assert.equal(err, null, `Error aborting MPU: ${err}`);
-                s3.listParts({
-                    Bucket: awsBucket,
-                    Key: objectKey,
-                    UploadId: uploadId,
-                }, err => {
+                try {
+                    await s3.send(new ListPartsCommand({
+                        Bucket: awsBucket,
+                        Key: objectKey,
+                        UploadId: uploadId,
+                    }));    
+                } catch (err) {
                     const wantedError = isCEPH ? 'NoSuchKey' : 'NoSuchUpload';
-                    assert.strictEqual(err.code, wantedError);
+                    assert.strictEqual(err.Code, wantedError);
                     done();
-                });
+                }
             });
         });
     });
@@ -512,17 +530,19 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocationMismatch, objectKey, uploadId => {
             const delParams = getDeleteParams(objectKey, uploadId);
-            multipartDelete(authInfo, delParams, log, err => {
+            multipartDelete(authInfo, delParams, log, async err => {
                 assert.equal(err, null, `Error aborting MPU: ${err}`);
-                s3.listParts({
-                    Bucket: awsBucket,
-                    Key: `${bucketName}/${objectKey}`,
-                    UploadId: uploadId,
-                }, err => {
+                try {
+                    await s3.send(new ListPartsCommand({
+                        Bucket: awsBucket,
+                        Key: `${bucketName}/${objectKey}`,
+                        UploadId: uploadId,
+                    }));
+                } catch (err) {
                     const wantedError = isCEPH ? 'NoSuchKey' : 'NoSuchUpload';
-                    assert.strictEqual(err.code, wantedError);
+                    assert.strictEqual(err.Code, wantedError);
                     done();
-                });
+                }
             });
         });
     });

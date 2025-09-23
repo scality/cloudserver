@@ -1,5 +1,20 @@
 const assert = require('assert');
-const AWS = require('aws-sdk');
+const {
+    S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketVersioningCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+    HeadObjectCommand,
+    GetObjectCommand,
+    GetObjectTaggingCommand,
+    PutObjectTaggingCommand,
+    PutBucketEncryptionCommand,
+    ListObjectVersionsCommand,
+    CreateMultipartUploadCommand,
+    ListMultipartUploadsCommand,
+} = require('@aws-sdk/client-s3');
 const async = require('async');
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
@@ -8,8 +23,7 @@ const versionIdUtils = versioning.VersionID;
 
 const { makeid } = require('../../unit/helpers');
 const { makeRequest, makeBackbeatRequest } = require('../../functional/raw-node/utils/makeRequest');
-const BucketUtility =
-      require('../../functional/aws-node-sdk/lib/utility/bucket-util');
+const BucketUtility = require('../../functional/aws-node-sdk/lib/utility/bucket-util');
 const { describeSkipIfNotMultipleOrCeph, itSkipCeph } = require('../../functional/aws-node-sdk/lib/utility/test-utils');
 const {
     awsLocation,
@@ -23,7 +37,7 @@ const { getCredentials } = require('../../functional/aws-node-sdk/test/support/c
 const { config } = require('../../../lib/Config');
 
 const awsConfig = getRealAwsConfig(awsLocation);
-const awsClient = new AWS.S3(awsConfig);
+const awsClient = new S3Client(awsConfig);
 const awsBucket = config.locationConstraints[awsLocation].details.bucketName;
 const azureClient = getAzureClient();
 const containerName = getAzureContainerName(azureLocation);
@@ -126,23 +140,27 @@ const nonVersionedTestMd = {
 };
 
 function checkObjectData(s3, bucket, objectKey, dataValue, done) {
-    s3.getObject({
+    s3.send(new GetObjectCommand({
         Bucket: bucket,
         Key: objectKey,
-    }, (err, data) => {
-        assert.ifError(err);
+    }), (err, data) => {
+        if (err) {
+            return done(err);
+        }
         assert.strictEqual(data.Body.toString(), dataValue);
-        done();
+        return done();
     });
 }
 
 function checkVersionData(s3, bucket, objectKey, versionId, dataValue, done) {
-    return s3.getObject({
+    return s3.send(new GetObjectCommand({
         Bucket: bucket,
         Key: objectKey,
         VersionId: versionId,
-    }, (err, data) => {
-        assert.ifError(err);
+    }), (err, data) => {
+        if (err) {
+            return done(err);
+        }
         assert.strictEqual(data.Body.toString(), dataValue);
         return done();
     });
@@ -168,10 +186,10 @@ describeSkipIfNotMultipleOrCeph('backbeat DELETE routes', () => {
         const awsKey = 'backbeat-mpu-test';
         async.waterfall([
             next =>
-                awsClient.createMultipartUpload({
+                awsClient.send(new CreateMultipartUploadCommand({
                     Bucket: awsBucket,
                     Key: awsKey,
-                }, next),
+                }), next),
             (response, next) => {
                 const { UploadId } = response;
                 makeBackbeatRequest({
@@ -193,10 +211,12 @@ describeSkipIfNotMultipleOrCeph('backbeat DELETE routes', () => {
                     return next(null, UploadId);
                 });
             }, (UploadId, next) =>
-                awsClient.listMultipartUploads({
+                awsClient.send(new ListMultipartUploadsCommand({
                     Bucket: awsBucket,
-                }, (err, response) => {
-                    assert.ifError(err);
+                }), (err, response) => {
+                    if (err) {
+                        return next(err);
+                    }
                     const hasOngoingUpload =
                         response.Uploads.some(upload => (upload === UploadId));
                     assert(!hasOngoingUpload);
@@ -228,63 +248,77 @@ describe('backbeat routes', () => {
     let s3;
 
     before(done => {
-        bucketUtil = new BucketUtility(
-            'default', { signatureVersion: 'v4' });
+        bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
         s3 = bucketUtil.s3;
         bucketUtil.emptyManyIfExists([TEST_BUCKET, TEST_ENCRYPTED_BUCKET, NONVERSIONED_BUCKET,
         VERSION_SUSPENDED_BUCKET])
-            .then(() => s3.createBucket({ Bucket: TEST_BUCKET }).promise())
-            .then(() => s3.putBucketVersioning(
-                {
+            .then(() => s3.send(new CreateBucketCommand({ Bucket: TEST_BUCKET }), err => {
+                if (err) {
+                    return done(err);
+                }
+                return s3.send(new PutBucketVersioningCommand({
                     Bucket: TEST_BUCKET,
                     VersioningConfiguration: { Status: 'Enabled' },
-                }).promise())
-            .then(() => s3.createBucket({
-                Bucket: NONVERSIONED_BUCKET,
-            }).promise())
-            .then(() => s3.createBucket({ Bucket: VERSION_SUSPENDED_BUCKET }).promise())
-            .then(() => s3.putBucketVersioning(
-                {
-                    Bucket: VERSION_SUSPENDED_BUCKET,
-                    VersioningConfiguration: { Status: 'Suspended' },
-                }).promise())
-            .then(() => s3.createBucket({ Bucket: TEST_ENCRYPTED_BUCKET }).promise())
-            .then(() => s3.putBucketVersioning(
-                {
-                    Bucket: TEST_ENCRYPTED_BUCKET,
-                    VersioningConfiguration: { Status: 'Enabled' },
-                }).promise())
-            .then(() => s3.putBucketEncryption(
-                {
-                    Bucket: TEST_ENCRYPTED_BUCKET,
-                    ServerSideEncryptionConfiguration: {
-                        Rules: [
-                            {
-                                ApplyServerSideEncryptionByDefault: {
-                                    SSEAlgorithm: 'AES256',
-                                },
-                            },
-                        ],
-                    },
-                }).promise())
-            .then(() => done())
+                }), err => {
+                    if (err) {return done(err);}
+                    return s3.send(new CreateBucketCommand({
+                        Bucket: NONVERSIONED_BUCKET,
+                    }), err => {
+                        if (err) {return done(err);}
+                        return s3.send(new CreateBucketCommand({ Bucket: VERSION_SUSPENDED_BUCKET }), err => {
+                            if (err) {return done(err);}
+                            return s3.send(new PutBucketVersioningCommand({
+                                Bucket: VERSION_SUSPENDED_BUCKET,
+                                VersioningConfiguration: { Status: 'Suspended' },
+                            }), err => {
+                                if (err) {return done(err);}
+                                return s3.send(new CreateBucketCommand({ Bucket: TEST_ENCRYPTED_BUCKET }), err => {
+                                    if (err) {return done(err);}
+                                    return s3.send(new PutBucketVersioningCommand({
+                                        Bucket: TEST_ENCRYPTED_BUCKET,
+                                        VersioningConfiguration: { Status: 'Enabled' },
+                                    }), err => {
+                                        if (err) {return done(err);}
+                                        return s3.send(new PutBucketEncryptionCommand({
+                                            Bucket: TEST_ENCRYPTED_BUCKET,
+                                            ServerSideEncryptionConfiguration: {
+                                                Rules: [
+                                                    {
+                                                        ApplyServerSideEncryptionByDefault: {
+                                                            SSEAlgorithm: 'AES256',
+                                                        },
+                                                    },
+                                                ],
+                                            },
+                                        }), done);
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            }))
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
+                done(err);
             });
     });
 
     after(() =>
         bucketUtil.empty(TEST_BUCKET)
-            .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
-            .then(() => bucketUtil.empty(TEST_ENCRYPTED_BUCKET))
-            .then(() => s3.deleteBucket({ Bucket: TEST_ENCRYPTED_BUCKET }).promise())
-            .then(() => bucketUtil.empty(NONVERSIONED_BUCKET))
-            .then(() =>
-                s3.deleteBucket({ Bucket: NONVERSIONED_BUCKET }).promise())
-            .then(() => bucketUtil.empty(VERSION_SUSPENDED_BUCKET))
-            .then(() =>
-                s3.deleteBucket({ Bucket: VERSION_SUSPENDED_BUCKET }).promise())
+            .then(() => s3.send(new DeleteBucketCommand({ Bucket: TEST_BUCKET }), err => {
+                if (err) {throw err;}
+                bucketUtil.empty(TEST_ENCRYPTED_BUCKET)
+                    .then(() => s3.send(new DeleteBucketCommand({ Bucket: TEST_ENCRYPTED_BUCKET }), err => {
+                        if (err) {throw err;}
+                        bucketUtil.empty(NONVERSIONED_BUCKET)
+                            .then(() => s3.send(new DeleteBucketCommand({ Bucket: NONVERSIONED_BUCKET }), err => {
+                                if (err) {throw err;}
+                                bucketUtil.empty(VERSION_SUSPENDED_BUCKET)
+                                    .then(() => s3.send(new DeleteBucketCommand({ Bucket: VERSION_SUSPENDED_BUCKET })));
+                            }));
+                    }));
+            }))
     );
 
     describe('null version', () => {
@@ -308,20 +342,26 @@ describe('backbeat routes', () => {
 
         beforeEach(() =>
             bucketUtil.emptyIfExists(BUCKET_FOR_NULL_VERSION)
-                .then(() => s3.createBucket({ Bucket: BUCKET_FOR_NULL_VERSION }).promise())
+                .then(() => s3.send(new CreateBucketCommand({ Bucket: BUCKET_FOR_NULL_VERSION })))
         );
 
         afterEach(() =>
             bucketUtil.empty(BUCKET_FOR_NULL_VERSION)
-                .then(() => s3.deleteBucket({ Bucket: BUCKET_FOR_NULL_VERSION }).promise())
+                .then(() => s3.send(new DeleteBucketCommand({ Bucket: BUCKET_FOR_NULL_VERSION })))
         );
 
         it('should update metadata of a current null version', done => {
             let objMD;
-            return async.series({
-                putObject: next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
-                enableVersioningSource: next => s3.putBucketVersioning(
-                    { Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            async.series({
+                putObject: next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
+                enableVersioningSource: next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }), next),
                 getMetadata: next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -353,8 +393,11 @@ describe('backbeat routes', () => {
                     authCredentials: backbeatAuthCredentials,
                     requestBody: objMD,
                 }, next),
-                headObject: next => s3.headObject(
-                    { Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
+                headObject: next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
                 getMetadataAfter: next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -365,7 +408,9 @@ describe('backbeat routes', () => {
                     },
                     authCredentials: backbeatAuthCredentials,
                 }, next),
-                listObjectVersions: next => s3.listObjectVersions({ Bucket: bucket }, next),
+                listObjectVersions: next => s3.send(new ListObjectVersionsCommand({
+                    Bucket: bucket,
+                }), next),
             }, (err, results) => {
                 if (err) {
                     return done(err);
@@ -399,12 +444,20 @@ describe('backbeat routes', () => {
             let objMD;
             let expectedVersionId;
             return async.series({
-                putObjectInitial: next => s3.putObject(
-                    { Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
-                enableVersioning: next => s3.putBucketVersioning(
-                    { Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } }, next),
-                putObjectAgain: next => s3.putObject(
-                { Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                putObjectInitial: next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
+                enableVersioning: next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }), next),
+                putObjectAgain: next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), (err, data) => {
                     if (err) {
                         return next(err);
                     }
@@ -442,7 +495,11 @@ describe('backbeat routes', () => {
                     authCredentials: backbeatAuthCredentials,
                     requestBody: objMD,
                 }, next),
-                headObject: next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
+                headObject: next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
                 getMetadataAfter: next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -453,7 +510,9 @@ describe('backbeat routes', () => {
                     },
                     authCredentials: backbeatAuthCredentials,
                 }, next),
-                listObjectVersions: next => s3.listObjectVersions({ Bucket: bucket }, next),
+                listObjectVersions: next => s3.send(new ListObjectVersionsCommand({
+                    Bucket: bucket,
+                }), next),
             }, (err, results) => {
                 if (err) {
                     return done(err);
@@ -473,7 +532,7 @@ describe('backbeat routes', () => {
                 const currentVersion = Versions.find(v => v.IsLatest);
                 assertVersionHasNotBeenUpdated(currentVersion, expectedVersionId);
 
-                const nonCurrentVersion = Versions.find(v => !v.IsLatest);
+                const [nonCurrentVersion] = Versions.filter(v => !v.IsLatest);
                 assertVersionIsNullAndUpdated(nonCurrentVersion);
                 return done();
             });
@@ -482,12 +541,19 @@ describe('backbeat routes', () => {
         it('should update metadata of a suspended null version', done => {
             let objMD;
             return async.series({
-                suspendVersioning: next => s3.putBucketVersioning(
-                    { Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } }, next),
-                putObject: next => s3.putObject(
-                    { Bucket: bucket, Key: keyName, Body: Buffer.from(testData) }, next),
-                enableVersioning: next => s3.putBucketVersioning(
-                    { Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } }, next),
+                suspendVersioning: next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Suspended' },
+                }), next),
+                putObject: next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
+                enableVersioning: next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }), next),
                 getMetadata: next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -519,7 +585,11 @@ describe('backbeat routes', () => {
                     authCredentials: backbeatAuthCredentials,
                     requestBody: objMD,
                 }, next),
-                headObject: next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
+                headObject: next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
                 getMetadataAfter: next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -530,7 +600,9 @@ describe('backbeat routes', () => {
                     },
                     authCredentials: backbeatAuthCredentials,
                 }, next),
-                listObjectVersions: next => s3.listObjectVersions({ Bucket: bucket }, next),
+                listObjectVersions: next => s3.send(new ListObjectVersionsCommand({
+                    Bucket: bucket,
+                }), next),
             }, (err, results) => {
                 if (err) {
                     return done(err);
@@ -557,16 +629,25 @@ describe('backbeat routes', () => {
         it('should update metadata of a suspended null version with internal version id', done => {
             let objMD;
             return async.series({
-                suspendVersioning: next => s3.putBucketVersioning(
-                    { Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } }, next),
-                putObject: next => s3.putObject(
-                    { Bucket: bucket, Key: keyName, Body: Buffer.from(testData) }, next),
-                enableVersioning: next => s3.putBucketVersioning(
-                    { Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } }, next),
-                putObjectTagging: next => s3.putObjectTagging({
-                    Bucket: bucket, Key: keyName, VersionId: 'null',
+                suspendVersioning: next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Suspended' },
+                }), next),
+                putObject: next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
+                enableVersioning: next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }), next),
+                putObjectTagging: next => s3.send(new PutObjectTaggingCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
                     Tagging: { TagSet: [{ Key: 'key1', Value: 'value1' }] },
-                }, next),
+                }), next),
                 getMetadata: next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -598,7 +679,11 @@ describe('backbeat routes', () => {
                     authCredentials: backbeatAuthCredentials,
                     requestBody: objMD,
                 }, next),
-                headObject: next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
+                headObject: next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
                 getMetadataAfter: next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -609,7 +694,9 @@ describe('backbeat routes', () => {
                     },
                     authCredentials: backbeatAuthCredentials,
                 }, next),
-                listObjectVersions: next => s3.listObjectVersions({ Bucket: bucket }, next),
+                listObjectVersions: next => s3.send(new ListObjectVersionsCommand({
+                    Bucket: bucket,
+                }), next),
             }, (err, results) => {
                 if (err) {
                     return done(err);
@@ -627,7 +714,8 @@ describe('backbeat routes', () => {
 
                 assert.strictEqual(Versions.length, 1);
 
-                const [currentVersion] = Versions;
+                const currentVersion = Versions[0];
+                assert(currentVersion.IsLatest);
                 assertVersionIsNullAndUpdated(currentVersion);
                 return done();
             });
@@ -635,8 +723,12 @@ describe('backbeat routes', () => {
 
         it('should update metadata of a non-version object', done => {
             let objMD;
-            return async.series([
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
+            async.series([
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
                 next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -668,8 +760,13 @@ describe('backbeat routes', () => {
                     authCredentials: backbeatAuthCredentials,
                     requestBody: objMD,
                 }, next),
-                next => s3.headObject({ Bucket: bucket, Key: keyName }, next),
-                next => s3.listObjectVersions({ Bucket: bucket }, next),
+                next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                }), next),
+                next => s3.send(new ListObjectVersionsCommand({
+                    Bucket: bucket,
+                }), next),
             ], (err, data) => {
                 if (err) {
                     return done(err);
@@ -694,10 +791,16 @@ describe('backbeat routes', () => {
 
         it('should create a new null version if versioning suspended and no version', done => {
             let objMD;
-            return async.series([
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } },
-                    next),
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
+            async.series([
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Suspended' },
+                }), next),
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
                 next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -718,7 +821,11 @@ describe('backbeat routes', () => {
                     objMD = result;
                     return next();
                 }),
-                next => s3.deleteObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
+                next => s3.send(new DeleteObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
                 next => makeBackbeatRequest({
                     method: 'PUT',
                     resourceType: 'metadata',
@@ -730,8 +837,13 @@ describe('backbeat routes', () => {
                     authCredentials: backbeatAuthCredentials,
                     requestBody: objMD,
                 }, next),
-                next => s3.headObject({ Bucket: bucket, Key: keyName }, next),
-                next => s3.listObjectVersions({ Bucket: bucket }, next),
+                next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                }), next),
+                next => s3.send(new ListObjectVersionsCommand({ 
+                    Bucket: bucket 
+                }), next),
             ], (err, data) => {
                 if (err) {
                     return done(err);
@@ -758,9 +870,15 @@ describe('backbeat routes', () => {
         it('should create a new null version if versioning suspended and delete marker null version', done => {
             let objMD;
             return async.series([
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } },
-                    next),
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Suspended' },
+                }), next),
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
                 next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -781,7 +899,10 @@ describe('backbeat routes', () => {
                     objMD = result;
                     return next();
                 }),
-                next => s3.deleteObject({ Bucket: bucket, Key: keyName }, next),
+                next => s3.send(new DeleteObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                }), next),
                 next => makeBackbeatRequest({
                     method: 'PUT',
                     resourceType: 'metadata',
@@ -793,8 +914,13 @@ describe('backbeat routes', () => {
                     authCredentials: backbeatAuthCredentials,
                     requestBody: objMD,
                 }, next),
-                next => s3.headObject({ Bucket: bucket, Key: keyName }, next),
-                next => s3.listObjectVersions({ Bucket: bucket }, next),
+                next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                }), next),
+                next => s3.send(new ListObjectVersionsCommand({ 
+                    Bucket: bucket 
+                }), next),
             ], (err, data) => {
                 if (err) {
                     return done(err);
@@ -820,18 +946,30 @@ describe('backbeat routes', () => {
             let expectedVersionId;
             let objMD;
             return async.series([
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } },
-                    next),
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }), next),
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), (err, data) => {
                     if (err) {
                         return next(err);
                     }
                     expectedVersionId = data.VersionId;
                     return next();
                 }),
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } },
-                    next),
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Suspended' },
+                }), next),
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
                 next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -852,7 +990,11 @@ describe('backbeat routes', () => {
                     objMD = result;
                     return next();
                 }),
-                next => s3.deleteObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
+                next => s3.send(new DeleteObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
                 next => makeBackbeatRequest({
                     method: 'PUT',
                     resourceType: 'metadata',
@@ -864,8 +1006,11 @@ describe('backbeat routes', () => {
                     authCredentials: backbeatAuthCredentials,
                     requestBody: objMD,
                 }, next),
-                next => s3.headObject({ Bucket: bucket, Key: keyName }, next),
-                next => s3.listObjectVersions({ Bucket: bucket }, next),
+                next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                }), next),
+                next => s3.send(new ListObjectVersionsCommand({ Bucket: bucket }), next),
             ], (err, data) => {
                 if (err) {
                     return done(err);
@@ -895,9 +1040,15 @@ describe('backbeat routes', () => {
         it('should update null version with no version id and versioning suspended', done => {
             let objMD;
             return async.series([
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } },
-                    next),
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Suspended' },
+                }), next),
                 next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -929,8 +1080,13 @@ describe('backbeat routes', () => {
                     authCredentials: backbeatAuthCredentials,
                     requestBody: objMD,
                 }, next),
-                next => s3.headObject({ Bucket: bucket, Key: keyName }, next),
-                next => s3.listObjectVersions({ Bucket: bucket }, next),
+                next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                }), next),
+                next => s3.send(new ListObjectVersionsCommand({
+                    Bucket: bucket,
+                }), next),
             ], (err, data) => {
                 if (err) {
                     return done(err);
@@ -955,9 +1111,15 @@ describe('backbeat routes', () => {
         it('should update null version if versioning suspended and null version has a version id', done => {
             let objMD;
             return async.series([
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } },
-                    next),
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Suspended' },
+                }), next),
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
                 next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -989,8 +1151,14 @@ describe('backbeat routes', () => {
                     authCredentials: backbeatAuthCredentials,
                     requestBody: objMD,
                 }, next),
-                next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
-                next => s3.listObjectVersions({ Bucket: bucket }, next),
+                next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
+                next => s3.send(new ListObjectVersionsCommand({
+                    Bucket: bucket,
+                }), next),
             ], (err, data) => {
                 if (err) {
                     return done(err);
@@ -1016,9 +1184,15 @@ describe('backbeat routes', () => {
         'put object afterward', done => {
             let objMD;
             return async.series([
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } },
-                    next),
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Suspended' },
+                }), next),
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
                 next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -1050,9 +1224,24 @@ describe('backbeat routes', () => {
                     authCredentials: backbeatAuthCredentials,
                     requestBody: objMD,
                 }, next),
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
-                next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
-                next => s3.listObjectVersions({ Bucket: bucket }, next),
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
+                next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
+                next => s3.send(new ListObjectVersionsCommand({
+                    Bucket: bucket,
+                }), next),
+                next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
             ], (err, data) => {
                 if (err) {
                     return done(err);
@@ -1079,9 +1268,15 @@ describe('backbeat routes', () => {
             let objMD;
             let expectedVersionId;
             return async.series([
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } },
-                    next),
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Suspended' },
+                }), next),
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
                 next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -1113,17 +1308,29 @@ describe('backbeat routes', () => {
                     authCredentials: backbeatAuthCredentials,
                     requestBody: objMD,
                 }, next),
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } },
-                    next),
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }), next),
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), (err, data) => {
                     if (err) {
                         return next(err);
                     }
                     expectedVersionId = data.VersionId;
                     return next();
                 }),
-                next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
-                next => s3.listObjectVersions({ Bucket: bucket }, next),
+                next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
+                next => s3.send(new ListObjectVersionsCommand({
+                    Bucket: bucket,
+                }), next),
             ], (err, data) => {
                 if (err) {
                     return done(err);
@@ -1150,18 +1357,30 @@ describe('backbeat routes', () => {
             let expectedVersionId;
             let objMD;
             return async.series([
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } },
-                    next),
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }), next),
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), (err, data) => {
                     if (err) {
                         return next(err);
                     }
                     expectedVersionId = data.VersionId;
                     return next();
                 }),
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } },
-                    next),
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Suspended' },
+                }), next),
                 next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -1193,8 +1412,19 @@ describe('backbeat routes', () => {
                     authCredentials: backbeatAuthCredentials,
                     requestBody: objMD,
                 }, next),
-                next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
-                next => s3.listObjectVersions({ Bucket: bucket }, next),
+                next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
+                next => s3.send(new ListObjectVersionsCommand({
+                    Bucket: bucket,
+                }), next),
+                next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
             ], (err, data) => {
                 if (err) {
                     return done(err);
@@ -1224,19 +1454,36 @@ describe('backbeat routes', () => {
             let objMD;
             let expectedVersionId;
             return async.series([
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } },
-                    next),
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }), next),
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), (err, data) => {
                     if (err) {
                         return next(err);
                     }
                     expectedVersionId = data.VersionId;
                     return next();
+                    
                 }),
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } },
-                    next),
-                next => s3.deleteObject({ Bucket: bucket, Key: keyName, VersionId: expectedVersionId }, next),
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Suspended' },
+                }), next),
+                next => s3.send(new DeleteObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: expectedVersionId,
+                }), next),
                 next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -1268,8 +1515,19 @@ describe('backbeat routes', () => {
                     authCredentials: backbeatAuthCredentials,
                     requestBody: objMD,
                 }, next),
-                next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
-                next => s3.listObjectVersions({ Bucket: bucket }, next),
+                next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
+                next => s3.send(new ListObjectVersionsCommand({
+                    Bucket: bucket,
+                }), next),
+                next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
             ], (err, data) => {
                 if (err) {
                     return done(err);
@@ -1296,19 +1554,35 @@ describe('backbeat routes', () => {
             let objMD;
             let deletedVersionId;
             return async.series([
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } },
-                    next),
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }), next),
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), (err, data) => {
                     if (err) {
                         return next(err);
                     }
                     deletedVersionId = data.VersionId;
                     return next();
                 }),
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } },
-                    next),
-                next => s3.deleteObject({ Bucket: bucket, Key: keyName, VersionId: deletedVersionId }, next),
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Suspended' },
+                }), next),
+                next => s3.send(new DeleteObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: deletedVersionId,
+                }), next),
                 next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -1340,9 +1614,24 @@ describe('backbeat routes', () => {
                     authCredentials: backbeatAuthCredentials,
                     requestBody: objMD,
                 }, next),
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
-                next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
-                next => s3.listObjectVersions({ Bucket: bucket }, next),
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
+                next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
+                next => s3.send(new ListObjectVersionsCommand({
+                    Bucket: bucket,
+                }), next),
+                next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
             ], (err, data) => {
                 if (err) {
                     return done(err);
@@ -1370,19 +1659,35 @@ describe('backbeat routes', () => {
             let deletedVersionId;
             let expectedVersionId;
             return async.series([
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } },
-                    next),
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), next),
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }), next),
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), (err, data) => {
                     if (err) {
                         return next(err);
                     }
                     deletedVersionId = data.VersionId;
                     return next();
                 }),
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } },
-                    next),
-                next => s3.deleteObject({ Bucket: bucket, Key: keyName, VersionId: deletedVersionId }, next),
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Suspended' },
+                }), next),
+                next => s3.send(new DeleteObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: deletedVersionId,
+                }), next),
                 next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
@@ -1414,17 +1719,29 @@ describe('backbeat routes', () => {
                     authCredentials: backbeatAuthCredentials,
                     requestBody: objMD,
                 }, next),
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } },
-                    next),
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                next => s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }), next),
+                next => s3.send(new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    Body: Buffer.from(testData),
+                }), (err, data) => {
                     if (err) {
                         return next(err);
                     }
-                    expectedVersionId = data.VersionId;
+                    deletedVersionId = data.VersionId;
                     return next();
                 }),
-                next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
-                next => s3.listObjectVersions({ Bucket: bucket }, next),
+                next => s3.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: keyName,
+                    VersionId: 'null',
+                }), next),
+                next => s3.send(new ListObjectVersionsCommand({
+                    Bucket: bucket,
+                }), next),
             ], (err, data) => {
                 if (err) {
                     return done(err);
@@ -1584,10 +1901,10 @@ describe('backbeat routes', () => {
                         next();
                     }),
                 next =>
-                    s3.headObject({
+                    s3.send(new HeadObjectCommand({
                         Bucket: bucket,
                         Key: objectKey,
-                    }, (err, data) => {
+                    }), (err, data) => {
                         assert.ifError(err);
                         assert.strictEqual(data.StorageClass, 'awsbackend');
                         next();
@@ -1673,10 +1990,10 @@ describe('backbeat routes', () => {
                         return next();
                     }),
                 next =>
-                    awsClient.getObjectTagging({
+                    awsClient.send(new GetObjectTaggingCommand({
                         Bucket: awsBucket,
                         Key: awsKey,
-                    }, (err, data) => {
+                    }), (err, data) => {
                         assert.ifError(err);
                         assert.deepStrictEqual(data.TagSet, [{
                             Key: 'Key1',
@@ -1702,11 +2019,11 @@ describe('backbeat routes', () => {
             it(`should PUT metadata and data if ${description} and x-scal-versioning-required is not set`, done => {
                 let objectMd;
                 async.waterfall([
-                    next => s3.putObject({
+                    next => s3.send(new PutObjectCommand({
                         Bucket: bucket,
                         Key: 'sourcekey',
-                        Body: new Buffer(testData) },
-                        next),
+                        Body: Buffer.from(testData),
+                    }), next),
                     (resp, next) => makeBackbeatRequest({
                         method: 'GET',
                         resourceType: 'metadata',
@@ -1910,10 +2227,10 @@ describe('backbeat routes', () => {
                 // check that the object copy referencing the old data
                 // locations is unreadable, confirming that the old
                 // data locations have been deleted
-                s3.getObject({
+                s3.send(new GetObjectCommand({
                     Bucket: TEST_BUCKET,
                     Key: testKeyOldData,
-                }, err => {
+                }), err => {
                     assert(err, 'expected error to get object with old data ' +
                            'locations, got success');
                     next();
@@ -2000,10 +2317,10 @@ describe('backbeat routes', () => {
                 // check that the object copy referencing the old data
                 // locations is unreadable, confirming that the old
                 // data locations have been deleted
-                s3.getObject({
+                s3.send(new GetObjectCommand({
                     Bucket: TEST_BUCKET,
                     Key: testKeyOldData,
-                }, err => {
+                }), err => {
                     assert(err, 'expected error to get object with old data ' +
                            'locations, got success');
                     next();
@@ -2050,10 +2367,10 @@ describe('backbeat routes', () => {
             }, next => {
                 // check that the object is still readable to make
                 // sure we did not remove the data keys
-                s3.getObject({
+                s3.send(new GetObjectCommand({
                     Bucket: TEST_BUCKET,
                     Key: testKey,
-                }, (err, data) => {
+                }), (err, data) => {
                     assert.ifError(err);
                     assert.strictEqual(data.Body.toString(), testData);
                     next();
@@ -2128,21 +2445,21 @@ describe('backbeat routes', () => {
                 assert.notStrictEqual(newVersion, testMd.versionId);
                 // give some time for the async deletes to complete,
                 // then check that we can read the latest version
-                setTimeout(() => s3.getObject({
+                setTimeout(() => s3.send(new GetObjectCommand({
                     Bucket: TEST_BUCKET,
                     Key: testKey,
-                }, (err, data) => {
+                }), (err, data) => {
                     assert.ifError(err);
                     assert.strictEqual(data.Body.toString(), testData);
                     next();
                 }), 1000);
             }, next => {
                 // check that the previous object version is still readable
-                s3.getObject({
+                s3.send(new GetObjectCommand({
                     Bucket: TEST_BUCKET,
                     Key: testKey,
                     VersionId: versionIdUtils.encode(testMd.versionId),
-                }, (err, data) => {
+                }), (err, data) => {
                     assert.ifError(err);
                     assert.strictEqual(data.Body.toString(), testData);
                     next();
@@ -2407,10 +2724,10 @@ describe('backbeat routes', () => {
                         jsonResponse: true,
                     }, next),
                 next =>
-                    awsClient.getObjectTagging({
+                    awsClient.send(new GetObjectTaggingCommand({
                         Bucket: awsBucket,
                         Key: awsKey,
-                    }, (err, data) => {
+                    }), (err, data) => {
                         assert.ifError(err);
                         assert.deepStrictEqual(data.TagSet, [{
                             Key: 'key1',
@@ -2493,11 +2810,11 @@ describe('backbeat routes', () => {
             const testKey = 'batch-delete-test-key';
 
             async.series([
-                done => s3.putObject({
+                done => s3.send(new PutObjectCommand({
                     Bucket: TEST_BUCKET,
                     Key: testKey,
-                    Body: new Buffer('hello'),
-                }, (err, data) => {
+                    Body: Buffer.from('hello'),
+                }), (err, data) => {
                     assert.ifError(err);
                     versionId = data.VersionId;
                     done();
@@ -2534,10 +2851,10 @@ describe('backbeat routes', () => {
                     };
                     makeRequest(options, done);
                 },
-                done => s3.getObject({
+                done => s3.send(new GetObjectCommand({
                     Bucket: TEST_BUCKET,
                     Key: testKey,
-                }, err => {
+                }), err => {
                     // should error out as location shall no longer exist
                     assert(err);
                     done();
@@ -2550,11 +2867,11 @@ describe('backbeat routes', () => {
             const awsKey = `${TEST_BUCKET}/batch-delete-test-key-${makeid(8)}`;
 
             async.series([
-                done => awsClient.putObject({
+                done => awsClient.send(new PutObjectCommand({
                     Bucket: awsBucket,
                     Key: awsKey,
-                    Body: new Buffer('hello'),
-                }, (err, data) => {
+                    Body: Buffer.from('hello'),
+                }), (err, data) => {
                     assert.ifError(err);
                     versionId = data.VersionId;
                     done();
@@ -2578,10 +2895,10 @@ describe('backbeat routes', () => {
                     };
                     makeRequest(options, done);
                 },
-                done => awsClient.getObject({
+                done => awsClient.send(new GetObjectCommand({
                     Bucket: awsBucket,
                     Key: awsKey,
-                }, err => {
+                }), err => {
                     // should error out as location shall no longer exist
                     assert(err);
                     done();
@@ -2647,10 +2964,10 @@ describe('backbeat routes', () => {
             const awsKey = uuidv4();
             async.series([
                 next =>
-                    awsClient.putObject({
+                    awsClient.send(new PutObjectCommand({
                         Bucket: awsBucket,
                         Key: awsKey,
-                    }, next),
+                    }), next),
                 next =>
                     makeRequest({
                         authCredentials: backbeatAuthCredentials,
@@ -2674,10 +2991,10 @@ describe('backbeat routes', () => {
                         jsonResponse: true,
                     }, next),
                 next =>
-                    awsClient.getObjectTagging({
+                    awsClient.send(new GetObjectTaggingCommand({
                         Bucket: awsBucket,
                         Key: awsKey,
-                    }, (err, data) => {
+                    }), (err, data) => {
                         assert.ifError(err);
                         assert.deepStrictEqual(data.TagSet, []);
                         next();
@@ -2690,10 +3007,10 @@ describe('backbeat routes', () => {
             const awsKey = uuidv4();
             async.series([
                 next =>
-                    awsClient.putObject({
+                    awsClient.send(new PutObjectCommand({
                         Bucket: awsBucket,
                         Key: awsKey,
-                    }, next),
+                    }), next),
                 next =>
                     makeRequest({
                         authCredentials: backbeatAuthCredentials,
@@ -2719,10 +3036,10 @@ describe('backbeat routes', () => {
                         jsonResponse: true,
                     }, next),
                 next =>
-                    awsClient.getObjectTagging({
+                    awsClient.send(new GetObjectTaggingCommand({
                         Bucket: awsBucket,
                         Key: awsKey,
-                    }, (err, data) => {
+                    }), (err, data) => {
                         assert.ifError(err);
                         assert.deepStrictEqual(data.TagSet, []);
                         next();
@@ -2736,15 +3053,15 @@ describe('backbeat routes', () => {
             let lastModified;
             async.series([
                 next =>
-                    awsClient.putObject({
+                    awsClient.send(new PutObjectCommand({
                         Bucket: awsBucket,
                         Key: awsKey,
-                    }, next),
+                    }), next),
                 next =>
-                    awsClient.headObject({
+                    awsClient.send(new HeadObjectCommand({
                         Bucket: awsBucket,
                         Key: awsKey,
-                    }, (err, data) => {
+                    }), (err, data) => {
                         if (err) {
                             return next(err);
                         }
@@ -2775,10 +3092,10 @@ describe('backbeat routes', () => {
                         jsonResponse: true,
                     }, next),
                 next =>
-                    awsClient.getObjectTagging({
+                    awsClient.send(new GetObjectTaggingCommand({
                         Bucket: awsBucket,
                         Key: awsKey,
-                    }, (err, data) => {
+                    }), (err, data) => {
                         assert.ifError(err);
                         assert.strictEqual(data.TagSet.length, 2);
                         data.TagSet.forEach(tag => {

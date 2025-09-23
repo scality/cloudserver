@@ -1,6 +1,11 @@
 const assert = require('assert');
 const async = require('async');
-
+const { CreateBucketCommand,
+    PutObjectCommand,
+    GetObjectCommand,
+    CreateMultipartUploadCommand,
+    AbortMultipartUploadCommand,
+    PutBucketVersioningCommand } = require('@aws-sdk/client-s3');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const {
@@ -35,16 +40,14 @@ let bucketUtil;
 let s3;
 
 function azureGetCheck(objectKey, azureMD5, azureMetadata, cb) {
-    azureClient.getContainerClient(azureContainerName).getProperties(objectKey).then(res => {
-        const resMD5 = convertMD5(res.contentSettings.contentMD5);
-        assert.strictEqual(resMD5, azureMD5);
-        assert.deepStrictEqual(res.metadata, azureMetadata);
-        return cb();
-    }, err => {
-        assert.strictEqual(err, null, 'Expected success, got error ' +
-            `on call to Azure: ${err}`);
-        return cb();
-    });
+    azureClient.getContainerClient(azureContainerName).getBlobClient(objectKey).getProperties()
+        .then(res => {
+            const resMD5 = convertMD5(res.contentSettings.contentMD5);
+            assert.strictEqual(resMD5, azureMD5);
+            assert.deepStrictEqual(res.metadata, azureMetadata);
+            return cb();
+        })
+        .catch(err => cb(err));
 }
 
 describeSkipIfNotMultipleOrCeph('MultipleBackend put object to AZURE', function
@@ -70,12 +73,16 @@ describeF() {
             });
         });
         describe('with bucket location header', () => {
-            beforeEach(done =>
-                s3.createBucket({ Bucket: azureContainerName,
-                    CreateBucketConfiguration: {
-                        LocationConstraint: azureLocation,
-                    },
-                }, done));
+                    beforeEach(done => {
+            s3.send(new CreateBucketCommand({ 
+                Bucket: azureContainerName,
+                CreateBucketConfiguration: {
+                    LocationConstraint: azureLocation,
+                },
+            }))
+                .then(() => done())
+                .catch(done);
+        });
 
             it('should return a NotImplemented error if try to put ' +
             'versioning to bucket with Azure location', done => {
@@ -85,10 +92,14 @@ describeF() {
                         Status: 'Enabled',
                     },
                 };
-                s3.putBucketVersioning(params, err => {
-                    assert.strictEqual(err.code, 'NotImplemented');
-                    done();
-                });
+                s3.send(new PutBucketVersioningCommand(params))
+                    .then(() => {
+                        done(new Error('Expected NotImplemented error'));
+                    })
+                    .catch(err => {
+                        assert.strictEqual(err.name, 'NotImplemented');
+                        done();
+                    });
             });
 
             it('should put an object to Azure, with no object location ' +
@@ -99,8 +110,11 @@ describeF() {
                     Body: normalBody,
                 };
                 async.waterfall([
-                    next => s3.putObject(params, err => setTimeout(() =>
-                      next(err), azureTimeout)),
+                    next => {
+                        s3.send(new PutObjectCommand(params))
+                            .then(() => setTimeout(() => next(), azureTimeout))
+                            .catch(next);
+                    },
                     next => azureGetCheck(this.test.keyName, normalMD5, {},
                       next),
                 ], done);
@@ -109,7 +123,7 @@ describeF() {
 
         describe('with no bucket location header', () => {
             beforeEach(() =>
-              s3.createBucket({ Bucket: azureContainerName }).promise()
+              s3.send(new CreateBucketCommand({ Bucket: azureContainerName }))
                 .catch(err => {
                     process.stdout.write(`Error creating bucket: ${err}\n`);
                     throw err;
@@ -124,14 +138,14 @@ describeF() {
                         Metadata: { 'scal-location-constraint': azureLocation },
                         Body: key.body,
                     };
-                    s3.putObject(params, err => {
-                        assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                        setTimeout(() =>
-                            azureGetCheck(this.test.keyName,
-                              key.MD5, azureMetadata,
-                            () => done()), azureTimeout);
-                    });
+                    s3.send(new PutObjectCommand(params))
+                        .then(() => {
+                            setTimeout(() =>
+                                azureGetCheck(this.test.keyName,
+                                  key.MD5, azureMetadata,
+                                () => done()), azureTimeout);
+                        })
+                        .catch(done);
                 });
             });
 
@@ -149,15 +163,15 @@ describeF() {
                     scal_location_constraint: azureLocationMismatch,
                     /* eslint-enable camelcase */
                 };
-                s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                    `got error ${err}`);
-                    setTimeout(() =>
-                        azureGetCheck(
-                          `${azureContainerName}/${this.test.keyName}`,
-                          normalMD5, azureMetadataMismatch,
-                        () => done()), azureTimeout);
-                });
+                s3.send(new PutObjectCommand(params))
+                    .then(() => {
+                        setTimeout(() =>
+                            azureGetCheck(
+                              `${azureContainerName}/${this.test.keyName}`,
+                              normalMD5, azureMetadataMismatch,
+                            () => done()), azureTimeout);
+                    })
+                    .catch(done);
             });
 
             it('should return error ServiceUnavailable putting an invalid ' +
@@ -168,30 +182,37 @@ describeF() {
                     Metadata: { 'scal-location-constraint': azureLocation },
                     Body: normalBody,
                 };
-                s3.putObject(params, err => {
-                    assert.strictEqual(err.code, 'ServiceUnavailable');
-                    done();
-                });
+                s3.send(new PutObjectCommand(params))
+                    .then(() => {
+                        done(new Error('Expected ServiceUnavailable error'));
+                    })
+                    .catch(err => {
+                        assert.strictEqual(err.name, 'ServiceUnavailable');
+                        done();
+                    });
             });
 
             it('should return error NotImplemented putting a ' +
             'version to Azure', function itF(done) {
-                s3.putBucketVersioning({
+                s3.send(new PutBucketVersioningCommand({
                     Bucket: azureContainerName,
                     VersioningConfiguration: versioningEnabled,
-                }, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                    const params = { Bucket: azureContainerName,
-                        Key: this.test.keyName,
-                        Body: normalBody,
-                        Metadata: { 'scal-location-constraint':
-                        azureLocation } };
-                    s3.putObject(params, err => {
-                        assert.strictEqual(err.code, 'NotImplemented');
+                }))
+                    .then(() => {
+                        const params = { Bucket: azureContainerName,
+                            Key: this.test.keyName,
+                            Body: normalBody,
+                            Metadata: { 'scal-location-constraint':
+                            azureLocation } };
+                        return s3.send(new PutObjectCommand(params));
+                    })
+                    .then(() => {
+                        done(new Error('Expected NotImplemented error'));
+                    })
+                    .catch(err => {
+                        assert.strictEqual(err.name, 'NotImplemented');
                         done();
                     });
-                });
             });
 
             it('should put two objects to Azure with same ' +
@@ -202,11 +223,16 @@ describeF() {
                     Metadata: { 'scal-location-constraint': azureLocation },
                 };
                 async.waterfall([
-                    next => s3.putObject(params, err => next(err)),
+                    next => {
+                        s3.send(new PutObjectCommand(params))
+                            .then(() => next())
+                            .catch(next);
+                    },
                     next => {
                         params.Body = normalBody;
-                        s3.putObject(params, err => setTimeout(() =>
-                          next(err), azureTimeout));
+                        s3.send(new PutObjectCommand(params))
+                            .then(() => setTimeout(() => next(), azureTimeout))
+                            .catch(next);
                     },
                     next => {
                         setTimeout(() => {
@@ -226,32 +252,42 @@ describeF() {
                     Body: normalBody,
                     Metadata: { 'scal-location-constraint': azureLocation } };
                 async.waterfall([
-                    next => s3.putObject(params, err => next(err)),
+                    next => {
+                        s3.send(new PutObjectCommand(params))
+                            .then(() => next())
+                            .catch(next);
+                    },
                     next => {
                         params.Metadata = { 'scal-location-constraint':
                         fileLocation };
-                        s3.putObject(params, err => setTimeout(() =>
-                          next(err), azureTimeout));
+                        s3.send(new PutObjectCommand(params))
+                            .then(() => setTimeout(() => next(), azureTimeout))
+                            .catch(next);
                     },
-                    next => s3.getObject({
-                        Bucket: azureContainerName,
-                        Key: this.test.keyName,
-                    }, (err, res) => {
-                        assert.equal(err, null, 'Expected success, ' +
-                            `got error ${err}`);
-                        assert.strictEqual(
-                            res.Metadata['scal-location-constraint'],
-                            fileLocation);
-                        next();
-                    }),
-                    next => azureClient.getContainerClient(azureContainerName)
-                        .getProperties(this.test.keyName).then(() => {
-                            assert.fail('unexpected success');
-                            next();
-                        }, err => {
-                            assert.strictEqual(err.code, 'NotFound');
-                            next();
-                        }),
+                    next => {
+                        s3.send(new GetObjectCommand({
+                            Bucket: azureContainerName,
+                            Key: this.test.keyName,
+                        }))
+                            .then(res => {
+                                assert.strictEqual(
+                                    res.Metadata['scal-location-constraint'],
+                                    fileLocation);
+                                next();
+                            })
+                            .catch(next);
+                    },
+                    next => {
+                        azureClient.getContainerClient(azureContainerName)
+                            .getBlobClient(this.test.keyName).getProperties()
+                            .then(() => {
+                                next(new Error('Expected NotFound error'));
+                            })
+                            .catch(err => {
+                                assert.strictEqual(err.code, 'NotFound');
+                                next();
+                            });
+                    },
                 ], done);
             });
 
@@ -263,13 +299,13 @@ describeF() {
                     Body: normalBody,
                     Metadata: { 'scal-location-constraint': fileLocation } };
                 async.waterfall([
-                    next => s3.putObject(params, err => next(err)),
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
                     next => {
                         params.Metadata = {
                             'scal-location-constraint': azureLocation,
                         };
-                        s3.putObject(params, err => setTimeout(() =>
-                          next(err), azureTimeout));
+                        s3.send(new PutObjectCommand(params)).then(() => setTimeout(() =>
+                          next(), azureTimeout));
                     },
                     next => azureGetCheck(this.test.keyName, normalMD5,
                       azureMetadata, next),
@@ -278,37 +314,43 @@ describeF() {
 
             describe('with ongoing MPU with same key name', () => {
                 beforeEach(function beFn(done) {
-                    s3.createMultipartUpload({
+                    s3.send(new CreateMultipartUploadCommand({
                         Bucket: azureContainerName,
                         Key: this.currentTest.keyName,
                         Metadata: { 'scal-location-constraint': azureLocation },
-                    }, (err, res) => {
-                        assert.equal(err, null, `Err creating MPU: ${err}`);
-                        this.currentTest.uploadId = res.UploadId;
-                        done();
-                    });
+                    }))
+                        .then(res => {
+                            this.currentTest.uploadId = res.UploadId;
+                            done();
+                        })
+                        .catch(done);
                 });
 
                 afterEach(function afFn(done) {
-                    s3.abortMultipartUpload({
+                    s3.send(new AbortMultipartUploadCommand({
                         Bucket: azureContainerName,
                         Key: this.currentTest.keyName,
                         UploadId: this.currentTest.uploadId,
-                    }, err => {
-                        assert.equal(err, null, `Err aborting MPU: ${err}`);
-                        done();
-                    });
+                    }))
+                        .then(() => {
+                            done();
+                        })
+                        .catch(done);
                 });
 
                 it('should return ServiceUnavailable', function itFn(done) {
-                    s3.putObject({
+                    s3.send(new PutObjectCommand({
                         Bucket: azureContainerName,
                         Key: this.test.keyName,
                         Metadata: { 'scal-location-constraint': azureLocation },
-                    }, err => {
-                        assert.strictEqual(err.code, 'ServiceUnavailable');
-                        done();
-                    });
+                    }))
+                        .then(() => {
+                            done(new Error('Expected ServiceUnavailable error'));
+                        })
+                        .catch(err => {
+                            assert.strictEqual(err.name, 'ServiceUnavailable');
+                            done();
+                        });
                 });
             });
         });

@@ -1,5 +1,9 @@
 const assert = require('assert');
-
+const { CreateBucketCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    AbortMultipartUploadCommand,
+    ListPartsCommand } = require('@aws-sdk/client-s3');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { describeSkipIfNotMultipleOrCeph, gcpLocation, genUniqID }
@@ -20,23 +24,23 @@ describeSkipIfNotMultipleOrCeph('List parts of MPU on GCP data backend', () => {
             this.currentTest.key = `somekey-${genUniqID()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucket({ Bucket: bucket }).promise()
-            .then(() => s3.createMultipartUpload({
+            return s3.send(new CreateBucketCommand({ Bucket: bucket }))
+            .then(() => s3.send(new CreateMultipartUploadCommand({
                 Bucket: bucket, Key: this.currentTest.key,
                 Metadata: { 'scal-location-constraint': gcpLocation },
-            }).promise())
+            })))
             .then(res => {
                 this.currentTest.uploadId = res.UploadId;
-                return s3.uploadPart({ Bucket: bucket,
+                return s3.send(new UploadPartCommand({ Bucket: bucket,
                     Key: this.currentTest.key, PartNumber: 1,
                     UploadId: this.currentTest.uploadId, Body: bodyFirstPart,
-                }).promise();
+                }));
             }).then(res => {
                 this.currentTest.firstEtag = res.ETag;
-            }).then(() => s3.uploadPart({ Bucket: bucket,
+            }).then(() => s3.send(new UploadPartCommand({ Bucket: bucket,
                 Key: this.currentTest.key, PartNumber: 2,
                 UploadId: this.currentTest.uploadId, Body: bodySecondPart,
-            }).promise())
+            })))
             .then(res => {
                 this.currentTest.secondEtag = res.ETag;
             })
@@ -48,10 +52,10 @@ describeSkipIfNotMultipleOrCeph('List parts of MPU on GCP data backend', () => {
 
         afterEach(function afterEachFn() {
             process.stdout.write('Emptying bucket');
-            return s3.abortMultipartUpload({
+            return s3.send(new AbortMultipartUploadCommand({
                 Bucket: bucket, Key: this.currentTest.key,
                 UploadId: this.currentTest.uploadId,
-            }).promise()
+            }))
             .then(() => bucketUtil.empty(bucket))
             .then(() => {
                 process.stdout.write('Deleting bucket');
@@ -64,12 +68,10 @@ describeSkipIfNotMultipleOrCeph('List parts of MPU on GCP data backend', () => {
         });
 
         it('should list both parts', function itFn(done) {
-            s3.listParts({
+            s3.send(new ListPartsCommand({
                 Bucket: bucket,
                 Key: this.test.key,
-                UploadId: this.test.uploadId },
-            (err, data) => {
-                assert.equal(err, null, `Err listing parts: ${err}`);
+                UploadId: this.test.uploadId })).then(data => {
                 assert.strictEqual(data.Parts.length, 2);
                 assert.strictEqual(data.Parts[0].PartNumber, 1);
                 assert.strictEqual(data.Parts[0].Size, firstPartSize);
@@ -78,21 +80,25 @@ describeSkipIfNotMultipleOrCeph('List parts of MPU on GCP data backend', () => {
                 assert.strictEqual(data.Parts[1].Size, secondPartSize);
                 assert.strictEqual(data.Parts[1].ETag, this.test.secondEtag);
                 done();
+            }).catch(err => {
+                assert.equal(err, null, `Err listing parts: ${err}`);
+                done(err);
             });
         });
 
         it('should only list the second part', function itFn(done) {
-            s3.listParts({
+            s3.send(new ListPartsCommand({
                 Bucket: bucket,
                 Key: this.test.key,
                 PartNumberMarker: 1,
-                UploadId: this.test.uploadId },
-            (err, data) => {
-                assert.equal(err, null, `Err listing parts: ${err}`);
+                UploadId: this.test.uploadId })).then(data => {
                 assert.strictEqual(data.Parts[0].PartNumber, 2);
                 assert.strictEqual(data.Parts[0].Size, secondPartSize);
                 assert.strictEqual(data.Parts[0].ETag, this.test.secondEtag);
                 done();
+            }).catch(err => {
+                assert.equal(err, null, `Err listing parts: ${err}`);
+                done(err);
             });
         });
     });

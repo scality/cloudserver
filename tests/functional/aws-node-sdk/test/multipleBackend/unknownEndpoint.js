@@ -1,4 +1,11 @@
 const assert = require('assert');
+const {
+    CreateBucketCommand,
+    GetBucketLocationCommand,
+    PutObjectCommand,
+    HeadObjectCommand,
+    GetObjectCommand,
+} = require('@aws-sdk/client-s3');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const config = require('../../../config.json');
@@ -21,27 +28,18 @@ describe('Requests to ip endpoint not in config', () => {
             s3 = bucketUtil.s3;
         });
 
-        after(() => {
+        after(async () => {
             process.stdout.write('Emptying bucket\n');
-            return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write(`Error in afterEach: ${err}\n`);
-                throw err;
-            });
+            await bucketUtil.empty(bucket);
+            process.stdout.write('Deleting bucket\n');
+            await bucketUtil.deleteOne(bucket);
         });
 
         it('should accept put bucket request ' +
             'to IP address endpoint that is not in config using ' +
             'path style',
-            done => {
-                s3.createBucket({ Bucket: bucket }, err => {
-                    assert.ifError(err);
-                    done();
-                });
+            async () => {
+                await s3.send(new CreateBucketCommand({ Bucket: bucket }));
             });
 
         const itSkipIfE2E = process.env.S3_END_TO_END ? it.skip : it;
@@ -51,42 +49,26 @@ describe('Requests to ip endpoint not in config', () => {
         itSkipIfE2E('should show us-east-1 as bucket location since' +
             'IP address endpoint was not in config thereby ' +
             'defaulting to us-east-1',
-            done => {
-                s3.getBucketLocation({ Bucket: bucket },
-                    (err, res) => {
-                        assert.ifError(err);
-                        // us-east-1 is returned as empty string
-                        assert.strictEqual(res
-                            .LocationConstraint, '');
-                        done();
-                    });
+            async () => {
+                const res = await s3.send(new GetBucketLocationCommand({ Bucket: bucket }));
+                // us-east-1 is returned as empty string
+                assert.strictEqual(res.LocationConstraint, undefined);
             });
 
         it('should accept put object request ' +
             'to IP address endpoint that is not in config using ' +
             'path style and use the bucket location for the object',
-            done => {
-                s3.putObject({ Bucket: bucket, Key: key, Body: body },
-                    err => {
-                        assert.ifError(err);
-                        return s3.headObject({ Bucket: bucket, Key: key },
-                            err => {
-                                assert.ifError(err);
-                                done();
-                            });
-                    });
+            async () => {
+                await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body }));
+                await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
             });
 
         it('should accept get object request ' +
             'to IP address endpoint that is not in config using ' +
             'path style',
-            done => {
-                s3.getObject({ Bucket: bucket, Key: key },
-                    (err, res) => {
-                        assert.ifError(err);
-                        assert.strictEqual(res.ETag, expectedETag);
-                        done();
-                    });
+            async () => {
+                const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+                assert.strictEqual(res.ETag, expectedETag);
             });
     });
 });

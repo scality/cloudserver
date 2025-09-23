@@ -1,5 +1,6 @@
 const https = require('https');
-const AWS = require('aws-sdk');
+const http = require('http');
+const { NodeHttpHandler } = require('@smithy/node-http-handler');
 
 const { getCredentials } = require('./credentials');
 const { getAwsCredentials } = require('./awsConfig');
@@ -19,19 +20,45 @@ if (ssl && ssl.ca) {
 
 const DEFAULT_GLOBAL_OPTIONS = {
     httpOptions,
-    apiVersions: { s3: '2006-03-01' },
-    signatureCache: false,
-    sslEnabled: ssl !== undefined,
 };
+
 const DEFAULT_MEM_OPTIONS = {
     endpoint: `${transport}://127.0.0.1:8000`,
-    s3ForcePathStyle: true,
+    port: 8000,
+    forcePathStyle: true, // s3ForcePathStyle renamed to forcePathStyle in v3
+    region: 'us-east-1', // Required by AWS SDK v3
+    maxAttempts: 3,
+    requestHandler: new NodeHttpHandler({
+        connectionTimeout: 5000,
+        socketTimeout: 5000,
+        httpAgent: new (ssl ? https : http).Agent({
+            maxSockets: 200,
+            keepAlive: true,
+            keepAliveMsecs: 1000,
+        }),
+    }),
 };
-const DEFAULT_AWS_OPTIONS = {};
+
+const DEFAULT_AWS_OPTIONS = {
+    region: 'us-east-1', // Required by AWS SDK v3
+    maxAttempts: 3,
+    requestHandler: new NodeHttpHandler({
+        connectionTimeout: 5000,
+        socketTimeout: 5000,
+        httpAgent: new https.Agent({
+            maxSockets: 200,
+            keepAlive: true,
+            keepAliveMsecs: 1000,
+        }),
+    }),
+};
 
 function _getMemCredentials(profile) {
     const { accessKeyId, secretAccessKey } = getCredentials(profile);
-    return new AWS.Credentials(accessKeyId, secretAccessKey);
+    return {
+        accessKeyId,
+        secretAccessKey,
+    };
 }
 
 function _getMemConfig(profile, config) {
@@ -49,7 +76,7 @@ function _getMemConfig(profile, config) {
 }
 
 function _getAwsConfig(profile, config) {
-    const credentials = getAwsCredentials(profile, '/.aws/scality');
+    const credentials = getAwsCredentials(profile);
 
     const awsConfig = Object.assign({}
         , DEFAULT_GLOBAL_OPTIONS, DEFAULT_AWS_OPTIONS
@@ -58,11 +85,11 @@ function _getAwsConfig(profile, config) {
     return awsConfig;
 }
 
-function getConfig(profile = 'default', config = {}) {
-    const fn = process.env.AWS_ON_AIR && process.env.AWS_ON_AIR === 'true'
-        ? _getAwsConfig : _getMemConfig;
-
-    return fn.apply(this, [profile, config]);
+function getConfig(profile, config) {
+    if (process.env.AWS_ON_AIR) {
+        return _getAwsConfig(profile, config);
+    }
+    return _getMemConfig(profile, config);
 }
 
 module.exports = getConfig;

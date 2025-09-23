@@ -3,6 +3,17 @@ const async = require('async');
 const { models } = require('arsenal');
 const { ObjectMD } = models;
 const { v4: uuidv4 } = require('uuid');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketVersioningCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+    HeadObjectCommand,
+    ListObjectVersionsCommand,
+    GetObjectTaggingCommand,
+    PutObjectTaggingCommand,
+} = require('@aws-sdk/client-s3');
 
 const { makeBackbeatRequest } = require('../../functional/raw-node/utils/makeRequest');
 const BucketUtility = require('../../functional/aws-node-sdk/lib/utility/bucket-util');
@@ -51,16 +62,16 @@ describe('backbeat routes for replication', () => {
         bucketSource = generateUniqueBucketName('backbeatbucket-replication-source');
         bucketDestination = generateUniqueBucketName('backbeatbucket-replication-destination');
         await srcBucketUtil.emptyIfExists(bucketSource);
-        await srcS3.createBucket({ Bucket: bucketSource }).promise();
+        await srcS3.send(new CreateBucketCommand({ Bucket: bucketSource }));
         await dstBucketUtil.emptyIfExists(bucketDestination);
-        await dstS3.createBucket({ Bucket: bucketDestination }).promise();
+        await dstS3.send(new CreateBucketCommand({ Bucket: bucketDestination }));
     });
 
     afterEach(async () => {
         await srcBucketUtil.empty(bucketSource);
-        await srcS3.deleteBucket({ Bucket: bucketSource }).promise();
+        await srcS3.send(new DeleteBucketCommand({ Bucket: bucketSource }));
         await dstBucketUtil.empty(bucketDestination);
-        await dstS3.deleteBucket({ Bucket: bucketDestination }).promise();
+        await dstS3.send(new DeleteBucketCommand({ Bucket: bucketDestination }));
     });
 
     it('should successfully replicate a version', done => {
@@ -68,18 +79,28 @@ describe('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            enableVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObject: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
-                    if (err) {
-                        return next(err);
-                    }
-                    versionId = data.VersionId;
-                    return next();
-                }),
-            enableVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            putObject: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                versionId = data.VersionId;
+                return next();
+            }),
+
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -112,9 +133,14 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObject: next => dstS3.headObject(
-                { Bucket: bucketDestination, Key: keyName, VersionId: versionId }, next),
-            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+            headObject: next => dstS3.send(new HeadObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                VersionId: versionId
+            }), next),
+            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -138,18 +164,28 @@ describe('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            enableVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObject: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
-                    if (err) {
-                        return next(err);
-                    }
-                    versionId = data.VersionId;
-                    return next();
-                }),
-            enableVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            putObject: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                versionId = data.VersionId;
+                return next();
+            }),
+
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -200,9 +236,14 @@ describe('backbeat routes for replication', () => {
                     requestBody: result.getSerialized(),
                 }, next);
             },
-            getObjectTagging: next => dstS3.getObjectTagging(
-                { Bucket: bucketDestination, Key: keyName, VersionId: versionId }, next),
-            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+            getObjectTagging: next => dstS3.send(new GetObjectTaggingCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                VersionId: versionId
+            }), next),
+            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -227,18 +268,28 @@ describe('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            enableVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObject: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
-                    if (err) {
-                        return next(err);
-                    }
-                    versionId = data.VersionId;
-                    return next();
-                }),
-            enableVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            putObject: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                versionId = data.VersionId;
+                return next();
+            }),
+
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -304,18 +355,28 @@ describe('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            enableVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObject: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
-                    if (err) {
-                        return next(err);
-                    }
-                    versionId = data.VersionId;
-                    return next();
-                }),
-            enableVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            putObject: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                versionId = data.VersionId;
+                return next();
+            }),
+
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -356,26 +417,40 @@ describe('backbeat routes for replication', () => {
         let versionIdCurrent, versionIdNonCurrent;
 
         async.series({
-            enableVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObjectNonCurrent: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
-                    if (err) {
-                        return next(err);
-                    }
-                    versionIdNonCurrent = data.VersionId;
-                    return next();
-                }),
-            putObjectCurrent: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
-                    if (err) {
-                        return next(err);
-                    }
-                    versionIdCurrent = data.VersionId;
-                    return next();
-                }),
-            enableVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            putObjectNonCurrent: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                versionIdNonCurrent = data.VersionId;
+                return next();
+            }),
+
+            putObjectCurrent: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                versionIdCurrent = data.VersionId;
+                return next();
+            }),
+
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
             getMetadataNonCurrent: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -441,7 +516,9 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMDNonCurrent,
             }, next),
-            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -468,26 +545,39 @@ describe('backbeat routes for replication', () => {
         let versionIdVersion, versionIdDeleteMarker;
 
         async.series({
-            enableVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObject: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
-                    if (err) {
-                        return next(err);
-                    }
-                    versionIdVersion = data.VersionId;
-                    return next();
-                }),
-            deleteObject: next => srcS3.deleteObject(
-                { Bucket: bucketSource, Key: keyName }, (err, data) => {
-                    if (err) {
-                        return next(err);
-                    }
-                    versionIdDeleteMarker = data.VersionId;
-                    return next();
-                }),
-            enableVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            putObject: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                versionIdVersion = data.VersionId;
+                return next();
+            }),
+
+            deleteObject: next => srcS3.send(new DeleteObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName
+            }), (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                versionIdDeleteMarker = data.VersionId;
+                return next();
+            }),
+
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
             getMetadataVersion: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -552,7 +642,9 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMDDeleteMarker,
             }, next),
-            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -578,12 +670,19 @@ describe('backbeat routes for replication', () => {
         let objMD;
 
         async.series({
-            putObject: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, next),
-            enableVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            enableVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            putObject: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), next),
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -616,8 +715,14 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObject: next => dstS3.headObject({ Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+            headObject: next => dstS3.send(new HeadObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                VersionId: 'null'
+            }), next),
+            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -643,14 +748,27 @@ describe('backbeat routes for replication', () => {
         let objMD;
 
         async.series({
-            suspendVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Suspended' } }, next),
-            putObject: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, next),
-            enableVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            enableVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            suspendVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Suspended' }
+            }), next),
+
+            putObject: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), next),
+
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -683,8 +801,14 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObject: next => dstS3.headObject({ Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+            headObject: next => dstS3.send(new HeadObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                VersionId: 'null'
+            }), next),
+            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -710,12 +834,22 @@ describe('backbeat routes for replication', () => {
         let objMD;
 
         async.series({
-            putObject: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, next),
-            enableVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            enableVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            putObject: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), next),
+
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -766,8 +900,14 @@ describe('backbeat routes for replication', () => {
                     requestBody: result.getSerialized(),
                 }, next);
             },
-            headObject: next => dstS3.headObject({ Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+            headObject: next => dstS3.send(new HeadObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                VersionId: 'null'
+            }), next),
+            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -796,12 +936,22 @@ describe('backbeat routes for replication', () => {
         let expectedVersionId;
 
         async.series({
-            putObjectSource: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, next),
-            enableVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            enableVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            putObjectSource: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), next),
+
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -834,16 +984,25 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            putObjectDestination: next => dstS3.putObject(
-            { Bucket: bucketDestination, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
+            putObjectDestination: next => dstS3.send(new PutObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), (err, data) => {
                 if (err) {
                     return next(err);
                 }
                 expectedVersionId = data.VersionId;
                 return next();
             }),
-            headObject: next => dstS3.headObject({ Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+            headObject: next => dstS3.send(new HeadObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                VersionId: 'null'
+            }), next),
+            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -871,26 +1030,40 @@ describe('backbeat routes for replication', () => {
         let secondVersionId;
 
         async.series({
-            enableVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObjectDestination: next => dstS3.putObject(
-            { Bucket: bucketDestination, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            putObjectDestination: next => dstS3.send(new PutObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), (err, data) => {
                 if (err) {
                     return next(err);
                 }
                 firstVersionId = data.VersionId;
                 return next();
             }),
-            enableVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObjectSource: next => srcS3.putObject(
-            { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
+
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            putObjectSource: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), (err, data) => {
                 if (err) {
                     return next(err);
                 }
                 secondVersionId = data.VersionId;
                 return next();
             }),
+
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -923,11 +1096,19 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObjectFirstVersion: next => dstS3.headObject(
-                { Bucket: bucketDestination, Key: keyName, VersionId: firstVersionId }, next),
-            headObjectSecondVersion: next => dstS3.headObject(
-                { Bucket: bucketDestination, Key: keyName, VersionId: secondVersionId }, next),
-            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+            headObjectFirstVersion: next => dstS3.send(new HeadObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                VersionId: firstVersionId
+            }), next),
+            headObjectSecondVersion: next => dstS3.send(new HeadObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                VersionId: secondVersionId
+            }), next),
+            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -960,20 +1141,34 @@ describe('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            putObjectDestinationInitial: next => dstS3.putObject(
-                { Bucket: bucketDestination, Key: keyName, Body: Buffer.from(testData) }, next),
-            enableVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            enableVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObjectSource: next => srcS3.putObject(
-            { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
+            putObjectDestinationInitial: next => dstS3.send(new PutObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), next),
+
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            putObjectSource: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), (err, data) => {
                 if (err) {
                     return next(err);
                 }
                 versionId = data.VersionId;
                 return next();
             }),
+
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -1006,10 +1201,14 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObjectNullVersion: next => dstS3.headObject(
-                { Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            listObjectVersions: next => dstS3.listObjectVersions(
-                { Bucket: bucketDestination }, next),
+            headObjectNullVersion: next => dstS3.send(new HeadObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                VersionId: 'null'
+            }), next),
+            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -1039,22 +1238,39 @@ describe('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            suspendVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Suspended' } }, next),
-            putObjectDestinationInitial: next => dstS3.putObject(
-                { Bucket: bucketDestination, Key: keyName, Body: Buffer.from(testData) }, next),
-            enableVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            enableVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObjectSource: next => srcS3.putObject(
-            { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
+            suspendVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Suspended' }
+            }), next),
+
+            putObjectDestinationInitial: next => dstS3.send(new PutObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), next),
+
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            putObjectSource: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), (err, data) => {
                 if (err) {
                     return next(err);
                 }
                 versionId = data.VersionId;
                 return next();
             }),
+
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -1087,9 +1303,14 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObjectNullVersion: next => dstS3.headObject(
-                { Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+            headObjectNullVersion: next => dstS3.send(new HeadObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                VersionId: 'null'
+            }), next),
+            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -1120,10 +1341,17 @@ describe('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            putObjectDestinationInitial: next => dstS3.putObject(
-                { Bucket: bucketDestination, Key: keyName, Body: Buffer.from(testData) }, next),
-            enableVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            putObjectDestinationInitial: next => dstS3.send(new PutObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), next),
+
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
             getMetadataNullVersion: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -1151,16 +1379,23 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMDNull,
             }, next),
-            enableVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObjectSource: next => srcS3.putObject(
-            { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            putObjectSource: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), (err, data) => {
                 if (err) {
                     return next(err);
                 }
                 versionId = data.VersionId;
                 return next();
             }),
+
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -1193,9 +1428,14 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObjectNullVersion: next => dstS3.headObject(
-                { Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+            headObjectNullVersion: next => dstS3.send(new HeadObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                VersionId: 'null'
+            }), next),
+            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -1232,18 +1472,38 @@ describe('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            suspendVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Suspended' } }, next),
-            putObjectDestinationInitial: next => dstS3.putObject(
-                { Bucket: bucketDestination, Key: keyName, Body: Buffer.from(testData) }, next),
-            putObjectTagging: next => dstS3.putObjectTagging(
-                { Bucket: bucketDestination, Key: keyName, Tagging: { TagSet: tagSet } }, next),
-            enableVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            enableVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
-            putObjectSource: next => srcS3.putObject(
-            { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
+            suspendVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Suspended' }
+            }), next),
+
+            putObjectDestinationInitial: next => dstS3.send(new PutObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), next),
+
+            putObjectTagging: next => dstS3.send(new PutObjectTaggingCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                Tagging: { TagSet: tagSet }
+            }), next),
+
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            putObjectSource: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), (err, data) => {
                 if (err) {
                     return next(err);
                 }
@@ -1282,11 +1542,19 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObjectNullVersion: next => dstS3.headObject(
-                { Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            getObjectTaggingNullVersion: next => dstS3.getObjectTagging(
-                { Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            listObjectVersions: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+            headObjectNullVersion: next => dstS3.send(new HeadObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                VersionId: 'null'
+            }), next),
+            getObjectTaggingNullVersion: next => dstS3.send(new GetObjectTaggingCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                VersionId: 'null'
+            }), next),
+            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -1321,10 +1589,17 @@ describe('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            createNullSoloMasterKey: next => srcS3.putObject(
-                { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, next),
-            enableVersioningSource: next => srcS3.putBucketVersioning(
-                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            createNullSoloMasterKey: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), next),
+
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
             simulateCrrExistingObjectsGetMetadata: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -1353,8 +1628,10 @@ describe('backbeat routes for replication', () => {
                 authCredentials: sourceAuthCredentials,
                 requestBody: objMDNull,
             }, next),
-            enableVersioningDestination: next => dstS3.putBucketVersioning(
-                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
             replicateNullVersion: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -1387,8 +1664,11 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMDNullReplicated,
             }, next),
-            putNewVersionSource: next => srcS3.putObject(
-            { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
+            putNewVersionSource: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            }), (err, data) => {
                 if (err) {
                     return next(err);
                 }
@@ -1416,7 +1696,9 @@ describe('backbeat routes for replication', () => {
                     .getSerialized();
                 return next();
             }),
-            listObjectVersionsBeforeReplicate: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+            listObjectVersionsBeforeReplicate: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
             putReplicatedVersion: next => makeBackbeatRequest({
                 method: 'PUT',
                 resourceType: 'metadata',
@@ -1428,11 +1710,19 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMDVersion,
             }, next),
-            checkReplicatedNullVersion: next => dstS3.headObject(
-                { Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
-            checkReplicatedVersion: next => dstS3.headObject(
-                { Bucket: bucketDestination, Key: keyName, VersionId: versionId }, next),
-            listObjectVersionsAfterReplicate: next => dstS3.listObjectVersions({ Bucket: bucketDestination }, next),
+            checkReplicatedNullVersion: next => dstS3.send(new HeadObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                VersionId: 'null'
+            }), next),
+            checkReplicatedVersion: next => dstS3.send(new HeadObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                VersionId: versionId
+            }), next),
+            listObjectVersionsAfterReplicate: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -1466,30 +1756,34 @@ describe('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            enableVersioningDestination: next => dstS3.putBucketVersioning({
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
                 Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
-            putObjectDestination: next => dstS3.putObject({
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            putObjectDestination: next => dstS3.send(new PutObjectCommand({
                 Bucket: bucketDestination,
                 Key: keyName,
-                Body: Buffer.from(testData),
-            }, (err, data) => {
+                Body: Buffer.from(testData)
+            }), (err, data) => {
                 if (err) {
                     return next(err);
                 }
                 versionId = data.VersionId;
                 return next();
             }),
-            putObjectSource: next => srcS3.putObject({
+
+            putObjectSource: next => srcS3.send(new PutObjectCommand({
                 Bucket: bucketSource,
                 Key: keyName,
-                Body: Buffer.from(testData),
-            }, next),
-            enableVersioningSource: next => srcS3.putBucketVersioning({
+                Body: Buffer.from(testData)
+            }), next),
+
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
                 Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -1518,19 +1812,19 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObjectByVersionId: next => dstS3.headObject({
+            headObjectByVersionId: next => dstS3.send(new HeadObjectCommand({
                 Bucket: bucketDestination,
                 Key: keyName,
-                VersionId: versionId,
-            }, next),
-            headObjectByNullVersionId: next => dstS3.headObject({
+                VersionId: versionId
+            }), next),
+            headObjectByNullVersionId: next => dstS3.send(new HeadObjectCommand({
                 Bucket: bucketDestination,
                 Key: keyName,
-                VersionId: 'null',
-            }, next),
-            listObjectVersions: next => dstS3.listObjectVersions({
-                Bucket: bucketDestination,
-            }, next),
+                VersionId: 'null'
+            }), next),
+            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -1562,30 +1856,35 @@ describe('backbeat routes for replication', () => {
         let objMD;
 
         async.series({
-            putObjectDestinationInitial: next => dstS3.putObject({
+            putObjectDestinationInitial: next => dstS3.send(new PutObjectCommand({
                 Bucket: bucketDestination,
                 Key: keyName,
-                Body: Buffer.from(testData),
-            }, next),
-            enableVersioningDestination: next => dstS3.putBucketVersioning({
+                Body: Buffer.from(testData)
+            }), next),
+
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
                 Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
-            putObjectSource: next => srcS3.putObject({
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            putObjectSource: next => srcS3.send(new PutObjectCommand({
                 Bucket: bucketSource,
                 Key: keyName,
-                Body: Buffer.from(testData),
-            }, next),
-            enableVersioningSource: next => srcS3.putBucketVersioning({
+                Body: Buffer.from(testData)
+            }), next),
+
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
                 Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
-            putObjectTaggingSource: next => srcS3.putObjectTagging({
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            putObjectTaggingSource: next => srcS3.send(new PutObjectTaggingCommand({
                 Bucket: bucketSource,
                 Key: keyName,
                 VersionId: 'null',
-                Tagging: { TagSet: [{ Key: 'key1', Value: 'value1' }] },
-            }, next),
+                Tagging: { TagSet: [{ Key: 'key1', Value: 'value1' }] }
+            }), next),
+
             getMetadata: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -1614,19 +1913,19 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMD,
             }, next),
-            headObjectNullVersion: next => dstS3.headObject({
+            headObjectNullVersion: next => dstS3.send(new HeadObjectCommand({
                 Bucket: bucketDestination,
                 Key: keyName,
-                VersionId: 'null',
-            }, next),
-            getObjectTaggingNullVersion: next => dstS3.getObjectTagging({
+                VersionId: 'null'
+            }), next),
+            getObjectTaggingNullVersion: next => dstS3.send(new GetObjectTaggingCommand({
                 Bucket: bucketDestination,
                 Key: keyName,
-                VersionId: 'null',
-            }, next),
-            listObjectVersions: next => dstS3.listObjectVersions({
-                Bucket: bucketDestination,
-            }, next),
+                VersionId: 'null'
+            }), next),
+            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);
@@ -1657,30 +1956,34 @@ describe('backbeat routes for replication', () => {
         let versionId;
 
         async.series({
-            enableVersioningDestination: next => dstS3.putBucketVersioning({
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
                 Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
-            putObjectDestination: next => dstS3.putObject({
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
+            putObjectDestination: next => dstS3.send(new PutObjectCommand({
                 Bucket: bucketDestination,
                 Key: keyName,
-                Body: Buffer.from(testData),
-            }, (err, data) => {
+                Body: Buffer.from(testData)
+            }), (err, data) => {
                 if (err) {
                     return next(err);
                 }
                 versionId = data.VersionId;
                 return next();
             }),
-            putObjectSource: next => srcS3.putObject({
+
+            putObjectSource: next => srcS3.send(new PutObjectCommand({
                 Bucket: bucketSource,
                 Key: keyName,
-                Body: Buffer.from(testData),
-            }, next),
-            enableVersioningSource: next => srcS3.putBucketVersioning({
+                Body: Buffer.from(testData)
+            }), next),
+
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
                 Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
+                VersioningConfiguration: { Status: 'Enabled' }
+            }), next),
+
             simulateLifecycleNullVersion: next => makeBackbeatRequest({
                 method: 'GET',
                 resourceType: 'metadata',
@@ -1732,19 +2035,19 @@ describe('backbeat routes for replication', () => {
                 authCredentials: destinationAuthCredentials,
                 requestBody: objMDReplicated,
             }, next),
-            headObjectByVersionId: next => dstS3.headObject({
+            headObjectByVersionId: next => dstS3.send(new HeadObjectCommand({
                 Bucket: bucketDestination,
                 Key: keyName,
-                VersionId: versionId,
-            }, next),
-            headObjectByNullVersion: next => dstS3.headObject({
+                VersionId: versionId
+            }), next),
+            headObjectByNullVersion: next => dstS3.send(new HeadObjectCommand({
                 Bucket: bucketDestination,
                 Key: keyName,
-                VersionId: 'null',
-            }, next),
-            listObjectVersionsDestination: next => dstS3.listObjectVersions({
-                Bucket: bucketDestination,
-            }, next),
+                VersionId: 'null'
+            }), next),
+            listObjectVersionsDestination: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination
+            }), next),
         }, (err, results) => {
             if (err) {
                 return done(err);

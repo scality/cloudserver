@@ -1,10 +1,11 @@
-const AWS = require('aws-sdk');
+const { fromIni } = require('@aws-sdk/credential-providers');
 const fs = require('fs');
 const path = require('path');
 const { config } = require('../../../../../lib/Config');
 const https = require('https');
 const http = require('http');
-function getAwsCredentials(profile, credFile) {
+
+function getAwsCredentials(profile, credFile = '/.aws/credentials') {
     const filename = path.join(process.env.HOME, credFile);
 
     try {
@@ -14,7 +15,7 @@ function getAwsCredentials(profile, credFile) {
         throw new Error(msg);
     }
 
-    return new AWS.SharedIniFileCredentials({ profile, filename });
+    return fromIni({ profile, filepath: filename });
 }
 
 function getRealAwsConfig(location) {
@@ -26,19 +27,19 @@ function getRealAwsConfig(location) {
     const params = {
         endpoint: gcpEndpoint ?
             `${proto}://${gcpEndpoint}` : `${proto}://${awsEndpoint}`,
-        signatureVersion: 'v4',
+        // signatureVersion: 'v4', // Not needed in v3, handled automatically
     };
     if (config.locationConstraints[location].type === 'gcp') {
         params.mainBucket = bucketName;
         params.mpuBucket = mpuBucketName;
     }
     if (useHTTPS) {
-        params.httpOptions = {
-            agent: new https.Agent({ keepAlive: true }),
+        params.requestHandler = {
+            httpsAgent: new https.Agent({ keepAlive: true }),
         };
     } else {
-        params.httpOptions = {
-            agent: new http.Agent({ keepAlive: true }),
+        params.requestHandler = {
+            httpAgent: new http.Agent({ keepAlive: true }),
         };
     }
     if (credentialsProfile) {
@@ -48,13 +49,13 @@ function getRealAwsConfig(location) {
         return params;
     }
     if (pathStyle) {
-        params.s3ForcePathStyle = true;
+        params.forcePathStyle = true;
     }
-    if (!useHTTPS) {
-        params.sslEnabled = false;
-    }
-    params.accessKeyId = locCredentials.accessKey;
-    params.secretAccessKey = locCredentials.secretKey;
+    // sslEnabled not needed in v3, handled by endpoint protocol
+    params.credentials = {
+        accessKeyId: locCredentials.accessKey,
+        secretAccessKey: locCredentials.secretKey,
+    };
     return params;
 }
 

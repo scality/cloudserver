@@ -1,6 +1,10 @@
 const assert = require('assert');
 const async = require('async');
 const withV4 = require('../../support/withV4');
+const { GetObjectCommand,
+    PutObjectCommand,
+    CreateBucketCommand,
+    DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const {
     awsS3,
@@ -22,17 +26,25 @@ const bucket = `getawsversioning${genUniqID()}`;
 function getAndAssertVersions(s3, bucket, key, versionIds, expectedData,
     cb) {
     async.mapSeries(versionIds, (versionId, next) => {
-        s3.getObject({ Bucket: bucket, Key: key,
-            VersionId: versionId }, next);
+        s3.send(new GetObjectCommand({ Bucket: bucket, Key: key,
+            VersionId: versionId })).then(result => {
+                next(null, {
+                    VersionId: result.VersionId,
+                    Body: result.Body.toString()
+                });
+            })
+            .catch(err => {
+                next(err);
+            });
     }, (err, results) => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `getting object, got error ${err}`);
+        if (err) {
+            return cb(err);
+        }
         const resultIds = results.map(result => result.VersionId);
-        const resultData = results.map(result =>
-            result.Body.toString());
+        const resultData = results.map(result => result.Body);
         assert.deepStrictEqual(resultIds, versionIds);
         assert.deepStrictEqual(resultData, expectedData);
-        cb();
+        return cb();
     });
 }
 
@@ -47,7 +59,7 @@ function testSuite() {
             process.stdout.write('Creating bucket');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucket({ Bucket: bucket }).promise()
+            return s3.send(new CreateBucketCommand({ Bucket: bucket }))
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
@@ -71,28 +83,30 @@ function testSuite() {
         it('should not return version ids when versioning has not been ' +
         'configured via CloudServer', done => {
             const key = `somekey-${genUniqID()}`;
-            s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
-            Metadata: { 'scal-location-constraint': awsLocation } },
-            (err, data) => {
-                assert.strictEqual(err, null, 'Expected success ' +
-                    `putting object, got error ${err}`);
+            s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: someBody,
+            Metadata: { 'scal-location-constraint': awsLocation } })).then(data => {
                 assert.strictEqual(data.VersionId, undefined);
                 getAndAssertResult(s3, { bucket, key, body: someBody,
                     expectedVersionId: false }, done);
+            }).catch(err => {
+                assert.strictEqual(err, null, 'Expected success ' +
+                    `putting object, got error ${err}`);
+                done();
             });
         });
 
         it('should not return version ids when versioning has not been ' +
         'configured via CloudServer, even when version id specified', done => {
             const key = `somekey-${genUniqID()}`;
-            s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
-            Metadata: { 'scal-location-constraint': awsLocation } },
-            (err, data) => {
-                assert.strictEqual(err, null, 'Expected success ' +
-                    `putting object, got error ${err}`);
+            s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: someBody,
+            Metadata: { 'scal-location-constraint': awsLocation } })).then(data => {
                 assert.strictEqual(data.VersionId, undefined);
                 getAndAssertResult(s3, { bucket, key, body: someBody,
                     versionId: 'null', expectedVersionId: false }, done);
+            }).catch(err => {   
+                assert.strictEqual(err, null, 'Expected success ' +
+                    `putting object, got error ${err}`);
+                done();
             });
         });
 
@@ -100,9 +114,13 @@ function testSuite() {
         'has been configured via CloudServer', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
-                next => s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
-                    Metadata: { 'scal-location-constraint': awsLocation } },
-                    err => next(err)),
+                next => s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: someBody,
+                    Metadata: { 'scal-location-constraint': awsLocation } })).then(() => next())
+                .catch(err => {
+                    assert.strictEqual(err, null, 'Expected success ' +
+                        `putting object, got error ${err}`);
+                    next(err);
+                }),
                 next => enableVersioning(s3, bucket, next),
                 // get with version id specified
                 next => getAndAssertResult(s3, { bucket, key, body: someBody,
@@ -133,13 +151,21 @@ function testSuite() {
             const key = `somekey-${genUniqID()}`;
             const data = ['data1', 'data2'];
             async.waterfall([
-                next => s3.putObject({ Bucket: bucket, Key: key, Body: data[0],
-                    Metadata: { 'scal-location-constraint': awsLocation } },
-                    err => next(err)),
+                next => s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: data[0],
+                    Metadata: { 'scal-location-constraint': awsLocation } })).then(() => next())
+                .catch(err => {
+                    assert.strictEqual(err, null, 'Expected success ' +
+                        `putting object, got error ${err}`);
+                    next(err);
+                }),
                 next => suspendVersioning(s3, bucket, next),
-                next => s3.putObject({ Bucket: bucket, Key: key, Body: data[1],
-                    Metadata: { 'scal-location-constraint': awsLocation } },
-                    err => next(err)),
+                next => s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: data[1],
+                    Metadata: { 'scal-location-constraint': awsLocation } })).then(() => next())
+                .catch(err => {
+                    assert.strictEqual(err, null, 'Expected success ' +
+                        `putting object, got error ${err}`);
+                    next(err);
+                }),
                 // get latest version
                 next => getAndAssertResult(s3, { bucket, key, body: data[1],
                     expectedVersionId: 'null' }, next),
@@ -155,23 +181,32 @@ function testSuite() {
             const data = [...Array(3).keys()].map(i => `data${i}`);
             let firstVersionId;
             async.waterfall([
-                next => s3.putObject({ Bucket: bucket, Key: key, Body: data[0],
-                    Metadata: { 'scal-location-constraint': awsLocation } },
-                    err => next(err)),
+                next => s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: data[0],
+                    Metadata: { 'scal-location-constraint': awsLocation } })).then(() => next())
+                .catch(err => {
+                    assert.strictEqual(err, null, 'Expected success ' +
+                        `putting object, got error ${err}`);
+                    next(err);
+                }),
                 next => enableVersioning(s3, bucket, next),
-                next => s3.putObject({ Bucket: bucket, Key: key, Body: data[1],
-                    Metadata: { 'scal-location-constraint': awsLocation } },
-                    (err, result) => {
-                        assert.strictEqual(err, null, 'Expected success ' +
-                            `putting object, got error ${err}`);
+                next => s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: data[1],
+                    Metadata: { 'scal-location-constraint': awsLocation } })).then(result => {
                         assert.notEqual(result.VersionId, 'null');
                         firstVersionId = result.VersionId;
                         next();
+                    }).catch(err => {
+                        assert.strictEqual(err, null, 'Expected success ' +
+                            `putting object, got error ${err}`);
+                        next(err);
                     }),
                 next => suspendVersioning(s3, bucket, next),
-                next => s3.putObject({ Bucket: bucket, Key: key, Body: data[3],
-                    Metadata: { 'scal-location-constraint': awsLocation } },
-                    err => next(err)),
+                next => s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: data[3],
+                    Metadata: { 'scal-location-constraint': awsLocation } })).then(() => next())
+                .catch(err => {
+                    assert.strictEqual(err, null, 'Expected success ' +
+                        `putting object, got error ${err}`);
+                    next(err);
+                }),
                 // get latest version
                 next => getAndAssertResult(s3, { bucket, key, body: data[3],
                     expectedVersionId: 'null' }, next),
@@ -191,9 +226,11 @@ function testSuite() {
             const data = [...Array(5).keys()].map(i => i.toString());
             const versionIds = ['null'];
             async.waterfall([
-                next => s3.putObject({ Bucket: bucket, Key: key, Body: data[0],
-                    Metadata: { 'scal-location-constraint': awsLocation } },
-                    err => next(err)),
+                next => s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: data[0],
+                    Metadata: { 'scal-location-constraint': awsLocation } })).then(() => next())
+                .catch(err => {
+                    next(err);
+                }),
                 next => putVersionsToAws(s3, bucket, key, data.slice(1), next),
                 (ids, next) => {
                     versionIds.push(...ids);
@@ -210,9 +247,11 @@ function testSuite() {
             const data = [...Array(5).keys()].map(i => i.toString());
             const versionIds = ['null'];
             async.waterfall([
-                next => s3.putObject({ Bucket: bucket, Key: key, Body: data[0],
-                    Metadata: { 'scal-location-constraint': awsLocation } },
-                    err => next(err)),
+                next => s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: data[0],
+                    Metadata: { 'scal-location-constraint': awsLocation } })).then(() => next())
+                .catch(err => {
+                    next(err);
+                }),
                 next => putVersionsToAws(s3, bucket, key, data.slice(1), next),
                 (ids, next) => {
                     versionIds.push(...ids);
@@ -276,9 +315,11 @@ function testSuite() {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
-                next => s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
-                    Metadata: { 'scal-location-constraint': awsLocation } },
-                    (err, res) => next(err, res.VersionId)),
+                next => s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: someBody,
+                    Metadata: { 'scal-location-constraint': awsLocation } })).then(res => next(null, res.VersionId))
+                .catch(err => {
+                    next(err);
+                }),
                 // create a delete marker in AWS
                 (versionId, next) => awsS3.deleteObject({ Bucket: awsBucket,
                     Key: key }, err => next(err, versionId)),
@@ -293,12 +334,17 @@ function testSuite() {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
-                next => s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
-                    Metadata: { 'scal-location-constraint': awsLocation } },
-                    (err, res) => next(err, res.VersionId)),
+                next => s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: someBody,
+                    Metadata: { 'scal-location-constraint': awsLocation } })).then(res => next(null, res.VersionId))
+                .catch(err => {
+                    next(err);
+                }),
                 // put an object in AWS
-                (versionId, next) => awsS3.putObject({ Bucket: awsBucket,
-                    Key: key }, err => next(err, versionId)),
+                (versionId, next) => awsS3.send(new PutObjectCommand({ Bucket: awsBucket,
+                    Key: key })).then(() => next(null, versionId))
+                .catch(err => {
+                    next(err);
+                }),
                 (versionId, next) => getAndAssertResult(s3, { bucket, key,
                     body: someBody, expectedVersionId: versionId }, next),
             ], done);
@@ -310,17 +356,25 @@ function testSuite() {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
-                next => s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
-                    Metadata: { 'scal-location-constraint': awsLocation } },
-                    (err, res) => next(err, res.VersionId)),
+                next => s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: someBody,
+                    Metadata: { 'scal-location-constraint': awsLocation } })).then(res => next(null, res.VersionId))
+                .catch(err => {
+                    next(err);
+                }),
                 // get the latest version id in aws
-                (s3vid, next) => awsS3.getObject({ Bucket: awsBucket,
-                    Key: key }, (err, res) => next(err, s3vid, res.VersionId)),
-                (s3VerId, awsVerId, next) => awsS3.deleteObject({
-                    Bucket: awsBucket, Key: key, VersionId: awsVerId },
-                    err => next(err, s3VerId)),
-                (s3VerId, next) => s3.getObject({ Bucket: bucket, Key: key },
-                    err => {
+                (s3vid, next) => awsS3.send(new GetObjectCommand({ Bucket: awsBucket,
+                    Key: key })).then(res => next(null, s3vid, res.VersionId))
+                .catch(err => {
+                    next(err);
+                }),
+                (s3VerId, awsVerId, next) => awsS3.send(new DeleteObjectCommand({
+                    Bucket: awsBucket, Key: key, VersionId: awsVerId })).then(() => next(null, s3VerId))
+                .catch(err => {
+                    next(err);
+                }),
+                (s3VerId, next) => s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
+                .then(res => next(null, s3VerId, res.VersionId))
+                .catch(err => {
                         assert.strictEqual(err.code, 'LocationNotFound');
                         assert.strictEqual(err.statusCode, 424);
                         next();
@@ -334,17 +388,26 @@ function testSuite() {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
-                next => s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
-                    Metadata: { 'scal-location-constraint': awsLocation } },
-                    (err, res) => next(err, res.VersionId)),
+                next => s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: someBody,
+                    Metadata: { 'scal-location-constraint': awsLocation } })).then(res => next(null, res.VersionId))
+                .catch(err => {
+                    next(err);
+                }),
                 // get the latest version id in aws
-                (s3vid, next) => awsS3.getObject({ Bucket: awsBucket,
-                    Key: key }, (err, res) => next(err, s3vid, res.VersionId)),
-                (s3VerId, awsVerId, next) => awsS3.deleteObject({
-                    Bucket: awsBucket, Key: key, VersionId: awsVerId },
-                    err => next(err, s3VerId)),
-                (s3VerId, next) => s3.getObject({ Bucket: bucket, Key: key,
-                    VersionId: s3VerId }, err => {
+                (s3vid, next) => awsS3.send(new GetObjectCommand({ Bucket: awsBucket,
+                    Key: key })).then(res => next(null, s3vid, res.VersionId))
+                .catch(err => {
+                    next(err);
+                }),
+                (s3VerId, awsVerId, next) => awsS3.send(new DeleteObjectCommand({
+                    Bucket: awsBucket, Key: key, VersionId: awsVerId })).then(() => next(null, s3VerId))
+                .catch(err => {
+                    next(err);
+                }),
+                (s3VerId, next) => s3.send(new GetObjectCommand({ Bucket: bucket, Key: key,
+                    VersionId: s3VerId })).then(() => {
+                    next();
+                }).catch(err => {
                     assert.strictEqual(err.code, 'LocationNotFound');
                     assert.strictEqual(err.statusCode, 424);
                     next();

@@ -1,4 +1,7 @@
 const assert = require('assert');
+const { CreateBucketCommand,
+    PutObjectCommand,
+    GetObjectCommand } = require('@aws-sdk/client-s3');
 
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const withV4 = require('../../support/withV4');
@@ -31,7 +34,7 @@ function testSuite() {
             process.stdout.write('Creating bucket');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucket({ Bucket: azureContainerName }).promise()
+            return s3.send(new CreateBucketCommand({ Bucket: azureContainerName }))
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
@@ -56,26 +59,30 @@ function testSuite() {
                 const testKey = `${key.name}-${Date.now()}`;
                 before(done => {
                     setTimeout(() => {
-                        s3.putObject({
+                        s3.send(new PutObjectCommand({
                             Bucket: azureContainerName,
                             Key: testKey,
                             Body: key.body,
                             Metadata: {
                                 'scal-location-constraint': azureLocation,
                             },
-                        }, done);
+                        })).then(() => done())
+                        .catch(err => {
+                            done(err);
+                        });
                     }, azureTimeout);
                 });
 
                 it(`should get an ${key.describe} object from Azure`, done => {
-                    s3.getObject({ Bucket: azureContainerName, Key:
-                      testKey },
-                        (err, res) => {
-                            assert.equal(err, null, 'Expected success ' +
-                                `but got error ${err}`);
-                            assert.strictEqual(res.ETag, `"${key.MD5}"`);
-                            done();
-                        });
+                    s3.send(new GetObjectCommand({ Bucket: azureContainerName, Key:
+                      testKey })).then(res => {
+                        assert.strictEqual(res.ETag, `"${key.MD5}"`);
+                        done();
+                    }).catch(err => {
+                        assert.equal(err, null, 'Expected success ' +
+                            `but got error ${err}`);
+                        done(err);
+                    });
                 });
             });
         });
@@ -83,44 +90,51 @@ function testSuite() {
         describe('with range', () => {
             const azureObject = uniqName(keyObject);
             before(done => {
-                s3.putObject({
+                s3.send(new PutObjectCommand({
                     Bucket: azureContainerName,
                     Key: azureObject,
                     Body: '0123456789',
                     Metadata: {
                         'scal-location-constraint': azureLocation,
                     },
-                }, done);
+                })).then(() => done())
+                .catch(err => {
+                    done(err);
+                });
             });
 
             it('should get an object with body 012345 with "bytes=0-5"',
             done => {
-                s3.getObject({
+                s3.send(new GetObjectCommand({
                     Bucket: azureContainerName,
                     Key: azureObject,
                     Range: 'bytes=0-5',
-                }, (err, res) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                      `error ${err}`);
+                })).then(res => {
                     assert.equal(res.ContentLength, 6);
                     assert.strictEqual(res.ContentRange, 'bytes 0-5/10');
                     assert.strictEqual(res.Body.toString(), '012345');
                     done();
+                }).catch(err => {
+                    assert.equal(err, null, 'Expected success but got ' +
+                      `error ${err}`);
+                    done(err);
                 });
             });
             it('should get an object with body 456789 with "bytes=4-"',
             done => {
-                s3.getObject({
+                s3.send(new GetObjectCommand({
                     Bucket: azureContainerName,
                     Key: azureObject,
                     Range: 'bytes=4-',
-                }, (err, res) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                      `error ${err}`);
+                })).then(res => {
                     assert.equal(res.ContentLength, 6);
                     assert.strictEqual(res.ContentRange, 'bytes 4-9/10');
                     assert.strictEqual(res.Body.toString(), '456789');
                     done();
+                }).catch(err => {
+                    assert.equal(err, null, 'Expected success but got ' +
+                      `error ${err}`);
+                    done(err);
                 });
             });
         });
@@ -128,33 +142,38 @@ function testSuite() {
         describe('returning error', () => {
             const azureObject = uniqName(keyObject);
             before(done => {
-                s3.putObject({
+                s3.send(new PutObjectCommand({
                     Bucket: azureContainerName,
                     Key: azureObject,
                     Body: normalBody,
                     Metadata: {
                         'scal-location-constraint': azureLocation,
                     },
-                }, err => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error ${err}`);
+                })).then(() => {
                     azureClient.getContainerClient(azureContainerName)
                         .deleteBlob(azureObject).then(done, err => {
                             assert.equal(err, null, 'Expected success but got ' +
                                 `error ${err}`);
                             done(err);
                         });
+                })
+                .catch(err => {
+                    assert.equal(err, null, 'Expected success but got ' +
+                        `error ${err}`);
+                    done(err);
                 });
             });
 
             it('should return an error on get done to object deleted ' +
             'from Azure', done => {
-                s3.getObject({
+                s3.send(new GetObjectCommand({
                     Bucket: azureContainerName,
                     Key: azureObject,
-                }, err => {
-                    assert.strictEqual(err.code, 'LocationNotFound');
+                })).then(() => {
                     done();
+                }).catch(err => {
+                    assert.equal(err.code, 'LocationNotFound');
+                    done(err);
                 });
             });
         });
