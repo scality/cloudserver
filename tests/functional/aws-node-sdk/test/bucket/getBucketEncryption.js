@@ -1,5 +1,8 @@
 const assert = require('assert');
-const { S3 } = require('aws-sdk');
+const { S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    GetBucketEncryptionCommand } = require('@aws-sdk/client-s3');
 
 const checkError = require('../../lib/utility/checkError');
 const getConfig = require('../support/config');
@@ -22,83 +25,105 @@ function setEncryptionInfo(info, cb) {
 describe('aws-sdk test get bucket encryption', () => {
     let s3;
 
-    before(done => {
+    before(async () => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3 = new S3(config);
-        metadata.setup(done);
+        s3 = new S3Client(config);
+        await new Promise((resolve, reject) => {
+            metadata.setup(err => err ? reject(err) : resolve());
+        });
+    }); 
+
+    beforeEach(async () => {
+        await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
     });
 
-    beforeEach(done => s3.createBucket({ Bucket: bucketName }, done));
+    afterEach(async () => {
+        await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
+    });
 
-    afterEach(done => s3.deleteBucket({ Bucket: bucketName }, done));
-
-    it('should return NoSuchBucket error if bucket does not exist', done => {
-        s3.getBucketEncryption({ Bucket: 'invalid' }, err => {
+    it('should return NoSuchBucket error if bucket does not exist', async () => {
+        try {
+            await s3.send(new GetBucketEncryptionCommand({ Bucket: 'invalid' }));
+            throw new Error('Expected NoSuchBucket error');
+        } catch (err) {
             checkError(err, 'NoSuchBucket', 404);
-            done();
-        });
+        }
     });
 
-    it('should return ServerSideEncryptionConfigurationNotFoundError if no sse configured', done => {
-        s3.getBucketEncryption({ Bucket: bucketName }, err => {
+    it('should return ServerSideEncryptionConfigurationNotFoundError if no sse configured', async () => {
+        try {
+            await s3.send(new GetBucketEncryptionCommand({ Bucket: bucketName }));
+            throw new Error('Expected ServerSideEncryptionConfigurationNotFoundError');
+        } catch (err) {
             checkError(err, 'ServerSideEncryptionConfigurationNotFoundError', 404);
-            done();
-        });
+        }
     });
 
-    it('should return ServerSideEncryptionConfigurationNotFoundError if `mandatory` flag not set', done => {
-        setEncryptionInfo({ cryptoScheme: 1, algorithm: 'AES256', masterKeyId: '12345', mandatory: false }, err => {
-            assert.ifError(err);
-            s3.getBucketEncryption({ Bucket: bucketName }, err => {
-                checkError(err, 'ServerSideEncryptionConfigurationNotFoundError', 404);
-                done();
+    it('should return ServerSideEncryptionConfigurationNotFoundError if `mandatory` flag not set', async () => {
+        await new Promise((resolve, reject) => {
+            setEncryptionInfo({ cryptoScheme: 1, algorithm: 'AES256', masterKeyId: '12345', mandatory: false }, err => {
+                if (err) {return reject(err);}
+                return resolve();
             });
         });
+
+        try {
+            await s3.send(new GetBucketEncryptionCommand({ Bucket: bucketName }));
+            throw new Error('Expected ServerSideEncryptionConfigurationNotFoundError');
+        } catch (err) {
+            checkError(err, 'ServerSideEncryptionConfigurationNotFoundError', 404);
+        }
     });
 
-    it('should include KMSMasterKeyID if user has configured a custom master key', done => {
-        setEncryptionInfo({ cryptoScheme: 1, algorithm: 'aws:kms', masterKeyId: '12345',
-                            configuredMasterKeyId: '54321', mandatory: true }, err => {
-            assert.ifError(err);
-            s3.getBucketEncryption({ Bucket: bucketName }, (err, res) => {
-                assert.ifError(err);
-                assert.deepStrictEqual(res, {
-                    ServerSideEncryptionConfiguration: {
-                        Rules: [
-                            {
-                                ApplyServerSideEncryptionByDefault: {
-                                    SSEAlgorithm: 'aws:kms',
-                                    KMSMasterKeyID: '54321',
-                                },
-                                BucketKeyEnabled: false,
+    it('should include KMSMasterKeyID if user has configured a custom master key', async () => {
+        await new Promise((resolve, reject) => {
+            setEncryptionInfo({ cryptoScheme: 1, algorithm: 'aws:kms', masterKeyId: '12345',
+                configuredMasterKeyId: '54321', mandatory: true }, err => {
+                if (err) {return reject(err);}
+                return resolve();
+            });
+        });
+
+        const { $metadata, ...res } = await s3.send(new GetBucketEncryptionCommand({ Bucket: bucketName }));
+        // eslint-disable-next-line no-console
+        console.log('GetBucketEncryption response:', res);
+        assert.deepStrictEqual(res, {
+            ServerSideEncryptionConfiguration: {
+                Rules: [
+                    {
+                            ApplyServerSideEncryptionByDefault: {
+                                SSEAlgorithm: 'aws:kms',
+                                KMSMasterKeyID: '54321',
                             },
-                        ],
+                            BucketKeyEnabled: false,
                     },
-                });
-                done();
-            });
+                ],
+            },
         });
+        assert.strictEqual($metadata.httpStatusCode, 200);
     });
 
-    it('should not include KMSMasterKeyID if no user configured master key', done => {
-        setEncryptionInfo({ cryptoScheme: 1, algorithm: 'AES256', masterKeyId: '12345', mandatory: true }, err => {
-            assert.ifError(err);
-            s3.getBucketEncryption({ Bucket: bucketName }, (err, res) => {
-                assert.ifError(err);
-                assert.deepStrictEqual(res, {
-                    ServerSideEncryptionConfiguration: {
-                        Rules: [
-                            {
-                                ApplyServerSideEncryptionByDefault: {
-                                    SSEAlgorithm: 'AES256',
-                                },
-                                BucketKeyEnabled: false,
-                            },
-                        ],
-                    },
-                });
-                done();
+    it('should not include KMSMasterKeyID if no user configured master key', async () => {
+        await new Promise((resolve, reject) => {
+            setEncryptionInfo({ cryptoScheme: 1, algorithm: 'AES256', masterKeyId: '12345', mandatory: true }, err => {
+                if (err) {return reject(err);}
+                return resolve();
             });
         });
+
+        const { $metadata, ...res } = await s3.send(new GetBucketEncryptionCommand({ Bucket: bucketName }));
+        assert.deepStrictEqual(res, {
+            ServerSideEncryptionConfiguration: {
+                Rules: [
+                    {
+                            ApplyServerSideEncryptionByDefault: {
+                                SSEAlgorithm: 'AES256',
+                            },
+                            BucketKeyEnabled: false,
+                    },
+                ],
+            },
+        });
+        assert.strictEqual($metadata.httpStatusCode, 200);
     });
 });

@@ -1,5 +1,6 @@
-const AWS = require('aws-sdk');
-const S3 = AWS.S3;
+const { S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand } = require('@aws-sdk/client-s3');
 
 const assert = require('assert');
 const getConfig = require('../support/config');
@@ -17,13 +18,16 @@ describe('Test update bucket quota', () => {
 
     before(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3 = new S3(config);
-        AWS.config.update(config);
+        s3 = new S3Client(config);
     });
 
-    beforeEach(done => s3.createBucket({ Bucket: bucket }, done));
+    beforeEach(async () => {
+        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+    });
 
-    afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
+    afterEach(async () => {
+        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+    });
 
     it('should update the quota', async () => {
         try {
@@ -42,7 +46,7 @@ describe('Test update bucket quota', () => {
         }
     });
 
-    it('should return error when quota is negative', async () => {
+    it('should return invalid request error for negative quota', async () => {
         try {
             await sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(negativeQuota));
         } catch (err) {
@@ -51,18 +55,19 @@ describe('Test update bucket quota', () => {
         }
     });
 
-    it('should return error when quota is not in correct format', async () => {
+    it('should return invalid request error for wrong quota format', async () => {
         try {
-            await sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, wrongquotaFromat);
+            await sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(wrongquotaFromat));
         } catch (err) {
             assert.strictEqual(err.Error.Code[0], 'InvalidArgument');
             assert.strictEqual(err.Error.Message[0], 'Request body must be a JSON object');
         }
     });
 
-    it('should handle large quota values', async () => {
+    it('should accept large quota', async () => {
         try {
             await sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(largeQuota));
+            assert.ok(true);
         } catch (err) {
             assert.fail(`Expected no error, but got ${err}`);
         }

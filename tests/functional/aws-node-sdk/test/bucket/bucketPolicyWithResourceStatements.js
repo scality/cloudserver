@@ -1,10 +1,13 @@
 const assert = require('assert');
-const AWS = require('aws-sdk');
+const {
+    PutBucketPolicyCommand,
+    ListObjectsCommand,
+    GetObjectCommand,
+    PutObjectCommand } = require('@aws-sdk/client-s3');
 const { errorInstances } = require('arsenal');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
-const { VALIDATE_CREDENTIALS, SIGN } = AWS.EventListeners.Core;
 
 withV4(sigCfg => {
     const ownerAccountBucketUtil = new BucketUtility('default', sigCfg);
@@ -13,13 +16,33 @@ withV4(sigCfg => {
 
     function awsRequest(auth, operation, params, callback) {
         if (auth) {
-            ownerAccountBucketUtil.s3[operation](params, callback);
+            // Use authenticated client
+            const commandMap = {
+                'listObjects': ListObjectsCommand,
+                'getObject': GetObjectCommand,
+                'putObject': PutObjectCommand,
+            };
+            const CommandCtor = commandMap[operation];
+            ownerAccountBucketUtil.s3.send(new CommandCtor(params))
+                .then(data => callback(null, data))
+                .catch(err => callback(err));
         } else {
-            const bucketUtil = new BucketUtility('default', sigCfg);
-            const request = bucketUtil.s3[operation](params);
-            request.removeListener('validate', VALIDATE_CREDENTIALS);
-            request.removeListener('sign', SIGN);
-            request.send(callback);
+            // Create unauthenticated client
+            const unauthClient = new BucketUtility('default', {
+                ...sigCfg,
+                credentials: { accessKeyId: '', secretAccessKey: '' },
+                forcePathStyle: true,
+                signer: { sign: async request => request },
+            });
+            const commandMap = {
+                'listObjects': ListObjectsCommand,
+                'getObject': GetObjectCommand,
+                'putObject': PutObjectCommand,
+            };
+            const CommandCtor = commandMap[operation];
+            unauthClient.s3.send(new CommandCtor(params))
+                .then(data => callback(null, data))
+                .catch(err => callback(err));
         }
     }
 
@@ -32,7 +55,7 @@ withV4(sigCfg => {
 
     function cbWithError(done) {
         return err => {
-            assert.strictEqual(err.statusCode, errorInstances.AccessDenied.code);
+            assert.strictEqual(err.$metadata.httpStatusCode, errorInstances.AccessDenied.code);
             done();
         };
     }
@@ -54,13 +77,16 @@ withV4(sigCfg => {
                 Version: '2012-10-17',
                 Statement: [statement],
             };
-            s3.putBucketPolicy({
+            s3.send(new PutBucketPolicyCommand({
                 Bucket: testBuckets[0],
                 Policy: JSON.stringify(bucketPolicy),
-            }, err => {
-                assert.ifError(err);
+            }))
+            .then(() => {
                 const param = { Bucket: testBuckets[0] };
                 awsRequest(true, 'listObjects', param, cbNoError(done));
+            })
+            .catch(err => {
+                assert.ifError(err);
             });
         });
 
@@ -76,13 +102,16 @@ withV4(sigCfg => {
                 Version: '2012-10-17',
                 Statement: [statement],
             };
-            s3.putBucketPolicy({
+            s3.send(new PutBucketPolicyCommand({
                 Bucket: testBuckets[0],
                 Policy: JSON.stringify(bucketPolicy),
-            }, err => {
-                assert.ifError(err);
+            }))
+            .then(() => {
                 const param = { Bucket: testBuckets[1] };
                 awsRequest(false, 'listObjects', param, cbWithError(done));
+            })
+            .catch(err => {
+                assert.ifError(err);
             });
         });
 
@@ -98,13 +127,16 @@ withV4(sigCfg => {
                 Version: '2012-10-17',
                 Statement: [statement],
             };
-            s3.putBucketPolicy({
+            s3.send(new PutBucketPolicyCommand({
                 Bucket: testBuckets[0],
                 Policy: JSON.stringify(bucketPolicy),
-            }, err => {
-                assert.ifError(err);
+            }))
+            .then(() => {
                 const param = { Bucket: testBuckets[0] };
                 awsRequest(false, 'listObjects', param, cbWithError(done));
+            })
+            .catch(err => {
+                assert.ifError(err);
             });
         });
 
@@ -122,23 +154,24 @@ withV4(sigCfg => {
                 Version: '2012-10-17',
                 Statement: [statement],
             };
-            s3.putBucketPolicy({
+            s3.send(new PutBucketPolicyCommand({
                 Bucket: testBuckets[0],
                 Policy: JSON.stringify(bucketPolicy),
-            }, err => {
-                assert.ifError(err);
-                s3.putObject({
+            }))
+            .then(() => s3.send(new PutObjectCommand({
                     Bucket: testBuckets[0],
                     Body: testBody,
                     Key: testKey,
-                }, er => {
-                    assert.ifError(er);
-                    const param = {
-                        Bucket: testBuckets[0],
-                        Key: testKey,
-                    };
-                    awsRequest(false, 'getObject', param, cbNoError(done));
-                });
+                })))
+            .then(() => {
+                const param = {
+                    Bucket: testBuckets[0],
+                    Key: testKey,
+                };
+                awsRequest(false, 'getObject', param, cbNoError(done));
+            })
+            .catch(err => {
+                assert.ifError(err);
             });
         });
 
@@ -156,23 +189,24 @@ withV4(sigCfg => {
                 Version: '2012-10-17',
                 Statement: [statement],
             };
-            s3.putBucketPolicy({
+            s3.send(new PutBucketPolicyCommand({
                 Bucket: testBuckets[0],
                 Policy: JSON.stringify(bucketPolicy),
-            }, err => {
-                assert.ifError(err);
-                s3.putObject({
+            }))
+            .then(() => s3.send(new PutObjectCommand({
                     Bucket: testBuckets[0],
                     Body: testBody,
                     Key: testKey,
-                }, er => {
-                    assert.ifError(er);
-                    const param = {
-                        Bucket: testBuckets[0],
-                        Key: testKey,
-                    };
-                    awsRequest(false, 'getObject', param, cbNoError(done));
-                });
+                })))
+            .then(() => {
+                const param = {
+                    Bucket: testBuckets[0],
+                    Key: testKey,
+                };
+                awsRequest(false, 'getObject', param, cbNoError(done));
+            })
+            .catch(err => {
+                assert.ifError(err);
             });
         });
 
@@ -190,23 +224,24 @@ withV4(sigCfg => {
                 Version: '2012-10-17',
                 Statement: [statement],
             };
-            s3.putBucketPolicy({
+            s3.send(new PutBucketPolicyCommand({
                 Bucket: testBuckets[0],
                 Policy: JSON.stringify(bucketPolicy),
-            }, err => {
-                assert.ifError(err);
-                s3.putObject({
+            }))
+            .then(() => s3.send(new PutObjectCommand({
                     Bucket: testBuckets[0],
                     Body: testBody,
                     Key: testKey,
-                }, er => {
-                    assert.ifError(er);
-                    const param = {
-                        Bucket: testBuckets[0],
-                        Key: testKey,
-                    };
-                    awsRequest(false, 'getObject', param, cbWithError(done));
-                });
+                })))
+            .then(() => {
+                const param = {
+                    Bucket: testBuckets[0],
+                    Key: testKey,
+                };
+                awsRequest(false, 'getObject', param, cbWithError(done));
+            })
+            .catch(err => {
+                assert.ifError(err);
             });
         });
 
@@ -223,16 +258,19 @@ withV4(sigCfg => {
                 Version: '2012-10-17',
                 Statement: [statement],
             };
-            s3.putBucketPolicy({
+            s3.send(new PutBucketPolicyCommand({
                 Bucket: testBuckets[0],
                 Policy: JSON.stringify(bucketPolicy),
-            }, err => {
-                assert.ifError(err);
+            }))
+            .then(() => {
                 const param = {
                     Bucket: testBuckets[0],
                     Key: 'invalidkey',
                 };
                 awsRequest(false, 'getObject', param, cbWithError(done));
+            })
+            .catch(err => {
+                assert.ifError(err);
             });
         });
 
@@ -249,16 +287,19 @@ withV4(sigCfg => {
                 Version: '2012-10-17',
                 Statement: [statement],
             };
-            s3.putBucketPolicy({
+            s3.send(new PutBucketPolicyCommand({
                 Bucket: testBuckets[0],
                 Policy: JSON.stringify(bucketPolicy),
-            }, err => {
-                assert.ifError(err);
+            }))
+            .then(() => {
                 const param = {
                     Bucket: testBuckets[1],
                     Key: 'invalidkey',
                 };
                 awsRequest(false, 'getObject', param, cbWithError(done));
+            })
+            .catch(err => {
+                assert.ifError(err);
             });
         });
     });

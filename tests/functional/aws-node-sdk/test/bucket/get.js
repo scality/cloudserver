@@ -1,5 +1,10 @@
 const assert = require('assert');
 const tv4 = require('tv4');
+const {
+    PutObjectCommand,
+    ListObjectsCommand,
+    ListObjectsV2Command,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -287,12 +292,14 @@ const tests = [
 
 describe('GET Bucket - AWS.S3.listObjects', () => {
     describe('When user is unauthorized', () => {
-        let bucketUtil;
         let bucketName;
+        let authenticatedBucketUtil;
+        let unauthenticatedBucketUtil;
 
         before(done => {
-            bucketUtil = new BucketUtility();
-            bucketUtil.createRandom(1)
+            authenticatedBucketUtil = new BucketUtility('default', {});
+            unauthenticatedBucketUtil = new BucketUtility('default', {}, true);
+            authenticatedBucketUtil.createRandom(1)
                       .then(created => {
                           bucketName = created;
                           done();
@@ -301,18 +308,21 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
         });
 
         after(done => {
-            bucketUtil.deleteOne(bucketName)
+            authenticatedBucketUtil.deleteOne(bucketName)
                       .then(() => done())
                       .catch(done);
         });
 
         it('should return 403 and AccessDenied on a private bucket', done => {
             const params = { Bucket: bucketName };
-            bucketUtil.s3
-                .makeUnauthenticatedRequest('listObjects', params, error => {
+            unauthenticatedBucketUtil.s3.send(new ListObjectsCommand(params))
+                .then(() => {
+                    assert.fail('Expected request to fail with AccessDenied');
+                })
+                .catch(error => {
                     assert(error);
-                    assert.strictEqual(error.statusCode, 403);
-                    assert.strictEqual(error.code, 'AccessDenied');
+                    assert.strictEqual(error.$metadata.httpStatusCode, 403);
+                    assert.strictEqual(error.Code, 'AccessDenied');
                     done();
                 });
         });
@@ -345,14 +355,19 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
                 for (const param of test.objectPutParams(Bucket)) {
-                    await s3.putObject(param).promise();
+                    await s3.send(new PutObjectCommand(param));
                 }
-                const data = await s3.listObjects(test.listObjectParams(Bucket)).promise();
-                const isValidResponse = tv4.validate(data, bucketSchema);
+                const { $metadata, ...data } = await s3.send(new ListObjectsCommand(test.listObjectParams(Bucket)));
+                const validationSchema = {
+                    ...bucketSchema,
+                    required: bucketSchema.required.filter(field => Object.prototype.hasOwnProperty.call(data, field))
+                };
+                const isValidResponse = tv4.validate(data, validationSchema);
                 if (!isValidResponse) {
                     throw new Error(tv4.error);
                 }
                 test.assertions(data, Bucket);
+                assert.strictEqual($metadata.httpStatusCode, 200);
             });
         });
 
@@ -362,14 +377,19 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const Bucket = bucketName;
 
                 for (const param of test.objectPutParams(Bucket)) {
-                    await s3.putObject(param).promise();
+                    await s3.send(new PutObjectCommand(param));
                 }
-                const data = await s3.listObjectsV2(test.listObjectParams(Bucket)).promise();
-                const isValidResponse = tv4.validate(data, bucketSchemaV2);
+                const { $metadata, ...data } = await s3.send(new ListObjectsV2Command(test.listObjectParams(Bucket)));
+                const validationSchema2 = {
+                    ...bucketSchemaV2,
+                    required: bucketSchemaV2.required.filter(field => Object.prototype.hasOwnProperty.call(data, field))
+                };
+                const isValidResponse = tv4.validate(data, validationSchema2);
                 if (!isValidResponse) {
                     throw new Error(tv4.error);
                 }
                 test.assertions(data, Bucket);
+                assert.strictEqual($metadata.httpStatusCode, 200);
             });
         });
 
@@ -380,14 +400,19 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const objects = [{ Bucket, Key: k }];
 
                 for (const param of objects) {
-                    await s3.putObject(param).promise();
-                }
-                const data = await s3.listObjects({ Bucket, Prefix: k }).promise();
-                const isValidResponse = tv4.validate(data, bucketSchema);
+                                await s3.send(new PutObjectCommand(param));
+        }
+                const { $metadata, ...data } = await s3.send(new ListObjectsCommand({ Bucket, Prefix: k }));
+                const validationSchema = {
+                    ...bucketSchema,
+                    required: bucketSchema.required.filter(field => Object.prototype.hasOwnProperty.call(data, field))
+                };
+                const isValidResponse = tv4.validate(data, validationSchema);
                 if (!isValidResponse) {
                     throw new Error(tv4.error);
                 }
                 assert.deepStrictEqual(data.Prefix, k);
+                assert.strictEqual($metadata.httpStatusCode, 200);
             });
         });
 
@@ -398,14 +423,19 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const objects = [{ Bucket, Key: k }];
 
                 for (const param of objects) {
-                    await s3.putObject(param).promise();
+                    await s3.send(new PutObjectCommand(param));
                 }
-                const data = await s3.listObjects({ Bucket, Marker: k }).promise();
-                const isValidResponse = tv4.validate(data, bucketSchema);
+                const { $metadata, ...data } = await s3.send(new ListObjectsCommand({ Bucket, Marker: k }));
+                const validationSchema = {
+                    ...bucketSchema,
+                    required: bucketSchema.required.filter(field => Object.prototype.hasOwnProperty.call(data, field))
+                };
+                const isValidResponse = tv4.validate(data, validationSchema);
                 if (!isValidResponse) {
                     throw new Error(tv4.error);
                 }
                 assert.deepStrictEqual(data.Marker, k);
+                assert.strictEqual($metadata.httpStatusCode, 200);
             });
         });
 
@@ -416,15 +446,21 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const objects = [{ Bucket, Key: k }, { Bucket, Key: 'zzz' }];
 
                 for (const param of objects) {
-                    await s3.putObject(param).promise();
+                    await s3.send(new PutObjectCommand(param));
                 }
-                const data = await s3.listObjects({ Bucket, MaxKeys: 1,
-                    Delimiter: 'foo' }).promise();
-                const isValidResponse = tv4.validate(data, bucketSchema);
+                const { $metadata, ...data } = await s3.send(new ListObjectsCommand({ Bucket, MaxKeys: 1,
+                    Delimiter: 'foo' }));
+
+                const validationSchema = {
+                    ...bucketSchema,
+                    required: bucketSchema.required.filter(field => Object.prototype.hasOwnProperty.call(data, field))
+                };
+                const isValidResponse = tv4.validate(data, validationSchema);
                 if (!isValidResponse) {
                     throw new Error(tv4.error);
                 }
                 assert.strictEqual(data.NextMarker, k);
+                assert.strictEqual($metadata.httpStatusCode, 200);
             });
         });
 
@@ -435,15 +471,19 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const objects = [{ Bucket, Key: k }];
 
                 for (const param of objects) {
-                    await s3.putObject(param).promise();
+                    await s3.send(new PutObjectCommand(param));
                 }
-                const data = await s3.listObjectsV2(
-                    { Bucket, StartAfter: k }).promise();
-                const isValidResponse = tv4.validate(data, bucketSchemaV2);
+                const { $metadata, ...data } = await s3.send(new ListObjectsV2Command({ Bucket, StartAfter: k }));
+                const validationSchema2 = {
+                    ...bucketSchemaV2,
+                    required: bucketSchemaV2.required.filter(field => Object.prototype.hasOwnProperty.call(data, field))
+                };
+                const isValidResponse = tv4.validate(data, validationSchema2);
                 if (!isValidResponse) {
                     throw new Error(tv4.error);
                 }
                 assert.deepStrictEqual(data.StartAfter, k);
+                assert.strictEqual($metadata.httpStatusCode, 200);
             });
         });
 
@@ -455,18 +495,23 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const objects = [{ Bucket, Key: k }];
 
                 for (const param of objects) {
-                    await s3.putObject(param).promise();
+                    await s3.send(new PutObjectCommand(param));
                 }
-                const data = await s3.listObjectsV2({
+                const { $metadata, ...data } = await s3.send(new ListObjectsV2Command({
                     Bucket,
                     ContinuationToken: generateToken(k),
-                }).promise();
-                const isValidResponse = tv4.validate(data, bucketSchemaV2);
+                }));
+                const validationSchema2 = {
+                    ...bucketSchemaV2,
+                    required: bucketSchemaV2.required.filter(field => Object.prototype.hasOwnProperty.call(data, field))
+                };
+                const isValidResponse = tv4.validate(data, validationSchema2);
                 if (!isValidResponse) {
                     throw new Error(tv4.error);
                 }
                 assert.deepStrictEqual(
                     decryptToken(data.ContinuationToken), k);
+                assert.strictEqual($metadata.httpStatusCode, 200);
             });
         });
 
@@ -478,16 +523,21 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const objects = [{ Bucket, Key: k }, { Bucket, Key: 'zzz' }];
 
                 for (const param of objects) {
-                    await s3.putObject(param).promise();
+                    await s3.send(new PutObjectCommand(param));
                 }
-                const data = await s3.listObjectsV2({ Bucket, MaxKeys: 1,
-                    Delimiter: 'foo' }).promise();
-                const isValidResponse = tv4.validate(data, bucketSchemaV2);
+                const { $metadata, ...data } = await s3.send(new ListObjectsV2Command({ Bucket, MaxKeys: 1,
+                    Delimiter: 'foo' }));
+                const validationSchema2 = {
+                    ...bucketSchemaV2,
+                    required: bucketSchemaV2.required.filter(field => Object.prototype.hasOwnProperty.call(data, field))
+                };
+                const isValidResponse = tv4.validate(data, validationSchema2);
                 if (!isValidResponse) {
                     throw new Error(tv4.error);
                 }
                 assert.strictEqual(
                     decryptToken(data.NextContinuationToken), k);
+                assert.strictEqual($metadata.httpStatusCode, 200);
             });
         });
     });

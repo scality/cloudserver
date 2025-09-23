@@ -1,7 +1,11 @@
 const assert = require('assert');
+const { S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketCorsCommand } = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
-const BucketUtility = require('../../lib/utility/bucket-util');
+const getConfig = require('../support/config');
 
 const bucketName = 'testcorsbucket';
 
@@ -34,34 +38,49 @@ function _corsTemplate(params) {
     return { CORSRules: [sampleRule] };
 }
 
+// Helper function to delete bucket
+async function deleteBucket(s3, bucket) {
+    try {
+        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+    } catch (err) {
+        // eslint-disable-next-line no-console
+        console.log(err);
+    }
+}
+
 describe('PUT bucket cors', () => {
     withV4(sigCfg => {
-        const bucketUtil = new BucketUtility('default', sigCfg);
-        const s3 = bucketUtil.s3;
+        const config = getConfig('default', sigCfg);
+        const s3 = new S3Client(config);
 
-        function _testPutBucketCors(rules, statusCode, errMsg, cb) {
-            s3.putBucketCors({ Bucket: bucketName,
-                CORSConfiguration: rules }, err => {
+        async function _testPutBucketCors(rules, statusCode, errMsg) {
+            try {
+                await s3.send(new PutBucketCorsCommand({ 
+                    Bucket: bucketName,
+                    CORSConfiguration: rules 
+                }));
+                throw new Error('Expected error but found none');
+            } catch (err) {
                 assert(err, 'Expected err but found none');
-                assert.strictEqual(err.code, errMsg);
-                assert.strictEqual(err.statusCode, statusCode);
-                cb();
-            });
+                assert.strictEqual(err.Code, errMsg);
+                assert.strictEqual(err.$metadata.httpStatusCode, statusCode);
+            }
         }
 
-        beforeEach(done => s3.createBucket({ Bucket: bucketName }, done));
-
-        afterEach(() => bucketUtil.deleteOne(bucketName));
-
-        it('should put a bucket cors successfully', done => {
-            s3.putBucketCors({ Bucket: bucketName,
-                CORSConfiguration: sampleCors }, err => {
-                assert.strictEqual(err, null, `Found unexpected err ${err}`);
-                done();
-            });
+        beforeEach(async () => {
+            await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
         });
 
-        it('should return InvalidRequest if more than 100 rules', done => {
+        afterEach(() => deleteBucket(s3, bucketName));
+
+        it('should put a bucket cors successfully', async () => {
+            await s3.send(new PutBucketCorsCommand({ 
+                Bucket: bucketName,
+                CORSConfiguration: sampleCors 
+            }));
+        });
+
+        it('should return InvalidRequest if more than 100 rules', async () => {
             const sampleRule = {
                 AllowedMethods: ['PUT', 'POST', 'DELETE'],
                 AllowedOrigins: ['http://www.example.com'],
@@ -73,55 +92,53 @@ describe('PUT bucket cors', () => {
             for (let i = 0; i < 101; i++) {
                 testCors.CORSRules.push(sampleRule);
             }
-            _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
+            await _testPutBucketCors(testCors, 400, 'InvalidRequest');
         });
 
-        it('should return MalformedXML if missing AllowedOrigin', done => {
+        it('should return MalformedXML if missing AllowedOrigin', async () => {
             const testCors = _corsTemplate({ AllowedOrigins: [] });
-            _testPutBucketCors(testCors, 400, 'MalformedXML', done);
+            await _testPutBucketCors(testCors, 400, 'MalformedXML');
         });
 
         it('should return InvalidRequest if more than one asterisk in ' +
-        'AllowedOrigin', done => {
+        'AllowedOrigin', async () => {
             const testCors =
                 _corsTemplate({ AllowedOrigins: ['http://*.*.com'] });
-            _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
+            await _testPutBucketCors(testCors, 400, 'InvalidRequest');
         });
 
-        it('should return MalformedXML if missing AllowedMethod', done => {
+        it('should return MalformedXML if missing AllowedMethod', async () => {
             const testCors = _corsTemplate({ AllowedMethods: [] });
-            _testPutBucketCors(testCors, 400, 'MalformedXML', done);
+            await _testPutBucketCors(testCors, 400, 'MalformedXML');
         });
 
         it('should return InvalidRequest if AllowedMethod is not a valid ' +
-        'method', done => {
+        'method', async () => {
             const testCors = _corsTemplate({ AllowedMethods: ['test'] });
-            _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
+            await _testPutBucketCors(testCors, 400, 'InvalidRequest');
         });
 
         it('should return InvalidRequest for lowercase value for ' +
-        'AllowedMethod', done => {
+        'AllowedMethod', async () => {
             const testCors = _corsTemplate({ AllowedMethods: ['put', 'get'] });
-            _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
+            await _testPutBucketCors(testCors, 400, 'InvalidRequest');
         });
 
         it('should return InvalidRequest if more than one asterisk in ' +
-        'AllowedHeader', done => {
+        'AllowedHeader', async () => {
             const testCors = _corsTemplate({ AllowedHeaders: ['*-amz-*'] });
-            _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
+            await _testPutBucketCors(testCors, 400, 'InvalidRequest');
         });
 
         it('should return InvalidRequest if ExposeHeader has character ' +
-        'that is not dash or alphanumeric',
-        done => {
+        'that is not dash or alphanumeric', async () => {
             const testCors = _corsTemplate({ ExposeHeaders: ['test header'] });
-            _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
+            await _testPutBucketCors(testCors, 400, 'InvalidRequest');
         });
 
-        it('should return InvalidRequest if ExposeHeader has wildcard',
-        done => {
+        it('should return InvalidRequest if ExposeHeader has wildcard', async () => {
             const testCors = _corsTemplate({ ExposeHeaders: ['x-amz-*'] });
-            _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
+            await _testPutBucketCors(testCors, 400, 'InvalidRequest');
         });
     });
 });

@@ -1,4 +1,8 @@
 const assert = require('assert');
+const {
+    CreateBucketCommand,
+    PutBucketWebsiteCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -12,22 +16,25 @@ describe('PUT bucket website', () => {
         const s3 = bucketUtil.s3;
 
         function _testPutBucketWebsite(config, statusCode, errMsg, cb) {
-            s3.putBucketWebsite({ Bucket: bucketName,
-                WebsiteConfiguration: config }, err => {
+            s3.send(new PutBucketWebsiteCommand({ Bucket: bucketName,
+                WebsiteConfiguration: config }))
+            .then(() => {
+                cb(new Error('Expected err but found none'));
+            })
+            .catch(err => {
                 assert(err, 'Expected err but found none');
-                assert.strictEqual(err.code, errMsg);
-                assert.strictEqual(err.statusCode, statusCode);
+                assert.strictEqual(err.name, errMsg);
+                assert.strictEqual(err.$metadata.httpStatusCode, statusCode);
                 cb();
             });
         }
         beforeEach(done => {
             process.stdout.write('about to create bucket\n');
-            s3.createBucket({ Bucket: bucketName }, err => {
-                if (err) {
-                    process.stdout.write('error in beforeEach', err);
-                    done(err);
-                }
-                done();
+            s3.send(new CreateBucketCommand({ Bucket: bucketName }))
+            .then(() => done())
+            .catch(err => {
+                process.stdout.write('error in beforeEach', err);
+                done(err);
             });
         });
 
@@ -46,11 +53,10 @@ describe('PUT bucket website', () => {
 
         it('should put a bucket website successfully', done => {
             const config = new WebsiteConfigTester('index.html');
-            s3.putBucketWebsite({ Bucket: bucketName,
-                WebsiteConfiguration: config }, err => {
-                assert.strictEqual(err, null, `Found unexpected err ${err}`);
-                done();
-            });
+            s3.send(new PutBucketWebsiteCommand({ Bucket: bucketName,
+                WebsiteConfiguration: config }))
+            .then(() => done())
+            .catch(done);
         });
 
         it('should return InvalidArgument if IndexDocument or ' +
@@ -66,7 +72,7 @@ describe('PUT bucket website', () => {
                 Protocol: 'http',
             };
             const config = new WebsiteConfigTester(null, null,
-            redirectAllTo);
+              redirectAllTo);
             config.addRoutingRule({ Protocol: 'http' });
             _testPutBucketWebsite(config, 400, 'InvalidRequest', done);
         });

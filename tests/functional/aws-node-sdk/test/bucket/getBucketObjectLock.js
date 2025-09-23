@@ -1,5 +1,9 @@
 const assert = require('assert');
-const { S3 } = require('aws-sdk');
+const { S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    GetObjectLockConfigurationCommand,
+    PutObjectLockConfigurationCommand } = require('@aws-sdk/client-s3');
 
 const checkError = require('../../lib/utility/checkError');
 const getConfig = require('../support/config');
@@ -23,60 +27,68 @@ describe('aws-sdk test get bucket object lock', () => {
 
     before(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3 = new S3(config);
+        s3 = new S3Client(config);
         otherAccountS3 = new BucketUtility('lisa', {}).s3;
         return done();
     });
 
-    it('should return NoSuchBucket error if bucket does not exist', done => {
-        s3.getObjectLockConfiguration({ Bucket: bucket }, err => {
+    it('should return NoSuchBucket error if bucket does not exist', async () => {
+        try {
+            await s3.send(new GetObjectLockConfigurationCommand({ Bucket: bucket }));
+            throw new Error('Expected NoSuchBucket error');
+        } catch (err) {
             checkError(err, 'NoSuchBucket', 404);
-            done();
-        });
+        }
     });
 
     describe('request to object lock disabled bucket', () => {
-        beforeEach(done => s3.createBucket({ Bucket: bucket }, done));
+        beforeEach(async () => {
+            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+        });
 
-        afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
+        afterEach(async () => {
+            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+        });
 
-        it('should return ObjectLockConfigurationNotFoundError', done => {
-            s3.getObjectLockConfiguration({ Bucket: bucket }, err => {
+        it('should return ObjectLockConfigurationNotFoundError', async () => {
+            try {
+                await s3.send(new GetObjectLockConfigurationCommand({ Bucket: bucket }));
+                throw new Error('Expected ObjectLockConfigurationNotFoundError');
+            } catch (err) {
                 checkError(err, 'ObjectLockConfigurationNotFoundError', 404);
-                done();
-            });
+            }
         });
     });
 
     describe('config rules', () => {
-        beforeEach(done => s3.createBucket({
-            Bucket: bucket,
-            ObjectLockEnabledForBucket: true,
-        }, done));
-
-        afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
-
-        it('should return AccessDenied if user is not bucket owner', done => {
-            otherAccountS3.getObjectLockConfiguration({ Bucket: bucket }, err => {
-                checkError(err, 'AccessDenied', 403);
-                done();
-            });
+        beforeEach(async () => {
+            await s3.send(new CreateBucketCommand({
+                Bucket: bucket,
+                ObjectLockEnabledForBucket: true,
+            }));
         });
 
-        it('should get bucket object lock config', done => {
-            s3.putObjectLockConfiguration({
+        afterEach(async () => {
+            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+        });
+
+        it('should return AccessDenied if user is not bucket owner', async () => {
+            try {
+                await otherAccountS3.send(new GetObjectLockConfigurationCommand({ Bucket: bucket }));
+                throw new Error('Expected AccessDenied error');
+            } catch (err) {
+                checkError(err, 'AccessDenied', 403);
+            }
+        });
+
+        it('should get bucket object lock config', async () => {
+            // Put object lock configuration
+            await s3.send(new PutObjectLockConfigurationCommand({
                 Bucket: bucket,
                 ObjectLockConfiguration: objectLockConfig,
-            }, err => {
-                assert.ifError(err);
-                s3.getObjectLockConfiguration({ Bucket: bucket }, (err, res) => {
-                    assert.ifError(err);
-                    assert.deepStrictEqual(res, {
-                        ObjectLockConfiguration: objectLockConfig,
-                    });
-                    done();
-                });
-            });
+            }));
+            const res = await s3.send(new GetObjectLockConfigurationCommand({ Bucket: bucket }));
+            assert.deepStrictEqual(res.ObjectLockConfiguration, objectLockConfig);
         });
     });
 });

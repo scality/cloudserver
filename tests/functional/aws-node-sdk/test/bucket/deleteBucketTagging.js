@@ -1,6 +1,11 @@
 const assert = require('assert');
-const { S3 } = require('aws-sdk');
-const async = require('async');
+const { S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketTaggingCommand,
+    GetBucketTaggingCommand,
+    DeleteBucketTaggingCommand } = require('@aws-sdk/client-s3');
+
 const assertError = require('../../../../utilities/bucketTagging-util');
 
 const getConfig = require('../support/config');
@@ -25,60 +30,80 @@ describe('aws-sdk test delete bucket tagging', () => {
 
     before(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3 = new S3(config);
+        s3 = new S3Client(config);
+        // Preserve AccountId property for tests
+        s3.AccountId = '123456789012';
     });
 
-    beforeEach(done => s3.createBucket({ Bucket: bucket }, done));
+    beforeEach(async () => {
+        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+    });
 
-    afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
+    afterEach(async () => {
+        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+    });
 
-    it('should delete tag', done => {
-        async.series([
-            next => s3.putBucketTagging({
-                AccountId: s3.AccountId,
-                Tagging: validTagging, Bucket: bucket,
-            }, (err, res) => next(err, res)),
-            next => s3.getBucketTagging({
+    it('should delete tag', async () => {
+        await s3.send(new PutBucketTaggingCommand({
+            AccountId: s3.AccountId,
+            Tagging: validTagging, 
+            Bucket: bucket,
+        }));
+
+        // Get bucket tagging to verify it was set
+        const res = await s3.send(new GetBucketTaggingCommand({
+            AccountId: s3.AccountId,
+            Bucket: bucket,
+        }));
+        // eslint-disable-next-line no-console
+        console.log('get tagging response: ', res);
+        assert.deepStrictEqual(res.TagSet, validTagging.TagSet);
+
+        // Delete bucket tagging
+        await s3.send(new DeleteBucketTaggingCommand({
+            AccountId: s3.AccountId,
+            Bucket: bucket,
+        }));
+
+        // Try to get bucket tagging again (should fail with NoSuchTagSet)
+        try {
+            await s3.send(new GetBucketTaggingCommand({
                 AccountId: s3.AccountId,
                 Bucket: bucket,
-            }, (err, res) => {
-                assert.deepStrictEqual(res, validTagging);
-                next(err, res);
-            }),
-            next => s3.deleteBucketTagging({
-                AccountId: s3.AccountId,
-                Bucket: bucket,
-            }, (err, res) => next(err, res)),
-            next => s3.getBucketTagging({
-                AccountId: s3.AccountId,
-                Bucket: bucket,
-            }, next),
-        ], err => {
+            }));
+            throw new Error('Expected NoSuchTagSet error');
+        } catch (err) {
             assertError(err, 'NoSuchTagSet');
-            done();
-        });
+        }
     });
 
-    it('should make no change when deleting tags on bucket with no tags', done => {
-        async.series([
-            next => s3.getBucketTagging({
+    it('should make no change when deleting tags on bucket with no tags', async () => {
+        // Verify bucket has no tags initially
+        try {
+            await s3.send(new GetBucketTaggingCommand({
                 AccountId: s3.AccountId,
                 Bucket: bucket,
-            }, err => {
-                assertError(err, 'NoSuchTagSet');
-                next();
-            }),
-            next => s3.deleteBucketTagging({
+            }));
+            throw new Error('Expected NoSuchTagSet error');
+        } catch (err) {
+            assertError(err, 'NoSuchTagSet');
+        }
+
+        // Delete bucket tagging (should succeed even if no tags exist)
+        await s3.send(new DeleteBucketTaggingCommand({
+            AccountId: s3.AccountId,
+            Bucket: bucket,
+        }));
+
+        // Verify bucket still has no tags
+        try {
+            await s3.send(new GetBucketTaggingCommand({
                 AccountId: s3.AccountId,
                 Bucket: bucket,
-            }, (err, res) => next(err, res)),
-            next => s3.getBucketTagging({
-                AccountId: s3.AccountId,
-                Bucket: bucket,
-            }, err => {
-                assertError(err, 'NoSuchTagSet');
-                next();
-            }),
-        ], done);
+            }));
+            throw new Error('Expected NoSuchTagSet error');
+        } catch (err) {
+            assertError(err, 'NoSuchTagSet');
+        }
     });
 });
