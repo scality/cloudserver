@@ -1,7 +1,12 @@
 const assert = require('assert');
+const { S3Client,
+    CreateBucketCommand,
+    GetBucketWebsiteCommand,
+    PutBucketWebsiteCommand,
+    DeleteBucketCommand } = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
-const BucketUtility = require('../../lib/utility/bucket-util');
+const getConfig = require('../support/config');
 const { WebsiteConfigTester } = require('../../lib/utility/website-util');
 
 const bucketName = 'testgetwebsitetestbucket';
@@ -22,51 +27,64 @@ const config = new WebsiteConfigTester('index.html', 'error.html');
 config.addRoutingRule(ruleRedirect1, ruleCondition1);
 config.addRoutingRule(ruleRedirect2, ruleCondition2);
 
+// Helper function to delete bucket (replacing bucketUtil.deleteOne)
+async function deleteBucket(s3, bucket) {
+    try {
+        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+    } catch (err) {
+        // eslint-disable-next-line no-console
+        console.log(err);
+    }
+}
+
 describe('GET bucket website', () => {
     withV4(sigCfg => {
-        const bucketUtil = new BucketUtility('default', sigCfg);
-        const s3 = bucketUtil.s3;
+        const s3Config = getConfig('default', sigCfg);
+        const s3 = new S3Client(s3Config);
 
-        afterEach(() => bucketUtil.deleteOne(bucketName));
+        afterEach(() => deleteBucket(s3, bucketName));
 
         describe('with existing bucket configuration', () => {
-            before(() =>
-                s3.createBucket({ Bucket: bucketName }).promise()
-                .then(() => s3.putBucketWebsite({
+            before(async () => {
+                await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
+                await s3.send(new PutBucketWebsiteCommand({
                     Bucket: bucketName,
                     WebsiteConfiguration: config,
-                }).promise()));
+                }));
+            });
 
-            it('should return bucket website xml successfully', done => {
-                s3.getBucketWebsite({ Bucket: bucketName }, (err, data) => {
-                    assert.strictEqual(err, null,
-                        `Found unexpected err ${err}`);
+            it('should return bucket website xml successfully', async () => {
+                try {
+                    const { $metadata, ...data } = await s3.send(new GetBucketWebsiteCommand({ Bucket: bucketName }));
                     const configObject = Object.assign({}, config);
                     assert.deepStrictEqual(data, configObject);
-                    return done();
-                });
+                    assert.strictEqual($metadata.httpStatusCode, 200);
+                } catch (err) {
+                    assert.fail(`Found unexpected err ${err}`);
+                }
             });
         });
 
         describe('on bucket without website configuration', () => {
-            before(done => {
+            before(async () => {
                 process.stdout.write('about to create bucket\n');
-                s3.createBucket({ Bucket: bucketName }, err => {
-                    if (err) {
-                        process.stdout.write('error creating bucket', err);
-                        return done(err);
-                    }
-                    return done();
-                });
+                try {
+                    await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
+                } catch (err) {
+                    process.stdout.write('error creating bucket', err);
+                    throw err;
+                }
             });
 
-            it('should return NoSuchWebsiteConfiguration', done => {
-                s3.getBucketWebsite({ Bucket: bucketName }, err => {
+            it('should return NoSuchWebsiteConfiguration', async () => {
+                try {
+                    await s3.send(new GetBucketWebsiteCommand({ Bucket: bucketName }));
+                    assert.fail('Expected NoSuchWebsiteConfiguration error');
+                } catch (err) {
                     assert(err);
-                    assert.strictEqual(err.code, 'NoSuchWebsiteConfiguration');
-                    assert.strictEqual(err.statusCode, 404);
-                    return done();
-                });
+                    assert.strictEqual(err.Code, 'NoSuchWebsiteConfiguration');
+                    assert.strictEqual(err.$metadata.httpStatusCode, 404);
+                }
             });
         });
     });

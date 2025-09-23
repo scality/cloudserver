@@ -1,5 +1,9 @@
 const assert = require('assert');
-const { S3 } = require('aws-sdk');
+const { S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketAclCommand,
+    GetBucketAclCommand } = require('@aws-sdk/client-s3');
 const getConfig = require('../support/config');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -25,17 +29,19 @@ describe('aws-node-sdk test bucket put acl', () => {
     let s3;
 
     // setup test
-    before(done => {
+    before(async () => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3 = new S3(config);
-        s3.createBucket({ Bucket: bucket }, done);
+        s3 = new S3Client(config);
+        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
     });
 
     // delete bucket after testing
-    after(done => s3.deleteBucket({ Bucket: bucket }, done));
+    after(async () => {
+        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+    });
 
     const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
-    itSkipIfAWS('should not accept xml body larger than 512 KB', done => {
+    itSkipIfAWS('should not accept xml body larger than 512 KB', async () => {
         const params = {
             Bucket: bucket,
             AccessControlPolicy: {
@@ -46,16 +52,14 @@ describe('aws-node-sdk test bucket put acl', () => {
                 },
             },
         };
-        s3.putBucketAcl(params, error => {
-            if (error) {
-                assert.strictEqual(error.statusCode, 400);
-                assert.strictEqual(
-                    error.code, 'InvalidRequest');
-                done();
-            } else {
-                done('accepted xml body larger than 512 KB');
-            }
-        });
+        try {
+            await s3.send(new PutBucketAclCommand(params));
+            throw new Error('accepted xml body larger than 512 KB');
+        } catch (error) {
+            assert.strictEqual(error.$metadata.httpStatusCode, 400);
+            assert.strictEqual(
+                error.Code, 'InvalidRequest');
+        }
     });
 });
 
@@ -81,59 +85,60 @@ describe('PUT Bucket ACL', () => {
         });
 
         it('should set multiple ACL permissions with same grantee specified' +
-        'using email', done => {
-            s3.putBucketAcl({
+        'using email', async () => {
+            await s3.send(new PutBucketAclCommand({
                 Bucket: bucketName,
                 GrantRead: 'emailAddress=sampleaccount1@sampling.com',
                 GrantWrite: 'emailAddress=sampleaccount1@sampling.com',
-            }, err => {
-                assert(!err);
-                s3.getBucketAcl({
+            }));
+            
+            const res = await s3.send(new GetBucketAclCommand({
+                Bucket: bucketName,
+            }));
+            // expect both READ and WRITE grants to exist
+            assert.strictEqual(res.Grants.length, 2);
+        });
+
+        it('should return InvalidArgument if invalid grantee ' +
+            'user ID provided in ACL header request', async () => {
+            try {
+                await s3.send(new PutBucketAclCommand({
                     Bucket: bucketName,
-                }, (err, res) => {
-                    assert(!err);
-                    // expect both READ and WRITE grants to exist
-                    assert.strictEqual(res.Grants.length, 2);
-                    return done();
-                });
-            });
+                    GrantRead: 'id=invalidUserID' 
+                }));
+                throw new Error('Expected InvalidArgument error');
+            } catch (err) {
+                assert.strictEqual(err.$metadata.httpStatusCode, 400);
+                assert.strictEqual(err.Code, 'InvalidArgument');
+            }
         });
 
         it('should return InvalidArgument if invalid grantee ' +
-            'user ID provided in ACL header request', done => {
-            s3.putBucketAcl({
-                Bucket: bucketName,
-                GrantRead: 'id=invalidUserID' }, err => {
-                assert.strictEqual(err.statusCode, 400);
-                assert.strictEqual(err.code, 'InvalidArgument');
-                done();
-            });
-        });
-
-        it('should return InvalidArgument if invalid grantee ' +
-            'user ID provided in ACL request body', done => {
-            s3.putBucketAcl({
-                Bucket: bucketName,
-                AccessControlPolicy: {
-                    Grants: [
-                        {
-                            Grantee: {
-                                Type: 'CanonicalUser',
-                                ID: 'invalidUserID',
-                            },
-                            Permission: 'WRITE_ACP',
-                        }],
-                    Owner: {
-                        DisplayName: 'Bart',
-                        ID: '79a59df900b949e55d96a1e698fbace' +
-                        'dfd6e09d98eacf8f8d5218e7cd47ef2be',
+            'user ID provided in ACL request body', async () => {
+            try {
+                await s3.send(new PutBucketAclCommand({
+                    Bucket: bucketName,
+                    AccessControlPolicy: {
+                        Grants: [
+                            {
+                                Grantee: {
+                                    Type: 'CanonicalUser',
+                                    ID: 'invalidUserID',
+                                },
+                                Permission: 'WRITE_ACP',
+                            }],
+                        Owner: {
+                            DisplayName: 'Bart',
+                            ID: '79a59df900b949e55d96a1e698fbace' +
+                            'dfd6e09d98eacf8f8d5218e7cd47ef2be',
+                        },
                     },
-                },
-            }, err => {
-                assert.strictEqual(err.statusCode, 400);
-                assert.strictEqual(err.code, 'InvalidArgument');
-                done();
-            });
+                }));
+                throw new Error('Expected InvalidArgument error');
+            } catch (err) {
+                assert.strictEqual(err.$metadata.httpStatusCode, 400);
+                assert.strictEqual(err.Code, 'InvalidArgument');
+            }
         });
     });
 });

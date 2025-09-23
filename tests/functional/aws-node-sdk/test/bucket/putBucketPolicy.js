@@ -1,6 +1,9 @@
 const assert = require('assert');
 const { errors } = require('arsenal');
-const { S3 } = require('aws-sdk');
+const { S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketPolicyCommand } = require('@aws-sdk/client-s3');
 
 const getConfig = require('../support/config');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -62,11 +65,11 @@ function assertError(err, expectedErr, cb) {
     if (expectedErr === null) {
         assert.strictEqual(err, null, `expected no error but got '${err}'`);
     } else {
-        assert.strictEqual(err.code, expectedErr, 'incorrect error response ' +
-            `code: should be '${expectedErr}' but got '${err.code}'`);
-        assert.strictEqual(err.statusCode, errors[expectedErr].code,
+        assert.strictEqual(err.Code, expectedErr, 'incorrect error response ' +
+            `code: should be '${expectedErr}' but got '${err.Code}'`);
+        assert.strictEqual(err.$metadata.httpStatusCode, errors[expectedErr].code,
             'incorrect error status code: should be  ' +
-            `${errors[expectedErr].code}, but got '${err.statusCode}'`);
+            `${errors[expectedErr].code}, but got '${err.$metadata.httpStatusCode}'`);
     }
     cb();
 }
@@ -78,86 +81,116 @@ describe('aws-sdk test put bucket policy', () => {
 
     before(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3 = new S3(config);
+        s3 = new S3Client(config);
         otherAccountS3 = new BucketUtility('lisa', {}).s3;
         return done();
     });
 
-    it('should return NoSuchBucket error if bucket does not exist', done => {
+    it('should return NoSuchBucket error if bucket does not exist', async () => {
         const params = getPolicyParams();
-        s3.putBucketPolicy(params, err =>
-            assertError(err, 'NoSuchBucket', done));
+        try {
+            await s3.send(new PutBucketPolicyCommand(params));
+            throw new Error('Expected NoSuchBucket error');
+        } catch (err) {
+            assertError(err, 'NoSuchBucket', () => {});
+        }
     });
 
     describe('config rules', () => {
-        beforeEach(done => s3.createBucket({ Bucket: bucket }, done));
-
-        afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
-
-        it('should return MethodNotAllowed if user is not bucket owner', done => {
-            const params = getPolicyParams();
-            otherAccountS3.putBucketPolicy(params,
-                err => assertError(err, 'MethodNotAllowed', done));
+        beforeEach(async () => {
+            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
         });
 
-        it('should put a bucket policy on bucket', done => {
-            const params = getPolicyParams();
-            s3.putBucketPolicy(params, err =>
-                assertError(err, null, done));
+        afterEach(async () => {
+            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
         });
 
-        it('should not allow bucket policy with no Action', done => {
+        it('should return MethodNotAllowed if user is not bucket owner', async () => {
+            const params = getPolicyParams();
+            try {
+                await otherAccountS3.send(new PutBucketPolicyCommand(params));
+                throw new Error('Expected MethodNotAllowed error');
+            } catch (err) {
+                assertError(err, 'MethodNotAllowed', () => {});
+            }
+        });
+
+        it('should put a bucket policy on bucket', async () => {
+            const params = getPolicyParams();
+            await s3.send(new PutBucketPolicyCommand(params));
+        });
+
+        it('should not allow bucket policy with no Action', async () => {
             const params = getPolicyParams({ key: 'Action', value: '' });
-            s3.putBucketPolicy(params, err =>
-                assertError(err, 'MalformedPolicy', done));
+            try {
+                await s3.send(new PutBucketPolicyCommand(params));
+                throw new Error('Expected MalformedPolicy error');
+            } catch (err) {
+                assertError(err, 'MalformedPolicy', () => {});
+            }
         });
 
-        it('should not allow bucket policy with no Effect', done => {
+        it('should not allow bucket policy with no Effect', async () => {
             const params = getPolicyParams({ key: 'Effect', value: '' });
-            s3.putBucketPolicy(params, err =>
-                assertError(err, 'MalformedPolicy', done));
+            try {
+                await s3.send(new PutBucketPolicyCommand(params));
+                throw new Error('Expected MalformedPolicy error');
+            } catch (err) {
+                assertError(err, 'MalformedPolicy', () => {});
+            }
         });
 
-        it('should not allow bucket policy with no Resource', done => {
+        it('should not allow bucket policy with no Resource', async () => {
             const params = getPolicyParams({ key: 'Resource', value: '' });
-            s3.putBucketPolicy(params, err =>
-                assertError(err, 'MalformedPolicy', done));
+            try {
+                await s3.send(new PutBucketPolicyCommand(params));
+                throw new Error('Expected MalformedPolicy error');
+            } catch (err) {
+                assertError(err, 'MalformedPolicy', () => {});
+            }
         });
 
-        it('should not allow bucket policy with no Principal',
-        done => {
+        it('should not allow bucket policy with no Principal', async () => {
             const params = getPolicyParams({ key: 'Principal', value: '' });
-            s3.putBucketPolicy(params, err =>
-                assertError(err, 'MalformedPolicy', done));
+            try {
+                await s3.send(new PutBucketPolicyCommand(params));
+                throw new Error('Expected MalformedPolicy error');
+            } catch (err) {
+                assertError(err, 'MalformedPolicy', () => {});
+            }
         });
 
-        it('should return MalformedPolicy because Id is not a string',
-        done => {
+        it('should return MalformedPolicy because Id is not a string', async () => {
             const params = getPolicyParamsWithId(null, 59);
-            s3.putBucketPolicy(params, err =>
-                assertError(err, 'MalformedPolicy', done));
+            try {
+                await s3.send(new PutBucketPolicyCommand(params));
+                throw new Error('Expected MalformedPolicy error');
+            } catch (err) {
+                assertError(err, 'MalformedPolicy', () => {});
+            }
         });
 
-        it('should put a bucket policy on bucket since Id is a string',
-        done => {
+        it('should put a bucket policy on bucket since Id is a string', async () => {
             const params = getPolicyParamsWithId(null, 'cd3ad3d9-2776-4ef1-a904-4c229d1642e');
-            s3.putBucketPolicy(params, err =>
-                assertError(err, null, done));
+            await s3.send(new PutBucketPolicyCommand(params));
         });
 
-        it('should allow bucket policy with pincipal arn less than 2048 characters', done => {
+        it('should allow bucket policy with pincipal arn less than 2048 characters', async () => {
             const params = getPolicyParams({ key: 'Principal', value: { AWS: `arn:aws:iam::767707094035:user/${generateRandomString(150)}` } }); // eslint-disable-line max-len
-            s3.putBucketPolicy(params, err =>
-                assertError(err, null, done));
+            await s3.send(new PutBucketPolicyCommand(params));
         });
 
-        it('should not allow bucket policy with pincipal arn more than 2048 characters', done => {
+        it('should not allow bucket policy with pincipal arn more than 2048 characters', async () => {
             const params = getPolicyParams({ key: 'Principal', value: { AWS: `arn:aws:iam::767707094035:user/${generateRandomString(2020)}` } }); // eslint-disable-line max-len
-            s3.putBucketPolicy(params, err =>
-                assertError(err, 'MalformedPolicy', done));
+            try {
+                await s3.send(new PutBucketPolicyCommand(params));
+                throw new Error('Expected MalformedPolicy error');
+            } catch (err) {
+                assertError(err, 'MalformedPolicy', () => {});
+            }
         });
 
-        it('should allow bucket policy with valid SourceIp condition', done => {
+        it('should allow bucket policy with valid SourceIp condition', async () => {
             const params = getPolicyParams({
                 key: 'Condition', value: {
                     IpAddress: {
@@ -165,10 +198,10 @@ describe('aws-sdk test put bucket policy', () => {
                     },
                 },
             });
-            s3.putBucketPolicy(params, err => assertError(err, null, done));
+            await s3.send(new PutBucketPolicyCommand(params));
         });
 
-        it('should not allow bucket policy with invalid SourceIp format', done => {
+        it('should not allow bucket policy with invalid SourceIp format', async () => {
             const params = getPolicyParams({
                 key: 'Condition', value: {
                     IpAddress: {
@@ -176,10 +209,15 @@ describe('aws-sdk test put bucket policy', () => {
                     },
                 },
             });
-            s3.putBucketPolicy(params, err => assertError(err, 'MalformedPolicy', done));
+            try {
+                await s3.send(new PutBucketPolicyCommand(params));
+                throw new Error('Expected MalformedPolicy error');
+            } catch (err) {
+                assertError(err, 'MalformedPolicy', () => {});
+            }
         });
 
-        it('should allow bucket policy with valid s3:object-lock-remaining-retention-days condition', done => {
+        it('should allow bucket policy with valid s3:object-lock-remaining-retention-days condition', async () => {
             const params = getPolicyParams({
                 key: 'Condition', value: {
                     NumericGreaterThanEquals: {
@@ -187,11 +225,11 @@ describe('aws-sdk test put bucket policy', () => {
                     },
                 },
             });
-            s3.putBucketPolicy(params, err => assertError(err, null, done));
+            await s3.send(new PutBucketPolicyCommand(params));
         });
 
         // yep, this is the expected behaviour
-        it('should not reject policy with invalid s3:object-lock-remaining-retention-days value', done => {
+        it('should not reject policy with invalid s3:object-lock-remaining-retention-days value', async () => {
             const params = getPolicyParams({
                 key: 'Condition', value: {
                     NumericGreaterThanEquals: {
@@ -199,11 +237,11 @@ describe('aws-sdk test put bucket policy', () => {
                     },
                 },
             });
-            s3.putBucketPolicy(params, err => assertError(err, null, done));
+            await s3.send(new PutBucketPolicyCommand(params));
         });
 
         // this too ¯\_(ツ)_/¯
-        it('should not reject policy with a key starting with aws:', done => {
+        it('should not reject policy with a key starting with aws:', async () => {
             const params = getPolicyParams({
                 key: 'Condition', value: {
                     NumericGreaterThanEquals: {
@@ -211,10 +249,10 @@ describe('aws-sdk test put bucket policy', () => {
                     },
                 },
             });
-            s3.putBucketPolicy(params, err => assertError(err, null, done));
+            await s3.send(new PutBucketPolicyCommand(params));
         });
 
-        it('should reject policy with a key that does not exist that does not start with aws:', done => {
+        it('should reject policy with a key that does not exist that does not start with aws:', async () => {
             const params = getPolicyParams({
                 key: 'Condition', value: {
                     NumericGreaterThanEquals: {
@@ -222,10 +260,15 @@ describe('aws-sdk test put bucket policy', () => {
                     },
                 },
             });
-            s3.putBucketPolicy(params, err => assertError(err, 'MalformedPolicy', done));
+            try {
+                await s3.send(new PutBucketPolicyCommand(params));
+                throw new Error('Expected MalformedPolicy error');
+            } catch (err) {
+                assertError(err, 'MalformedPolicy', () => {});
+            }
         });
 
-        it('should enforce policies with both SourceIp and s3:object-lock conditions together', done => {
+        it('should enforce policies with both SourceIp and s3:object-lock conditions together', async () => {
             const params = getPolicyParams({
                 key: 'Condition', value: {
                     IpAddress: {
@@ -236,10 +279,10 @@ describe('aws-sdk test put bucket policy', () => {
                     },
                 },
             });
-            s3.putBucketPolicy(params, err => assertError(err, null, done));
+            await s3.send(new PutBucketPolicyCommand(params));
         });
 
-        it('should return error if a condition one of the condition values is invalid', done => {
+        it('should return error if a condition one of the condition values is invalid', async () => {
             const params = getPolicyParams({
                 key: 'Condition', value: {
                     IpAddress: {
@@ -250,7 +293,12 @@ describe('aws-sdk test put bucket policy', () => {
                     },
                 },
             });
-            s3.putBucketPolicy(params, err => assertError(err, 'MalformedPolicy', done));
+            try {
+                await s3.send(new PutBucketPolicyCommand(params));
+                throw new Error('Expected MalformedPolicy error');
+            } catch (err) {
+                assertError(err, 'MalformedPolicy', () => {});
+            }
         });
     });
 });

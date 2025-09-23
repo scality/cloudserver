@@ -1,5 +1,8 @@
-const { S3 } = require('aws-sdk');
-const { times, timesSeries, waterfall } = require('async');
+const { S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutObjectCommand,
+    DeleteObjectCommand } = require('@aws-sdk/client-s3');
 
 const getConfig = require('../support/config');
 
@@ -8,18 +11,22 @@ const text = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
 const objectCount = 100;
 const loopCount = 10;
 
-function putObjects(s3, loopId, cb) {
-    times(objectCount, (i, next) => {
+async function putObjects(s3, loopId) {
+    const promises = [];
+    for (let i = 0; i < objectCount; i++) {
         const params = { Bucket: bucket, Key: `foo${loopId}_${i}`, Body: text };
-        s3.putObject(params, next);
-    }, cb);
+        promises.push(s3.send(new PutObjectCommand(params)));
+    }
+    await Promise.all(promises);
 }
 
-function deleteObjects(s3, loopId, cb) {
-    times(objectCount, (i, next) => {
+async function deleteObjects(s3, loopId) {
+    const promises = [];
+    for (let i = 0; i < objectCount; i++) {
         const params = { Bucket: bucket, Key: `foo${loopId}_${i}` };
-        s3.deleteObject(params, next);
-    }, cb);
+        promises.push(s3.send(new DeleteObjectCommand(params)));
+    }
+    await Promise.all(promises);
 }
 
 describe('aws-node-sdk stress test bucket', function testSuite() {
@@ -27,15 +34,22 @@ describe('aws-node-sdk stress test bucket', function testSuite() {
     let s3;
     before(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3 = new S3(config);
+        s3 = new S3Client(config);
     });
 
-    it('createBucket-putObject-deleteObject-deleteBucket loop', done =>
-        timesSeries(loopCount, (loopId, next) => waterfall([
-            next => s3.createBucket({ Bucket: bucket }, err => next(err)),
-            next => putObjects(s3, loopId, err => next(err)),
-            next => deleteObjects(s3, loopId, err => next(err)),
-            next => s3.deleteBucket({ Bucket: bucket }, err => next(err)),
-        ], err => next(err)), done)
-    );
+    it('createBucket-putObject-deleteObject-deleteBucket loop', async () => {
+        for (let loopId = 0; loopId < loopCount; loopId++) {
+            // Create bucket
+            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+            
+            // Put objects
+            await putObjects(s3, loopId);
+            
+            // Delete objects
+            await deleteObjects(s3, loopId);
+            
+            // Delete bucket
+            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+        }
+    });
 });

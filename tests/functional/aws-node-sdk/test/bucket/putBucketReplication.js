@@ -1,6 +1,10 @@
 const assert = require('assert');
 const { errors } = require('arsenal');
-const { S3 } = require('aws-sdk');
+const { S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketReplicationCommand,
+    PutBucketVersioningCommand } = require('@aws-sdk/client-s3');
 const { series } = require('async');
 
 const getConfig = require('../support/config');
@@ -17,11 +21,11 @@ function assertError(err, expectedErr) {
     if (expectedErr === null) {
         assert.strictEqual(err, null, `expected no error but got '${err}'`);
     } else {
-        assert.strictEqual(err.code, expectedErr, 'incorrect error response ' +
-            `code: should be '${expectedErr}' but got '${err.code}'`);
-        assert.strictEqual(err.statusCode, errors[expectedErr].code,
-            'incorrect error status code: should be 400 but got ' +
-            `'${err.statusCode}'`);
+        assert.strictEqual(err.Code, expectedErr, 'incorrect error response ' +
+            `code: should be '${expectedErr}' but got '${err.Code}'`);
+        assert.strictEqual(err.$metadata.httpStatusCode, errors[expectedErr].code,
+            `incorrect error status code: should be ${errors[expectedErr].code} but got ` +
+            `'${err.$metadata.httpStatusCode}'`);
     }
 }
 
@@ -77,8 +81,12 @@ describe('aws-node-sdk test putBucketReplication bucket status', () => {
     function checkVersioningError(s3Client, versioningStatus, expectedErr, cb) {
         const versioningParams = getVersioningParams(versioningStatus);
         return series([
-            next => s3Client.putBucketVersioning(versioningParams, next),
-            next => s3Client.putBucketReplication(replicationParams, next),
+            next => s3Client.send(new PutBucketVersioningCommand(versioningParams))
+                .then(() => next())
+                .catch(next),
+            next => s3Client.send(new PutBucketReplicationCommand(replicationParams))
+                .then(() => next())
+                .catch(next),
         ], err => {
             assertError(err, expectedErr);
             return cb();
@@ -87,37 +95,68 @@ describe('aws-node-sdk test putBucketReplication bucket status', () => {
 
     before(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3 = new S3(config);
+        s3 = new S3Client(config);
         otherAccountS3 = new BucketUtility('lisa', {}).s3;
         replicationAccountS3 = new BucketUtility('replication', {}).s3;
         return done();
     });
 
-    it('should return \'NoSuchBucket\' error if bucket does not exist', done =>
-        s3.putBucketReplication(replicationParams, err => {
+    it('should return \'NoSuchBucket\' error if bucket does not exist', async () => {
+        try {
+            await s3.send(new PutBucketReplicationCommand(replicationParams));
+            throw new Error('Expected NoSuchBucket error');
+        } catch (err) {
+            if (err.message === 'Expected NoSuchBucket error') {
+                throw err;
+            }
             assertError(err, 'NoSuchBucket');
-            return done();
-        }));
-
+        }
+    });
+    
     describe('test putBucketReplication bucket versioning status', () => {
-        beforeEach(done => s3.createBucket({ Bucket: sourceBucket }, done));
-
-        afterEach(done => s3.deleteBucket({ Bucket: sourceBucket }, done));
-
-        it('should return AccessDenied if user is not bucket owner', done =>
-            otherAccountS3.putBucketReplication(replicationParams,
-            err => {
+        beforeEach(async () => {
+            await s3.send(new CreateBucketCommand({ Bucket: sourceBucket }));
+        });
+    
+        afterEach(async () => {
+            try {
+                await s3.send(new DeleteBucketCommand({ Bucket: sourceBucket }));
+            } catch (error) {
+                // Log error but don't fail the test cleanup
+                // eslint-disable-next-line no-console
+                console.warn(`Failed to cleanup bucket ${sourceBucket}:`, error.message);
+            }
+        });
+    
+        it('should return AccessDenied if user is not bucket owner', async () => {
+            try {
+                const res = await otherAccountS3.send(new PutBucketReplicationCommand(replicationParams));
+                // eslint-disable-next-line no-console
+                console.log('res', res);
+                throw new Error('Expected AccessDenied error');
+            } catch (err) {
+                if (err.message === 'Expected AccessDenied error') {
+                    throw err;
+                }
                 assert(err);
-                assert.strictEqual(err.code, 'AccessDenied');
-                assert.strictEqual(err.statusCode, 403);
-                return done();
-            }));
+                assert.strictEqual(err.Code, 'AccessDenied');
+                assert.strictEqual(err.$metadata.httpStatusCode, 403);
+            }
+        });
 
-        it('should not put configuration on bucket without versioning', done =>
-            s3.putBucketReplication(replicationParams, err => {
+                // Replace lines 147-155:
+        
+        it('should not put configuration on bucket without versioning', async () => {
+            try {
+                await s3.send(new PutBucketReplicationCommand(replicationParams));
+                throw new Error('Expected InvalidRequest error');
+            } catch (err) {
+                if (err.message === 'Expected InvalidRequest error') {
+                    throw err;
+                }
                 assertError(err, 'InvalidRequest');
-                return done();
-            }));
+            }
+        });
 
         it('should not put configuration on bucket with \'Suspended\'' +
             'versioning', done =>
@@ -137,23 +176,39 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
 
     function checkError(config, expectedErr, cb) {
         const replicationParams = getReplicationParams(config);
-        s3.putBucketReplication(replicationParams, err => {
-            assertError(err, expectedErr);
-            return cb();
-        });
+        s3.send(new PutBucketReplicationCommand(replicationParams))
+            .then(() => {
+                if (expectedErr !== null) {
+                    return cb(new Error(`Expected ${expectedErr} error`));
+                }
+                return cb();
+            })
+            .catch(err => {
+                assertError(err, expectedErr);
+                return cb();
+            });
     }
 
-    beforeEach(done => {
+    beforeEach(async () => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3 = new S3(config);
-        return series([
-            next => s3.createBucket({ Bucket: sourceBucket }, next),
-            next =>
-                s3.putBucketVersioning(getVersioningParams('Enabled'), next),
-        ], err => done(err));
+        s3 = new S3Client(config);
+        
+        // Create bucket
+        await s3.send(new CreateBucketCommand({ Bucket: sourceBucket }));
+        
+        // Enable versioning
+        await s3.send(new PutBucketVersioningCommand(getVersioningParams('Enabled')));
     });
-
-    afterEach(done => s3.deleteBucket({ Bucket: sourceBucket }, done));
+    
+    afterEach(async () => {
+        try {
+            await s3.send(new DeleteBucketCommand({ Bucket: sourceBucket }));
+        } catch (error) {
+            // Log error but don't fail the test cleanup
+            // eslint-disable-next-line no-console
+            console.warn(`Failed to cleanup bucket ${sourceBucket}:`, error.message);
+        }
+    });
 
     replicationUtils.invalidRoleARNs.forEach(ARN => {
         const Role = ARN === '' || ARN === ',' ? ARN : `${ARN},${ARN}`;

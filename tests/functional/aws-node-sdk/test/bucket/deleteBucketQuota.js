@@ -1,5 +1,6 @@
-const AWS = require('aws-sdk');
-const S3 = AWS.S3;
+const { S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand } = require('@aws-sdk/client-s3');
 const assert = require('assert');
 const getConfig = require('../support/config');
 const sendRequest = require('../quota/tooling').sendRequest;
@@ -12,13 +13,16 @@ describe('Test delete bucket quota', () => {
 
     before(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3 = new S3(config);
-        AWS.config.update(config);
+        s3 = new S3Client(config);
     });
 
-    beforeEach(done => s3.createBucket({ Bucket: bucket }, done));
+    beforeEach(async () => {
+        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+    });
 
-    afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
+    afterEach(async () => {
+        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+    });
 
     it('should delete the bucket quota', async () => {
         try {
