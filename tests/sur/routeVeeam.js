@@ -2,6 +2,10 @@ const assert = require('assert');
 const crypto = require('crypto');
 const async = require('async');
 const { Scuba: MockScuba } = require('../utilities/mock/Scuba');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+} = require('@aws-sdk/client-s3');
 
 const { makeRequest } = require('../functional/raw-node/utils/makeRequest');
 const BucketUtility =
@@ -148,7 +152,7 @@ function makeVeeamRequest(params, callback) {
             bucketUtil = new BucketUtility(
                 'default', { signatureVersion: 'v4' });
             s3 = bucketUtil.s3;
-            s3.createBucket({ Bucket: TEST_BUCKET }).promise()
+            s3.send(new CreateBucketCommand({ Bucket: TEST_BUCKET }))
                 .then(() => done())
                 .catch(err => {
                     process.stdout.write(`Error creating bucket: ${err}\n`);
@@ -157,7 +161,7 @@ function makeVeeamRequest(params, callback) {
         });
         after(done => {
             bucketUtil.empty(TEST_BUCKET)
-                .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
+                .then(() => s3.send(new DeleteBucketCommand({ Bucket: TEST_BUCKET })))
                 .then(() => done())
                 .catch(done);
         });
@@ -236,7 +240,7 @@ function makeVeeamRequest(params, callback) {
             bucketUtil = new BucketUtility(
                 'default', { signatureVersion: 'v4' });
             s3 = bucketUtil.s3;
-            s3.createBucket({ Bucket: TEST_BUCKET }).promise()
+            s3.send(new CreateBucketCommand({ Bucket: TEST_BUCKET }))
                 .then(() => done())
                 .catch(err => {
                     process.stdout.write(`Error creating bucket: ${err}\n`);
@@ -245,7 +249,7 @@ function makeVeeamRequest(params, callback) {
         });
         afterEach(done => {
             bucketUtil.empty(TEST_BUCKET)
-                .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
+                .then(() => s3.send(new DeleteBucketCommand({ Bucket: TEST_BUCKET })))
                 .then(() => done())
                 .catch(done);
         });
@@ -372,7 +376,7 @@ function makeVeeamRequest(params, callback) {
             bucketUtil = new BucketUtility(
                 'default', { signatureVersion: 'v4' });
             s3 = bucketUtil.s3;
-            s3.createBucket({ Bucket: TEST_BUCKET }).promise()
+            s3.send(new CreateBucketCommand({ Bucket: TEST_BUCKET }))
                 .then(() => done())
                 .catch(err => {
                     process.stdout.write(`Error creating bucket: ${err}\n`);
@@ -381,7 +385,7 @@ function makeVeeamRequest(params, callback) {
         });
         afterEach(done => {
             bucketUtil.empty(TEST_BUCKET)
-                .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
+                .then(() => s3.send(new DeleteBucketCommand({ Bucket: TEST_BUCKET })))
                 .then(() => done())
                 .catch(done);
         });
@@ -484,7 +488,7 @@ function makeVeeamRequest(params, callback) {
             bucketUtil = new BucketUtility(
                 'default', { signatureVersion: 'v4' });
             s3 = bucketUtil.s3;
-            s3.createBucket({ Bucket: TEST_BUCKET }).promise()
+            s3.send(new CreateBucketCommand({ Bucket: TEST_BUCKET }))
                 .then(() => done())
                 .catch(err => {
                     process.stdout.write(`Error creating bucket: ${err}\n`);
@@ -493,7 +497,7 @@ function makeVeeamRequest(params, callback) {
         });
         afterEach(done => {
             bucketUtil.empty(TEST_BUCKET)
-                .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
+                .then(() => s3.send(new DeleteBucketCommand({ Bucket: TEST_BUCKET })))
                 .then(() => done())
                 .catch(done);
         });
@@ -571,7 +575,7 @@ describe.skip('veeam LIST routes:', () => {
         bucketUtil = new BucketUtility(
             'default', { signatureVersion: 'v4' });
         s3 = bucketUtil.s3;
-        s3.createBucket({ Bucket: TEST_BUCKET }).promise()
+        s3.send(new CreateBucketCommand({ Bucket: TEST_BUCKET }))
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
@@ -580,7 +584,7 @@ describe.skip('veeam LIST routes:', () => {
     });
     afterEach(done => {
         bucketUtil.empty(TEST_BUCKET)
-            .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
+            .then(() => s3.send(new DeleteBucketCommand({ Bucket: TEST_BUCKET })))
             .then(() => done())
             .catch(done);
     });
