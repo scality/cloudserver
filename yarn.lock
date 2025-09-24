@@ -684,6 +684,15 @@
     "@smithy/types" "^4.8.0"
     tslib "^2.6.2"
 
+"@aws-sdk/middleware-retry@^3.374.0":
+  version "3.374.0"
+  resolved "https://registry.yarnpkg.com/@aws-sdk/middleware-retry/-/middleware-retry-3.374.0.tgz#2e80bad67338a3bd3c7dd7364e16482b08c9ffda"
+  integrity sha512-ZnT84qnT+Zmelv7y6hAqgAEaZgpGlrvf/+rchNWT0oG4duxI5bLWcRi9U88Jz7G8JgNQcGKJqPfC6oogCd7p8w==
+  dependencies:
+    "@smithy/middleware-retry" "^1.0.3"
+    tslib "^2.5.0"
+    uuid "^8.3.2"
+
 "@aws-sdk/middleware-sdk-s3@3.916.0":
   version "3.916.0"
   resolved "https://registry.yarnpkg.com/@aws-sdk/middleware-sdk-s3/-/middleware-sdk-s3-3.916.0.tgz#5c1cc4645186b3c0f7ac5f6a897885af0b62198e"
@@ -2119,6 +2128,19 @@
     "@smithy/util-middleware" "^4.2.3"
     tslib "^2.6.2"
 
+"@smithy/middleware-retry@^1.0.3":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@smithy/middleware-retry/-/middleware-retry-1.1.0.tgz#084f70df112f22b5bfa0de8faaa14a5dcf22149e"
+  integrity sha512-lINKYxIvT+W20YFOtHBKeGm7npuJg0/YCoShttU7fVpsmU+a2rdb9zrJn1MHqWfUL6DhTAWGa0tH2O7l4XrDcw==
+  dependencies:
+    "@smithy/protocol-http" "^1.2.0"
+    "@smithy/service-error-classification" "^1.1.0"
+    "@smithy/types" "^1.2.0"
+    "@smithy/util-middleware" "^1.1.0"
+    "@smithy/util-retry" "^1.1.0"
+    tslib "^2.5.0"
+    uuid "^8.3.2"
+
 "@smithy/middleware-retry@^4.2.4":
   version "4.3.0"
   resolved "https://registry.yarnpkg.com/@smithy/middleware-retry/-/middleware-retry-4.3.0.tgz#453c9668b013fbfa900957857f74f3b15936b384"
@@ -2241,6 +2263,14 @@
     "@smithy/types" "^4.8.0"
     tslib "^2.6.2"
 
+"@smithy/protocol-http@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@smithy/protocol-http/-/protocol-http-1.2.0.tgz#a554e4dabb14508f0bc2cdef9c3710e2b294be04"
+  integrity sha512-GfGfruksi3nXdFok5RhgtOnWe5f6BndzYfmEXISD+5gAGdayFGpjWu5pIqIweTudMtse20bGbc+7MFZXT1Tb8Q==
+  dependencies:
+    "@smithy/types" "^1.2.0"
+    tslib "^2.5.0"
+
 "@smithy/protocol-http@^4.1.8":
   version "4.1.8"
   resolved "https://registry.yarnpkg.com/@smithy/protocol-http/-/protocol-http-4.1.8.tgz#0461758671335f65e8ff3fc0885ab7ed253819c9"
@@ -2298,6 +2328,11 @@
   dependencies:
     "@smithy/types" "^4.8.0"
     tslib "^2.6.2"
+
+"@smithy/service-error-classification@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@smithy/service-error-classification/-/service-error-classification-1.1.0.tgz#264dd432ae513b3f2ad9fc6f461deda8c516173c"
+  integrity sha512-OCTEeJ1igatd5kFrS2VDlYbainNNpf7Lj1siFOxnRWqYOP9oNvC5HOJBd3t+Z8MbrmehBtuDJ2QqeBsfeiNkww==
 
 "@smithy/service-error-classification@^4.1.2":
   version "4.1.2"
@@ -2663,6 +2698,13 @@
   dependencies:
     tslib "^2.6.2"
 
+"@smithy/util-middleware@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@smithy/util-middleware/-/util-middleware-1.1.0.tgz#9f186489437ca2ef753c5e1de2930f76fd1edc14"
+  integrity sha512-6hhckcBqVgjWAqLy2vqlPZ3rfxLDhFWEmM7oLh2POGvsi7j0tHkbN7w4DFhuBExVJAbJ/qqxqZdRY6Fu7/OezQ==
+  dependencies:
+    tslib "^2.5.0"
+
 "@smithy/util-middleware@^2.2.0":
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/@smithy/util-middleware/-/util-middleware-2.2.0.tgz#80cfad40f6cca9ffe42a5899b5cb6abd53a50006"
@@ -2694,6 +2736,14 @@
   dependencies:
     "@smithy/types" "^4.8.0"
     tslib "^2.6.2"
+
+"@smithy/util-retry@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@smithy/util-retry/-/util-retry-1.1.0.tgz#f6e62ec7d7d30f1dd9608991730ba7a86e445047"
+  integrity sha512-ygQW5HBqYXpR3ua09UciS0sL7UGJzGiktrKkOuEJwARoUuzz40yaEGU6xd9Gs7KBmAaFC8gMfnghHtwZ2nyBCQ==
+  dependencies:
+    "@smithy/service-error-classification" "^1.1.0"
+    tslib "^2.5.0"
 
 "@smithy/util-retry@^4.1.2":
   version "4.1.2"
