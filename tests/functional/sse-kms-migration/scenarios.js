@@ -48,7 +48,7 @@ async function assertObjectSSE(
     { arnPrefix = kms.arnPrefix, headers } = { arnPrefix: kms.arnPrefix },
     testCase,
 ) {
-    const head = await helpers.s3.headObject({ Bucket, Key, VersionId }).promise();
+    const head = await helpers.s3.headObject({ Bucket, Key, VersionId });
     const sseMD = await helpers.getObjectMDSSE(Bucket, Key);
     const arnPrefixReg = new RegExp(`^${arnPrefix}`);
 
@@ -83,7 +83,7 @@ async function assertObjectSSE(
     }
 
     // always verify GetObject as well to ensure accurate decryption
-    const get = await helpers.s3.getObject({ Bucket, Key, ...(VersionId && { VersionId }) }).promise();
+    const get = await helpers.s3.getObject({ Bucket, Key, ...(VersionId && { VersionId }) });
     assert.strictEqual(get.Body.toString(), Body);
 }
 
@@ -96,10 +96,12 @@ async function deleteBucketSSEBeforeEach(bktName, log) {
 }
 
 async function getBucketSSEError(Bucket) {
-    await assert.rejects(helpers.s3.getBucketEncryption({ Bucket }).promise(), err => {
-        assert.strictEqual(err.code, 'ServerSideEncryptionConfigurationNotFoundError');
-        return true;
-    });
+    try {
+        await helpers.s3.getBucketEncryption({ Bucket });
+        throw new Error('Expected error but got success');
+    } catch (err) {
+        assert.strictEqual(err.name, 'ServerSideEncryptionConfigurationNotFoundError');
+    }
 }
 
 // testCase should be one of before, migration, after
@@ -199,7 +201,7 @@ async function copyObjectAndSSE(
             body: 'BODY(copy)',
         },
     ];
-    const headers = await helpers.s3.copyObject(tests[index].copyArgs).promise();
+    const headers = await helpers.s3.copyObject(tests[index].copyArgs);
     let forcedSSE;
 
     if (forceBktSSE) {
@@ -253,7 +255,7 @@ async function mpuUploadPart({ UploadId, Bucket, Key, Body, PartNumber }, mpuOve
         Body,
         Key,
         PartNumber,
-    }).promise();
+    });
     testCase !== 'before' && assertMPUSSEHeaders(part, mpuOverviewMDSSE, algo);
     return part;
 }
@@ -270,24 +272,37 @@ async function mpuUploadPartCopy(
         PartNumber,
         CopySource,
         CopySourceRange,
-    }).promise();
+    });
     testCase !== 'before' && assertMPUSSEHeaders(part, mpuOverviewMDSSE, algo);
     return part;
 }
 
 // before has no headers to assert
 async function mpuComplete({ UploadId, Bucket, Key }, { existingParts, newParts }, mpuOverviewMDSSE, algo, testCase) {
+    const extractETag = part => {
+        const eTag = part.CopyPartResult?.ETag || part.ETag || undefined;
+        assert(eTag !== undefined, `Could not find ETag in part: ${JSON.stringify(part)}`);
+        return eTag;
+    };
+    
+    const allParts = [
+        ...existingParts.map(part => ({ 
+            PartNumber: part.PartNumber, 
+            ETag: extractETag(part)
+        })),
+        ...newParts.map((part, idx) => ({ 
+            PartNumber: existingParts.length + idx + 1, 
+            ETag: extractETag(part)
+        })),
+    ];    
     const complete = await helpers.s3.completeMultipartUpload({
         UploadId,
         Bucket,
         Key,
         MultipartUpload: {
-            Parts: [
-                ...existingParts.map(part => ({ PartNumber: part.PartNumber, ETag: part.ETag })),
-                ...newParts.map((part, idx) => ({ PartNumber: existingParts.length + idx + 1, ETag: part.ETag })),
-            ],
+             Parts: allParts,
         },
-    }).promise();
+    });
     testCase !== 'before' && assertMPUSSEHeaders(complete, mpuOverviewMDSSE, algo);
     return complete;
 }
