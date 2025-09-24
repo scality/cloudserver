@@ -23,7 +23,7 @@ async function assertObjectSSE(
     { arnPrefix = kms.arnPrefix, put, headers } = { arnPrefix: kms.arnPrefix },
 ) {
     const sseMD = await helpers.getObjectMDSSE(Bucket, Key);
-    const head = await helpers.s3.headObject({ Bucket, Key, VersionId }).promise();
+    const head = await helpers.s3.headObject({ Bucket, Key, VersionId });
     const sseMDMigrated = await helpers.getObjectMDSSE(Bucket, Key);
     const expectedKey = `${sseMD.SSEKMSKeyId && isScalityKmsArn(sseMD.SSEKMSKeyId)
         ? '' : arnPrefix}${sseMD.SSEKMSKeyId}`;
@@ -58,7 +58,7 @@ async function assertObjectSSE(
     }
 
     // always verify GetObject as well to ensure acurate decryption
-    const get = await helpers.s3.getObject({ Bucket, Key, ...(VersionId && { VersionId }) }).promise();
+    const get = await helpers.s3.getObject({ Bucket, Key, ...(VersionId && { VersionId }) });
     assert.strictEqual(get.Body.toString(), Body);
 }
 
@@ -86,8 +86,8 @@ describe('SSE KMS migration', () => {
                 ? bkt.kmsKeyInfo.masterKeyArn
                 : bkt.kmsKeyInfo.masterKeyId;
         }
-        await helpers.s3.headBucket(({ Bucket: bkt.name })).promise();
-        await helpers.s3.headBucket(({ Bucket: bkt.vname })).promise();
+        await helpers.s3.headBucket(({ Bucket: bkt.name }));
+        await helpers.s3.headBucket(({ Bucket: bkt.vname }));
         if (bktConf.algo) {
             const bktSSE = await helpers.getBucketSSE(bkt.name);
             assert.strictEqual(bktSSE.SSEAlgorithm, bktConf.algo);
@@ -127,12 +127,12 @@ describe('SSE KMS migration', () => {
     before('setup', async () => {
         console.log('Run migration',
             { profile: helpers.credsProfile, accessKeyId: helpers.s3.config.credentials.accessKeyId });
-        const allBuckets = (await helpers.s3.listBuckets().promise()).Buckets.map(b => b.Name);
+        const allBuckets = (await helpers.s3.listBuckets()).Buckets.map(b => b.Name);
         console.log('List buckets:', allBuckets);
         await helpers.MD.setup();
-        await helpers.s3.headBucket({ Bucket: copyBkt }).promise();
-        await helpers.s3.headBucket(({ Bucket: mpuCopyBkt })).promise();
-        const copySSE = await helpers.s3.getBucketEncryption({ Bucket: copyBkt }).promise();
+        await helpers.s3.headBucket({ Bucket: copyBkt });
+        await helpers.s3.headBucket(({ Bucket: mpuCopyBkt }));
+        const copySSE = await helpers.s3.getBucketEncryption({ Bucket: copyBkt });
         const { SSEAlgorithm, KMSMasterKeyID } = copySSE
             .ServerSideEncryptionConfiguration.Rules[0].ApplyServerSideEncryptionByDefault;
         assert.strictEqual(SSEAlgorithm, 'aws:kms');
@@ -209,7 +209,7 @@ describe('SSE KMS migration', () => {
 
             const mpus = {};
             before('retrieve MPUS', async () => {
-                const listed = await helpers.s3.listMultipartUploads({ Bucket: bkt.name }).promise();
+                const listed = await helpers.s3.listMultipartUploads({ Bucket: bkt.name });
                 assert.strictEqual(listed.IsTruncated, false, 'Too much MPUs, need to loop on pagination');
                 for (const mpu of listed.Uploads) {
                     mpus[mpu.Key] = mpu.UploadId;
@@ -267,7 +267,7 @@ describe('SSE KMS migration', () => {
                 const mpuOverviewMDSSE = await helpers.getObjectMDSSE(MPUBucketName, longMPUIdentifier);
 
                 const existingParts = await helpers.s3.listParts({
-                    Bucket: bkt.name, Key: mpuKey, UploadId: uploadId }).promise();
+                    Bucket: bkt.name, Key: mpuKey, UploadId: uploadId });
                 const partCount = (existingParts.Parts || []).length || 0;
                 assert.strictEqual(existingParts.IsTruncated, false, 'Too much parts, need to loop on pagination');
                 assert.strictEqual(partCount, expectedExistingParts);
@@ -384,7 +384,7 @@ describe('SSE KMS migration', () => {
 
     it('should finish ongoing encrypted MPU by copy parts from all bkt and objects matrice', async () => {
         const mpuKey = 'mpucopy';
-        const listed = await helpers.s3.listMultipartUploads({ Bucket: mpuCopyBkt }).promise();
+        const listed = await helpers.s3.listMultipartUploads({ Bucket: mpuCopyBkt });
         assert.strictEqual(listed.IsTruncated, false, 'Too much MPUs, need to loop on pagination');
         assert.strictEqual(listed.Uploads.length, 1, 'There should be only one MPU for global copy');
         const uploadId = listed.Uploads[0].UploadId;
@@ -394,7 +394,7 @@ describe('SSE KMS migration', () => {
             Key: mpuKey,
         };
 
-        const existingParts = await helpers.s3.listParts(copyPartArg).promise();
+        const existingParts = await helpers.s3.listParts(copyPartArg);
         const partCount = (existingParts.Parts || []).length || 0;
         assert.strictEqual(existingParts.IsTruncated, false, 'Too much parts, need to loop on pagination');
         assert.strictEqual(partCount, scenarios.testCases.length * scenarios.testCasesObj.length);
@@ -411,7 +411,7 @@ describe('SSE KMS migration', () => {
                     ...copyPartArg,
                     PartNumber: partNumber,
                     CopySource: `${bkt.name}/${obj.name}`,
-                }).promise();
+                });
 
                 return { partNumber, body: obj.body, res: res.CopyPartResult };
             }));
@@ -429,7 +429,7 @@ describe('SSE KMS migration', () => {
                     ...parts.map(part => ({ PartNumber: part.partNumber, ETag: part.res.ETag })),
                 ],
             },
-        }).promise();
+        });
         const assertion = {
             Bucket: mpuCopyBkt,
             Key: mpuKey,
