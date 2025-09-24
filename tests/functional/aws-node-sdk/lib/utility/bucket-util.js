@@ -1,27 +1,39 @@
-const AWS = require('aws-sdk');
-AWS.config.logger = console;
-const { S3 } = require('aws-sdk');
+const {
+    S3Client,
+    HeadBucketCommand,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    ListObjectVersionsCommand,
+    DeleteObjectCommand,
+    ListBucketsCommand,
+} = require('@aws-sdk/client-s3');
 const projectFixture = require('../fixtures/project');
 const getConfig = require('../../test/support/config');
 
 class BucketUtility {
-    constructor(profile = 'default', config = {}) {
+    constructor(profile = 'default', config = {}, unauthenticated = false) {
         const s3Config = getConfig(profile, config);
-
-        this.s3 = new S3(s3Config);
-        this.s3.config.setPromisesDependency(Promise);
-        this.s3.config.update({
-            maxRetries: 0,
-        });
+        if (unauthenticated) {
+            this.s3 = new S3Client({
+                ...s3Config,
+                credentials: { accessKeyId: '', secretAccessKey: '' },
+                forcePathStyle: true,
+                signer: { sign: async request => request },
+             });
+        }
+       else {
+            this.s3 = new S3Client({
+                ...s3Config,
+                maxAttempts: 0,
+             });
+       }
     }
 
     bucketExists(bucketName) {
-        return this.s3
-            .headBucket({ Bucket: bucketName })
-            .promise()
+        return this.s3.send(new HeadBucketCommand({ Bucket: bucketName }))
             .then(() => true)
             .catch(err => {
-                if (err.code === 'NotFound') {
+                if (err.name === 'NotFound') {
                     return false;
                 }
                 throw err;
@@ -29,56 +41,54 @@ class BucketUtility {
     }
 
     createOne(bucketName) {
-        return this.s3
-            .createBucket({ Bucket: bucketName })
-            .promise()
-            .then(() => bucketName);
+        return this.s3.send(new CreateBucketCommand({ Bucket: bucketName }))
+            .then(() => bucketName)
+            .catch(err => {
+                throw err;
+            });
     }
 
     createOneWithLock(bucketName) {
-        return this.s3
-            .createBucket({
-                Bucket: bucketName,
-                ObjectLockEnabledForBucket: true,
-            })
-            .promise()
-            .then(() => bucketName);
+        return this.s3.send(new CreateBucketCommand({
+            Bucket: bucketName,
+            ObjectLockEnabledForBucket: true,
+        }))
+            .then(() => bucketName)
+            .catch(err => {
+                throw err;
+            });
     }
 
     createMany(bucketNames) {
         const promises = bucketNames.map(bucketName =>
             this.createOne(bucketName),
         );
-
         return Promise.all(promises);
     }
-
     createRandom(nBuckets = 1) {
         if (nBuckets === 1) {
             const bucketName = projectFixture.generateBucketName();
-
             return this.createOne(bucketName);
         }
-
         const bucketNames = projectFixture
             .generateManyBucketNames(nBuckets)
-            .sort(() => 0.5 - Math.random()); // Simply shuffle array
-
+            .sort(() => 0.5 - Math.random());
         return this.createMany(bucketNames);
     }
 
     deleteOne(bucketName) {
-        return this.s3.deleteBucket({ Bucket: bucketName }).promise();
+        return this.s3.send(new DeleteBucketCommand({ Bucket: bucketName }))
+            .catch(err => {
+                throw err;
+            });
     }
 
     deleteMany(bucketNames) {
         const promises = bucketNames.map(bucketName =>
             this.deleteOne(bucketName),
         );
-
         return Promise.all(promises);
     }
-
     /**
      * Recursively delete all versions of all objects within the bucket
      * @param bucketName
@@ -90,62 +100,47 @@ class BucketUtility {
             Bucket: bucketName,
         };
 
-        const listedObjects = await this.s3.listObjectVersions(param).promise();
-
-        for (const version of listedObjects.Versions) {
-            if (version.Key.endsWith('/')) {
-                continue;
-            }
-
-            await this.s3
-                .deleteObject({
-                    Bucket: bucketName,
-                    Key: version.Key,
-                    VersionId: version.VersionId,
-                    ...(BypassGovernanceRetention && {
-                        BypassGovernanceRetention,
-                    }),
-                })
-                .promise();
-        }
-
-        for (const version of listedObjects.Versions) {
-            if (!version.Key.endsWith('/')) {
-                continue;
-            }
-
-            await this.s3
-                .deleteObject({
-                    Bucket: bucketName,
-                    Key: version.Key,
-                    VersionId: version.VersionId,
-                    ...(BypassGovernanceRetention && {
-                        BypassGovernanceRetention,
-                    }),
-                })
-                .promise();
-        }
-
-        for (const marker of listedObjects.DeleteMarkers) {
-            await this.s3
-                .deleteObject({
-                    Bucket: bucketName,
-                    Key: marker.Key,
-                    VersionId: marker.VersionId,
-                    ...(BypassGovernanceRetention && {
-                        BypassGovernanceRetention,
-                    }),
-                })
-                .promise();
-        }
+        return this.s3.send(new ListObjectVersionsCommand(param))
+            .then(data => Promise.all(
+                (data.Versions || [])
+                    .filter(object => !object.Key.endsWith('/'))
+                    .map(object =>
+                        this.s3.send(new DeleteObjectCommand({
+                            Bucket: bucketName,
+                            Key: object.Key,
+                            VersionId: object.VersionId,
+                        }))
+                            .then(() => object)
+                    )
+                    .concat((data.Versions || [])
+                        .filter(object => object.Key.endsWith('/'))
+                        .map(object =>
+                            this.s3.send(new DeleteObjectCommand({
+                                Bucket: bucketName,
+                                Key: object.Key,
+                            }))
+                            .then(() => object)
+                        )
+                    )
+                    .concat((data.DeleteMarkers || [])
+                        .map(object =>
+                        this.s3.send(new DeleteObjectCommand({
+                            Bucket: bucketName,
+                            Key: object.Key,
+                            VersionId: object.VersionId,
+                            }))
+                            .then(() => object)
+                        ))
+            ));
     }
 
     emptyMany(bucketNames) {
-        const promises = bucketNames.map(bucketName => this.empty(bucketName));
+            const promises = bucketNames.map(
+                bucketName => this.empty(bucketName)
+        );
 
         return Promise.all(promises);
     }
-
     emptyIfExists(bucketName) {
         return this.bucketExists(bucketName).then(exists => {
             if (exists) {
@@ -154,20 +149,19 @@ class BucketUtility {
             return undefined;
         });
     }
-
     emptyManyIfExists(bucketNames) {
         const promises = bucketNames.map(bucketName =>
             this.emptyIfExists(bucketName),
         );
-
         return Promise.all(promises);
     }
 
     getOwner() {
-        return this.s3
-            .listBuckets()
-            .promise()
-            .then(data => data.Owner);
+        return this.s3.send(new ListBucketsCommand({}))
+            .then(data => data.Owner)
+            .catch(err => {
+                throw err;
+            });
     }
 }
 
