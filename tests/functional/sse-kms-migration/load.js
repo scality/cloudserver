@@ -103,12 +103,12 @@ describe(`KMS load (kmip cluster ${KMS_NODES} nodes): ${OBJECT_NUMBER
                 const Bucket = `kms-load-${i}`;
                 const { masterKeyArn } = await helpers.createKmsKey(log);
 
-                await helpers.s3.createBucket({ Bucket }).promise();
+                await helpers.s3.createBucket({ Bucket });
                 await helpers.s3.putBucketEncryption({
                     Bucket,
                     ServerSideEncryptionConfiguration: helpers.hydrateSSEConfig({
                         algo: 'aws:kms', masterKeyId: masterKeyArn }),
-                }).promise();
+                });
 
                 return { Bucket, masterKeyArn };
             }));
@@ -184,7 +184,7 @@ describe(`KMS load (kmip cluster ${KMS_NODES} nodes): ${OBJECT_NUMBER
         await (Promise.all(
             buckets.map(async ({ Bucket }) => Promise.all(
                 new Array(OBJECT_NUMBER).fill(0).map(async (_, i) =>
-                    helpers.s3.putObject({ Bucket, Key: `obj-${i}`, Body: `body-${i}` }).promise())
+                    helpers.s3.putObject({ Bucket, Key: `obj-${i}`, Body: `body-${i}` }))
             ))
         ));
         await assertRepartition(closePromise);
@@ -194,7 +194,7 @@ describe(`KMS load (kmip cluster ${KMS_NODES} nodes): ${OBJECT_NUMBER
         await Promise.all(
             buckets.map(async ({ Bucket }) => Promise.all(
                 new Array(OBJECT_NUMBER).fill(0).map(async (_, i) =>
-                    helpers.s3.getObject({ Bucket, Key: `obj-${i}` }).promise())
+                    helpers.s3.getObject({ Bucket, Key: `obj-${i}` }))
             ))
         );
         await assertRepartition(closePromise);
