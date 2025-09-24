@@ -4,6 +4,7 @@ const { S3 } = require('aws-sdk');
 const checkError = require('../../lib/utility/checkError');
 const getConfig = require('../support/config');
 const BucketUtility = require('../../lib/utility/bucket-util');
+const { config } = require('../../../../../lib/Config');
 
 const bucket = 'mock-notification-bucket';
 
@@ -114,6 +115,35 @@ describe('aws-sdk test put notification configuration', () => {
                     done();
                 });
             });
+    });
+
+    describe('event validation', () => {
+        before(done => s3.createBucket({ Bucket: bucket }, done));
+
+        after(done => s3.deleteBucket({ Bucket: bucket }, done));
+
+        const events = [
+            { supported: 'Transition', event: 's3:ObjectRestore:*' },
+            { supported: 'Transition', event: 's3:LifecycleTransition' },
+            { supported: 'Expiration', event: 's3:LifecycleExpiration:*' },
+        ];
+        events.forEach(({ supported, event }) => {
+            describe(`${event} event validation`, () => {
+                it(`should handle ${event} events based on lifecycle rules configuration`, done => {
+                    const params = getNotificationParams([event]);
+                    s3.putBucketNotificationConfiguration(params, err => {
+                        if (config.supportedLifecycleRules.some(rule => rule.includes(supported))) {
+                            // Should succeed when lifecycle rule is supported
+                            assert.ifError(err);
+                        } else {
+                            // Should fail when lifecycle rule is not supported
+                            checkError(err, 'MalformedXML', 400);
+                        }
+                        done();
+                    });
+                });
+            });
+        });
     });
 
     describe('cross origin requests', () => {
