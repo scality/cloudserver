@@ -7,6 +7,7 @@ const {
     azureGetLocationCredentials,
     locationConstraintAssert,
     parseSupportedLifecycleRules,
+    parseIntegrityChecks,
     ConfigObject,
 } = require('../../lib/Config');
 
@@ -931,6 +932,42 @@ describe('Config', () => {
                 () => new ConfigObject(),
                 /bad config: apiBodySizeLimits for "anApiNotSetInConstants.js" cannot be configured/
             );
+        });
+    });
+
+    describe('parse integrity checks', () => {
+        it('should replace default values with new values', () => {
+            const newConfig = {
+                integrityChecks: {
+                    'bucketPutACL': false,
+                    'bucketPutCors': false,
+                    'bucketPutEncryption': false,
+                    'bucketPutLifecycle': false,
+                    'bucketPutNotification': false,
+                    'bucketPutObjectLock': false,
+                    'bucketPutPolicy': false,
+                    'bucketPutReplication': false,
+                    'bucketPutVersioning': false,
+                    'bucketPutWebsite': false,
+                    'multiObjectDelete': false,
+                    'objectPutACL': false,
+                    'objectPutLegalHold': false,
+                    'objectPutTagging': false,
+                    'objectPutRetention': false,
+                },
+            };
+
+            const result = parseIntegrityChecks(newConfig);
+            for (const method in result) {
+                assert(result[method] == false, method);
+            }
+        });
+
+        it('default method value is true', () => {
+            const result = parseIntegrityChecks(null);
+            for (const method in result) {
+                assert(result[method] == true, method);
+            }
         });
     });
 });

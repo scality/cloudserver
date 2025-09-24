@@ -1,6 +1,5 @@
 const assert = require('assert');
 const async = require('async');
-
 const { errorInstances } = require('arsenal');
 const AuthInfo = require('arsenal').auth.AuthInfo;
 

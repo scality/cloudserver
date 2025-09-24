@@ -1,5 +1,4 @@
 const assert = require('assert');
-
 const aclUtils = require('../../../lib/utilities/aclUtils');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutACL = require('../../../lib/api/bucketPutACL');
