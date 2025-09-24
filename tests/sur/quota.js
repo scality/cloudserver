@@ -1,6 +1,5 @@
 const async = require('async');
 const assert = require('assert');
-const { S3 } = require('aws-sdk');
 const getConfig = require('../functional/aws-node-sdk/test/support/config');
 const { Scuba: MockScuba, inflightFlushFrequencyMS } = require('../utilities/mock/Scuba');
 const sendRequest = require('../functional/aws-node-sdk/test/quota/tooling').sendRequest;
@@ -8,6 +7,23 @@ const memCredentials = require('../functional/aws-node-sdk/lib/json/mem_credenti
 const metadata = require('../../lib/metadata/wrapper');
 const { fakeMetadataArchive } = require('../functional/aws-node-sdk/test/utils/init');
 const { config: s3Config } = require('../../lib/Config');
+const {
+    S3Client,
+    PutObjectCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    UploadPartCopyCommand,
+    CompleteMultipartUploadCommand,
+    PutBucketVersioningCommand,
+    PutObjectLockConfigurationCommand,
+    CopyObjectCommand,
+    DeleteObjectCommand,
+    DeleteObjectsCommand,
+    AbortMultipartUploadCommand,
+    RestoreObjectCommand,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+} = require('@aws-sdk/client-s3');
 
 let mockScuba = null;
 let s3Client = null;
@@ -27,26 +43,30 @@ function createBucket(bucket, locked, cb) {
     if (locked) {
         config.ObjectLockEnabledForBucket = true;
     }
-    return s3Client.createBucket(config, (err, data) => {
-        assert.ifError(err);
-        return cb(err, data);
-    });
+    return s3Client.send(new CreateBucketCommand(config)) 
+        .then(data => cb(null, data))
+        .catch(err => {
+            assert.ifError(err);
+            cb(err);
+        });
 }
 
 function configureBucketVersioning(bucket, cb) {
-    return s3Client.putBucketVersioning({
+    return s3Client.send(new PutBucketVersioningCommand({
         Bucket: bucket,
         VersioningConfiguration: {
             Status: 'Enabled',
         },
-    }, (err, data) => {
-        assert.ifError(err);
-        return cb(err, data);
-    });
+    }))
+        .then(data => cb(null, data))
+        .catch(err => {
+            assert.ifError(err);
+            cb(err);
+        });
 }
 
 function putObjectLockConfiguration(bucket, cb) {
-    return s3Client.putObjectLockConfiguration({
+    return s3Client.send(new PutObjectLockConfigurationCommand({
         Bucket: bucket,
         ObjectLockConfiguration: {
             ObjectLockEnabled: 'Enabled',
@@ -57,109 +77,136 @@ function putObjectLockConfiguration(bucket, cb) {
                 },
             },
         },
-    }, (err, data) => {
-        assert.ifError(err);
-        return cb(err, data);
-    });
+    }))
+        .then(data => cb(null, data))
+        .catch(err => {
+            assert.ifError(err);
+            cb(err);
+        });
 }
 
 function deleteBucket(bucket, cb) {
-    return s3Client.deleteBucket({
-        Bucket: bucket,
-    }, err => {
-        assert.ifError(err);
-        return cb(err);
-    });
+    return s3Client.send(new DeleteBucketCommand({ Bucket: bucket }))
+        .then(data => cb(null, data))
+        .catch(err => {
+            assert.ifError(err);
+            cb(err);
+        });
 }
 
 function putObject(bucket, key, size, cb) {
-    return s3Client.putObject({
+    return s3Client.send(new PutObjectCommand({
         Bucket: bucket,
         Key: key,
         Body: Buffer.alloc(size),
-    }, (err, data) => {
-        if (!err && !s3Config.isQuotaInflightEnabled()) {
-            mockScuba.incrementBytesForBucket(bucket, size);
-        }
-        return cb(err, data);
-    });
+    }))
+        .then(data => {
+            if (!s3Config.isQuotaInflightEnabled()) {
+                mockScuba.incrementBytesForBucket(bucket, size);
+            }
+            return cb(null, data);
+        })
+        .catch(err => {
+            cb(err);
+        });
 }
 
 function putObjectWithCustomHeader(bucket, key, size, vID, cb) {
-    const request = s3Client.putObject({
+    const params = {
         Bucket: bucket,
         Key: key,
         Body: Buffer.alloc(size),
-    });
+    };
 
-    request.on('build', () => {
-        request.httpRequest.headers['x-scal-s3-version-id'] = vID;
-    });
+    // Add custom header using middleware
+    const command = new PutObjectCommand(params);
+    command.middlewareStack.add(
+        next => async args => {
+            // eslint-disable-next-line no-param-reassign
+            args.request.headers['x-scal-s3-version-id'] = vID;
+            return next(args);
+        },
+        { step: 'build' }
+    );
 
-    return request.send((err, data) => {
-        if (!err && !s3Config.isQuotaInflightEnabled()) {
-            mockScuba.incrementBytesForBucket(bucket, 0);
-        }
-        return cb(err, data);
-    });
+    return s3Client.send(command)
+        .then(data => {
+            if (!s3Config.isQuotaInflightEnabled()) {
+                mockScuba.incrementBytesForBucket(bucket, 0);
+            }
+            cb(null, data);
+        })
+        .catch(err => cb(err));
 }
 
 function copyObject(bucket, key, sourceSize, cb) {
-    return s3Client.copyObject({
+    return s3Client.send(new CopyObjectCommand({
         Bucket: bucket,
-        CopySource: `/${bucket}/${key}`,
+        CopySource: `${bucket}/${key}`,
         Key: `${key}-copy`,
-    }, (err, data) => {
-        if (!err && !s3Config.isQuotaInflightEnabled()) {
-            mockScuba.incrementBytesForBucket(bucket, sourceSize);
-        }
-        return cb(err, data);
-    });
+    }))
+        .then(data => {
+            if (!s3Config.isQuotaInflightEnabled()) {
+                mockScuba.incrementBytesForBucket(bucket, sourceSize);
+            }
+            return cb(null, data);
+        })
+        .catch(err => {
+            cb(err);
+        });
 }
 
 function deleteObject(bucket, key, size, cb) {
-    return s3Client.deleteObject({
+    return s3Client.send(new DeleteObjectCommand({
         Bucket: bucket,
         Key: key,
-    }, err => {
-        if (!err && !s3Config.isQuotaInflightEnabled()) {
-            mockScuba.incrementBytesForBucket(bucket, -size);
-        }
-        assert.ifError(err);
-        return cb(err);
-    });
+    }))
+        .then(() => {
+            if (!s3Config.isQuotaInflightEnabled()) {
+                mockScuba.incrementBytesForBucket(bucket, -size);
+            }
+            return cb();
+        })
+        .catch(err => {
+            cb(err);
+        });
 }
 
 function deleteVersionID(bucket, key, versionId, size, cb) {
-    return s3Client.deleteObject({
+    return s3Client.send(new DeleteObjectCommand({
         Bucket: bucket,
         Key: key,
         VersionId: versionId,
-    }, (err, data) => {
-        if (!err && !s3Config.isQuotaInflightEnabled()) {
-            mockScuba.incrementBytesForBucket(bucket, -size);
-        }
-        return cb(err, data);
-    });
+    }))
+        .then(data => {
+            if (!s3Config.isQuotaInflightEnabled()) {
+                mockScuba.incrementBytesForBucket(bucket, -size);
+            }
+            return cb(null, data);
+        })
+        .catch(err => {
+            cb(err);
+        });
 }
 
 function objectMPU(bucket, key, parts, partSize, callback) {
-    let ETags = [];
+    const ETags = [];
     let uploadId = null;
     const partNumbers = Array.from(Array(parts).keys());
     const initiateMPUParams = {
         Bucket: bucket,
         Key: key,
     };
+    if (!s3Config.isQuotaInflightEnabled()) {
+        mockScuba.incrementBytesForBucket(bucket, parts * partSize);
+    }
     return async.waterfall([
-        next => s3Client.createMultipartUpload(initiateMPUParams,
-            (err, data) => {
-                if (err) {
-                    return next(err);
-                }
+        next => s3Client.send(new CreateMultipartUploadCommand(initiateMPUParams))
+            .then(data => {
                 uploadId = data.UploadId;
                 return next();
-            }),
+            })
+            .catch(next),
         next =>
             async.mapLimit(partNumbers, 1, (partNumber, callback) => {
                 const uploadPartParams = {
@@ -169,21 +216,13 @@ function objectMPU(bucket, key, parts, partSize, callback) {
                     UploadId: uploadId,
                     Body: Buffer.alloc(partSize),
                 };
-
-                return s3Client.uploadPart(uploadPartParams,
-                    (err, data) => {
-                        if (err) {
-                            return callback(err);
-                        }
-                        return callback(null, data.ETag);
-                    });
-            }, (err, results) => {
-                if (err) {
-                    return next(err);
-                }
-                ETags = results;
-                return next();
-            }),
+                return s3Client.send(new UploadPartCommand(uploadPartParams))
+                    .then(data => {
+                        ETags[partNumber] = data.ETag;
+                        return callback();
+                    })
+                    .catch(callback);
+            }, next),
         next => {
             const params = {
                 Bucket: bucket,
@@ -196,27 +235,33 @@ function objectMPU(bucket, key, parts, partSize, callback) {
                 },
                 UploadId: uploadId,
             };
-            return s3Client.completeMultipartUpload(params, next);
+            return s3Client.send(new CompleteMultipartUploadCommand(params))
+                .then(() => next())
+                .catch(next);
         },
     ], err => {
-        if (!err && !s3Config.isQuotaInflightEnabled()) {
-            mockScuba.incrementBytesForBucket(bucket, parts * partSize);
+        if (!s3Config.isQuotaInflightEnabled()) {
+            mockScuba.incrementBytesForBucket(bucket, -(parts * partSize));
         }
         return callback(err, uploadId);
     });
 }
 
 function abortMPU(bucket, key, uploadId, size, callback) {
-    return s3Client.abortMultipartUpload({
+    return s3Client.send(new AbortMultipartUploadCommand({
         Bucket: bucket,
         Key: key,
         UploadId: uploadId,
-    }, (err, data) => {
-        if (!err && !s3Config.isQuotaInflightEnabled()) {
-            mockScuba.incrementBytesForBucket(bucket, -size);
-        }
-        return callback(err, data);
-    });
+    }))
+        .then(data => {
+            if (!s3Config.isQuotaInflightEnabled()) {
+                mockScuba.incrementBytesForBucket(bucket, -size);
+            }
+            return callback(null, data);
+        })
+        .catch(err => {
+            callback(err);
+        });
 }
 
 function uploadPartCopy(bucket, key, partNumber, partSize, sleepDuration, keyToCopy, callback) {
@@ -232,14 +277,12 @@ function uploadPartCopy(bucket, key, partNumber, partSize, sleepDuration, keyToC
         mockScuba.incrementBytesForBucket(bucket, parts * partSize);
     }
     return async.waterfall([
-        next => s3Client.createMultipartUpload(initiateMPUParams,
-            (err, data) => {
-                if (err) {
-                    return next(err);
-                }
+        next => s3Client.send(new CreateMultipartUploadCommand(initiateMPUParams))
+            .then(data => {
                 uploadId = data.UploadId;
                 return next();
-            }),
+            })
+            .catch(next),
         next => {
             const uploadPartParams = {
                 Bucket: bucket,
@@ -248,30 +291,28 @@ function uploadPartCopy(bucket, key, partNumber, partSize, sleepDuration, keyToC
                 UploadId: uploadId,
                 Body: Buffer.alloc(partSize),
             };
-            return s3Client.uploadPart(uploadPartParams, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                ETags[partNumber] = data.ETag;
-                return next();
-            });
+            return s3Client.send(new UploadPartCommand(uploadPartParams))
+                .then(data => {
+                    ETags[partNumber] = data.ETag;
+                    return next();
+                })
+                .catch(next);
         },
         next => wait(sleepDuration, next),
         next => {
             const copyPartParams = {
                 Bucket: bucket,
-                CopySource: `/${bucket}/${keyToCopy}`,
+                CopySource: `${bucket}/${keyToCopy}`,
                 Key: `${key}-copy`,
                 PartNumber: partNumber + 1,
                 UploadId: uploadId,
             };
-            return s3Client.uploadPartCopy(copyPartParams, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                ETags[partNumber] = data.ETag;
-                return next(null, data.ETag);
-            });
+            return s3Client.send(new UploadPartCopyCommand(copyPartParams))
+                .then(data => {
+                    ETags[partNumber] = data.ETag;
+                    return next(null, data.ETag);
+                })
+                .catch(next);
         },
         next => {
             const params = {
@@ -285,7 +326,9 @@ function uploadPartCopy(bucket, key, partNumber, partSize, sleepDuration, keyToC
                 },
                 UploadId: uploadId,
             };
-            return s3Client.completeMultipartUpload(params, next);
+            return s3Client.send(new CompleteMultipartUploadCommand(params))
+                .then(() => next())
+                .catch(next);
         },
     ], err => {
         if (err && !s3Config.isQuotaInflightEnabled()) {
@@ -296,35 +339,48 @@ function uploadPartCopy(bucket, key, partNumber, partSize, sleepDuration, keyToC
 }
 
 function restoreObject(bucket, key, size, callback) {
-    return s3Client.restoreObject({
+    return s3Client.send(new RestoreObjectCommand({
         Bucket: bucket,
         Key: key,
         RestoreRequest: {
             Days: 1,
         },
-    }, (err, data) => {
-        if (!err && !s3Config.isQuotaInflightEnabled()) {
-            mockScuba.incrementBytesForBucket(bucket, size);
-        }
-        return callback(err, data);
-    });
+    }))
+        .then(data => {
+            if (!s3Config.isQuotaInflightEnabled()) {
+                mockScuba.incrementBytesForBucket(bucket, size);
+            }
+            return callback(null, data);
+        })
+        .catch(err => {
+            callback(err);
+        });
 }
 
 function multiObjectDelete(bucket, keys, size, callback) {
     if (!s3Config.isQuotaInflightEnabled()) {
         mockScuba.incrementBytesForBucket(bucket, -size);
     }
-    return s3Client.deleteObjects({
+    const deleteObjectsParams = keys.map(key => ({ Key: key }));    
+    const command = new DeleteObjectsCommand({
         Bucket: bucket,
         Delete: {
-            Objects: keys.map(key => ({ Key: key })),
+            Objects: deleteObjectsParams,
+            Quiet: false,
         },
-    }, (err, data) => {
-        if (err && !s3Config.isQuotaInflightEnabled()) {
-            mockScuba.incrementBytesForBucket(bucket, size);
-        }
-        return callback(err, data);
     });
+    
+    return s3Client.send(command)
+        .then(data => {
+            callback(null, data);
+        })
+        .catch(err => {
+
+            if (!s3Config.isQuotaInflightEnabled()) {
+                mockScuba.incrementBytesForBucket(bucket, size);
+            }
+            return callback(err);
+        });
 }
 
 (process.env.S3METADATA === 'mongodb' ? describe : describe.skip)('quota evaluation with scuba metrics',
@@ -339,8 +395,52 @@ function multiObjectDelete(bucket, keys, size, callback) {
         mockScuba = scuba;
 
         before(done => {
-            const config = getConfig('default', { signatureVersion: 'v4', maxRetries: 0 });
-            s3Client = new S3(config);
+            const config = getConfig('default', { 
+                maxRetries: 0,
+            });
+
+            s3Client = new S3Client({
+                ...config,
+                // Disable ALL automatic checksum handling
+                requestChecksumCalculation: 'WHEN_REQUIRED',
+                responseChecksumValidation: 'WHEN_REQUIRED',
+                checksumDisabled: true,
+                disableRequestCompression: true,
+                // Force the client to not add automatic headers
+                useGlobalEndpoint: false,
+            });
+            
+            // Add middleware to strip ALL checksum headers
+            s3Client.middlewareStack.add(
+                next => async args => {
+                    if (args.request && args.request.headers) {
+                        // Remove all AWS checksum headers
+                        // eslint-disable-next-line no-param-reassign
+                        delete args.request.headers['x-amz-checksum-crc32'];
+                        // eslint-disable-next-line no-param-reassign
+                        delete args.request.headers['x-amz-checksum-crc32c'];
+                        // eslint-disable-next-line no-param-reassign
+                        delete args.request.headers['x-amz-checksum-sha1'];
+                        // eslint-disable-next-line no-param-reassign
+                        delete args.request.headers['x-amz-checksum-sha256'];
+                        // eslint-disable-next-line no-param-reassign
+                        delete args.request.headers['x-amz-sdk-checksum-algorithm'];
+                        // eslint-disable-next-line no-param-reassign
+                        delete args.request.headers['content-md5'];
+                        
+                        // Log what headers we're sending
+                        // eslint-disable-next-line no-console
+                        console.log('Request headers after stripping:', Object.keys(args.request.headers));
+                    }
+                    return next(args);
+                },
+                {
+                    step: 'build',
+                    name: 'stripAllChecksumHeaders',
+                    priority: 'high'
+                }
+            );
+            
             scuba.start();
             metadata.setup(err => wait(2000, () => done(err)));
         });
@@ -361,10 +461,12 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 next => createBucket(bucket, false, next),
                 next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
                     JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
-                next => putObject(bucket, key, size, err => {
-                    assert.strictEqual(err.code, 'QuotaExceeded');
-                    return next();
-                }),
+                next => {
+                    putObject(bucket, key, size, err => {
+                        assert.strictEqual(err.Code, 'QuotaExceeded');
+                        return next();
+                    });
+                },
                 next => deleteBucket(bucket, next),
             ], done);
         });
@@ -386,7 +488,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => copyObject(bucket, key, size, err => {
-                    assert.strictEqual(err.code, 'QuotaExceeded');
+                    assert.strictEqual(err.Code, 'QuotaExceeded');
                     return next();
                 }),
                 next => deleteVersionID(bucket, key, vID, size, next),
@@ -405,7 +507,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 next => putObject(bucket, key, size, next),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => copyObject(bucket, key, size, err => {
-                    assert.strictEqual(err.code, 'QuotaExceeded');
+                    assert.strictEqual(err.Code, 'QuotaExceeded');
                     return next();
                 }),
                 next => deleteObject(bucket, key, size, next),
@@ -425,7 +527,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                     JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
                 next => objectMPU(bucket, key, parts, partSize, (err, _uploadId) => {
                     uploadId = _uploadId;
-                    assert.strictEqual(err.code, 'QuotaExceeded');
+                    assert.strictEqual(err.Code, 'QuotaExceeded');
                     return next();
                 }),
                 next => abortMPU(bucket, key, uploadId, 0, next),
@@ -493,7 +595,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 next => uploadPartCopy(bucket, key, parts, partSize, inflightFlushFrequencyMS * 2, keyToCopy,
                     (err, _uploadId) => {
                         uploadId = _uploadId;
-                        assert.strictEqual(err.code, 'QuotaExceeded');
+                        assert.strictEqual(err.Code, 'QuotaExceeded');
                         return next();
                     }),
                 next => abortMPU(bucket, key, uploadId, parts * partSize, next),
@@ -522,7 +624,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 }, next),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => restoreObject(bucket, key, size, err => {
-                    assert.strictEqual(err.code, 'QuotaExceeded');
+                    assert.strictEqual(err.Code, 'QuotaExceeded');
                     return next();
                 }),
                 next => deleteVersionID(bucket, key, vID, size, next),
@@ -585,7 +687,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => putObject(bucket, `${key}3`, size, err => {
-                    assert.strictEqual(err.code, 'QuotaExceeded');
+                    assert.strictEqual(err.Code, 'QuotaExceeded');
                     return next();
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
@@ -637,7 +739,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 // Here we have 0 inflight but the stored bytes are 4000 (equal to the quota)
                 // Should reject new write with QuotaExceeded (4000 + 400)
                 next => putObject(bucket, `${key}3`, size, err => {
-                    assert.strictEqual(err.code, 'QuotaExceeded');
+                    assert.strictEqual(err.Code, 'QuotaExceeded');
                     return next();
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
@@ -690,35 +792,42 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 next => deleteBucket(bucket, next),
             ], done);
         });
-
         it('should decrease the inflights when performing multi object delete', done => {
             const bucket = 'quota-test-bucket10';
             const key = 'quota-test-object';
             const size = 400;
             return async.series([
-                next => createBucket(bucket, false, next),
+                next => {
+                    createBucket(bucket, false, next);
+                },
                 next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
                     JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
-                next => putObject(bucket, `${key}1`, size, err => {
-                    assert.ifError(err);
-                    return next();
-                }
-                ),
-                next => putObject(bucket, `${key}2`, size, err => {
-                    assert.ifError(err);
-                    return next();
-                }),
+                next => {
+                    putObject(bucket, `${key}1`, size, err => {
+                        assert.ifError(err);
+                        return next();
+                    });
+                },
+                next => {
+                    putObject(bucket, `${key}2`, size, err => {
+                        assert.ifError(err);
+                        return next();
+                    });
+                },
                 next => wait(inflightFlushFrequencyMS * 2, next),
-                next => multiObjectDelete(bucket, [`${key}1`, `${key}2`], size * 2, err => {
-                    assert.ifError(err);
-                    return next();
-                }),
+                next => 
+                    multiObjectDelete(bucket, [`${key}1`, `${key}2`], size * 2, err => {
+                        assert.ifError(err);
+                        return next();
+                    }), 
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
                     assert.strictEqual(scuba.getInflightsForBucket(bucket), 0);
                     return next();
                 },
-                next => deleteBucket(bucket, next),
+                next => {
+                    deleteBucket(bucket, next);
+                },
             ], done);
         });
 
@@ -747,7 +856,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                     return next();
                 },
                 next => putObject(bucket, `${key}3`, size, err => {
-                    assert.strictEqual(err.code, 'QuotaExceeded');
+                    assert.strictEqual(err.Code, 'QuotaExceeded');
                     return next();
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
@@ -790,7 +899,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                     return next();
                 },
                 next => deleteVersionID(bucket, key, vID, size, err => {
-                    assert.strictEqual(err.code, 'AccessDenied');
+                    assert.strictEqual(err.Code, 'AccessDenied');
                     next();
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
@@ -867,7 +976,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                     }, next),
                     // Put an object, the quota should be exceeded
                     next => putObject(bucket, `${key}-2`, size, err => {
-                        assert.strictEqual(err.code, 'QuotaExceeded');
+                        assert.strictEqual(err.Code, 'QuotaExceeded');
                         return next();
                     }),
                     // Simulate the real restore
@@ -903,16 +1012,15 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
                     JSON.stringify({ quota: totalSize * 2 }), config)
                     .then(() => next()).catch(err => next(err)),
-                next => s3Client.createMultipartUpload({
+                next => s3Client.send(new CreateMultipartUploadCommand({
                     Bucket: bucket,
                     Key: key,
-                }, (err, data) => {
-                    if (err) {
-                        return next(err);
-                    }
-                    uploadId = data.UploadId;
-                    return next();
-                }),
+                }))
+                    .then(data => {
+                        uploadId = data.UploadId;
+                        return next();
+                    })
+                    .catch(err => next(err)),
                 next => async.timesSeries(parts, (n, cb) => {
                     const uploadPartParams = {
                         Bucket: bucket,
@@ -921,13 +1029,12 @@ function multiObjectDelete(bucket, keys, size, callback) {
                         UploadId: uploadId,
                         Body: Buffer.alloc(partSize),
                     };
-                    return s3Client.uploadPart(uploadPartParams, (err, data) => {
-                        if (err) {
-                            return cb(err);
-                        }
-                        ETags[n] = data.ETag;
-                        return cb();
-                    });
+                    return s3Client.send(new UploadPartCommand(uploadPartParams))
+                        .then(data => {
+                            ETags[n] = data.ETag;
+                            return cb();
+                        })
+                        .catch(err => cb(err));
                 }, next),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
@@ -948,7 +1055,9 @@ function multiObjectDelete(bucket, keys, size, callback) {
                         },
                         UploadId: uploadId,
                     };
-                    return s3Client.completeMultipartUpload(params, next);
+                    return s3Client.send(new CompleteMultipartUploadCommand(params))
+                        .then(() => next())
+                        .catch(err => next(err));
                 },
                 next => wait(inflightFlushFrequencyMS * 2, () => next()),
                 next => {
@@ -979,16 +1088,15 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
                     JSON.stringify({ quota: totalSize * 2 }), config)
                     .then(() => next()).catch(err => next(err)),
-                next => s3Client.createMultipartUpload({
+                next => s3Client.send(new CreateMultipartUploadCommand({
                     Bucket: bucket,
                     Key: key,
-                }, (err, data) => {
-                    if (err) {
-                        return next(err);
-                    }
-                    uploadId = data.UploadId;
-                    return next();
-                }),
+                }))
+                    .then(data => {
+                        uploadId = data.UploadId;
+                        return next();
+                    })
+                    .catch(err => next(err)),
                 next => async.timesSeries(parts, (n, cb) => {
                     const uploadPartParams = {
                         Bucket: bucket,
@@ -997,7 +1105,9 @@ function multiObjectDelete(bucket, keys, size, callback) {
                         UploadId: uploadId,
                         Body: Buffer.alloc(partSize),
                     };
-                    return s3Client.uploadPart(uploadPartParams, cb);
+                    return s3Client.send(new UploadPartCommand(uploadPartParams))
+                        .then(data => cb(null, data))
+                        .catch(err => cb(err));
                 }, next),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
