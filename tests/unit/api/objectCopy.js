@@ -16,6 +16,7 @@ const metadata = require('../metadataswitch');
 const { data } = require('../../../lib/data/wrapper');
 const { objectLocationConstraintHeader } = require('../../../constants');
 const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
+const { config } = require('../../../lib/Config');
 
 const {
     LOCATION_NAME_CRR,
@@ -558,5 +559,71 @@ describe('objectCopy in ingestion bucket', () => {
                     next();
                 }),
         ], done);
+    });
+});
+
+describe('objectCopy with objectKeyByteLimit', () => {
+    const originalObjectKeyByteLimit = config.objectKeyByteLimit;
+
+    beforeEach(done => {
+        cleanup();
+        async.series([
+            next => bucketPut(authInfo, putDestBucketRequest, log, next),
+            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+            next => objectPut(authInfo, versioningTestUtils.createPutObjectRequest(
+                sourceBucketName, objectKey, objData[0]), undefined, log, next),
+        ], done);
+    });
+
+    afterEach(() => {
+        config.objectKeyByteLimit = originalObjectKeyByteLimit;
+    });
+
+    it('should reject destination object key longer than 915 bytes by default', done => {
+        const longDestKey = 'a'.repeat(916);
+        const testCopyObjectRequest = _createObjectCopyRequest(destBucketName);
+        testCopyObjectRequest.objectKey = longDestKey;
+        testCopyObjectRequest.url = `/${destBucketName}/${longDestKey}`;
+
+        objectCopy(authInfo, testCopyObjectRequest, sourceBucketName, objectKey,
+            undefined, log, err => {
+                assert(err);
+                assert.strictEqual(err.KeyTooLong, true);
+                assert.match(err.description, /915/);
+                done();
+            });
+    });
+
+    it('should accept destination object key longer than 915 bytes with objectKeyByteLimit', done => {
+        config.objectKeyByteLimit = 1024;
+
+        const longDestKey = 'a'.repeat(1024);
+        const testCopyObjectRequest = _createObjectCopyRequest(destBucketName);
+        testCopyObjectRequest.objectKey = longDestKey;
+        testCopyObjectRequest.url = `/${destBucketName}/${longDestKey}`;
+
+        objectCopy(authInfo, testCopyObjectRequest, sourceBucketName, objectKey,
+            undefined, log, (err, xml) => {
+                assert.ifError(err);
+                assert(xml);
+                done();
+            });
+    });
+
+    it('should reject destination object key exceeding objectKeyByteLimit', done => {
+        config.objectKeyByteLimit = 1024;
+
+        const longDestKey = 'a'.repeat(1025);
+        const testCopyObjectRequest = _createObjectCopyRequest(destBucketName);
+        testCopyObjectRequest.objectKey = longDestKey;
+        testCopyObjectRequest.url = `/${destBucketName}/${longDestKey}`;
+
+        objectCopy(authInfo, testCopyObjectRequest, sourceBucketName, objectKey,
+            undefined, log, err => {
+                assert(err);
+                assert.strictEqual(err.KeyTooLong, true);
+                assert.match(err.description, /1024/);
+                done();
+            });
     });
 });

@@ -970,4 +970,33 @@ describe('Config', () => {
             }
         });
     });
+
+    describe('objectKeyByteLimit', () => {
+        it('should use default objectKeyByteLimit (915) from arsenal constants', () => {
+            const config = new ConfigObject();
+            assert.strictEqual(config.objectKeyByteLimit, 915);
+        });
+
+        it('should override objectKeyByteLimit from environment variable', () => {
+            setEnv('OVERRIDE_OBJECT_KEY_BYTE_LIMIT', '2048');
+            const config = new ConfigObject();
+            assert.strictEqual(config.objectKeyByteLimit, 2048);
+        });
+
+        it('should allow setting objectKeyByteLimit to 0 (no limit)', () => {
+            setEnv('OVERRIDE_OBJECT_KEY_BYTE_LIMIT', '0');
+            const config = new ConfigObject();
+            assert.strictEqual(config.objectKeyByteLimit, 0);
+        });
+
+        it('should throw error for negative objectKeyByteLimit override', () => {
+            setEnv('OVERRIDE_OBJECT_KEY_BYTE_LIMIT', '-1');
+            assert.throws(() => new ConfigObject());
+        });
+
+        it('should throw error for invalid string objectKeyByteLimit override', () => {
+            setEnv('OVERRIDE_OBJECT_KEY_BYTE_LIMIT', 'invalid');
+            assert.throws(() => new ConfigObject());
+        });
+    });
 });

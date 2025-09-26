@@ -52,6 +52,15 @@ describe('Initiate MPU', () => {
              })
         );
 
+        it('should return KeyTooLong error when key is longer than 915 bytes', done =>
+            s3.createMultipartUpload({ Bucket: bucket, Key: 'a'.repeat(916) }, err => {
+                assert(err, 'Expected err but did not find one');
+                assert.strictEqual(err.code, 'KeyTooLong');
+                assert.strictEqual(err.statusCode, 400);
+                done();
+            })
+        );
+
         it('should return error if initiating MPU w/ > 2KB user-defined md',
         done => {
             const metadata = genMaxSizeMetaHeaders();

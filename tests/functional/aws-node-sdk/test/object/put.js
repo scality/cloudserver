@@ -77,6 +77,16 @@ describe('PUT object', () => {
                 });
             });
 
+        it('should return KeyTooLong error when key is longer than 915 bytes', done => {
+            const params = { Bucket: bucket, Key: 'a'.repeat(916) };
+            s3.putObject(params, err => {
+                assert(err, 'Expected error but did not find one');
+                assert.strictEqual(err.code, 'KeyTooLong');
+                assert.match(err.message, /915/);
+                done();
+            });
+        });
+
         it('should return error if putting object w/ > 2KB user-defined md',
             done => {
                 const metadata = genMaxSizeMetaHeaders();
