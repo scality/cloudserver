@@ -105,9 +105,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                 Bucket: bucket,
                 LifecycleConfiguration: lifecycleConfig,
             };
-        
-            // Create a new S3Client with middleware to add Origin header
-            const clientConfig = getConfig('default', { signatureVersion: 'v4' });
+            const clientConfig = getConfig('default', {});
             const clientWithOrigin = new S3Client({
                 ...clientConfig,
                 requestHandler: {
