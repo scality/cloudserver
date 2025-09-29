@@ -47,13 +47,12 @@ async function cleanAllBuckets(bucketUtils, s3) {
 
 describeFn('GET Service - AWS.S3.listBuckets', function getService() {
     this.timeout(600000);
+    let unauthenticatedBucketUtil;
 
     describe('When user is unauthorized', () => {
-        let config;
-        let unauthenticatedBucketUtil;
 
         beforeEach(() => {
-            config = getConfig('default');
+            const config = getConfig('default');
             unauthenticatedBucketUtil = new BucketUtility('default', config, true);
         });
 
