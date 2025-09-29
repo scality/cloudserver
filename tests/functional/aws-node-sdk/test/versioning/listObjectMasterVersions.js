@@ -1,4 +1,5 @@
 const assert = require('assert');
+const async = require('async');
 const {
     CreateBucketCommand,
     PutBucketVersioningCommand,
@@ -44,8 +45,8 @@ describe('listObject - Delimiter master', function testSuite() {
         const s3 = bucketUtil.s3;
 
         // setup test
-        before(async () => {
-            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+        before(done => {
+            s3.send(new CreateBucketCommand({ Bucket: bucket }), done);
         });
 
         // delete bucket after testing
@@ -80,45 +81,53 @@ describe('listObject - Delimiter master', function testSuite() {
             { name: 'notes/summer/44444.txt', value: null },
         ];
 
-        it('put objects inside bucket', async () => {
-            for (const obj of objects) {
-                // Handle versioning state changes
-                if (!versioning && obj.isNull !== true) {
-                    const params = {
-                        Bucket: bucket,
-                        VersioningConfiguration: {
-                            Status: 'Enabled',
-                        },
-                    };
-                    versioning = true;
-                    await s3.send(new PutBucketVersioningCommand(params));
-                } else if (versioning && obj.isNull === true) {
-                    const params = {
-                        Bucket: bucket,
-                        VersioningConfiguration: {
-                            Status: 'Suspended',
-                        },
-                    };
-                    versioning = false;
-                    await s3.send(new PutBucketVersioningCommand(params));
-                }
-
-                // Handle object operations
-                if (obj.value === null) {
-                    // For delete operations, we need to check the response headers
-                        const result = await s3.send(new DeleteObjectCommand({
+        it('put objects inside bucket', done => {
+            async.eachSeries(objects, (obj, next) => {
+                async.waterfall([
+                    next => {
+                        if (!versioning && obj.isNull !== true) {
+                            const params = {
+                                Bucket: bucket,
+                                VersioningConfiguration: {
+                                    Status: 'Enabled',
+                                },
+                            };
+                            versioning = true;
+                            return s3.send(new PutBucketVersioningCommand(params), err =>
+                                next(err));
+                        } else if (versioning && obj.isNull === true) {
+                            const params = {
+                                Bucket: bucket,
+                                VersioningConfiguration: {
+                                    Status: 'Suspended',
+                                },
+                            };
+                            versioning = false;
+                            return s3.send(new PutBucketVersioningCommand(params), err =>
+                                next(err));
+                        }
+                        return next();
+                    },
+                    next => {
+                        if (obj.value === null) {
+                            return s3.send(new DeleteObjectCommand({
+                                Bucket: bucket,
+                                Key: obj.name,
+                            }), function test(err) {
+                                const headers = this.httpResponse.headers;
+                                assert.strictEqual(
+                                    headers['x-amz-delete-marker'], 'true');
+                                return next(err);
+                            });
+                        }
+                        return s3.send(new PutObjectCommand({
                             Bucket: bucket,
                             Key: obj.name,
-                        }));
-                        assert.strictEqual(result.DeleteMarker, true, 'Expected delete marker to be true');
-                } else {
-                    await s3.send(new PutObjectCommand({
-                        Bucket: bucket,
-                        Key: obj.name,
-                        Body: obj.value,
-                    }));
-                }
-            }
+                            Body: obj.value,
+                        }), err => next(err));
+                    },
+                ], err => next(err));
+            }, err => done(err));
         });
 
         [
@@ -325,27 +334,32 @@ describe('listObject - Delimiter master', function testSuite() {
             },
         ].forEach(test => {
             const runTest = test.skipe2e ? itSkipIfE2E : it;
-            runTest(test.name, async () => {
+            runTest(test.name, done => {
                 const expectedResult = test.expectedResult;
-                const res = await s3.send(new ListObjectsCommand(Object.assign({ Bucket: bucket }, test.params)));
-                
-                res.Contents?.forEach(result => {
-                    if (!expectedResult
-                        .find(key => key === result.Key)) {
-                        throw new Error('listing fail, ' +
-                        `unexpected key ${result.Key}`);
-                    }
-                    _assertResultElements(result);
-                });
-                res.CommonPrefixes?.forEach(cp => {
-                    if (!test.commonPrefix
-                        .find(item => item === cp.Prefix)) {
-                        throw new Error('listing fail, ' +
-                        `unexpected prefix ${cp.Prefix}`);
-                    }
-                });
-                assert.strictEqual(res.IsTruncated, test.isTruncated);
-                assert.strictEqual(res.NextMarker, test.nextMarker);
+                s3.send(new ListObjectsCommand(Object.assign({ Bucket: bucket }, test.params)),
+                    (err, res) => {
+                        if (err) {
+                            return done(err);
+                        }
+                        res.Contents?.forEach(result => {
+                            if (!expectedResult
+                                .find(key => key === result.Key)) {
+                                throw new Error('listing fail, ' +
+                                `unexpected key ${result.Key}`);
+                            }
+                            _assertResultElements(result);
+                        });
+                        res.CommonPrefixes?.forEach(cp => {
+                            if (!test.commonPrefix
+                                .find(item => item === cp.Prefix)) {
+                                throw new Error('listing fail, ' +
+                                `unexpected prefix ${cp.Prefix}`);
+                            }
+                        });
+                        assert.strictEqual(res.IsTruncated, test.isTruncated);
+                        assert.strictEqual(res.NextMarker, test.nextMarker);
+                        return done();
+                    });
             });
         });
     });
