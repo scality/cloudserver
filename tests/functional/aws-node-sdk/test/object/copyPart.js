@@ -1,19 +1,18 @@
 const assert = require('assert');
 const crypto = require('crypto');
 
-const { CreateBucketCommand,
-    PutObjectCommand,
-    GetObjectCommand,
-    HeadObjectCommand,
-    CreateMultipartUploadCommand,
-    UploadPartCommand,
-    UploadPartCopyCommand,
-    CompleteMultipartUploadCommand,
-    AbortMultipartUploadCommand
- } = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
+const { PutObjectCommand,
+    GetObjectCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    UploadPartCopyCommand,
+    CreateBucketCommand,
+    CompleteMultipartUploadCommand,
+    HeadObjectCommand,
+    AbortMultipartUploadCommand } = require('@aws-sdk/client-s3');
 const { createEncryptedBucketPromise } =
     require('../../lib/utility/createEncryptedBucket');
 const { fakeMetadataTransition, fakeMetadataArchive } = require('../utils/init');
@@ -50,7 +49,7 @@ describe('Object Part Copy', () => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            s3.createBucketPromise = params => s3.send(new CreateBucketCommand(params));
+            s3.createBucketPromise = s3.send(new s3.CreateBucketCommand());
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
                 s3.createBucketPromise = createEncryptedBucketPromise;
             }

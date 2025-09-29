@@ -1,6 +1,4 @@
 const assert = require('assert');
-const fs = require('fs');
-const path = require('path');
 const { CreateBucketCommand, 
     PutObjectCommand,
     GetObjectAclCommand,
@@ -51,17 +49,12 @@ describe('PUT object', () => {
 
         it('should put an object and set the acl via query param',
             async () => {
-                // Create a temporary file for upload
-                const tempFile = path.join(__dirname, 'temp-upload-file.txt');
-                fs.writeFileSync(tempFile, 'test content for upload');
                 const params = { Bucket: bucket, Key: 'key',
                     ACL: 'public-read', StorageClass: 'STANDARD' };
                 
-                const command = new PutObjectCommand(params);
-                const url = await getSignedUrl(s3, command);
+                const url = await getSignedUrl(s3, 'putObject', params);
                 provideRawOutput(['-verbose', '-X', 'PUT', url,
-                    '--upload-file', tempFile], httpCode => {
-                    fs.unlinkSync(tempFile);
+                    '--upload-file', 'uploadFile'], httpCode => {
                     assert.strictEqual(httpCode, '200 OK');
                     s3.send(new GetObjectAclCommand({ Bucket: bucket, Key: 'key' }))
                     .then(result => {
