@@ -143,6 +143,24 @@ function makeVeeamRequest(params, callback) {
         scuba.stop();
     });
 
+    describe('veeam invalid requests:', () => {
+        it('should return MethodNotAllowed for invalid request', done => {
+            const options = {
+                authCredentials: veeamAuthCredentials,
+                hostname: ipAddress,
+                port: 8000,
+                method: 'GET',
+                path: '/_/veeam',
+                urlForSignature: '',
+                jsonResponse: false,
+            };
+            makeRequest(options, (err, response) => {
+                assert.strictEqual(response.statusCode, 405);
+                done();
+            });
+        });
+    });
+
     describe('veeam PUT routes:', () => {
         before(done => {
             bucketUtil = new BucketUtility(

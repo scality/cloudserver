@@ -60,5 +60,6 @@
             "type": "dummy",
             "host": "localhost:6000"
         }
-    ]
+    ],
+    "enableVeeamRoute": false
 }
