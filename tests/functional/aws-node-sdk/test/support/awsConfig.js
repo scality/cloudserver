@@ -25,9 +25,9 @@ function getRealAwsConfig(location) {
     const useHTTPS = config.locationConstraints[location].details.https;
     const proto = useHTTPS ? 'https' : 'http';
     const params = {
+        region: 'us-east-1',
         endpoint: gcpEndpoint ?
             `${proto}://${gcpEndpoint}` : `${proto}://${awsEndpoint}`,
-        // signatureVersion: 'v4', // Not needed in v3, handled automatically
     };
     if (config.locationConstraints[location].type === 'gcp') {
         params.mainBucket = bucketName;
