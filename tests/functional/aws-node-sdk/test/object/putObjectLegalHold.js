@@ -1,9 +1,12 @@
 const assert = require('assert');
+const AWS = require('aws-sdk');
+const { errorInstances } = require('arsenal');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const checkError = require('../../lib/utility/checkError');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
+const { VALIDATE_CREDENTIALS, SIGN } = AWS.EventListeners.Core;
 
 const bucket = 'mock-bucket-lock';
 const unlockedBucket = 'mock-bucket-no-lock';
@@ -186,6 +189,145 @@ describeSkipIfCeph('PUT object legal hold', () => {
             s3.putObjectLegalHold(params, err => {
                 assert.ifError(err);
                 changeObjectLock([{ bucket, key, versionId }], '', done);
+            });
+        });
+    });
+});
+
+// Use bucket policy to test iam action for putObjectLegalHold with version id
+// It used to need non standard s3:PutObjectVersionLegalHold action but was fixed
+// by ARSN-297 ARTESCA-7107
+describeSkipIfCeph('PUT object legal hold iam action and version id', () => {
+    withV4(sigCfg => {
+        const bucketUtil = new BucketUtility('default', sigCfg);
+        const s3 = bucketUtil.s3;
+        const testBucket = 'bucket-policy-legalhold-test';
+        let versionId;
+
+        const legalHoldConfig = { Status: 'ON' };
+
+        function awsRequest(auth, operation, params, callback) {
+            if (auth) {
+                bucketUtil.s3[operation](params, callback);
+            } else {
+                const unauthBucketUtil = new BucketUtility('default', sigCfg);
+                const request = unauthBucketUtil.s3[operation](params);
+                request.removeListener('validate', VALIDATE_CREDENTIALS);
+                request.removeListener('sign', SIGN);
+                request.send(callback);
+            }
+        }
+
+        function cbNoError(done) {
+            return err => {
+                assert.ifError(err);
+                done();
+            };
+        }
+
+        function cbWithError(done) {
+            return err => {
+                assert.strictEqual(err.statusCode, errorInstances.AccessDenied.code);
+                done();
+            };
+        }
+
+        beforeEach(() => {
+            process.stdout.write('Setting up bucket policy legal hold tests\n');
+            return s3.createBucket({
+                Bucket: testBucket,
+                ObjectLockEnabledForBucket: true,
+            }).promise()
+            .then(() => s3.putObject({ Bucket: testBucket, Key: key }).promise())
+            .then(res => {
+                versionId = res.VersionId;
+            })
+            .catch(err => {
+                process.stdout.write('Error in beforeEach\n');
+                throw err;
+            });
+        });
+
+        afterEach(() => {
+            process.stdout.write('Cleaning up bucket policy legal hold tests\n');
+            return bucketUtil.empty(testBucket)
+            .then(() => bucketUtil.deleteMany([testBucket]))
+            .catch(err => {
+                process.stdout.write('Error in afterEach\n');
+                throw err;
+            });
+        });
+
+        const policyTestCases = [
+            {
+                action: 's3:PutObjectLegalHold',
+                expectedResult: 'allow',
+                callback: cbNoError,
+            },
+            {
+                action: 's3:PutObjectVersionLegalHold',
+                expectedResult: 'deny',
+                callback: cbWithError,
+            },
+        ];
+
+        policyTestCases.forEach(testCase => {
+            describe(`with ${testCase.action} policy`, () => {
+                beforeEach(done => {
+                    const statement = {
+                        Sid: 'AllowLegalHold',
+                        Effect: 'Allow',
+                        Principal: '*',
+                        Action: [testCase.action],
+                        Resource: [`arn:aws:s3:::${testBucket}/*`],
+                    };
+                    const bucketPolicy = {
+                        Version: '2012-10-17',
+                        Statement: [statement],
+                    };
+                    s3.putBucketPolicy({
+                        Bucket: testBucket,
+                        Policy: JSON.stringify(bucketPolicy),
+                    }, err => {
+                        assert.ifError(err);
+                        done();
+                    });
+                });
+
+                if (testCase.expectedResult === 'allow') {
+                    afterEach(() =>
+                        s3.putObjectLegalHold({
+                            Bucket: testBucket,
+                            Key: key,
+                            LegalHold: { Status: 'OFF' },
+                        }).promise()
+                        .then(() => s3.putObjectLegalHold({
+                            Bucket: testBucket,
+                            Key: key,
+                            VersionId: versionId,
+                            LegalHold: { Status: 'OFF' },
+                        }).promise())
+                    );
+                }
+
+                it(`should ${testCase.expectedResult} unauthenticated putObjectLegalHold without VersionId`, done => {
+                    const params = {
+                        Bucket: testBucket,
+                        Key: key,
+                        LegalHold: legalHoldConfig,
+                    };
+                    awsRequest(false, 'putObjectLegalHold', params, testCase.callback(done));
+                });
+
+                it(`should ${testCase.expectedResult} unauthenticated putObjectLegalHold with VersionId`, done => {
+                    const params = {
+                        Bucket: testBucket,
+                        Key: key,
+                        LegalHold: legalHoldConfig,
+                        VersionId: versionId,
+                    };
+                    awsRequest(false, 'putObjectLegalHold', params, testCase.callback(done));
+                });
             });
         });
     });
