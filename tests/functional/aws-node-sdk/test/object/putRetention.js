@@ -1,10 +1,13 @@
 const assert = require('assert');
 const moment = require('moment');
+const AWS = require('aws-sdk');
+const { errorInstances } = require('arsenal');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const checkError = require('../../lib/utility/checkError');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
+const { VALIDATE_CREDENTIALS, SIGN } = AWS.EventListeners.Core;
 
 const bucketName = 'lockenabledputbucket';
 const unlockedBucket = 'locknotenabledputbucket';
@@ -140,6 +143,127 @@ describeSkipIfCeph('PUT object retention', () => {
                 changeObjectLock([
                     { bucket: bucketName, key: objectName, versionId },
                 ], '', done);
+            });
+        });
+    });
+});
+
+// Use bucket policy to test iam action for putObjectRetention with version id
+// It used to need non standard s3:PutObjectVersionRetention action but was fixed
+// by ARSN-297 ARTESCA-7107
+describeSkipIfCeph('PUT object retention iam action and version id', () => {
+    withV4(sigCfg => {
+        const bucketUtil = new BucketUtility('default', sigCfg);
+        const s3 = bucketUtil.s3;
+        const testBucket = 'bucket-policy-retention-test';
+        let versionId;
+
+        function awsRequest(auth, operation, params, callback) {
+            if (auth) {
+                bucketUtil.s3[operation](params, callback);
+            } else {
+                const unauthBucketUtil = new BucketUtility('default', sigCfg);
+                const request = unauthBucketUtil.s3[operation](params);
+                request.removeListener('validate', VALIDATE_CREDENTIALS);
+                request.removeListener('sign', SIGN);
+                request.send(callback);
+            }
+        }
+
+        function cbNoError(done) {
+            return err => {
+                assert.ifError(err);
+                done();
+            };
+        }
+
+        function cbWithError(done) {
+            return err => {
+                assert.strictEqual(err.statusCode, errorInstances.AccessDenied.code);
+                done();
+            };
+        }
+
+        beforeEach(() => {
+            process.stdout.write('Setting up bucket policy retention tests\n');
+            return s3.createBucket({
+                Bucket: testBucket,
+                ObjectLockEnabledForBucket: true,
+            }).promise()
+            .then(() => s3.putObject({ Bucket: testBucket, Key: objectName }).promise())
+            .then(res => {
+                versionId = res.VersionId;
+            })
+            .catch(err => {
+                process.stdout.write('Error in beforeEach\n');
+                throw err;
+            });
+        });
+
+        afterEach(() => {
+            process.stdout.write('Cleaning up bucket policy retention tests\n');
+            return bucketUtil.empty(testBucket, true)
+            .then(() => bucketUtil.deleteMany([testBucket]))
+            .catch(err => {
+                process.stdout.write('Error in afterEach\n');
+                throw err;
+            });
+        });
+
+        const policyTestCases = [
+            {
+                action: 's3:PutObjectRetention',
+                expectedResult: 'allow',
+                callback: cbNoError,
+            },
+            {
+                action: 's3:PutObjectVersionRetention',
+                expectedResult: 'deny',
+                callback: cbWithError,
+            },
+        ];
+
+        policyTestCases.forEach(testCase => {
+            describe(`with ${testCase.action} policy`, () => {
+                beforeEach(done => {
+                    const statement = {
+                        Sid: 'AllowRetention',
+                        Effect: 'Allow',
+                        Principal: '*',
+                        Action: [testCase.action],
+                        Resource: [`arn:aws:s3:::${testBucket}/*`],
+                    };
+                    const bucketPolicy = {
+                        Version: '2012-10-17',
+                        Statement: [statement],
+                    };
+                    s3.putBucketPolicy({
+                        Bucket: testBucket,
+                        Policy: JSON.stringify(bucketPolicy),
+                    }, err => {
+                        assert.ifError(err);
+                        done();
+                    });
+                });
+
+                it(`should ${testCase.expectedResult} unauthenticated putObjectRetention without VersionId`, done => {
+                    const params = {
+                        Bucket: testBucket,
+                        Key: objectName,
+                        Retention: retentionConfig,
+                    };
+                    awsRequest(false, 'putObjectRetention', params, testCase.callback(done));
+                });
+
+                it(`should ${testCase.expectedResult} unauthenticated putObjectRetention with VersionId`, done => {
+                    const params = {
+                        Bucket: testBucket,
+                        Key: objectName,
+                        Retention: retentionConfig,
+                        VersionId: versionId,
+                    };
+                    awsRequest(false, 'putObjectRetention', params, testCase.callback(done));
+                });
             });
         });
     });
