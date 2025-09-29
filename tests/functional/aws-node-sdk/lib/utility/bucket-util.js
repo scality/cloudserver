@@ -82,7 +82,7 @@ class BucketUtility {
      * @returns {Promise.<T>}
      */
 
-    empty(bucketName) {
+    empty(bucketName, BypassGovernanceRetention = false) {
         const param = {
             Bucket: bucketName,
         };
@@ -99,6 +99,7 @@ class BucketUtility {
                                 Bucket: bucketName,
                                 Key: object.Key,
                                 VersionId: object.VersionId,
+                                ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
                             }).promise()
                               .then(() => object)
                         )
@@ -110,6 +111,7 @@ class BucketUtility {
                                     Bucket: bucketName,
                                     Key: object.Key,
                                     VersionId: object.VersionId,
+                                    ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
                                 }).promise()
                                 .then(() => object)
                             )
@@ -120,6 +122,7 @@ class BucketUtility {
                                      Bucket: bucketName,
                                      Key: object.Key,
                                      VersionId: object.VersionId,
+                                     ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
                                  }).promise()
                                  .then(() => object)))
                 )
