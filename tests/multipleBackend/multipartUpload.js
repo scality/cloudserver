@@ -241,29 +241,22 @@ function _getZenkoObjectKey(objectKey) {
     return objectKey;
 }
 
-async function assertObjOnBackend(expectedBackend, objectKey, cb) {
+function assertObjOnBackend(expectedBackend, objectKey, cb) {
     const zenkoObjectKey = _getZenkoObjectKey(objectKey);
     return objectGet(authInfo, getObjectGetRequest(zenkoObjectKey), false, log,
     async (err, result, metaHeaders) => {
         assert.equal(err, null, `Error getting object on S3: ${err}`);
         assert.strictEqual(metaHeaders[`x-amz-meta-${locMetaHeader}`], expectedBackend);
         if (expectedBackend === awsLocation) {
-            try {
-                const result = await s3.send(new HeadObjectCommand({ Bucket: awsBucket, Key: objectKey }));
-                // eslint-disable-next-line no-console
-                console.log('HeadObject on AWS result', result);
-                // eslint-disable-next-line no-console
-                console.log('Metadata on AWS', result.Metadata);
-                // eslint-disable-next-line no-console
-                console.log('result.Metadata[locMetaHeader]', result.Metadata[locMetaHeader]);
-                // eslint-disable-next-line no-console
-                console.log('Expected location', awsLocation);
+            return s3.send(new HeadObjectCommand({ Bucket: awsBucket, Key: objectKey }))
+            .then(result => {
                 assert.strictEqual(result.Metadata[locMetaHeader], awsLocation);
                 return cb();
-            } catch (err) {
-                assert.equal(err, null, 'Error on headObject call to AWS: ' + `${err}`);
+            }).catch(err => {
+                assert.equal(err, null, 'Error on headObject call to AWS: ' +
+                    `${err}`);
                 return cb();
-            }
+            });
         }
         return process.nextTick(cb);
     });
@@ -321,15 +314,14 @@ function putObject(putBackend, objectKey, cb) {
     });
 }
 
-async function abortMPU(uploadId, awsParams, cb) {
+function abortMPU(uploadId, awsParams, cb) {
     const abortParams = Object.assign({ UploadId: uploadId }, awsParams);
-    try {
-        await s3.send(new AbortMultipartUploadCommand(abortParams));
+    s3.send(new AbortMultipartUploadCommand(abortParams)).then(() => {
         cb();
-    } catch (err) {
+    }).catch(err => {
         assert.equal(err, null, `Error aborting MPU: ${err}`);
         cb();
-    }
+    });
 }
 
 function abortMultipleMpus(backendsInfo, callback) {
@@ -370,7 +362,6 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             parsedHost: 'localhost',
             actionImplicitDenies: false,
         };
-
         initiateMultipartUpload(authInfo, initiateRequest, log,
         (err, result) => {
             assert.strictEqual(err, null, 'Error initiating MPU');
@@ -510,17 +501,17 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             const delParams = getDeleteParams(objectKey, uploadId);
             multipartDelete(authInfo, delParams, log, async err => {
                 assert.equal(err, null, `Error aborting MPU: ${err}`);
-                try {
-                    await s3.send(new ListPartsCommand({
-                        Bucket: awsBucket,
-                        Key: objectKey,
-                        UploadId: uploadId,
-                    }));    
-                } catch (err) {
+                s3.send(new ListPartsCommand({
+                    Bucket: awsBucket,
+                    Key: objectKey,
+                    UploadId: uploadId,
+                })).then(() => {
+                    assert.fail('Expected an error listing parts of aborted MPU');
+                }).catch(err => {
                     const wantedError = isCEPH ? 'NoSuchKey' : 'NoSuchUpload';
-                    assert.strictEqual(err.Code, wantedError);
+                    assert.strictEqual(err.name, wantedError);
                     done();
-                }
+                });
             });
         });
     });
@@ -532,17 +523,17 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             const delParams = getDeleteParams(objectKey, uploadId);
             multipartDelete(authInfo, delParams, log, async err => {
                 assert.equal(err, null, `Error aborting MPU: ${err}`);
-                try {
-                    await s3.send(new ListPartsCommand({
-                        Bucket: awsBucket,
-                        Key: `${bucketName}/${objectKey}`,
-                        UploadId: uploadId,
-                    }));
-                } catch (err) {
+                s3.send(new ListPartsCommand({
+                    Bucket: awsBucket,
+                    Key: `${bucketName}/${objectKey}`,
+                    UploadId: uploadId,
+                })).then(() => {
+                    assert.fail('Expected an error listing parts of aborted MPU');
+                }).catch(err => {
                     const wantedError = isCEPH ? 'NoSuchKey' : 'NoSuchUpload';
-                    assert.strictEqual(err.Code, wantedError);
+                    assert.strictEqual(err.name, wantedError);
                     done();
-                }
+                });
             });
         });
     });
