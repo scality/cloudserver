@@ -1,6 +1,13 @@
 const assert = require('assert');
 const async = require('async');
 const { errors } = require('arsenal');
+const {
+    CreateBucketCommand,
+    DeleteObjectCommand,
+    DeleteObjectsCommand,
+    GetObjectCommand,
+    PutObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
@@ -63,18 +70,23 @@ function _assertDeleteResult(result, resultType, requestVersionId) {
 
 function delAndAssertResult(s3, params, cb) {
     const { bucket, key, versionId, resultType, resultError } = params;
-    return s3.deleteObject({ Bucket: bucket, Key: key, VersionId:
-        versionId }, (err, result) => {
+    return s3.send(new DeleteObjectCommand({ 
+        Bucket: bucket, 
+        Key: key, 
+        VersionId: versionId 
+    })).then(result => {
         if (resultError) {
-            assert(err, `expected ${resultError} but found no error`);
-            assert.strictEqual(err.code, resultError);
-            assert.strictEqual(err.statusCode, errors[resultError].code);
-            return cb(null);
+            assert.fail(`expected ${resultError} but got success`);
         }
-        assert.strictEqual(err, null, 'Expected success ' +
-            `deleting object, got error ${err}`);
         _assertDeleteResult(result, resultType, versionId);
         return cb(null, result.VersionId);
+    }).catch(err => {
+        if (resultError) {
+            assert.strictEqual(err.name, resultError);
+            assert.strictEqual(err.$metadata.httpStatusCode, errors[resultError].code);
+            return cb(null);
+        }
+        return cb(err);
     });
 }
 
@@ -89,18 +101,23 @@ function delObjectsAndAssertResult(s3, params, cb) {
         ],
         Quiet: false,
     };
-    return s3.deleteObjects({ Bucket: bucket, Delete: deleteParams }, (err, res) => {
+    return s3.send(new DeleteObjectsCommand({ 
+        Bucket: bucket, 
+        Delete: deleteParams 
+    })).then(res => {
         if (resultError) {
-            assert(err, `expected ${resultError} but found no error`);
-            assert.strictEqual(err.code, resultError);
-            assert.strictEqual(err.statusCode, errors[resultError].code);
-            return cb(null);
+            assert.fail(`expected ${resultError} but got success`);
         }
-        assert.strictEqual(err, null, 'Expected success ' +
-            `deleting object, got error ${err}`);
         const result = res.Deleted[0];
         _assertDeleteResult(result, resultType, versionId);
         return cb(null, result.VersionId);
+    }).catch(err => {
+        if (resultError) {
+            assert.strictEqual(err.name, resultError);
+            assert.strictEqual(err.$metadata.httpStatusCode, errors[resultError].code);
+            return cb(null);
+        }
+        return cb(err);
     });
 }
 
@@ -120,19 +137,25 @@ function _deleteDeleteMarkers(s3, bucket, key, deleteMarkerVids, cb) {
 
 function _getAssertDeleted(s3, params, cb) {
     const { key, versionId, errorCode } = params;
-    return s3.getObject({ Bucket: bucket, Key: key, VersionId: versionId },
-        err => {
-            assert.strictEqual(err.code, errorCode);
-            assert.strictEqual(err.statusCode, 404);
-            return cb();
-        });
+    return s3.send(new GetObjectCommand({ 
+        Bucket: bucket, 
+        Key: key, 
+        VersionId: versionId 
+    })).then(() => {
+        assert.fail('Expected error but got success');
+    }).catch(err => {
+        assert.strictEqual(err.name, errorCode);
+        assert.strictEqual(err.$metadata.httpStatusCode, 404);
+        return cb();
+    });
 }
 
+// Update AWS S3 direct calls
 function _awsGetAssertDeleted(params, cb) {
     const { key, versionId, errorCode } = params;
     return getAwsRetry({ key, versionId }, 0, err => {
-        assert.strictEqual(err.code, errorCode);
-        assert.strictEqual(err.statusCode, 404);
+        assert.strictEqual(err.name, errorCode);
+        assert.strictEqual(err.$metadata.httpStatusCode, 404);
         return cb();
     });
 }
@@ -147,7 +170,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             process.stdout.write('Creating bucket\n');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucket({ Bucket: bucket }).promise()
+            return s3.send(new CreateBucketCommand({ Bucket: bucket }))
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
@@ -476,11 +499,17 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 (s3vid, next) => awsGetLatestVerId(key, someBody,
                     (err, awsVid) => next(err, s3vid, awsVid)),
                 // put an object in AWS
-                (s3vid, awsVid, next) => awsS3.putObject({ Bucket: awsBucket,
-                    Key: key }, err => next(err, s3vid, awsVid)),
+                (s3vid, awsVid, next) => awsS3.send(new PutObjectCommand({ 
+                    Bucket: awsBucket,
+                    Key: key 
+                })).then(() => next(null, s3vid, awsVid))
+                  .catch(err => next(err)),
                 // create a delete marker in AWS
-                (s3vid, awsVid, next) => awsS3.deleteObject({ Bucket: awsBucket,
-                    Key: key }, err => next(err, s3vid, awsVid)),
+                (s3vid, awsVid, next) => awsS3.send(new DeleteObjectCommand({ 
+                    Bucket: awsBucket,
+                    Key: key 
+                })).then(() => next(null, s3vid, awsVid))
+                  .catch(err => next(err)),
                 // delete original version in s3
                 (s3vid, awsVid, next) => delAndAssertResult(s3, { bucket, key,
                     versionId: s3vid, resultType: deleteVersion },
@@ -504,8 +533,12 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 (s3vid, next) => awsGetLatestVerId(key, someBody,
                     (err, awsVid) => next(err, s3vid, awsVid)),
                 // delete the object in AWS
-                (s3vid, awsVid, next) => awsS3.deleteObject({ Bucket: awsBucket,
-                    Key: key, VersionId: awsVid }, err => next(err, s3vid)),
+                (s3vid, awsVid, next) => awsS3.send(new DeleteObjectCommand({ 
+                    Bucket: awsBucket,
+                    Key: key, 
+                    VersionId: awsVid 
+                })).then(() => next(null, s3vid))
+                  .catch(err => next(err)),
                 // then try to delete in S3
                 (s3vid, next) => delAndAssertResult(s3, { bucket, key,
                     versionId: s3vid, resultType: deleteVersion },
@@ -533,7 +566,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             process.stdout.write('Creating bucket\n');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucket(createBucketParams).promise()
+            return s3.send(new CreateBucketCommand(createBucketParams))
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
@@ -609,7 +642,7 @@ describeSkipIfNotMultiple('AWS backend delete multiple objects w. versioning: ' 
             process.stdout.write('Creating bucket\n');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucket({ Bucket: bucket }).promise()
+            return s3.send(new CreateBucketCommand({ Bucket: bucket }))
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
