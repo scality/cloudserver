@@ -102,7 +102,6 @@ function clearUploadIdFromVersions(versions) {
         return versions;
     }
 
-    // eslint-disable-next-line no-restricted-syntax
     for (const version of versions) {
         if (version.value) {
             version.value.uploadId = undefined;

@@ -815,7 +815,7 @@ describe('Abort MPU - Race Conditions', function testSuite() {
 
             // Verify results
             const abortErrors = abortResults.map(result =>
-                (result.status === 'rejected' ? result.reason : null)
+                result.status === 'rejected' ? result.reason : null
             );
 
             // At least one abort should succeed
