@@ -2,7 +2,9 @@ const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
 const { parseString } = require('xml2js');
-const AWS = require('aws-sdk');
+const { S3Client, 
+    ListPartsCommand,
+    AbortMultipartUploadCommand } = require('@aws-sdk/client-s3');
 const { storage } = require('arsenal');
 
 const { config } = require('../../lib/Config');
@@ -26,7 +28,7 @@ const fileLocation = 'scality-internal-file';
 const awsLocation = 'awsbackend';
 const awsLocationMismatch = 'awsbackendmismatch';
 const awsConfig = getRealAwsConfig(awsLocation);
-const s3 = new AWS.S3(awsConfig);
+const s3 = new S3Client(awsConfig);
 
 const splitter = constants.splitter;
 const log = new DummyRequestLogger();
@@ -159,13 +161,14 @@ function listAndAbort(uploadId, calculatedHash2, objectName, location, done) {
         Key: objectName,
         UploadId: uploadId,
     };
-    s3.listParts(params, (err, data) => {
-        assert.equal(err, null, `Error listing parts: ${err}`);
+    s3.send(new ListPartsCommand(params)).then(data => {
         assert.strictEqual(data.Parts.length, 1);
         if (calculatedHash2) {
             assert.strictEqual(`"${calculatedHash2}"`, data.Parts[0].ETag);
         }
-        s3.abortMultipartUpload(params, err => {
+        s3.send(new AbortMultipartUploadCommand(params)).then(() => {
+            done();
+        }).catch(err => {
             assert.equal(err, null, `Error aborting MPU: ${err}. ` +
             `You must abort MPU with upload ID ${uploadId} manually.`);
             done();
