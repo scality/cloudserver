@@ -1,5 +1,12 @@
 const assert = require('assert');
 const async = require('async');
+const {
+    CreateBucketCommand,
+    PutObjectCommand,
+    GetObjectAclCommand,
+    PutObjectAclCommand,
+} = require('@aws-sdk/client-s3');
+
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const constants = require('../../../../../../constants');
@@ -56,27 +63,47 @@ const testAcp = new _AccessControlPolicy(ownerParams);
 testAcp.addGrantee('Group', constants.publicId, 'READ');
 
 function putObjectAcl(s3, key, versionId, acp, cb) {
-    s3.putObjectAcl({ Bucket: bucket, Key: key, AccessControlPolicy: acp,
-        VersionId: versionId }, err => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `putting object acl, got error ${err}`);
-        cb();
-    });
+    const params = {
+        Bucket: bucket,
+        Key: key,
+        AccessControlPolicy: acp,
+    };
+    if (versionId) {
+        params.VersionId = versionId;
+    }
+    
+    const command = new PutObjectAclCommand(params);
+    s3.send(command)
+        .then(() => {
+            cb();
+        })
+        .catch(err => {
+            assert.strictEqual(err, null, 'Expected success ' +
+                `putting object acl, got error ${err}`);
+        });
 }
 
 function putObjectAndAcl(s3, key, body, acp, cb) {
-    s3.putObject({ Bucket: bucket, Key: key, Body: body },
-    (err, putData) => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `putting object, got error ${err}`);
-        putObjectAcl(s3, key, putData.VersionId, acp, () =>
-            cb(null, putData.VersionId));
+    const command = new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: body,
     });
+    
+    s3.send(command)
+        .then(putData => {
+            putObjectAcl(s3, key, putData.VersionId, acp, () =>
+                cb(null, putData.VersionId));
+        })
+        .catch(err => {
+            assert.strictEqual(err, null, 'Expected success ' +
+                `putting object, got error ${err}`);
+        });
 }
 
 /** putVersionsWithAclToAws - enable versioning and put multiple versions
  * followed by putting object acl
- * @param {AWS.S3} s3 - aws node sdk s3 instance
+ * @param {S3Client} s3 - aws sdk v3 s3 client instance
  * @param {string} key - string
  * @param {(string[]|Buffer[])} data - array of data to put as objects
  * @param {_AccessControlPolicy[]} acps - array of _AccessControlPolicy instance
@@ -103,19 +130,30 @@ function getObjectAndAssertAcl(s3, params, cb) {
         = params;
     getAndAssertResult(s3, { bucket, key, versionId, expectedVersionId, body },
         () => {
-            s3.getObjectAcl({ Bucket: bucket, Key: key, VersionId: versionId },
-                (err, data) => {
-                    assert.strictEqual(err, null, 'Expected success ' +
-                        `getting object acl, got error ${err}`);
+            const aclParams = {
+                Bucket: bucket,
+                Key: key,
+            };
+            if (versionId) {
+                aclParams.VersionId = versionId;
+            }
+            
+            const command = new GetObjectAclCommand(aclParams);
+            s3.send(command)
+                .then(data => {
                     assert.deepEqual(data, expectedResult);
                     cb();
+                })
+                .catch(err => {
+                    assert.strictEqual(err, null, 'Expected success ' +
+                        `getting object acl, got error ${err}`);
                 });
         });
 }
 
 /** getObjectsAndAssertAcls - enable versioning and put multiple versions
  * followed by putting object acl
- * @param {AWS.S3} s3 - aws node sdk s3 instance
+ * @param {S3Client} s3 - aws sdk v3 s3 client instance
  * @param {string} key - string
  * @param {string[]} versionIds - array of versionIds to use to get objs & acl
  * @param {(string[]|Buffer[])} expectedData - array of data expected from gets
@@ -150,15 +188,19 @@ function testSuite() {
             process.stdout.write('Creating bucket');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucket({ Bucket: bucket,
+            
+            const command = new CreateBucketCommand({
+                Bucket: bucket,
                 CreateBucketConfiguration: {
                     LocationConstraint: awsLocation,
                 },
-            }).promise()
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
             });
+            
+            return s3.send(command)
+                .catch(err => {
+                    process.stdout.write(`Error creating bucket: ${err}\n`);
+                    throw err;
+                });
         });
 
         afterEach(() => {
