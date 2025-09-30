@@ -29,7 +29,7 @@ function checkNoError(err) {
 
 function checkError(err, code) {
     assert.notEqual(err, null, 'Expected failure but got success');
-    assert.strictEqual(err.code, code);
+    assert.strictEqual(err.name, code);
 }
 
 describe('Object Part Copy', () => {
