@@ -1,5 +1,8 @@
 const assert = require('assert');
-
+const { CreateBucketCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+    GetObjectCommand } = require('@aws-sdk/client-s3');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const {
@@ -28,7 +31,7 @@ function testSuite() {
             process.stdout.write('Creating bucket\n');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucket({ Bucket: bucket }).promise()
+            return s3.send(new CreateBucketCommand({ Bucket: bucket }))
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
@@ -36,27 +39,27 @@ function testSuite() {
                 process.stdout.write('Putting object to GCP\n');
                 const params = { Bucket: bucket, Key: gcpObject, Body: body,
                     Metadata: { 'scal-location-constraint': gcpLocation } };
-                return s3.putObject(params).promise();
+                return s3.send(new PutObjectCommand(params));
             })
             .then(() => {
                 process.stdout.write('Putting 0-byte object to GCP\n');
                 const params = { Bucket: bucket, Key: emptyObject,
                     Metadata: { 'scal-location-constraint': gcpLocation } };
-                return s3.putObject(params).promise();
+                return s3.send(new PutObjectCommand(params));
             })
             .then(() => {
                 process.stdout.write('Putting large object to GCP\n');
                 const params = { Bucket: bucket, Key: bigObject,
                     Body: bigBody,
                     Metadata: { 'scal-location-constraint': gcpLocation } };
-                return s3.putObject(params).promise();
+                return s3.send(new PutObjectCommand(params));
             })
             .then(() => {
                 process.stdout.write('Putting object to GCP\n');
                 const params = { Bucket: bucket, Key: mismatchObject,
                     Body: body, Metadata:
                     { 'scal-location-constraint': gcpLocationMismatch } };
-                return s3.putObject(params).promise();
+                return s3.send(new PutObjectCommand(params));
             })
             .catch(err => {
                 process.stdout.write(`Error putting objects: ${err}\n`);
@@ -93,22 +96,24 @@ function testSuite() {
         ];
         deleteTests.forEach(test => {
             const { msg, Bucket, Key } = test;
-            it(msg, done => s3.deleteObject({ Bucket, Key }, err => {
-                assert.strictEqual(err, null,
-                    `Expected success, got error ${JSON.stringify(err)}`);
-                s3.getObject({ Bucket, Key }, err => {
+            it(msg, done => s3.send(new DeleteObjectCommand({ Bucket, Key }))
+                .then(() => s3.send(new GetObjectCommand({ Bucket, Key }))
+                .then(() => {
+                    assert.fail('Expected error but got success');
+                }).catch(err => {
                     assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
                         'error but got success');
-                    done();
-                });
-            }));
+                    return done();
+                })));
         });
 
         it('should return success if the object does not exist',
-            done => s3.deleteObject({ Bucket: bucket, Key: 'noop' }, err => {
+            done => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'noop' })).then(() => {
+                assert.fail('Expected error but got success');  
+            }).catch(err => {
                 assert.strictEqual(err, null,
                     `Expected success, got error ${JSON.stringify(err)}`);
-                done();
+                return done();
             }));
     });
 });
