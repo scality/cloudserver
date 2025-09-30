@@ -1,5 +1,20 @@
 const assert = require('assert');
 const moment = require('moment');
+const { NodeHttpHandler } = require('@smithy/node-http-handler');
+const {
+    CreateBucketCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    CompleteMultipartUploadCommand,
+    DeleteObjectCommand,
+    PutObjectCommand,
+    PutObjectRetentionCommand,
+    PutObjectLegalHoldCommand,
+    PutObjectLockConfigurationCommand,
+    HeadObjectCommand,
+    S3Client,
+} = require('@aws-sdk/client-s3');
+
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
@@ -19,81 +34,69 @@ describe('DELETE object', () => {
 
         describe('with multipart upload', () => {
             const bucketName = 'testdeletempu';
-            before(() => {
-                process.stdout.write('creating bucket\n');
-                return s3.createBucket({ Bucket: bucketName }).promise()
-                .then(() => {
+            before(async () => {
+                try {
+                    process.stdout.write('creating bucket\n');
+                    await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
+                    
                     process.stdout.write('initiating multipart upload\n');
-                    return s3.createMultipartUpload({
+                    const res = await s3.send(new CreateMultipartUploadCommand({
                         Bucket: bucketName,
                         Key: objectName,
-                    }).promise();
-                })
-                .then(res => {
-                    process.stdout.write('uploading parts\n');
+                    }));
+                    
                     uploadId = res.UploadId;
+                    process.stdout.write('uploading parts\n');
                     const uploads = [];
                     for (let i = 1; i <= 3; i++) {
                         uploads.push(
-                            s3.uploadPart({
+                            s3.send(new UploadPartCommand({
                                 Bucket: bucketName,
                                 Key: objectName,
                                 PartNumber: i,
                                 Body: testfile,
                                 UploadId: uploadId,
-                            }).promise()
+                            }))
                         );
                     }
-                    return Promise.all(uploads);
-                })
-                .catch(err => {
-                    process.stdout.write(`Error with uploadPart ${err}\n`);
-                    throw err;
-                })
-                .then(res => {
-                    process.stdout.write('about to complete multipart ' +
-                        'upload\n');
-                    return s3.completeMultipartUpload({
+                    const uploadResults = await Promise.all(uploads);
+                    
+                    process.stdout.write('about to complete multipart upload\n');
+                    await s3.send(new CompleteMultipartUploadCommand({
                         Bucket: bucketName,
                         Key: objectName,
                         UploadId: uploadId,
                         MultipartUpload: {
                             Parts: [
-                                { ETag: res[0].ETag, PartNumber: 1 },
-                                { ETag: res[1].ETag, PartNumber: 2 },
-                                { ETag: res[2].ETag, PartNumber: 3 },
+                                { ETag: uploadResults[0].ETag, PartNumber: 1 },
+                                { ETag: uploadResults[1].ETag, PartNumber: 2 },
+                                { ETag: uploadResults[2].ETag, PartNumber: 3 },
                             ],
                         },
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write('completeMultipartUpload error: ' +
-                        `${err}\n`);
+                    }));
+                } catch (err) {
+                    process.stdout.write(`Error in before: ${err}\n`);
                     throw err;
-                });
+                }
             });
 
-            after(() => {
-                process.stdout.write('Emptying bucket\n');
-                return bucketUtil.empty(bucketName)
-                .then(() => {
+            after(async () => {
+                try {
+                    process.stdout.write('Emptying bucket\n');
+                    await bucketUtil.empty(bucketName);
                     process.stdout.write('Deleting bucket\n');
-                    return bucketUtil.deleteOne(bucketName);
-                })
-                .catch(err => {
+                    await bucketUtil.deleteOne(bucketName);
+                } catch (err) {
                     process.stdout.write('Error in after\n');
                     throw err;
-                });
+                }
             });
 
-            it('should delete a object uploaded in parts successfully',
-            done => {
-                s3.deleteObject({ Bucket: bucketName, Key: objectName },
-                err => {
-                    assert.strictEqual(err, null,
-                        `Expected success, got error ${JSON.stringify(err)}`);
-                    done();
-                });
+            it('should delete a object uploaded in parts successfully', async () => {
+                await s3.send(new DeleteObjectCommand({ 
+                    Bucket: bucketName, 
+                    Key: objectName 
+                }));
             });
         });
 
@@ -101,127 +104,104 @@ describe('DELETE object', () => {
             const bucketName = 'testdeleteobjectlockbucket';
             let versionIdOne;
             let versionIdTwo;
-            const retainDate = moment().add(10, 'days').toISOString();
-            before(() => {
-                process.stdout.write('creating bucket\n');
-                return s3.createBucket({
-                    Bucket: bucketName,
-                    ObjectLockEnabledForBucket: true,
-                }).promise()
-                .catch(err => {
-                    process.stdout.write(`Error creating bucket ${err}\n`);
-                    throw err;
-                })
-                .then(() => {
+            const retainDate = moment().add(10, 'days').toDate();
+            before(async () => {
+                try {
+                    process.stdout.write('creating bucket\n');
+                    await s3.send(new CreateBucketCommand({
+                        Bucket: bucketName,
+                        ObjectLockEnabledForBucket: true,
+                    }));
+                    
                     process.stdout.write('putting object\n');
-                    return s3.putObject({
+                    let res = await s3.send(new PutObjectCommand({
                         Bucket: bucketName,
                         Key: objectName,
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write('Error putting object');
-                    throw err;
-                })
-                .then(res => {
+                    }));
                     versionIdOne = res.VersionId;
+
                     process.stdout.write('putting object retention\n');
-                    return s3.putObjectRetention({
+                    await s3.send(new PutObjectRetentionCommand({
                         Bucket: bucketName,
                         Key: objectName,
                         Retention: {
                             Mode: 'GOVERNANCE',
                             RetainUntilDate: retainDate,
                         },
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write('Err putting object retention\n');
-                    throw err;
-                })
-                .then(() => {
-                    process.stdout.write('putting object\n');
-                    return s3.putObject({
+                    }));
+                    
+                    process.stdout.write('putting second object\n');
+                    res = await s3.send(new PutObjectCommand({
                         Bucket: bucketName,
                         Key: objectNameTwo,
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write(('Err putting second object\n'));
-                    throw err;
-                })
-                .then(res => {
+                    }));
                     versionIdTwo = res.VersionId;
                     process.stdout.write('putting object legal hold\n');
-                    return s3.putObjectLegalHold({
+                    await s3.send(new PutObjectLegalHoldCommand({
                         Bucket: bucketName,
                         Key: objectNameTwo,
                         LegalHold: {
                             Status: 'ON',
                         },
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write('Err putting object legal hold\n');
+                    }));
+                } catch (err) {
+                    process.stdout.write(`Error in before: ${err}\n`);
                     throw err;
-                });
+                }
             });
 
-            after(() => {
-                process.stdout.write('Emptying bucket\n');
-                return bucketUtil.empty(bucketName)
-                .then(() => {
+            after(async () => {
+                try {
+                    process.stdout.write('Emptying bucket\n');
+                    await bucketUtil.empty(bucketName);
                     process.stdout.write('Deleting bucket\n');
-                    return bucketUtil.deleteOne(bucketName);
-                })
-                .catch(err => {
+                    await bucketUtil.deleteOne(bucketName);
+                } catch (err) {
                     process.stdout.write('Error in after\n');
                     throw err;
-                });
+                }
             });
 
-            it('should put delete marker if no version id specified', done => {
-                s3.deleteObject({
+            it('should put delete marker if no version id specified', async () => {
+                await s3.send(new DeleteObjectCommand({
                     Bucket: bucketName,
                     Key: objectName,
-                }, err => {
-                    assert.ifError(err);
-                    done();
-                });
+                }));
             });
 
-            it('should not delete object version locked with object ' +
-            'retention', done => {
-                s3.deleteObject({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    VersionId: versionIdOne,
-                }, err => {
-                    assert.strictEqual(err.code, 'AccessDenied');
-                    done();
-                });
+            it('should not delete object version locked with object retention', async () => {
+                try {
+                    await s3.send(new DeleteObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        VersionId: versionIdOne,
+                    }));
+                    assert.fail('Expected AccessDenied error');
+                } catch (err) {
+                    assert.strictEqual(err.name, 'AccessDenied');
+                }
             });
 
-            it('should delete locked object version with GOVERNANCE ' +
-            'retention mode and correct header', done => {
-                s3.deleteObject({
+            it('should delete locked object version with GOVERNANCE retention mode and correct header', async () => {
+                await s3.send(new DeleteObjectCommand({
                     Bucket: bucketName,
                     Key: objectName,
                     VersionId: versionIdOne,
                     BypassGovernanceRetention: true,
-                }, err => {
-                    assert.ifError(err);
-                    done();
-                });
+                }));
             });
 
             it('should not delete object locked with legal hold', done => {
-                s3.deleteObject({
+                s3.send(new DeleteObjectCommand({
                     Bucket: bucketName,
                     Key: objectNameTwo,
                     VersionId: versionIdTwo,
-                }, err => {
-                    assert.strictEqual(err.code, 'AccessDenied');
+                }))
+                .then(() => {
+                    done(new Error('Expected AccessDenied error'));
+                })
+                .catch(err => {
+                    assert.strictEqual(err.name, 'AccessDenied');
                     changeObjectLock(
                         [{
                             bucket: bucketName,
@@ -236,93 +216,82 @@ describe('DELETE object', () => {
             const bucketName = 'testdeletelocklegalholdbucket';
             const objectName = 'key';
             let versionId;
-            before(() => {
-                process.stdout.write('creating bucket\n');
-                return s3.createBucket({
-                    Bucket: bucketName,
-                    ObjectLockEnabledForBucket: true,
-                }).promise()
-                    .catch(err => {
-                        process.stdout.write(`Error creating bucket ${err}\n`);
-                        throw err;
-                    })
-                    .then(() => {
-                        process.stdout.write('putting object lock configuration\n');
-                        return s3.putObjectLockConfiguration({
-                            Bucket: bucketName,
-                            ObjectLockConfiguration: {
-                                ObjectLockEnabled: 'Enabled',
-                                Rule: {
-                                    DefaultRetention: {
-                                        Mode: 'GOVERNANCE',
-                                        Days: 1,
-                                    },
+            
+            before(async () => {
+                try {
+                    process.stdout.write('creating bucket\n');
+                    await s3.send(new CreateBucketCommand({
+                        Bucket: bucketName,
+                        ObjectLockEnabledForBucket: true,
+                    }));
+                    
+                    process.stdout.write('putting object lock configuration\n');
+                    await s3.send(new PutObjectLockConfigurationCommand({
+                        Bucket: bucketName,
+                        ObjectLockConfiguration: {
+                            ObjectLockEnabled: 'Enabled',
+                            Rule: {
+                                DefaultRetention: {
+                                    Mode: 'GOVERNANCE',
+                                    Days: 1,
                                 },
                             },
-                        }).promise();
-                    })
-                    .catch(err => {
-                        process.stdout.write('Error putting object lock configuration\n');
-                        throw err;
-                    })
-                    .then(() => {
-                        process.stdout.write('putting object\n');
-                        return s3.putObject({
-                            Bucket: bucketName,
-                            Key: objectName,
-                        }).promise();
-                    })
-                    .catch(err => {
-                        process.stdout.write('Error putting object');
-                        throw err;
-                    })
-                    .then(res => {
-                        versionId = res.VersionId;
-                        process.stdout.write('putting object legal hold\n');
-                        return s3.putObjectLegalHold({
-                            Bucket: bucketName,
-                            Key: objectName,
-                            LegalHold: {
-                                Status: 'ON',
-                            },
-                        }).promise();
-                    })
-                    .catch(err => {
-                        process.stdout.write('Err putting object legal hold\n');
-                        throw err;
-                    });
+                        },
+                    }));
+                    
+                    process.stdout.write('putting object\n');
+                    const res = await s3.send(new PutObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectName,
+                    }));
+                    versionId = res.VersionId;
+                    process.stdout.write('putting object legal hold\n');
+                    await s3.send(new PutObjectLegalHoldCommand({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        LegalHold: {
+                            Status: 'ON',
+                        },
+                    }));
+                } catch (err) {
+                    process.stdout.write(`Error in before: ${err}\n`);
+                    throw err;
+                }
             });
 
-            after(() => {
-                process.stdout.write('Emptying bucket\n');
-                return bucketUtil.empty(bucketName)
-                    .then(() => {
-                        process.stdout.write('Deleting bucket\n');
-                        return bucketUtil.deleteOne(bucketName);
-                    })
-                    .catch(err => {
-                        process.stdout.write('Error in after\n');
-                        throw err;
-                    });
+            after(async () => {
+                try {
+                    process.stdout.write('Emptying bucket\n');
+                    await bucketUtil.empty(bucketName);
+                    process.stdout.write('Deleting bucket\n');
+                    await bucketUtil.deleteOne(bucketName);
+                } catch (err) {
+                    process.stdout.write('Error in after\n');
+                    throw err;
+                }
             });
 
             it('should not delete locked object version with GOVERNANCE ' +
-                'retention mode and bypass header when object is legal-hold enabled', done =>
-                     s3.deleteObject({
-                         Bucket: bucketName,
-                         Key: objectName,
-                         VersionId: versionId,
-                         BypassGovernanceRetention: true,
-                     }, err => {
-                         assert.strictEqual(err.code, 'AccessDenied');
-                         changeObjectLock(
-                             [{
-                                 bucket: bucketName,
-                                 key: objectName,
-                                 versionId,
-                             }], '', done);
-                     }
-                ));
+                'retention mode and bypass header when object is legal-hold enabled', done => {
+                s3.send(new DeleteObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    VersionId: versionId,
+                    BypassGovernanceRetention: true,
+                }))
+                .then(() => {
+                    done(new Error('Expected AccessDenied error'));
+                })
+                .catch(err => {
+                    assert.strictEqual(err.name, 'AccessDenied');
+                    changeObjectLock(
+                        [{
+                            bucket: bucketName,
+                            key: objectName,
+                            versionId,
+                        }], '', done);
+                });
+            });
         });
 
         describe('with conditional headers (unofficial, for backbeat)', () => {
@@ -332,20 +301,20 @@ describe('DELETE object', () => {
             let objectLastModified;
 
             before(async () => {
-                await s3.createBucket({ Bucket: bucketName }).promise();
+                await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
             });
 
             beforeEach(async () => {
                 // Re-create the object for each test since some tests will delete it
-                await s3.putObject({
+                await s3.send(new PutObjectCommand({
                     Bucket: bucketName,
                     Key: testObjectKey,
                     Body: testObjectBody,
-                }).promise();
-                const head = await s3.headObject({
+                }));
+                const head = await s3.send(new HeadObjectCommand({
                     Bucket: bucketName,
                     Key: testObjectKey,
-                }).promise();
+                }));
                 objectLastModified = head.LastModified;
             });
 
@@ -355,13 +324,23 @@ describe('DELETE object', () => {
             });
 
             function deleteObjectConditional(s3, params, headers, next) {
-                const request = s3.deleteObject(params);
-                request.on('build', () => {
-                    for (const [key, value] of Object.entries(headers)) {
-                        request.httpRequest.headers[key] = value;
-                    }
+                const command = new DeleteObjectCommand(params);
+                
+                const customHandler = new NodeHttpHandler();
+                const originalHandle = customHandler.handle.bind(customHandler);
+                
+                customHandler.handle = async (request, options) => {
+                    Object.assign(request.headers, headers);
+                    return originalHandle(request, options);
+                };
+                const tempClient = new S3Client({
+                    ...s3.config,
+                    requestHandler: customHandler,
                 });
-                return request.send(next);
+
+                return tempClient.send(command)
+                    .then(data => next(null, data))
+                    .catch(err => next(err));
             }
 
             describe('If-Unmodified-Since header tests', () => {
@@ -376,11 +355,15 @@ describe('DELETE object', () => {
                     }, (err, data) => {
                         assert.ifError(err);
                         assert.deepStrictEqual(data, {});
-                        s3.headObject({
+                        s3.send(new HeadObjectCommand({
                             Bucket: bucketName,
                             Key: testObjectKey,
-                        }, err => {
-                            assert.strictEqual(err.code, 'NotFound');
+                        }))
+                        .then(() => {
+                            done(new Error('Expected NotFound error'));
+                        })
+                        .catch(err => {
+                            assert.strictEqual(err.name, 'NotFound');
                             done();
                         });
                     });
@@ -395,8 +378,8 @@ describe('DELETE object', () => {
                     }, {
                         'If-Unmodified-Since': pastDate.toUTCString(),
                     }, err => {
-                        assert.strictEqual(err.code, 'PreconditionFailed');
-                        assert.strictEqual(err.statusCode, 412);
+                        assert.strictEqual(err.name, 'PreconditionFailed');
+                        assert.strictEqual(err.$metadata.httpStatusCode, 412);
                         done();
                     });
                 });
@@ -414,11 +397,15 @@ describe('DELETE object', () => {
                     }, (err, data) => {
                         assert.ifError(err);
                         assert.deepStrictEqual(data, {});
-                        s3.headObject({
+                        s3.send(new HeadObjectCommand({
                             Bucket: bucketName,
                             Key: testObjectKey,
-                        }, err => {
-                            assert.strictEqual(err.code, 'NotFound');
+                        }))
+                        .then(() => {
+                            done(new Error('Expected NotFound error'));
+                        })
+                        .catch(err => {
+                            assert.strictEqual(err.name, 'NotFound');
                             done();
                         });
                     });
@@ -454,11 +441,15 @@ describe('DELETE object', () => {
                     }, (err, data) => {
                         assert.ifError(err);
                         assert.deepStrictEqual(data, {});
-                        s3.headObject({
+                        s3.send(new HeadObjectCommand({
                             Bucket: bucketName,
                             Key: testObjectKey,
-                        }, err => {
-                            assert.strictEqual(err.code, 'NotFound');
+                        }))
+                        .then(() => {
+                            done(new Error('Expected NotFound error'));
+                        })
+                        .catch(err => {
+                            assert.strictEqual(err.name, 'NotFound');
                             done();
                         });
                     });

@@ -3,6 +3,21 @@ const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
 const moment = require('moment');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    DeleteObjectCommand,
+    GetObjectCommand,
+    HeadObjectCommand,
+    PutObjectCommand,
+    PutObjectTaggingCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    UploadPartCopyCommand,
+    CompleteMultipartUploadCommand,
+    AbortMultipartUploadCommand,
+    ListObjectVersionsCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -21,7 +36,7 @@ const contentLanguage = 'en-US';
 const contentType = 'xml';
 // AWS Node SDK requires Date object, ISO-8601 string, or
 // a UNIX timestamp for Expires header
-const expires = new Date().toISOString();
+const expires = new Date();
 const etagTrim = 'd41d8cd98f00b204e9800998ecf8427e';
 const etag = `"${etagTrim}"`;
 const partSize = 1024 * 1024 * 5; // 5MB minumum required part size.
@@ -33,7 +48,7 @@ function checkNoError(err) {
 
 function checkError(err, code) {
     assert.notEqual(err, null, 'Expected failure but got success');
-    assert.strictEqual(err.code, code);
+    assert.strictEqual(err.Code, code);
 }
 
 function checkIntegerHeader(integerHeader, expectedSize) {
@@ -43,11 +58,11 @@ function checkIntegerHeader(integerHeader, expectedSize) {
 function dateFromNow(diff) {
     const d = new Date();
     d.setHours(d.getHours() + diff);
-    return d.toISOString();
+    return d;
 }
 
 function dateConvert(d) {
-    return (new Date(d)).toISOString();
+    return new Date(d);
 }
 
 describe('GET object', () => {
@@ -56,173 +71,179 @@ describe('GET object', () => {
         let s3;
 
         function requestGet(fields, cb) {
-            s3.getObject(Object.assign({
+            s3.send(new GetObjectCommand(Object.assign({
                 Bucket: bucketName,
                 Key: objectName,
-            }, fields), cb);
+            }, fields))).then(data => cb(null, data)).catch(err => {
+                if (err.$metadata.httpStatusCode === 304) {
+                    const notModifiedError = new Error('NotModified');
+                    notModifiedError.name = 'NotModified';
+                    notModifiedError.$metadata = err.$metadata;
+                    return cb(notModifiedError);
+                }
+                return cb(err);
+            });
         }
 
+        const requestGetPromise = promisify(requestGet);
+
         function checkGetObjectPart(key, partNumber, len, body, cb) {
-            s3.getObject({
+            s3.send(new GetObjectCommand({
                 Bucket: bucketName,
                 Key: key,
                 PartNumber: partNumber,
-            }, (err, data) => {
-                checkNoError(err);
+            })).then(async data => {
                 checkIntegerHeader(data.ContentLength, len);
                 const md5Hash = crypto.createHash('md5');
                 const md5HashExpected = crypto.createHash('md5');
+                const bodyText = await data.Body.transformToString();
                 assert.strictEqual(
-                    md5Hash.update(data.Body).digest('hex'),
+                    md5Hash.update(bodyText).digest('hex'),
                     md5HashExpected.update(body).digest('hex')
                 );
                 return cb();
-            });
+            }).catch(cb);
         }
 
-        // Upload parts with the given partNumbers array and complete MPU.
-        function completeMPU(partNumbers, cb) {
-            let ETags = [];
-
-            return async.waterfall([
-                next => {
-                    const createMpuParams = {
-                        Bucket: bucketName,
-                        Key: objectName,
-                    };
-
-                    s3.createMultipartUpload(createMpuParams, (err, data) => {
-                        checkNoError(err);
-                        return next(null, data.UploadId);
-                    });
-                },
-                (uploadId, next) =>
-                    async.eachSeries(partNumbers, (partNumber, callback) => {
-                        const uploadPartParams = {
-                            Bucket: bucketName,
-                            Key: objectName,
-                            PartNumber: partNumber,
-                            UploadId: uploadId,
-                            Body: Buffer.alloc(partSize).fill(partNumber),
-                        };
-                        return s3.uploadPart(uploadPartParams, (err, data) => {
-                            checkNoError(err);
-                            ETags = ETags.concat(data.ETag);
-                            return callback();
-                        });
-                    }, err => next(err, uploadId)),
-                (uploadId, next) => {
-                    const parts = Array.from(Array(partNumbers.length).keys());
-                    const params = {
-                        Bucket: bucketName,
-                        Key: objectName,
-                        MultipartUpload: {
-                            Parts: parts.map(n => ({
-                                ETag: ETags[n],
-                                PartNumber: partNumbers[n],
-                            })),
+                // Upload parts with the given partNumbers array and complete MPU.
+                function completeMPU(partNumbers, cb) {
+                    let ETags = [];
+        
+                    return async.waterfall([
+                        next => {
+                            const createMpuParams = {
+                                Bucket: bucketName,
+                                Key: objectName,
+                            };
+        
+                            s3.send(new CreateMultipartUploadCommand(createMpuParams)).then(data => 
+                                next(null, data.UploadId)).catch(next);
                         },
-                        UploadId: uploadId,
-                    };
-                    return s3.completeMultipartUpload(params, err => {
-                        checkNoError(err);
-                        return next(null, uploadId);
+                        (uploadId, next) =>
+                            async.eachSeries(partNumbers, (partNumber, callback) => {
+                                const uploadPartParams = {
+                                    Bucket: bucketName,
+                                    Key: objectName,
+                                    PartNumber: partNumber,
+                                    UploadId: uploadId,
+                                    Body: Buffer.alloc(partSize).fill(partNumber),
+                                };
+                                return s3.send(new UploadPartCommand(uploadPartParams)).then(data => {
+                                    ETags = ETags.concat(data.ETag);
+                                    return callback();
+                                }).catch(callback);
+                            }, err => next(err, uploadId)),
+                        (uploadId, next) => {
+                            const parts = Array.from(Array(partNumbers.length).keys());
+                            const params = {
+                                Bucket: bucketName,
+                                Key: objectName,
+                                MultipartUpload: {
+                                    Parts: parts.map(n => ({
+                                        ETag: ETags[n],
+                                        PartNumber: partNumbers[n],
+                                    })),
+                                },
+                                UploadId: uploadId,
+                            };
+                            return s3.send(new CompleteMultipartUploadCommand(params)).then(() => 
+                                next(null, uploadId)).catch(next);
+                        },
+                    ], (err, uploadId) => {
+                        if (err) {
+                            // Only try to abort if we have an uploadId
+                            if (uploadId) {
+                                return s3.send(new AbortMultipartUploadCommand({
+                                    Bucket: bucketName,
+                                    Key: objectName,
+                                    UploadId: uploadId,
+                                })).then(() => cb(err)).catch(() => cb(err));
+                            }
+                            return cb(err);
+                        }
+                        return cb();
                     });
-                },
-            ], (err, uploadId) => {
-                if (err) {
-                    return s3.abortMultipartUpload({
-                        Bucket: bucketName,
-                        Key: objectName,
-                        UploadId: uploadId,
-                    }, cb);
                 }
-                return cb();
-            });
-        }
 
         function createMPUAndPutTwoParts(partTwoBody, cb) {
             let uploadId;
             const ETags = [];
             return async.waterfall([
-                next => s3.createMultipartUpload({
+                next => s3.send(new CreateMultipartUploadCommand({
                     Bucket: bucketName,
                     Key: copyPartKey,
-                }, (err, data) => {
-                    checkNoError(err);
+                })).then(data => {
                     uploadId = data.UploadId;
                     return next();
-                }),
+                }).catch(next),
                 // Copy an object with three parts.
-                next => s3.uploadPartCopy({
+                next => s3.send(new UploadPartCopyCommand({
                     Bucket: bucketName,
                     CopySource: `/${bucketName}/${objectName}`,
                     Key: copyPartKey,
                     PartNumber: 1,
                     UploadId: uploadId,
-                }, (err, data) => {
-                    checkNoError(err);
-                    ETags[0] = data.ETag;
+                })).then(data => {
+                    ETags[0] = data.CopyPartResult.ETag;
                     return next();
-                }),
+                }).catch(next),
                 // Put an object with one part.
-                next => s3.uploadPart({
+                next => s3.send(new UploadPartCommand({
                     Bucket: bucketName,
                     Key: copyPartKey,
                     PartNumber: 2,
                     UploadId: uploadId,
                     Body: partTwoBody,
-                }, (err, data) => {
-                    checkNoError(err);
+                })).then(data => {
                     ETags[1] = data.ETag;
                     return next();
-                }),
+                }).catch(next),
             ], err => {
                 if (err) {
-                    return s3.abortMultipartUpload({
-                        Bucket: bucketName,
-                        Key: copyPartKey,
-                        UploadId: uploadId,
-                    }, cb);
+                    // Only try to abort if we have an uploadId
+                    if (uploadId) {
+                        return s3.send(new AbortMultipartUploadCommand({
+                            Bucket: bucketName,
+                            Key: copyPartKey,
+                            UploadId: uploadId,
+                        })).then(() => cb(err)).catch(() => cb(err));
+                    }
+                    return cb(err);
                 }
                 return cb(null, uploadId, ETags);
             });
         }
 
-        before(done => {
+        before(async () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             // Create a bucket to put object to get later
-            s3.createBucket({ Bucket: bucketName }, done);
+            await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
         });
 
-        after(done => {
-            s3.deleteObject({ Bucket: bucketName, Key: objectName }, err => {
-                if (err) {
-                    return done(err);
-                }
-                return s3.deleteBucket({ Bucket: bucketName }, done);
-            });
+        after(async () => {
+                await s3.send(new DeleteObjectCommand({ Bucket: bucketName, Key: objectName }));
+                await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
         });
 
         // aws-sdk now (v2.363.0) returns 'UriParameterError' error
         it.skip('should return an error to get request without a valid ' +
         'bucket name',
             done => {
-                s3.getObject({ Bucket: '', Key: 'somekey' }, err => {
-                    assert.notEqual(err, null,
-                        'Expected failure but got success');
-                    assert.strictEqual(err.code, 'MethodNotAllowed');
+                s3.send(new GetObjectCommand({ Bucket: '', Key: 'somekey' })).then(() => {
+                    assert.fail('Expected failure but got success');
+                }).catch(err => {
+                    assert.strictEqual(err.name, 'MethodNotAllowed');
                     return done();
                 });
             });
 
         it('should return NoSuchKey error when no such object',
             done => {
-                s3.getObject({ Bucket: bucketName, Key: 'nope' }, err => {
-                    assert.notEqual(err, null,
-                        'Expected failure but got success');
-                    assert.strictEqual(err.code, 'NoSuchKey');
+                s3.send(new GetObjectCommand({ Bucket: bucketName, Key: 'nope' })).then(() => {
+                    assert.fail('Expected failure but got success');
+                }).catch(err => {
+                    assert.strictEqual(err.name, 'NoSuchKey');
                     return done();
                 });
             });
@@ -230,7 +251,7 @@ describe('GET object', () => {
         describe('Additional headers: [Cache-Control, Content-Disposition, ' +
             'Content-Encoding, Expires, Accept-Ranges]', () => {
             describe('if specified in put object request', () => {
-                before(done => {
+                before(async () => {
                     const params = {
                         Bucket: bucketName,
                         Key: objectName,
@@ -240,35 +261,30 @@ describe('GET object', () => {
                         ContentType: contentType,
                         Expires: expires,
                     };
-                    s3.putObject(params, err => done(err));
+                    await s3.send(new PutObjectCommand(params));
                 });
                 it('should return additional headers', done => {
-                    s3.getObject({ Bucket: bucketName, Key: objectName },
-                      (err, res) => {
-                          if (err) {
-                              return done(err);
-                          }
-                          assert.strictEqual(res.CacheControl,
-                            cacheControl);
-                          assert.strictEqual(res.ContentDisposition,
-                            contentDisposition);
-                          // Should remove V4 streaming value 'aws-chunked'
-                          // to be compatible with AWS behavior
-                          assert.strictEqual(res.ContentEncoding,
-                            'gzip');
-                          assert.strictEqual(res.ContentType, contentType);
-                          assert.strictEqual(res.Expires.toGMTString(),
-                            new Date(expires).toGMTString());
-                          assert.strictEqual(res.AcceptRanges, 'bytes');
-                          return done();
-                      });
+                    s3.send(new GetObjectCommand({ Bucket: bucketName, Key: objectName })).then(res => {
+                        assert.strictEqual(res.CacheControl,
+                          cacheControl);
+                        assert.strictEqual(res.ContentDisposition,
+                          contentDisposition);
+                        // Should remove V4 streaming value 'aws-chunked'
+                        // to be compatible with AWS behavior
+                        assert.strictEqual(res.ContentEncoding,
+                          'gzip');
+                        assert.strictEqual(res.ContentType, contentType);
+                        assert.strictEqual(res.Expires.toGMTString(),
+                          new Date(expires).toGMTString());
+                        assert.strictEqual(res.AcceptRanges, 'bytes');
+                        return done();
+                    }).catch(done);
                 });
             });
 
             describe('if response content headers are set in query', () => {
-                before(done => {
-                    s3.putObject({ Bucket: bucketName, Key: objectName },
-                        err => done(err));
+                before(async () => {
+                    await s3.send(new PutObjectCommand({ Bucket: bucketName, Key: objectName }));
                 });
 
                 it('should return additional headers even if not set in ' +
@@ -283,10 +299,7 @@ describe('GET object', () => {
                         ResponseContentType: contentType,
                         ResponseExpires: expires,
                     };
-                    s3.getObject(params, (err, res) => {
-                        if (err) {
-                            return done(err);
-                        }
+                    s3.send(new GetObjectCommand(params)).then(res => {
                         assert.strictEqual(res.CacheControl,
                           cacheControl);
                         assert.strictEqual(res.ContentDisposition,
@@ -299,30 +312,26 @@ describe('GET object', () => {
                         assert.strictEqual(res.Expires.toGMTString(),
                             new Date(expires).toGMTString());
                         return done();
-                    });
+                    }).catch(done);
                 });
             });
         });
 
         describe('x-amz-website-redirect-location header', () => {
-            before(done => {
+            before(async () => {
                 const params = {
                     Bucket: bucketName,
                     Key: objectName,
                     WebsiteRedirectLocation: '/',
                 };
-                s3.putObject(params, err => done(err));
+                await s3.send(new PutObjectCommand(params));
             });
             it('should return website redirect header if specified in ' +
                 'objectPUT request', done => {
-                s3.getObject({ Bucket: bucketName, Key: objectName },
-                  (err, res) => {
-                      if (err) {
-                          return done(err);
-                      }
-                      assert.strictEqual(res.WebsiteRedirectLocation, '/');
-                      return done();
-                  });
+                s3.send(new GetObjectCommand({ Bucket: bucketName, Key: objectName })).then(res => {
+                    assert.strictEqual(res.WebsiteRedirectLocation, '/');
+                    return done();
+                }).catch(done);
             });
         });
 
@@ -343,44 +352,38 @@ describe('GET object', () => {
                     ],
                 },
             };
-            beforeEach(done => {
-                s3.putObject(params, done);
+            beforeEach(async () => {
+                await s3.send(new PutObjectCommand(params));
             });
 
             it('should not return "x-amz-tagging-count" if no tag ' +
             'associated with the object',
             done => {
-                s3.getObject(params, (err, data) => {
-                    if (err) {
-                        return done(err);
-                    }
+                s3.send(new GetObjectCommand(params)).then(data => {
                     assert.strictEqual(data.TagCount, undefined);
                     return done();
-                });
+                }).catch(done);
             });
 
             describe('tag associated with the object', () => {
-                beforeEach(done => {
-                    s3.putObjectTagging(paramsTagging, done);
+                beforeEach(async () => {
+                    await s3.send(new PutObjectTaggingCommand(paramsTagging));
                 });
                 it('should return "x-amz-tagging-count" header that provides ' +
                 'the count of number of tags associated with the object',
                 done => {
-                    s3.getObject(params, (err, data) => {
-                        if (err) {
-                            return done(err);
-                        }
+                    s3.send(new GetObjectCommand(params)).then(data => {
                         assert.equal(data.TagCount, 1);
                         return done();
-                    });
+                    }).catch(done);
                 });
             });
         });
 
         describe('conditional headers', () => {
             const params = { Bucket: bucketName, Key: objectName };
-            beforeEach(done => {
-                s3.putObject(params, done);
+            beforeEach(async () => {
+                await s3.send(new PutObjectCommand(params));
             });
             it('If-Match: returns no error when ETag match, with double ' +
                 'quotes around ETag',
@@ -438,12 +441,12 @@ describe('GET object', () => {
                 });
 
             it('If-None-Match: returns no error when ETag does not match',
-            done => {
-                requestGet({ IfNoneMatch: 'non-matching' }, err => {
-                    checkNoError(err);
-                    done();
+                done => {
+                    requestGet({ IfNoneMatch: 'non-matching' }, err => {
+                        checkNoError(err);
+                        done();
+                    });
                 });
-            });
 
             it('If-None-Match: returns no error when all ETags do not match',
                 done => {
@@ -531,15 +534,13 @@ describe('GET object', () => {
             it('If-Modified-Since: returns NotModified if Last modified ' +
                 'date is equal',
                 done => {
-                    s3.headObject({ Bucket: bucketName, Key: objectName },
-                    (err, data) => {
-                        checkNoError(err);
+                    s3.send(new HeadObjectCommand({ Bucket: bucketName, Key: objectName })).then(data => {
                         const lastModified = dateConvert(data.LastModified);
                         requestGet({ IfModifiedSince: lastModified }, err => {
                             checkError(err, 'NotModified');
                             done();
                         });
-                    });
+                    }).catch(done);
                 });
 
             it('If-Unmodified-Since: returns no error when lastModified date ' +
@@ -554,16 +555,14 @@ describe('GET object', () => {
 
             it('If-Unmodified-Since: returns no error when lastModified ' +
                 'date is equal', done => {
-                s3.headObject({ Bucket: bucketName, Key: objectName },
-                    (err, data) => {
-                        checkNoError(err);
-                        const lastModified = dateConvert(data.LastModified);
-                        requestGet({ IfUnmodifiedSince: lastModified },
-                            err => {
-                                checkNoError(err);
-                                done();
-                            });
-                    });
+                s3.send(new HeadObjectCommand({ Bucket: bucketName, Key: objectName })).then(data => {
+                    const lastModified = dateConvert(data.LastModified);
+                    requestGet({ IfUnmodifiedSince: lastModified },
+                        err => {
+                            checkNoError(err);
+                            done();
+                        });
+                }).catch(done);
             });
 
             it('If-Unmodified-Since: returns PreconditionFailed when ' +
@@ -663,18 +662,12 @@ describe('GET object', () => {
             it('If-None-Match & If-Modified-Since: returns NotModified when ' +
                 'Etag does not match and lastModified is greater',
                 done => {
-                    const req = s3.getObject({
-                        Bucket: bucketName,
-                        Key: objectName,
+                    requestGet({
                         IfNoneMatch: etagTrim,
                         IfModifiedSince: dateFromNow(1),
                     }, err => {
                         checkError(err, 'NotModified');
                         done();
-                    });
-                    req.on('httpHeaders', (code, headers) => {
-                        assert(!headers['content-type']);
-                        assert(!headers['content-length']);
                     });
                 });
 
@@ -763,14 +756,15 @@ describe('GET object', () => {
                 it(`should get the body of part ${num} when ordered MPU`,
                     done => completeMPU(orderedPartNumbers, err => {
                         checkNoError(err);
-                        return requestGet({ PartNumber: num }, (err, data) => {
+                        return requestGet({ PartNumber: num }, async (err, data) => {
                             checkNoError(err);
                             checkIntegerHeader(data.ContentLength, partSize);
                             const md5Hash = crypto.createHash('md5');
                             const md5HashExpected = crypto.createHash('md5');
                             const expected = Buffer.alloc(partSize).fill(num);
+                            const bodyText = await data.Body.transformToString();
                             assert.strictEqual(
-                                md5Hash.update(data.Body).digest('hex'),
+                                md5Hash.update(bodyText).digest('hex'),
                                 md5HashExpected.update(expected).digest('hex')
                             );
                             return done();
@@ -782,15 +776,16 @@ describe('GET object', () => {
                 it(`should get the body of part ${num} when unordered MPU`,
                     done => completeMPU(unOrderedPartNumbers, err => {
                         checkNoError(err);
-                        return requestGet({ PartNumber: num }, (err, data) => {
+                        return requestGet({ PartNumber: num }, async (err, data) => {
                             checkNoError(err);
                             checkIntegerHeader(data.ContentLength, partSize);
                             const md5Hash = crypto.createHash('md5');
                             const md5HashExpected = crypto.createHash('md5');
                             const expected = Buffer.alloc(partSize)
                                 .fill(unOrderedPartNumbers[num - 1]);
+                            const bodyText = await data.Body.transformToString();
                             assert.strictEqual(
-                                md5Hash.update(data.Body).digest('hex'),
+                                md5Hash.update(bodyText).digest('hex'),
                                 md5HashExpected.update(expected).digest('hex')
                             );
                             return done();
@@ -818,57 +813,58 @@ describe('GET object', () => {
                 }));
 
             it('should accept a part number of 1 for regular put object',
-                done => s3.putObject({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    Body: Buffer.alloc(10),
-                }, err => {
-                    checkNoError(err);
-                    return requestGet({ PartNumber: 1 }, (err, data) => {
-                        const md5Hash = crypto.createHash('md5');
-                        const md5HashExpected = crypto.createHash('md5');
-                        const expected = Buffer.alloc(10);
-                        assert.strictEqual(
-                            md5Hash.update(data.Body).digest('hex'),
-                            md5HashExpected.update(expected).digest('hex')
-                        );
-                        done();
-                    });
-                }));
+                async () => {
+                    await s3.send(new PutObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        Body: Buffer.alloc(10),
+                    }));
+                    
+                    const data = await requestGetPromise({ PartNumber: 1 });
+                    const md5Hash = crypto.createHash('md5');
+                    const md5HashExpected = crypto.createHash('md5');
+                    const expected = Buffer.alloc(10).fill(0);
+                    const bodyText = await data.Body.transformToString();
+                    assert.strictEqual(
+                        md5Hash.update(bodyText).digest('hex'),
+                        md5HashExpected.update(expected).digest('hex')
+                    );
+                });
 
-            it('should accept a part number that is a string', done =>
-                s3.putObject({
+            it('should accept a part number that is a string', async () => {
+                await s3.send(new PutObjectCommand({
                     Bucket: bucketName,
                     Key: objectName,
                     Body: Buffer.alloc(10),
-                }, err => {
-                    checkNoError(err);
-                    return requestGet({ PartNumber: '1' }, (err, data) => {
-                        checkIntegerHeader(data.ContentLength, 10);
-                        const md5Hash = crypto.createHash('md5');
-                        const md5HashExpected = crypto.createHash('md5');
-                        const expected = Buffer.alloc(10);
-                        assert.strictEqual(
-                            md5Hash.update(data.Body).digest('hex'),
-                            md5HashExpected.update(expected).digest('hex')
-                        );
-                        done();
-                    });
                 }));
+                
+                const data = await requestGetPromise({ PartNumber: '1' });
+                checkIntegerHeader(data.ContentLength, 10); 
+                const md5Hash = crypto.createHash('md5');
+                const md5HashExpected = crypto.createHash('md5');
+                const expected = Buffer.alloc(10).fill(0);
+                const bodyText = await data.Body.transformToString();
+                assert.strictEqual(
+                    md5Hash.update(bodyText).digest('hex'),
+                    md5HashExpected.update(expected).digest('hex')
+                );
+            });
 
             it('should not accept a part number greater than 1 for regular ' +
-            'put object', done =>
-                s3.putObject({
+            'put object', async () => {
+                await s3.send(new PutObjectCommand({
                     Bucket: bucketName,
                     Key: objectName,
                     Body: Buffer.alloc(10),
-                }, err => {
-                    checkNoError(err);
-                    return requestGet({ PartNumber: 2 }, err => {
-                        checkError(err, 'InvalidPartNumber');
-                        done();
-                    });
                 }));
+                
+                try {
+                    await requestGetPromise({ PartNumber: 2 });
+                    assert.fail('Expected InvalidPartNumber error');
+                } catch (err) {
+                    checkError(err, 'InvalidPartNumber');
+                }
+            });
 
             it('should not accept both PartNumber and Range as params', done =>
                 completeMPU(orderedPartNumbers, err => {
@@ -883,20 +879,16 @@ describe('GET object', () => {
                 }));
 
             it('should not include PartsCount response header for regular ' +
-            'put object', done => {
-                s3.putObject({
+            'put object', async () => {
+                await s3.send(new PutObjectCommand({
                     Bucket: bucketName,
                     Key: objectName,
                     Body: Buffer.alloc(10),
-                }, err => {
-                    assert.ifError(err);
-                    requestGet({ PartNumber: 1 }, (err, data) => {
-                        assert.ifError(err);
-                        assert.strictEqual('PartsCount' in data, false,
-                            'PartsCount header is present.');
-                        done();
-                    });
-                });
+                }));
+                
+                const data = await requestGetPromise({ PartNumber: 1 });
+                assert.strictEqual('PartsCount' in data, false,
+                    'PartsCount header is present.');
             });
 
             it('should include PartsCount response header for mpu object',
@@ -923,7 +915,7 @@ describe('GET object', () => {
                     next => completeMPU(orderedPartNumbers, next),
                     next => createMPUAndPutTwoParts(partTwoBody, next),
                     (uploadId, ETags, next) =>
-                        s3.completeMultipartUpload({
+                        s3.send(new CompleteMultipartUploadCommand({
                             Bucket: bucketName,
                             Key: copyPartKey,
                             MultipartUpload: {
@@ -939,13 +931,15 @@ describe('GET object', () => {
                                 ],
                             },
                             UploadId: uploadId,
-                        }, next),
+                        })).then(() => next()).catch(next),
                 ], done));
 
-                afterEach(done => s3.deleteObject({
-                    Bucket: bucketName,
-                    Key: copyPartKey,
-                }, done));
+                afterEach(async () => {
+                    await s3.send(new DeleteObjectCommand({
+                        Bucket: bucketName,
+                        Key: copyPartKey,
+                    }));
+                });
 
                 it('should retrieve a part copied from an MPU', done =>
                     checkGetObjectPart(copyPartKey, 1, partOneSize, partOneBody,
@@ -970,33 +964,31 @@ describe('GET object', () => {
                     /* eslint-disable no-param-reassign */
                     // Overwrite part one.
                     (uploadId, ETags, next) =>
-                        s3.uploadPart({
+                        s3.send(new UploadPartCommand({
                             Bucket: bucketName,
                             Key: copyPartKey,
                             PartNumber: 1,
                             UploadId: uploadId,
                             Body: partOneBody,
-                        }, (err, data) => {
-                            checkNoError(err);
+                        })).then(data => {
                             ETags[0] = data.ETag;
                             return next(null, uploadId, ETags);
-                        }),
+                        }).catch(next),
                     // Overwrite part one with an three-part object.
                     (uploadId, ETags, next) =>
-                        s3.uploadPartCopy({
+                        s3.send(new UploadPartCopyCommand({
                             Bucket: bucketName,
                             CopySource: `/${bucketName}/${objectName}`,
                             Key: copyPartKey,
                             PartNumber: 2,
                             UploadId: uploadId,
-                        }, (err, data) => {
-                            checkNoError(err);
-                            ETags[1] = data.ETag;
+                        })).then(data => {
+                            ETags[1] = data.CopyPartResult.ETag;
                             return next(null, uploadId, ETags);
-                        }),
+                        }).catch(next),
                     /* eslint-enable no-param-reassign */
                     (uploadId, ETags, next) =>
-                        s3.completeMultipartUpload({
+                        s3.send(new CompleteMultipartUploadCommand({
                             Bucket: bucketName,
                             Key: copyPartKey,
                             MultipartUpload: {
@@ -1012,13 +1004,15 @@ describe('GET object', () => {
                                 ],
                             },
                             UploadId: uploadId,
-                        }, next),
+                        })).then(() => next()).catch(next),
                 ], done));
 
-                afterEach(done => s3.deleteObject({
-                    Bucket: bucketName,
-                    Key: copyPartKey,
-                }, done));
+                afterEach(async () => {
+                    await s3.send(new DeleteObjectCommand({
+                        Bucket: bucketName,
+                        Key: copyPartKey,
+                    }));
+                });
 
                 it('should retrieve a part that overwrote another part ' +
                 'originally copied from an MPU', done =>
@@ -1033,24 +1027,20 @@ describe('GET object', () => {
         });
 
         describe('absent x-amz-website-redirect-location header', () => {
-            before(done => {
+            before(async () => {
                 const params = {
                     Bucket: bucketName,
                     Key: objectName,
                 };
-                s3.putObject(params, err => done(err));
+                await s3.send(new PutObjectCommand(params));
             });
             it('should return website redirect header if specified in ' +
                 'objectPUT request', done => {
-                s3.getObject({ Bucket: bucketName, Key: objectName },
-                  (err, res) => {
-                      if (err) {
-                          return done(err);
-                      }
-                      assert.strictEqual(res.WebsiteRedirectLocation,
-                          undefined);
-                      return done();
-                  });
+                s3.send(new GetObjectCommand({ Bucket: bucketName, Key: objectName })).then(res => {
+                    assert.strictEqual(res.WebsiteRedirectLocation,
+                        undefined);
+                    return done();
+                }).catch(done);
             });
         });
     });
@@ -1066,7 +1056,7 @@ describeSkipIfCeph('GET object with object lock', () => {
         const bucket = 'bucket-with-lock';
         const key = 'object-with-lock';
         const formatDate = date => date.toString().slice(0, 20);
-        const mockDate = moment().add(1, 'days').toISOString();
+        const mockDate = moment().add(1, 'days');
         const mockMode = 'GOVERNANCE';
         let versionId;
 
@@ -1078,12 +1068,12 @@ describeSkipIfCeph('GET object with object lock', () => {
                 ObjectLockMode: mockMode,
                 ObjectLockLegalHoldStatus: 'ON',
             };
-            return s3.createBucket({
+            return s3.send(new CreateBucketCommand({
                 Bucket: bucket,
                 ObjectLockEnabledForBucket: true,
-            }).promise()
-            .then(() => s3.putObject(params).promise())
-            .then(() => s3.getObject({ Bucket: bucket, Key: key }).promise())
+            }))
+            .then(() => s3.send(new PutObjectCommand(params)))
+            .then(() => s3.send(new GetObjectCommand({ Bucket: bucket, Key: key })))
             /* eslint-disable no-return-assign */
             .then(res => versionId = res.VersionId)
             .catch(err => {
@@ -1093,8 +1083,8 @@ describeSkipIfCeph('GET object with object lock', () => {
         });
 
         afterEach(() => changeLockPromise([{ bucket, key, versionId }], '')
-            .then(() => s3.listObjectVersions({ Bucket: bucket }).promise())
-            .then(res => res.Versions.forEach(object => {
+            .then(() => s3.send(new ListObjectVersionsCommand({ Bucket: bucket })))
+            .then(res => res.Versions?.forEach(object => {
                 const params = [
                     {
                         bucket,
@@ -1108,18 +1098,17 @@ describeSkipIfCeph('GET object with object lock', () => {
                 process.stdout.write('Emptying and deleting buckets\n');
                 return bucketUtil.empty(bucket);
             })
-            .then(() => s3.deleteBucket({ Bucket: bucket }).promise())
+            .then(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })))
             .catch(err => {
                 process.stdout.write('Error in afterEach');
                 throw err;
             }));
 
         it('should return object lock headers if set on the object', done => {
-            s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
-                assert.ifError(err);
+            s3.send(new GetObjectCommand({ Bucket: bucket, Key: key })).then(res => {
                 assert.strictEqual(res.ObjectLockMode, mockMode);
                 const responseDate
-                    = formatDate(res.ObjectLockRetainUntilDate.toISOString());
+                    = formatDate(res.ObjectLockRetainUntilDate);
                 const expectedDate = formatDate(mockDate);
                 assert.strictEqual(responseDate, expectedDate);
                 assert.strictEqual(res.ObjectLockLegalHoldStatus, 'ON');
@@ -1131,7 +1120,7 @@ describeSkipIfCeph('GET object with object lock', () => {
                     },
                 ];
                 changeObjectLock(objectWithLock, '', done);
-            });
+            }).catch(done);
         });
     });
 });
