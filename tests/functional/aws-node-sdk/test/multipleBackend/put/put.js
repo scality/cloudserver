@@ -1,6 +1,12 @@
-const { promisify } = require('util');
 const assert = require('assert');
-const async = require('async');
+const {
+    PutObjectCommand,
+    GetObjectCommand,
+    HeadObjectCommand,
+    PutBucketVersioningCommand,
+    CreateBucketCommand,
+    GetBucketLocationCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
@@ -24,98 +30,89 @@ const bigAWSMD5 = 'a7d414b9133d6483d9a1c4e04e856e3b-2';
 let bucketUtil;
 let s3;
 
-const retryTimeout = 10000;
-
-function getAwsSuccess(key, awsMD5, location, cb) {
-    return getAwsRetry({ key }, 0, (err, res) => {
-        assert.strictEqual(err, null, 'Expected success, got error ' +
-        `on direct AWS call: ${err}`);
-        if (location === awsLocationEncryption) {
-            // doesn't check ETag because it's different
-            // with every PUT with encryption
-            assert.strictEqual(res.ServerSideEncryption, 'AES256');
-        }
-        if (process.env.ENABLE_KMS_ENCRYPTION !== 'true') {
-            assert.strictEqual(res.ETag, `"${awsMD5}"`);
-        }
-        assert.strictEqual(res.Metadata['scal-location-constraint'],
-            location);
-        return cb(res);
+async function getAwsSuccess(key, awsMD5, location) {
+    return new Promise((resolve, reject) => {
+        getAwsRetry({ key }, 0, (err, res) => {
+            if (err) {
+                reject(new Error(`Expected success, got error on direct AWS call: ${err}`));
+                return;
+            }
+            
+            if (location === awsLocationEncryption) {
+                // doesn't check ETag because it's different
+                // with every PUT with encryption
+                assert.strictEqual(res.ServerSideEncryption, 'AES256');
+            }
+            if (process.env.ENABLE_KMS_ENCRYPTION !== 'true') {
+                assert.strictEqual(res.ETag, `"${awsMD5}"`);
+            }
+            assert.strictEqual(res.Metadata['scal-location-constraint'],
+                location);
+            resolve(res);
+        });
     });
 }
 
-function getAwsError(key, expectedError, cb) {
-    return getAwsRetry({ key }, 0, err => {
-        assert.notStrictEqual(err, undefined,
-            'Expected error but did not find one');
-        assert.strictEqual(err.code, expectedError,
-            `Expected error code ${expectedError} but got ${err.code}`);
-        cb();
+async function getAwsError(key, expectedError) {
+    return new Promise((resolve, reject) => {
+        getAwsRetry({ key }, 0, err => {
+            try {
+                assert.notStrictEqual(err, undefined,
+                    'Expected error but did not find one');
+                assert.strictEqual(err.name, expectedError);
+                resolve();
+            } catch (assertionError) {
+                reject(assertionError);
+            }
+        });
     });
 }
 
-function awsGetCheck(objectKey, s3MD5, awsMD5, location, cb) {
-    process.stdout.write('Getting object\n');
-    s3.getObject({ Bucket: bucket, Key: objectKey },
-    function s3GetCallback(err, res) {
-        if (err && err.code === 'NetworkingError') {
-            return setTimeout(() => {
-                process.stdout.write('Getting object retry\n');
-                s3.getObject({ Bucket: bucket, Key: objectKey }, s3GetCallback);
-            }, retryTimeout);
-        }
-        assert.strictEqual(err, null, 'Expected success, got error ' +
-        `on call to AWS through S3: ${err}`);
-        assert.strictEqual(res.ETag, `"${s3MD5}"`);
-        assert.strictEqual(res.Metadata['scal-location-constraint'],
-            location);
-        process.stdout.write('Getting object from AWS\n');
-        return getAwsSuccess(objectKey, awsMD5, location, cb);
-    });
+async function awsGetCheck(objectKey, s3MD5, awsMD5, location) {
+    const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: objectKey }));
+    assert.strictEqual(res.ETag, `"${s3MD5}"`);
+    
+    if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
+        assert.strictEqual(res.ServerSideEncryption, 'AES256');
+    }
+    
+    process.stdout.write('Getting object from AWS\n');
+    return await getAwsSuccess(objectKey, awsMD5, location);
 }
 
-describe('MultipleBackend put object', function testSuite() {
+
+describeSkipIfNotMultiple('MultipleBackend put object', function testSuite() {
     this.timeout(250000);
     withV4(sigCfg => {
-        beforeEach(() => {
+        beforeEach(async () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             process.stdout.write('Creating bucket\n');
-            s3.createBucketPromise = promisify(s3.createBucket);
+            
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
-                s3.createBucketPromise = createEncryptedBucketPromise;
+                await createEncryptedBucketPromise({ Bucket: bucket });
+            } else {
+                await s3.send(new CreateBucketCommand({ Bucket: bucket }));
             }
-            return s3.createBucketPromise({ Bucket: bucket })
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
-            });
         });
 
-        afterEach(() => {
+        afterEach(async () => {
             process.stdout.write('Emptying bucket\n');
-            return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write(`Error in afterEach: ${err}\n`);
-                throw err;
-            });
+            await bucketUtil.empty(bucket);
+            await bucketUtil.deleteOne(bucket);
         });
 
         // aws-sdk now (v2.363.0) returns 'UriParameterError' error
         it.skip('should return an error to put request without a valid ' +
         'bucket name',
-            done => {
+            async () => {
                 const key = `somekey-${genUniqID()}`;
-                s3.putObject({ Bucket: '', Key: key }, err => {
-                    assert.notEqual(err, null,
-                        'Expected failure but got success');
+                try {
+                    await s3.send(new PutObjectCommand({ Bucket: '', Key: key }));
+                    throw new Error('Expected failure but got success');
+                } catch (err) {
                     assert.strictEqual(err.code, 'MethodNotAllowed');
-                    done();
-                });
+                }
             });
 
         describeSkipIfNotMultiple('with set location from "x-amz-meta-scal-' +
@@ -125,56 +122,51 @@ describe('MultipleBackend put object', function testSuite() {
             }
 
             it('should return an error to put request without a valid ' +
-                'location constraint', done => {
+                'location constraint', async () => {
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': 'fail-region' } };
-                s3.putObject(params, err => {
-                    assert.notEqual(err, null, 'Expected failure but got ' +
-                        'success');
+                try {
+                    await s3.send(new PutObjectCommand(params));
+                    throw new Error('Expected failure but got success');
+                } catch (err) {
                     assert.strictEqual(err.code, 'InvalidArgument');
-                    done();
-                });
+                }
             });
 
-            it('should put an object to mem', done => {
+            it('should put an object to mem', async () => {
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': memLocation },
                 };
-                s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                    s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
-                        assert.strictEqual(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                        done();
-                    });
+                
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
                 });
+                const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+                assert.strictEqual(res.ETag, `"${correctMD5}"`);
             });
 
-            it('should put a 0-byte object to mem', done => {
+            it('should put a 0-byte object to mem', async () => {
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Metadata: { 'scal-location-constraint': memLocation },
                 };
-                s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                    s3.getObject({ Bucket: bucket, Key: key },
-                    (err, res) => {
-                        assert.strictEqual(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                        assert.strictEqual(res.ETag, `"${emptyMD5}"`);
-                        done();
-                    });
+                
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
                 });
+                const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+                assert.strictEqual(res.ETag, `"${emptyMD5}"`);
             });
 
-            it('should put only metadata to mem with mdonly header', done => {
+            it('should put only metadata to mem with mdonly header', async () => {
                 const key = `mdonly-${genUniqID()}`;
                 const b64 = Buffer.from(correctMD5, 'hex').toString('base64');
                 const params = { Bucket: bucket, Key: key,
@@ -183,19 +175,17 @@ describe('MultipleBackend put object', function testSuite() {
                     'md5chksum': b64,
                     'size': body.length.toString(),
                     } };
-                s3.putObject(params, err => {
-                    assert.strictEqual(err, null, `Unexpected err: ${err}`);
-                    s3.headObject({ Bucket: bucket, Key: key },
-                    (err, res) => {
-                        assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                        getAwsError(key, 'NoSuchKey', () => done());
-                    });
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
                 });
+                const res = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+                assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                await getAwsError(key, 'NoSuchKey');
             });
 
-            it('should put actual object with body and mdonly header', done => {
+            it('should put actual object with body and mdonly header', async () => {
                 const key = `mdonly-${genUniqID()}`;
                 const b64 = Buffer.from(correctMD5, 'hex').toString('base64');
                 const params = { Bucket: bucket, Key: key, Body: body,
@@ -204,20 +194,17 @@ describe('MultipleBackend put object', function testSuite() {
                     'md5chksum': b64,
                     'size': body.length.toString(),
                     } };
-                s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                    s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
-                        assert.strictEqual(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                        awsGetCheck(key, correctMD5, correctMD5, awsLocation,
-                            () => done());
-                    });
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
                 });
+                const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+                assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                await awsGetCheck(key, correctMD5, correctMD5, awsLocation);
             });
 
-            it('should put 0-byte normally with mdonly header', done => {
+            it('should put 0-byte normally with mdonly header', async () => {
                 const key = `mdonly-${genUniqID()}`;
                 const b64 = Buffer.from(emptyMD5, 'hex').toString('base64');
                 const params = { Bucket: bucket, Key: key,
@@ -226,196 +213,188 @@ describe('MultipleBackend put object', function testSuite() {
                     'md5chksum': b64,
                     'size': '0',
                     } };
-                s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                    `got error ${err}`);
-                    awsGetCheck(key, emptyMD5, emptyMD5, awsLocation,
-                        () => done());
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
                 });
+                await awsGetCheck(key, emptyMD5, emptyMD5, awsLocation);
             });
 
-            it('should put a 0-byte object to AWS', done => {
+            it('should put a 0-byte object to AWS', async () => {
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Metadata: { 'scal-location-constraint': awsLocation },
                 };
-                return s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                    `got error ${err}`);
-                    return awsGetCheck(key, emptyMD5, emptyMD5, awsLocation,
-                      () => done());
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
                 });
+                await awsGetCheck(key, emptyMD5, emptyMD5, awsLocation);
             });
 
-            it('should put an object to file', done => {
+            it('should put an object to file', async () => {
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': fileLocation },
                 };
-                s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                    s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
-                        assert.strictEqual(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                        done();
-                    });
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
                 });
+                const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+                assert.strictEqual(res.ETag, `"${correctMD5}"`);
             });
 
-            it('should put an object to AWS', done => {
+            it('should put an object to AWS', async () => {
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': awsLocation } };
-                return s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                    return awsGetCheck(key, correctMD5, correctMD5, awsLocation,
-                      () => done());
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
                 });
+                await awsGetCheck(key, correctMD5, correctMD5, awsLocation);
             });
 
             it('should encrypt body only if bucket encrypted putting ' +
             'object to AWS',
-            done => {
+            async () => {
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': awsLocation } };
-                return s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                    return getAwsSuccess(key, correctMD5, awsLocation,
-                        () => done());
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
                 });
+                await getAwsSuccess(key, correctMD5, awsLocation);
             });
 
 
-            it('should put an object to AWS with encryption', done => {
+            it('should put an object to AWS with encryption', async () => {
                 // Test refuses to skip using itSkipCeph so just mark it passed
                 if (isCEPH) {
-                    return done();
+                    return;
                 }
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint':
                     awsLocationEncryption } };
-                return s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                    return awsGetCheck(key, correctMD5, correctMD5,
-                      awsLocationEncryption, () => done());
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
                 });
+                await awsGetCheck(key, correctMD5, correctMD5,
+                  awsLocationEncryption);
             });
 
             it('should return a version id putting object to ' +
-            'to AWS with versioning enabled', done => {
+            'to AWS with versioning enabled', async () => {
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key, Body: body,
                     Metadata: { 'scal-location-constraint': awsLocation } };
-                async.waterfall([
-                    next => s3.putBucketVersioning({
-                        Bucket: bucket,
-                        VersioningConfiguration: versioningEnabled,
-                    }, err => next(err)),
-                    next => s3.putObject(params, (err, res) => {
-                        assert.strictEqual(err, null, 'Expected success ' +
-                            `putting object, got error ${err}`);
-                        assert(res.VersionId);
-                        next(null, res.ETag);
-                    }),
-                    (eTag, next) => getAwsSuccess(key, correctMD5, awsLocation,
-                        () => next()),
-                ], done);
+                await s3.send(new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: versioningEnabled,
+                }));
+                const res = await s3.send(new PutObjectCommand(params));
+                assert.strictEqual(res.VersionId);
+                await getAwsSuccess(key, correctMD5, awsLocation);
             });
 
-            it('should put a large object to AWS', done => {
+            it('should put a large object to AWS', async () => {
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: bigBody,
                     Metadata: { 'scal-location-constraint': awsLocation } };
-                return s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected sucess, ' +
-                        `got error ${err}`);
-                    return awsGetCheck(key, bigS3MD5, bigAWSMD5, awsLocation,
-                      () => done());
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
                 });
+                await awsGetCheck(key, bigS3MD5, bigAWSMD5, awsLocation);
             });
 
             it('should put objects with same key to AWS ' +
-            'then file, and object should only be present in file', done => {
+            'then file, and object should only be present in file', async () => {
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': awsLocation } };
-                return s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                    params.Metadata =
-                        { 'scal-location-constraint': fileLocation };
-                    return s3.putObject(params, err => {
-                        assert.equal(err, null, 'Expected success, ' +
-                            `got error ${err}`);
-                        return s3.getObject({ Bucket: bucket, Key: key },
-                        (err, res) => {
-                            assert.equal(err, null, 'Expected success, ' +
-                                `got error ${err}`);
-                            assert.strictEqual(
-                                res.Metadata['scal-location-constraint'],
-                                fileLocation);
-                            return getAwsError(key, 'NoSuchKey', done);
-                        });
-                    });
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
                 });
+                params.Metadata =
+                    { 'scal-location-constraint': fileLocation };
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
+                });
+                const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+                assert.strictEqual(
+                    res.Metadata['scal-location-constraint'],
+                    fileLocation);
+                return await getAwsError(key, 'NoSuchKey');
             });
 
             it('should put objects with same key to file ' +
-            'then AWS, and object should only be present on AWS', done => {
+            'then AWS, and object should only be present on AWS', async () => {
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': fileLocation } };
-                return s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                    params.Metadata = {
-                        'scal-location-constraint': awsLocation };
-                    return s3.putObject(params, err => {
-                        assert.equal(err, null, 'Expected success, ' +
-                            `got error ${err}`);
-                        return awsGetCheck(key, correctMD5, correctMD5,
-                            awsLocation, () => done());
-                    });
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
                 });
+                params.Metadata = {
+                    'scal-location-constraint': awsLocation };
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
+                });
+                await awsGetCheck(key, correctMD5, correctMD5,
+                    awsLocation);
             });
 
             it('should put two objects to AWS with same ' +
-            'key, and newest object should be returned', done => {
+            'key, and newest object should be returned', async () => {
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': awsLocation,
                         'unique-header': 'first object' } };
-                return s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                    params.Metadata = { 'scal-location-constraint': awsLocation,
-                        'unique-header': 'second object' };
-                    return s3.putObject(params, err => {
-                        assert.equal(err, null, 'Expected success, ' +
-                            `got error ${err}`);
-                        return awsGetCheck(key, correctMD5, correctMD5,
-                        awsLocation, result => {
-                            assert.strictEqual(result.Metadata
-                                ['unique-header'], 'second object');
-                            done();
-                        });
-                    });
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
                 });
+                params.Metadata = { 'scal-location-constraint': awsLocation,
+                        'unique-header': 'second object' };
+                await s3.send(new PutObjectCommand(params)).then(() => {
+                    process.stdout.write('Putting object succeeded\n');
+                }).catch(err => {
+                    throw new Error(`Expected success, got error: ${err}`);
+                });
+                await awsGetCheck(key, correctMD5, correctMD5,
+                    awsLocation, result => {
+                        assert.strictEqual(result.Metadata
+                            ['unique-header'], 'second object');
+                    });
             });
         });
     });
@@ -429,9 +408,9 @@ describeSkipIfNotMultiple('MultipleBackend put object based on bucket location',
             s3 = bucketUtil.s3;
         });
 
-        afterEach(() => {
+        afterEach(async () => {
             process.stdout.write('Emptying bucket\n');
-            return bucketUtil.empty(bucket)
+            await bucketUtil.empty(bucket)
             .then(() => {
                 process.stdout.write('Deleting bucket\n');
                 return bucketUtil.deleteOne(bucket);
@@ -443,72 +422,60 @@ describeSkipIfNotMultiple('MultipleBackend put object based on bucket location',
         });
 
         it('should put an object to mem with no location header',
-        done => {
+        async () => {
             process.stdout.write('Creating bucket\n');
-            return s3.createBucket({ Bucket: bucket,
+            await s3.send(new CreateBucketCommand({ Bucket: bucket,
                 CreateBucketConfiguration: {
                     LocationConstraint: memLocation,
                 },
-            }, err => {
-                assert.equal(err, null, `Error creating bucket: ${err}`);
-                process.stdout.write('Putting object\n');
-                const key = `somekey-${genUniqID()}`;
-                const params = { Bucket: bucket, Key: key, Body: body };
-                return s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${JSON.stringify(err)}`);
-                    s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
-                        assert.strictEqual(err, null, 'Expected success, ' +
-                        `got error ${JSON.stringify(err)}`);
-                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                        done();
-                    });
-                });
+            }));
+            process.stdout.write('Putting object\n');
+            const key = `somekey-${genUniqID()}`;
+            const params = { Bucket: bucket, Key: key, Body: body };
+            await s3.send(new PutObjectCommand(params)).then(() => {
+                process.stdout.write('Putting object succeeded\n');
+            }).catch(err => {
+                throw new Error(`Expected success, got error: ${err}`);
             });
+            const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+            assert.strictEqual(res.ETag, `"${correctMD5}"`);
         });
 
-        it('should put an object to file with no location header', done => {
+        it('should put an object to file with no location header', async () => {
             process.stdout.write('Creating bucket\n');
-            return s3.createBucket({ Bucket: bucket,
+            await s3.send(new CreateBucketCommand({ Bucket: bucket,
                 CreateBucketConfiguration: {
                     LocationConstraint: fileLocation,
                 },
-            }, err => {
-                assert.equal(err, null, `Error creating bucket: ${err}`);
-                process.stdout.write('Putting object\n');
-                const key = `somekey-${genUniqID()}`;
-                const params = { Bucket: bucket, Key: key, Body: body };
-                return s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${JSON.stringify(err)}`);
-                    s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
-                        assert.strictEqual(err, null, 'Expected success, ' +
-                        `got error ${JSON.stringify(err)}`);
-                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                        done();
-                    });
-                });
+            }));
+            process.stdout.write('Putting object\n');
+            const key = `somekey-${genUniqID()}`;
+            const params = { Bucket: bucket, Key: key, Body: body };
+            await s3.send(new PutObjectCommand(params)).then(() => {
+                process.stdout.write('Putting object succeeded\n');
+            }).catch(err => {
+                throw new Error(`Expected success, got error: ${err}`);
             });
+            const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+            assert.strictEqual(res.ETag, `"${correctMD5}"`);
         });
 
-        it('should put an object to AWS with no location header', done => {
+        it('should put an object to AWS with no location header', async () => {
             process.stdout.write('Creating bucket\n');
-            return s3.createBucket({ Bucket: bucket,
+            await s3.send(new CreateBucketCommand({ Bucket: bucket,
                 CreateBucketConfiguration: {
                     LocationConstraint: awsLocation,
                 },
-            }, err => {
-                assert.equal(err, null, `Error creating bucket: ${err}`);
-                process.stdout.write('Putting object\n');
-                const key = `somekey-${genUniqID()}`;
-                const params = { Bucket: bucket, Key: key, Body: body };
-                return s3.putObject(params, err => {
-                    assert.equal(err, null,
-                        `Expected success, got error ${err}`);
-                    return awsGetCheck(key, correctMD5, correctMD5, undefined,
-                        () => done());
-                });
+            }));
+            process.stdout.write('Putting object\n');
+            const key = `somekey-${genUniqID()}`;
+            const params = { Bucket: bucket, Key: key, Body: body };
+            await s3.send(new PutObjectCommand(params)).then(() => {
+                process.stdout.write('Putting object succeeded\n');
+            }).catch(err => {
+                throw new Error(`Expected success, got error: ${err}`);
             });
+            await awsGetCheck(key, correctMD5, correctMD5, undefined);
         });
     });
 });
@@ -532,38 +499,33 @@ describe('MultipleBackend put based on request endpoint', () => {
             });
         });
 
-        it('should create bucket in corresponding backend', done => {
+        it('should create bucket in corresponding backend', async () => {
             process.stdout.write('Creating bucket');
-            const request = s3.createBucket({ Bucket: bucket });
-            request.on('build', () => {
-                request.httpRequest.body = '';
-            });
-            request.send(err => {
-                assert.strictEqual(err, null, `Error creating bucket: ${err}`);
-                const key = `somekey-${genUniqID()}`;
-                s3.putObject({ Bucket: bucket, Key: key, Body: body }, err => {
-                    assert.strictEqual(err, null, 'Expected succes, ' +
-                        `got error ${JSON.stringify(err)}`);
-                    const host = request.service.endpoint.hostname;
-                    let endpoint = config.restEndpoints[host];
-                    // s3 returns '' for us-east-1
-                    if (endpoint === 'us-east-1') {
-                        endpoint = '';
-                    }
-                    s3.getBucketLocation({ Bucket: bucket }, (err, data) => {
-                        assert.strictEqual(err, null, 'Expected succes, ' +
-                            `got error ${JSON.stringify(err)}`);
-                        assert.strictEqual(data.LocationConstraint, endpoint);
-                        s3.getObject({ Bucket: bucket, Key: key },
-                        (err, res) => {
-                            assert.strictEqual(err, null, 'Expected succes, ' +
-                                `got error ${JSON.stringify(err)}`);
-                            assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                            done();
-                        });
-                    });
-                });
-            });
+            
+            // Create bucket using AWS SDK v3
+            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+            
+            const key = `somekey-${genUniqID()}`;
+            
+            await s3.send(new PutObjectCommand({ 
+                Bucket: bucket, 
+                Key: key, 
+                Body: body 
+            }));            
+            const locationData = await s3.send(new GetBucketLocationCommand({ Bucket: bucket }));            
+            const objectData = await s3.send(new GetObjectCommand({ 
+                Bucket: bucket, 
+                Key: key 
+            }));
+            const host = s3.config.endpoint.hostname;
+            let endpoint = config.restEndpoints[host];
+            // s3 returns '' for us-east-1
+            if (endpoint === 'us-east-1') {
+                endpoint = '';
+            }
+            
+            assert.strictEqual(locationData.LocationConstraint, endpoint);
+            assert.strictEqual(objectData.ETag, `"${correctMD5}"`);
         });
     });
 });
