@@ -1,7 +1,12 @@
-const { promisify } = require('util');
 const assert = require('assert');
-const async = require('async');
-const AWS = require('aws-sdk');
+const { 
+    S3Client, 
+    PutObjectCommand,
+    GetObjectCommand,
+    CopyObjectCommand,
+    PutObjectAclCommand,
+    CreateBucketCommand,
+} = require('@aws-sdk/client-s3');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const constants = require('../../../../../../constants');
@@ -24,7 +29,7 @@ const locMetaHeader = constants.objectLocationConstraintHeader.substring(11);
 let bucketUtil;
 let s3;
 
-function putSourceObj(location, isEmptyObj, bucket, cb) {
+async function putSourceObj(location, isEmptyObj, bucket) {
     const key = `somekey-${genUniqID()}`;
     const sourceParams = { Bucket: bucket, Key: key,
         Metadata: {
@@ -38,32 +43,28 @@ function putSourceObj(location, isEmptyObj, bucket, cb) {
         sourceParams.Body = body;
     }
     process.stdout.write('Putting source object\n');
-    s3.putObject(sourceParams, (err, result) => {
-        assert.equal(err, null, `Error putting source object: ${err}`);
-        if (isEmptyObj) {
-            assert.strictEqual(result.ETag, `"${emptyMD5}"`);
-        } else {
-            assert.strictEqual(result.ETag, `"${correctMD5}"`);
-        }
-        cb(key);
-    });
+    const result = await s3.send(new PutObjectCommand(sourceParams));
+    if (isEmptyObj) {
+        assert.strictEqual(result.ETag, `"${emptyMD5}"`);
+    } else {
+        assert.strictEqual(result.ETag, `"${correctMD5}"`);
+    }
+    return key;
 }
 
-function assertGetObjects(sourceKey, sourceBucket, sourceLoc, destKey,
-destBucket, destLoc, awsKey, mdDirective, isEmptyObj, awsS3, awsLocation,
-callback) {
+async function assertGetObjects(sourceKey, sourceBucket, sourceLoc, destKey,
+destBucket, destLoc, awsKey, mdDirective, isEmptyObj, awsS3, awsLocation) {
     const awsBucket =
         config.locationConstraints[awsLocation].details.bucketName;
     const sourceGetParams = { Bucket: sourceBucket, Key: sourceKey };
     const destGetParams = { Bucket: destBucket, Key: destKey };
     const awsParams = { Bucket: awsBucket, Key: awsKey };
-    async.series([
-        cb => s3.getObject(sourceGetParams, cb),
-        cb => s3.getObject(destGetParams, cb),
-        cb => awsS3.getObject(awsParams, cb),
-    ], (err, results) => {
-        assert.equal(err, null, `Error in assertGetObjects: ${err}`);
-        const [sourceRes, destRes, awsRes] = results;
+    
+    const [sourceRes, destRes, awsRes] = await Promise.all([
+        s3.send(new GetObjectCommand(sourceGetParams)),
+        s3.send(new GetObjectCommand(destGetParams)),
+        awsS3.send(new GetObjectCommand(awsParams)),
+    ]);
         if (isEmptyObj) {
             assert.strictEqual(sourceRes.ETag, `"${emptyMD5}"`);
             assert.strictEqual(destRes.ETag, `"${emptyMD5}"`);
@@ -100,69 +101,63 @@ callback) {
                   undefined);
             }
         }
-        assert.strictEqual(sourceRes.ContentLength, destRes.ContentLength);
-        assert.strictEqual(sourceRes.Metadata[locMetaHeader], sourceLoc);
-        assert.strictEqual(destRes.Metadata[locMetaHeader], destLoc);
-        callback();
-    });
+    assert.strictEqual(sourceRes.ContentLength, destRes.ContentLength);
+    assert.strictEqual(sourceRes.Metadata[locMetaHeader], sourceLoc);
+    assert.strictEqual(destRes.Metadata[locMetaHeader], destLoc);
 }
 
 describeSkipIfNotMultiple('MultipleBackend object copy: AWS',
 function testSuite() {
     this.timeout(250000);
     withV4(sigCfg => {
-        beforeEach(() => {
+        beforeEach(async () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             process.stdout.write('Creating bucket\n');
-            s3.createBucketPromise = promisify(s3.createBucket);
+            
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
-                s3.createBucketPromise = createEncryptedBucketPromise;
+                await createEncryptedBucketPromise({ Bucket: bucket });
+                await createEncryptedBucketPromise({ Bucket: awsServerSideEncryptionbucket });
+                await createEncryptedBucketPromise({ Bucket: bucketAws });
+            } else {
+                await s3.send(new CreateBucketCommand({ 
+                    Bucket: bucket,
+                    CreateBucketConfiguration: {
+                        LocationConstraint: memLocation,
+                    },
+                }));
+                
+                await s3.send(new CreateBucketCommand({
+                    Bucket: awsServerSideEncryptionbucket,
+                    CreateBucketConfiguration: {
+                        LocationConstraint: awsLocationEncryption,
+                    },
+                }));
+                
+                await s3.send(new CreateBucketCommand({ 
+                    Bucket: bucketAws,
+                    CreateBucketConfiguration: {
+                        LocationConstraint: awsLocation,
+                    },
+                }));
             }
-            return s3.createBucketPromise({ Bucket: bucket,
-              CreateBucketConfiguration: {
-                  LocationConstraint: memLocation,
-              },
-            })
-            .then(() => s3.createBucketPromise({
-                Bucket: awsServerSideEncryptionbucket,
-                CreateBucketConfiguration: {
-                    LocationConstraint: awsLocationEncryption,
-                },
-            }))
-            .then(() => s3.createBucketPromise({ Bucket: bucketAws,
-              CreateBucketConfiguration: {
-                  LocationConstraint: awsLocation,
-              },
-            }))
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
-            });
         });
 
-        afterEach(() => {
+        afterEach(async () => {
             process.stdout.write('Emptying bucket\n');
-            return bucketUtil.empty(bucket)
-            .then(() => bucketUtil.empty(bucketAws))
-            .then(() => bucketUtil.empty(awsServerSideEncryptionbucket))
-            .then(() => {
-                process.stdout.write(`Deleting bucket ${bucket}\n`);
-                return bucketUtil.deleteOne(bucket);
-            })
-            .then(() => {
-                process.stdout.write('Deleting bucket ' +
-                `${awsServerSideEncryptionbucket}\n`);
-                return bucketUtil.deleteOne(awsServerSideEncryptionbucket);
-            })
-            .then(() => {
-                process.stdout.write(`Deleting bucket ${bucketAws}\n`);
-                return bucketUtil.deleteOne(bucketAws);
-            })
-            .catch(err => {
-                process.stdout.write(`Error in afterEach: ${err}\n`);
-                throw err;
-            });
+            await bucketUtil.empty(bucket);
+            await bucketUtil.empty(bucketAws);
+            await bucketUtil.empty(awsServerSideEncryptionbucket);
+            
+            process.stdout.write(`Deleting bucket ${bucket}\n`);
+            await bucketUtil.deleteOne(bucket);
+            
+            process.stdout.write('Deleting bucket ' +
+            `${awsServerSideEncryptionbucket}\n`);
+            await bucketUtil.deleteOne(awsServerSideEncryptionbucket);
+            
+            process.stdout.write(`Deleting bucket ${bucketAws}\n`);
+            await bucketUtil.deleteOne(bucketAws);
         });
 
         it('should copy an object from mem to AWS relying on ' +
@@ -484,42 +479,36 @@ function testSuite() {
 
         it('should copy an object on AWS to a different AWS location ' +
         'with source object READ access',
-        done => {
+        async () => {
             const awsConfig2 = getRealAwsConfig(awsLocation2);
-            const awsS3Two = new AWS.S3(awsConfig2);
+            const awsS3Two = new S3Client(awsConfig2);
             const copyKey = `copyKey-${genUniqID()}`;
             const awsBucket =
                 config.locationConstraints[awsLocation].details.bucketName;
-            async.waterfall([
-                // giving access to the object on the AWS side
-                next => putSourceObj(awsLocation, false, bucket, key =>
-                  next(null, key)),
-                (key, next) => awsS3.putObjectAcl(
-                  { Bucket: awsBucket, Key: key,
-                  ACL: 'public-read' }, err => next(err, key)),
-                (key, next) => {
-                    const copyParams = {
-                        Bucket: bucket,
-                        Key: copyKey,
-                        CopySource: `/${bucket}/${key}`,
-                        MetadataDirective: 'REPLACE',
-                        Metadata: {
-                            'scal-location-constraint': awsLocation2 },
-                    };
-                    process.stdout.write('Copying object\n');
-                    s3.copyObject(copyParams, (err, result) => {
-                        assert.equal(err, null, 'Expected success ' +
-                        `but got error: ${err}`);
-                        assert.strictEqual(result.CopyObjectResult.ETag,
-                            `"${correctMD5}"`);
-                        next(err, key);
-                    });
-                },
-                (key, next) =>
-                assertGetObjects(key, bucket, awsLocation, copyKey,
-                  bucket, awsLocation2, copyKey, 'REPLACE', false,
-                  awsS3Two, awsLocation2, next),
-            ], done);
+            
+            // giving access to the object on the AWS side
+            const key = await putSourceObj(awsLocation, false, bucket);
+            await awsS3.send(new PutObjectAclCommand({
+                Bucket: awsBucket, 
+                Key: key,
+                ACL: 'public-read' 
+            }));
+            
+            const copyParams = {
+                Bucket: bucket,
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'REPLACE',
+                Metadata: {
+                    'scal-location-constraint': awsLocation2 },
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${correctMD5}"`);
+            
+            await assertGetObjects(key, bucket, awsLocation, copyKey,
+              bucket, awsLocation2, copyKey, 'REPLACE', false,
+              awsS3Two, awsLocation2);
         });
 
         itSkipCeph('should return error AccessDenied copying an object on ' +
