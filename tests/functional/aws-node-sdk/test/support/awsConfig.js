@@ -5,7 +5,7 @@ const { config } = require('../../../../../lib/Config');
 const https = require('https');
 const http = require('http');
 
-function getAwsCredentials(profile, credFile) {
+function getAwsCredentials(profile, credFile = '/.aws/credentials') {
     const filename = path.join(process.env.HOME, credFile);
 
     try {
@@ -25,6 +25,7 @@ function getRealAwsConfig(location) {
     const useHTTPS = config.locationConstraints[location].details.https;
     const proto = useHTTPS ? 'https' : 'http';
     const params = {
+        region: 'us-east-1',
         endpoint: gcpEndpoint ?
             `${proto}://${gcpEndpoint}` : `${proto}://${awsEndpoint}`,
     };
