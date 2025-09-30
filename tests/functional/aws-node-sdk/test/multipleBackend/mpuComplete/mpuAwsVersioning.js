@@ -2,6 +2,9 @@ const assert = require('assert');
 const async = require('async');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
+const { CreateBucketCommand, DeleteBucketCommand,
+    CreateMultipartUploadCommand, UploadPartCommand,
+    CompleteMultipartUploadCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const { minimumAllowedPartSize } = require('../../../../../../constants');
 const { removeAllVersions } = require('../../../lib/utility/versioning-util');
 const {
@@ -29,13 +32,14 @@ function mpuSetup(s3, key, location, cb) {
                 Key: key,
                 Metadata: { 'scal-location-constraint': location },
             };
-            s3.createMultipartUpload(params, (err, res) => {
-                assert.strictEqual(err, null, `err creating mpu: ${err}`);
+            s3.send(new CreateMultipartUploadCommand(params)).then(res => {
                 const uploadId = res.UploadId;
                 assert(uploadId);
                 assert.strictEqual(res.Bucket, bucket);
                 assert.strictEqual(res.Key, key);
-                next(err, uploadId);
+                next(null, uploadId);
+            }).catch(err => {
+                next(err);
             });
         },
         (uploadId, next) => {
@@ -46,10 +50,11 @@ function mpuSetup(s3, key, location, cb) {
                 UploadId: uploadId,
                 Body: data[0],
             };
-            s3.uploadPart(partParams, (err, res) => {
-                assert.strictEqual(err, null, `err uploading part 1: ${err}`);
+            s3.send(new UploadPartCommand(partParams)).then(res => {
                 partArray.push({ ETag: res.ETag, PartNumber: 1 });
-                next(err, uploadId);
+                next(null, uploadId);
+            }).catch(err => {
+                next(err);
             });
         },
         (uploadId, next) => {
@@ -60,10 +65,11 @@ function mpuSetup(s3, key, location, cb) {
                 UploadId: uploadId,
                 Body: data[1],
             };
-            s3.uploadPart(partParams, (err, res) => {
-                assert.strictEqual(err, null, `err uploading part 2: ${err}`);
+            s3.send(new UploadPartCommand(partParams)).then(res => {
                 partArray.push({ ETag: res.ETag, PartNumber: 2 });
-                next(err, uploadId);
+                next(null, uploadId);
+            }).catch(err => {
+                next(err);
             });
         },
     ], (err, uploadId) => {
@@ -75,13 +81,12 @@ function mpuSetup(s3, key, location, cb) {
 function completeAndAssertMpu(s3, params, cb) {
     const { bucket, key, uploadId, partArray, expectVersionId,
         expectedGetVersionId } = params;
-    s3.completeMultipartUpload({
+    s3.send(new CompleteMultipartUploadCommand({
         Bucket: bucket,
         Key: key,
         UploadId: uploadId,
         MultipartUpload: { Parts: partArray },
-    }, (err, data) => {
-        assert.strictEqual(err, null, `Err completing MPU: ${err}`);
+    })).then(data => {
         if (expectVersionId) {
             assert.notEqual(data.VersionId, undefined);
         } else {
@@ -90,6 +95,8 @@ function completeAndAssertMpu(s3, params, cb) {
         const expectedVersionId = expectedGetVersionId || data.VersionId;
         getAndAssertResult(s3, { bucket, key, body: concattedData,
             expectedVersionId }, cb);
+    }).catch(err => {
+        cb(err);
     });
 }
 
@@ -99,19 +106,15 @@ function testSuite() {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
-        beforeEach(done => s3.createBucket({
+        beforeEach(done => s3.send(new CreateBucketCommand({
             Bucket: bucket,
             CreateBucketConfiguration: {
                 LocationConstraint: awsLocation,
             },
-        }, done));
-        afterEach(done => {
-            removeAllVersions({ Bucket: bucket }, err => {
-                if (err) {
-                    return done(err);
-                }
-                return s3.deleteBucket({ Bucket: bucket }, done);
-            });
+        })).then(() => done()).catch(err => done(err)));
+        afterEach(async () => {
+            await removeAllVersions({ Bucket: bucket });
+            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
         });
 
         it('versioning not configured: should not return version id ' +
@@ -138,8 +141,8 @@ function testSuite() {
                 (uploadId, partArray, next) => completeAndAssertMpu(s3,
                     { bucket, key, uploadId, partArray, expectVersionId:
                         false }, next),
-                next => s3.deleteObject({ Bucket: bucket, Key: key, VersionId:
-                    'null' }, next),
+                next => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key, VersionId:
+                    'null' })).then(delData => next(null, delData)).catch(next),
                 (delData, next) => getAndAssertResult(s3, { bucket, key,
                     expectedError: 'NoSuchKey' }, next),
                 next => awsGetLatestVerId(key, '', next),
