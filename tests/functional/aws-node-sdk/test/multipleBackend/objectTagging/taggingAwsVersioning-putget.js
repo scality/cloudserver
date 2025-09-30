@@ -1,4 +1,10 @@
 const async = require('async');
+const {
+    CreateBucketCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+    DeleteBucketCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
@@ -30,26 +36,34 @@ function testSuite() {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
-        beforeEach(done => s3.createBucket({
-            Bucket: bucket,
-            CreateBucketConfiguration: {
-                LocationConstraint: awsLocation,
-            },
-        }, done));
-        afterEach(done => {
-            removeAllVersions({ Bucket: bucket }, err => {
-                if (err) {
-                    return done(err);
-                }
-                return s3.deleteBucket({ Bucket: bucket }, done);
+        
+        beforeEach(done => {
+            const command = new CreateBucketCommand({
+                Bucket: bucket,
+                CreateBucketConfiguration: {
+                    LocationConstraint: awsLocation,
+                },
             });
+            s3.send(command)
+                .then(() => done())
+                .catch(err => done(err));
+        });
+        
+        afterEach(async () => {
+            await removeAllVersions({ Bucket: bucket });
+            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
         });
 
         it('versioning not configured: should put/get a tag set on the ' +
         'latest version if no version is specified', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
-                next => s3.putObject({ Bucket: bucket, Key: key }, next),
+                next => {
+                    const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                    s3.send(command)
+                        .then(data => next(null, data))
+                        .catch(err => next(err));
+                },
                 (putData, next) => putTaggingAndAssert(s3, { bucket, key, tags,
                     expectedVersionId: false }, next),
                 (versionId, next) => getTaggingAndAssert(s3, { bucket, key,
@@ -63,7 +77,12 @@ function testSuite() {
         'specific version if specified (null)', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
-                next => s3.putObject({ Bucket: bucket, Key: key }, next),
+                next => {
+                    const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                    s3.send(command)
+                        .then(data => next(null, data))
+                        .catch(err => next(err));
+                },
                 (putData, next) => putTaggingAndAssert(s3, { bucket, key, tags,
                     versionId: 'null', expectedVersionId: false }, next),
                 (versionId, next) => getTaggingAndAssert(s3, { bucket, key,
@@ -110,7 +129,12 @@ function testSuite() {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
-                next => s3.putObject({ Bucket: bucket, Key: key }, next),
+                next => {
+                    const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                    s3.send(command)
+                        .then(data => next(null, data))
+                        .catch(err => next(err));
+                },
                 (putData, next) => awsGetLatestVerId(key, '',
                     (err, awsVid) => next(err, putData.VersionId, awsVid)),
                 (s3Vid, awsVid, next) => putNullVersionsToAws(s3, bucket, key,
@@ -131,7 +155,12 @@ function testSuite() {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
-                next => s3.putObject({ Bucket: bucket, Key: key }, next),
+                next => {
+                    const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                    s3.send(command)
+                        .then(data => next(null, data))
+                        .catch(err => next(err));
+                },
                 (putData, next) => putTaggingAndAssert(s3, { bucket, key, tags,
                     expectedVersionId: putData.VersionId }, next),
                 (versionId, next) => getTaggingAndAssert(s3, { bucket, key,
@@ -146,7 +175,12 @@ function testSuite() {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
-                next => s3.putObject({ Bucket: bucket, Key: key }, next),
+                next => {
+                    const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                    s3.send(command)
+                        .then(data => next(null, data))
+                        .catch(err => next(err));
+                },
                 (putData, next) => putTaggingAndAssert(s3, { bucket, key, tags,
                     versionId: putData.VersionId,
                     expectedVersionId: putData.VersionId }, next),
@@ -163,7 +197,12 @@ function testSuite() {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
-                next => s3.putObject({ Bucket: bucket, Key: key }, next),
+                next => {
+                    const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                    s3.send(command)
+                        .then(data => next(null, data))
+                        .catch(err => next(err));
+                },
                 (putData, next) => putTaggingAndAssert(s3, { bucket, key, tags,
                     versionId: putData.VersionId,
                     expectedVersionId: putData.VersionId }, next),
@@ -178,13 +217,25 @@ function testSuite() {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
-                next => s3.putObject({ Bucket: bucket, Key: key }, next),
+                next => {
+                    const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                    s3.send(command)
+                        .then(data => next(null, data))
+                        .catch(err => next(err));
+                },
                 (putData, next) => awsGetLatestVerId(key, '',
                     (err, awsVid) => next(err, putData.VersionId, awsVid)),
                 // put another version
-                (s3Vid, awsVid, next) => s3.putObject({ Bucket: bucket,
-                    Key: key, Body: someBody },
-                    err => next(err, s3Vid, awsVid)),
+                (s3Vid, awsVid, next) => {
+                    const command = new PutObjectCommand({ 
+                        Bucket: bucket,
+                        Key: key, 
+                        Body: someBody 
+                    });
+                    s3.send(command)
+                        .then(() => next(null, s3Vid, awsVid))
+                        .catch(err => next(err, s3Vid, awsVid));
+                },
                 (s3Vid, awsVid, next) => putTaggingAndAssert(s3, { bucket, key,
                     tags, versionId: s3Vid, expectedVersionId: s3Vid }, err =>
                     next(err, s3Vid, awsVid)),
@@ -195,7 +246,6 @@ function testSuite() {
                     expectedTags: tags }, next),
             ], done);
         });
-
 
         it('versioning suspended then enabled: should put/get a tag set on ' +
         'a specific version (null) if specified', done => {
@@ -222,12 +272,25 @@ function testSuite() {
         done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
-                next => s3.putObject({ Bucket: bucket, Key: key }, next),
+                next => {
+                    const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                    s3.send(command)
+                        .then(data => next(null, data))
+                        .catch(err => next(err));
+                },
                 (putData, next) => awsGetLatestVerId(key, '', next),
                 (awsVid, next) => putTaggingAndAssert(s3, { bucket, key, tags,
                     expectedVersionId: false }, () => next(null, awsVid)),
-                (awsVid, next) => awsS3.deleteObject({ Bucket: awsBucket,
-                    Key: key, VersionId: awsVid }, next),
+                (awsVid, next) => {
+                    const command = new DeleteObjectCommand({ 
+                        Bucket: awsBucket,
+                        Key: key, 
+                        VersionId: awsVid 
+                    });
+                    awsS3.send(command)
+                        .then(data => next(null, data))
+                        .catch(err => next(err));
+                },
                 (delData, next) => getTaggingAndAssert(s3, { bucket, key,
                     expectedTags: tags, expectedVersionId: false,
                     getObject: false }, next),
@@ -239,10 +302,23 @@ function testSuite() {
         done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
-                next => s3.putObject({ Bucket: bucket, Key: key }, next),
+                next => {
+                    const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                    s3.send(command)
+                        .then(data => next(null, data))
+                        .catch(err => next(err));
+                },
                 (putData, next) => awsGetLatestVerId(key, '', next),
-                (awsVid, next) => awsS3.deleteObject({ Bucket: awsBucket,
-                    Key: key, VersionId: awsVid }, next),
+                (awsVid, next) => {
+                    const command = new DeleteObjectCommand({ 
+                        Bucket: awsBucket,
+                        Key: key, 
+                        VersionId: awsVid 
+                    });
+                    awsS3.send(command)
+                        .then(data => next(null, data))
+                        .catch(err => next(err));
+                },
                 (delData, next) => putTaggingAndAssert(s3, { bucket, key, tags,
                     expectedError: 'ServiceUnavailable' }, next),
             ], done);
@@ -254,14 +330,27 @@ function testSuite() {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
-                next => s3.putObject({ Bucket: bucket, Key: key }, next),
+                next => {
+                    const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                    s3.send(command)
+                        .then(data => next(null, data))
+                        .catch(err => next(err));
+                },
                 (putData, next) => awsGetLatestVerId(key, '',
                     (err, awsVid) => next(err, putData.VersionId, awsVid)),
                 (s3Vid, awsVid, next) => putTaggingAndAssert(s3, { bucket, key,
                     tags, versionId: s3Vid, expectedVersionId: s3Vid },
                     () => next(null, s3Vid, awsVid)),
-                (s3Vid, awsVid, next) => awsS3.deleteObject({ Bucket: awsBucket,
-                    Key: key, VersionId: awsVid }, err => next(err, s3Vid)),
+                (s3Vid, awsVid, next) => {
+                    const command = new DeleteObjectCommand({ 
+                        Bucket: awsBucket,
+                        Key: key, 
+                        VersionId: awsVid 
+                    });
+                    awsS3.send(command)
+                        .then(() => next(null, s3Vid))
+                        .catch(err => next(err, s3Vid));
+                },
                 (s3Vid, next) => getTaggingAndAssert(s3, { bucket, key,
                     versionId: s3Vid, expectedTags: tags,
                     expectedVersionId: s3Vid, getObject: false }, next),
@@ -273,11 +362,24 @@ function testSuite() {
         done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
-                next => s3.putObject({ Bucket: bucket, Key: key }, next),
+                next => {
+                    const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                    s3.send(command)
+                        .then(data => next(null, data))
+                        .catch(err => next(err));
+                },
                 (putData, next) => awsGetLatestVerId(key, '',
                     (err, awsVid) => next(err, putData.VersionId, awsVid)),
-                (s3Vid, awsVid, next) => awsS3.deleteObject({ Bucket: awsBucket,
-                    Key: key, VersionId: awsVid }, err => next(err, s3Vid)),
+                (s3Vid, awsVid, next) => {
+                    const command = new DeleteObjectCommand({ 
+                        Bucket: awsBucket,
+                        Key: key, 
+                        VersionId: awsVid 
+                    });
+                    awsS3.send(command)
+                        .then(() => next(null, s3Vid))
+                        .catch(err => next(err, s3Vid));
+                },
                 (s3Vid, next) => putTaggingAndAssert(s3, { bucket, key, tags,
                     versionId: s3Vid, expectedError:
                     'ServiceUnavailable' }, next),
