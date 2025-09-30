@@ -76,7 +76,7 @@ function _getMemConfig(profile, config) {
 }
 
 function _getAwsConfig(profile, config) {
-    const credentials = getAwsCredentials(profile, '/.aws/scality');
+    const credentials = getAwsCredentials(profile);
 
     const awsConfig = Object.assign({}
         , DEFAULT_GLOBAL_OPTIONS, DEFAULT_AWS_OPTIONS
