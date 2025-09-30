@@ -5,12 +5,15 @@ const async = require('async');
 const { makeRequest } = require('../../functional/raw-node/utils/makeRequest');
 const BucketUtility =
     require('../../functional/aws-node-sdk/lib/utility/bucket-util');
+const { getCredentials } = require('../../functional/aws-node-sdk/test/support/credentials');
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 
+const { accessKeyId, secretAccessKey } = getCredentials();
+
 const veeamAuthCredentials = {
-    accessKey: 'accessKey1',
-    secretKey: 'verySecretKey1',
+    accessKey: accessKeyId,
+    secretKey: secretAccessKey,
 };
 
 const badVeeamAuthCredentials = {
@@ -128,6 +131,24 @@ function makeVeeamRequest(params, callback) {
     };
     makeRequest(options, callback);
 }
+
+describe('veeam invalid requests:', () => {
+    it('should return MethodNotAllowed for invalid request', done => {
+        const options = {
+            authCredentials: veeamAuthCredentials,
+            hostname: ipAddress,
+            port: 8000,
+            method: 'GET',
+            path: '/_/veeam',
+            urlForSignature: '',
+            jsonResponse: false,
+        };
+        makeRequest(options, (err, response) => {
+            assert.strictEqual(response.statusCode, 405);
+            done();
+        });
+    });
+});
 
 describe('veeam PUT routes:', () => {
     before(done => {
