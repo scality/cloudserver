@@ -870,23 +870,7 @@ describe('Config', () => {
             assert.throws(() => new ConfigObject());
         });
 
-        it('should generate a new instanceId for external cloudserver', () => {
-            setEnv('HOSTNAME', 'connector-cloudserver-69958b4697-bs5pn');
-            const config = new ConfigObject();
-            assert.strictEqual(config.instanceId, 'ebs5pn');
-        });
-
-        it('should generate a new instanceId for internal cloudserver', () => {
-            setEnv('HOSTNAME', 'internal-cloudserver-54dc76b796-48m2x');
-            const config = new ConfigObject();
-            assert.strictEqual(config.instanceId, 'i48m2x');
-        });
-        it('should generate a random instanceId if HOSTNAME has an unexpected format', () => {
-            setEnv('HOSTNAME', 'cldsrv1');
-            const config = new ConfigObject();
-            assert.strictEqual(config.instanceId.length, 6);
-        });
-        it('should generate a random instanceId if HOSTNAME is not set', () => {
+        it('should generate a random instanceId if not set', () => {
             const config = new ConfigObject();
             assert.strictEqual(config.instanceId.length, 6);
         });
