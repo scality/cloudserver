@@ -550,6 +550,9 @@ describe('routeBackbeat', () => {
                 cb(null, {
                     canonicalID: 'id',
                     getCanonicalID: () => 'id',
+                    getAccountDisplayName: () => 'my-account',
+                    getIAMdisplayName: () => '[assumedRole] service-backbeat-lifecycle-1:backbeat-lifecycle',
+                    isRequesterAnIAMUser: () => true,
                 });
             });
 
