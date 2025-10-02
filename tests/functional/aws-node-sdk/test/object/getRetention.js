@@ -1,6 +1,13 @@
 const { promisify } = require('util');
 const assert = require('assert');
 const moment = require('moment');
+const {
+    CreateBucketCommand,
+    PutObjectCommand,
+    PutObjectRetentionCommand,
+    GetObjectRetentionCommand,
+    DeleteObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -17,19 +24,12 @@ const retainDate = moment().add(1, 'days').toISOString();
 
 const retentionConfig = {
     Mode: 'GOVERNANCE',
-    RetainUntilDate: retainDate,
+    RetainUntilDate: new Date(retainDate),
 };
-
-// aws sdk manipulates dates by removing milliseconds
-// and converting date strings to date objects
-function manipulateDate() {
-    const noMillis = `${retainDate.slice(0, 19)}.000Z`;
-    return new Date(noMillis);
-}
 
 const expectedConfig = {
     Mode: 'GOVERNANCE',
-    RetainUntilDate: manipulateDate(),
+    RetainUntilDate: new Date(retainDate),
 };
 
 const isCEPH = process.env.CI_CEPH !== undefined;
@@ -43,125 +43,138 @@ describeSkipIfCeph('GET object retention', () => {
         const otherAccountS3 = otherAccountBucketUtility.s3;
         let versionId;
 
-        beforeEach(() => {
+        beforeEach(async () => {
             process.stdout.write('Putting buckets and objects\n');
-            return s3.createBucket({
-                Bucket: bucketName,
-                ObjectLockEnabledForBucket: true,
-            }).promise()
-            .then(() => s3.createBucket({ Bucket: unlockedBucket }).promise())
-            .then(() => s3.putObject({ Bucket: unlockedBucket, Key: objectName }).promise())
-            .then(() => s3.putObject({ Bucket: bucketName, Key: noRetentionObject }).promise())
-            .then(() => s3.putObject({ Bucket: bucketName, Key: objectName }).promise())
-            .then(res => {
+            try {
+                await s3.send(new CreateBucketCommand({
+                    Bucket: bucketName,
+                    ObjectLockEnabledForBucket: true,
+                }));
+                await s3.send(new CreateBucketCommand({ Bucket: unlockedBucket }));
+                await s3.send(new PutObjectCommand({ Bucket: unlockedBucket, Key: objectName }));
+                await s3.send(new PutObjectCommand({ Bucket: bucketName, Key: noRetentionObject }));
+                
+                const res = await s3.send(new PutObjectCommand({ Bucket: bucketName, Key: objectName }));
                 versionId = res.VersionId;
+                
                 process.stdout.write('Putting object retention\n');
-                return s3.putObjectRetention({
+                await s3.send(new PutObjectRetentionCommand({
                     Bucket: bucketName,
                     Key: objectName,
                     Retention: retentionConfig,
-                }).promise();
-            })
-            .catch(err => {
+                }));
+            } catch (err) {
                 process.stdout.write('Error in beforeEach\n');
                 throw err;
-            });
+            }
         });
 
         afterEach(() => {
+            process.stdout.write('Emptying and deleting buckets\n');
             process.stdout.write('Removing object lock\n');
-            return changeLockPromise([{ bucket: bucketName, key: objectName, versionId }], '')
-            .then(() => {
-                process.stdout.write('Emptying and deleting buckets\n');
-                return bucketUtil.empty(bucketName);
-            })
-            .then(() => bucketUtil.empty(unlockedBucket))
-            .then(() => bucketUtil.deleteMany([bucketName, unlockedBucket]))
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
-            });
+                return changeObjectLock([{ bucket: bucketName, key: objectName, versionId }], '', err => {
+                    if (err) {
+                        process.stdout.write('Error in changeObjectLock\n');
+                        throw err;
+                    }
+                    return Promise.all([
+                        bucketUtil.empty(bucketName),
+                        bucketUtil.empty(unlockedBucket),
+                    ]).then(() => bucketUtil.deleteMany([bucketName, unlockedBucket]))
+                    .catch(err => {
+                        process.stdout.write(`Error in deleting buckets ${err}\n`);
+                        throw err;
+                    });
+                });
         });
 
         it('should return AccessDenied putting retention with another account',
-        done => {
-            otherAccountS3.getObjectRetention({
-                Bucket: bucketName,
-                Key: objectName,
-            }, err => {
+        async () => {
+            try {
+                await otherAccountS3.send(new GetObjectRetentionCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                }));
+                throw new Error('Expected AccessDenied error');
+            } catch (err) {
                 checkError(err, 'AccessDenied', 403);
-                done();
-            });
+            }
         });
 
-        it('should return NoSuchKey error if key does not exist', done => {
-            s3.getObjectRetention({
-                Bucket: bucketName,
-                Key: 'thiskeydoesnotexist',
-            }, err => {
+        it('should return NoSuchKey error if key does not exist', async () => {
+            try {
+                await s3.send(new GetObjectRetentionCommand({
+                    Bucket: bucketName,
+                    Key: 'thiskeydoesnotexist',
+                }));
+                throw new Error('Expected NoSuchKey error');
+            } catch (err) {
                 checkError(err, 'NoSuchKey', 404);
-                done();
-            });
+            }
         });
 
-        it('should return NoSuchVersion error if version does not exist', done => {
-            s3.getObjectRetention({
-                Bucket: bucketName,
-                Key: objectName,
-                VersionId: '012345678901234567890123456789012',
-            }, err => {
+        it('should return NoSuchVersion error if version does not exist', async () => {
+            try {
+                await s3.send(new GetObjectRetentionCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    VersionId: '012345678901234567890123456789012',
+                }));
+                throw new Error('Expected NoSuchVersion error');
+            } catch (err) {
                 checkError(err, 'NoSuchVersion', 404);
-                done();
-            });
+            }
         });
 
         it('should return MethodNotAllowed if object version is delete marker',
-        done => {
-            s3.deleteObject({ Bucket: bucketName, Key: objectName }, (err, res) => {
-                assert.ifError(err);
-                s3.getObjectRetention({
+        async () => {
+            const res = await s3.send(new DeleteObjectCommand({ Bucket: bucketName, Key: objectName }));
+            try {
+                await s3.send(new GetObjectRetentionCommand({
                     Bucket: bucketName,
                     Key: objectName,
                     VersionId: res.VersionId,
-                }, err => {
-                    checkError(err, 'MethodNotAllowed', 405);
-                    done();
-                });
-            });
+                }));
+                throw new Error('Expected MethodNotAllowed error');
+            } catch (err) {
+                checkError(err, 'MethodNotAllowed', 405);
+            }
         });
 
         it('should return InvalidRequest error getting retention to object ' +
-        'in bucket with no object lock enabled', done => {
-            s3.getObjectRetention({
-                Bucket: unlockedBucket,
-                Key: objectName,
-            }, err => {
+        'in bucket with no object lock enabled', async () => {
+            try {
+                await s3.send(new GetObjectRetentionCommand({
+                    Bucket: unlockedBucket,
+                    Key: objectName,
+                }));
+                throw new Error('Expected InvalidRequest error');
+            } catch (err) {
                 checkError(err, 'InvalidRequest', 400);
-                done();
-            });
+            }
         });
 
         it('should return NoSuchObjectLockConfiguration if no retention set',
-        done => {
-            s3.getObjectRetention({
-                Bucket: bucketName,
-                Key: noRetentionObject,
-            }, err => {
+        async () => {
+            try {
+                await s3.send(new GetObjectRetentionCommand({
+                    Bucket: bucketName,
+                    Key: noRetentionObject,
+                }));
+                throw new Error('Expected NoSuchObjectLockConfiguration error');
+            } catch (err) {
                 checkError(err, 'NoSuchObjectLockConfiguration', 404);
-                done();
-            });
+            }
         });
 
-        it('should get object retention', done => {
-            s3.getObjectRetention({
+        it('should get object retention', async () => {
+            const res = await s3.send(new GetObjectRetentionCommand({
                 Bucket: bucketName,
                 Key: objectName,
-            }, (err, res) => {
-                assert.ifError(err);
-                assert.deepStrictEqual(res.Retention, expectedConfig);
-                changeObjectLock([
-                    { bucket: bucketName, key: objectName, versionId }], '', done);
-            });
+            }));
+            assert.deepStrictEqual(res.Retention, expectedConfig);
+            await changeLockPromise([
+                { bucket: bucketName, key: objectName, versionId }], '');
         });
     });
 });

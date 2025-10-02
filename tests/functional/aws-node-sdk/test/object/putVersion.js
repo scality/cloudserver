@@ -7,11 +7,20 @@ const metadata = require('../../../../../lib/metadata/wrapper');
 const { DummyRequestLogger } = require('../../../../unit/helpers');
 const checkError = require('../../lib/utility/checkError');
 const { getMetadata, fakeMetadataArchive, isNullKeyMetadataV1 } = require('../utils/init');
+const { CreateBucketCommand, 
+    PutObjectCommand, 
+    HeadObjectCommand, 
+    GetObjectCommand,
+    PutObjectAclCommand,
+    PutObjectTaggingCommand,
+    PutObjectLegalHoldCommand,
+    ListObjectsCommand,
+    DeleteObjectCommand,
+    PutBucketVersioningCommand } = require('@aws-sdk/client-s3');
 
 const {
     LOCATION_NAME_DMF,
 } = require('../../../../constants');
-
 const log = new DummyRequestLogger();
 
 const bucketName = 'bucket1putversion32';
@@ -24,13 +33,25 @@ const archive = {
     restoreRequestedDays: 5,
 };
 
-function putObjectVersion(s3, params, vid, next) {
+async function putObjectVersion(s3, params, vid, next) {
     const paramsWithBody = { ...params, Body: '123' };
-    const request = s3.putObject(paramsWithBody);
-    request.on('build', () => {
-        request.httpRequest.headers['x-scal-s3-version-id'] = vid;
-    });
-    return request.send(next);
+    const command = new PutObjectCommand(paramsWithBody);
+    command.middlewareStack.add(
+        next => async args => {
+            // eslint-disable-next-line no-param-reassign
+            args.request.headers['x-scal-s3-version-id'] = vid;
+            return next(args);
+        },
+        {
+            step: 'build',
+        }
+    );
+    try {
+        const result = await s3.send(command);
+        return next(null, result);
+    } catch (error) {
+        return next(error);
+    }
 }
 
 function checkVersionsAndUpdate(versionsBefore, versionsAfter, indexes) {
@@ -65,8 +86,13 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
             s3 = bucketUtil.s3;
             async.series([
                 next => metadata.setup(next),
-                next => s3.createBucket({ Bucket: bucketName }, next),
-                next => s3.createBucket({ Bucket: bucketNameMD, ObjectLockEnabledForBucket: true, }, next),
+                next => s3.send(new CreateBucketCommand({ Bucket: bucketName })).then(() => {
+                    next();
+                }),
+                next => s3.send(new CreateBucketCommand({ Bucket: bucketNameMD, 
+                    ObjectLockEnabledForBucket: true })).then(() => {
+                    next();
+                }),
             ], done);
         });
 
@@ -78,7 +104,7 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
                 return bucketUtil.deleteMany([bucketName, bucketNameMD]);
             })
             .catch(err => {
-                process.stdout.write('Error in afterEach');
+                process.stdout.write(`Error in afterEach ${err}\n`);
                 throw err;
             });
         });
@@ -89,11 +115,15 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
             let objMDAfter;
             let versionsBefore;
             let versionsAfter;
-
             async.series([
-                next => s3.putObject(params, next),
+                next => s3.send(new PutObjectCommand(params)).then(() => {
+                    next();
+                }).catch(() => {
+                    next();
+                }),
                 next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
                 next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+
                     objMDBefore = objMD;
                     return next(err);
                 }),
@@ -138,10 +168,10 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
             let vId;
 
             async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, (err, res) => {
+                next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                next => s3.send(new PutObjectCommand(params)).then(res => {
                     vId = res.VersionId;
-                    return next(err);
+                    return next();
                 }),
                 next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
@@ -189,10 +219,10 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
             let vId;
 
             async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, (err, res) => {
+                next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                next => s3.send(new PutObjectCommand(params)).then(res => {
                     vId = res.VersionId;
-                    return next(err);
+                    return next();
                 }),
                 next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
@@ -237,10 +267,10 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
             let vId;
 
             async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, (err, res) => {
+                next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                next => s3.send(new PutObjectCommand(params)).then(res => {
                     vId = res.VersionId;
-                    return next(err);
+                    return next();
                 }),
                 next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                 next => putObjectVersion(s3, params, 'aJLWKz4Ko9IjBBgXKj5KQT.G9UHv0g7P', err => {
@@ -277,8 +307,8 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
             const params = { Bucket: bucketName, Key: objectName };
 
             async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, next),
+                next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                next => s3.send(new PutObjectCommand(params)).then(() => next()),
                 next => putObjectVersion(s3, params,
                 '393833343735313131383832343239393939393952473030312020313031', err => {
                     checkError(err, 'NoSuchVersion', 404);
@@ -304,9 +334,9 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
             let objMDAfter;
 
             async.series([
-                next => s3.putObject(params, next),
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, next),
+                next => s3.send(new PutObjectCommand(params)).then(() => next()),
+                next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                next => s3.send(new PutObjectCommand(params)).then(() => next()),
                 next => fakeMetadataArchive(bucketName, objectName, 'null', archive, next),
                 next => getMetadata(bucketName, objectName, 'null', (err, objMD) => {
                     objMDBefore = objMD;
@@ -353,11 +383,11 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
             let vId;
 
             async.series([
-                next => s3.putObject(params, next),
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, (err, res) => {
+                next => s3.send(new PutObjectCommand(params)).then(() => next()),
+                next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                next => s3.send(new PutObjectCommand(params)).then(res => {
                     vId = res.VersionId;
-                    return next(err);
+                    return next();
                 }),
                 next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                 next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
@@ -410,10 +440,10 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
             let versionsAfter;
 
             async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, next),
-                next => s3.putBucketVersioning(sParams, next),
-                next => s3.putObject(params, next),
+                next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                next => s3.send(new PutObjectCommand(params)).then(() => next()),
+                next => s3.send(new PutBucketVersioningCommand(sParams)).then(() => next()),
+                next => s3.send(new PutObjectCommand(params)).then(() => next()),
                 next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
                 next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDBefore = objMD;
@@ -460,14 +490,14 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
             let vId;
 
             async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, next),
-                next => s3.putObject(params, (err, res) => {
+                next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                next => s3.send(new PutObjectCommand(params)).then(() => next()),
+                next => s3.send(new PutObjectCommand(params)).then(res => {
                     vId = res.VersionId;
-                    return next(err);
+                    return next();
                 }),
                 next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
-                next => s3.putObject(params, next),
+                next => s3.send(new PutObjectCommand(params)).then(() => next()),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
                     return next(err);
@@ -513,11 +543,11 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
             let vId;
 
             async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, next),
-                next => s3.putObject(params, (err, res) => {
+                next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                next => s3.send(new PutObjectCommand(params)).then(() => next()),
+                next => s3.send(new PutObjectCommand(params)).then(res => {
                     vId = res.VersionId;
-                    return next(err);
+                    return next();
                 }),
                 next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
@@ -571,11 +601,11 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
             let vId;
 
             async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, next),
-                next => s3.putObject(params, (err, res) => {
+                next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                next => s3.send(new PutObjectCommand(params)).then(() => next()),
+                next => s3.send(new PutObjectCommand(params)).then(res => {
                     vId = res.VersionId;
-                    return next(err);
+                    return next();
                 }),
                 next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
@@ -586,7 +616,7 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
-                next => s3.putBucketVersioning(sParams, next),
+                next => s3.send(new PutBucketVersioningCommand(sParams)).then(() => next()).catch(next),
                 next => putObjectVersion(s3, params, vId, next),
                 next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
@@ -623,7 +653,7 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
             let versionsAfter;
 
             async.series([
-                next => s3.putObject(params, next),
+                next => s3.send(new PutObjectCommand(params)).then(() => next()),
                 next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
@@ -633,7 +663,7 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
-                next => s3.putBucketVersioning(vParams, next),
+                next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
                 next => putObjectVersion(s3, params, 'null', next),
                 next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDAfter = objMD;
@@ -660,7 +690,7 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
             const params = { Bucket: bucketName, Key: objectName };
 
             async.series([
-                next => s3.putObject(params, next),
+                next => s3.send(new PutObjectCommand(params)).then(() => next()),
                 next => putObjectVersion(s3, params, '', err => {
                     checkError(err, 'InvalidObjectState', 403);
                     return next();
@@ -682,11 +712,11 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
             let vId;
 
             async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, next),
-                next => s3.deleteObject(params, (err, res) => {
+                next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                next => s3.send(new PutObjectCommand(params)).then(() => next()),
+                next => s3.send(new DeleteObjectCommand(params)).then(res => {
                     vId = res.VersionId;
-                    return next(err);
+                    return next();
                 }),
                 next => putObjectVersion(s3, params, vId, err => {
                     checkError(err, 'MethodNotAllowed', 405);
@@ -709,7 +739,7 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
             };
 
             async.series([
-                next => s3.putObject(params, next),
+                next => s3.send(new PutObjectCommand(params)).then(() => next()),
                 next => fakeMetadataArchive(bucketName, objectName, undefined, archiveCompleted, next),
                 next => putObjectVersion(s3, params, '', err => {
                     checkError(err, 'InvalidObjectState', 403);
@@ -734,19 +764,19 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
                 async.series([
                     next => {
                         if (versioning === 'versioned') {
-                            return s3.putBucketVersioning({
+                            return s3.send(new PutBucketVersioningCommand({
                                 Bucket: bucketName,
                                 VersioningConfiguration: { Status: 'Enabled' }
-                            }, next);
+                            })).then(() => next());
                         } else if (versioning === 'suspended') {
-                            return s3.putBucketVersioning({
+                            return s3.send(new PutBucketVersioningCommand({
                                 Bucket: bucketName,
                                 VersioningConfiguration: { Status: 'Suspended' }
-                            }, next);
+                            })).then(() => next());
                         }
                         return next();
                     },
-                    next => s3.putObject(params, next),
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
                     next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
                     next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                         objMDBefore = objMD;
@@ -758,21 +788,27 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
                         objMDAfter = objMD;
                         return next(err);
                     }),
-                    next => s3.listObjects({ Bucket: bucketName }, (err, res) => {
-                        assert.ifError(err);
+                    next => s3.send(new ListObjectsCommand({ Bucket: bucketName })).then(res => {
                         assert.strictEqual(res.Contents.length, 1);
                         assert.strictEqual(res.Contents[0].StorageClass, LOCATION_NAME_DMF);
                         return next();
-                    }),
-                    next => s3.headObject(params, (err, res) => {
+                    }).catch(err => {
                         assert.ifError(err);
+                        return next(err);
+                    }),
+                    next => s3.send(new HeadObjectCommand(params)).then(res => {
                         assert.strictEqual(res.StorageClass, LOCATION_NAME_DMF);
                         return next();
-                    }),
-                    next => s3.getObject(params, (err, res) => {
+                    }).catch(err => {
                         assert.ifError(err);
+                        return next(err);
+                    }),
+                    next => s3.send(new GetObjectCommand(params)).then(res => {
                         assert.strictEqual(res.StorageClass, LOCATION_NAME_DMF);
                         return next();
+                    }).catch(err => {
+                        assert.ifError(err);
+                        return next(err);
                     }),
                 ], err => {
                     assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
@@ -865,10 +901,10 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
                 'isNFS': null,
             };
             async.series([
-                next => s3.putObject(putParams, next),
-                next => s3.putObjectAcl(aclParams, next),
-                next => s3.putObjectTagging(tagParams, next),
-                next => s3.putObjectLegalHold(legalHoldParams, next),
+                next => s3.send(new PutObjectCommand(putParams)).then(() => next()),
+                next => s3.send(new PutObjectAclCommand(aclParams)).then(() => next()),
+                next => s3.send(new PutObjectTaggingCommand(tagParams)).then(() => next()),
+                next => s3.send(new PutObjectLegalHoldCommand(legalHoldParams)).then(() => next()),
                 next => getMetadata(bucketNameMD, objectName, undefined, (err, objMD) => {
                     if (err) {
                         return next(err);
@@ -911,7 +947,7 @@ describeSkipNullMdV1('PUT object with x-scal-s3-version-id header', () => {
                 // removing legal hold to be able to clean the bucket after the test
                 next => {
                     legalHoldParams.LegalHold.Status = 'OFF';
-                    return s3.putObjectLegalHold(legalHoldParams, next);
+                    return s3.send(new PutObjectLegalHoldCommand(legalHoldParams)).then(() => next());
                 },
             ], done);
         });

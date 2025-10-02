@@ -1,4 +1,11 @@
 const assert = require('assert');
+const {
+    CreateBucketCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    ListPartsCommand,
+    AbortMultipartUploadCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -8,72 +15,63 @@ const key = 'key';
 const bodyFirstPart = Buffer.allocUnsafe(10).fill(0);
 const bodySecondPart = Buffer.allocUnsafe(20).fill(0);
 
-function checkNoError(err) {
-    assert.equal(err, null,
-        `Expected success, got error ${JSON.stringify(err)}`);
-}
-
 describe('List parts', () => {
     withV4(sigCfg => {
-        let bucketUtil;
-        let s3;
+        const bucketUtil = new BucketUtility('default', sigCfg);
+        const s3 = bucketUtil.s3;
         let uploadId;
         let secondEtag;
 
-        beforeEach(() => {
-            bucketUtil = new BucketUtility('default', sigCfg);
-            s3 = bucketUtil.s3;
-            return s3.createBucket({ Bucket: bucket }).promise()
-            .then(() => s3.createMultipartUpload({
-                Bucket: bucket, Key: key }).promise())
-            .then(res => {
+        beforeEach(async () => {
+            try {
+                await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+                const res = await s3.send(new CreateMultipartUploadCommand({
+                    Bucket: bucket, Key: key }));
                 uploadId = res.UploadId;
-                return s3.uploadPart({ Bucket: bucket, Key: key,
+                await s3.send(new UploadPartCommand({ Bucket: bucket, Key: key,
                     PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart,
-                }).promise();
-            }).then(() => s3.uploadPart({
-                Bucket: bucket, Key: key,
-                PartNumber: 2, UploadId: uploadId, Body: bodySecondPart,
-            }).promise()).then(res => {
-                secondEtag = res.ETag;
-                return secondEtag;
-            })
-            .catch(err => {
+                }));
+                const secondRes = await s3.send(new UploadPartCommand({
+                    Bucket: bucket, Key: key,
+                    PartNumber: 2, UploadId: uploadId, Body: bodySecondPart,
+                }));
+                secondEtag = secondRes.ETag;
+            } catch (err) {
                 process.stdout.write(`Error in beforeEach: ${err}\n`);
                 throw err;
-            });
+            }
         });
 
-        afterEach(() => {
+        afterEach(async () => {
             process.stdout.write('Emptying bucket');
-            return s3.abortMultipartUpload({
-                Bucket: bucket, Key: key, UploadId: uploadId,
-            }).promise()
-            .then(() => bucketUtil.empty(bucket))
-            .then(() => {
+            try {
+                await s3.send(new AbortMultipartUploadCommand({
+                    Bucket: bucket, Key: key, UploadId: uploadId,
+                }));
+                await bucketUtil.empty(bucket);
                 process.stdout.write('Deleting bucket');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
+                await bucketUtil.deleteOne(bucket);
+            } catch (err) {
                 process.stdout.write('Error in afterEach');
                 throw err;
-            });
+            }
         });
 
-        it('should only list the second part', done => {
-            s3.listParts({
-                Bucket: bucket,
-                Key: key,
-                PartNumberMarker: 1,
-                UploadId: uploadId },
-            (err, data) => {
-                checkNoError(err);
-                assert.strictEqual(data.Parts[0].PartNumber, 2);
-                assert.strictEqual(data.Parts[0].Size, 20);
-                assert.strictEqual(`${data.Parts[0].ETag}`, secondEtag);
-                done();
+        it('should only list the second part', async () => {
+                await s3.send(new ListPartsCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    PartNumberMarker: '1',
+                    UploadId: uploadId,
+                })).then(data => {
+                    assert.strictEqual(data.Parts[0].PartNumber, 2);
+                    assert.strictEqual(data.Parts[0].Size, 20);
+                    assert.strictEqual(`${data.Parts[0].ETag}`, secondEtag);
+                }).catch(err => {
+                    process.stdout.write(`Error in listParts: ${err}\n`);
+                    throw err;
+                });
             });
-        });
     });
 });
 
@@ -81,13 +79,13 @@ describe('List parts', () => {
 
 function createPart(sigCfg, bucketUtil, s3, key) {
     let uploadId;
-    return s3.createBucket({ Bucket: bucket }).promise()
-    .then(() => s3.createMultipartUpload({
-        Bucket: bucket, Key: key }).promise())
+    return s3.send(new CreateBucketCommand({ Bucket: bucket }))
+    .then(() => s3.send(new CreateMultipartUploadCommand({
+        Bucket: bucket, Key: key })))
     .then(res => {
         uploadId = res.UploadId;
-        return s3.uploadPart({ Bucket: bucket, Key: key,
-            PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart }).promise();
+        return s3.send(new UploadPartCommand({ Bucket: bucket, Key: key,
+            PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart }));
     })
     .then(() => Promise.resolve(uploadId));
 }
@@ -95,9 +93,9 @@ function createPart(sigCfg, bucketUtil, s3, key) {
 function deletePart(s3, bucketUtil, key, uploadId) {
     process.stdout.write('Emptying bucket');
 
-    return s3.abortMultipartUpload({
+    return s3.send(new AbortMultipartUploadCommand({
         Bucket: bucket, Key: key, UploadId: uploadId,
-    }).promise()
+    }))
     .then(() => bucketUtil.empty(bucket))
     .then(() => {
         process.stdout.write('Deleting bucket');
@@ -105,16 +103,17 @@ function deletePart(s3, bucketUtil, key, uploadId) {
     });
 }
 
-function testFunc(s3, bucket, key, uploadId, cb) {
-    s3.listParts({
-        Bucket: bucket,
-        Key: key,
-        UploadId: uploadId },
-    (err, data) => {
-        checkNoError(err);
-        assert.strictEqual(data.Key, key);
-        cb();
-    });
+async function testFunc(s3, bucket, key, uploadId) {
+        await s3.send(new ListPartsCommand({
+            Bucket: bucket,
+            Key: key,
+            UploadId: uploadId,
+        })).then(data => {
+            assert.strictEqual(data.Key, key);
+        }).catch(err => {
+            process.stdout.write(`Error in listParts: ${err}\n`);
+            throw err;
+        });
 }
 
 describe('List parts - object keys with special characters: `&`', () => {
@@ -135,7 +134,7 @@ describe('List parts - object keys with special characters: `&`', () => {
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
 
         it('should list parts of an object with `&` in its key',
-            done => testFunc(s3, bucket, key, uploadId, done));
+            async () => await testFunc(s3, bucket, key, uploadId));
     });
 });
 
@@ -157,7 +156,7 @@ describe('List parts - object keys with special characters: `"`', () => {
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
 
         it('should list parts of an object with `"` in its key',
-            done => testFunc(s3, bucket, key, uploadId, done));
+            async () => await testFunc(s3, bucket, key, uploadId));
     });
 });
 
@@ -179,7 +178,7 @@ describe('List parts - object keys with special characters: `\'`', () => {
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
 
         it('should list parts of an object with `\'` in its key',
-            done => testFunc(s3, bucket, key, uploadId, done));
+            async () => await testFunc(s3, bucket, key, uploadId));
     });
 });
 
@@ -201,7 +200,7 @@ describe('List parts - object keys with special characters: `<`', () => {
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
 
         it('should list parts of an object with `<` in its key',
-            done => testFunc(s3, bucket, key, uploadId, done));
+            async () => await testFunc(s3, bucket, key, uploadId));
     });
 });
 
@@ -223,6 +222,6 @@ describe('List parts - object keys with special characters: `>`', () => {
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
 
         it('should list parts of an object with `>` in its key',
-            done => testFunc(s3, bucket, key, uploadId, done));
+            async () => await testFunc(s3, bucket, key, uploadId));
     });
 });

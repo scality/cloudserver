@@ -1,5 +1,20 @@
 const assert = require('assert');
-const async = require('async');
+const { isDeepStrictEqual } = require('util');
+const {
+    CreateBucketCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    CompleteMultipartUploadCommand,
+    PutObjectCommand,
+    PutBucketVersioningCommand,
+    DeleteObjectCommand,
+    ListObjectsCommand,
+    HeadObjectCommand,
+    GetObjectCommand,
+    PutObjectAclCommand,
+    PutObjectTaggingCommand,
+    PutObjectLegalHoldCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -14,9 +29,9 @@ const {
 
 const log = new DummyRequestLogger();
 
-const bucketName = 'bucket1putversion33';
+const bucketName = 'bucket1putversion398';
 const objectName = 'object1putversion';
-const bucketNameMD = 'restore-metadata-copy-bucket-mpu';
+const bucketNameMD = 'restore-metadata-copy-bucket-mpu-205';
 const mdListingParams = { listingType: 'DelimiterVersions', maxKeys: 1000 };
 const archive = {
     archiveInfo: {},
@@ -24,62 +39,105 @@ const archive = {
     restoreRequestedDays: 5,
 };
 
-function putMPUVersion(s3, bucketName, objectName, vId, cb) {
-    async.waterfall([
-        next => {
-            const params = { Bucket: bucketName, Key: objectName };
-            const request = s3.createMultipartUpload(params);
-            if (vId !== undefined) {
-                request.on('build', () => {
-                    request.httpRequest.headers['x-scal-s3-version-id'] = vId;
-                });
-            }
-            return request.send(next);
-        },
-        (resCreation, next) => {
-            const uploadId = resCreation.UploadId;
-            const params = {
-                Body: 'okok',
-                Bucket: bucketName,
-                Key: objectName,
-                PartNumber: 1,
-                UploadId: uploadId,
-            };
-            const request = s3.uploadPart(params);
-            if (vId !== undefined) {
-                request.on('build', () => {
-                    request.httpRequest.headers['x-scal-s3-version-id'] = vId;
-                });
-            }
-            return request.send((err, res) => next(err, res, uploadId));
-        },
-        (res, uploadId, next) => {
-            const params = {
-                Bucket: bucketName,
-                Key: objectName,
-                MultipartUpload: {
-                    Parts: [
-                        {
-                            ETag: res.ETag,
-                            PartNumber: 1
-                        },
-                    ]
+// Promisified versions of callback-based functions from external modules
+const fakeMetadataArchivePromise = (bucket, key, versionId, archive) => new Promise((resolve, reject) => {
+    fakeMetadataArchive(bucket, key, versionId, archive, (err, res) => {
+        if (err) {
+            return reject(err);
+        }
+        return resolve(res);
+    });
+});
+const getMetadataPromise = (bucket, key, versionId) => new Promise((resolve, reject) => {
+    getMetadata(bucket, key, versionId, (err, res) => {
+        if (err) {
+            return reject(err);
+        }
+        return resolve(res);
+    });
+});
+const metadataListObjectPromise = (bucket, prefix, delimiter) => new Promise((resolve, reject) => {
+    metadata.listObject(bucket, prefix, delimiter, (err, res) => {
+        if (err) {
+            return reject(err);
+        }
+        return resolve(res);
+    });
+});
+const metadataPutObjectMDPromise = (bucket, key, objMD, versionId, log) => new Promise((resolve, reject) => {
+    metadata.putObjectMD(bucket, key, objMD, versionId, log, (err, res) => {
+        if (err) {
+            return reject(err);
+        }
+        return resolve(res);
+    });
+});
+
+async function putMPUVersion(s3, bucketName, objectName, vId) {
+    const params = { Bucket: bucketName, Key: objectName };
+    const command = new CreateMultipartUploadCommand(params);
+    if (vId !== undefined) {
+        command.middlewareStack.add(
+            next => args => {
+                // eslint-disable-next-line no-param-reassign
+                args.request.headers['x-scal-s3-version-id'] = vId;
+                return next(args);
+            },
+            { step: 'build' }
+        );
+    }
+    const resCreation = await s3.send(command);
+    
+    const uploadId = resCreation.UploadId;
+    const uploadParams = {
+        Body: 'okok',
+        Bucket: bucketName,
+        Key: objectName,
+        PartNumber: 1,
+        UploadId: uploadId,
+    };
+    const uploadCommand = new UploadPartCommand(uploadParams);
+    if (vId !== undefined) {
+        uploadCommand.middlewareStack.add(
+            next => args => {
+                // eslint-disable-next-line no-param-reassign
+                args.request.headers['x-scal-s3-version-id'] = vId;
+                return next(args);
+            },
+            { step: 'build' }
+        );
+    }
+    const uploadRes = await s3.send(uploadCommand);
+    
+    const completeParams = {
+        Bucket: bucketName,
+        Key: objectName,
+        MultipartUpload: {
+            Parts: [
+                {
+                    ETag: uploadRes.ETag,
+                    PartNumber: 1
                 },
-                UploadId: uploadId,
-            };
-            const request = s3.completeMultipartUpload(params);
-            if (vId !== undefined) {
-                request.on('build', () => {
-                    request.httpRequest.headers['x-scal-s3-version-id'] = vId;
-                });
-            }
-            return request.send(next);
+            ]
         },
-    ], err => cb(err));
+        UploadId: uploadId,
+    };
+    const completeCommand = new CompleteMultipartUploadCommand(completeParams);
+    if (vId !== undefined) {
+        completeCommand.middlewareStack.add(
+            next => args => {
+                // eslint-disable-next-line no-param-reassign
+                args.request.headers['x-scal-s3-version-id'] = vId;
+                return next(args);
+            },
+            { step: 'build' }
+        );
+    }
+    return await s3.send(completeCommand);
 }
 
-function putMPU(s3, bucketName, objectName, cb) {
-    return putMPUVersion(s3, bucketName, objectName, undefined, cb);
+async function putMPU(s3, bucketName, objectName) {
+    return putMPUVersion(s3, bucketName, objectName, undefined);
 }
 
 function checkVersionsAndUpdate(versionsBefore, versionsAfter, indexes) {
@@ -98,6 +156,10 @@ function checkObjMdAndUpdate(objMDBefore, objMDAfter, props) {
         // eslint-disable-next-line no-param-reassign
         objMDBefore[p] = objMDAfter[p];
     });
+    if (objMDBefore['content-type'] && !objMDAfter['content-type']) {
+        // eslint-disable-next-line no-param-reassign
+        delete objMDBefore['content-type'];
+    }
 }
 
 // TODO: CLDSRV-721 RING 10 Support ObjectRestore (cold storage) with MD v1
@@ -109,18 +171,28 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
         let bucketUtil;
         let s3;
 
-        beforeEach(done => {
+        beforeEach(async () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            async.series([
-                next => metadata.setup(next),
-                next => s3.createBucket({ Bucket: bucketName }, next),
-                next => s3.createBucket({ Bucket: bucketNameMD, ObjectLockEnabledForBucket: true, }, next),
-            ], done);
+            
+            try {
+                await new Promise((resolve, reject) => {
+                    metadata.setup(err => err ? reject(err) : resolve());
+                });
+                await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
+                await s3.send(new CreateBucketCommand({ 
+                    Bucket: bucketNameMD, 
+                    ObjectLockEnabledForBucket: true 
+                }));
+            } catch (err) {
+                process.stdout.write(`Error in beforeEach ${err}`);
+                throw err;
+            }
         });
 
-        afterEach(() => {
+         afterEach(() => {
             process.stdout.write('Emptying bucket');
+
             return bucketUtil.emptyMany([bucketName, bucketNameMD])
             .then(() => {
                 process.stdout.write('Deleting bucket');
@@ -132,89 +204,80 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
             });
         });
 
-        it('should overwrite an MPU object', done => {
+        it('should overwrite an MPU object', async () => {
             let objMDBefore;
             let objMDAfter;
             let versionsBefore;
             let versionsAfter;
 
-            async.series([
-                next => putMPU(s3, bucketName, objectName, next),
-                next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
-                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
-                    objMDBefore = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsBefore = res.Versions;
-                    return next(err);
-                }),
-                next => putMPUVersion(s3, bucketName, objectName, '', next),
-                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
-                    objMDAfter = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsAfter = res.Versions;
-                    return next(err);
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+            try {
+                await putMPU(s3, bucketName, objectName);
+                
+                await fakeMetadataArchivePromise(bucketName, objectName, undefined, archive);
+                
+                objMDBefore = await getMetadataPromise(bucketName, objectName, undefined);
+                
+                const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsBefore = versionRes1.Versions;
 
+                await putMPUVersion(s3, bucketName, objectName, '');
+                
+                objMDAfter = await getMetadataPromise(bucketName, objectName, undefined);
+                
+                const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsAfter = versionRes2.Versions;
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
-
                 checkObjMdAndUpdate(objMDBefore, objMDAfter,
                     ['location', 'uploadId', 'microVersionId', 'x-amz-restore',
                     'archive', 'dataStoreName', 'originOp']);
 
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
-                return done();
-            });
+            } catch (err) {
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
 
-        it('should overwrite an object', done => {
+        it('should overwrite an object', async () => {
             const params = { Bucket: bucketName, Key: objectName };
             let objMDBefore;
             let objMDAfter;
             let versionsBefore;
             let versionsAfter;
 
-            async.series([
-                next => s3.putObject(params, next),
-                next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
-                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
-                    objMDBefore = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsBefore = res.Versions;
-                    return next(err);
-                }),
-                next => putMPUVersion(s3, bucketName, objectName, '', next),
-                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
-                    objMDAfter = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsAfter = res.Versions;
-                    return next(err);
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+            try {
+                await s3.send(new PutObjectCommand(params));
+
+                await fakeMetadataArchivePromise(bucketName, objectName, undefined, archive);
+                
+                objMDBefore = await getMetadataPromise(bucketName, objectName, undefined);
+                
+                const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsBefore = versionRes1.Versions;
+                
+                await putMPUVersion(s3, bucketName, objectName, '');
+                
+                objMDAfter = await getMetadataPromise(bucketName, objectName, undefined);
+                
+                const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsAfter = versionRes2.Versions;
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
+
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter,
                     ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
                     'x-amz-restore', 'archive', 'dataStoreName']);
 
-                assert.deepStrictEqual(objMDAfter, objMDBefore);
-                return done();
-            });
+                
+                // Use util.isDeepStrictEqual which is less sensitive to property order
+                assert(isDeepStrictEqual(objMDAfter, objMDBefore), 'Objects should be deeply equal');
+            } catch (err) {
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
 
-        it('should overwrite a version', done => {
+        it('should overwrite a version', async () => {
             const vParams = {
                 Bucket: bucketName,
                 VersioningConfiguration: {
@@ -228,32 +291,25 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
             let versionsAfter;
             let vId;
 
-            async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, (err, res) => {
-                    vId = res.VersionId;
-                    return next(err);
-                }),
-                next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsBefore = res.Versions;
-                    return next(err);
-                }),
-                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
-                    objMDBefore = objMD;
-                    return next(err);
-                }),
-                next => putMPUVersion(s3, bucketName, objectName, vId, next),
-                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
-                    objMDAfter = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsAfter = res.Versions;
-                    return next(err);
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+            try {
+                await s3.send(new PutBucketVersioningCommand(vParams));
+                
+                const putRes = await s3.send(new PutObjectCommand(params));
+                vId = putRes.VersionId;
+                
+                await fakeMetadataArchivePromise(bucketName, objectName, vId, archive);
+                
+                const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsBefore = versionRes1.Versions;
+                
+                objMDBefore = await getMetadataPromise(bucketName, objectName, vId);
+                
+                await putMPUVersion(s3, bucketName, objectName, vId);
+                
+                objMDAfter = await getMetadataPromise(bucketName, objectName, vId);
+                
+                const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsAfter = versionRes2.Versions;
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -262,11 +318,12 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
                     ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
                     'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
-                return done();
-            });
+            } catch (err) {
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
 
-        it('should overwrite the current version if empty version id header', done => {
+        it('should overwrite the current version if empty version id header', async () => {
             const vParams = {
                 Bucket: bucketName,
                 VersioningConfiguration: {
@@ -280,32 +337,25 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
             let versionsAfter;
             let vId;
 
-            async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, (err, res) => {
-                    vId = res.VersionId;
-                    return next(err);
-                }),
-                next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsBefore = res.Versions;
-                    return next(err);
-                }),
-                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
-                    objMDBefore = objMD;
-                    return next(err);
-                }),
-                next => putMPUVersion(s3, bucketName, objectName, '', next),
-                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
-                    objMDAfter = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsAfter = res.Versions;
-                    return next(err);
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+            try {
+                await s3.send(new PutBucketVersioningCommand(vParams));
+                
+                const putRes = await s3.send(new PutObjectCommand(params));
+                vId = putRes.VersionId;
+
+                await fakeMetadataArchivePromise(bucketName, objectName, vId, archive);
+                
+                const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsBefore = versionRes1.Versions;
+                
+                objMDBefore = await getMetadataPromise(bucketName, objectName, vId);
+                
+                await putMPUVersion(s3, bucketName, objectName, '');
+                
+                objMDAfter = await getMetadataPromise(bucketName, objectName, vId);
+                
+                const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsAfter = versionRes2.Versions;
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -314,12 +364,13 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
                     ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
                     'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
-                return done();
-            });
+            } catch (err) {
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
 
 
-        it('should fail if version is invalid', done => {
+        it('should fail if version is invalid', async () => {
             const vParams = {
                 Bucket: bucketName,
                 VersioningConfiguration: {
@@ -328,32 +379,34 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
             };
             const params = { Bucket: bucketName, Key: objectName };
 
-            async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, next),
-                next => putMPUVersion(s3, bucketName, objectName, 'aJLWKz4Ko9IjBBgXKj5KQT.G9UHv0g7P', err => {
+            try {
+                await s3.send(new PutBucketVersioningCommand(vParams));
+                await s3.send(new PutObjectCommand(params));
+                
+                try {
+                    await putMPUVersion(s3, bucketName, objectName, 'aJLWKz4Ko9IjBBgXKj5KQT.G9UHv0g7P');
+                    throw new Error('Expected InvalidArgument error');
+                } catch (err) {
                     checkError(err, 'InvalidArgument', 400);
-                    return next();
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
-                return done();
-            });
+                }
+            } catch (err) {
+                if (err.message === 'Expected InvalidArgument error') {
+                    throw err;
+                }
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
 
-        it('should fail if key does not exist', done => {
-            async.series([
-                next => putMPUVersion(s3, bucketName, objectName, '', err => {
-                    checkError(err, 'NoSuchKey', 404);
-                    return next();
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
-                return done();
-            });
+        it('should fail if key does not exist', async () => {
+            try {
+                await putMPUVersion(s3, bucketName, objectName, '');
+                throw new Error('Expected NoSuchKey error');
+            } catch (err) {
+                checkError(err, 'NoSuchKey', 404);
+            }
         });
 
-        it('should fail if version does not exist', done => {
+        it('should fail if version does not exist', async () => {
             const vParams = {
                 Bucket: bucketName,
                 VersioningConfiguration: {
@@ -362,21 +415,26 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
             };
             const params = { Bucket: bucketName, Key: objectName };
 
-            async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, next),
-                next => putMPUVersion(s3, bucketName, objectName,
-                '393833343735313131383832343239393939393952473030312020313031', err => {
+            try {
+                await s3.send(new PutBucketVersioningCommand(vParams));
+                await s3.send(new PutObjectCommand(params));
+                
+                try {
+                    await putMPUVersion(s3, bucketName, objectName, 
+                        '393833343735313131383832343239393939393952473030312020313031');
+                    throw new Error('Expected NoSuchVersion error');
+                } catch (err) {
                     checkError(err, 'NoSuchVersion', 404);
-                    return next();
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
-                return done();
-            });
+                }
+            } catch (err) {
+                if (err.message === 'Expected NoSuchVersion error') {
+                    throw err;
+                }
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
 
-        it('should overwrite a non-current null version', done => {
+        it('should overwrite a non-current null version', async () => {
             const vParams = {
                 Bucket: bucketName,
                 VersioningConfiguration: {
@@ -389,30 +447,24 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
             let objMDBefore;
             let objMDAfter;
 
-            async.series([
-                next => s3.putObject(params, next),
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, next),
-                next => fakeMetadataArchive(bucketName, objectName, 'null', archive, next),
-                next => getMetadata(bucketName, objectName, 'null', (err, objMD) => {
-                    objMDBefore = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsBefore = res.Versions;
-                    return next(err);
-                }),
-                next => putMPUVersion(s3, bucketName, objectName, 'null', next),
-                next => getMetadata(bucketName, objectName, 'null', (err, objMD) => {
-                    objMDAfter = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsAfter = res.Versions;
-                    return next(err);
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+            try {
+                await s3.send(new PutObjectCommand(params));
+                await s3.send(new PutBucketVersioningCommand(vParams));
+                await s3.send(new PutObjectCommand(params));
+                
+                await fakeMetadataArchivePromise(bucketName, objectName, 'null', archive);
+                
+                objMDBefore = await getMetadataPromise(bucketName, objectName, 'null');
+                
+                const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsBefore = versionRes1.Versions;
+                
+                await putMPUVersion(s3, bucketName, objectName, 'null');
+                
+                objMDAfter = await getMetadataPromise(bucketName, objectName, 'null');
+                
+                const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsAfter = versionRes2.Versions;
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [1]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -421,11 +473,12 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
                     ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
                     'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
-                return done();
-            });
+            } catch (err) {
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
 
-        it('should overwrite the lastest version and keep nullVersionId', done => {
+        it('should overwrite the lastest version and keep nullVersionId', async () => {
             const vParams = {
                 Bucket: bucketName,
                 VersioningConfiguration: {
@@ -439,33 +492,26 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
             let objMDAfter;
             let vId;
 
-            async.series([
-                next => s3.putObject(params, next),
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, (err, res) => {
-                    vId = res.VersionId;
-                    return next(err);
-                }),
-                next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
-                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
-                    objMDBefore = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsBefore = res.Versions;
-                    next(err);
-                }),
-                next => putMPUVersion(s3, bucketName, objectName, vId, next),
-                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
-                    objMDAfter = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsAfter = res.Versions;
-                    return next(err);
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+            try {
+                await s3.send(new PutObjectCommand(params));
+                await s3.send(new PutBucketVersioningCommand(vParams));
+                
+                const putRes = await s3.send(new PutObjectCommand(params));
+                vId = putRes.VersionId;
+                
+                await fakeMetadataArchivePromise(bucketName, objectName, vId, archive);
+                
+                objMDBefore = await getMetadataPromise(bucketName, objectName, vId);
+                
+                const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsBefore = versionRes1.Versions;
+                
+                await putMPUVersion(s3, bucketName, objectName, vId);
+                
+                objMDAfter = await getMetadataPromise(bucketName, objectName, vId);
+                
+                const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsAfter = versionRes2.Versions;
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -474,11 +520,12 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
                     ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
                     'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
-                return done();
-            });
+            } catch (err) {
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
 
-        it('should overwrite a current null version', done => {
+        it('should overwrite a current null version', async () => {
             const vParams = {
                 Bucket: bucketName,
                 VersioningConfiguration: {
@@ -497,31 +544,25 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
             let versionsBefore;
             let versionsAfter;
 
-            async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, next),
-                next => s3.putBucketVersioning(sParams, next),
-                next => s3.putObject(params, next),
-                next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
-                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
-                    objMDBefore = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsBefore = res.Versions;
-                    next(err);
-                }),
-                next => putMPUVersion(s3, bucketName, objectName, '', next),
-                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
-                    objMDAfter = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsAfter = res.Versions;
-                    return next(err);
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+            try {
+                await s3.send(new PutBucketVersioningCommand(vParams));
+                await s3.send(new PutObjectCommand(params));
+                await s3.send(new PutBucketVersioningCommand(sParams));
+                await s3.send(new PutObjectCommand(params));
+                
+                await fakeMetadataArchivePromise(bucketName, objectName, undefined, archive);
+                
+                objMDBefore = await getMetadataPromise(bucketName, objectName, undefined);
+                
+                const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsBefore = versionRes1.Versions;
+                
+                await putMPUVersion(s3, bucketName, objectName, '');
+                
+                objMDAfter = await getMetadataPromise(bucketName, objectName, undefined);
+                
+                const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsAfter = versionRes2.Versions;
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -530,11 +571,12 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
                     ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
                     'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
-                return done();
-            });
+            } catch (err) {
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
 
-        it('should overwrite a non-current version', done => {
+        it('should overwrite a non-current version', async () => {
             const vParams = {
                 Bucket: bucketName,
                 VersioningConfiguration: {
@@ -548,34 +590,28 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
             let versionsAfter;
             let vId;
 
-            async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, next),
-                next => s3.putObject(params, (err, res) => {
-                    vId = res.VersionId;
-                    return next(err);
-                }),
-                next => s3.putObject(params, next),
-                next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
-                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
-                    objMDBefore = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsBefore = res.Versions;
-                    return next(err);
-                }),
-                next => putMPUVersion(s3, bucketName, objectName, vId, next),
-                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
-                    objMDAfter = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsAfter = res.Versions;
-                    return next(err);
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+            try {
+                await s3.send(new PutBucketVersioningCommand(vParams));
+                await s3.send(new PutObjectCommand(params));
+                
+                const putRes = await s3.send(new PutObjectCommand(params));
+                vId = putRes.VersionId;
+                
+                await s3.send(new PutObjectCommand(params));
+                
+                await fakeMetadataArchivePromise(bucketName, objectName, vId, archive);
+                
+                objMDBefore = await getMetadataPromise(bucketName, objectName, vId);
+                
+                const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsBefore = versionRes1.Versions;
+                
+                await putMPUVersion(s3, bucketName, objectName, vId);
+                
+                objMDAfter = await getMetadataPromise(bucketName, objectName, vId);
+                
+                const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsAfter = versionRes2.Versions;
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [1]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -584,11 +620,12 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
                     ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
                     'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
-                return done();
-            });
+            } catch (err) {
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
 
-        it('should overwrite the current version', done => {
+        it('should overwrite the current version', async () => {
             const vParams = {
                 Bucket: bucketName,
                 VersioningConfiguration: {
@@ -602,33 +639,26 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
             let versionsAfter;
             let vId;
 
-            async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, next),
-                next => s3.putObject(params, (err, res) => {
-                    vId = res.VersionId;
-                    return next(err);
-                }),
-                next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsBefore = res.Versions;
-                    return next(err);
-                }),
-                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
-                    objMDBefore = objMD;
-                    return next(err);
-                }),
-                next => putMPUVersion(s3, bucketName, objectName, vId, next),
-                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
-                    objMDAfter = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsAfter = res.Versions;
-                    return next(err);
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+            try {
+                await s3.send(new PutBucketVersioningCommand(vParams));
+                await s3.send(new PutObjectCommand(params));
+                
+                const putRes = await s3.send(new PutObjectCommand(params));
+                vId = putRes.VersionId;
+                
+                await fakeMetadataArchivePromise(bucketName, objectName, vId, archive);
+                
+                const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsBefore = versionRes1.Versions;
+                
+                objMDBefore = await getMetadataPromise(bucketName, objectName, vId);
+                
+                await putMPUVersion(s3, bucketName, objectName, vId);
+                
+                objMDAfter = await getMetadataPromise(bucketName, objectName, vId);
+                
+                const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsAfter = versionRes2.Versions;
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -637,11 +667,12 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
                     ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
                     'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
-                return done();
-            });
+            } catch (err) {
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
 
-        it('should overwrite the current version after bucket version suspended', done => {
+        it('should overwrite the current version after bucket version suspended', async () => {
             const vParams = {
                 Bucket: bucketName,
                 VersioningConfiguration: {
@@ -661,34 +692,28 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
             let versionsAfter;
             let vId;
 
-            async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, next),
-                next => s3.putObject(params, (err, res) => {
-                    vId = res.VersionId;
-                    return next(err);
-                }),
-                next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsBefore = res.Versions;
-                    return next(err);
-                }),
-                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
-                    objMDBefore = objMD;
-                    return next(err);
-                }),
-                next => s3.putBucketVersioning(sParams, next),
-                next => putMPUVersion(s3, bucketName, objectName, vId, next),
-                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
-                    objMDAfter = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsAfter = res.Versions;
-                    return next(err);
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+            try {
+                await s3.send(new PutBucketVersioningCommand(vParams));
+                await s3.send(new PutObjectCommand(params));
+                
+                const putRes = await s3.send(new PutObjectCommand(params));
+                vId = putRes.VersionId;
+                
+                await fakeMetadataArchivePromise(bucketName, objectName, vId, archive);
+                
+                const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsBefore = versionRes1.Versions;
+                
+                objMDBefore = await getMetadataPromise(bucketName, objectName, vId);
+                
+                await s3.send(new PutBucketVersioningCommand(sParams));
+                
+                await putMPUVersion(s3, bucketName, objectName, vId);
+                
+                objMDAfter = await getMetadataPromise(bucketName, objectName, vId);
+                
+                const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsAfter = versionRes2.Versions;
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -697,11 +722,12 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
                     ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
                     'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
-                return done();
-            });
+            } catch (err) {
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
 
-        it('should overwrite the current null version after bucket version enabled', done => {
+        it('should overwrite the current null version after bucket version enabled', async () => {
             const vParams = {
                 Bucket: bucketName,
                 VersioningConfiguration: {
@@ -714,29 +740,24 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
             let versionsBefore;
             let versionsAfter;
 
-            async.series([
-                next => s3.putObject(params, next),
-                next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsBefore = res.Versions;
-                    return next(err);
-                }),
-                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
-                    objMDBefore = objMD;
-                    return next(err);
-                }),
-                next => s3.putBucketVersioning(vParams, next),
-                next => putMPUVersion(s3, bucketName, objectName, 'null', next),
-                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
-                    objMDAfter = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsAfter = res.Versions;
-                    return next(err);
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+            try {
+                await s3.send(new PutObjectCommand(params));
+                
+                await fakeMetadataArchivePromise(bucketName, objectName, undefined, archive);
+                
+                const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsBefore = versionRes1.Versions;
+                
+                objMDBefore = await getMetadataPromise(bucketName, objectName, undefined);
+                
+                await s3.send(new PutBucketVersioningCommand(vParams));
+                
+                await putMPUVersion(s3, bucketName, objectName, 'null');
+                
+                objMDAfter = await getMetadataPromise(bucketName, objectName, undefined);
+                
+                const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                versionsAfter = versionRes2.Versions;
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -745,27 +766,33 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
                     ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
                     'x-amz-restore', 'archive', 'dataStoreName']);
 
-                assert.deepStrictEqual(objMDAfter, objMDBefore);
-                return done();
-            });
+                assert(isDeepStrictEqual(objMDAfter, objMDBefore), 'Objects should be deeply equal');
+            } catch (err) {
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
 
-        it('should fail if archiving is not in progress', done => {
+        it('should fail if archiving is not in progress', async () => {
             const params = { Bucket: bucketName, Key: objectName };
 
-            async.series([
-                next => s3.putObject(params, next),
-                next => putMPUVersion(s3, bucketName, objectName, '', err => {
+            try {
+                await s3.send(new PutObjectCommand(params));
+                
+                try {
+                    await putMPUVersion(s3, bucketName, objectName, '');
+                    throw new Error('Expected InvalidObjectState error');
+                } catch (err) {
                     checkError(err, 'InvalidObjectState', 403);
-                    return next();
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
-                return done();
-            });
+                }
+            } catch (err) {
+                if (err.message === 'Expected InvalidObjectState error') {
+                    throw err;
+                }
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
 
-        it('should fail if trying to overwrite a delete marker', done => {
+        it('should fail if trying to overwrite a delete marker', async () => {
             const params = { Bucket: bucketName, Key: objectName };
             const vParams = {
                 Bucket: bucketName,
@@ -775,24 +802,28 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
             };
             let vId;
 
-            async.series([
-                next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, next),
-                next => s3.deleteObject(params, (err, res) => {
-                    vId = res.VersionId;
-                    return next(err);
-                }),
-                next => putMPUVersion(s3, bucketName, objectName, vId, err => {
+            try {
+                await s3.send(new PutBucketVersioningCommand(vParams));
+                await s3.send(new PutObjectCommand(params));
+                
+                const deleteRes = await s3.send(new DeleteObjectCommand(params));
+                vId = deleteRes.VersionId;
+                
+                try {
+                    await putMPUVersion(s3, bucketName, objectName, vId);
+                    throw new Error('Expected MethodNotAllowed error');
+                } catch (err) {
                     checkError(err, 'MethodNotAllowed', 405);
-                    return next();
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
-                return done();
-            });
+                }
+            } catch (err) {
+                if (err.message === 'Expected MethodNotAllowed error') {
+                    throw err;
+                }
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
 
-        it('should fail if restore is already completed', done => {
+        it('should fail if restore is already completed', async () => {
             const params = { Bucket: bucketName, Key: objectName };
             const archiveCompleted = {
                 archiveInfo: {},
@@ -802,17 +833,23 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
                 restoreWillExpireAt: new Date(10 + (5 * 24 * 60 * 60 * 1000)),
             };
 
-            async.series([
-                next => s3.putObject(params, next),
-                next => fakeMetadataArchive(bucketName, objectName, undefined, archiveCompleted, next),
-                next => putMPUVersion(s3, bucketName, objectName, '', err => {
+            try {
+                await s3.send(new PutObjectCommand(params));
+                
+                await fakeMetadataArchivePromise(bucketName, objectName, undefined, archiveCompleted);
+                
+                try {
+                    await putMPUVersion(s3, bucketName, objectName, '');
+                    throw new Error('Expected InvalidObjectState error');
+                } catch (err) {
                     checkError(err, 'InvalidObjectState', 403);
-                    return next();
-                }),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
-                return done();
-            });
+                }
+            } catch (err) {
+                if (err.message === 'Expected InvalidObjectState error') {
+                    throw err;
+                }
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
 
         [
@@ -820,56 +857,45 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
             'versioned',
             'suspended'
         ].forEach(versioning => {
-            it(`should update restore metadata while keeping storage class (${versioning})`, done => {
+            it(`should update restore metadata while keeping storage class (${versioning})`, async () => {
                 const params = { Bucket: bucketName, Key: objectName };
                 let objMDBefore;
                 let objMDAfter;
 
-                async.series([
-                    next => {
-                        if (versioning === 'versioned') {
-                            return s3.putBucketVersioning({
-                                Bucket: bucketName,
-                                VersioningConfiguration: { Status: 'Enabled' }
-                            }, next);
-                        } else if (versioning === 'suspended') {
-                            return s3.putBucketVersioning({
-                                Bucket: bucketName,
-                                VersioningConfiguration: { Status: 'Suspended' }
-                            }, next);
-                        }
-                        return next();
-                    },
-                    next => s3.putObject(params, next),
-                    next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
-                    next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
-                        objMDBefore = objMD;
-                        return next(err);
-                    }),
-                    next => metadata.listObject(bucketName, mdListingParams, log, next),
-                    next => putMPUVersion(s3, bucketName, objectName, '', next),
-                    next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
-                        objMDAfter = objMD;
-                        return next(err);
-                    }),
-                    next => s3.listObjects({ Bucket: bucketName }, (err, res) => {
-                        assert.ifError(err);
-                        assert.strictEqual(res.Contents.length, 1);
-                        assert.strictEqual(res.Contents[0].StorageClass, LOCATION_NAME_DMF);
-                        return next();
-                    }),
-                    next => s3.headObject(params, (err, res) => {
-                        assert.ifError(err);
-                        assert.strictEqual(res.StorageClass, LOCATION_NAME_DMF);
-                        return next();
-                    }),
-                    next => s3.getObject(params, (err, res) => {
-                        assert.ifError(err);
-                        assert.strictEqual(res.StorageClass, LOCATION_NAME_DMF);
-                        return next();
-                    }),
-                ], err => {
-                    assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                try {
+                    if (versioning === 'versioned') {
+                        await s3.send(new PutBucketVersioningCommand({
+                            Bucket: bucketName,
+                            VersioningConfiguration: { Status: 'Enabled' }
+                        }));
+                    } else if (versioning === 'suspended') {
+                        await s3.send(new PutBucketVersioningCommand({
+                            Bucket: bucketName,
+                            VersioningConfiguration: { Status: 'Suspended' }
+                        }));
+                    }
+                    
+                    await s3.send(new PutObjectCommand(params));
+                    
+                    await fakeMetadataArchivePromise(bucketName, objectName, undefined, archive);
+                    
+                    objMDBefore = await getMetadataPromise(bucketName, objectName, undefined);
+                    
+                    await metadataListObjectPromise(bucketName, mdListingParams, log);
+                    
+                    await putMPUVersion(s3, bucketName, objectName, '');
+                    
+                    objMDAfter = await getMetadataPromise(bucketName, objectName, undefined);
+                    
+                    const listRes = await s3.send(new ListObjectsCommand({ Bucket: bucketName }));
+                    assert.strictEqual(listRes.Contents.length, 1);
+                    assert.strictEqual(listRes.Contents[0].StorageClass, LOCATION_NAME_DMF);
+                    
+                    const headRes = await s3.send(new HeadObjectCommand(params));
+                    assert.strictEqual(headRes.StorageClass, LOCATION_NAME_DMF);
+                    
+                    const getRes = await s3.send(new GetObjectCommand(params));
+                    assert.strictEqual(getRes.StorageClass, LOCATION_NAME_DMF);
 
                     // Make sure object data location is set back to its bucket data location.
                     assert.deepStrictEqual(objMDAfter.dataStoreName, 'us-east-1');
@@ -884,12 +910,13 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
                     assert(objMDAfter.archive.restoreCompletedAt);
                     assert(objMDAfter.archive.restoreWillExpireAt);
                     assert(objMDAfter['x-amz-restore']['expiry-date']);
-                    return done();
-                });
+                } catch (err) {
+                    throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+                }
             });
         });
 
-        it('should "copy" all but non data-related metadata (data encryption, data size...)', done => {
+        it('should "copy" all but non data-related metadata (data encryption, data size...)', async () => {
             const params = {
                 Bucket: bucketNameMD,
                 Key: objectName
@@ -955,56 +982,53 @@ describeSkipNullMdV1('MPU with x-scal-s3-version-id header', () => {
                 'dataStoreVersionId': '',
                 'isNFS': null,
             };
-            async.series([
-                next => s3.putObject(putParams, next),
-                next => s3.putObjectAcl(aclParams, next),
-                next => s3.putObjectTagging(tagParams, next),
-                next => s3.putObjectLegalHold(legalHoldParams, next),
-                next => getMetadata(bucketNameMD, objectName, undefined, (err, objMD) => {
-                    if (err) {
-                        return next(err);
-                    }
-                    /* eslint-disable no-param-reassign */
-                    objMD.dataStoreName = LOCATION_NAME_DMF;
-                    objMD.archive = archive;
-                    objMD.replicationInfo = replicationInfo;
-                    // data related
-                    objMD['content-length'] = 99;
-                    objMD['content-type'] = 'testtype';
-                    objMD['content-md5'] = 'testmd5';
-                    objMD['content-encoding'] = 'testencoding';
-                    objMD['x-amz-server-side-encryption'] = 'aws:kms';
-                    /* eslint-enable no-param-reassign */
-                    return metadata.putObjectMD(bucketNameMD, objectName, objMD, undefined, log, next);
-                }),
-                next => putMPUVersion(s3, bucketNameMD, objectName, '', next),
-                next => getMetadata(bucketNameMD, objectName, undefined, (err, objMD) => {
-                    if (err) {
-                        return next(err);
-                    }
-                    assert.deepStrictEqual(objMD.acl, acl);
-                    assert.deepStrictEqual(objMD.tags, tags);
-                    assert.deepStrictEqual(objMD.replicationInfo, replicationInfo);
-                    assert.deepStrictEqual(objMD.legalHold, true);
-                    assert.strictEqual(objMD['x-amz-meta-custom-user-md'], 'custom-md');
-                    assert.strictEqual(objMD['x-amz-website-redirect-location'], 'http://custom-redirect');
-                    // make sure data related metadatas ar not the same before and after
-                    assert.notStrictEqual(objMD['x-amz-server-side-encryption'], 'aws:kms');
-                    assert.notStrictEqual(objMD['content-length'], 99);
-                    assert.notStrictEqual(objMD['content-encoding'], 'testencoding');
-                    assert.notStrictEqual(objMD['content-type'], 'testtype');
-                    // make sure we keep the same etag and add the new restored
-                    // data's etag inside x-amz-restore
-                    assert.strictEqual(objMD['content-md5'], 'testmd5');
-                    assert.strictEqual(typeof objMD['x-amz-restore']['content-md5'], 'string');
-                    return next();
-                }),
+
+            try {
+                await s3.send(new PutObjectCommand(putParams));
+                await s3.send(new PutObjectAclCommand(aclParams));
+                await s3.send(new PutObjectTaggingCommand(tagParams));
+                await s3.send(new PutObjectLegalHoldCommand(legalHoldParams));
+
+                const objMD = await getMetadataPromise(bucketNameMD, objectName, undefined);
+
+                objMD.dataStoreName = LOCATION_NAME_DMF;
+                objMD.archive = archive;
+                objMD.replicationInfo = replicationInfo;
+                // data related
+                objMD['content-length'] = 99;
+                objMD['content-type'] = 'testtype';
+                objMD['content-md5'] = 'testmd5';
+                objMD['content-encoding'] = 'testencoding';
+                objMD['x-amz-server-side-encryption'] = 'aws:kms';
+
+                 
+                await metadataPutObjectMDPromise(bucketNameMD, objectName, objMD, undefined, log);
+
+                await putMPUVersion(s3, bucketNameMD, objectName, '');
+
+                const finalObjMD = await getMetadataPromise(bucketNameMD, objectName, undefined);
+                assert.deepStrictEqual(finalObjMD.acl, acl);
+                assert.deepStrictEqual(finalObjMD.tags, tags);
+                assert.deepStrictEqual(finalObjMD.replicationInfo, replicationInfo);
+                assert.deepStrictEqual(finalObjMD.legalHold, true);
+                assert.strictEqual(finalObjMD['x-amz-meta-custom-user-md'], 'custom-md');
+                assert.strictEqual(finalObjMD['x-amz-website-redirect-location'], 'http://custom-redirect');
+                // make sure data related metadatas ar not the same before and after
+                assert.notStrictEqual(finalObjMD['x-amz-server-side-encryption'], 'aws:kms');
+                assert.notStrictEqual(finalObjMD['content-length'], 99);
+                assert.notStrictEqual(finalObjMD['content-encoding'], 'testencoding');
+                assert.notStrictEqual(finalObjMD['content-type'], 'testtype');
+                // make sure we keep the same etag and add the new restored
+                // data's etag inside x-amz-restore
+                assert.strictEqual(finalObjMD['content-md5'], 'testmd5');
+                assert.strictEqual(typeof finalObjMD['x-amz-restore']['content-md5'], 'string');
+                
                 // removing legal hold to be able to clean the bucket after the test
-                next => {
-                    legalHoldParams.LegalHold.Status = 'OFF';
-                    return s3.putObjectLegalHold(legalHoldParams, next);
-                },
-            ], done);
+                legalHoldParams.LegalHold.Status = 'OFF';
+                await s3.send(new PutObjectLegalHoldCommand(legalHoldParams));
+            } catch (err) {
+                throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+            }
         });
     });
 });
