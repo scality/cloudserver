@@ -1,5 +1,6 @@
 const assert = require('assert');
 const sinon = require('sinon');
+const http = require('http');
 const { promisify } = require('util');
 const metadataUtils = require('../../../lib/metadata/metadataUtils');
 const storeObject = require('../../../lib/api/apiUtils/object/storeObject');
@@ -8,6 +9,7 @@ const { DummyRequestLogger } = require('../helpers');
 const dataWrapper = require('../../../lib/data/wrapper');
 const DummyRequest = require('../DummyRequest');
 const { auth } = require('arsenal');
+const AuthInfo = auth.AuthInfo;
 const { config } = require('../../../lib/Config');
 const quotaUtils = require('../../../lib/api/apiUtils/quotas/quotaUtils');
 
@@ -695,5 +697,57 @@ describe('routeBackbeat', () => {
         assert.strictEqual(mockResponse.statusCode, 200);
         assert.deepStrictEqual(mockResponse.body, null);
     });
+    });
+
+    describe('routeBackbeatAPIProxy', () => {
+        let mockBackbeat;
+
+        const request = new DummyRequest({
+            method: 'POST',
+            url: '/_/backbeat/api/ingestion/pause',
+            socket: {
+                remoteAddress: '127.0.0.1',
+            },
+        }, Buffer.from(''));
+
+        beforeEach(() => {
+            mockBackbeat = http.createServer((req, res) => {
+                res.writeHead(200);
+                res.end();
+            });
+            mockBackbeat.listen(config.backbeat.port);
+        });
+
+        afterEach(() => {
+            mockBackbeat.close();
+            sinon.restore();
+        });
+
+        it('should correctly proxy the request to the backbeat API', async () => {
+            sinon.stub(auth.server, 'doAuth').yields(null, new AuthInfo({
+                canonicalID: 'abcdef/lifecycle',
+                accountDisplayName: 'Lifecycle Service Account',
+            }), undefined, undefined, undefined);
+
+            endPromise = new Promise(resolve => { resolveEnd = resolve; });
+            const response = {
+                on: sinon.stub(),
+                once: sinon.stub(),
+                emit: sinon.stub(),
+                setHeader: sinon.stub(),
+                end: sinon.stub().callsFake(() => {
+                    resolveEnd();
+                })
+            };
+
+            routeBackbeat('127.0.0.1', request, response, log);
+
+            void await endPromise;
+
+            const proxyReq = response.emit.getCall(0).args[1].req;
+            assert.strictEqual(proxyReq.method, 'POST');
+            assert.strictEqual(proxyReq.path, '/_/ingestion/pause');
+            assert.strictEqual(proxyReq.getHeader('host'), `localhost:${config.backbeat.port}`);
+        });
     });
 });
