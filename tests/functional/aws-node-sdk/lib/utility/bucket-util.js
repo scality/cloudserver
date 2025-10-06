@@ -5,160 +5,170 @@ const projectFixture = require('../fixtures/project');
 const getConfig = require('../../test/support/config');
 
 class BucketUtility {
-  constructor(profile = 'default', config = {}) {
-    const s3Config = getConfig(profile, config);
+    constructor(profile = 'default', config = {}) {
+        const s3Config = getConfig(profile, config);
 
-    this.s3 = new S3(s3Config);
-    this.s3.config.setPromisesDependency(Promise);
-    this.s3.config.update({
-      maxRetries: 0,
-    });
-  }
+        this.s3 = new S3(s3Config);
+        this.s3.config.setPromisesDependency(Promise);
+        this.s3.config.update({
+            maxRetries: 0,
+        });
+    }
 
-  bucketExists(bucketName) {
-    return this.s3
-      .headBucket({ Bucket: bucketName })
-      .promise()
-      .then(() => true)
-      .catch(err => {
-        if (err.code === 'NotFound') {
-          return false;
+    bucketExists(bucketName) {
+        return this.s3
+            .headBucket({ Bucket: bucketName })
+            .promise()
+            .then(() => true)
+            .catch(err => {
+                if (err.code === 'NotFound') {
+                    return false;
+                }
+                throw err;
+            });
+    }
+
+    createOne(bucketName) {
+        return this.s3
+            .createBucket({ Bucket: bucketName })
+            .promise()
+            .then(() => bucketName);
+    }
+
+    createOneWithLock(bucketName) {
+        return this.s3
+            .createBucket({
+                Bucket: bucketName,
+                ObjectLockEnabledForBucket: true,
+            })
+            .promise()
+            .then(() => bucketName);
+    }
+
+    createMany(bucketNames) {
+        const promises = bucketNames.map(bucketName =>
+            this.createOne(bucketName),
+        );
+
+        return Promise.all(promises);
+    }
+
+    createRandom(nBuckets = 1) {
+        if (nBuckets === 1) {
+            const bucketName = projectFixture.generateBucketName();
+
+            return this.createOne(bucketName);
         }
-        throw err;
-      });
-  }
 
-  createOne(bucketName) {
-    return this.s3
-      .createBucket({ Bucket: bucketName })
-      .promise()
-      .then(() => bucketName);
-  }
+        const bucketNames = projectFixture
+            .generateManyBucketNames(nBuckets)
+            .sort(() => 0.5 - Math.random()); // Simply shuffle array
 
-  createOneWithLock(bucketName) {
-    return this.s3
-      .createBucket({
-        Bucket: bucketName,
-        ObjectLockEnabledForBucket: true,
-      })
-      .promise()
-      .then(() => bucketName);
-  }
-
-  createMany(bucketNames) {
-    const promises = bucketNames.map(bucketName => this.createOne(bucketName));
-
-    return Promise.all(promises);
-  }
-
-  createRandom(nBuckets = 1) {
-    if (nBuckets === 1) {
-      const bucketName = projectFixture.generateBucketName();
-
-      return this.createOne(bucketName);
+        return this.createMany(bucketNames);
     }
 
-    const bucketNames = projectFixture
-      .generateManyBucketNames(nBuckets)
-      .sort(() => 0.5 - Math.random()); // Simply shuffle array
-
-    return this.createMany(bucketNames);
-  }
-
-  deleteOne(bucketName) {
-    return this.s3.deleteBucket({ Bucket: bucketName }).promise();
-  }
-
-  deleteMany(bucketNames) {
-    const promises = bucketNames.map(bucketName => this.deleteOne(bucketName));
-
-    return Promise.all(promises);
-  }
-
-  /**
-   * Recursively delete all versions of all objects within the bucket
-   * @param bucketName
-   * @returns {Promise.<T>}
-   */
-
-  async empty(bucketName, BypassGovernanceRetention = false) {
-    const param = {
-      Bucket: bucketName,
-    };
-
-    const listedObjects = await this.s3.listObjectVersions(param).promise();
-
-    for (const version of listedObjects.Versions) {
-      if (version.Key.endsWith('/')) {
-        continue;
-      }
-
-      await this.s3
-        .deleteObject({
-          Bucket: bucketName,
-          Key: version.Key,
-          VersionId: version.VersionId,
-          ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
-        })
-        .promise();
+    deleteOne(bucketName) {
+        return this.s3.deleteBucket({ Bucket: bucketName }).promise();
     }
 
-    for (const version of listedObjects.Versions) {
-      if (!version.Key.endsWith('/')) {
-        continue;
-      }
+    deleteMany(bucketNames) {
+        const promises = bucketNames.map(bucketName =>
+            this.deleteOne(bucketName),
+        );
 
-      await this.s3
-        .deleteObject({
-          Bucket: bucketName,
-          Key: version.Key,
-          VersionId: version.VersionId,
-          ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
-        })
-        .promise();
+        return Promise.all(promises);
     }
 
-    for (const marker of listedObjects.DeleteMarkers) {
-      await this.s3
-        .deleteObject({
-          Bucket: bucketName,
-          Key: marker.Key,
-          VersionId: marker.VersionId,
-          ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
-        })
-        .promise();
+    /**
+     * Recursively delete all versions of all objects within the bucket
+     * @param bucketName
+     * @returns {Promise.<T>}
+     */
+
+    async empty(bucketName, BypassGovernanceRetention = false) {
+        const param = {
+            Bucket: bucketName,
+        };
+
+        const listedObjects = await this.s3.listObjectVersions(param).promise();
+
+        for (const version of listedObjects.Versions) {
+            if (version.Key.endsWith('/')) {
+                continue;
+            }
+
+            await this.s3
+                .deleteObject({
+                    Bucket: bucketName,
+                    Key: version.Key,
+                    VersionId: version.VersionId,
+                    ...(BypassGovernanceRetention && {
+                        BypassGovernanceRetention,
+                    }),
+                })
+                .promise();
+        }
+
+        for (const version of listedObjects.Versions) {
+            if (!version.Key.endsWith('/')) {
+                continue;
+            }
+
+            await this.s3
+                .deleteObject({
+                    Bucket: bucketName,
+                    Key: version.Key,
+                    VersionId: version.VersionId,
+                    ...(BypassGovernanceRetention && {
+                        BypassGovernanceRetention,
+                    }),
+                })
+                .promise();
+        }
+
+        for (const marker of listedObjects.DeleteMarkers) {
+            await this.s3
+                .deleteObject({
+                    Bucket: bucketName,
+                    Key: marker.Key,
+                    VersionId: marker.VersionId,
+                    ...(BypassGovernanceRetention && {
+                        BypassGovernanceRetention,
+                    }),
+                })
+                .promise();
+        }
     }
-  }
 
-  emptyMany(bucketNames) {
-    const promises = bucketNames.map(bucketName => this.empty(bucketName));
+    emptyMany(bucketNames) {
+        const promises = bucketNames.map(bucketName => this.empty(bucketName));
 
-    return Promise.all(promises);
-  }
+        return Promise.all(promises);
+    }
 
-  emptyIfExists(bucketName) {
-    return this.bucketExists(bucketName).then(exists => {
-      if (exists) {
-        return this.empty(bucketName);
-      }
-      return undefined;
-    });
-  }
+    emptyIfExists(bucketName) {
+        return this.bucketExists(bucketName).then(exists => {
+            if (exists) {
+                return this.empty(bucketName);
+            }
+            return undefined;
+        });
+    }
 
-  emptyManyIfExists(bucketNames) {
-    const promises = bucketNames.map(bucketName =>
-      this.emptyIfExists(bucketName),
-    );
+    emptyManyIfExists(bucketNames) {
+        const promises = bucketNames.map(bucketName =>
+            this.emptyIfExists(bucketName),
+        );
 
-    return Promise.all(promises);
-  }
+        return Promise.all(promises);
+    }
 
-  getOwner() {
-    return this.s3
-      .listBuckets()
-      .promise()
-      .then(data => data.Owner);
-  }
+    getOwner() {
+        return this.s3
+            .listBuckets()
+            .promise()
+            .then(data => data.Owner);
+    }
 }
 
 module.exports = BucketUtility;
