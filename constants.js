@@ -117,7 +117,6 @@ const constants = {
         'accelerate',
         'analytics',
         'inventory',
-        'logging',
         'metrics',
         'policyStatus',
         'publicAccessBlock',
@@ -191,6 +190,8 @@ const constants = {
         'bucketPutReplication',
         'bucketPutVersioning',
         'bucketPutWebsite',
+        'bucketPutLogging',
+        'bucketGetLogging',
         'objectDeleteTagging',
         'objectGetTagging',
         'objectPutTagging',
@@ -267,7 +268,13 @@ const constants = {
     ],
     // if requester is not bucket owner, bucket policy actions should be denied with
     // MethodNotAllowed error
-    onlyOwnerAllowed: ['bucketDeletePolicy', 'bucketGetPolicy', 'bucketPutPolicy'],
+    onlyOwnerAllowed: [
+        'bucketDeletePolicy',
+        'bucketGetPolicy',
+        'bucketPutPolicy',
+        'bucketPutLogging',
+        'bucketGetLogging',
+    ],
 };
 
 module.exports = constants;
