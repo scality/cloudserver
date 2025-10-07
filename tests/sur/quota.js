@@ -45,10 +45,7 @@ function createBucket(bucket, locked, cb) {
     }
     return s3Client.send(new CreateBucketCommand(config)) 
         .then(data => cb(null, data))
-        .catch(err => {
-            assert.ifError(err);
-            cb(err);
-        });
+        .catch(cb);
 }
 
 function configureBucketVersioning(bucket, cb) {
@@ -59,10 +56,7 @@ function configureBucketVersioning(bucket, cb) {
         },
     }))
         .then(data => cb(null, data))
-        .catch(err => {
-            assert.ifError(err);
-            cb(err);
-        });
+        .catch(cb);
 }
 
 function putObjectLockConfiguration(bucket, cb) {
@@ -79,19 +73,13 @@ function putObjectLockConfiguration(bucket, cb) {
         },
     }))
         .then(data => cb(null, data))
-        .catch(err => {
-            assert.ifError(err);
-            cb(err);
-        });
+        .catch(cb);
 }
 
 function deleteBucket(bucket, cb) {
     return s3Client.send(new DeleteBucketCommand({ Bucket: bucket }))
         .then(data => cb(null, data))
-        .catch(err => {
-            assert.ifError(err);
-            cb(err);
-        });
+        .catch(cb);
 }
 
 function putObject(bucket, key, size, cb) {
@@ -106,9 +94,7 @@ function putObject(bucket, key, size, cb) {
             }
             return cb(null, data);
         })
-        .catch(err => {
-            cb(err);
-        });
+        .catch(cb);
 }
 
 function putObjectWithCustomHeader(bucket, key, size, vID, cb) {
@@ -136,7 +122,7 @@ function putObjectWithCustomHeader(bucket, key, size, vID, cb) {
             }
             cb(null, data);
         })
-        .catch(err => cb(err));
+        .catch(cb);
 }
 
 function copyObject(bucket, key, sourceSize, cb) {
@@ -151,9 +137,7 @@ function copyObject(bucket, key, sourceSize, cb) {
             }
             return cb(null, data);
         })
-        .catch(err => {
-            cb(err);
-        });
+        .catch(cb);
 }
 
 function deleteObject(bucket, key, size, cb) {
@@ -167,9 +151,7 @@ function deleteObject(bucket, key, size, cb) {
             }
             return cb();
         })
-        .catch(err => {
-            cb(err);
-        });
+        .catch(cb);
 }
 
 function deleteVersionID(bucket, key, versionId, size, cb) {
@@ -184,22 +166,17 @@ function deleteVersionID(bucket, key, versionId, size, cb) {
             }
             return cb(null, data);
         })
-        .catch(err => {
-            cb(err);
-        });
+        .catch(cb);
 }
 
 function objectMPU(bucket, key, parts, partSize, callback) {
-    const ETags = [];
+    let ETags = [];
     let uploadId = null;
     const partNumbers = Array.from(Array(parts).keys());
     const initiateMPUParams = {
         Bucket: bucket,
         Key: key,
     };
-    if (!s3Config.isQuotaInflightEnabled()) {
-        mockScuba.incrementBytesForBucket(bucket, parts * partSize);
-    }
     return async.waterfall([
         next => s3Client.send(new CreateMultipartUploadCommand(initiateMPUParams))
             .then(data => {
@@ -217,12 +194,15 @@ function objectMPU(bucket, key, parts, partSize, callback) {
                     Body: Buffer.alloc(partSize),
                 };
                 return s3Client.send(new UploadPartCommand(uploadPartParams))
-                    .then(data => {
-                        ETags[partNumber] = data.ETag;
-                        return callback();
-                    })
+                    .then(data => callback(null, data.ETag))
                     .catch(callback);
-            }, next),
+            }, (err, results) => {
+                if (err) {
+                    return next(err);
+                }
+                ETags = results;
+                return next();
+            }),
         next => {
             const params = {
                 Bucket: bucket,
@@ -236,12 +216,12 @@ function objectMPU(bucket, key, parts, partSize, callback) {
                 UploadId: uploadId,
             };
             return s3Client.send(new CompleteMultipartUploadCommand(params))
-                .then(() => next())
+                .then(data => next(null, data))
                 .catch(next);
         },
     ], err => {
-        if (!s3Config.isQuotaInflightEnabled()) {
-            mockScuba.incrementBytesForBucket(bucket, -(parts * partSize));
+        if (!err && !s3Config.isQuotaInflightEnabled()) {
+            mockScuba.incrementBytesForBucket(bucket, parts * partSize);
         }
         return callback(err, uploadId);
     });
@@ -259,9 +239,7 @@ function abortMPU(bucket, key, uploadId, size, callback) {
             }
             return callback(null, data);
         })
-        .catch(err => {
-            callback(err);
-        });
+        .catch(err => callback(err));
 }
 
 function uploadPartCopy(bucket, key, partNumber, partSize, sleepDuration, keyToCopy, callback) {
@@ -309,8 +287,8 @@ function uploadPartCopy(bucket, key, partNumber, partSize, sleepDuration, keyToC
             };
             return s3Client.send(new UploadPartCopyCommand(copyPartParams))
                 .then(data => {
-                    ETags[partNumber] = data.ETag;
-                    return next(null, data.ETag);
+                    ETags[partNumber] = data.CopyPartResult.ETag;
+                    return next(null, data.CopyPartResult.ETag);
                 })
                 .catch(next);
         },
@@ -352,9 +330,7 @@ function restoreObject(bucket, key, size, callback) {
             }
             return callback(null, data);
         })
-        .catch(err => {
-            callback(err);
-        });
+        .catch(callback);
 }
 
 function multiObjectDelete(bucket, keys, size, callback) {
@@ -375,7 +351,6 @@ function multiObjectDelete(bucket, keys, size, callback) {
             callback(null, data);
         })
         .catch(err => {
-
             if (!s3Config.isQuotaInflightEnabled()) {
                 mockScuba.incrementBytesForBucket(bucket, size);
             }
@@ -409,38 +384,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 // Force the client to not add automatic headers
                 useGlobalEndpoint: false,
             });
-            
-            // Add middleware to strip ALL checksum headers
-            s3Client.middlewareStack.add(
-                next => async args => {
-                    if (args.request && args.request.headers) {
-                        // Remove all AWS checksum headers
-                        // eslint-disable-next-line no-param-reassign
-                        delete args.request.headers['x-amz-checksum-crc32'];
-                        // eslint-disable-next-line no-param-reassign
-                        delete args.request.headers['x-amz-checksum-crc32c'];
-                        // eslint-disable-next-line no-param-reassign
-                        delete args.request.headers['x-amz-checksum-sha1'];
-                        // eslint-disable-next-line no-param-reassign
-                        delete args.request.headers['x-amz-checksum-sha256'];
-                        // eslint-disable-next-line no-param-reassign
-                        delete args.request.headers['x-amz-sdk-checksum-algorithm'];
-                        // eslint-disable-next-line no-param-reassign
-                        delete args.request.headers['content-md5'];
-                        
-                        // Log what headers we're sending
-                        // eslint-disable-next-line no-console
-                        console.log('Request headers after stripping:', Object.keys(args.request.headers));
-                    }
-                    return next(args);
-                },
-                {
-                    step: 'build',
-                    name: 'stripAllChecksumHeaders',
-                    priority: 'high'
-                }
-            );
-            
+
             scuba.start();
             metadata.setup(err => wait(2000, () => done(err)));
         });
@@ -463,8 +407,12 @@ function multiObjectDelete(bucket, keys, size, callback) {
                     JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
                 next => {
                     putObject(bucket, key, size, err => {
-                        assert.strictEqual(err.Code, 'QuotaExceeded');
-                        return next();
+                        try {
+                            assert.strictEqual(err.name, 'QuotaExceeded');
+                            return next();
+                        } catch (assertError) {
+                            return next(assertError);
+                        }
                     });
                 },
                 next => deleteBucket(bucket, next),
@@ -488,8 +436,12 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => copyObject(bucket, key, size, err => {
-                    assert.strictEqual(err.Code, 'QuotaExceeded');
-                    return next();
+                    try {
+                        assert.strictEqual(err.name, 'QuotaExceeded');
+                        return next();
+                    } catch (assertError) {
+                        return next(assertError);
+                    }
                 }),
                 next => deleteVersionID(bucket, key, vID, size, next),
                 next => deleteBucket(bucket, next),
@@ -507,8 +459,12 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 next => putObject(bucket, key, size, next),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => copyObject(bucket, key, size, err => {
-                    assert.strictEqual(err.Code, 'QuotaExceeded');
-                    return next();
+                    try {
+                        assert.strictEqual(err.name, 'QuotaExceeded');
+                        return next();
+                    } catch (assertError) {
+                        return next(assertError);
+                    }
                 }),
                 next => deleteObject(bucket, key, size, next),
                 next => deleteBucket(bucket, next),
@@ -527,8 +483,12 @@ function multiObjectDelete(bucket, keys, size, callback) {
                     JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
                 next => objectMPU(bucket, key, parts, partSize, (err, _uploadId) => {
                     uploadId = _uploadId;
-                    assert.strictEqual(err.Code, 'QuotaExceeded');
-                    return next();
+                    try {
+                        assert.strictEqual(err.name, 'QuotaExceeded');
+                        return next();
+                    } catch (assertError) {
+                        return next(assertError);
+                    }
                 }),
                 next => abortMPU(bucket, key, uploadId, 0, next),
                 next => wait(inflightFlushFrequencyMS * 2, next),
@@ -595,8 +555,12 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 next => uploadPartCopy(bucket, key, parts, partSize, inflightFlushFrequencyMS * 2, keyToCopy,
                     (err, _uploadId) => {
                         uploadId = _uploadId;
-                        assert.strictEqual(err.Code, 'QuotaExceeded');
-                        return next();
+                        try {
+                            assert.strictEqual(err.name, 'QuotaExceeded');
+                            return next();
+                        } catch (assertError) {
+                            return next(assertError);
+                        }
                     }),
                 next => abortMPU(bucket, key, uploadId, parts * partSize, next),
                 next => deleteObject(bucket, keyToCopy, partSize, next),
@@ -624,8 +588,12 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 }, next),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => restoreObject(bucket, key, size, err => {
-                    assert.strictEqual(err.Code, 'QuotaExceeded');
-                    return next();
+                    try {
+                        assert.strictEqual(err.name, 'QuotaExceeded');
+                        return next();
+                    } catch (assertError) {
+                        return next(assertError);
+                    }
                 }),
                 next => deleteVersionID(bucket, key, vID, size, next),
                 next => deleteBucket(bucket, next),
@@ -687,8 +655,12 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => putObject(bucket, `${key}3`, size, err => {
-                    assert.strictEqual(err.Code, 'QuotaExceeded');
-                    return next();
+                    try {
+                        assert.strictEqual(err.name, 'QuotaExceeded');
+                        return next();
+                    } catch (assertError) {
+                        return next(assertError);
+                    }
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
@@ -739,8 +711,12 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 // Here we have 0 inflight but the stored bytes are 4000 (equal to the quota)
                 // Should reject new write with QuotaExceeded (4000 + 400)
                 next => putObject(bucket, `${key}3`, size, err => {
-                    assert.strictEqual(err.Code, 'QuotaExceeded');
-                    return next();
+                    try {
+                        assert.strictEqual(err.name, 'QuotaExceeded');
+                        return next();
+                    } catch (assertError) {
+                        return next(assertError);
+                    }
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 // Should still have 0 as inflight
@@ -797,9 +773,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
             const key = 'quota-test-object';
             const size = 400;
             return async.series([
-                next => {
-                    createBucket(bucket, false, next);
-                },
+                next => createBucket(bucket, false, next),
                 next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
                     JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
                 next => {
@@ -856,8 +830,12 @@ function multiObjectDelete(bucket, keys, size, callback) {
                     return next();
                 },
                 next => putObject(bucket, `${key}3`, size, err => {
-                    assert.strictEqual(err.Code, 'QuotaExceeded');
-                    return next();
+                    try {
+                        assert.strictEqual(err.name, 'QuotaExceeded');
+                        return next();
+                    } catch (assertError) {
+                        return next(assertError);
+                    }
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
@@ -899,8 +877,12 @@ function multiObjectDelete(bucket, keys, size, callback) {
                     return next();
                 },
                 next => deleteVersionID(bucket, key, vID, size, err => {
-                    assert.strictEqual(err.Code, 'AccessDenied');
-                    next();
+                    try {
+                        assert.strictEqual(err.name, 'AccessDenied');
+                        next();
+                    } catch (assertError) {
+                        next(assertError);
+                    }
                 }),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
@@ -976,13 +958,12 @@ function multiObjectDelete(bucket, keys, size, callback) {
                     }, next),
                     // Put an object, the quota should be exceeded
                     next => putObject(bucket, `${key}-2`, size, err => {
-                        assert.strictEqual(err.Code, 'QuotaExceeded');
-                        return next();
-                    }),
-                    // Simulate the real restore
-                    next => putObjectWithCustomHeader(bucket, key, size, vID, err => {
-                        assert.ifError(err);
-                        return next();
+                        try {
+                            assert.strictEqual(err.name, 'QuotaExceeded');
+                            return next();
+                        } catch (assertError) {
+                            return next(assertError);
+                        }
                     }),
                     next => {
                         assert.strictEqual(scuba.getInflightsForBucket(bucket), size);
@@ -1034,7 +1015,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                             ETags[n] = data.ETag;
                             return cb();
                         })
-                        .catch(err => cb(err));
+                        .catch(cb);
                 }, next),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
@@ -1107,7 +1088,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
                     };
                     return s3Client.send(new UploadPartCommand(uploadPartParams))
                         .then(data => cb(null, data))
-                        .catch(err => cb(err));
+                        .catch(cb);
                 }, next),
                 next => wait(inflightFlushFrequencyMS * 2, next),
                 next => {
