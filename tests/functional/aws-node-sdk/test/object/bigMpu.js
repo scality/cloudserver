@@ -1,6 +1,6 @@
 const assert = require('assert');
 const { timesLimit, waterfall } = require('async');
-const { NodeHttpHandler } = require('@aws-sdk/node-http-handler');
+const { NodeHttpHandler } = require('@smithy/node-http-handler');
 
 const { 
     S3Client,
