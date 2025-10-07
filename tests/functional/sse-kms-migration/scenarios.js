@@ -235,10 +235,6 @@ async function copyObjectAndSSE(
 // check MPU headers against the MPU overview MD
 // because there is no migration for ongoing MPU
 function assertMPUSSEHeaders(actual, expected, algo) {
-    // eslint-disable-next-line no-console
-    console.log('actual', actual);
-    // eslint-disable-next-line no-console
-    console.log('expected', expected);
     if (algo) {
         assert.strictEqual(actual.ServerSideEncryption, algo);
     }
@@ -284,16 +280,9 @@ async function mpuUploadPartCopy(
 // before has no headers to assert
 async function mpuComplete({ UploadId, Bucket, Key }, { existingParts, newParts }, mpuOverviewMDSSE, algo, testCase) {
     const extractETag = part => {
-        // For uploadPartCopy responses, ETag is in CopyPartResult
-        if (part.CopyPartResult && part.CopyPartResult.ETag) {
-            return part.CopyPartResult.ETag;
-        }
-        // For regular uploadPart responses, ETag is at the top level
-        if (part.ETag) {
-            return part.ETag;
-        }
-        // If neither exists, throw an error for debugging
-        throw new Error(`Could not find ETag in part: ${JSON.stringify(part)}`);
+        const eTag = part.CopyPartResult?.ETag || part.ETag;
+        assert(eTag, `Could not find ETag in part: ${JSON.stringify(part)}`);
+        return eTag;
     };
     
     // Build the parts array with proper ETag extraction

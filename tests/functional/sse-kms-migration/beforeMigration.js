@@ -326,8 +326,7 @@ describe('SSE KMS before migration', () => {
             it(`should PutObject versioned with SSE ${obj.name}`, async () => {
                 // ensure versioned bucket is empty
                 await helpers.bucketUtil.empty(bkt.vname);
-                let { Versions } = await helpers.s3.listObjectVersions({ Bucket: bkt.vname }) || [];
-                // regularly count versioned objects
+                let { Versions } = await helpers.s3.listObjectVersions({ Bucket: bkt.vname }) || { Versions: [] };
                 assert.strictEqual(Versions.length, 0);
 
                 const bodyBase = `BODY(${obj.name})-base`;

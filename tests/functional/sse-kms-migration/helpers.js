@@ -20,7 +20,6 @@ const { S3Client,
     HeadBucketCommand,
 } = require('@aws-sdk/client-s3');
 const { NodeHttpHandler } = require('@smithy/node-http-handler');
-const { StandardRetryStrategy } = require('@aws-sdk/middleware-retry');
 const { Agent: HttpAgent } = require('http');
 const { Agent: HttpsAgent } = require('https');
 const kms = require('../../../lib/kms/wrapper');
@@ -40,7 +39,6 @@ function getKey(key) {
 // For Integration use default profile, in cloudserver use vault profile
 const credsProfile = process.env.S3_END_TO_END === 'true' ? 'default' : 'vault';
 
-// Create custom agents with specific pooling settings
 const httpAgent = new HttpAgent({
     keepAlive: true,
     keepAliveMsecs: 30000,
@@ -65,36 +63,21 @@ const s3config = {
         httpAgent,
         httpsAgent,
     }),
-    maxAttempts: 8,
-    retryStrategy: new StandardRetryStrategy({
-        maxAttempts: 8,
-        retryDecider: error => 
-             (
-                error.code === 'ECONNREFUSED' ||
-                error.code === 'ECONNRESET' ||
-                error.name === 'TimeoutError' ||
-                error.message?.includes('socket hang up') ||
-                error.code === 'ThrottlingException' ||
-                error.code === 'RequestTimeout'
-            )
-        ,
-        delayDecider: attempts => Math.min(1000 * Math.pow(2, attempts), 30000), // Exponential backoff
-    }),
+    maxAttempts: 3,
 };
 
 const s3Client = new S3Client(s3config);
 
-// Remove logger middleware if present
 if (s3Client.middlewareStack.identify().includes('loggerMiddleware')) {
     s3Client.middlewareStack.remove('loggerMiddleware');
 }
 
 const bucketUtil = new BucketUtility(credsProfile);
 
-// Wrapper for SDK v3 commands to return promises directly
 const wrap = exec => exec();
 const s3 = {
     createBucket: params => wrap(() => s3Client.send(new CreateBucketCommand(params))),
+    deleteBucket: params => wrap(() => s3Client.send(new DeleteBucketCommand(params))),
     putBucketEncryption: params => wrap(() => s3Client.send(new PutBucketEncryptionCommand(params))),
     getBucketEncryption: params => wrap(() => s3Client.send(new GetBucketEncryptionCommand(params))),
     putObject: params => wrap(() => s3Client.send(new PutObjectCommand(params))),
@@ -176,7 +159,7 @@ const MD = {
 
 async function getBucketSSE(Bucket) {
     try {
-        const sse = await s3Client.send(new GetBucketEncryptionCommand({ Bucket }));
+        const sse = await s3.getBucketEncryption({ Bucket });
         return sse.ServerSideEncryptionConfiguration.Rules[0].ApplyServerSideEncryptionByDefault;
     } catch (error) {
         if (error.name === 'ServerSideEncryptionConfigurationNotFoundError') {
@@ -187,10 +170,10 @@ async function getBucketSSE(Bucket) {
 }
 
 async function putEncryptedObject(Bucket, Key, sseConfig, kmsKeyId, Body) {
-    return s3Client.send(new PutObjectCommand({
+    return s3.putObject({
         ...putObjParams(Bucket, Key, sseConfig, kmsKeyId),
         Body,
-    }));
+    });
 }
 
 async function getObjectMDSSE(Bucket, Key) {
@@ -221,7 +204,7 @@ const destroyKmsKey = promisify(kms.destroyBucketKey);
 
 async function cleanup(Bucket) {
     await bucketUtil.empty(Bucket);
-    await s3Client.send(new DeleteBucketCommand({ Bucket }));
+    await s3.deleteBucket({ Bucket });
 }
 
 module.exports = {

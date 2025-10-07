@@ -602,12 +602,12 @@ describe('KMS error', () => {
         },
         {
             action: 'getObject', kmsAction: 'Decrypt',
-            fct: async () => helpers.s3.getObject({ Bucket, Key }) ,
+            fct: async () => helpers.s3.getObject({ Bucket, Key }),
         },
         {
             action: 'copyObject', detail: ' when getting from source', kmsAction: 'Decrypt',
             fct: async () =>
-                helpers.s3.copyObject({ Bucket, Key: 'copy', CopySource: `${Bucket}/${Key}` }) ,
+                helpers.s3.copyObject({ Bucket, Key: 'copy', CopySource: `${Bucket}/${Key}` }),
         },
         {
             action: 'copyObject', detail: ' when putting to destination', kmsAction: 'Encrypt',
@@ -617,7 +617,7 @@ describe('KMS error', () => {
                 CopySource: `${Bucket}/plaintext`,
                 ServerSideEncryption: 'aws:kms',
                 SSEKMSKeyId: masterKeyArn,
-            }) ,
+            }),
         },
         {
             action: 'createMPU', kmsAction: 'Encrypt',
@@ -632,7 +632,7 @@ describe('KMS error', () => {
                 Key: 'mpuPlaintext',
                 PartNumber: 1,
                 CopySource: `${Bucket}/${Key}`,
-            }) ,
+            }),
         },
         {
             action: 'mpu uploadPart', detail: ' when putting to destination', kmsAction: 'Encrypt',
