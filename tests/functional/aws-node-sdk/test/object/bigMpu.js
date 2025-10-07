@@ -63,8 +63,9 @@ describe('large mpu', function tester() {
         // sdk will create SocketHangUp error before response.
         // Custom request handler with no timeouts
         const requestHandler = new NodeHttpHandler({
-            requestTimeout: 0,
-            connectionTimeout: 0,
+            requestTimeout: 300000,
+            connectionTimeout: 60000,  
+            socketTimeout: 300000,
         });
         
         s3 = new S3Client({
