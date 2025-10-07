@@ -16,6 +16,7 @@ class BucketUtility {
         if (unauthenticated) {
             this.s3 = new S3Client({
                 ...s3Config,
+                maxAttempts: 0,
                 credentials: { accessKeyId: '', secretAccessKey: '' },
                 forcePathStyle: true,
                 signer: { sign: async request => request },
@@ -109,6 +110,7 @@ class BucketUtility {
                             Bucket: bucketName,
                             Key: object.Key,
                             VersionId: object.VersionId,
+                            ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
                         }))
                             .then(() => object)
                     )
@@ -118,6 +120,8 @@ class BucketUtility {
                             this.s3.send(new DeleteObjectCommand({
                                 Bucket: bucketName,
                                 Key: object.Key,
+                                VersionId: object.VersionId,
+                                ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
                             }))
                             .then(() => object)
                         )
@@ -128,19 +132,23 @@ class BucketUtility {
                             Bucket: bucketName,
                             Key: object.Key,
                             VersionId: object.VersionId,
+                            ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
                             }))
                             .then(() => object)
-                        ))
-            ));
+                        )
+                    )
+            )
+        );
     }
 
     emptyMany(bucketNames) {
-            const promises = bucketNames.map(
-                bucketName => this.empty(bucketName)
+        const promises = bucketNames.map(
+            bucketName => this.empty(bucketName)
         );
 
         return Promise.all(promises);
     }
+    
     emptyIfExists(bucketName) {
         return this.bucketExists(bucketName).then(exists => {
             if (exists) {
