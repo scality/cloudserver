@@ -36,6 +36,7 @@ describe('Complete MPU', () => {
         const s3 = bucketUtil.s3;
 
         function _completeMpuAndCheckVid(uploadId, eTag, expectedVid, cb) {
+            let versionId;
             s3.send(new CompleteMultipartUploadCommand({
                 Bucket: bucket,
                 Key: key,
@@ -45,7 +46,7 @@ describe('Complete MPU', () => {
                 UploadId: uploadId 
             }))
             .then(data => {
-                const versionId = data.VersionId;
+                versionId = data.VersionId; // Assign to the outer scope variable
                 if (expectedVid) {
                     assert.notEqual(versionId, undefined);
                 } else {

@@ -215,7 +215,7 @@ describe('Object Part Copy', () => {
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-                    CopySourceRange: `bytes=0-${oneHundredMBPlus11}`,
+                    CopySourceRange: `bytes=0-${oneHundredMBPlus11 - 1}`,
                 }))).catch(err => {
                 checkNoError(err);
             });
