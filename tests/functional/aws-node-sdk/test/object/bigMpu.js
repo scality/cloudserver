@@ -63,9 +63,8 @@ describe('large mpu', function tester() {
         // sdk will create SocketHangUp error before response.
         // Custom request handler with no timeouts
         const requestHandler = new NodeHttpHandler({
-            requestTimeout: 300000,
-            connectionTimeout: 60000,  
-            socketTimeout: 300000,
+            requestTimeout: 0,
+            connectionTimeout: 0,
         });
         
         s3 = new S3Client({
@@ -95,6 +94,7 @@ describe('large mpu', function tester() {
     itSkipIfAWS('should intiate, put parts and complete mpu ' +
         `with ${partCount} parts`, done => {
         process.stdout.write('***Running large MPU test***\n');
+        const startTime = Date.now(); // Record start time for performance measurement
         let uploadId;     
         return waterfall([
             next => {
