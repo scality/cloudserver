@@ -17,7 +17,6 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 const { createEncryptedBucketPromise } =
     require('../../lib/utility/createEncryptedBucket');
 const { fakeMetadataTransition, fakeMetadataArchive } = require('../utils/init');
-const { AccessDenied } = require('arsenal/build/lib/errors/arsenalErrors');
 
 const sourceBucketName = 'supersourcebucket81033016532';
 const sourceObjName = 'supersourceobject';

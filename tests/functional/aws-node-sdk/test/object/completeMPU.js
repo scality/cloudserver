@@ -24,11 +24,6 @@ const date = Date.now();
 const bucket = `completempu${date}`;
 const key = 'key';
 
-function checkNoError(err) {
-    assert.equal(err, null,
-        `Expected success, got error ${JSON.stringify(err)}`);
-}
-
 
 describe('Complete MPU', () => {
     withV4(sigCfg => {
