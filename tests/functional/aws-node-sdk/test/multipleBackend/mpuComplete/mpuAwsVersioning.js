@@ -112,9 +112,14 @@ function testSuite() {
                 LocationConstraint: awsLocation,
             },
         })).then(() => done()).catch(err => done(err)));
-        afterEach(async () => {
-            await removeAllVersions({ Bucket: bucket });
-            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+        afterEach(done => {
+            removeAllVersions({ Bucket: bucket }, err => {
+                if (err) {
+                    return done(err);
+                }
+                return s3.send(new DeleteBucketCommand({ Bucket: bucket }))
+                .then(() => done()).catch(done);
+            });
         });
 
         it('versioning not configured: should not return version id ' +
