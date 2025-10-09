@@ -31,6 +31,7 @@ function _deleteVersionList(versionList, bucket, callback) {
 function checkOneVersion(s3, bucket, versionId, callback) {
     return s3Client.send(new ListObjectVersionsCommand({ Bucket: bucket })).then(data => {
             assert.strictEqual(data.Versions.length, 1);
+        
             if (versionId) {
                 assert.strictEqual(data.Versions[0].VersionId, versionId);
             }
