@@ -707,8 +707,8 @@ describe('Object Part Copy', () => {
                     PartNumber: 1,
                     UploadId: uploadId,
                 })).catch(err => {
-                        assert.strictEqual(err.Code, 'InvalidObjectState');
-                        assert.strictEqual(err.$metadata.httpStatusCode, 403);
+                    assert.strictEqual(err.name, 'InvalidObjectState');
+                    assert.strictEqual(err.$metadata.httpStatusCode, 403);
                 });
             });
         });
@@ -723,8 +723,8 @@ describe('Object Part Copy', () => {
                     PartNumber: 1,
                     UploadId: uploadId,
                 })).then(res => {
-                    assert.strictEqual(res.ETag, etag);
-                    assert(res.LastModified);
+                    assert.strictEqual(res.CopyPartResult.ETag, etag);
+                    assert(res.CopyPartResult.LastModified);
                 });
             });
         });
@@ -746,8 +746,8 @@ describe('Object Part Copy', () => {
                     PartNumber: 1,
                     UploadId: uploadId,
                 })).then(res => {
-                    assert.strictEqual(res.ETag, etag);
-                    assert(res.LastModified);
+                    assert.strictEqual(res.CopyPartResult.ETag, etag);
+                    assert(res.CopyPartResult.LastModified);
                 });
             });
         });
@@ -818,10 +818,7 @@ describe('Object Part Copy', () => {
                         CopySource: `${otherAccountBucket}/${otherAccountKey}`,
                         PartNumber: 1,
                         UploadId: uploadId,
-                    })).catch(
-                        err => {
-                            checkError(err, 'AccessDenied');
-                        });
+                    })).catch(err => checkError(err, 'AccessDenied'));
                 });
             });
 

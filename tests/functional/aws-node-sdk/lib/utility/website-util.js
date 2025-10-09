@@ -352,41 +352,35 @@ class WebsiteConfigTester {
     }
 
     static createPutBucketWebsite(s3, bucket, bucketACL, objects, done) {
-        s3.createBucket({ Bucket: bucket, ACL: bucketACL },
-        err => {
-            if (err) {
-                return done(err);
-            }
+        s3.send(new CreateBucketCommand({ Bucket: bucket, ACL: bucketACL })).then(() => { 
             const webConfig = new WebsiteConfigTester('index.html',
               'error.html');
-            return s3.putBucketWebsite({ Bucket: bucket,
-                WebsiteConfiguration: webConfig }, err => {
-                if (err) {
-                    return done(err);
-                }
+            return s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                WebsiteConfiguration: webConfig })).then(() => {
                 return async.forEachOf(objects,
                 (acl, object, next) => {
-                    s3.putObject({ Bucket: bucket,
+                    s3.send(new PutObjectCommand({ Bucket: bucket,
                         Key: `${object}.html`,
                         ACL: acl,
                         Body: fs.readFileSync(path.join(__dirname,
                             `/../../test/object/websiteFiles/${object}.html`)),
-                    },
-                        next);
+                    })).then(() => next()).catch(next);
                 }, done);
             });
+        }).catch(err => {
+                return done(err);
         });
     }
 
     static deleteObjectsThenBucket(s3, bucket, objects, done) {
         async.forEachOf(objects, (acl, object, next) => {
-            s3.deleteObject({ Bucket: bucket,
-                Key: `${object}.html` }, next);
+            s3.send(new DeleteObjectCommand({ Bucket: bucket,
+                Key: `${object}.html` })).then(() => next()).catch(next);
         }, err => {
             if (err) {
                 return done(err);
             }
-            return s3.deleteBucket({ Bucket: bucket }, done);
+            return s3.send(new DeleteBucketCommand({ Bucket: bucket })).then(() => done()).catch(done);
         });
     }
 }

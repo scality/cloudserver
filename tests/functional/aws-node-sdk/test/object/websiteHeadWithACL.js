@@ -4,7 +4,7 @@ const conf = require('../../../../../lib/Config').config;
 const getConfig = require('../support/config');
 const { WebsiteConfigTester } = require('../../lib/utility/website-util');
 
-const config = getConfig('default', { signatureVersion: 'v4' });
+const config = getConfig('default');
 const s3 = new S3Client(config);
 
 // Note: To run these tests locally, you may need to edit the machine's
