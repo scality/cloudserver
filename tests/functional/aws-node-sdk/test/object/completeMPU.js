@@ -92,9 +92,18 @@ describe('Complete MPU', () => {
             await s3.send(new CreateBucketCommand({ Bucket: bucket }));
         });
 
-        afterEach(async () => {
-            await removeAllVersions({ Bucket: bucket });
-            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+        afterEach(done => {
+            removeAllVersions({ Bucket: bucket }, err => {
+                if (err) {
+                    process.stdout.write(`Error removing all versions: ${err}\n`);
+                }
+                s3.send(new DeleteBucketCommand({ Bucket: bucket }))
+                    .then(() => done())
+                    .catch(err => {
+                        process.stdout.write(`Error deleting bucket: ${err}\n`);
+                        done(err);
+                    });
+            });
         });
 
         describe('on bucket without versioning configuration', () => {
