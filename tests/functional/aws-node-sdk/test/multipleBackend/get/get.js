@@ -71,9 +71,7 @@ describe('Multiple backend get object', function testSuite() {
             done => {
                 const command = new GetObjectCommand({ Bucket: '', Key: 'somekey' });
                 s3.send(command)
-                    .then(() => {
-                        done(new Error('Expected failure but got success'));
-                    })
+                    .then(() => done(new Error('Expected failure but got success')))
                     .catch(err => {
                         assert.notEqual(err, null,
                             'Expected failure but got success');
@@ -85,9 +83,7 @@ describe('Multiple backend get object', function testSuite() {
             done => {
                 const command = new GetObjectCommand({ Bucket: bucket, Key: 'nope' });
                 s3.send(command)
-                    .then(() => {
-                        done(new Error('Expected failure but got success'));
-                    })
+                    .then(() => done(new Error('Expected failure but got success')))
                     .catch(err => {
                         assert.notEqual(err, null,
                             'Expected failure but got success');

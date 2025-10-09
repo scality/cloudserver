@@ -70,12 +70,20 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
                 Metadata: { 'scal-location-constraint': awsLocation } 
             }));
             
-            process.stdout.write('Putting big object to AWS\n');
+            process.stdout.write('Putting large object to AWS\n');
             await s3.send(new PutObjectCommand({ 
                 Bucket: bucket, 
                 Key: bigObject, 
                 Body: bigBody,
                 Metadata: { 'scal-location-constraint': awsLocation } 
+            }));
+
+            process.stdout.write('Putting object to AWS\n');
+            await s3.send(new PutObjectCommand({ 
+                Bucket: bucket, 
+                Key: mismatchObject, 
+                Body: body,
+                Metadata: { 'scal-location-constraint': awsLocationMismatch } 
             }));
         });
 
@@ -91,7 +99,7 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
             
             try {
                 await s3.send(new GetObjectCommand({ Bucket: bucket, Key: memObject }));
-                throw new Error('Expected NoSuchKey error but got success');
+                assert.fail('Expected NoSuchKey error but got success');
             } catch (err) {
                 assert.strictEqual(err.code, 'NoSuchKey');
             }
@@ -102,7 +110,7 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
             
             try {
                 await s3.send(new GetObjectCommand({ Bucket: bucket, Key: fileObject }));
-                throw new Error('Expected NoSuchKey error but got success');
+                assert.fail('Expected NoSuchKey error but got success');
             } catch (err) {
                 assert.strictEqual(err.code, 'NoSuchKey');
             }
@@ -113,7 +121,7 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
             
             try {
                 await s3.send(new GetObjectCommand({ Bucket: bucket, Key: awsObject }));
-                throw new Error('Expected NoSuchKey error but got success');
+                assert.fail('Expected NoSuchKey error but got success');
             } catch (err) {
                 assert.strictEqual(err.code, 'NoSuchKey');
             }
@@ -124,7 +132,7 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
             
             try {
                 await s3.send(new GetObjectCommand({ Bucket: bucket, Key: emptyObject }));
-                throw new Error('Expected NoSuchKey error but got success');
+                assert.fail('Expected NoSuchKey error but got success');
             } catch (err) {
                 assert.strictEqual(err.code, 'NoSuchKey');
             }
@@ -135,24 +143,23 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
             
             try {
                 await s3.send(new GetObjectCommand({ Bucket: bucket, Key: bigObject }));
-                throw new Error('Expected NoSuchKey error but got success');
+                assert.fail('Expected NoSuchKey error but got success');
             } catch (err) {
                 assert.strictEqual(err.code, 'NoSuchKey');
             }
         });
 
-        it('should return an InvalidLocationConstraint ' +
-            'error for mismatch location', async () => {
+         it('should delete object from AWS location with bucketMatch set to ' +
+            'false', async () => {
             try {
-                await s3.send(new PutObjectCommand({ 
+                await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: mismatchObject }));
+                await s3.send(new GetObjectCommand({ 
                     Bucket: bucket, 
-                    Key: mismatchObject, 
-                    Body: body,
-                    Metadata: { 'scal-location-constraint': awsLocationMismatch } 
+                    Key: mismatchObject
                 }));
-                throw new Error('Expected InvalidLocationConstraint error but got success');
+                assert.fail('Expected NoSuchKey error but got success');
             } catch (err) {
-                assert.strictEqual(err.code, 'InvalidLocationConstraint');
+                assert.strictEqual(err.code, 'NoSuchKey');
             }
         });
     });
