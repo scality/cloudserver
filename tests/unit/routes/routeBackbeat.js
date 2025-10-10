@@ -14,6 +14,7 @@ const { auth, errors } = require('arsenal');
 const AuthInfo = auth.AuthInfo;
 const { config } = require('../../../lib/Config');
 const quotaUtils = require('../../../lib/api/apiUtils/quotas/quotaUtils');
+const versioningUtils = require('../../../lib/api/apiUtils/object/versioning');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketDelete = require('../../../lib/api/bucketDelete');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
@@ -558,6 +559,67 @@ describe('routeBackbeat', () => {
             assert.strictEqual(mockResponse.statusCode, 200);
             assert.deepStrictEqual(mockResponse.body, {});
             assert.strictEqual(dataDeleteSpy.called, false);
+        });
+
+        it('should transform a non-versioned object to a versioned' +
+          ' one and create a new object if the bucket is versioned', async () => {
+            const bucketInfo = {
+                getVersioningConfiguration: () => ({ Status: 'Enabled' }),
+                isVersioningEnabled: () => true,
+            };
+            const notFoundObject = undefined;
+            const nonVersionedObject = {
+                'content-length': 100,
+            };
+
+            const metadataGetObjectMDPromisedStub = sandbox.stub(metadata, 'getObjectMDPromised');
+            metadataGetObjectMDPromisedStub.callsFake((bucketName, objectKey, options, log) => Promise.resolve({
+                    data: nonVersionedObject,
+                }));
+            const metadataPutObjectMDStub = sandbox.stub(metadata, 'putObjectMD')
+                .callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+                    cb(null, {});
+                });
+
+            mockRequest = prepareDummyRequest();
+            mockRequest.method = 'PUT';
+            mockRequest.url = '/_/backbeat/metadata/bucket0/key0';
+
+            metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
+                callback(null, bucketInfo, notFoundObject);
+            });
+
+            routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+            await endPromise;
+
+            sinon.assert.calledOnce(metadataGetObjectMDPromisedStub);
+            sinon.assert.calledTwice(metadataPutObjectMDStub);
+            sinon.assert.calledWith(
+                metadataPutObjectMDStub.firstCall,// Transform the non versioned object to a versioned one
+                'bucket0',
+                'key0',
+                sinon.match({
+                    data: nonVersionedObject,
+                    versionId: '99999999999999999999RG001  ',
+                    isNull: true,
+                    isNull2: true
+                }),
+                sinon.match({ versionId: 'null' }),
+                log,
+            );
+            sinon.assert.calledWith(
+                metadataPutObjectMDStub.secondCall, // Create the new object
+                'bucket0',
+                'key0',
+                sinon.match({
+                    nullVersionId: '99999999999999999999RG001  ',
+                }),
+                sinon.match({ versioning: true, isNull: false }),
+                log,
+            );
+
+            assert.strictEqual(mockResponse.statusCode, 200);
+            assert.deepStrictEqual(mockResponse.body, {});
         });
     });
 
