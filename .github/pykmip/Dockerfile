@@ -13,6 +13,8 @@ RUN apk add --no-cache \
         build-base \
         curl \
         git && \
+    pip3 install --upgrade pip && \
+    pip3 install --upgrade typing-extensions>=4.13.2 && \
     git clone https://github.com/openkmip/pykmip.git && \
     cd pykmip && \
     python3 setup.py install && \
