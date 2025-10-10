@@ -118,7 +118,7 @@ describe('DELETE object', () => {
             const bucketName = 'testdeleteobjectlockbucket';
             let versionIdOne;
             let versionIdTwo;
-            const retainDate = moment().add(10, 'days').toISOString();
+            const retainDate = moment().add(10, 'days');
             before(() => {
                 process.stdout.write('creating bucket\n');
                 return s3.send(new CreateBucketCommand({
