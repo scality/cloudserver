@@ -14,6 +14,7 @@ const { auth, errors } = require('arsenal');
 const AuthInfo = auth.AuthInfo;
 const { config } = require('../../../lib/Config');
 const quotaUtils = require('../../../lib/api/apiUtils/quotas/quotaUtils');
+const versioningUtils = require('../../../lib/api/apiUtils/object/versioning');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketDelete = require('../../../lib/api/bucketDelete');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
@@ -572,7 +573,7 @@ describe('routeBackbeat', () => {
             };
 
             const metadataGetObjectMDPromisedStub = sandbox.stub(metadata, 'getObjectMDPromised');
-            metadataGetObjectMDPromisedStub.callsFake(() => Promise.resolve({
+            metadataGetObjectMDPromisedStub.callsFake((bucketName, objectKey, options, log) => Promise.resolve({
                     data: nonVersionedObject,
                 }));
             const metadataPutObjectMDStub = sandbox.stub(metadata, 'putObjectMD')
@@ -594,7 +595,7 @@ describe('routeBackbeat', () => {
             sinon.assert.calledOnce(metadataGetObjectMDPromisedStub);
             sinon.assert.calledTwice(metadataPutObjectMDStub);
             sinon.assert.calledWith(
-                metadataPutObjectMDStub.firstCall, // Transform the non versioned object to a versioned one
+                metadataPutObjectMDStub.firstCall,// Transform the non versioned object to a versioned one
                 'bucket0',
                 'key0',
                 sinon.match({
