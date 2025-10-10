@@ -3,6 +3,11 @@ const async = require('async');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
+const { CreateBucketCommand,
+    DeleteBucketCommand, 
+    PutBucketWebsiteCommand,
+    DeleteObjectCommand, 
+    PutObjectCommand } = require('@aws-sdk/client-s3');
 
 const { makeRequest } = require('../../../raw-node/utils/makeRequest');
 
