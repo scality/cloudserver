@@ -247,8 +247,6 @@ describe('objectPut API', () => {
         });
     });
 
-    const formatTime = time => time.slice(0, 20);
-
     const testObjectLockConfigs = [
         {
             testMode: 'COMPLIANCE',
@@ -261,8 +259,8 @@ describe('objectPut API', () => {
             type: 'Years',
         },
     ];
-    testObjectLockConfigs.forEach(config => {
-        const { testMode, type, val } = config;
+    testObjectLockConfigs.forEach(lockConfig => {
+        const { testMode, type, val } = lockConfig;
         it('should put an object with default retention if object does not ' +
             'have retention configuration but bucket has', done => {
             const testPutObjectRequest = new DummyRequest({
@@ -288,17 +286,18 @@ describe('objectPut API', () => {
                             assert.strictEqual(headers.ETag, `"${correctMD5}"`);
                             metadata.getObjectMD(bucketName, objectName, {},
                                 log, (err, md) => {
-                                    const mode = md.retentionMode;
-                                    const retainDate = md.retentionDate;
-                                    const date = moment();
-                                    const days
-                                        = type === 'Days' ? val : val * 365;
-                                    const expectedDate
-                                        = date.add(days, 'days');
                                     assert.ifError(err);
+
+                                    const mode = md.retentionMode;
                                     assert.strictEqual(mode, testMode);
-                                    assert.strictEqual(formatTime(retainDate),
-                                        formatTime(expectedDate.toISOString()));
+
+                                    const retainDate = moment(md.retentionDate);
+                                    const days = type === 'Days' ? val : val * 365;
+                                    const { scaledMsPerDay } = config.getTimeOptions();
+                                    const date = moment().add(days * scaledMsPerDay, 'ms');
+                                    const dateDiff = retainDate.diff(date, 'ms');
+                                    assert.ok(dateDiff < 10);
+
                                     done();
                                 });
                         });
@@ -306,7 +305,6 @@ describe('objectPut API', () => {
             });
         });
     });
-
 
     it('should successfully put an object with legal hold ON', done => {
         const request = new DummyRequest({
@@ -413,8 +411,7 @@ describe('objectPut API', () => {
         }, postBody);
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
-            const config = require('../../../lib/Config');
-            config.config.testingMode = true;
+            config.testingMode = true;
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
@@ -430,7 +427,7 @@ describe('objectPut API', () => {
                             // The header should be removed after being treated.
                             assert(md[lastModifiedHeader] === undefined);
 
-                            config.config.testingMode = false;
+                            config.testingMode = false;
                             done();
                         });
                 });
@@ -452,8 +449,7 @@ describe('objectPut API', () => {
         }, postBody);
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
-            const config = require('../../../lib/Config');
-            config.config.testingMode = false;
+            config.testingMode = false;
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
