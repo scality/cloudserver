@@ -389,15 +389,15 @@ describe('Cross Origin Resource Sharing requests', () => {
             await s3.send(new PutBucketCorsCommand(corsParams));
         });
 
-        afterEach(async () => {
-            try {
-                await removeAllVersions({ Bucket: bucket });
-            } catch (err) {
-                if (err.name !== 'NoSuchKey' && err.name !== 'NoSuchBucket') {
+        afterEach(done => {
+            removeAllVersions({ Bucket: bucket }, err => {
+                if (err && err.name !== 'NoSuchKey' &&
+                err.name !== 'NoSuchBucket') {
                     process.stdout.write(`Unexpected err in afterEach: ${err}`);
-                    throw err;
+                    return done(err);
                 }
-            }
+                return done();
+            });
         });
 
         describe('when request Origin/method match CORS configuration', () => {
