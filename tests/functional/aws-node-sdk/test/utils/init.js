@@ -52,6 +52,9 @@ function initMetadata(done) {
 }
 
 function getMetadata(bucketName, objectName, versionId, cb) {
+    console.log('getting metadata for', bucketName, objectName, versionId);
+    console.log('decoded versionId', decodeVersionId(versionId));
+    console.log('metadata', metadata);
     return metadata.getObjectMD(bucketName, objectName, { versionId: decodeVersionId(versionId) },
         log, cb);
 }

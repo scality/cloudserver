@@ -8,7 +8,7 @@ const { DummyRequestLogger } = require('../unit/helpers');
 const versionIdUtils = versioning.VersionID;
 
 const log = new DummyRequestLogger();
-
+console.log('loading objectLock-util', metadata);
 function changeObjectLock(objects, newConfig, cb) {
     async.each(objects, (object, next) => {
         const { bucket, key, versionId } = object;
