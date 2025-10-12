@@ -2933,9 +2933,9 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#8.2.30":
-  version "8.2.30"
-  resolved "git+https://github.com/scality/Arsenal#2b36180dc1cfd4b2f37d00cbe38f250fe7e5d2bf"
+"arsenal@git+https://github.com/scality/Arsenal#8.2.32":
+  version "8.2.32"
+  resolved "git+https://github.com/scality/Arsenal#f14ee39934837b9b0dd14ab442945e4e5d4947ff"
   dependencies:
     "@azure/identity" "^4.12.0"
     "@azure/storage-blob" "^12.28.0"

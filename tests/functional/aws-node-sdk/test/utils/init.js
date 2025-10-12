@@ -52,6 +52,7 @@ function initMetadata(done) {
 }
 
 function getMetadata(bucketName, objectName, versionId, cb) {
+    console.log('GETMETADATA', bucketName, objectName, versionId, metadata);
     return metadata.getObjectMD(bucketName, objectName, { versionId: decodeVersionId(versionId) },
         log, cb);
 }
@@ -90,6 +91,7 @@ function fakeMetadataTransition(bucketName, objectName, versionId, cb) {
  */
 function fakeMetadataArchive(bucketName, objectName, versionId, archive, cb) {
     return getMetadata(bucketName, objectName, versionId, (err, objMD) => {
+        console.log('GETMETADATAAAAAAAAA', err)
         if (err) {
             return cb(err);
         }
