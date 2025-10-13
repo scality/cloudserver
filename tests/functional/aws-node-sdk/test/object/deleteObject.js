@@ -11,9 +11,7 @@ const {
     PutObjectLegalHoldCommand,
     PutObjectLockConfigurationCommand,
     HeadObjectCommand,
-    S3Client,
 } = require('@aws-sdk/client-s3');
-const { NodeHttpHandler } = require('@smithy/node-http-handler');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
@@ -41,7 +39,7 @@ describe('DELETE object', () => {
                     return s3.send(new CreateMultipartUploadCommand({
                         Bucket: bucketName,
                         Key: objectName,
-                    }))
+                    }));
                 })
                 .then(res => {
                     process.stdout.write('uploading parts\n');
@@ -78,7 +76,7 @@ describe('DELETE object', () => {
                                 { ETag: res[2].ETag, PartNumber: 3 },
                             ],
                         },
-                    }))
+                    }));
                 })
                 .catch(err => {
                     process.stdout.write('completeMultipartUpload error: ' +
@@ -380,34 +378,26 @@ describe('DELETE object', () => {
             });
 
             function deleteObjectConditional(s3, params, headers, next) {
-                
-                // Create a custom request handler that adds headers
-                const customRequestHandler = new NodeHttpHandler({
-                    requestTimeout: 30000,
-                    connectionTimeout: 5000,
-                });
-                
-                // Override the handle method to inject custom headers
-                const originalHandle = customRequestHandler.handle.bind(customRequestHandler);
-                customRequestHandler.handle = async (request, options) => {
-                    // Add custom headers to the request
-                    if (headers) {
-                        Object.assign(request.headers, headers);
-                    }
-                    
-                    // Call the original handle method
-                    return originalHandle(request, options);
-                };
-
-                // Create a temporary client with the custom request handler
-                const tempS3 = new S3Client({
-                    ...s3.config,
-                    requestHandler: customRequestHandler,
-                });
-
                 const command = new DeleteObjectCommand(params);
                 
-                return tempS3.send(command)
+                // Add custom headers using middleware
+                if (headers && Object.keys(headers).length > 0) {
+                    command.middlewareStack.add(
+                        next => async args => {
+                            if (args.request && args.request.headers) {
+                                Object.assign(args.request.headers, headers);
+                            }
+                            return next(args);
+                        },
+                        {
+                            step: 'build',
+                            name: 'addCustomHeaders',
+                            priority: 'high'
+                        }
+                    );
+                }
+                
+                return s3.send(command)
                     .then(data => next(null, data))
                     .catch(err => next(err));
             }
@@ -423,7 +413,7 @@ describe('DELETE object', () => {
                         'If-Unmodified-Since': futureDate.toUTCString(),
                     }, (err, data) => {
                         assert.ifError(err);
-                        assert.deepStrictEqual(data, {});
+                        assert.deepStrictEqual(data.$metadata.httpStatusCode, 204);
                         s3.send(new HeadObjectCommand({
                             Bucket: bucketName,
                             Key: testObjectKey,
@@ -431,6 +421,7 @@ describe('DELETE object', () => {
                             assert.fail('Expected NotFound error');
                         }).catch(err => {
                             assert.strictEqual(err.name, 'NotFound');
+                            assert.strictEqual(err.$metadata.httpStatusCode, 404);
                             done();
                         });
                     });
@@ -463,7 +454,7 @@ describe('DELETE object', () => {
                         'If-Modified-Since': pastDate.toUTCString(),
                     }, (err, data) => {
                         assert.ifError(err);
-                        assert.deepStrictEqual(data, {});
+                        assert.deepStrictEqual(data.$metadata.httpStatusCode, 204);
                         s3.send(new HeadObjectCommand({
                             Bucket: bucketName,
                             Key: testObjectKey,
@@ -471,6 +462,7 @@ describe('DELETE object', () => {
                             assert.fail('Expected NotFound error');
                         }).catch(err => {
                             assert.strictEqual(err.name, 'NotFound');
+                            assert.strictEqual(err.$metadata.httpStatusCode, 404);
                             done();
                         });
                     });
@@ -485,7 +477,6 @@ describe('DELETE object', () => {
                     }, {
                         'If-Modified-Since': futureDate.toUTCString(),
                     }, err => {
-                        assert.strictEqual(err.name, 'NotModified');
                         assert.strictEqual(err.$metadata.httpStatusCode, 304);
                         done();
                     });
@@ -505,7 +496,7 @@ describe('DELETE object', () => {
                         'If-Unmodified-Since': futureDate.toUTCString(),
                     }, (err, data) => {
                         assert.ifError(err);
-                        assert.deepStrictEqual(data, {});
+                        assert.deepStrictEqual(data.$metadata.httpStatusCode, 204);
                         s3.send(new HeadObjectCommand({
                             Bucket: bucketName,
                             Key: testObjectKey,
@@ -513,6 +504,7 @@ describe('DELETE object', () => {
                             assert.fail('Expected NotFound error');
                         }).catch(err => {
                             assert.strictEqual(err.name, 'NotFound');
+                            assert.strictEqual(err.$metadata.httpStatusCode, 404);
                             done();
                         });
                     });

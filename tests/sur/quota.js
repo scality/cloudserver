@@ -106,9 +106,7 @@ function putObject(bucket, key, size, cb) {
             }
             return cb(null, data);
         })
-        .catch(err => {
-            cb(err);
-        });
+        .catch(cb);
 }
 
 function putObjectWithCustomHeader(bucket, key, size, vID, cb) {
@@ -136,7 +134,7 @@ function putObjectWithCustomHeader(bucket, key, size, vID, cb) {
             }
             cb(null, data);
         })
-        .catch(err => cb(err));
+        .catch(cb);
 }
 
 function copyObject(bucket, key, sourceSize, cb) {
@@ -151,9 +149,7 @@ function copyObject(bucket, key, sourceSize, cb) {
             }
             return cb(null, data);
         })
-        .catch(err => {
-            cb(err);
-        });
+        .catch(cb);
 }
 
 function deleteObject(bucket, key, size, cb) {
@@ -167,9 +163,7 @@ function deleteObject(bucket, key, size, cb) {
             }
             return cb();
         })
-        .catch(err => {
-            cb(err);
-        });
+        .catch(cb);
 }
 
 function deleteVersionID(bucket, key, versionId, size, cb) {
@@ -184,9 +178,7 @@ function deleteVersionID(bucket, key, versionId, size, cb) {
             }
             return cb(null, data);
         })
-        .catch(err => {
-            cb(err);
-        });
+        .catch(cb);
 }
 
 function objectMPU(bucket, key, parts, partSize, callback) {
