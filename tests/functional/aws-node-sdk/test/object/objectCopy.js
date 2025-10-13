@@ -63,7 +63,7 @@ function checkNoError(err) {
 
 function checkError(err, code) {
     assert.notEqual(err, null, 'Expected failure but got success');
-    assert.strictEqual(err.Code, code);
+    assert.strictEqual(err.name, code);
 }
 
 function dateFromNow(diff) {
@@ -110,34 +110,26 @@ describe('Object Copy', () => {
             });
         });
 
-        beforeEach(async () => {
-            try {
-                const res = await s3.send(new PutObjectCommand({
-                    Bucket: sourceBucketName,
-                    Key: sourceObjName,
-                    Body: content,
-                    Metadata: originalMetadata,
-                    CacheControl: originalCacheControl,
-                    ContentDisposition: originalContentDisposition,
-                    ContentEncoding: originalContentEncoding,
-                    Expires: originalExpires,
-                    Tagging: originalTagging,
-                }));
-                
-                etag = res.ETag;
-                etagTrim = etag.substring(1, etag.length - 1);
-                
-                const headRes = await s3.send(new HeadObjectCommand({
-                    Bucket: sourceBucketName,
-                    Key: sourceObjName,
-                }));
-                
-                lastModified = headRes.LastModified;
-            } catch (err) {
-                checkNoError(err);
-                throw err;
-            }
-        });
+         beforeEach(() => s3.send(new PutObjectCommand({
+            Bucket: sourceBucketName,
+            Key: sourceObjName,
+            Body: content,
+            Metadata: originalMetadata,
+            CacheControl: originalCacheControl,
+            ContentDisposition: originalContentDisposition,
+            ContentEncoding: originalContentEncoding,
+            Expires: originalExpires,
+            Tagging: originalTagging,
+        })).then(res => {
+            etag = res.ETag;
+            etagTrim = etag.substring(1, etag.length - 1);
+            return s3.send(new HeadObjectCommand({
+                Bucket: sourceBucketName,
+                Key: sourceObjName,
+            }));
+        }).then(res => {
+            lastModified = res.LastModified;
+        }));
         afterEach(() => bucketUtil.empty(sourceBucketName)
                 .then(() => bucketUtil.empty(destBucketName)));
 
@@ -150,9 +142,7 @@ describe('Object Copy', () => {
                 CopySource: `${sourceBucketName}/${sourceObjName}`,
             }, fields))).then(res => {
                 cb(null, res);
-            }).catch(err => {
-                cb(err);
-            });
+            }).catch(cb);
         }
 
         async function successCopyCheck(error, response, copyVersionMetadata, destBucketName, destObjName) {
