@@ -48,7 +48,7 @@ function checkNoError(err) {
 
 function checkError(err, code) {
     assert.notEqual(err, null, 'Expected failure but got success');
-    assert.strictEqual(err.Code, code);
+    assert.strictEqual(err.name, code);
 }
 
 function checkIntegerHeader(integerHeader, expectedSize) {
