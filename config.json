@@ -99,11 +99,7 @@
         "writeConcern": "majority",
         "replicaSet": "rs0",
         "readPreference": "primary",
-        "database": "metadata",
-        "authCredentials": {
-          "password": "password",
-          "username": "root"
-        }
+        "database": "metadata"
     },
     "externalBackends": {
         "aws_s3": {
