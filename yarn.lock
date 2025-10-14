@@ -3239,6 +3239,45 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
+"arsenal@git+https://github.com/scality/Arsenal#8.2.33":
+  version "8.2.33"
+  resolved "git+https://github.com/scality/Arsenal#34b7f08652c8eb765551c3422dd6418c0c65a79b"
+  dependencies:
+    "@azure/identity" "^4.13.0"
+    "@azure/storage-blob" "^12.28.0"
+    "@js-sdsl/ordered-set" "^4.4.2"
+    "@scality/hdclient" "^1.3.1"
+    JSONStream "^1.3.5"
+    agentkeepalive "^4.6.0"
+    ajv "6.12.3"
+    async "~2.6.4"
+    aws-sdk "^2.1691.0"
+    backo "^1.1.0"
+    base-x "3.0.8"
+    base62 "^2.0.2"
+    debug "^4.4.3"
+    fcntl "github:scality/node-fcntl#0.3.0"
+    httpagent scality/httpagent#1.1.0
+    https-proxy-agent "^7.0.6"
+    ioredis "^5.8.1"
+    ipaddr.js "^2.2.0"
+    joi "^18.0.1"
+    level "~5.0.1"
+    level-sublevel "~6.6.5"
+    mongodb "^6.20.0"
+    node-forge "^1.3.1"
+    prom-client "^15.1.3"
+    simple-glob "^0.2.0"
+    socket.io "^4.8.0"
+    socket.io-client "^4.8.0"
+    sproxydclient "github:scality/sproxydclient#8.1.0"
+    utf8 "^3.0.0"
+    uuid "^10.0.0"
+    werelogs scality/werelogs#8.2.2
+    xml2js "^0.6.2"
+  optionalDependencies:
+    ioctl "^2.0.2"
+
 "arsenal@git+https://github.com/scality/Arsenal#8.2.4":
   version "8.2.4"
   resolved "git+https://github.com/scality/Arsenal#96ef6a3e26d7528f877300606586759f1da6d0cd"
@@ -3270,45 +3309,6 @@ arraybuffer.prototype.slice@^1.0.4:
     level "~5.0.1"
     level-sublevel "~6.6.5"
     mongodb "^6.11.0"
-    node-forge "^1.3.1"
-    prom-client "^15.1.3"
-    simple-glob "^0.2.0"
-    socket.io "^4.8.0"
-    socket.io-client "^4.8.0"
-    sproxydclient "github:scality/sproxydclient#8.1.0"
-    utf8 "^3.0.0"
-    uuid "^10.0.0"
-    werelogs scality/werelogs#8.2.2
-    xml2js "^0.6.2"
-  optionalDependencies:
-    ioctl "^2.0.2"
-
-"arsenal@git+https://github.com/scality/Arsenal#8.2.40":
-  version "8.2.40"
-  resolved "git+https://github.com/scality/Arsenal#0565be3a01c95b283eb8a3f2e0eb64e19fa5030a"
-  dependencies:
-    "@azure/identity" "^4.13.0"
-    "@azure/storage-blob" "^12.28.0"
-    "@js-sdsl/ordered-set" "^4.4.2"
-    "@scality/hdclient" "^1.3.1"
-    JSONStream "^1.3.5"
-    agentkeepalive "^4.6.0"
-    ajv "6.12.3"
-    async "~2.6.4"
-    aws-sdk "^2.1691.0"
-    backo "^1.1.0"
-    base-x "3.0.8"
-    base62 "^2.0.2"
-    debug "^4.4.3"
-    fcntl "github:scality/node-fcntl#0.3.0"
-    httpagent scality/httpagent#1.1.0
-    https-proxy-agent "^7.0.6"
-    ioredis "^5.8.1"
-    ipaddr.js "^2.2.0"
-    joi "^18.0.1"
-    level "~5.0.1"
-    level-sublevel "~6.6.5"
-    mongodb "^6.20.0"
     node-forge "^1.3.1"
     prom-client "^15.1.3"
     simple-glob "^0.2.0"
@@ -3547,14 +3547,6 @@ bson@^6.10.4:
 bucketclient@scality/bucketclient#8.2.5:
   version "8.2.5"
   resolved "https://codeload.github.com/scality/bucketclient/tar.gz/aeb2655ef82fdacc56968e92367f01d09f0e09a2"
-  dependencies:
-    arsenal "git+https://github.com/scality/Arsenal#8.2.4"
-    httpagent "git+https://github.com/scality/httpagent#1.1.0"
-    werelogs scality/werelogs#8.2.2
-
-bucketclient@scality/bucketclient#8.2.7:
-  version "8.2.7"
-  resolved "https://codeload.github.com/scality/bucketclient/tar.gz/3f6cd94ef0100bfdd5c640ac21e38228de855457"
   dependencies:
     arsenal "git+https://github.com/scality/Arsenal#8.2.4"
     httpagent "git+https://github.com/scality/httpagent#1.1.0"
@@ -5559,9 +5551,9 @@ ioredis@^5.6.1:
     standard-as-callback "^2.1.0"
 
 ioredis@^5.8.1:
-  version "5.8.2"
-  resolved "https://registry.yarnpkg.com/ioredis/-/ioredis-5.8.2.tgz#c7a228a26cf36f17a5a8011148836877780e2e14"
-  integrity sha512-C6uC+kleiIMmjViJINWk80sOQw5lEzse1ZmvD+S/s8p8CWapftSaC+kocGTx6xrbrJ4WmYQGC08ffHLr6ToR6Q==
+  version "5.8.1"
+  resolved "https://registry.yarnpkg.com/ioredis/-/ioredis-5.8.1.tgz#2d2dae406be71665607906f57b3c971bb4b089ae"
+  integrity sha512-Qho8TgIamqEPdgiMadJwzRMW3TudIg6vpg4YONokGDudy4eqRIJtDbVX72pfLBcWxvbn3qm/40TyGUObdW4tLQ==
   dependencies:
     "@ioredis/commands" "1.4.0"
     cluster-key-slot "^1.1.0"
