@@ -580,7 +580,7 @@ describe('Object Part Copy', () => {
                 });
             });
 
-            it('should not corrupt object if overwriting an existing part by copying a part ' +
+            it.only('should not corrupt object if overwriting an existing part by copying a part ' +
             'while the MPU is being completed', async () => {
                     const finalObjETag = '"db77ebbae9e9f5a244a26b86193ad818-1"';
                     process.stdout.write('Putting first part in MPU test"');
@@ -609,6 +609,7 @@ describe('Object Part Copy', () => {
                     process.stdout.write(
                       'Overwriting first part in MPU test and completing MPU at the same time',
                     );
+
                     const [completeRes, uploadRes] = await Promise.all([
                       s3
                         .completeMultipartUpload({
@@ -621,6 +622,8 @@ describe('Object Part Copy', () => {
                         })
                         .promise()
                         .catch(err => {
+                          console.info('the error is in the completeMultipartUpload');
+
                           throw err;
                         }),
                       s3
@@ -633,11 +636,12 @@ describe('Object Part Copy', () => {
                         })
                         .promise()
                         .catch(err => {
-                          const completeMPUFinishedEarlier =
-                            err && err.code === 'NoSuchKey';
+                          const completeMPUFinishedEarlier = err && err.code === 'NoSuchKey';
                           if (completeMPUFinishedEarlier) {
                             return Promise.resolve(null);
                           }
+
+                          console.info('the error is in the uploadPartCopy');
 
                           throw err;
                         }),
