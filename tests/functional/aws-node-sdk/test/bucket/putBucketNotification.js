@@ -128,9 +128,9 @@ describe('aws-sdk test put notification configuration', () => {
     });
 
     describe('event validation', () => {
-        before(done => s3.createBucket({ Bucket: bucket }, done));
+        before(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
-        after(done => s3.deleteBucket({ Bucket: bucket }, done));
+        after(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
         const events = [
             { supported: 'Transition', event: 's3:ObjectRestore:*' },
@@ -141,15 +141,25 @@ describe('aws-sdk test put notification configuration', () => {
             describe(`${event} event validation`, () => {
                 it(`should handle ${event} events based on lifecycle rules configuration`, done => {
                     const params = getNotificationParams([event]);
-                    s3.putBucketNotificationConfiguration(params, err => {
-                        if (config.supportedLifecycleRules.some(rule => rule.includes(supported))) {
-                            // Should succeed when lifecycle rule is supported
-                            assert.ifError(err);
+                    const shouldSucceed = config.supportedLifecycleRules.some(rule => rule.includes(supported));
+                    
+                    s3.send(new PutBucketNotificationConfigurationCommand(params)).then(() => {
+                        if (shouldSucceed) {
+                            // Expected success when lifecycle rule is supported
+                            done();
                         } else {
-                            // Should fail when lifecycle rule is not supported
-                            checkError(err, 'MalformedXML', 400);
+                            // Unexpected success - should have failed when lifecycle rule is not supported
+                            done(new Error('Expected MalformedXML error but operation succeeded'));
                         }
-                        done();
+                    }).catch(err => {
+                        if (shouldSucceed) {
+                            // Unexpected error - should have succeeded when lifecycle rule is supported
+                            done(err);
+                        } else {
+                            // Expected error when lifecycle rule is not supported
+                            checkError(err, 'MalformedXML', 400);
+                            done();
+                        }
                     });
                 });
             });
