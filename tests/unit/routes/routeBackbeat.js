@@ -594,7 +594,7 @@ describe('routeBackbeat', () => {
             sinon.assert.calledOnce(metadataGetObjectMDPromisedStub);
             sinon.assert.calledTwice(metadataPutObjectMDStub);
             sinon.assert.calledWith(
-                metadataPutObjectMDStub.firstCall,// Transform the non versioned object to a versioned one
+                metadataPutObjectMDStub.firstCall, // Transform the non versioned object to a versioned one
                 'bucket0',
                 'key0',
                 sinon.match({
