@@ -24,7 +24,7 @@
     "arsenal": "git+https://github.com/scality/Arsenal#8.2.33",
     "async": "2.6.4",
     "aws-sdk": "^2.1692.0",
-    "bucketclient": "scality/bucketclient#8.2.5",
+    "bucketclient": "scality/bucketclient#77c72638b5e1496779f1ea5115b60651cba89655",
     "bufferutil": "^4.0.8",
     "commander": "^12.1.0",
     "cron-parser": "^4.9.0",
