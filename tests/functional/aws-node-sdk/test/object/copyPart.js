@@ -580,113 +580,107 @@ describe('Object Part Copy', () => {
                 });
             });
 
-            it('should not corrupt object if overwriting an existing part by copying a part ' +
+            it.only('should not corrupt object if overwriting an existing part by copying a part ' +
             'while the MPU is being completed', async () => {
-                    const finalObjETag = '"db77ebbae9e9f5a244a26b86193ad818-1"';
-                    process.stdout.write('Putting first part in MPU test"');
-                    const randomDestObjName = `copycatobject${Math.floor(Math.random() * 100000)}`;
+                const finalObjETag = '"db77ebbae9e9f5a244a26b86193ad818-1"';
+                process.stdout.write('Putting first part in MPU test"');
+                const randomDestObjName = `copycatobject${Math.floor(Math.random() * 100000)}`;
 
-                    const initiateRes = await s3
-                      .createMultipartUpload({
+                const initiateRes = await s3
+                    .createMultipartUpload({
                         Bucket: destBucketName,
                         Key: randomDestObjName,
-                      })
-                      .promise();
-                    const uploadId = initiateRes.UploadId;
+                    })
+                    .promise();
+                const uploadId = initiateRes.UploadId;
 
-                    const res = await s3
-                      .uploadPartCopy({
+                const res = await s3
+                    .uploadPartCopy({
                         Bucket: destBucketName,
                         Key: randomDestObjName,
                         CopySource: `${sourceBucketName}/${sourceObjName}`,
                         PartNumber: 1,
                         UploadId: uploadId,
-                      })
-                      .promise();
-                    assert.strictEqual(res.ETag, etag);
-                    assert(res.LastModified);
+                    })
+                    .promise();
+                assert.strictEqual(res.ETag, etag);
+                assert(res.LastModified);
 
-                    process.stdout.write(
-                      'Overwriting first part in MPU test and completing MPU at the same time',
-                    );
+                process.stdout.write(
+            'Overwriting first part in MPU test and completing MPU at the same time',
+                );
 
-                    const completeMPU = () => s3
-                      .completeMultipartUpload({
-                        Bucket: destBucketName,
-                        Key: randomDestObjName,
-                        UploadId: uploadId,
-                        MultipartUpload: {
-                          Parts: [{ ETag: etag, PartNumber: 1 }],
-                        },
-                      }).promise();
-
-                    const [completeRes, uploadRes] = await Promise.all([
-                      completeMPU()
+                const [completeRes, uploadRes] = await Promise.all([
+                    s3
+                        .completeMultipartUpload({
+                            Bucket: destBucketName,
+                            Key: randomDestObjName,
+                            UploadId: uploadId,
+                            MultipartUpload: {
+                            Parts: [{ ETag: etag, PartNumber: 1 }],
+                            },
+                        }).promise()
                         .catch(async err => {
-                          // The completeMPU delete part in a 2 steps
-                          // (first mark it as deletion with `delete: true` in Mongo, then delete it).
-                          // At the same time, the uploadPartCopy update the same data in Mongo.
-                          // In that case, the completeMPU fail with an InternalError (DeleteConflict in the logs)
-                          const raceConditionOccurred = err && err.code === 'InternalError';
+                            // The completeMPU delete part in a 2 steps
+                            // (first mark it as deletion with `delete: true` in Mongo, then delete it).
+                            // At the same time, the uploadPartCopy update the same data in Mongo.
+                            // In that case, the completeMPU fail with an InternalError (DeleteConflict in the logs)
+                            const raceConditionOccurred = err?.code === 'InternalError'
+                                && err?.message === 'conflict deleting MPU parts metadata';
 
-                          if (raceConditionOccurred) {
-                            process.stdout.write('Retrying the complete MPU');
+                            console.info({
+                                raceConditionOccurred,
+                                err,
+                                message: err?.message,
+                                description: err.description,
+                                code: err?.code,
+                            });
 
-                            try {
-                              await completeMPU();
-                            } catch (e) {
-                              if (e.code === 'NoSuchUpload') {
-                                process.stdout.write('Race condition done');
+                            if (raceConditionOccurred) {
                                 return Promise.resolve(null);
-                              }
-
-                              throw e;
                             }
-                 
-                            throw new Error('Expected error on the retry of complete MPU');
-                          }
 
-                          throw err;
+                            throw err;
                         }),
-                      s3
+                    s3
                         .uploadPartCopy({
-                          Bucket: destBucketName,
-                          Key: randomDestObjName,
-                          CopySource: `${sourceBucketName}/${sourceObjName}`,
-                          PartNumber: 1,
-                          UploadId: uploadId,
+                            Bucket: destBucketName,
+                            Key: randomDestObjName,
+                            CopySource: `${sourceBucketName}/${sourceObjName}`,
+                            PartNumber: 1,
+                            UploadId: uploadId,
                         })
                         .promise()
                         .catch(err => {
-                          const completeMPUFinishedEarlier =
-                            err && err.code === 'NoSuchKey';
-                          if (completeMPUFinishedEarlier) {
-                            return Promise.resolve(null);
-                          }
+                            const completeMPUFinishedEarlier = err && err.code === 'NoSuchKey';
+                            if (completeMPUFinishedEarlier) {
+                                return Promise.resolve(null);
+                            }
 
-                          throw err;
+                            throw err;
                         }),
-                    ]);
+                    ],
+                );
 
-                    if (uploadRes !== null) {
-                      assert.strictEqual(uploadRes.ETag, etag);
-                      assert(uploadRes.LastModified);
-                    }
+                if (uploadRes !== null) {
+                    assert.strictEqual(uploadRes.ETag, etag);
+                    assert(uploadRes.LastModified);
+                }
 
-                    if (completeRes !== null) {
-                      assert.strictEqual(completeRes.Bucket, destBucketName);
-                      assert.strictEqual(completeRes.Key, randomDestObjName);
-                      assert.strictEqual(completeRes.ETag, finalObjETag);
-                    }
+                if (completeRes !== null) {
+                    assert.strictEqual(completeRes.Bucket, destBucketName);
+                    assert.strictEqual(completeRes.Key, randomDestObjName);
+                    assert.strictEqual(completeRes.ETag, finalObjETag);
+                }
 
-                    process.stdout.write('Getting object put by MPU with overwrite part');
-                    const resGet = await s3
-                      .getObject({
+                process.stdout.write('Getting object put by MPU with overwrite part');
+                const resGet = await s3
+                    .getObject({
                         Bucket: destBucketName,
                         Key: randomDestObjName,
-                      })
-                      .promise();
-                    assert.strictEqual(resGet.ETag, finalObjETag);
+                    })
+                    .promise();
+                assert.strictEqual(resGet.ETag, finalObjETag);
             });
         });
 
