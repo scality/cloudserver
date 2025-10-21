@@ -250,6 +250,9 @@ const constants = {
     // if requester is not bucket owner, bucket policy actions should be denied with
     // MethodNotAllowed error
     onlyOwnerAllowed: ['bucketDeletePolicy', 'bucketGetPolicy', 'bucketPutPolicy'],
+    // Default value for rate limiting config cache TTL
+    rateLimitDefaultConfigCacheTTL: 30000,
+    rateLimitDefaultBurstCapacity: 1,
 };
 
 module.exports = constants;
