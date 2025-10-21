@@ -16,20 +16,15 @@ describe('Test delete bucket quota', () => {
         s3 = new S3Client(config);
     });
 
-    beforeEach(async () => {
-        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-    });
+    beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
-    afterEach(async () => {
-        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-    });
+    afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
     it('should delete the bucket quota', async () => {
         try {
             await sendRequest('DELETE', '127.0.0.1:8000', `/${bucket}/?quota=true`);
-            assert.ok(true);
         } catch (err) {
-            assert.fail(`Expected no error, but got ${err}`);
+            assert.fail(`Unexpected error: ${err}`);
         }
     });
 

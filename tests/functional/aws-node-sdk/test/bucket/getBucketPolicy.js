@@ -28,13 +28,12 @@ const expectedPolicy = {
     Resource: `arn:aws:s3:::${bucket}`,
 };
 
-// Check for the expected error response code and status code.
 function assertError(err, expectedErr) {
     if (expectedErr === null) {
         assert.strictEqual(err, null, `expected no error but got '${err}'`);
     } else {
-        assert.strictEqual(err.Code, expectedErr, 'incorrect error response ' +
-            `code: should be '${expectedErr}' but got '${err.Code}'`);
+        assert.strictEqual(err.name, expectedErr, 'incorrect error response ' +
+            `code: should be '${expectedErr}' but got '${err.name}'`);
         assert.strictEqual(err.$metadata.httpStatusCode, errors[expectedErr].code,
             'incorrect error status code: should be 400 but got ' +
             `'${err.$metadata.httpStatusCode}'`);
@@ -56,13 +55,9 @@ describe('aws-sdk test get bucket policy', () => {
     });
 
     describe('policy rules', () => {
-        beforeEach(async () => {
-            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-        });
+        beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
-        afterEach(async () => {
-            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-        });
+        afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
         it('should return MethodNotAllowed if user is not bucket owner', async () => {
             try {
@@ -83,13 +78,10 @@ describe('aws-sdk test get bucket policy', () => {
         });
 
         it('should get bucket policy', async () => {
-            // Put bucket policy
             await s3.send(new PutBucketPolicyCommand({
                 Bucket: bucket,
                 Policy: JSON.stringify(bucketPolicy),
             }));
-
-            // Get bucket policy
             const res = await s3.send(new GetBucketPolicyCommand({ Bucket: bucket }));
             const parsedRes = JSON.parse(res.Policy);
             assert.deepStrictEqual(parsedRes.Statement[0], expectedPolicy);

@@ -10,22 +10,12 @@ const getConfig = require('../support/config');
 
 const bucketName = 'testgetcorsbucket';
 
-// Helper function to delete bucket
-async function deleteBucket(s3, bucket) {
-    try {
-        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-    } catch (err) {
-        // eslint-disable-next-line no-console
-        console.log(err);
-    }
-}
-
 describe('GET bucket cors', () => {
     withV4(sigCfg => {
         const config = getConfig('default', sigCfg);
         const s3 = new S3Client(config);
 
-        afterEach(() => deleteBucket(s3, bucketName));
+        afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucketName })));
 
         describe('on bucket with existing cors configuration', () => {
             const sampleCors = { CORSRules: [
@@ -99,23 +89,14 @@ describe('GET bucket cors', () => {
         });
 
         describe('on bucket without cors configuration', () => {
-            before(async () => {
-                process.stdout.write('about to create bucket\n');
-                try {
-                    await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
-                } catch (err) {
-                    process.stdout.write('error creating bucket', err);
-                    throw err;
-                }
-            });
+            before(() => s3.send(new CreateBucketCommand({ Bucket: bucketName })));
 
             it('should return NoSuchCORSConfiguration', async () => {
                 try {
                     await s3.send(new GetBucketCorsCommand({ Bucket: bucketName }));
                     throw new Error('Expected NoSuchCORSConfiguration error');
                 } catch (err) {
-                    assert(err);
-                    assert.strictEqual(err.Code, 'NoSuchCORSConfiguration');
+                    assert.strictEqual(err.name, 'NoSuchCORSConfiguration');
                     assert.strictEqual(err.$metadata.httpStatusCode, 404);
                 }
             });

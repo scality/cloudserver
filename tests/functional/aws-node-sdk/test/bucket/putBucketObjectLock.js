@@ -34,11 +34,10 @@ describe('aws-sdk test put object lock configuration', () => {
     let s3;
     let otherAccountS3;
 
-    before(done => {
+    before(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3Client(config);
         otherAccountS3 = new BucketUtility('lisa', {}).s3;
-        return done();
     });
 
     it('should return NoSuchBucket error if bucket does not exist', async () => {
@@ -52,15 +51,9 @@ describe('aws-sdk test put object lock configuration', () => {
     });
 
     describe('on object lock disabled bucket', () => {
-        beforeEach(async () => {
-            await s3.send(new CreateBucketCommand({
-                Bucket: bucket,
-            }));
-        });
+        beforeEach(() => s3.send(new CreateBucketCommand({Bucket: bucket})));
 
-        afterEach(async () => {
-            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-        });
+        afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
         it('should return InvalidBucketState error', async () => {
             const params = getObjectLockParams('Enabled', 'GOVERNANCE', 1);
@@ -89,16 +82,12 @@ describe('aws-sdk test put object lock configuration', () => {
     });
 
     describe('config rules', () => {
-        beforeEach(async () => {
-            await s3.send(new CreateBucketCommand({
-                Bucket: bucket,
-                ObjectLockEnabledForBucket: true,
-            }));
-        });
+        beforeEach(() => s3.send(new CreateBucketCommand({
+            Bucket: bucket,
+            ObjectLockEnabledForBucket: true,
+        })));
 
-        afterEach(async () => {
-            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-        });
+        afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
         it('should return AccessDenied if user is not bucket owner', async () => {
             const params = getObjectLockParams('Enabled', 'GOVERNANCE', 1);

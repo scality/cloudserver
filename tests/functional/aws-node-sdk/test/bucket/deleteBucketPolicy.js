@@ -27,8 +27,8 @@ function assertError(err, expectedErr) {
     if (expectedErr === null) {
         assert.strictEqual(err, null, `expected no error but got '${err}'`);
     } else {
-        assert.strictEqual(err.Code, expectedErr, 'incorrect error response ' +
-            `code: should be '${expectedErr}' but got '${err.Code}'`);
+        assert.strictEqual(err.name, expectedErr, 'incorrect error response ' +
+            `code: should be '${expectedErr}' but got '${err.name}'`);
         assert.strictEqual(err.$metadata.httpStatusCode, errors[expectedErr].code,
             'incorrect error status code: should be 400 but got ' +
             `'${err.$metadata.httpStatusCode}'`);
@@ -56,13 +56,9 @@ describe('aws-sdk test delete bucket policy', () => {
     });
 
     describe('policy rules', () => {
-        beforeEach(async () => {
-            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-        });
+        beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
-        afterEach(async () => {
-            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-        });
+        afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
         it('should return MethodNotAllowed if user is not bucket owner', async () => {
             try {
@@ -73,21 +69,14 @@ describe('aws-sdk test delete bucket policy', () => {
             }
         });
 
-        it('should return no error if no policy on bucket', async () => {
-            await s3.send(new DeleteBucketPolicyCommand({ Bucket: bucket }));
-            // Should not throw an error
+        it('should return no error if no policy on bucket', () => {
+            s3.send(new DeleteBucketPolicyCommand({ Bucket: bucket }));
         });
 
         it('should delete policy from bucket', async () => {
             const params = { Bucket: bucket, Policy: JSON.stringify(bucketPolicy) };
-            
-            // Put bucket policy
             await s3.send(new PutBucketPolicyCommand(params));
-            
-            // Delete bucket policy
             await s3.send(new DeleteBucketPolicyCommand({ Bucket: bucket }));
-            
-            // Try to get bucket policy (should fail)
             try {
                 await s3.send(new GetBucketPolicyCommand({ Bucket: bucket }));
                 throw new Error('Expected NoSuchBucketPolicy error');

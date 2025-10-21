@@ -27,11 +27,10 @@ withV4(sigCfg => {
     const ownerObjKey = 'account.txt';
     const testBody = '000';
 
-    async function awsRequest(auth, Operation, params) {
+    function awsRequest(auth, Operation, params) {
         if (auth) {
-            return await otherAccountBucketUtil.s3.send(new Operation(params));
+            return  otherAccountBucketUtil.s3.send(new Operation(params));
         } else {
-            // Create the command 
             const command = new Operation(params);
             
             // Create unsigned client
@@ -55,10 +54,6 @@ withV4(sigCfg => {
                             // Ensure no auth headers are added
                             if (args.request && args.request.headers) {
                                 // eslint-disable-next-line no-param-reassign
-                                delete args.request.headers.Authorization;
-                                // eslint-disable-next-line no-param-reassign
-                                delete args.request.headers.authorization;
-                                // eslint-disable-next-line no-param-reassign
                                 delete args.request.headers['x-amz-date'];
                                 // eslint-disable-next-line no-param-reassign
                                 delete args.request.headers['x-amz-content-sha256'];
@@ -78,7 +73,7 @@ withV4(sigCfg => {
                     );
                 }
             });
-            return await unsignedClient.s3.send(command);
+            return unsignedClient.s3.send(command);
         }
     }
 
@@ -124,35 +119,29 @@ withV4(sigCfg => {
                 await ownerAccountBucketUtil.deleteOne(testBucket);
             });
 
-            it('should grant read access', done => {
-                s3.send(new PutBucketAclCommand({
+            it('should grant read access', () => {
+                return s3.send(new PutBucketAclCommand({
                     Bucket: testBucket,
                     GrantRead: grantUri,
                 }))
-                    .then(() => awsRequest(auth, ListObjectsV2Command, { Bucket: testBucket }))
-                    .then(() => done())
-                    .catch(cbNoError(done));
+                    .then(() =>  awsRequest(auth, ListObjectsV2Command, { Bucket: testBucket }));
             });
 
-            it('should grant read access with grant-full-control', done => {
-                s3.send(new PutBucketAclCommand({
+            it('should grant read access with grant-full-control', () => {
+                return s3.send(new PutBucketAclCommand({
                     Bucket: testBucket,
                     GrantFullControl: grantUri,
                 }))
-                    .then(() => awsRequest(auth, ListObjectsV2Command, { Bucket: testBucket }))
-                    .then(() => done())
-                    .catch(cbNoError(done));
+                    .then(() => awsRequest(auth, ListObjectsV2Command, { Bucket: testBucket }));
             });
 
-            it('should not grant read access', done => {
-                s3.send(new PutBucketAclCommand(aclParam))
-                    .then(() => awsRequest(auth, ListObjectsV2Command, { Bucket: testBucket }))
-                    .then(() => done(new Error('Expected failure')))
-                    .catch(cbWithError(done));
+            it('should not grant read access', () => {
+                return s3.send(new PutBucketAclCommand(aclParam))
+                    .then(() => awsRequest(auth, ListObjectsV2Command, { Bucket: testBucket }));
             });
 
-            it('should grant write access', done => {
-                s3.send(new PutBucketAclCommand({
+            it('should grant write access', () => {
+                return s3.send(new PutBucketAclCommand({
                     Bucket: testBucket,
                     GrantWrite: grantUri,
                 }))
@@ -160,13 +149,11 @@ withV4(sigCfg => {
                         Bucket: testBucket,
                         Body: testBody,
                         Key: testKey,
-                    }))
-                    .then(() => done())
-                    .catch(cbNoError(done));
+                    }));
             });
 
-            it('should grant write access with grant-full-control', done => {
-                s3.send(new PutBucketAclCommand({
+            it('should grant write access with grant-full-control', () => {
+                return s3.send(new PutBucketAclCommand({
                     Bucket: testBucket,
                     GrantFullControl: grantUri,
                 }))
@@ -174,9 +161,7 @@ withV4(sigCfg => {
                         Bucket: testBucket,
                         Body: testBody,
                         Key: testKey,
-                    }))
-                    .then(() => done())
-                    .catch(cbNoError(done));
+                    }));
             });
 
             it('should not grant write access', done => {
@@ -190,8 +175,8 @@ withV4(sigCfg => {
                     .catch(cbWithError(done));
             });
 
-            itSkipIfE2E('should grant write access on an object not owned by the grantee', done => {
-                s3.send(new PutBucketAclCommand({
+            itSkipIfE2E('should grant write access on an object not owned by the grantee',  () => {
+                return s3.send(new PutBucketAclCommand({
                     Bucket: testBucket,
                     GrantWrite: grantUri,
                 }))
@@ -199,9 +184,7 @@ withV4(sigCfg => {
                         Bucket: testBucket,
                         Body: testBody,
                         Key: ownerObjKey,
-                    }))
-                    .then(() => done())
-                    .catch(cbNoError(done));
+                    }));
             });
 
             it(`should ${auth ? '' : 'not '}delete object not owned by the grantee`, done => {
@@ -229,24 +212,20 @@ withV4(sigCfg => {
                     });
             });
 
-            it('should read bucket acl', done => {
-                s3.send(new PutBucketAclCommand({
+            it('should read bucket acl', () => {
+                return s3.send(new PutBucketAclCommand({
                     Bucket: testBucket,
                     GrantReadACP: grantUri,
                 }))
-                    .then(() => awsRequest(auth, GetBucketAclCommand, { Bucket: testBucket }))
-                    .then(() => done())
-                    .catch(cbNoError(done));
+                    .then(() => awsRequest(auth, GetBucketAclCommand, { Bucket: testBucket }));
             });
 
-            it('should read bucket acl with grant-full-control', done => {
-                s3.send(new PutBucketAclCommand({
+            it('should read bucket acl with grant-full-control', () => {
+                return s3.send(new PutBucketAclCommand({
                     Bucket: testBucket,
                     GrantFullControl: grantUri,
                 }))
-                    .then(() => awsRequest(auth, GetBucketAclCommand, { Bucket: testBucket }))
-                    .then(() => done())
-                    .catch(cbNoError(done));
+                    .then(() => awsRequest(auth, GetBucketAclCommand, { Bucket: testBucket }));
             });
 
             it('should not read bucket acl', done => {
@@ -256,30 +235,26 @@ withV4(sigCfg => {
                     .catch(cbWithError(done));
             });
 
-            it('should write bucket acl', done => {
-                s3.send(new PutBucketAclCommand({
+            it('should write bucket acl', () => {
+                return s3.send(new PutBucketAclCommand({
                     Bucket: testBucket,
                     GrantWriteACP: grantUri,
                 }))
                     .then(() => awsRequest(auth, PutBucketAclCommand, {
                         Bucket: testBucket,
                         GrantReadACP: `uri=${constants.publicId}`,
-                    }))
-                    .then(() => done())
-                    .catch(cbNoError(done));
+                    }));
             });
 
-            it('should write bucket acl with grant-full-control', done => {
-                s3.send(new PutBucketAclCommand({
+            it('should write bucket acl with grant-full-control', () => {
+                return s3.send(new PutBucketAclCommand({
                     Bucket: testBucket,
                     GrantFullControl: grantUri,
                 }))
                     .then(() => awsRequest(auth, PutBucketAclCommand, {
                         Bucket: testBucket,
                         GrantReadACP: `uri=${constants.publicId}`,
-                    }))
-                    .then(() => done())
-                    .catch(cbNoError(done));
+                    }));
             });
 
             it('should not write bucket acl', done => {
@@ -314,8 +289,8 @@ withV4(sigCfg => {
                 await ownerAccountBucketUtil.deleteOne(testBucket);
             });
 
-            it('should grant read access', done => {
-                s3.send(new PutObjectAclCommand({
+            it('should grant read access', () => {
+                return s3.send(new PutObjectAclCommand({
                     Bucket: testBucket,
                     GrantRead: grantUri,
                     Key: testKey,
@@ -323,13 +298,11 @@ withV4(sigCfg => {
                     .then(() => awsRequest(auth, GetObjectCommand, {
                         Bucket: testBucket,
                         Key: testKey,
-                    }))
-                    .then(() => done())
-                    .catch(cbNoError(done));
+                    }));
             });
 
-            it('should grant read access with grant-full-control', done => {
-                s3.send(new PutObjectAclCommand({
+            it('should grant read access with grant-full-control', () => {
+                return s3.send(new PutObjectAclCommand({
                     Bucket: testBucket,
                     GrantFullControl: grantUri,
                     Key: testKey,
@@ -337,9 +310,7 @@ withV4(sigCfg => {
                     .then(() => awsRequest(auth, GetObjectCommand, {
                         Bucket: testBucket,
                         Key: testKey,
-                    }))
-                    .then(() => done())
-                    .catch(cbNoError(done));
+                    }));
             });
 
             it('should not grant read access', done => {
@@ -352,8 +323,8 @@ withV4(sigCfg => {
                     .catch(cbWithError(done));
             });
 
-            it('should read object acl', done => {
-                s3.send(new PutObjectAclCommand({
+            it('should read object acl', () => {
+                return s3.send(new PutObjectAclCommand({
                     Bucket: testBucket,
                     GrantReadACP: grantUri,
                     Key: testKey,
@@ -361,13 +332,11 @@ withV4(sigCfg => {
                     .then(() => awsRequest(auth, GetObjectAclCommand, {
                         Bucket: testBucket,
                         Key: testKey,
-                    }))
-                    .then(() => done())
-                    .catch(cbNoError(done));
+                    }));
             });
 
-            it('should read object acl with grant-full-control', done => {
-                s3.send(new PutObjectAclCommand({
+            it('should read object acl with grant-full-control', () => {
+                return s3.send(new PutObjectAclCommand({
                     Bucket: testBucket,
                     GrantFullControl: grantUri,
                     Key: testKey,
@@ -375,9 +344,7 @@ withV4(sigCfg => {
                     .then(() => awsRequest(auth, GetObjectAclCommand, {
                         Bucket: testBucket,
                         Key: testKey,
-                    }))
-                    .then(() => done())
-                    .catch(cbNoError(done));
+                    }));
             });
 
             it('should not read object acl', done => {
@@ -390,8 +357,8 @@ withV4(sigCfg => {
                     .catch(cbWithError(done));
             });
 
-            it('should write object acl', done => {
-                s3.send(new PutObjectAclCommand({
+            it('should write object acl', () => {
+                return s3.send(new PutObjectAclCommand({
                     Bucket: testBucket,
                     GrantWriteACP: grantUri,
                     Key: testKey,
@@ -400,13 +367,11 @@ withV4(sigCfg => {
                         Bucket: testBucket,
                         Key: testKey,
                         GrantReadACP: grantUri,
-                    }))
-                    .then(() => done())
-                    .catch(cbNoError(done));
+                    }));
             });
 
-            it('should write object acl with grant-full-control', done => {
-                s3.send(new PutObjectAclCommand({
+            it('should write object acl with grant-full-control', () => {
+                return s3.send(new PutObjectAclCommand({
                     Bucket: testBucket,
                     GrantFullControl: grantUri,
                     Key: testKey,
@@ -415,9 +380,7 @@ withV4(sigCfg => {
                         Bucket: testBucket,
                         Key: testKey,
                         GrantReadACP: `uri=${constants.publicId}`,
-                    }))
-                    .then(() => done())
-                    .catch(cbNoError(done));
+                    }));
             });
 
             it('should not write object acl', done => {

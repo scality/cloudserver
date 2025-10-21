@@ -26,8 +26,8 @@ function assertError(err, expectedErr) {
     if (expectedErr === null) {
         assert.strictEqual(err, null, `expected no error but got '${err}'`);
     } else {
-        assert.strictEqual(err.Code, expectedErr, 'incorrect error response ' +
-            `code: should be '${expectedErr}' but got '${err.Code}'`);
+        assert.strictEqual(err.name, expectedErr, 'incorrect error response ' +
+            `code: should be '${expectedErr}' but got '${err.name}'`);
         assert.strictEqual(err.$metadata.httpStatusCode, errors[expectedErr].code,
             'incorrect error status code: should be  ' +
             `${errors[expectedErr].code}, but got '${err.$metadata.httpStatusCode}'`);
@@ -71,13 +71,9 @@ describe('aws-sdk test put bucket lifecycle', () => {
     });
 
     describe('config rules', () => {
-        beforeEach(async () => {
-            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-        });
+        beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
-        afterEach(async () => {
-            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-        });
+        afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
         it('should return AccessDenied if user is not bucket owner', async () => {
             const params = getLifecycleParams();
@@ -97,7 +93,6 @@ describe('aws-sdk test put bucket lifecycle', () => {
         it('should not allow lifecycle configuration with duplicated rule id ' +
         'and with Origin header set', async () => {
             const origin = 'http://www.allowedwebsite.com';
-        
             const lifecycleConfig = {
                 Rules: [expirationRule, expirationRule],
             };
@@ -105,8 +100,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                 Bucket: bucket,
                 LifecycleConfiguration: lifecycleConfig,
             };
-        
-            // Create a new S3Client with middleware to add Origin header
+
             const clientConfig = getConfig('default', { signatureVersion: 'v4' });
             const clientWithOrigin = new S3Client({
                 ...clientConfig,
@@ -456,7 +450,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected MalformedXML error');
                 } catch (err) {
-                    assert.strictEqual(err.Code, 'MalformedXML');
+                    assert.strictEqual(err.name, 'MalformedXML');
                 }
             });
 
@@ -469,7 +463,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected InvalidArgument error');
                 } catch (err) {
-                    assert.strictEqual(err.Code, 'InvalidArgument');
+                    assert.strictEqual(err.name, 'InvalidArgument');
                     assert.strictEqual(err.message,
                     "'NoncurrentDays' in NoncurrentVersionExpiration " +
                     'action must be nonnegative');
@@ -483,7 +477,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected MalformedXML error');
                 } catch (err) {
-                    assert.strictEqual(err.Code, 'MalformedXML');
+                    assert.strictEqual(err.name, 'MalformedXML');
                 }
             });
         });
@@ -525,8 +519,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected InvalidRequest error');
                 } catch (err) {
-                     
-                    assert.strictEqual(err.Code, 'InvalidRequest');
+                    assert.strictEqual(err.name, 'InvalidRequest');
                     assert.strictEqual(err.message,
                     "'StorageClass' must be different for " +
                     "'NoncurrentVersionTransition' actions in same " +
@@ -544,7 +537,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected MalformedXML error');
                 } catch (err) {
-                    assert.strictEqual(err.Code, 'MalformedXML');
+                    assert.strictEqual(err.name, 'MalformedXML');
                 }
             });
 
@@ -558,7 +551,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected MalformedXML error');
                 } catch (err) {
-                    assert.strictEqual(err.Code, 'MalformedXML');
+                    assert.strictEqual(err.name, 'MalformedXML');
                 }
             });
 
@@ -572,7 +565,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected InvalidArgument error');
                 } catch (err) {
-                    assert.strictEqual(err.Code, 'InvalidArgument');
+                    assert.strictEqual(err.name, 'InvalidArgument');
                     assert.strictEqual(err.message,
                     "'NoncurrentDays' in NoncurrentVersionTransition " +
                     'action must be nonnegative');
@@ -588,7 +581,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected MalformedXML error');
                 } catch (err) {
-                    assert.strictEqual(err.Code, 'MalformedXML');
+                    assert.strictEqual(err.name, 'MalformedXML');
                 }
             });
 
@@ -601,7 +594,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected MalformedXML error');
                 } catch (err) {
-                    assert.strictEqual(err.Code, 'MalformedXML');
+                    assert.strictEqual(err.name, 'MalformedXML');
                 }
             });
         });
@@ -630,7 +623,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     throw new Error('Expected NotImplemented error');
                 } catch (err) {
                     assert.strictEqual(err.$metadata.httpStatusCode, 501);
-                    assert.strictEqual(err.Code, 'NotImplemented');
+                    assert.strictEqual(err.name, 'NotImplemented');
                 }
             });
         });
@@ -672,15 +665,14 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected InvalidRequest error');
                 } catch (err) {
-                    assert.strictEqual(err.Code, 'InvalidRequest');
+                    assert.strictEqual(err.name, 'InvalidRequest');
                     assert.strictEqual(err.message,
                         "'StorageClass' must be different for 'Transition' " +
                         "actions in same 'Rule' with prefix ''");
                 }
             });
 
-            // TODO: Upgrade to aws-sdk >= 2.60.0 for correct Date field support
-            it.skip('should allow Date', async () => {
+            it('should allow Date', async () => {
                 const transitions = [{
                     Date: '2016-01-01T00:00:00.000Z',
                     StorageClass: 'us-east-2',
@@ -689,8 +681,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                 await s3.send(new PutBucketLifecycleConfigurationCommand(params));
             });
 
-            // TODO: Upgrade to aws-sdk >= 2.60.0 for correct Date field support
-            it.skip('should not allow speficying both Days and Date value', async () => {
+            it('should not allow speficying both Days and Date value', async () => {
                 const transitions = [{
                     Date: '2016-01-01T00:00:00.000Z',
                     Days: 1,
@@ -701,12 +692,11 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected MalformedXML error');
                 } catch (err) {
-                    assert.strictEqual(err.Code, 'MalformedXML');
+                    assert.strictEqual(err.name, 'MalformedXML');
                 }
             });
 
-            // TODO: Upgrade to aws-sdk >= 2.60.0 for correct Date field support
-            it.skip('should not allow speficying both Days and Date value ' +
+            it('should not allow speficying both Days and Date value ' +
             'across transitions', async () => {
                 const transitions = [{
                     Date: '2016-01-01T00:00:00.000Z',
@@ -720,15 +710,14 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected InvalidRequest error');
                 } catch (err) {
-                    assert.strictEqual(err.Code, 'InvalidRequest');
+                    assert.strictEqual(err.name, 'InvalidRequest');
                     assert.strictEqual(err.message,
                         "Found mixed 'Date' and 'Days' based Transition " +
                         "actions in lifecycle rule for prefix ''");
                 }
             });
 
-            // TODO: Upgrade to aws-sdk >= 2.60.0 for correct Date field support
-            it.skip('should not allow speficying both Days and Date value ' +
+            it('should not allow speficying both Days and Date value ' +
             'across transitions and expiration', async () => {
                 const transitions = [{
                     Days: 1,
@@ -740,7 +729,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected InvalidRequest error');
                 } catch (err) {
-                    assert.strictEqual(err.Code, 'InvalidRequest');
+                    assert.strictEqual(err.name, 'InvalidRequest');
                     assert.strictEqual(err.message,
                         "Found mixed 'Date' and 'Days' based Expiration and " +
                         "Transition actions in lifecycle rule for prefix ''");
@@ -795,7 +784,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                 throw new Error('Expected NotImplemented error');
             } catch (err) {
                 assert.strictEqual(err.$metadata.httpStatusCode, 501);
-                assert.strictEqual(err.Code, 'NotImplemented');
+                assert.strictEqual(err.name, 'NotImplemented');
             }
         });
     });

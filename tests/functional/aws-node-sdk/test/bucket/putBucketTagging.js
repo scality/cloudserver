@@ -91,13 +91,9 @@ describe('aws-sdk test put bucket tagging', () => {
         s3.AccountId = '123456789012';
     });
 
-    beforeEach(async () => {
-        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-    });
+    beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
-    afterEach(async () => {
-        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-    });
+    afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
     it('should not add tag if tagKey not unique', async () => {
         try {
@@ -144,9 +140,7 @@ describe('aws-sdk test put bucket tagging', () => {
             AccountId: s3.AccountId,
             Tagging: validTagging, 
             Bucket: bucket,
-        }));
-        
-        // Get bucket tagging and verify
+        }));        
         const res = await s3.send(new GetBucketTaggingCommand({
             AccountId: s3.AccountId,
             Bucket: bucket,
@@ -155,14 +149,11 @@ describe('aws-sdk test put bucket tagging', () => {
     });
 
     it('should be able to put single tag', async () => {
-        // Put bucket tagging
         await s3.send(new PutBucketTaggingCommand({
             AccountId: s3.AccountId,
             Tagging: validSingleTagging, 
             Bucket: bucket,
         }));
-        
-        // Get bucket tagging and verify
         const res = await s3.send(new GetBucketTaggingCommand({
             AccountId: s3.AccountId,
             Bucket: bucket,
@@ -171,14 +162,11 @@ describe('aws-sdk test put bucket tagging', () => {
     });
 
     it('should be able to put empty tag array', async () => {
-        // Put empty bucket tagging
         await s3.send(new PutBucketTaggingCommand({
             AccountId: s3.AccountId,
             Tagging: validEmptyTagging, 
             Bucket: bucket,
-        }));
-        
-        // Get bucket tagging should fail with NoSuchTagSet
+        }));        
         try {
             await s3.send(new GetBucketTaggingCommand({
                 AccountId: s3.AccountId,
@@ -205,15 +193,12 @@ describe('aws-sdk test put bucket tagging', () => {
     });
 
     it('should not return accessDenied if expected bucket owner matches', async () => {
-        // Put bucket tagging with matching ExpectedBucketOwner
         await s3.send(new PutBucketTaggingCommand({ 
             AccountId: s3.AccountId,
             Tagging: validEmptyTagging, 
             Bucket: bucket, 
             ExpectedBucketOwner: s3.AccountId 
-        }));
-        
-        // Get bucket tagging should fail with NoSuchTagSet (because empty tagging was set)
+        }));        
         try {
             await s3.send(new GetBucketTaggingCommand({ 
                 AccountId: s3.AccountId, 

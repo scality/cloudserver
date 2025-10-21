@@ -21,22 +21,12 @@ describe('Test update bucket quota', () => {
         s3 = new S3Client(config);
     });
 
-    beforeEach(async () => {
-        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-    });
+    beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
-    afterEach(async () => {
-        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-    });
+    afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
-    it('should update the quota', async () => {
-        try {
-            await sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota));
-            assert.ok(true);
-        } catch (err) {
-            assert.fail(`Expected no error, but got ${err}`);
-        }
-    });
+    it('should update the quota', () => sendRequest('PUT', 
+        '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota)));
 
     it('should return no such bucket error', async () => {
         try {
@@ -64,12 +54,6 @@ describe('Test update bucket quota', () => {
         }
     });
 
-    it('should accept large quota', async () => {
-        try {
-            await sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(largeQuota));
-            assert.ok(true);
-        } catch (err) {
-            assert.fail(`Expected no error, but got ${err}`);
-        }
-    });
+    it('should accept large quota', () => sendRequest('PUT', 
+        '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(largeQuota)));
 });

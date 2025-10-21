@@ -15,17 +15,12 @@ describe('aws-sdk test get bucket tagging', () => {
     before(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3Client(config);
-        // Preserve AccountId property for tests
         s3.AccountId = '123456789012';
     });
 
-    beforeEach(async () => {
-        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-    });
-
-    afterEach(async () => {
-        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-    });
+    beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
+    
+    afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
     it('should return accessDenied if expected bucket owner does not match', async () => {
         try {

@@ -38,16 +38,6 @@ function _corsTemplate(params) {
     return { CORSRules: [sampleRule] };
 }
 
-// Helper function to delete bucket
-async function deleteBucket(s3, bucket) {
-    try {
-        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-    } catch (err) {
-        // eslint-disable-next-line no-console
-        console.log(err);
-    }
-}
-
 describe('PUT bucket cors', () => {
     withV4(sigCfg => {
         const config = getConfig('default', sigCfg);
@@ -61,17 +51,14 @@ describe('PUT bucket cors', () => {
                 }));
                 throw new Error('Expected error but found none');
             } catch (err) {
-                assert(err, 'Expected err but found none');
-                assert.strictEqual(err.Code, errMsg);
+                assert.strictEqual(err.name, errMsg);
                 assert.strictEqual(err.$metadata.httpStatusCode, statusCode);
             }
         }
 
-        beforeEach(async () => {
-            await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
-        });
+        beforeEach(() =>  s3.send(new CreateBucketCommand({ Bucket: bucketName })));
 
-        afterEach(() => deleteBucket(s3, bucketName));
+        afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucketName })));
 
         it('should put a bucket cors successfully', async () => {
             await s3.send(new PutBucketCorsCommand({ 

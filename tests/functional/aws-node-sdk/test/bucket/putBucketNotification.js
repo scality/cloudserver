@@ -52,15 +52,9 @@ describe('aws-sdk test put notification configuration', () => {
     });
 
     describe('config rules', () => {
-        beforeEach(async () => {
-            await s3.send(new CreateBucketCommand({
-                Bucket: bucket,
-            }));
-        });
+        beforeEach(() => s3.send(new CreateBucketCommand({Bucket: bucket})));
 
-        afterEach(async () => {
-            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-        });
+        afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
         it('should return AccessDenied if user is not bucket owner', async () => {
             const params = getNotificationParams();
@@ -142,21 +136,16 @@ describe('aws-sdk test put notification configuration', () => {
                 it(`should handle ${event} events based on lifecycle rules configuration`, done => {
                     const params = getNotificationParams([event]);
                     const shouldSucceed = config.supportedLifecycleRules.some(rule => rule.includes(supported));
-                    
                     s3.send(new PutBucketNotificationConfigurationCommand(params)).then(() => {
                         if (shouldSucceed) {
-                            // Expected success when lifecycle rule is supported
                             done();
                         } else {
-                            // Unexpected success - should have failed when lifecycle rule is not supported
                             done(new Error('Expected MalformedXML error but operation succeeded'));
                         }
                     }).catch(err => {
                         if (shouldSucceed) {
-                            // Unexpected error - should have succeeded when lifecycle rule is supported
                             done(err);
                         } else {
-                            // Expected error when lifecycle rule is not supported
                             checkError(err, 'MalformedXML', 400);
                             done();
                         }
@@ -167,15 +156,11 @@ describe('aws-sdk test put notification configuration', () => {
     });
 
     describe('cross origin requests', () => {
-        beforeEach(async () => {
-            await s3.send(new CreateBucketCommand({
-                Bucket: bucket,
-            }));
-        });
+        beforeEach(() => s3.send(new CreateBucketCommand({
+            Bucket: bucket,
+        })));
 
-        afterEach(async () => {
-            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-        });
+        afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
         const corsTests = [
             {
@@ -194,8 +179,6 @@ describe('aws-sdk test put notification configuration', () => {
 
         corsTests.forEach(test => {
             it(`should ${test.it}`, async () => {
-                // For v3, we need to modify the request through middleware instead of .httpRequest.headers
-                // This is a simplified approach - in a real migration, custom middleware would be needed
                 try {
                     await s3.send(new PutBucketNotificationConfigurationCommand(test.param));
                     if (test.error) {

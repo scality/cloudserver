@@ -57,35 +57,29 @@ const objects = [
     { Bucket, Key: 'notes/zaphod/Beeblebrox.txt', Body: '' },
 ];
 
+const allKeys = objects.map(obj => obj.Key);
+
 describe('Listing corner cases tests', () => {
     let s3;
+    
     before(async () => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3Client(config);
         await s3.send(new CreateBucketCommand({ Bucket }));
         await Promise.all(objects.map(o => s3.send(new PutObjectCommand(o))));
     });
+
     after(async () => {
         const data = await s3.send(new ListObjectsCommand({ Bucket }));
         await Promise.all(data.Contents.map(o => s3.send(new DeleteObjectCommand({ Bucket, Key: o.Key }))));
         await s3.send(new DeleteBucketCommand({ Bucket }));
     });
+
     it('should list everything', async () => {
         const { $metadata, ...data } = await s3.send(new ListObjectsCommand({ Bucket }));
         cutAttributes(data);
         assert.deepStrictEqual(data, {
-            Contents: [
-                objects[0].Key,
-                objects[1].Key,
-                objects[2].Key,
-                objects[3].Key,
-                objects[4].Key,
-                objects[5].Key,
-                objects[6].Key,
-                objects[7].Key,
-                objects[8].Key,
-                objects[9].Key,
-            ],
+            Contents: allKeys,
             IsTruncated: false,
             Marker: '',
             MaxKeys: 1000,
@@ -94,6 +88,7 @@ describe('Listing corner cases tests', () => {
         });
         assert.strictEqual($metadata.httpStatusCode, 200);
     });
+
     it('should list with valid marker', async () => {
         const { $metadata, ...data } = await s3.send(new ListObjectsCommand({
             Bucket,
@@ -111,6 +106,7 @@ describe('Listing corner cases tests', () => {
         });
         assert.strictEqual($metadata.httpStatusCode, 200);
     });
+
     it('should list with unexpected marker', async () => {
         const { $metadata, ...data } = await s3.send(new ListObjectsCommand({
             Bucket,
@@ -127,6 +123,7 @@ describe('Listing corner cases tests', () => {
         });
         assert.strictEqual($metadata.httpStatusCode, 200);
     });
+
     it('should list with unexpected marker and prefix', async () => {
         const { $metadata, ...data } = await s3.send(new ListObjectsCommand({
             Bucket,
@@ -144,6 +141,7 @@ describe('Listing corner cases tests', () => {
         });
         assert.strictEqual($metadata.httpStatusCode, 200);
     });
+
     it('should list with MaxKeys', async () => {
         const { $metadata, ...data } = await s3.send(new ListObjectsCommand({
             Bucket,
@@ -151,10 +149,7 @@ describe('Listing corner cases tests', () => {
         }));
         cutAttributes(data);
         assert.deepStrictEqual(data, {
-            Contents: [objects[0].Key,
-                objects[1].Key,
-                objects[2].Key,
-            ],
+            Contents: objects.slice(0, 3).map(obj => obj.Key),
             IsTruncated: true,
             Marker: '',
             MaxKeys: 3, 
@@ -163,6 +158,7 @@ describe('Listing corner cases tests', () => {
         });
         assert.strictEqual($metadata.httpStatusCode, 200);
     });
+
     it('should list with big MaxKeys', async () => {
         const { $metadata, ...data } = await s3.send(new ListObjectsCommand({
             Bucket,
@@ -170,17 +166,7 @@ describe('Listing corner cases tests', () => {
         }));
         cutAttributes(data);
         assert.deepStrictEqual(data, {
-            Contents: [objects[0].Key,
-                objects[1].Key,
-                objects[2].Key,
-                objects[3].Key,
-                objects[4].Key,
-                objects[5].Key,
-                objects[6].Key,
-                objects[7].Key,
-                objects[8].Key,
-                objects[9].Key,
-            ],
+            Contents: allKeys,
             IsTruncated: false,
             Marker: '',
             MaxKeys: 15000,
@@ -189,6 +175,7 @@ describe('Listing corner cases tests', () => {
         });
         assert.strictEqual($metadata.httpStatusCode, 200);
     });
+
     it('should list with delimiter', async () => {
         const { $metadata, ...data } = await s3.send(new ListObjectsCommand({
             Bucket,
@@ -207,6 +194,7 @@ describe('Listing corner cases tests', () => {
         });
         assert.strictEqual($metadata.httpStatusCode, 200);
     });
+
     it('should list with long delimiter', async () => {
         const { $metadata, ...data } = await s3.send(new ListObjectsCommand({
             Bucket,
@@ -216,14 +204,7 @@ describe('Listing corner cases tests', () => {
         assert.deepStrictEqual(data, {
             Marker: '',
             IsTruncated: false,
-            Contents: [objects[0].Key,
-                objects[1].Key,
-                objects[2].Key,
-                objects[3].Key,
-                objects[7].Key,
-                objects[8].Key,
-                objects[9].Key,
-            ],
+            Contents: [0, 1, 2, 3, 7, 8, 9].map(i => objects[i].Key),
             Name: Bucket,
             Prefix: '',
             Delimiter: 'notes/summer',
@@ -232,6 +213,7 @@ describe('Listing corner cases tests', () => {
         });
         assert.strictEqual($metadata.httpStatusCode, 200);
     });
+
     it('should list with delimiter and prefix related to #147', async () => {
         const { $metadata, ...data } = await s3.send(new ListObjectsCommand({
             Bucket,
@@ -242,10 +224,7 @@ describe('Listing corner cases tests', () => {
         assert.deepStrictEqual(data, {
             Marker: '',
             IsTruncated: false,
-            Contents: [
-                objects[7].Key,
-                objects[8].Key,
-            ],
+            Contents: [objects[7].Key, objects[8].Key],
             Name: Bucket,
             Prefix: 'notes/',
             Delimiter: '/',
@@ -258,6 +237,7 @@ describe('Listing corner cases tests', () => {
         });
         assert.strictEqual($metadata.httpStatusCode, 200);
     });
+
     it('should list with prefix and marker related to #147', async () => {
         const { $metadata, ...data } = await s3.send(new ListObjectsCommand({
             Bucket,
@@ -278,6 +258,7 @@ describe('Listing corner cases tests', () => {
         });
         assert.strictEqual($metadata.httpStatusCode, 200);
     });
+
     it('should list with all parameters 1 of 5', async () => {
         const { $metadata, ...data } = await s3.send(new ListObjectsCommand({
             Bucket,
@@ -299,6 +280,7 @@ describe('Listing corner cases tests', () => {
         });
         assert.strictEqual($metadata.httpStatusCode, 200);
     });
+
     it('should list with all parameters 2 of 5', async () => {
         const { $metadata, ...data } = await s3.send(new ListObjectsCommand({
             Bucket,
@@ -320,6 +302,7 @@ describe('Listing corner cases tests', () => {
         });
         assert.strictEqual($metadata.httpStatusCode, 200);
     });
+
     it('should list with all parameters 3 of 5', async () => {
         const { $metadata, ...data } = await s3.send(new ListObjectsCommand({
             Bucket,
@@ -329,8 +312,6 @@ describe('Listing corner cases tests', () => {
             MaxKeys: 1,
         }));
         cutAttributes(data);
-        // eslint-disable-next-line no-console
-        console.log('data', data);
         assert.deepStrictEqual(data, {
             Marker: 'notes/summer/',
             NextMarker: 'notes/year.txt',
@@ -343,6 +324,7 @@ describe('Listing corner cases tests', () => {
         });
         assert.strictEqual($metadata.httpStatusCode, 200);
     });
+
     it('should list with all parameters 4 of 5', async () => {
         const { $metadata, ...data } = await s3.send(new ListObjectsCommand({
             Bucket,
@@ -364,6 +346,7 @@ describe('Listing corner cases tests', () => {
         });
         assert.strictEqual($metadata.httpStatusCode, 200);
     });
+
     it('should list with all parameters 5 of 5', async () => {
         const { $metadata, ...data } = await s3.send(new ListObjectsCommand({
             Bucket,
@@ -384,6 +367,7 @@ describe('Listing corner cases tests', () => {
         });
         assert.strictEqual($metadata.httpStatusCode, 200);
     });
+
     it('should end listing on last common prefix', async () => {
         await s3.send(new PutObjectCommand({
             Bucket,
@@ -410,60 +394,57 @@ describe('Listing corner cases tests', () => {
         assert.strictEqual($metadata.httpStatusCode, 200);
     });
 
-    it('should not list DeleteMarkers for version suspended buckets', done => {
+    it('should not list DeleteMarkers for version suspended buckets', async () => {
         const obj = { name: 'testDeleteMarker.txt', value: 'foo' };
         const bucketName = `bucket-test-delete-markers-not-listed${Date.now()}`;
-        return async.waterfall([
-            next => s3.send(new CreateBucketCommand({ Bucket: bucketName }))
-                .then(() => next())
-                .catch(next),
-            next => {
-                const params = {
-                    Bucket: bucketName,
-                    VersioningConfiguration: {
-                        Status: 'Suspended',
-                    },
-                };
-                return s3.send(new PutBucketVersioningCommand(params))
-                    .then(() => next())
-                    .catch(next);
-            },
-            next => s3.send(new PutObjectCommand({
-                    Bucket: bucketName,
-                    Key: obj.name,
-                    Body: obj.value,
-                }))
-                .then(() => next())
-                .catch(next),
-            next => s3.send(new ListObjectsV2Command({ Bucket: bucketName }))
-                .then(res => {
-                    assert.strictEqual(res.Contents.some(c => c.Key === obj.name), true);
-                    next();
-                })
-                .catch(next),
-            next => s3.send(new DeleteObjectCommand({
-                    Bucket: bucketName,
-                    Key: obj.name,
-                }))
-                .then(res => {
-                    const headers = res.DeleteMarker;
-                    assert.strictEqual(
-                        headers, true);
-                    return next();
-                })
-                .catch(next),
-            next => s3.send(new ListObjectsV2Command({ Bucket: bucketName }))
-                .then(res => {
-                    assert.strictEqual(res.Contents, undefined);
-                    next();
-                })
-                .catch(next),
-            next => s3.send(new DeleteObjectCommand({ Bucket: bucketName, Key: obj.name, VersionId: 'null' }))
-                .then(() => next())
-                .catch(next),
-            next => s3.send(new DeleteBucketCommand({ Bucket: bucketName }))
-                .then(() => next())
-                .catch(next)
-        ], err => done(err));
+        
+        try {
+            await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
+            
+            await s3.send(new PutBucketVersioningCommand({
+                Bucket: bucketName,
+                VersioningConfiguration: {
+                    Status: 'Suspended',
+                },
+            }));
+            
+            await s3.send(new PutObjectCommand({
+                Bucket: bucketName,
+                Key: obj.name,
+                Body: obj.value,
+            }));
+            
+            const listRes1 = await s3.send(new ListObjectsV2Command({ Bucket: bucketName }));
+            assert.strictEqual(listRes1.Contents.some(c => c.Key === obj.name), true);
+            
+            const deleteRes = await s3.send(new DeleteObjectCommand({
+                Bucket: bucketName,
+                Key: obj.name,
+            }));
+            assert.strictEqual(deleteRes.DeleteMarker, true);
+            
+            const listRes2 = await s3.send(new ListObjectsV2Command({ Bucket: bucketName }));
+            assert.strictEqual(listRes2.Contents, undefined);
+            
+            await s3.send(new DeleteObjectCommand({ 
+                Bucket: bucketName, 
+                Key: obj.name, 
+                VersionId: 'null' 
+            }));
+            
+            await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
+        } catch (err) {
+            try {
+                await s3.send(new DeleteObjectCommand({ 
+                    Bucket: bucketName, 
+                    Key: obj.name, 
+                    VersionId: 'null' 
+                }));
+                await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
+            } catch (cleanupErr) {
+                // Ignore cleanup errors
+            }
+            throw err;
+        }
     });
 });

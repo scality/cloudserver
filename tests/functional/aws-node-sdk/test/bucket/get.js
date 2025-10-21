@@ -320,9 +320,8 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                     assert.fail('Expected request to fail with AccessDenied');
                 })
                 .catch(error => {
-                    assert(error);
                     assert.strictEqual(error.$metadata.httpStatusCode, 403);
-                    assert.strictEqual(error.Code, 'AccessDenied');
+                    assert.strictEqual(error.name, 'AccessDenied');
                     done();
                 });
         });
@@ -342,13 +341,9 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                       .catch(done);
         });
 
-        after(done => {
-            bucketUtil.deleteOne(bucketName).then(() => done()).catch(done);
-        });
+        after(() => bucketUtil.deleteOne(bucketName));
 
-        afterEach(done => {
-            bucketUtil.empty(bucketName).then(() => done()).catch(done);
-        });
+        afterEach(() => bucketUtil.empty(bucketName));
 
         tests.forEach(test => {
             it(`should ${test.name}`, async () => {

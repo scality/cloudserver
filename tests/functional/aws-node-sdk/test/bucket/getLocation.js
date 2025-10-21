@@ -67,16 +67,15 @@ describeSkipAWS('GET bucket location ', () => {
         });
 
         describe('with location us-east-1', () => {
-            before(async () => {
-                await s3.send(new CreateBucketCommand({
-                    Bucket: bucketName,
-                    CreateBucketConfiguration: {
-                        LocationConstraint: 'us-east-1',
-                    },
-                }));
-            });
-            
-            afterEach(() => deleteBucket(s3, bucketName));
+            before(() => s3.send(new CreateBucketCommand({
+                Bucket: bucketName,
+                CreateBucketConfiguration: {
+                    LocationConstraint: 'us-east-1',
+                },
+            })));
+
+            afterEach(() =>  s3.send(new DeleteBucketCommand({ Bucket: bucketName })));
+
             it('should return empty location', async () => {
                 const data = await s3.send(new GetBucketLocationCommand({ Bucket: bucketName }));
                 const expectedLocation = data.LocationConstraint || '';
@@ -85,53 +84,36 @@ describeSkipAWS('GET bucket location ', () => {
         });
 
         describe('without location configuration', () => {
-            after(() => {
-                process.stdout.write('Deleting bucket\n');
-                return deleteBucket(s3, bucketName)
-                .catch(err => {
-                    process.stdout.write(`Error in after: ${err}\n`);
-                    throw err;
-                });
-            });
+            after(() => s3.send(new DeleteBucketCommand({ Bucket: bucketName })));
 
             it('should return request endpoint as location', async () => {
-                process.stdout.write('Creating bucket');
-                
-                // Create bucket
                 await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
-                
-                // For v3, we need to get endpoint from client config
                 const host = clientConfig.endpoint?.hostname || clientConfig.endpoint?.host || '127.0.0.1:8000';
                 let endpoint = config.restEndpoints[host];
-                // s3 actually returns '' for us-east-1
                 if (endpoint === 'us-east-1') {
                     endpoint = '';
                 }
-                
                 const data = await s3.send(new GetBucketLocationCommand({ Bucket: bucketName }));
                 assert.strictEqual(data.LocationConstraint, endpoint);
             });
         });
 
         describe('with location configuration', () => {
-            before(async () => {
-                await s3.send(new CreateBucketCommand({
-                    Bucket: bucketName,
-                    CreateBucketConfiguration: {
-                        LocationConstraint: 'us-east-1',
-                    },
-                }));
-            });
-            
-            after(() => deleteBucket(s3, bucketName));
+            before(() => s3.send(new CreateBucketCommand({
+                Bucket: bucketName,
+                CreateBucketConfiguration: {
+                    LocationConstraint: 'us-east-1',
+                },
+            })));
+
+            after(() => s3.send(new DeleteBucketCommand({ Bucket: bucketName })));
 
             it('should return AccessDenied if user is not bucket owner', async () => {
                 try {
                     await otherAccountS3.send(new GetBucketLocationCommand({ Bucket: bucketName }));
                     throw new Error('Expected AccessDenied error');
                 } catch (err) {
-                    assert(err);
-                    assert.strictEqual(err.Code, 'AccessDenied');
+                    assert.strictEqual(err.name, 'AccessDenied');
                     assert.strictEqual(err.$metadata.httpStatusCode, 403);
                 }
             });

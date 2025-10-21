@@ -39,16 +39,9 @@ describe('aws-node-sdk stress test bucket', function testSuite() {
 
     it('createBucket-putObject-deleteObject-deleteBucket loop', async () => {
         for (let loopId = 0; loopId < loopCount; loopId++) {
-            // Create bucket
             await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-            
-            // Put objects
             await putObjects(s3, loopId);
-            
-            // Delete objects
             await deleteObjects(s3, loopId);
-            
-            // Delete bucket
             await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
         }
     });

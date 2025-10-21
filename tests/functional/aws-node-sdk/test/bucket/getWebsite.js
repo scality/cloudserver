@@ -27,22 +27,12 @@ const config = new WebsiteConfigTester('index.html', 'error.html');
 config.addRoutingRule(ruleRedirect1, ruleCondition1);
 config.addRoutingRule(ruleRedirect2, ruleCondition2);
 
-// Helper function to delete bucket (replacing bucketUtil.deleteOne)
-async function deleteBucket(s3, bucket) {
-    try {
-        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-    } catch (err) {
-        // eslint-disable-next-line no-console
-        console.log(err);
-    }
-}
-
 describe('GET bucket website', () => {
     withV4(sigCfg => {
         const s3Config = getConfig('default', sigCfg);
         const s3 = new S3Client(s3Config);
 
-        afterEach(() => deleteBucket(s3, bucketName));
+        afterEach(() =>  s3.send(new DeleteBucketCommand({ Bucket: bucketName })));
 
         describe('with existing bucket configuration', () => {
             before(async () => {
@@ -54,35 +44,22 @@ describe('GET bucket website', () => {
             });
 
             it('should return bucket website xml successfully', async () => {
-                try {
-                    const { $metadata, ...data } = await s3.send(new GetBucketWebsiteCommand({ Bucket: bucketName }));
-                    const configObject = Object.assign({}, config);
-                    assert.deepStrictEqual(data, configObject);
-                    assert.strictEqual($metadata.httpStatusCode, 200);
-                } catch (err) {
-                    assert.fail(`Found unexpected err ${err}`);
-                }
+                const { $metadata, ...data } = await s3.send(new GetBucketWebsiteCommand({ Bucket: bucketName }));
+                const configObject = Object.assign({}, config);
+                assert.deepStrictEqual(data, configObject);
+                assert.strictEqual($metadata.httpStatusCode, 200);
             });
         });
 
         describe('on bucket without website configuration', () => {
-            before(async () => {
-                process.stdout.write('about to create bucket\n');
-                try {
-                    await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
-                } catch (err) {
-                    process.stdout.write('error creating bucket', err);
-                    throw err;
-                }
-            });
+            before(() => s3.send(new CreateBucketCommand({ Bucket: bucketName })));
 
             it('should return NoSuchWebsiteConfiguration', async () => {
                 try {
                     await s3.send(new GetBucketWebsiteCommand({ Bucket: bucketName }));
                     assert.fail('Expected NoSuchWebsiteConfiguration error');
                 } catch (err) {
-                    assert(err);
-                    assert.strictEqual(err.Code, 'NoSuchWebsiteConfiguration');
+                    assert.strictEqual(err.name, 'NoSuchWebsiteConfiguration');
                     assert.strictEqual(err.$metadata.httpStatusCode, 404);
                 }
             });

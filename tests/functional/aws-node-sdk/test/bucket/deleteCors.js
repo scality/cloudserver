@@ -24,14 +24,8 @@ const sampleCors = { CORSRules: [
 
 const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
 
-// Helper function to delete bucket
-async function deleteBucket(s3, bucket) {
-    try {
-        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-    } catch (err) {
-        // eslint-disable-next-line no-console
-        console.log(err);
-    }
+function deleteBucket(s3, bucket) {
+    return s3.send(new DeleteBucketCommand({ Bucket: bucket }));
 }
 
 describe('DELETE bucket cors', () => {
@@ -47,17 +41,14 @@ describe('DELETE bucket cors', () => {
                     await s3.send(new DeleteBucketCorsCommand({ Bucket: bucketName }));
                     throw new Error('Expected NoSuchBucket error');
                 } catch (err) {
-                    assert(err);
-                    assert.strictEqual(err.Code, 'NoSuchBucket');
+                    assert.strictEqual(err.name, 'NoSuchBucket');
                     assert.strictEqual(err.$metadata.httpStatusCode, 404);
                 }
             });
         });
 
         describe('with existing bucket', () => {
-            beforeEach(async () => {
-                await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
-            });
+            beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucketName })));
             
             afterEach(() => deleteBucket(s3, bucketName));
 
@@ -71,42 +62,22 @@ describe('DELETE bucket cors', () => {
             });
 
             describe('with existing cors configuration', () => {
-                beforeEach(async () => {
-                    try {
-                        // eslint-disable-next-line no-console
-                        console.log('Bucket name:', bucketName);
-                        // eslint-disable-next-line no-console
-                        console.log('CORS config:', JSON.stringify(sampleCors, null, 2));
-                        
-                        const result = await s3.send(new PutBucketCorsCommand({ 
-                            Bucket: bucketName,
-                            CORSConfiguration: sampleCors 
-                        }));
-                        
-                        // eslint-disable-next-line no-console
-                        console.log('set cors response: ', result);
-                    } catch (err) {
-                        // eslint-disable-next-line no-console
-                        console.log('PutBucketCors failed:', err.Code, err.message);
-                        // eslint-disable-next-line no-console
-                        console.log('Full error:', err);
-                        throw err;
-                    }
-                });
+                beforeEach(() => s3.send(new PutBucketCorsCommand({ 
+                    Bucket: bucketName,
+                    CORSConfiguration: sampleCors 
+                })));
+
 
                 it('should delete bucket configuration successfully', async () => {
-                    // Delete CORS configuration
                     const res = await s3.send(new DeleteBucketCorsCommand({ Bucket: bucketName }));
                     const statusCode = res?.$metadata?.httpStatusCode;
                     assert.strictEqual(statusCode, 204,
                         `Found unexpected statusCode ${statusCode}`);
-
-                    // Verify it was deleted by trying to get it
                     try {
                         await s3.send(new GetBucketCorsCommand({ Bucket: bucketName }));
                         throw new Error('Expected NoSuchCORSConfiguration error');
                     } catch (err) {
-                        assert.strictEqual(err.Code, 'NoSuchCORSConfiguration');
+                        assert.strictEqual(err.name, 'NoSuchCORSConfiguration');
                         assert.strictEqual(err.$metadata.httpStatusCode, 404);
                     }
                 });
@@ -123,8 +94,7 @@ describe('DELETE bucket cors', () => {
                         await otherAccountS3.send(new DeleteBucketCorsCommand({ Bucket: bucketName }));
                         throw new Error('Expected AccessDenied error');
                     } catch (err) {
-                        assert(err);
-                        assert.strictEqual(err.Code, 'AccessDenied');
+                        assert.strictEqual(err.name, 'AccessDenied');
                         assert.strictEqual(err.$metadata.httpStatusCode, 403);
                     }
                 });

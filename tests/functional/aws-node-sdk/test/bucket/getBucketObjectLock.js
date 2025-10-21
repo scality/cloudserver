@@ -61,16 +61,12 @@ describe('aws-sdk test get bucket object lock', () => {
     });
 
     describe('config rules', () => {
-        beforeEach(async () => {
-            await s3.send(new CreateBucketCommand({
-                Bucket: bucket,
-                ObjectLockEnabledForBucket: true,
-            }));
-        });
+        beforeEach(() => s3.send(new CreateBucketCommand({
+            Bucket: bucket,
+            ObjectLockEnabledForBucket: true,
+        })));
 
-        afterEach(async () => {
-            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-        });
+        afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
         it('should return AccessDenied if user is not bucket owner', async () => {
             try {
@@ -82,7 +78,6 @@ describe('aws-sdk test get bucket object lock', () => {
         });
 
         it('should get bucket object lock config', async () => {
-            // Put object lock configuration
             await s3.send(new PutObjectLockConfigurationCommand({
                 Bucket: bucket,
                 ObjectLockConfiguration: objectLockConfig,

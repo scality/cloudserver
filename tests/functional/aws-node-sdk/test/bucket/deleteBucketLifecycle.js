@@ -24,7 +24,7 @@ function assertError(err, expectedErr) {
     if (expectedErr === null) {
         assert.strictEqual(err, null, `expected no error but got '${err}'`);
     } else {
-        assert.strictEqual(err.Code, expectedErr, 'incorrect error response ' +
+        assert.strictEqual(err.name, expectedErr, 'incorrect error response ' +
             `code: should be '${expectedErr}' but got '${err.Code}'`);
         assert.strictEqual(err.$metadata.httpStatusCode, errors[expectedErr].code,
             'incorrect error status code: should be 400 but got ' +
@@ -55,13 +55,9 @@ describe('aws-sdk test delete bucket lifecycle', () => {
     });
 
     describe('config rules', () => {
-        beforeEach(async () => {
-            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-        });
+        beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
-        afterEach(async () => {
-            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-        });
+        afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
         it('should return AccessDenied if user is not bucket owner', async () => {
             try {
@@ -73,25 +69,16 @@ describe('aws-sdk test delete bucket lifecycle', () => {
             }
         });
 
-        it('should return no error if no lifecycle config on bucket', async () => {
-            // This should succeed without error
-            await s3.send(new DeleteBucketLifecycleCommand({ Bucket: bucket }));
-        });
+        it('should return no error if no lifecycle config on bucket', () => s3.send(new
+            DeleteBucketLifecycleCommand({ Bucket: bucket })));
 
         it('should delete lifecycle configuration from bucket', async () => {
             const params = { Bucket: bucket,
                 LifecycleConfiguration: { Rules: [basicRule] } };
-            
-            // Put lifecycle configuration
             await s3.send(new PutBucketLifecycleConfigurationCommand(params));
-            
-            // Delete lifecycle configuration
             await s3.send(new DeleteBucketLifecycleCommand({ Bucket: bucket }));
-            
-            // Verify it was deleted by trying to get it (should fail)
             try {
                 await s3.send(new GetBucketLifecycleConfigurationCommand({ Bucket: bucket }));
-                // Should not reach here
                 throw new Error('Expected NoSuchLifecycleConfiguration error');
             } catch (err) {
                 assertError(err, 'NoSuchLifecycleConfiguration');

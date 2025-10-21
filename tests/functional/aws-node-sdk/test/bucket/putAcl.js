@@ -28,17 +28,13 @@ for (let i = 0; i < 100000; i++) {
 describe('aws-node-sdk test bucket put acl', () => {
     let s3;
 
-    // setup test
     before(async () => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3Client(config);
         await s3.send(new CreateBucketCommand({ Bucket: bucket }));
     });
 
-    // delete bucket after testing
-    after(async () => {
-        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-    });
+    after(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
     const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
     itSkipIfAWS('should not accept xml body larger than 512 KB', async () => {
@@ -58,7 +54,7 @@ describe('aws-node-sdk test bucket put acl', () => {
         } catch (error) {
             assert.strictEqual(error.$metadata.httpStatusCode, 400);
             assert.strictEqual(
-                error.Code, 'InvalidRequest');
+                error.name, 'InvalidRequest');
         }
     });
 });
@@ -68,21 +64,9 @@ describe('PUT Bucket ACL', () => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
 
-        beforeEach(() => {
-            process.stdout.write('About to create bucket');
-            return bucketUtil.createOne(bucketName).catch(err => {
-                process.stdout.write(`Error in beforeEach ${err}\n`);
-                throw err;
-            });
-        });
+        beforeEach(() => bucketUtil.createOne(bucketName));
 
-        afterEach(() => {
-            process.stdout.write('About to delete bucket');
-            return bucketUtil.deleteOne(bucketName).catch(err => {
-                process.stdout.write(`Error in afterEach ${err}\n`);
-                throw err;
-            });
-        });
+        afterEach(() => bucketUtil.deleteOne(bucketName));
 
         it('should set multiple ACL permissions with same grantee specified' +
         'using email', async () => {
@@ -91,11 +75,9 @@ describe('PUT Bucket ACL', () => {
                 GrantRead: 'emailAddress=sampleaccount1@sampling.com',
                 GrantWrite: 'emailAddress=sampleaccount1@sampling.com',
             }));
-            
             const res = await s3.send(new GetBucketAclCommand({
                 Bucket: bucketName,
             }));
-            // expect both READ and WRITE grants to exist
             assert.strictEqual(res.Grants.length, 2);
         });
 
@@ -109,7 +91,7 @@ describe('PUT Bucket ACL', () => {
                 throw new Error('Expected InvalidArgument error');
             } catch (err) {
                 assert.strictEqual(err.$metadata.httpStatusCode, 400);
-                assert.strictEqual(err.Code, 'InvalidArgument');
+                assert.strictEqual(err.name, 'InvalidArgument');
             }
         });
 
@@ -137,7 +119,7 @@ describe('PUT Bucket ACL', () => {
                 throw new Error('Expected InvalidArgument error');
             } catch (err) {
                 assert.strictEqual(err.$metadata.httpStatusCode, 400);
-                assert.strictEqual(err.Code, 'InvalidArgument');
+                assert.strictEqual(err.name, 'InvalidArgument');
             }
         });
     });

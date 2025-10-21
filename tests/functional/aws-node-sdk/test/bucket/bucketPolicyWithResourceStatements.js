@@ -84,9 +84,6 @@ withV4(sigCfg => {
             .then(() => {
                 const param = { Bucket: testBuckets[0] };
                 awsRequest(true, 'listObjects', param, cbNoError(done));
-            })
-            .catch(err => {
-                assert.ifError(err);
             });
         });
 
@@ -109,9 +106,6 @@ withV4(sigCfg => {
             .then(() => {
                 const param = { Bucket: testBuckets[1] };
                 awsRequest(false, 'listObjects', param, cbWithError(done));
-            })
-            .catch(err => {
-                assert.ifError(err);
             });
         });
 
@@ -134,9 +128,6 @@ withV4(sigCfg => {
             .then(() => {
                 const param = { Bucket: testBuckets[0] };
                 awsRequest(false, 'listObjects', param, cbWithError(done));
-            })
-            .catch(err => {
-                assert.ifError(err);
             });
         });
 
@@ -169,9 +160,6 @@ withV4(sigCfg => {
                     Key: testKey,
                 };
                 awsRequest(false, 'getObject', param, cbNoError(done));
-            })
-            .catch(err => {
-                assert.ifError(err);
             });
         });
 
@@ -204,9 +192,6 @@ withV4(sigCfg => {
                     Key: testKey,
                 };
                 awsRequest(false, 'getObject', param, cbNoError(done));
-            })
-            .catch(err => {
-                assert.ifError(err);
             });
         });
 
@@ -239,9 +224,6 @@ withV4(sigCfg => {
                     Key: testKey,
                 };
                 awsRequest(false, 'getObject', param, cbWithError(done));
-            })
-            .catch(err => {
-                assert.ifError(err);
             });
         });
 
@@ -268,9 +250,6 @@ withV4(sigCfg => {
                     Key: 'invalidkey',
                 };
                 awsRequest(false, 'getObject', param, cbWithError(done));
-            })
-            .catch(err => {
-                assert.ifError(err);
             });
         });
 
@@ -297,9 +276,6 @@ withV4(sigCfg => {
                     Key: 'invalidkey',
                 };
                 awsRequest(false, 'getObject', param, cbWithError(done));
-            })
-            .catch(err => {
-                assert.ifError(err);
             });
         });
     });

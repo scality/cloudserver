@@ -45,16 +45,9 @@ describe('Skip scan cases tests', () => {
     let s3;
     before(async () => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3 = new S3Client(config);
-        
-        // Create bucket
+        s3 = new S3Client(config);        
         await s3.send(new CreateBucketCommand({ Bucket }));
-        
-        /* generating different prefixes every x > STREAK_LENGTH
-           to force the metadata backends to skip */
         const x = 120;
-        
-        // Create 500 objects with concurrency limit of 10
         const promises = [];
         for (let n = 0; n < 500; n++) {
             const putObjectPromise = async () => {
@@ -67,9 +60,7 @@ describe('Skip scan cases tests', () => {
                 await s3.send(new PutObjectCommand(o));
             };
             promises.push(putObjectPromise);
-        }
-        
-        // Execute promises with concurrency limit of 10
+        }        
         for (let i = 0; i < promises.length; i += 10) {
             const batch = promises.slice(i, i + 10);
             await Promise.all(batch.map(fn => fn()));
@@ -77,16 +68,11 @@ describe('Skip scan cases tests', () => {
     });
     
     after(async () => {
-        // List all objects
         const data = await s3.send(new ListObjectsCommand({ Bucket }));
-        
-        // Delete all objects
         const deletePromises = data.Contents.map(o => 
             s3.send(new DeleteObjectCommand({ Bucket, Key: o.Key }))
         );
         await Promise.all(deletePromises);
-        
-        // Delete bucket
         await s3.send(new DeleteBucketCommand({ Bucket }));
     });
     

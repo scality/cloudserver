@@ -61,17 +61,16 @@ function generateRandomString(length) {
 }
 
 // Check for the expected error response code and status code.
-function assertError(err, expectedErr, cb) {
+function assertError(err, expectedErr) {
     if (expectedErr === null) {
         assert.strictEqual(err, null, `expected no error but got '${err}'`);
     } else {
-        assert.strictEqual(err.Code, expectedErr, 'incorrect error response ' +
-            `code: should be '${expectedErr}' but got '${err.Code}'`);
+        assert.strictEqual(err.name, expectedErr, 'incorrect error response ' +
+            `code: should be '${expectedErr}' but got '${err.name}'`);
         assert.strictEqual(err.$metadata.httpStatusCode, errors[expectedErr].code,
             'incorrect error status code: should be  ' +
             `${errors[expectedErr].code}, but got '${err.$metadata.httpStatusCode}'`);
     }
-    cb();
 }
 
 
@@ -79,11 +78,10 @@ describe('aws-sdk test put bucket policy', () => {
     let s3;
     let otherAccountS3;
 
-    before(done => {
+    before(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3Client(config);
         otherAccountS3 = new BucketUtility('lisa', {}).s3;
-        return done();
     });
 
     it('should return NoSuchBucket error if bucket does not exist', async () => {
@@ -92,18 +90,14 @@ describe('aws-sdk test put bucket policy', () => {
             await s3.send(new PutBucketPolicyCommand(params));
             throw new Error('Expected NoSuchBucket error');
         } catch (err) {
-            assertError(err, 'NoSuchBucket', () => {});
+            assertError(err, 'NoSuchBucket');
         }
     });
 
     describe('config rules', () => {
-        beforeEach(async () => {
-            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-        });
+        beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
-        afterEach(async () => {
-            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-        });
+        afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
         it('should return MethodNotAllowed if user is not bucket owner', async () => {
             const params = getPolicyParams();
@@ -111,7 +105,7 @@ describe('aws-sdk test put bucket policy', () => {
                 await otherAccountS3.send(new PutBucketPolicyCommand(params));
                 throw new Error('Expected MethodNotAllowed error');
             } catch (err) {
-                assertError(err, 'MethodNotAllowed', () => {});
+                assertError(err, 'MethodNotAllowed');
             }
         });
 
@@ -126,7 +120,7 @@ describe('aws-sdk test put bucket policy', () => {
                 await s3.send(new PutBucketPolicyCommand(params));
                 throw new Error('Expected MalformedPolicy error');
             } catch (err) {
-                assertError(err, 'MalformedPolicy', () => {});
+                assertError(err, 'MalformedPolicy');
             }
         });
 
@@ -136,7 +130,7 @@ describe('aws-sdk test put bucket policy', () => {
                 await s3.send(new PutBucketPolicyCommand(params));
                 throw new Error('Expected MalformedPolicy error');
             } catch (err) {
-                assertError(err, 'MalformedPolicy', () => {});
+                assertError(err, 'MalformedPolicy');
             }
         });
 
@@ -146,7 +140,7 @@ describe('aws-sdk test put bucket policy', () => {
                 await s3.send(new PutBucketPolicyCommand(params));
                 throw new Error('Expected MalformedPolicy error');
             } catch (err) {
-                assertError(err, 'MalformedPolicy', () => {});
+                assertError(err, 'MalformedPolicy');
             }
         });
 
@@ -156,7 +150,7 @@ describe('aws-sdk test put bucket policy', () => {
                 await s3.send(new PutBucketPolicyCommand(params));
                 throw new Error('Expected MalformedPolicy error');
             } catch (err) {
-                assertError(err, 'MalformedPolicy', () => {});
+                assertError(err, 'MalformedPolicy');
             }
         });
 
@@ -166,7 +160,7 @@ describe('aws-sdk test put bucket policy', () => {
                 await s3.send(new PutBucketPolicyCommand(params));
                 throw new Error('Expected MalformedPolicy error');
             } catch (err) {
-                assertError(err, 'MalformedPolicy', () => {});
+                assertError(err, 'MalformedPolicy');
             }
         });
 
@@ -186,7 +180,7 @@ describe('aws-sdk test put bucket policy', () => {
                 await s3.send(new PutBucketPolicyCommand(params));
                 throw new Error('Expected MalformedPolicy error');
             } catch (err) {
-                assertError(err, 'MalformedPolicy', () => {});
+                assertError(err, 'MalformedPolicy');
             }
         });
 
@@ -213,7 +207,7 @@ describe('aws-sdk test put bucket policy', () => {
                 await s3.send(new PutBucketPolicyCommand(params));
                 throw new Error('Expected MalformedPolicy error');
             } catch (err) {
-                assertError(err, 'MalformedPolicy', () => {});
+                assertError(err, 'MalformedPolicy');
             }
         });
 
@@ -264,7 +258,7 @@ describe('aws-sdk test put bucket policy', () => {
                 await s3.send(new PutBucketPolicyCommand(params));
                 throw new Error('Expected MalformedPolicy error');
             } catch (err) {
-                assertError(err, 'MalformedPolicy', () => {});
+                assertError(err, 'MalformedPolicy');
             }
         });
 
@@ -297,7 +291,7 @@ describe('aws-sdk test put bucket policy', () => {
                 await s3.send(new PutBucketPolicyCommand(params));
                 throw new Error('Expected MalformedPolicy error');
             } catch (err) {
-                assertError(err, 'MalformedPolicy', () => {});
+                assertError(err, 'MalformedPolicy');
             }
         });
     });

@@ -42,9 +42,7 @@ describe('aws-node-sdk test getBucketReplication', () => {
         }));
     });
 
-    afterEach(async () => {
-        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-    });
+    afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
     it("should return 'ReplicationConfigurationNotFoundError' if bucket does " +
     'not have a replication configuration', async () => {
@@ -57,7 +55,6 @@ describe('aws-node-sdk test getBucketReplication', () => {
     });
 
     it('should get the replication configuration that was put on a bucket', async () => {
-        // Put bucket replication
         await s3.send(new PutBucketReplicationCommand({
             Bucket: bucket,
             ReplicationConfiguration: replicationConfig,
@@ -74,8 +71,7 @@ describe('aws-node-sdk test getBucketReplication', () => {
             await otherAccountS3.send(new GetBucketReplicationCommand({ Bucket: bucket }));
             throw new Error('Expected AccessDenied error');
         } catch (err) {
-            assert(err);
-            assert.strictEqual(err.Code, 'AccessDenied');
+            assert.strictEqual(err.name, 'AccessDenied');
             assert.strictEqual(err.$metadata.httpStatusCode, 403);
         }
     });

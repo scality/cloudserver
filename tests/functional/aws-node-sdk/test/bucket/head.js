@@ -14,17 +14,14 @@ describe('HEAD bucket', () => {
             s3 = new S3Client(config);
         });
 
-        // aws-sdk now (v2.363.0) returns 'UriParameterError' error
-        it.skip('should return an error to a head request without a ' +
+        it('should return an error to a head request without a ' +
         'bucket name',
             async () => {
                 try {
                     await s3.send(new HeadBucketCommand({ Bucket: '' }));
                     assert.fail('Expected failure but got success');
                 } catch (err) {
-                    assert.notEqual(err, null,
-                        'Expected failure but got success');
-                    assert.strictEqual(err.code, 405);
+                    assert.strictEqual(err.$metadata.httpStatusCode, 405);
                 }
             });
     });

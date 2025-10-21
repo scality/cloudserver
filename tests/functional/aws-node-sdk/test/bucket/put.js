@@ -28,16 +28,13 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
 
         it('should return 403 and AccessDenied', async () => {
             const params = { Bucket: 'mybucket' };
-
             try {
-                // In AWS SDK v3, makeUnauthenticatedRequest doesn't exist
-                // We simulate this by creating a client with invalid credentials
                 const unauthenticatedS3 = new BucketUtility('default', {}, true).s3;
                 await unauthenticatedS3.send(new CreateBucketCommand(params));
                 assert.fail('Expected request to fail with AccessDenied');
             } catch (error) {
                 assert.strictEqual(error.$metadata?.httpStatusCode, 403);
-                assert.strictEqual(error.Code, 'AccessDenied');
+                assert.strictEqual(error.name, 'AccessDenied');
             }
         });
     });
@@ -48,8 +45,6 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
         before(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
         });
-
-                // Replace the entire "create bucket twice" describe block:
         
         describe('create bucket twice', () => {
             let testBucketName;
@@ -65,17 +60,11 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                 }));
             });
         
-            afterEach(() => bucketUtil.s3.send(new DeleteBucketCommand({ Bucket: testBucketName }))
-                    .catch(error => {
-                        // eslint-disable-next-line no-console
-                        console.warn(`Failed to cleanup bucket ${testBucketName}:`, error.message);
-                    }));
+            afterEach(() => bucketUtil.s3.send(new DeleteBucketCommand({ Bucket: testBucketName })));
         
             itSkipIfE2E('should return a 200 if no locationConstraints provided.',
-                async () => {
-                    await bucketUtil.s3.send(new CreateBucketCommand({ Bucket: testBucketName }));
-                });
-                
+                () => bucketUtil.s3.send(new CreateBucketCommand({ Bucket: testBucketName })));
+
             it('should return a 200 if us-east behavior', async () => {
                 const res = await bucketUtil.s3.send(new CreateBucketCommand({
                     Bucket: testBucketName,
@@ -329,14 +318,8 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
         });
 
         describe('bucket creation with ingestion location', () => {
-            after(async () => {
-                try {
-                    await bucketUtil.s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
-                } catch (error) {
-                    // eslint-disable-next-line no-console
-                    console.warn(`Failed to cleanup bucket ${bucketName}:`, error.message);
-                }
-            });
+            after(() =>  bucketUtil.s3.send(new DeleteBucketCommand({ Bucket: bucketName })));
+            
             it('should create bucket with location and ingestion', done => {
                 async.waterfall([
                     next => bucketUtil.s3.send(new CreateBucketCommand({

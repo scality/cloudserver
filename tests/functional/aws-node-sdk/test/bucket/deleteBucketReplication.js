@@ -30,83 +30,69 @@ describe('aws-node-sdk test deleteBucketReplication', () => {
     let otherAccountS3;
     const config = getConfig('default', { signatureVersion: 'v4' });
 
-    async function putVersioningOnBucket(bucket) {
-        await s3.send(new PutBucketVersioningCommand({
+    function putVersioningOnBucket(bucket) {
+        return s3.send(new PutBucketVersioningCommand({
             Bucket: bucket,
             VersioningConfiguration: { Status: 'Enabled' },
         }));
     }
 
-    async function putReplicationOnBucket(bucket) {
-        await s3.send(new PutBucketReplicationCommand({
+    function putReplicationOnBucket(bucket) {
+        return s3.send(new PutBucketReplicationCommand({
             Bucket: bucket,
             ReplicationConfiguration: replicationConfig,
         }));
     }
 
-    async function deleteReplicationAndCheckResponse(bucket) {
-        const data = await s3.send(new DeleteBucketReplicationCommand({ Bucket: bucket }));
-        // eslint-disable-next-line no-console
-        console.log('delete replication response: ', data);
-        assert.deepStrictEqual(data.$metadata.httpStatusCode, 204);
+    function deleteReplicationAndCheckResponse(bucket) {
+        return s3.send(new DeleteBucketReplicationCommand({ Bucket: bucket }))
+            .then(data => {
+                assert.deepStrictEqual(data.$metadata.httpStatusCode, 204);
+            });
     }
 
-    beforeEach(async () => {
+    beforeEach(() => {
         s3 = new S3Client(config);
         otherAccountS3 = new BucketUtility('lisa', {}).s3;
-        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+        return s3.send(new CreateBucketCommand({ Bucket: bucket }));
     });
 
-    afterEach(async () => {
-        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-    });
+    afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
-    it('should return empty object if bucket has no replication config', async () => {
-        await deleteReplicationAndCheckResponse(bucket);
+    it('should return empty object if bucket has no replication config', () => {
+        return deleteReplicationAndCheckResponse(bucket);
     });
 
     it('should delete a bucket replication config when it has one', async () => {
-        // Put versioning on bucket
         await putVersioningOnBucket(bucket);
-        
-        // Put replication on bucket
         await putReplicationOnBucket(bucket);
-        
-        // Delete replication and check response
         await deleteReplicationAndCheckResponse(bucket);
     });
 
     it('should return ReplicationConfigurationNotFoundError if getting ' +
     'replication config after it has been deleted', async () => {
-        // Put versioning on bucket
         await putVersioningOnBucket(bucket);
-        
-        // Put replication on bucket
         await putReplicationOnBucket(bucket);
         
-        // Get bucket replication to verify it exists
         const data = await s3.send(new GetBucketReplicationCommand({ Bucket: bucket }));
         assert.deepStrictEqual(data.ReplicationConfiguration, replicationConfig);
 
-        // Delete replication and check response
         await deleteReplicationAndCheckResponse(bucket);
         
-        // Try to get replication config again (should fail)
         try {
             await s3.send(new GetBucketReplicationCommand({ Bucket: bucket }));
-            throw new Error('Expected ReplicationConfigurationNotFoundError');
+            assert.fail('Expected ReplicationConfigurationNotFoundError');
         } catch (err) {
-            assert(errorInstances.ReplicationConfigurationNotFoundError.is[err.Code]);
+            assert(errorInstances.ReplicationConfigurationNotFoundError.is[err.name]);
         }
     });
 
     it('should return AccessDenied if user is not bucket owner', async () => {
         try {
             await otherAccountS3.send(new DeleteBucketReplicationCommand({ Bucket: bucket }));
-            throw new Error('Expected AccessDenied error');
+            assert.fail('Expected AccessDenied error');
         } catch (err) {
-            assert(err);
-            assert.strictEqual(err.Code, 'AccessDenied');
+            assert.strictEqual(err.name, 'AccessDenied');
             assert.strictEqual(err.$metadata.httpStatusCode, 403);
         }
     });

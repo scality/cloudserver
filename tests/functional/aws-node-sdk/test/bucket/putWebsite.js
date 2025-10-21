@@ -22,41 +22,22 @@ describe('PUT bucket website', () => {
                 cb(new Error('Expected err but found none'));
             })
             .catch(err => {
-                assert(err, 'Expected err but found none');
                 assert.strictEqual(err.name, errMsg);
                 assert.strictEqual(err.$metadata.httpStatusCode, statusCode);
                 cb();
             });
         }
-        beforeEach(done => {
-            process.stdout.write('about to create bucket\n');
-            s3.send(new CreateBucketCommand({ Bucket: bucketName }))
-            .then(() => done())
-            .catch(err => {
-                process.stdout.write('error in beforeEach', err);
-                done(err);
-            });
+        beforeEach(() =>  s3.send(new CreateBucketCommand({ Bucket: bucketName })));
+
+        afterEach(async () => {
+            await bucketUtil.empty(bucketName);
+            await bucketUtil.deleteOne(bucketName);
         });
 
-        afterEach(() => {
-            process.stdout.write('about to empty bucket\n');
-            return bucketUtil.empty(bucketName).then(() => {
-                process.stdout.write('about to delete bucket\n');
-                return bucketUtil.deleteOne(bucketName);
-            }).catch(err => {
-                if (err) {
-                    process.stdout.write('error in afterEach', err);
-                    throw err;
-                }
-            });
-        });
-
-        it('should put a bucket website successfully', done => {
+        it('should put a bucket website successfully', () => {
             const config = new WebsiteConfigTester('index.html');
             s3.send(new PutBucketWebsiteCommand({ Bucket: bucketName,
-                WebsiteConfiguration: config }))
-            .then(() => done())
-            .catch(done);
+                WebsiteConfiguration: config }));
         });
 
         it('should return InvalidArgument if IndexDocument or ' +

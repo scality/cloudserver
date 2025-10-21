@@ -23,7 +23,7 @@ function assertError(err, expectedErr) {
     if (expectedErr === null) {
         assert.strictEqual(err, null, `expected no error but got '${err}'`);
     } else {
-        assert.strictEqual(err.Code, expectedErr);
+        assert.strictEqual(err.name, expectedErr);
         assert.strictEqual(err.$metadata.httpStatusCode, errors[expectedErr].code);
     }
 }
@@ -48,13 +48,9 @@ describe('aws-sdk test get bucket notification', () => {
     });
 
     describe('config rules', () => {
-        beforeEach(async () => {
-            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-        });
+        beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
-        afterEach(async () => {
-            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-        });
+        afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
         it('should return AccessDenied if user is not bucket owner', async () => {
             try {
@@ -66,11 +62,7 @@ describe('aws-sdk test get bucket notification', () => {
         });
 
         it('should not return an error if no notification configuration ' +
-        'put to bucket', async () => {
-            const result = await s3.send(new GetBucketNotificationConfigurationCommand({ Bucket: bucket }));
-            // Should not throw an error - just return empty configuration
-            assert(result !== undefined);
-        });
+        'put to bucket', () => s3.send(new GetBucketNotificationConfigurationCommand({ Bucket: bucket })));
 
         it('should get bucket notification config', async () => {
             await s3.send(new PutBucketNotificationConfigurationCommand({

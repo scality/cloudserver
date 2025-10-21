@@ -16,16 +16,12 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
     this.timeout(60000);
     let replicationAccountS3;
 
-    // setup test
     before(async () => {
         replicationAccountS3 = new S3Client(configReplication);
         await s3.send(new CreateBucketCommand({ Bucket: bucket }));
     });
 
-    // delete bucket after testing
-    after(async () => {
-        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
-    });
+    after(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
     it('should not accept empty versioning configuration', async () => {
         const params = {
@@ -38,7 +34,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         } catch (error) {
             assert.strictEqual(error.$metadata.httpStatusCode, 400);
             assert.strictEqual(
-                error.Code, 'IllegalVersioningConfigurationException');
+                error.name, 'IllegalVersioningConfigurationException');
         }
     });
 
@@ -62,7 +58,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         } catch (error) {
             assert.strictEqual(error.$metadata.httpStatusCode, 400);
             assert.strictEqual(
-                error.Code, 'IllegalVersioningConfigurationException');
+                error.name, 'IllegalVersioningConfigurationException');
         }
     });
 
@@ -87,7 +83,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         } catch (error) {
             assert.strictEqual(error.$metadata.httpStatusCode, 400);
             assert.strictEqual(
-                error.Code, 'IllegalVersioningConfigurationException');
+                error.name, 'IllegalVersioningConfigurationException');
         }
     });
 
@@ -103,9 +99,8 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
             await s3.send(new PutBucketVersioningCommand(params));
             throw new Error('Expected failure but got success');
         } catch (error) {
-            assert.notEqual(error, null, 'Expected failure but got success');
             assert.strictEqual(error.$metadata.httpStatusCode, 501);
-            assert.strictEqual(error.Code, 'NotImplemented');
+            assert.strictEqual(error.name, 'NotImplemented');
         }
     });
 
@@ -168,18 +163,14 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
 
 describe('bucket versioning for ingestion buckets', () => {
     const Bucket = `ingestion-bucket-${Date.now()}`;
-    before(async () => {
-        await s3.send(new CreateBucketCommand({
+    before(() => s3.send(new CreateBucketCommand({
             Bucket,
             CreateBucketConfiguration: {
                 LocationConstraint: 'us-east-2:ingest',
             },
-        }));
-    });
+        })));
 
-    after(async () => {
-        await s3.send(new DeleteBucketCommand({ Bucket }));
-    });
+    after(() => s3.send(new DeleteBucketCommand({ Bucket })));
 
     it('should not allow suspending versioning for ingestion buckets', async () => {
         try {
@@ -191,8 +182,7 @@ describe('bucket versioning for ingestion buckets', () => {
             }));
             throw new Error('Expected error but got success');
         } catch (err) {
-            assert(err, 'Expected error but got success');
-            assert.strictEqual(err.Code, 'InvalidBucketState');
+            assert.strictEqual(err.name, 'InvalidBucketState');
         }
     });
 });
@@ -200,7 +190,6 @@ describe('bucket versioning for ingestion buckets', () => {
 describe('aws-node-sdk test bucket versioning with object lock', () => {
     let s3ObjectLock;
 
-    // setup test
     before(async () => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3ObjectLock = new S3Client(config);
@@ -210,10 +199,7 @@ describe('aws-node-sdk test bucket versioning with object lock', () => {
         }));
     });
 
-    // delete bucket after testing
-    after(async () => {
-        await s3ObjectLock.send(new DeleteBucketCommand({ Bucket: bucket }));
-    });
+    after(() => s3ObjectLock.send(new DeleteBucketCommand({ Bucket: bucket })));
 
     it('should not accept suspending version when object lock is enabled', async () => {
         const params = {
@@ -226,7 +212,7 @@ describe('aws-node-sdk test bucket versioning with object lock', () => {
             await s3ObjectLock.send(new PutBucketVersioningCommand(params));
             throw new Error('Expected error but got success');
         } catch (error) {
-            assert.strictEqual(error.Code, 'InvalidBucketState');
+            assert.strictEqual(error.name, 'InvalidBucketState');
         }
     });
 });
