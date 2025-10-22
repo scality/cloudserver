@@ -149,5 +149,9 @@
     },
     "integrityChecks": {
         "objectPutRetention": true
+    },
+    "serverAccessLogs": {
+        "enabled": false,
+        "outputFile": "/logs/server-access.log"
     }
 }
