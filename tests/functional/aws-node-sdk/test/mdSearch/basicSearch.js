@@ -1,4 +1,11 @@
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutObjectCommand,
+    DeleteObjectsCommand,
+} = require('@aws-sdk/client-s3');
 const s3Client = require('./utils/s3SDK');
+
 const { runAndCheckSearch, runIfMongo } = require('./utils/helpers');
 
 const objectKey = 'findMe';
@@ -10,33 +17,35 @@ const updatedUserMetadata = { food: 'cake' };
 
 runIfMongo('Basic search', () => {
     const bucketName = `basicsearchmebucket${Date.now()}`;
+    
     before(done => {
-        s3Client.createBucket({ Bucket: bucketName }, err => {
-            if (err) {
-                return done(err);
-            }
-            return s3Client.putObject({ Bucket: bucketName, Key: objectKey,
-                Metadata: userMetadata, Tagging: objectTagData }, err => {
-                if (err) {
-                    return done(err);
-                }
-                return s3Client.putObject({ Bucket: bucketName,
-                    Key: hiddenKey, Tagging: hiddenTagData }, done);
-            });
-        });
+        s3Client.send(new CreateBucketCommand({ Bucket: bucketName }))
+            .then(() => s3Client.send(new PutObjectCommand({
+                Bucket: bucketName,
+                Key: objectKey,
+                Metadata: userMetadata,
+                Tagging: objectTagData,
+            })))
+            .then(() => s3Client.send(new PutObjectCommand({
+                Bucket: bucketName,
+                Key: hiddenKey,
+                Tagging: hiddenTagData,
+            })))
+            .then(() => done())
+            .catch(done);
     });
 
-    after(done => {
-        s3Client.deleteObjects({ Bucket: bucketName, Delete: { Objects: [
-            { Key: objectKey },
-            { Key: hiddenKey }],
-        } },
-            err => {
-                if (err) {
-                    return done(err);
-                }
-                return s3Client.deleteBucket({ Bucket: bucketName }, done);
-            });
+    after(async () => {
+        await s3Client.send(new DeleteObjectsCommand({
+            Bucket: bucketName,
+            Delete: {
+                Objects: [
+                    { Key: objectKey },
+                    { Key: hiddenKey },
+                ],
+            },
+        }));
+        await s3Client.send(new DeleteBucketCommand({ Bucket: bucketName }));
     });
 
     it('should list object with searched for system metadata', done => {
@@ -87,8 +96,13 @@ runIfMongo('Basic search', () => {
 
     describe('search when overwrite object', () => {
         before(done => {
-            s3Client.putObject({ Bucket: bucketName, Key: objectKey,
-                Metadata: updatedUserMetadata }, done);
+            s3Client.send(new PutObjectCommand({
+                Bucket: bucketName,
+                Key: objectKey,
+                Metadata: updatedUserMetadata,
+            }))
+                .then(() => done())
+                .catch(done);
         });
 
         it('should list object with searched for updated user metadata',
@@ -104,12 +118,17 @@ runIfMongo('Basic search', () => {
 
 runIfMongo('Search when no objects in bucket', () => {
     const bucketName = `noobjectbucket${Date.now()}`;
+    
     before(done => {
-        s3Client.createBucket({ Bucket: bucketName }, done);
+        s3Client.send(new CreateBucketCommand({ Bucket: bucketName }))
+            .then(() => done())
+            .catch(done);
     });
 
     after(done => {
-        s3Client.deleteBucket({ Bucket: bucketName }, done);
+        s3Client.send(new DeleteBucketCommand({ Bucket: bucketName }))
+            .then(() => done())
+            .catch(done);
     });
 
     it('should return empty listing when no objects in bucket', done => {
@@ -121,12 +140,17 @@ runIfMongo('Search when no objects in bucket', () => {
 
 runIfMongo('Invalid regular expression searches', () => {
     const bucketName = `badregex-${Date.now()}`;
+    
     before(done => {
-        s3Client.createBucket({ Bucket: bucketName }, done);
+        s3Client.send(new CreateBucketCommand({ Bucket: bucketName }))
+            .then(() => done())
+            .catch(done);
     });
 
     after(done => {
-        s3Client.deleteBucket({ Bucket: bucketName }, done);
+        s3Client.send(new DeleteBucketCommand({ Bucket: bucketName }))
+            .then(() => done())
+            .catch(done);
     });
 
     it('should return error if pattern is invalid', done => {

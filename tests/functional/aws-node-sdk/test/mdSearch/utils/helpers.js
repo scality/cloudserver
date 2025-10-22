@@ -1,17 +1,27 @@
 const assert = require('assert');
 const async = require('async');
+const {
+    ListObjectsCommand,
+    ListObjectVersionsCommand,
+    DeleteObjectsCommand,
+} = require('@aws-sdk/client-s3');
 
 function _deleteVersionList(s3Client, versionList, bucket, callback) {
     if (versionList === undefined || versionList.length === 0) {
         return callback();
     }
-    const params = { Bucket: bucket, Delete: { Objects: [] } };
-    versionList.forEach(version => {
-        params.Delete.Objects.push({
-            Key: version.Key, VersionId: version.VersionId });
-    });
-
-    return s3Client.deleteObjects(params, callback);
+    const params = {
+        Bucket: bucket,
+        Delete: {
+            Objects: versionList.map(version => ({
+                Key: version.Key,
+                VersionId: version.VersionId,
+            })),
+        },
+    };
+    return s3Client.send(new DeleteObjectsCommand(params))
+        .then(() => callback())
+        .catch(callback);
 }
 
 const testUtils = {};
@@ -21,62 +31,94 @@ testUtils.runIfMongo = process.env.S3METADATA === 'mongodb' ?
 
 testUtils.runAndCheckSearch = (s3Client, bucketName, encodedSearch, listVersions,
     testResult, done) => {
-    let searchRequest;
-    if (listVersions) {
-        searchRequest = s3Client.listObjectVersions({ Bucket: bucketName });
-        searchRequest.on('build', () => {
-            searchRequest.httpRequest.path =
-                `/${bucketName}?search=${encodedSearch}&&versions`;
-        });
-        searchRequest.on('success', res => {
-            if (testResult) {
-                assert.notStrictEqual(res.data.Versions[0].VersionId, undefined);
-                if (Array.isArray(testResult)) {
-                    assert.strictEqual(res.data.Versions.length, testResult.length);
-                    async.forEachOf(testResult, (expected, i, next) => {
-                        assert.strictEqual(res.data.Versions[i].Key, expected);
-                        next();
-                    });
+    const makeRequest = async () => {
+        try {
+            const input = { 
+                Bucket: bucketName,
+            };
+            
+            let command;
+            if (listVersions) {
+                command = new ListObjectVersionsCommand(input);
+            } else {
+                command = new ListObjectsCommand(input);
+            }
+            
+            // Add middleware to inject the search query parameter
+            // SDK v3 automatically encodes query parameters, so we decode first to avoid double-encoding
+            command.middlewareStack.add(
+                next => async args => {
+                    if (!args.request.query) {
+                        // eslint-disable-next-line no-param-reassign
+                        args.request.query = {};
+                    }
+                    // Decode the already-encoded search string since SDK v3 will encode it again
+                    // eslint-disable-next-line no-param-reassign
+                    args.request.query.search = decodeURIComponent(encodedSearch);
+                    if (listVersions) {
+                        // eslint-disable-next-line no-param-reassign
+                        args.request.query.versions = '';
+                    }
+                    
+                    return next(args);
+                },
+                {
+                    step: 'build',
+                    name: 'addSearchQuery',
+                }
+            );
+            
+            const res = await s3Client.send(command);
+            
+            if (listVersions) {
+                if (testResult) {
+                    assert.notStrictEqual(res.Versions[0].VersionId, undefined);
+                    if (Array.isArray(testResult)) {
+                        assert.strictEqual(res.Versions.length, testResult.length);
+                        async.forEachOf(testResult, (expected, i, next) => {
+                            assert.strictEqual(res.Versions[i].Key, expected);
+                            next();
+                        }, done);
+                        return;
+                    } else {
+                        assert(res.Versions[0], 'should be Contents listed');
+                        assert.strictEqual(res.Versions[0].Key, testResult);
+                        assert.strictEqual(res.Versions.length, 1);
+                    }
                 } else {
-                    assert(res.data.Versions[0], 'should be Contents listed');
-                    assert.strictEqual(res.data.Versions[0].Key, testResult);
-                    assert.strictEqual(res.data.Versions.length, 1);
+                    assert.strictEqual(res.Versions.length, 0);
                 }
             } else {
-                assert.strictEqual(res.data.Versions.length, 0);
+                if (testResult && typeof testResult === 'object' && testResult.code) {
+                    // This was expected to be an error, but we got success
+                    done(new Error('Expected error but got success'));
+                }
+                if (testResult) {
+                    assert(res.Contents[0], 'should be Contents listed');
+                    assert.strictEqual(res.Contents[0].Key, testResult);
+                    assert.strictEqual(res.Contents.length, 1);
+                } else {
+                    assert.strictEqual(res.Contents?.length, undefined);
+                }
             }
-            return done();
-        });
-    } else {
-        searchRequest = s3Client.listObjects({ Bucket: bucketName });
-        searchRequest.on('build', () => {
-            searchRequest.httpRequest.path =
-                `/${bucketName}?search=${encodedSearch}`;
-        });
-        searchRequest.on('success', res => {
-            if (testResult) {
-                assert(res.data.Contents[0], 'should be Contents listed');
-                assert.strictEqual(res.data.Contents[0].Key, testResult);
-                assert.strictEqual(res.data.Contents.length, 1);
-            } else {
-                assert.strictEqual(res.data.Contents.length, 0);
+            done();
+        } catch (err) {
+            if (testResult && typeof testResult === 'object' && testResult.code) {
+                assert.strictEqual(err.name, testResult.code);
+                assert.strictEqual(err.message, testResult.message);
+                done();
             }
-            return done();
-        });
-    }
-    searchRequest.on('error', err => {
-        if (testResult) {
-            assert.strictEqual(err.code, testResult.code);
-            assert.strictEqual(err.message, testResult.message);
+            done(err);
         }
-        return done();
-    });
-    searchRequest.send();
+    };
+    makeRequest();
 };
 
 testUtils.removeAllVersions = (s3Client, bucket, callback) => {
     async.waterfall([
-        cb => s3Client.listObjectVersions({ Bucket: bucket }, cb),
+        cb => s3Client.send(new ListObjectVersionsCommand({ Bucket: bucket }))
+            .then(data => cb(null, data))
+            .catch(cb),
         (data, cb) => _deleteVersionList(s3Client, data.DeleteMarkers, bucket,
             err => cb(err, data)),
         (data, cb) => _deleteVersionList(s3Client, data.Versions, bucket,
@@ -88,7 +130,7 @@ testUtils.removeAllVersions = (s3Client, bucket, callback) => {
                     KeyMarker: data.NextKeyMarker,
                     VersionIdMarker: data.NextVersionIdMarker,
                 };
-                return this.removeAllVersions(params, cb);
+                return testUtils.removeAllVersions(s3Client, params, cb);
             }
             return cb();
         },
