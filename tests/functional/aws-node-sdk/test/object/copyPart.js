@@ -580,7 +580,7 @@ describe('Object Part Copy', () => {
                 });
             });
 
-            it.only('should not corrupt object if overwriting an existing part by copying a part ' +
+            it('should not corrupt object if overwriting an existing part by copying a part ' +
             'while the MPU is being completed', async () => {
                 const finalObjETag = '"db77ebbae9e9f5a244a26b86193ad818-1"';
                 process.stdout.write('Putting first part in MPU test"');
@@ -621,20 +621,8 @@ describe('Object Part Copy', () => {
                             },
                         }).promise()
                         .catch(async err => {
-                            // The completeMPU delete part in a 2 steps
-                            // (first mark it as deletion with `delete: true` in Mongo, then delete it).
-                            // At the same time, the uploadPartCopy update the same data in Mongo.
-                            // In that case, the completeMPU fail with an InternalError (DeleteConflict in the logs)
                             const raceConditionOccurred = err?.code === 'InternalError'
                                 && err?.message === 'conflict deleting MPU parts metadata';
-
-                            console.info({
-                                raceConditionOccurred,
-                                err,
-                                message: err?.message,
-                                description: err.description,
-                                code: err?.code,
-                            });
 
                             if (raceConditionOccurred) {
                                 return Promise.resolve(null);
