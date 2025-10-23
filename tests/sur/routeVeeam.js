@@ -383,6 +383,111 @@ function makeVeeamRequest(params, callback) {
                 return done();
             }));
         });
+
+        it('GET capacity.xml should return 200 when scubaclient returns 404 (post-install scenario)', done => {
+            // This test simulates the post-install scenario where scubaclient returns 404
+            // because no metrics are available yet. By not calling scuba.incrementBytesForBucket,
+            // the mock scuba server will return 404 for this bucket.
+            
+            async.waterfall([
+                next => makeVeeamRequest({
+                    method: 'PUT',
+                    bucket: TEST_BUCKET,
+                    objectKey: '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml',
+                    headers: {
+                        'content-length': testCapacity.length,
+                        'content-md5': testCapacityMd5,
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: veeamAuthCredentials,
+                    requestBody: testCapacity,
+                }, (err, response) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    assert.strictEqual(response.statusCode, 200);
+                    return next();
+                }),
+                next => makeVeeamRequest({
+                    method: 'GET',
+                    bucket: TEST_BUCKET,
+                    objectKey: '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml',
+                    headers: {
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: veeamAuthCredentials,
+                }, (err, response) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    // Critical assertion: for 404 from scubaclient (no metrics yet),
+                    // should return 200 with static capacity data (Used=0)
+                    assert.strictEqual(response.statusCode, 200,
+                        'should return 200 when scubaclient returns 404 (no metrics available)');
+                    // Should return capacity.xml with static data
+                    assert(response.body.includes('<CapacityInfo>'),
+                        'should return capacity.xml content');
+                    assert(response.body.includes('<Used>0</Used>'),
+                        'Used should be 0 from static bucket metadata');
+                    return next();
+                }),
+            ], err => {
+                assert.ifError(err);
+                return done();
+            });
+        });
+
+        it('GET system.xml should return 200 even when scubaclient is down', done => {
+            // system.xml doesn't use scubaclient, so it should always work
+            // This test stops scuba to verify system.xml is independent of utilization metrics
+            async.waterfall([
+                next => makeVeeamRequest({
+                    method: 'PUT',
+                    bucket: TEST_BUCKET,
+                    objectKey: '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml',
+                    headers: {
+                        'content-length': testSystem.length,
+                        'content-md5': testSystemMd5,
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: veeamAuthCredentials,
+                    requestBody: testSystem,
+                }, (err, response) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    assert.strictEqual(response.statusCode, 200);
+                    return next();
+                }),
+                next => {
+                    // Stop scuba - system.xml should still work
+                    scuba.stop();
+                    return next();
+                },
+                next => makeVeeamRequest({
+                    method: 'GET',
+                    bucket: TEST_BUCKET,
+                    objectKey: '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml',
+                    headers: {
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: veeamAuthCredentials,
+                }, (err, response) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    assert.strictEqual(response.statusCode, 200,
+                        'system.xml should always return 200 even when scuba is down');
+                    assert.strictEqual(response.body.replaceAll(' ', ''), testSystem.replaceAll(' ', ''));
+                    return next();
+                }),
+            ], err => {
+                // Restart scuba for subsequent tests
+                scuba.start();
+                assert.ifError(err);
+                return done();
+            });
+        });
     });
 
     describe('veeam DELETE routes:', () => {
