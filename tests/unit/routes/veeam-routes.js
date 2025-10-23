@@ -7,6 +7,9 @@ const UtilizationService = require('../../../lib/utilization/instance');
 const metadata = require('../../../lib/metadata/wrapper');
 const { DummyRequestLogger } = require('../helpers');
 
+// Helper function to give async callbacks time to execute
+const giveAsyncCallbackTimeToExecute = setImmediate;
+
 describe('Veeam routes - comprehensive unit tests', () => {
     let utilizationStub;
     let metadataStub;
@@ -111,8 +114,7 @@ describe('Veeam routes - comprehensive unit tests', () => {
 
         getVeeamFile(request, response, bucketMd, log);
 
-        // Give async callback time to execute
-        setImmediate(() => {
+        giveAsyncCallbackTimeToExecute(() => {
             assert(logWarnSpy.calledOnce, 'log.warn should have been called once');
             const warnCall = logWarnSpy.getCall(0);
             assert(warnCall.args[0].includes('UtilizationService returned 404'),
@@ -137,8 +139,7 @@ describe('Veeam routes - comprehensive unit tests', () => {
 
         getVeeamFile(request, response, bucketMd, log);
 
-        setImmediate(() => {
-            // For 500 errors, we should return error to client
+        giveAsyncCallbackTimeToExecute(() => {
             assert(response.headersSent || response.write.called || response.writeHead.called,
                 'should send error response for 500 errors');
             done();
@@ -155,8 +156,7 @@ describe('Veeam routes - comprehensive unit tests', () => {
 
         getVeeamFile(request, response, bucketMd, log);
 
-        setImmediate(() => {
-            // For connection errors, we should return error to client
+        giveAsyncCallbackTimeToExecute(() => {
             assert(response.headersSent || response.write.called || response.writeHead.called,
                 'should send error response for connection errors');
             done();
@@ -174,7 +174,7 @@ describe('Veeam routes - comprehensive unit tests', () => {
 
         getVeeamFile(request, response, bucketMd, log);
 
-        setImmediate(() => {
+        giveAsyncCallbackTimeToExecute(() => {
             assert(!logWarnSpy.called, 'log.warn should not have been called');
             assert(response.writeHead.calledWith(200), 'should return 200 with metrics');
             assert(utilizationStub.calledOnce, 'should call UtilizationService once');
@@ -223,17 +223,11 @@ describe('Veeam routes - comprehensive unit tests', () => {
 
         getVeeamFile(request, response, bucketMd, log);
 
-        setImmediate(() => {
-            // Verify we logged a warning
+        giveAsyncCallbackTimeToExecute(() => {
             assert(logWarnSpy.calledOnce, 'should log warning for 404');
-            
-            // The critical assertion: for 404, we should return 200 with static capacity data
             assert(response.writeHead.calledWith(200),
                 'should return 200 with static capacity data for 404');
-            
             assert(response.end.called, 'response should be ended');
-            
-            // Verify it's specifically handling 404 gracefully
             const warnCall = logWarnSpy.getCall(0);
             assert(warnCall.args[0].includes('404'), 'warning should mention 404');
             
@@ -250,8 +244,7 @@ describe('Veeam routes - comprehensive unit tests', () => {
 
         getVeeamFile(request, response, bucketMd, log);
 
-        setImmediate(() => {
-            // Metadata errors are returned via responseXMLBody
+        giveAsyncCallbackTimeToExecute(() => {
             assert(response.headersSent || response.write.called || response.writeHead.called,
                 'should send response for metadata errors');
             done();
@@ -265,7 +258,7 @@ describe('Veeam routes - comprehensive unit tests', () => {
 
         getVeeamFile(request, response, bucketMd, log);
 
-        setImmediate(() => {
+        giveAsyncCallbackTimeToExecute(() => {
             assert(response.writeHead.calledWith(200),
                 'should return 200 for tagging query');
             assert(response.end.called, 'response should be ended');
@@ -365,7 +358,7 @@ describe('Veeam routes - HEAD request UtilizationService error handling', () => 
 
         headVeeamFile(request, response, bucketMdWithSystem, log);
 
-        setImmediate(() => {
+        giveAsyncCallbackTimeToExecute(() => {
             assert(response.setHeader.called, 'should set headers');
             assert(response.end.called, 'response should be ended');
             done();
@@ -378,7 +371,7 @@ describe('Veeam routes - HEAD request UtilizationService error handling', () => 
 
         headVeeamFile(request, response, bucketMd, log);
 
-        setImmediate(() => {
+        giveAsyncCallbackTimeToExecute(() => {
             assert(response.setHeader.called, 'should set headers');
             assert(response.end.called, 'response should be ended');
             done();
@@ -397,7 +390,7 @@ describe('Veeam routes - HEAD request UtilizationService error handling', () => 
 
         headVeeamFile(request, response, bucketMdWithoutVeeam, log);
 
-        setImmediate(() => {
+        giveAsyncCallbackTimeToExecute(() => {
             // HEAD should return 404 via headers, not body
             assert(response.end.called, 'response should be ended');
             done();
@@ -493,7 +486,7 @@ describe('Veeam routes - LIST request handling', () => {
 
         listVeeamFiles(request, response, bucketMd, log);
 
-        setImmediate(() => {
+        giveAsyncCallbackTimeToExecute(() => {
             assert(response.writeHead.calledWith(200), 'should return 200');
             assert(response.end.called, 'response should be ended');
             done();
@@ -506,7 +499,7 @@ describe('Veeam routes - LIST request handling', () => {
 
         listVeeamFiles(request, response, bucketMd, log);
 
-        setImmediate(() => {
+        giveAsyncCallbackTimeToExecute(() => {
             assert(response.writeHead.calledWith(200), 'should return 200 for versions query');
             assert(response.end.called, 'response should be ended');
             done();
@@ -519,7 +512,7 @@ describe('Veeam routes - LIST request handling', () => {
 
         listVeeamFiles(request, response, bucketMd, log);
 
-        setImmediate(() => {
+        giveAsyncCallbackTimeToExecute(() => {
             // Should return error for invalid query parameter
             assert(response.end.called, 'response should be ended');
             done();
@@ -532,8 +525,8 @@ describe('Veeam routes - LIST request handling', () => {
 
         listVeeamFiles(request, response, null, log);
 
-        setImmediate(() => {
-            // Should return NoSuchBucket error
+        giveAsyncCallbackTimeToExecute(() => {
+            assert(response.writeHead.calledWith(404), 'should return 404');
             assert(response.end.called, 'response should be ended');
             done();
         });
@@ -559,7 +552,7 @@ describe('Veeam routes - LIST request handling', () => {
 
         listVeeamFiles(request, response, bucketMdOnlySystem, log);
 
-        setImmediate(() => {
+        giveAsyncCallbackTimeToExecute(() => {
             assert(response.writeHead.calledWith(200), 'should return 200');
             assert(response.end.called, 'response should be ended');
             done();
