@@ -2,6 +2,8 @@ const assert = require('assert');
 const http = require('http');
 const https = require('https');
 const url = require('url');
+const { CreateBucketCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -121,17 +123,19 @@ describeSkipIfE2E('PUT public object with 100-continue header', () => {
         let continueRequest;
         const invalidSignedURL = `/${bucket}/${key}`;
 
-        beforeEach(() => {
+        beforeEach(async () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             const params = {
                 Bucket: bucket,
                 Key: key,
+                'Content-Length': 0,
             };
-            const signedUrl = s3.getSignedUrl('putObject', params);
+            const command = new PutObjectCommand(params);
+            const signedUrl = await getSignedUrl(s3, command);
             const { path } = url.parse(signedUrl);
             continueRequest = new ContinueRequestHandler(path);
-            return s3.createBucket({ Bucket: bucket }).promise();
+            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
         });
 
         afterEach(() =>

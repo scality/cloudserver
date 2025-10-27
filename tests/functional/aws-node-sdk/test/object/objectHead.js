@@ -3,10 +3,22 @@ const assert = require('assert');
 const async = require('async');
 const { errorInstances } = require('arsenal');
 const moment = require('moment');
+const {
+    HeadObjectCommand,
+    PutObjectCommand,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    GetObjectCommand,
+    ListObjectVersionsCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    CompleteMultipartUploadCommand,
+} = require('@aws-sdk/client-s3');
 
 const changeObjectLock = require('../../../../utilities/objectLock-util');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
+const checkError = require('../../lib/utility/checkError');
 
 const changeLockPromise = promisify(changeObjectLock);
 
@@ -19,19 +31,14 @@ function checkNoError(err) {
         `Expected success, got error ${JSON.stringify(err)}`);
 }
 
-function checkError(err, code) {
-    assert.notEqual(err, null, 'Expected failure but got success');
-    assert.strictEqual(err.code, code);
-}
-
 function dateFromNow(diff) {
     const d = new Date();
     d.setHours(d.getHours() + diff);
-    return d.toISOString();
+    return d;
 }
 
 function dateConvert(d) {
-    return (new Date(d)).toISOString();
+    return new Date(d);
 }
 
 describe('HEAD object, conditions', () => {
@@ -49,7 +56,7 @@ describe('HEAD object, conditions', () => {
                 bucketUtil.deleteOne(bucketName)
             )
             .catch(err => {
-                if (err.code !== 'NoSuchBucket') {
+                if (err.name !== 'NoSuchBucket') {
                     process.stdout.write(`${err}\n`);
                     throw err;
                 }
@@ -58,21 +65,22 @@ describe('HEAD object, conditions', () => {
         });
 
         function requestHead(fields, cb) {
-            s3.headObject(Object.assign({
+            s3.send(new HeadObjectCommand(Object.assign({
                 Bucket: bucketName,
                 Key: objectName,
-            }, fields), cb);
+            }, fields))).then(res => cb(null, res)).catch(cb);
         }
 
-        beforeEach(() => s3.putObject({
+        beforeEach(() => s3.send(new PutObjectCommand({
             Bucket: bucketName,
             Key: objectName,
             Body: 'I am the best content ever',
-        }).promise().then(res => {
+        }))
+        .then(res => {
             etag = res.ETag;
             etagTrim = etag.substring(1, etag.length - 1);
-            return s3.headObject(
-                { Bucket: bucketName, Key: objectName }).promise();
+            return s3.send(new HeadObjectCommand(
+                { Bucket: bucketName, Key: objectName }));
         }).then(res => {
             lastModified = res.LastModified;
         }));
@@ -127,7 +135,7 @@ describe('HEAD object, conditions', () => {
         it('If-Match: returns PreconditionFailed when ETag does not match',
             done => {
                 requestHead({ IfMatch: 'non-matching ETag' }, err => {
-                    checkError(err, errorInstances.PreconditionFailed.code);
+                    assert.equal(err.$metadata.httpStatusCode, 412);
                     done();
                 });
             });
@@ -153,7 +161,7 @@ describe('HEAD object, conditions', () => {
             'quotes around ETag',
             done => {
                 requestHead({ IfNoneMatch: etag }, err => {
-                    checkError(err, 'NotModified');
+                    assert.equal(err.$metadata.httpStatusCode, 304);
                     done();
                 });
             });
@@ -164,7 +172,7 @@ describe('HEAD object, conditions', () => {
                 requestHead({
                     IfNoneMatch: `non-matching,${etag}`,
                 }, err => {
-                    checkError(err, 'NotModified');
+                    assert.equal(err.$metadata.httpStatusCode, 304);
                     done();
                 });
             });
@@ -173,7 +181,7 @@ describe('HEAD object, conditions', () => {
             'double quotes around ETag',
             done => {
                 requestHead({ IfNoneMatch: etagTrim }, err => {
-                    checkError(err, 'NotModified');
+                    assert.equal(err.$metadata.httpStatusCode, 304);
                     done();
                 });
             });
@@ -184,7 +192,7 @@ describe('HEAD object, conditions', () => {
                 requestHead({
                     IfNoneMatch: `non-matching,${etagTrim}`,
                 }, err => {
-                    checkError(err, 'NotModified');
+                    assert.equal(err.$metadata.httpStatusCode, 304);
                     done();
                 });
             });
@@ -206,7 +214,7 @@ describe('HEAD object, conditions', () => {
             done => {
                 requestHead({ IfModifiedSince: dateFromNow(1) },
                     err => {
-                        checkError(err, 'NotModified');
+                        checkError(err, errorInstances.NotModified.code);
                         done();
                     });
             });
@@ -216,7 +224,7 @@ describe('HEAD object, conditions', () => {
             done => {
                 requestHead({ IfModifiedSince: dateConvert(lastModified) },
                     err => {
-                        checkError(err, 'NotModified');
+                        assert.equal(err.$metadata.httpStatusCode, 304);
                         done();
                     });
             });
@@ -244,7 +252,7 @@ describe('HEAD object, conditions', () => {
             'lastModified date is lesser',
             done => {
                 requestHead({ IfUnmodifiedSince: dateFromNow(-1) }, err => {
-                    checkError(err, errorInstances.PreconditionFailed.code);
+                    assert.equal(err.$metadata.httpStatusCode, 412);
                     done();
                 });
             });
@@ -276,7 +284,7 @@ describe('HEAD object, conditions', () => {
                 IfMatch: 'non-matching',
                 IfUnmodifiedSince: dateFromNow(-1),
             }, err => {
-                checkError(err, errorInstances.PreconditionFailed.code);
+                assert.equal(err.$metadata.httpStatusCode, 412);
                 done();
             });
         });
@@ -286,7 +294,7 @@ describe('HEAD object, conditions', () => {
                 IfMatch: 'non-matching',
                 IfUnmodifiedSince: dateFromNow(1),
             }, err => {
-                checkError(err, errorInstances.PreconditionFailed.code);
+                assert.equal(err.$metadata.httpStatusCode, 412);
                 done();
             });
         });
@@ -318,7 +326,7 @@ describe('HEAD object, conditions', () => {
                 IfMatch: 'non-matching',
                 IfModifiedSince: dateFromNow(1),
             }, err => {
-                checkError(err, errorInstances.PreconditionFailed.code);
+                assert.equal(err.$metadata.httpStatusCode, 412);
                 done();
             });
         });
@@ -328,7 +336,7 @@ describe('HEAD object, conditions', () => {
                 IfMatch: 'non-matching',
                 IfModifiedSince: dateFromNow(-1),
             }, err => {
-                checkError(err, errorInstances.PreconditionFailed.code);
+                assert.equal(err.$metadata.httpStatusCode, 412);
                 done();
             });
         });
@@ -340,7 +348,7 @@ describe('HEAD object, conditions', () => {
                     IfNoneMatch: etagTrim,
                     IfModifiedSince: dateFromNow(-1),
                 }, err => {
-                    checkError(err, 'NotModified');
+                    assert.equal(err.$metadata.httpStatusCode, 304);
                     done();
                 });
             });
@@ -350,7 +358,7 @@ describe('HEAD object, conditions', () => {
                 IfNoneMatch: etagTrim,
                 IfModifiedSince: dateFromNow(1),
             }, err => {
-                checkError(err, 'NotModified');
+                assert.equal(err.$metadata.httpStatusCode, 304);
                 done();
             });
         });
@@ -372,7 +380,7 @@ describe('HEAD object, conditions', () => {
                 IfNoneMatch: 'non-matching',
                 IfModifiedSince: dateFromNow(1),
             }, err => {
-                checkError(err, 'NotModified');
+                assert.equal(err.$metadata.httpStatusCode, 304);
                 done();
             });
         });
@@ -392,7 +400,7 @@ describe('HEAD object, conditions', () => {
                 IfNoneMatch: 'non-matching',
                 IfUnmodifiedSince: dateFromNow(-1),
             }, err => {
-                checkError(err, errorInstances.PreconditionFailed.code);
+                assert.equal(err.$metadata.httpStatusCode, 412);
                 done();
             });
         });
@@ -402,7 +410,7 @@ describe('HEAD object, conditions', () => {
                 IfNoneMatch: etagTrim,
                 IfUnmodifiedSince: dateFromNow(1),
             }, err => {
-                checkError(err, 'NotModified');
+                assert.equal(err.$metadata.httpStatusCode, 304);
                 done();
             });
         });
@@ -412,7 +420,7 @@ describe('HEAD object, conditions', () => {
                 IfNoneMatch: etagTrim,
                 IfUnmodifiedSince: dateFromNow(-1),
             }, err => {
-                checkError(err, errorInstances.PreconditionFailed.code);
+                assert.equal(err.$metadata.httpStatusCode, 412);
                 done();
             });
         });
@@ -428,13 +436,11 @@ describe('HEAD object, conditions', () => {
                 Bucket: bucketName,
                 Key: 'redir_present',
             };
-            s3.putObject(redirBktwBody, err => {
-                checkNoError(err);
-                s3.headObject(redirBkt, (err, data) => {
-                    checkNoError(err);
+            s3.send(new PutObjectCommand(redirBktwBody)).then(() => {
+                s3.send(new HeadObjectCommand(redirBkt)).then(data => {
                     assert.strictEqual(data.WebsiteRedirectLocation,
                             'http://google.com');
-                    return done();
+                    done();
                 });
             });
         });
@@ -450,10 +456,8 @@ describe('HEAD object, conditions', () => {
                 Bucket: bucketName,
                 Key: objectName,
             };
-            s3.putObject(mockPutObjectParams, err => {
-                checkNoError(err);
-                s3.headObject(mockHeadObjectParams, (err, data) => {
-                    checkNoError(err);
+            s3.send(new PutObjectCommand(mockPutObjectParams)).then(() => {
+                s3.send(new HeadObjectCommand(mockHeadObjectParams)).then(data => {
                     assert.strictEqual(data.AcceptRanges, 'bytes');
                     done();
                 });
@@ -483,29 +487,29 @@ describe('HEAD object, conditions', () => {
         'multipart object', done => {
             const mpuKey = 'mpukey';
             async.waterfall([
-                next => s3.createMultipartUpload({
+                next => s3.send(new CreateMultipartUploadCommand({
                     Bucket: bucketName,
                     Key: mpuKey,
-                }, next),
+                })).then(data => next(null, data)).catch(next),
                 (data, next) => {
                     const uploadId = data.UploadId;
-                    s3.uploadPart({
+                    s3.send(new UploadPartCommand({
                         Bucket: bucketName,
                         Key: mpuKey,
                         UploadId: uploadId,
                         PartNumber: 1,
                         Body: Buffer.alloc(partSize).fill('a'),
-                    }, (err, data) => next(err, uploadId, data.ETag));
+                    })).then(data => next(null, uploadId, data.ETag)).catch(next);
                 },
-                (uploadId, etagOne, next) => s3.uploadPart({
+                (uploadId, etagOne, next) => s3.send(new UploadPartCommand({
                     Bucket: bucketName,
                     Key: mpuKey,
                     UploadId: uploadId,
                     PartNumber: 2,
                     Body: Buffer.alloc(partSize).fill('z'),
-                }, (err, data) => next(err, uploadId, etagOne, data.ETag)),
+                })).then(data => next(null, uploadId, etagOne, data.ETag)).catch(next),
                 (uploadId, etagOne, etagTwo, next) =>
-                s3.completeMultipartUpload({
+                s3.send(new CompleteMultipartUploadCommand({
                     Bucket: bucketName,
                     Key: mpuKey,
                     UploadId: uploadId,
@@ -518,15 +522,14 @@ describe('HEAD object, conditions', () => {
                             ETag: etagTwo,
                         }],
                     },
-                }, next),
+                })).then(data => next(null, data)).catch(next),
             ], err => {
                 assert.ifError(err);
-                s3.headObject({
+                s3.send(new HeadObjectCommand({
                     Bucket: bucketName,
                     Key: mpuKey,
                     PartNumber: 1,
-                }, (err, data) => {
-                    assert.ifError(err);
+                })).then(data => {
                     assert.strictEqual(data.PartsCount, 2);
                     done();
                 });
@@ -544,12 +547,12 @@ describeSkipIfCeph('HEAD object with object lock', () => {
         const s3 = bucketUtil.s3;
         const bucket = 'bucket-with-lock';
         const key = 'object-with-lock';
-        const formatDate = date => date.toString().slice(0, 20);
-        const mockDate = moment().add(1, 'days').toISOString();
+        const formatDate = date => moment(date).format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
+        const mockDate = moment().add(1, 'days');
         const mockMode = 'GOVERNANCE';
         let versionId;
 
-        beforeEach(() => {
+        beforeEach(async () => {
             const params = {
                 Bucket: bucket,
                 Key: key,
@@ -557,23 +560,20 @@ describeSkipIfCeph('HEAD object with object lock', () => {
                 ObjectLockMode: mockMode,
                 ObjectLockLegalHoldStatus: 'ON',
             };
-            return s3.createBucket({
+            await s3.send(new CreateBucketCommand({
                 Bucket: bucket,
                 ObjectLockEnabledForBucket: true,
-            }).promise()
-            .then(() => s3.putObject(params).promise())
-            .then(() => s3.getObject({ Bucket: bucket, Key: key }).promise())
-            /* eslint-disable no-return-assign */
-            .then(res => versionId = res.VersionId)
-            .catch(err => {
-                process.stdout.write('Error in before\n');
-                throw err;
-            });
+            }));
+            await s3.send(new PutObjectCommand(params));
+            const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+             
+            versionId = res.VersionId;
         });
 
-        afterEach(() => changeLockPromise([{ bucket, key, versionId }], '')
-            .then(() => s3.listObjectVersions({ Bucket: bucket }).promise())
-            .then(res => res.Versions.forEach(object => {
+        afterEach(async () => {
+            await changeLockPromise([{ bucket, key, versionId }], '');
+            const res = await s3.send(new ListObjectVersionsCommand({ Bucket: bucket }));
+            res.Versions?.forEach(object => {
                 const params = [
                     {
                         bucket,
@@ -582,35 +582,26 @@ describeSkipIfCeph('HEAD object with object lock', () => {
                     },
                 ];
                 changeLockPromise(params, '');
-            }))
-            .then(() => {
-                process.stdout.write('Emptying and deleting buckets\n');
-                return bucketUtil.empty(bucket);
-            })
-            .then(() => s3.deleteBucket({ Bucket: bucket }).promise())
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
-            }));
-
-        it('should return object lock headers if set on the object', done => {
-            s3.headObject({ Bucket: bucket, Key: key }, (err, res) => {
-                assert.ifError(err);
-                assert.strictEqual(res.ObjectLockMode, mockMode);
-                const responseDate
-                    = formatDate(res.ObjectLockRetainUntilDate.toISOString());
-                const expectedDate = formatDate(mockDate);
-                assert.strictEqual(responseDate, expectedDate);
-                assert.strictEqual(res.ObjectLockLegalHoldStatus, 'ON');
-                const objectWithLock = [
-                    {
-                        bucket,
-                        key,
-                        versionId: res.VersionId,
-                    },
-                ];
-                changeObjectLock(objectWithLock, '', done);
             });
+            await bucketUtil.empty(bucket);
+            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+        });
+
+        it('should return object lock headers if set on the object', async () => {
+            const res = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+            assert.strictEqual(res.ObjectLockMode, mockMode);
+            const responseDate= formatDate(res.ObjectLockRetainUntilDate);
+            const expectedDate = formatDate(mockDate);
+            assert.strictEqual(responseDate, expectedDate);
+            assert.strictEqual(res.ObjectLockLegalHoldStatus, 'ON');
+            const objectWithLock = [
+                {
+                    bucket,
+                    key,
+                    versionId: res.VersionId,
+                },
+            ];
+            await changeLockPromise(objectWithLock, '');
         });
     });
 });
