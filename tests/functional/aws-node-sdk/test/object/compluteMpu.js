@@ -1,5 +1,10 @@
 const assert = require('assert');
-const { S3 } = require('aws-sdk');
+const {
+    S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    CompleteMultipartUploadCommand,
+} = require('@aws-sdk/client-s3');
 
 const getConfig = require('../support/config');
 
@@ -21,14 +26,16 @@ describe('aws-node-sdk test bucket complete mpu', () => {
     let s3;
 
     // setup test
-    before(done => {
+    before(async () => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3 = new S3(config);
-        s3.createBucket({ Bucket: bucket }, done);
+        s3 = new S3Client(config);
+        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
     });
 
     // delete bucket after testing
-    after(done => s3.deleteBucket({ Bucket: bucket }, done));
+    after(async () => {
+        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+    });
 
     const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
     itSkipIfAWS('should not accept xml body larger than 1 MB', done => {
@@ -40,15 +47,13 @@ describe('aws-node-sdk test bucket complete mpu', () => {
                 Parts: parts,
             },
         };
-        s3.completeMultipartUpload(params, error => {
-            if (error) {
-                assert.strictEqual(error.statusCode, 400);
-                assert.strictEqual(
-                    error.code, 'InvalidRequest');
-                done();
-            } else {
-                done('accepted xml body larger than 1 MB');
-            }
+        s3.send(new CompleteMultipartUploadCommand(params)).then(() => {
+            done('accepted xml body larger than 1 MB');
+        }).catch(error => {
+            assert.strictEqual(error.$metadata.httpStatusCode, 400);
+            assert.strictEqual(
+                error.name, 'InvalidRequest');
+            done();
         });
     });
 });
