@@ -47,7 +47,8 @@ describe('deleteBucketLifecycle API', () => {
         async.series([
             next => bucketPutLifecycle(authInfo, _makeRequest(true), log, next),
             next => bucketDeleteLifecycle(authInfo, _makeRequest(), log, next),
-            next => metadata.getBucket(bucketName, log, next),
+            // eslint-disable-next-line no-unused-vars
+            next => metadata.getBucket(bucketName, log, (err, bucket, raftSessionId) => next(err, bucket)),
         ], (err, results) => {
             assert.equal(err, null, `Expected success, got error: ${err}`);
             const bucket = results[2];

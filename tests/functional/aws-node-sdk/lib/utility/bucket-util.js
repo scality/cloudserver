@@ -57,8 +57,8 @@ class BucketUtility {
     }
 
     createMany(bucketNames) {
-        const promises = bucketNames.map(
-            bucketName => this.createOne(bucketName)
+        const promises = bucketNames.map(bucketName =>
+            this.createOne(bucketName),
         );
         return Promise.all(promises);
     }
@@ -79,8 +79,8 @@ class BucketUtility {
     }
 
     deleteMany(bucketNames) {
-        const promises = bucketNames.map(
-            bucketName => this.deleteOne(bucketName)
+        const promises = bucketNames.map(bucketName =>
+            this.deleteOne(bucketName),
         );
         return Promise.all(promises);
     }
@@ -142,17 +142,16 @@ class BucketUtility {
     }
     
     emptyIfExists(bucketName) {
-        return this.bucketExists(bucketName)
-            .then(exists => {
-                if (exists) {
-                    return this.empty(bucketName);
-                }
-                return undefined;
-            });
+        return this.bucketExists(bucketName).then(exists => {
+            if (exists) {
+                return this.empty(bucketName);
+            }
+            return undefined;
+        });
     }
     emptyManyIfExists(bucketNames) {
-        const promises = bucketNames.map(
-            bucketName => this.emptyIfExists(bucketName)
+        const promises = bucketNames.map(bucketName =>
+            this.emptyIfExists(bucketName),
         );
         return Promise.all(promises);
     }

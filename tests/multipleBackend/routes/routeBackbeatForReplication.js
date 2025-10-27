@@ -941,9 +941,7 @@ describe(`backbeat routes for replication (${name})`, () => {
         });
     });
 
-    // TODO fix and unskip by CLDSRV-632
-    const itSkipNotS3C = process.env.S3_END_TO_END ? it : it.skip;
-    itSkipNotS3C('should replicate/put metadata to a destination that has a null version', done => {
+    it('should replicate/put metadata to a destination that has a null version', done => {
         let objMD;
         let versionId;
 
@@ -959,6 +957,7 @@ describe(`backbeat routes for replication (${name})`, () => {
                 if (err) {
                     return next(err);
                 }
+
                 versionId = data.VersionId;
                 return next();
             }),
@@ -975,6 +974,7 @@ describe(`backbeat routes for replication (${name})`, () => {
                 if (err) {
                     return next(err);
                 }
+
                 objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
                 return next();
             }),
@@ -1017,7 +1017,7 @@ describe(`backbeat routes for replication (${name})`, () => {
         });
     });
 
-    itSkipNotS3C('should replicate/put metadata to a destination that has a suspended null version', done => {
+    it('should replicate/put metadata to a destination that has a suspended null version', done => {
         let objMD;
         let versionId;
 
@@ -1092,7 +1092,7 @@ describe(`backbeat routes for replication (${name})`, () => {
         });
     });
 
-    itSkipNotS3C('should replicate/put metadata to a destination that has a previously updated null version', done => {
+    it('should replicate/put metadata to a destination that has a previously updated null version', done => {
         let objMD;
         let objMDNull;
         let versionId;
@@ -1193,7 +1193,7 @@ describe(`backbeat routes for replication (${name})`, () => {
         });
     });
 
-    itSkipNotS3C(
+    it(
         'should replicate/put metadata to a destination that has a suspended null version with internal version',
     done => {
         const tagSet = [
@@ -1283,7 +1283,7 @@ describe(`backbeat routes for replication (${name})`, () => {
         });
     });
 
-    itSkipNotS3C('should mimic null version replication by crrExistingObjects, then replicate version', done => {
+    it('should mimic null version replication by crrExistingObjects, then replicate version', done => {
         let objMDNull;
         let objMDNullReplicated;
         let objMDVersion;
