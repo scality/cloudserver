@@ -1,17 +1,23 @@
 const assert = require('assert');
-const async = require('async');
 const fs = require('fs');
 const path = require('path');
 
-const { S3 } = require('aws-sdk');
+const {
+    S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketWebsiteCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+    PutBucketPolicyCommand,
+} = require('@aws-sdk/client-s3');
 
 const conf = require('../../../../../lib/Config').config;
 const getConfig = require('../support/config');
 const { WebsiteConfigTester } = require('../../lib/utility/website-util');
 
-const config = getConfig('default', { signatureVersion: 'v4' });
-const s3 = new S3(config);
-
+const config = getConfig('default');
+const s3 = new S3Client(config);
 // Note: To run these tests locally, you may need to edit the machine's
 // /etc/hosts file to include the following line:
 // `127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com`
@@ -90,9 +96,9 @@ describe('Head request on bucket website endpoint', () => {
     });
 
     describe('with existing bucket', () => {
-        beforeEach(done => s3.createBucket({ Bucket: bucket }, done));
+        beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
-        afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
+        afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
         it('should return 404 when no website configuration', done => {
             const expectedHeaders = {
@@ -105,32 +111,22 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('with existing configuration', () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, err => {
-                    assert.strictEqual(err,
-                        null, `Found unexpected err ${err}`);
-                    s3.putObject({ Bucket: bucket, Key: 'index.html',
-                        ACL: 'public-read',
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig }));
+                await s3.send(new PutObjectCommand({ Bucket: bucket, Key: 'index.html',
+                    ACL: 'public-read',
                         Body: fs.readFileSync(path.join(__dirname,
                             '/websiteFiles/index.html')),
                         ContentType: 'text/html',
                         Metadata: {
                             test: 'value',
                         },
-                    },
-                        err => {
-                            assert.strictEqual(err, null);
-                            done();
-                        });
-                });
+                    }));
             });
 
-            afterEach(done => {
-                s3.deleteObject({ Bucket: bucket, Key: 'index.html' },
-                err => done(err));
-            });
+            afterEach(() => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'index.html' })));
 
             it('should return indexDocument headers if no key ' +
                 'requested', done => {
@@ -145,14 +141,14 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('with path prefix in request with/without key', () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, err => {
-                    assert.strictEqual(err,
-                        null, `Found unexpected err ${err}`);
-                    s3.putObject({ Bucket: bucket,
-                        Key: 'pathprefix/index.html',
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig })).catch(err => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                });
+                await s3.send(new PutObjectCommand({ Bucket: bucket,
+                    Key: 'pathprefix/index.html',
                         ACL: 'public-read',
                         Body: fs.readFileSync(path.join(__dirname,
                             '/websiteFiles/index.html')),
@@ -160,15 +156,12 @@ describe('Head request on bucket website endpoint', () => {
                         Metadata: {
                             test: 'value',
                         },
-                    }, done);
-                });
+                    })).catch(err => {
+                        assert.strictEqual(err, null);
+                    });
             });
 
-            afterEach(done => {
-                s3.deleteObject({ Bucket: bucket, Key:
-                    'pathprefix/index.html' },
-                done);
-            });
+            afterEach(async () => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'pathprefix/index.html' })));
 
             it('should serve indexDocument if path request without key',
             done => {
@@ -185,24 +178,23 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('with private key', () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, err => {
-                    assert.strictEqual(err,
-                        null, `Found unexpected err ${err}`);
-                    s3.putObject({ Bucket: bucket,
-                        Key: 'index.html',
-                        ACL: 'private',
-                        Body: fs.readFileSync(path.join(__dirname,
-                            '/websiteFiles/index.html')),
-                        ContentType: 'text/html' }, done);
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig })).catch(err => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                });
+                await s3.send(new PutObjectCommand({ Bucket: bucket,
+                    Key: 'index.html',
+                    ACL: 'private',
+                    Body: fs.readFileSync(path.join(__dirname,
+                        '/websiteFiles/index.html')),
+                    ContentType: 'text/html' })).catch(err => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
                 });
             });
 
-            afterEach(done => {
-                s3.deleteObject({ Bucket: bucket, Key: 'index.html' }, done);
-            });
+            afterEach(() => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'index.html' })));
 
             it('should return 403 if key is private', done => {
                 const expectedHeaders = {
@@ -215,10 +207,10 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('with nonexisting index document key', () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig }));
             });
 
             it('should return 403 if nonexisting index document key', done => {
@@ -232,14 +224,16 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe(`redirect all requests to ${redirectEndpoint}`, () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const redirectAllTo = {
                     HostName: 'www.google.com',
                 };
                 const webConfig = new WebsiteConfigTester(null, null,
                   redirectAllTo);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig })).catch(err => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                });
             });
 
             it(`should redirect to ${redirectEndpoint}`, done => {
@@ -264,15 +258,17 @@ describe('Head request on bucket website endpoint', () => {
             // Note: these tests will all redirect to https even if
             // conf does not have https since protocol in website config
             // specifies https
-            beforeEach(done => {
+            beforeEach(async () => {
                 const redirectAllTo = {
                     HostName: 'www.google.com',
                     Protocol: 'https',
                 };
                 const webConfig = new WebsiteConfigTester(null, null,
                   redirectAllTo);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig })).catch(err => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                });
             });
 
             it('should redirect to https://google.com', done => {
@@ -293,25 +289,24 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('with custom error document', () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html',
                 'error.html');
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, err => {
-                    assert.strictEqual(err,
-                        null, `Found unexpected err ${err}`);
-                    s3.putObject({ Bucket: bucket,
-                        Key: 'error.html',
-                        ACL: 'public-read',
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig })).catch(err => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                });
+                await s3.send(new PutObjectCommand({ Bucket: bucket,
+                    Key: 'error.html',
+                    ACL: 'public-read',
                         Body: fs.readFileSync(path.join(__dirname,
                             '/websiteFiles/error.html')),
-                        ContentType: 'text/html' }, done);
+                        ContentType: 'text/html' })).catch(err => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
                 });
             });
 
-            afterEach(done => {
-                s3.deleteObject({ Bucket: bucket, Key: 'error.html' }, done);
-            });
+            afterEach(() => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'error.html' })));
 
             it('should return regular error headers regardless of whether ' +
                 'custom error document', done => {
@@ -325,7 +320,7 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('redirect to hostname with error code condition', () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
                     HttpErrorCodeReturnedEquals: '403',
@@ -334,8 +329,10 @@ describe('Head request on bucket website endpoint', () => {
                     HostName: 'www.google.com',
                 };
                 webConfig.addRoutingRule(redirect, condition);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig })).catch(err => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                });
             });
 
             it(`should redirect to ${redirectEndpoint} if error 403` +
@@ -349,7 +346,7 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('redirect to hostname with prefix condition', () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
                     KeyPrefixEquals: 'about/',
@@ -358,8 +355,10 @@ describe('Head request on bucket website endpoint', () => {
                     HostName: 'www.google.com',
                 };
                 webConfig.addRoutingRule(redirect, condition);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig })).catch(err => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                });
             });
 
             it(`should redirect to ${redirectEndpoint}about if ` +
@@ -374,7 +373,7 @@ describe('Head request on bucket website endpoint', () => {
 
         describe('redirect to hostname with prefix and error condition',
         () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
                     KeyPrefixEquals: 'about/',
@@ -384,8 +383,10 @@ describe('Head request on bucket website endpoint', () => {
                     HostName: 'www.google.com',
                 };
                 webConfig.addRoutingRule(redirect, condition);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig })).catch(err => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                });
             });
 
             it(`should redirect to ${redirectEndpoint} if ` +
@@ -399,7 +400,7 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('redirect with multiple redirect rules', () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const conditions = {
                     KeyPrefixEquals: 'about/',
@@ -412,8 +413,10 @@ describe('Head request on bucket website endpoint', () => {
                 };
                 webConfig.addRoutingRule(redirectOne, conditions);
                 webConfig.addRoutingRule(redirectTwo, conditions);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig })).catch(err => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                });
             });
 
             it('should redirect based on first rule', done => {
@@ -427,7 +430,7 @@ describe('Head request on bucket website endpoint', () => {
 
         describe('redirect with protocol',
         () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
                     KeyPrefixEquals: 'about/',
@@ -437,8 +440,10 @@ describe('Head request on bucket website endpoint', () => {
                     HostName: 'www.google.com',
                 };
                 webConfig.addRoutingRule(redirect, condition);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig })).catch(err => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                });
             });
 
             it('should redirect to https://www.google.com/about if ' +
@@ -452,7 +457,7 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('redirect to key using ReplaceKeyWith', () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
                     HttpErrorCodeReturnedEquals: '403',
@@ -461,14 +466,13 @@ describe('Head request on bucket website endpoint', () => {
                     ReplaceKeyWith: 'redirect.html',
                 };
                 webConfig.addRoutingRule(redirect, condition);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig })).catch(err => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                });
             });
 
-            afterEach(done => {
-                s3.deleteObject({ Bucket: bucket, Key: 'redirect.html' },
-                err => done(err));
-            });
+            afterEach(() => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'redirect.html' })));
 
             it('should redirect to specified file if 403 error ' +
                 'error occured', done => {
@@ -481,7 +485,7 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('redirect using ReplaceKeyPrefixWith', () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
                     HttpErrorCodeReturnedEquals: '403',
@@ -491,8 +495,10 @@ describe('Head request on bucket website endpoint', () => {
                     ReplaceKeyPrefixWith: 'about',
                 };
                 webConfig.addRoutingRule(redirect, condition);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig })).catch(err => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                });
             });
 
             it(`should redirect to ${redirectEndpoint}about if ` +
@@ -507,7 +513,7 @@ describe('Head request on bucket website endpoint', () => {
 
         describe('redirect requests with prefix /about to redirect/',
         () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
                     KeyPrefixEquals: 'about/',
@@ -516,14 +522,14 @@ describe('Head request on bucket website endpoint', () => {
                     ReplaceKeyPrefixWith: 'redirect/',
                 };
                 webConfig.addRoutingRule(redirect, condition);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig })).catch(err => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                });
             });
 
-            afterEach(done => {
-                s3.deleteObject({ Bucket: bucket, Key: 'redirect/index.html' },
-                err => done(err));
-            });
+            afterEach(async () => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'redirect/index.html' })));
+
 
             it('should redirect to "redirect/" object if key prefix is equal ' +
                 'to "about/"', done => {
@@ -537,7 +543,7 @@ describe('Head request on bucket website endpoint', () => {
 
         describe('redirect requests, with both prefix and error code ' +
             'condition', () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
                     KeyPrefixEquals: 'about/',
@@ -547,14 +553,13 @@ describe('Head request on bucket website endpoint', () => {
                     ReplaceKeyPrefixWith: 'redirect/',
                 };
                 webConfig.addRoutingRule(redirect, condition);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig })).catch(err => {
+                    assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                });
             });
 
-            afterEach(done => {
-                s3.deleteObject({ Bucket: bucket, Key: 'redirect/index.html' },
-                err => done(err));
-            });
+            afterEach(() => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'redirect/index.html' })));
 
             it('should redirect to "redirect" object if key prefix is equal ' +
                 'to "about/" and there is a 403 error satisfying the ' +
@@ -569,13 +574,11 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('object redirect to /', () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, err => {
-                    assert.strictEqual(err,
-                        null, `Found unexpected err ${err}`);
-                    s3.putObject({ Bucket: bucket, Key: 'index.html',
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig }));
+                await s3.send(new PutObjectCommand({ Bucket: bucket, Key: 'index.html',
                         ACL: 'public-read',
                         Body: fs.readFileSync(path.join(__dirname,
                             '/websiteFiles/index.html')),
@@ -584,18 +587,10 @@ describe('Head request on bucket website endpoint', () => {
                             test: 'value',
                         },
                         WebsiteRedirectLocation: '/',
-                    },
-                        err => {
-                            assert.strictEqual(err, null);
-                            done();
-                        });
-                });
+                    }));
             });
 
-            afterEach(done => {
-                s3.deleteObject({ Bucket: bucket, Key: 'index.html' },
-                err => done(err));
-            });
+            afterEach(() => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'index.html' })));
 
             it('should redirect to /', done => {
                 const expectedHeaders = {
@@ -607,48 +602,35 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('with bucket policy', () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, err => {
-                    assert.strictEqual(err,
-                        null, `Found unexpected err ${err}`);
-                    s3.putBucketPolicy({ Bucket: bucket, Policy: JSON.stringify(
-                        {
-                            Version: '2012-10-17',
-                            Statement: [{
-                                Sid: 'PublicReadGetObject',
-                                Effect: 'Allow',
-                                Principal: '*',
-                                Action: ['s3:GetObject'],
-                                Resource: [
-                                    `arn:aws:s3:::${bucket}/index.html`,
-                                    `arn:aws:s3:::${bucket}/access.html`,
-                                ],
-                            }],
-                        }
-                    ) }, err => {
-                        assert.strictEqual(err,
-                            null, `Found unexpected err ${err}`);
-                        s3.putObject({ Bucket: bucket, Key: 'index.html',
-                            Body: fs.readFileSync(path.join(__dirname,
-                                '/websiteFiles/index.html')),
-                            ContentType: 'text/html',
-                            Metadata: {
-                                test: 'value',
-                            } },
-                            err => {
-                                assert.strictEqual(err, null);
-                                done();
-                            });
-                    });
-                });
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig }));
+                await s3.send(new PutBucketPolicyCommand({ Bucket: bucket, Policy: JSON.stringify(
+                    {
+                        Version: '2012-10-17',
+                        Statement: [{
+                            Sid: 'PublicReadGetObject',
+                            Effect: 'Allow',
+                            Principal: '*',
+                            Action: ['s3:GetObject'],
+                            Resource: [
+                                `arn:aws:s3:::${bucket}/index.html`,
+                                `arn:aws:s3:::${bucket}/access.html`,
+                            ],
+                        }],
+                    }
+                )}));
+                await s3.send(new PutObjectCommand({ Bucket: bucket, Key: 'index.html',
+                        Body: fs.readFileSync(path.join(__dirname,
+                            '/websiteFiles/index.html')),
+                        ContentType: 'text/html',
+                        Metadata: {
+                            test: 'value',
+                }}));
             });
 
-            afterEach(done => {
-                s3.deleteObject({ Bucket: bucket, Key: 'index.html' },
-                err => done(err));
-            });
+            afterEach(() => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'index.html' })));
 
             it('should return indexDocument headers if no key ' +
                 'requested', done => {
@@ -678,7 +660,7 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('with routing rule on index', () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
                     KeyPrefixEquals: 'index.html',
@@ -687,30 +669,20 @@ describe('Head request on bucket website endpoint', () => {
                     ReplaceKeyWith: 'whatever.html',
                 };
                 webConfig.addRoutingRule(redirect, condition);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, err => {
-                    assert.strictEqual(err,
-                        null, `Found unexpected err ${err}`);
-                    s3.putObject({ Bucket: bucket, Key: 'index.html',
-                        ACL: 'public-read',
-                        Body: fs.readFileSync(path.join(__dirname,
-                            '/websiteFiles/index.html')),
-                        ContentType: 'text/html',
-                        Metadata: {
-                            test: 'value',
-                        },
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig }));
+                await s3.send(new PutObjectCommand({ Bucket: bucket, Key: 'index.html',
+                    ACL: 'public-read',
+                    Body: fs.readFileSync(path.join(__dirname,
+                        '/websiteFiles/index.html')),
+                    ContentType: 'text/html',
+                    Metadata: {
+                        test: 'value',
                     },
-                        err => {
-                            assert.strictEqual(err, null);
-                            done();
-                        });
-                });
+                }));
             });
 
-            afterEach(done => {
-                s3.deleteObject({ Bucket: bucket, Key: 'index.html' },
-                err => done(err));
-            });
+            afterEach(() => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'index.html' })));
 
             it('should not redirect if index key is not explicit', done => {
                 WebsiteConfigTester.makeHeadRequest(undefined, endpoint,
@@ -719,7 +691,7 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('without trailing / for recursive index check', () => {
-            beforeEach(done => {
+            beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const object = {
                     Bucket: bucket,
@@ -727,50 +699,41 @@ describe('Head request on bucket website endpoint', () => {
                     '/websiteFiles/index.html')),
                     ContentType: 'text/html',
                 };
-                async.waterfall([
-                    next => s3.putBucketWebsite({ Bucket: bucket,
-                        WebsiteConfiguration: webConfig }, next),
-                    (data, next) => s3.putBucketPolicy({ Bucket: bucket,
-                        Policy: JSON.stringify({
-                            Version: '2012-10-17',
-                            Statement: [{
-                                Sid: 'PublicReadGetObject',
-                                Effect: 'Allow',
-                                Principal: '*',
-                                Action: ['s3:GetObject'],
-                                Resource: [
-                                    `arn:aws:s3:::${bucket}/original_key_file`,
-                                    `arn:aws:s3:::${bucket}/original_key_nofile`,
-                                    `arn:aws:s3:::${bucket}/file/*`,
-                                    `arn:aws:s3:::${bucket}/nofile/*`,
-                                ],
-                            }],
-                        }),
-                    }, next),
-                    (data, next) => s3.putObject(Object.assign({}, object,
-                        { Key: 'original_key_file/index.html' }), next),
-                    (data, next) => s3.putObject(Object.assign({}, object,
-                        { Key: 'file/index.html' }), next), // the redirect 302
-                    (data, next) => s3.putObject(Object.assign({}, object,
-                        { Key: 'no_access_file/index.html' }), next),
-                ], err => {
-                    assert.ifError(err);
-                    done();
-                });
+                
+                await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig }));
+                await s3.send(new PutBucketPolicyCommand({ Bucket: bucket,
+                    Policy: JSON.stringify({
+                        Version: '2012-10-17',
+                        Statement: [{
+                            Sid: 'PublicReadGetObject',
+                            Effect: 'Allow',
+                            Principal: '*',
+                            Action: ['s3:GetObject'],
+                            Resource: [
+                                `arn:aws:s3:::${bucket}/original_key_file`,
+                                `arn:aws:s3:::${bucket}/original_key_nofile`,
+                                `arn:aws:s3:::${bucket}/file/*`,
+                                `arn:aws:s3:::${bucket}/nofile/*`,
+                            ],
+                        }],
+                    })
+                }));
+                await s3.send(new PutObjectCommand(Object.assign({}, object,
+                    { Key: 'original_key_file/index.html' })));
+                await s3.send(new PutObjectCommand(Object.assign({}, object,
+                    { Key: 'file/index.html' })));
+                await s3.send(new PutObjectCommand(Object.assign({}, object,
+                    { Key: 'no_access_file/index.html' })));
             });
 
-            afterEach(done => {
-                async.waterfall([
-                    next => s3.deleteObject({ Bucket: bucket,
-                        Key: 'original_key_file/index.html' }, next),
-                    (data, next) => s3.deleteObject({ Bucket: bucket,
-                            Key: 'file/index.html' }, next),
-                    (data, next) => s3.deleteObject({ Bucket: bucket,
-                        Key: 'no_access_file/index.html' }, next),
-                ], err => {
-                    assert.ifError(err);
-                    done();
-                });
+            afterEach(async () => {
+                    await s3.send(new DeleteObjectCommand({ Bucket: bucket,
+                        Key: 'original_key_file/index.html' }));
+                    await s3.send(new DeleteObjectCommand({ Bucket: bucket,
+                        Key: 'file/index.html' }));
+                    await s3.send(new DeleteObjectCommand({ Bucket: bucket,
+                        Key: 'no_access_file/index.html' }));
             });
 
             it('should redirect 302 with trailing / on folder with index', done => {
