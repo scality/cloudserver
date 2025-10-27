@@ -1,9 +1,19 @@
 const assert = require('assert');
-const async = require('async');
+const {
+    CreateBucketCommand,
+    HeadObjectCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+    DeleteBucketCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    CompleteMultipartUploadCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const { maximumAllowedPartCount } = require('../../../../../constants');
+const checkError = require('../../lib/utility/checkError');
 
 const bucket = 'mpu-test-bucket';
 const object = 'mpu-test-object';
@@ -19,18 +29,6 @@ const invalidPartNumbers = [-1, 0, maximumAllowedPartCount + 1];
 
 let ETags = [];
 
-// Because HEAD has no body, the SDK (v2) returns a generic code such as:
-// 400 BadRequest
-// 403 Forbidden
-// 404 NotFound
-// ...
-// It will fall back to HTTP statusCode
-// Example: 416 InvalidRange will be 416 416
-function checkError(err, statusCode, code) {
-    assert.strictEqual(err.statusCode, statusCode);
-    assert.strictEqual(err.code, code);
-}
-
 function checkNoError(err) {
     assert.equal(err, null,
         `Expected success, got error ${JSON.stringify(err)}`);
@@ -44,87 +42,94 @@ describe('Part size tests with object head', () => {
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
+        let uploadId;
 
         function headObject(fields, cb) {
-            s3.headObject({
+            s3.send(new HeadObjectCommand({
                 Bucket: bucket,
                 Key: object,
                 ...fields,
-            }, cb);
+            })).then(data => {
+                cb(null, data);
+            }).catch(err => {
+                cb(err);
+            });
         }
 
-        before(function beforeF(done) {
+        before(async () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
 
-            async.series([
-                next => s3.createBucket({ Bucket: bucket }, err => next(err)),
-                next => s3.createMultipartUpload({
-                    Bucket: bucket,
-                    Key: object
-                }, (err, data) => {
-                    checkNoError(err);
-                    this.currentTest.UploadId = data.UploadId;
-                    return next();
-                }),
-                next => async.mapSeries(partNumbers, (partNumber, callback) => {
-                    const uploadPartParams = {
-                        Bucket: bucket,
-                        Key: object,
-                        PartNumber: partNumber + 1,
-                        UploadId: this.currentTest.UploadId,
-                        Body: generateContent(partNumber + 1),
-                    };
+            // Create bucket
+            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
 
-                    return s3.uploadPart(uploadPartParams,
-                        (err, data) => {
-                            if (err) {
-                                return callback(err);
-                            }
-                            return callback(null, data.ETag);
-                        });
-                }, (err, results) => {
-                    checkNoError(err);
-                    ETags = results;
-                    return next();
-                }),
-                next => {
-                    const params = {
-                        Bucket: bucket,
-                        Key: object,
-                        MultipartUpload: {
-                            Parts: partNumbers.map(partNumber => ({
-                                ETag: ETags[partNumber],
-                                PartNumber: partNumber + 1,
-                            })),
-                        },
-                        UploadId: this.currentTest.UploadId,
-                    };
-                    return s3.completeMultipartUpload(params, next);
-                },
-                next => s3.putObject({
+            // Create multipart upload
+            const uploadResult = await s3.send(new CreateMultipartUploadCommand({
+                Bucket: bucket,
+                Key: object
+            }));
+            uploadId = uploadResult.UploadId;
+
+            // Upload parts
+            const uploadPromises = partNumbers.map(async partNumber => {
+                const uploadPartParams = {
                     Bucket: bucket,
-                    Key: emptyObject,
-                    Body: '',
-                }, next),
-                next => s3.putObject({
-                    Bucket: bucket,
-                    Key: nonMpuObject,
-                    Body: generateContent(0),
-                }, next),
-            ], err => {
-                checkNoError(err);
-                done();
+                    Key: object,
+                    PartNumber: partNumber + 1,
+                    UploadId: uploadId,
+                    Body: generateContent(partNumber + 1),
+                };
+                const result = await s3.send(new UploadPartCommand(uploadPartParams));
+                return result.ETag;
             });
+
+            ETags = await Promise.all(uploadPromises);
+
+            // Put empty object
+            await s3.send(new PutObjectCommand({
+                Bucket: bucket,
+                Key: emptyObject,
+                Body: '',
+            }));
+
+            // Put non-MPU object
+            await s3.send(new PutObjectCommand({
+                Bucket: bucket,
+                Key: nonMpuObject,
+                Body: generateContent(0),
+            }));
+
+            // Complete multipart upload
+            const completeParams = {
+                Bucket: bucket,
+                Key: object,
+                MultipartUpload: {
+                    Parts: partNumbers.map(partNumber => ({
+                        ETag: ETags[partNumber],
+                        PartNumber: partNumber + 1,
+                    })),
+                },
+                UploadId: uploadId,
+            };
+            await s3.send(new CompleteMultipartUploadCommand(completeParams));
         });
 
-        after(done => {
-            async.series([
-                next => s3.deleteObject({ Bucket: bucket, Key: object }, next),
-                next => s3.deleteObject({ Bucket: bucket, Key: emptyObject }, next),
-                next => s3.deleteObject({ Bucket: bucket, Key: nonMpuObject }, next),
-                next => s3.deleteBucket({ Bucket: bucket }, next),
-            ], done);
+        after(async () => {
+            await s3.send(new DeleteObjectCommand({
+                Bucket: bucket,
+                Key: object
+            }));
+            await s3.send(new DeleteObjectCommand({
+                Bucket: bucket,
+                Key: emptyObject
+            }));
+            await s3.send(new DeleteObjectCommand({
+                Bucket: bucket,
+                Key: nonMpuObject
+            }));
+            await s3.send(new DeleteBucketCommand({
+                Bucket: bucket
+            }));
         });
 
         it('should return the total size of the object ' +
@@ -154,23 +159,20 @@ describe('Part size tests with object head', () => {
         invalidPartNumbers.forEach(part => {
             it(`should return an error when --part-number is set to ${part}`,
             done => {
-                headObject({ PartNumber: part }, (err, data) => {
-                    checkError(err, 400, 'BadRequest');
-                    assert.strictEqual(data, null);
+                headObject({ PartNumber: part }, err => {
+                    assert.equal(err.$metadata.httpStatusCode, 400);
                     done();
                 });
             });
         });
 
-        it('should return an error when incorrect --part-number is used',
-            done => {
-                headObject({ PartNumber: partNumbers.length + 1 },
-                (err, data) => {
-                    checkError(err, 416, 416);
-                    assert.strictEqual(data, null);
-                    done();
-                });
+        it('should return an error when incorrect --part-number is used', done => {
+            headObject({ PartNumber: partNumbers.length + 1 },
+            err => {
+                checkError(err, '', 416);
+                done();
             });
+        });
 
         it('should return content-length 0 when requesting part 1 of empty object', done => {
             headObject({ Key: emptyObject, PartNumber: 1 }, (err, data) => {
@@ -181,12 +183,11 @@ describe('Part size tests with object head', () => {
         });
 
         it('should return an error when requesting part 2 of empty object', done => {
-            headObject({ Key: emptyObject, PartNumber: 2 }, (err, data) => {
-                checkError(err, 416, 416);
-                assert.strictEqual(data, null);
+            headObject({ Key: emptyObject, PartNumber: 2 }, err => {
+                checkError(err, '', 416);
                 done();
             });
-        });
+        }); 
 
         it('should return content-length requesting part 1 of non-MPU object', done => {
             headObject({ Key: nonMpuObject, PartNumber: 1 }, (err, data) => {
@@ -198,8 +199,8 @@ describe('Part size tests with object head', () => {
 
         it('should return an error when requesting part 2 of non-MPU object', done => {
             headObject({ Key: nonMpuObject, PartNumber: 2 }, (err, data) => {
-                checkError(err, 416, 416);
-                assert.strictEqual(data, null);
+                checkError(err, '', 416);
+                assert.strictEqual(data, undefined);
                 done();
             });
         });
