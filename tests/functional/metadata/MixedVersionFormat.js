@@ -1,5 +1,12 @@
 const assert = require('assert');
 const async = require('async');
+const { 
+    PutObjectCommand, 
+    GetObjectCommand, 
+    ListObjectsCommand, 
+    PutBucketVersioningCommand,
+    ListObjectVersionsCommand 
+} = require('@aws-sdk/client-s3');
 const withV4 = require('../aws-node-sdk/test/support/withV4');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const MongoClient = require('mongodb').MongoClient;
@@ -113,8 +120,16 @@ describe('Mongo backend mixed bucket format versions', () => {
                 };
                 const masterKey = vFormat === 'v0' ? `${vFormat}-object-1` : `\x7fM${vFormat}-object-1`;
                 async.series([
-                    next => s3.putObject(paramsObj1, next),
-                    next => s3.putObject(paramsObj2, next),
+                    next => {
+                        s3.send(new PutObjectCommand(paramsObj1))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new PutObjectCommand(paramsObj2))
+                            .then(() => next())
+                            .catch(next);
+                    },
                     // check if data stored in the correct format
                     next => getObject(`${vFormat}-bucket`, masterKey, (err, doc) => {
                         assert.ifError(err);
@@ -122,16 +137,23 @@ describe('Mongo backend mixed bucket format versions', () => {
                         return next();
                     }),
                     // test if we can get object
-                    next => s3.getObject(paramsObj1, next),
+                    next => {
+                        s3.send(new GetObjectCommand(paramsObj1))
+                            .then(() => next())
+                            .catch(next);
+                    },
                     // test if we can list objects
-                    next => s3.listObjects({ Bucket: `${vFormat}-bucket` }, (err, data) => {
-                        assert.ifError(err);
-                        assert.strictEqual(data.Contents.length, 2);
-                        const keys = data.Contents.map(obj => obj.Key);
-                        assert(keys.includes(`${vFormat}-object-1`));
-                        assert(keys.includes(`${vFormat}-object-2`));
-                        return next();
-                    })
+                    next => {
+                        s3.send(new ListObjectsCommand({ Bucket: `${vFormat}-bucket` }))
+                            .then(data => {
+                                assert.strictEqual(data.Contents.length, 2);
+                                const keys = data.Contents.map(obj => obj.Key);
+                                assert(keys.includes(`${vFormat}-object-1`));
+                                assert(keys.includes(`${vFormat}-object-2`));
+                                next();
+                            })
+                            .catch(next);
+                    }
                 ], done);
             });
 
@@ -151,11 +173,28 @@ describe('Mongo backend mixed bucket format versions', () => {
                     }
                 };
                 const masterKey = vFormat === 'v0' ? `${vFormat}-object-1` : `\x7fM${vFormat}-object-1`;
+                
                 async.series([
-                    next => s3.putBucketVersioning(versioningParams, next),
-                    next => s3.putObject(paramsObj1, next),
-                    next => s3.putObject(paramsObj1, next),
-                    next => s3.putObject(paramsObj2, next),
+                    next => {
+                        s3.send(new PutBucketVersioningCommand(versioningParams))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new PutObjectCommand(paramsObj1))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new PutObjectCommand(paramsObj1))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new PutObjectCommand(paramsObj2))
+                            .then(() => next())
+                            .catch(next);
+                    },
                     // check if data stored in the correct version format
                     next => getObject(`${vFormat}-bucket`, masterKey, (err, doc) => {
                         assert.ifError(err);
@@ -163,28 +202,38 @@ describe('Mongo backend mixed bucket format versions', () => {
                         return next();
                     }),
                     // test if we can get object
-                    next => s3.getObject(paramsObj1, next),
+                    next => {
+                        s3.send(new GetObjectCommand(paramsObj1))
+                            .then(() => next())
+                            .catch(next);
+                    },
                     // test if we can list objects
-                    next => s3.listObjects({ Bucket: `${vFormat}-bucket` }, (err, data) => {
-                        assert.ifError(err);
-                        assert.strictEqual(data.Contents.length, 2);
-                        const keys = data.Contents.map(obj => obj.Key);
-                        assert(keys.includes(`${vFormat}-object-1`));
-                        assert(keys.includes(`${vFormat}-object-2`));
-                        return next();
-                    }),
+                    next => {
+                        s3.send(new ListObjectsCommand({ Bucket: `${vFormat}-bucket` }))
+                            .then(data => {
+                                assert.strictEqual(data.Contents.length, 2);
+                                const keys = data.Contents.map(obj => obj.Key);
+                                assert(keys.includes(`${vFormat}-object-1`));
+                                assert(keys.includes(`${vFormat}-object-2`));
+                                next();
+                            })
+                            .catch(next);
+                    },
                     // test if we can list object versions
-                    next => s3.listObjectVersions({ Bucket: `${vFormat}-bucket` }, (err, data) => {
-                        assert.ifError(err);
-                        assert.strictEqual(data.Versions.length, 3);
-                        const versionPerObject = {};
-                        data.Versions.forEach(version => {
-                            versionPerObject[version.Key] = (versionPerObject[version.Key] || 0) + 1;
-                        });
-                        assert.strictEqual(versionPerObject[`${vFormat}-object-1`], 2);
-                        assert.strictEqual(versionPerObject[`${vFormat}-object-2`], 1);
-                        return next();
-                    })
+                    next => {
+                        s3.send(new ListObjectVersionsCommand({ Bucket: `${vFormat}-bucket` }))
+                            .then(data => {
+                                assert.strictEqual(data.Versions.length, 3);
+                                const versionPerObject = {};
+                                data.Versions.forEach(version => {
+                                    versionPerObject[version.Key] = (versionPerObject[version.Key] || 0) + 1;
+                                });
+                                assert.strictEqual(versionPerObject[`${vFormat}-object-1`], 2);
+                                assert.strictEqual(versionPerObject[`${vFormat}-object-2`], 1);
+                                next();
+                            })
+                            .catch(next);
+                    }
                 ], done);
             });
         });
