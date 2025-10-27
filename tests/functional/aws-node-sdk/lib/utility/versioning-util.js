@@ -1,10 +1,16 @@
 const async = require('async');
 const assert = require('assert');
-const { S3 } = require('aws-sdk');
+const { S3Client, 
+    ListObjectVersionsCommand, 
+    GetObjectCommand,
+    DeleteObjectsCommand,
+    PutBucketVersioningCommand,
+    PutObjectCommand,
+    DeleteObjectCommand } = require('@aws-sdk/client-s3');
 
 const getConfig = require('../../test/support/config');
-const config = getConfig('default', { signatureVersion: 'v4' });
-const s3 = new S3(config);
+const config = getConfig('default');
+const s3Client = new S3Client(config);
 
 const versioningEnabled = { Status: 'Enabled' };
 const versioningSuspended = { Status: 'Suspended' };
@@ -19,28 +25,25 @@ function _deleteVersionList(versionList, bucket, callback) {
             Key: version.Key, VersionId: version.VersionId });
     });
 
-    return s3.deleteObjects(params, callback);
+    return s3Client.send(new DeleteObjectsCommand(params)).then(() => callback()).catch(err => callback(err));
 }
 
 function checkOneVersion(s3, bucket, versionId, callback) {
-    return s3.listObjectVersions({ Bucket: bucket },
-        (err, data) => {
-            if (err) {
-                callback(err);
-            }
+    return s3Client.send(new ListObjectVersionsCommand({ Bucket: bucket })).then(data => {
             assert.strictEqual(data.Versions.length, 1);
             if (versionId) {
                 assert.strictEqual(data.Versions[0].VersionId, versionId);
             }
             assert.strictEqual(data.DeleteMarkers.length, 0);
             callback();
-        });
+        }).catch(err => callback(err));
 }
 
 function removeAllVersions(params, callback) {
     const bucket = params.Bucket;
     async.waterfall([
-        cb => s3.listObjectVersions(params, cb),
+        cb => s3Client.send(new ListObjectVersionsCommand(params)).then(data =>
+            cb(null, data)).catch(err => cb(err)),
         (data, cb) => _deleteVersionList(data.DeleteMarkers, bucket,
             err => cb(err, data)),
         (data, cb) => _deleteVersionList(data.Versions, bucket,
@@ -60,17 +63,17 @@ function removeAllVersions(params, callback) {
 }
 
 function suspendVersioning(bucket, callback) {
-    s3.putBucketVersioning({
+    s3Client.send(new PutBucketVersioningCommand({
         Bucket: bucket,
         VersioningConfiguration: versioningSuspended,
-    }, callback);
+    })).then(() => callback()).catch(err => callback(err));
 }
 
 function enableVersioning(bucket, callback) {
-    s3.putBucketVersioning({
+    s3Client.send(new PutBucketVersioningCommand({
         Bucket: bucket,
         VersioningConfiguration: versioningEnabled,
-    }, callback);
+    })).then(() => callback()).catch(err => callback(err));
 }
 
 function enableVersioningThenPutObject(bucket, object, callback) {
@@ -78,7 +81,8 @@ function enableVersioningThenPutObject(bucket, object, callback) {
         if (err) {
             callback(err);
         }
-        s3.putObject({ Bucket: bucket, Key: object }, callback);
+        s3Client.send(new PutObjectCommand({ Bucket: bucket, Key: object })).then(() => 
+            callback()).catch(err => callback(err));
     });
 }
 
@@ -102,33 +106,35 @@ function enableVersioningThenPutObject(bucket, object, callback) {
 function createDualNullVersion(s3, bucketName, keyName, cb) {
     async.waterfall([
         // put null version
-        next => s3.putObject({ Bucket: bucketName, Key: keyName },
-            err => next(err)),
+        next => s3Client.send(new PutObjectCommand({ Bucket: bucketName, Key: keyName, Body: null })).then(() => 
+            next()).catch(err => next(err)),
         next => enableVersioning(bucketName, err => next(err)),
         // should store null version as separate version before
         // putting new version
-        next => s3.putObject({ Bucket: bucketName, Key: keyName },
-            (err, data) => {
-                assert.strictEqual(err, null,
-                    'Unexpected err putting new version');
-                assert(data.VersionId);
-                next(null, data.VersionId);
-            }),
+        next => s3Client.send(new PutObjectCommand({ Bucket: bucketName, Key: keyName })).then(data => {
+            assert(data.VersionId);
+            next(null, data.VersionId);
+        }).catch(err => {
+            assert.strictEqual(err, null,
+                'Unexpected err putting new version');
+            next(err);
+        }),
         // delete version we just created, master version should be updated
         // with value of next most recent version: null version previously put
-        (versionId, next) => s3.deleteObject({
+        (versionId, next) => s3Client.send(new DeleteObjectCommand({
             Bucket: bucketName,
             Key: keyName,
             VersionId: versionId,
-        }, err => next(err)),
+        })).then(() => next()).catch(err => next(err)),
         // getting object should return null version now
-        next => s3.getObject({ Bucket: bucketName, Key: keyName },
-            (err, data) => {
-                assert.strictEqual(err, null,
-                    'Unexpected err getting latest version');
-                assert.strictEqual(data.VersionId, 'null');
-                next();
-            }),
+        next => s3Client.send(new GetObjectCommand({ Bucket: bucketName, Key: keyName })).then(data => {
+            assert.strictEqual(data.VersionId, 'null');
+            next();
+        }).catch(err => {
+            assert.strictEqual(err, null,
+                'Unexpected err getting latest version');
+            next(err);
+        }),
     ], err => cb(err));
 }
 
