@@ -1,6 +1,15 @@
 const assert = require('assert');
 const async = require('async');
 const uuid = require('uuid');
+const { 
+    CreateBucketCommand,
+    HeadObjectCommand,
+    PutObjectCommand,
+    PutBucketEncryptionCommand,
+    CopyObjectCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+} = require('@aws-sdk/client-s3');
 const BucketInfo = require('arsenal').models.BucketInfo;
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -31,26 +40,37 @@ const testCases = [
 function s3NoOp(_, cb) { cb(); }
 
 function getSSEConfig(s3, Bucket, Key, cb) {
-    return s3.headObject({ Bucket, Key }, (err, resp) => {
-        if (err) {
-            return cb(err);
-        }
-        return cb(null,
-            JSON.parse(JSON.stringify({ algo: resp.ServerSideEncryption, masterKeyId: resp.SSEKMSKeyId })));
-    });
+    const command = new HeadObjectCommand({ Bucket, Key });
+    s3.send(command)
+        .then(resp => {
+            const sseConfig = JSON.parse(JSON.stringify({ 
+                algo: resp.ServerSideEncryption, 
+                masterKeyId: resp.SSEKMSKeyId 
+            }));
+            cb(null, sseConfig);
+        })
+        .catch(cb);
 }
 
 function putEncryptedObject(s3, Bucket, Key, sseConfig, kmsKeyId, cb) {
     const params = {
         Bucket,
         Key,
-        ServerSideEncryption: sseConfig.algo,
         Body: 'somedata',
     };
+    
+    if (sseConfig.algo) {
+        params.ServerSideEncryption = sseConfig.algo;
+    }
+    
     if (sseConfig.masterKeyId) {
         params.SSEKMSKeyId = kmsKeyId;
     }
-    return s3.putObject(params, cb);
+    
+    const command = new PutObjectCommand(params);
+    s3.send(command)
+        .then(response => cb(null, response))
+        .catch(cb);
 }
 
 function createExpected(sseConfig, kmsKeyId) {
@@ -84,6 +104,34 @@ function hydrateSSEConfig({ algo: SSEAlgorithm, masterKeyId: KMSMasterKeyID }) {
     );
 }
 
+function putBucketEncryption(s3, params, cb) {
+    const command = new PutBucketEncryptionCommand(params);
+    s3.send(command)
+        .then(response => cb(null, response))
+        .catch(cb);
+}
+
+function copyObject(s3, params, cb) {
+    const command = new CopyObjectCommand(params);
+    s3.send(command)
+        .then(response => cb(null, response))
+        .catch(cb);
+}
+
+function createMultipartUpload(s3, params, cb) {
+    const command = new CreateMultipartUploadCommand(params);
+    s3.send(command)
+        .then(response => cb(null, response))
+        .catch(cb);
+}
+
+function uploadPart(s3, params, cb) {
+    const command = new UploadPartCommand(params);
+    s3.send(command)
+        .then(response => cb(null, response))
+        .catch(cb);
+}
+
 describe('per object encryption headers', () => {
     withV4(sigCfg => {
         let bucket;
@@ -106,19 +154,15 @@ describe('per object encryption headers', () => {
             );
         });
 
-        beforeEach(() => {
+        beforeEach(async () => {
             bucket = `enc-bucket-${uuid.v4()}`;
             bucket2 = `enc-bucket-2-${uuid.v4()}`;
             object = `enc-object-${uuid.v4()}`;
             object2 = `enc-object-2-${uuid.v4()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucket({ Bucket: bucket }).promise()
-                .then(() => s3.createBucket({ Bucket: bucket2 }).promise())
-                .catch(err => {
-                    process.stdout.write(`Error creating bucket: ${err}\n`);
-                    throw err;
-                });
+            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+            await s3.send(new CreateBucketCommand({ Bucket: bucket2 }));
         });
 
         afterEach(() => {
@@ -190,8 +234,9 @@ describe('per object encryption headers', () => {
                             Bucket: bucket,
                             ServerSideEncryptionConfiguration: hydrateSSEConfig(_existing),
                         };
-                        // no op putBucketNotification for the unencrypted case
-                        const s3Op = existing.algo ? (...args) => s3.putBucketEncryption(...args) : s3NoOp;
+                        // no op putBucketEncryption for the unencrypted case
+                        const s3Op = existing.algo ? 
+                            (params, cb) => putBucketEncryption(s3, params, cb) : s3NoOp;
                         s3Op(params, error => {
                             assert.ifError(error);
                             return putEncryptedObject(s3, bucket, object, target, kmsKeyId, error => {
@@ -236,8 +281,9 @@ describe('per object encryption headers', () => {
                             Bucket: bucket2,
                             ServerSideEncryptionConfiguration: hydrateSSEConfig(_existing),
                         };
-                        // no op putBucketNotification for the unencrypted case
-                        const s3Op = existing.algo ? (...args) => s3.putBucketEncryption(...args) : s3NoOp;
+                        // no op putBucketEncryption for the unencrypted case
+                        const s3Op = existing.algo ? 
+                            (params, cb) => putBucketEncryption(s3, params, cb) : s3NoOp;
                         s3Op(params, error => {
                             assert.ifError(error);
                             return putEncryptedObject(s3, bucket, object, target, kmsKeyId, error => {
@@ -253,7 +299,7 @@ describe('per object encryption headers', () => {
                                 if (target.masterKeyId) {
                                     copyParams.SSEKMSKeyId = kmsKeyId;
                                 }
-                                return s3.copyObject(copyParams, error => {
+                                return copyObject(s3, copyParams, error => {
                                     assert.ifError(error);
                                     return getSSEConfig(
                                         s3,
@@ -293,7 +339,7 @@ describe('per object encryption headers', () => {
                     if (target.masterKeyId) {
                         params.SSEKMSKeyId = kmsKeyId;
                     }
-                    s3.createMultipartUpload(params, (error, resp) => {
+                    createMultipartUpload(s3, params, (error, resp) => {
                         assert.ifError(error);
                         const { UploadId } = resp;
                         const partParams = {
@@ -303,7 +349,7 @@ describe('per object encryption headers', () => {
                             Key: object,
                             PartNumber: 1,
                         };
-                        s3.uploadPart(partParams, error => {
+                        uploadPart(s3, partParams, error => {
                             assert.ifError(error);
                             done();
                         });
@@ -315,7 +361,7 @@ describe('per object encryption headers', () => {
                         Bucket: bucket,
                         Key: object,
                     };
-                    s3.createMultipartUpload(sourceParams, (error, resp) => {
+                    createMultipartUpload(s3, sourceParams, (error, resp) => {
                         assert.ifError(error);
                         const { UploadId: sourceUploadId } = resp;
                         const sourcePartParams = {
@@ -325,7 +371,7 @@ describe('per object encryption headers', () => {
                             Key: object,
                             PartNumber: 1,
                         };
-                        s3.uploadPart(sourcePartParams, error => {
+                        uploadPart(s3, sourcePartParams, error => {
                             assert.ifError(error);
                             const targetParams = {
                                 Bucket: bucket,
@@ -337,7 +383,8 @@ describe('per object encryption headers', () => {
                             if (target.masterKeyId) {
                                 targetParams.SSEKMSKeyId = kmsKeyId;
                             }
-                            s3.createMultipartUpload(targetParams, (error, resp) => {
+                            createMultipartUpload(s3, targetParams, (error, resp) => {
+                                assert.ifError(error);
                                 const { UploadId: targetUploadId } = resp;
                                 const targetPartParams = {
                                     UploadId: targetUploadId,
@@ -346,7 +393,7 @@ describe('per object encryption headers', () => {
                                     Key: object2,
                                     PartNumber: 1,
                                 };
-                                s3.uploadPart(targetPartParams, error => {
+                                uploadPart(s3, targetPartParams, error => {
                                     assert.ifError(error);
                                     done();
                                 });
