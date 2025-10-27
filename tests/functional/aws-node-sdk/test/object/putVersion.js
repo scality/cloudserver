@@ -8,11 +8,20 @@ const { DummyRequestLogger } = require('../../../../unit/helpers');
 const checkError = require('../../lib/utility/checkError');
 const { getMetadata, fakeMetadataArchive, isNullKeyMetadataV1 } = require('../utils/init');
 const { hasColdStorage } = require('../../lib/utility/test-utils');
+const { CreateBucketCommand, 
+    PutObjectCommand, 
+    HeadObjectCommand, 
+    GetObjectCommand,
+    PutObjectAclCommand,
+    PutObjectTaggingCommand,
+    PutObjectLegalHoldCommand,
+    ListObjectsCommand,
+    DeleteObjectCommand,
+    PutBucketVersioningCommand } = require('@aws-sdk/client-s3');
 
 const {
     LOCATION_NAME_DMF,
 } = require('../../../../constants');
-
 const log = new DummyRequestLogger();
 
 const bucketName = 'bucket1putversion32';
@@ -25,13 +34,27 @@ const archive = {
     restoreRequestedDays: 5,
 };
 
-function putObjectVersion(s3, params, vid, next) {
+async function putObjectVersion(s3, params, vid, next) {
     const paramsWithBody = { ...params, Body: '123' };
-    const request = s3.putObject(paramsWithBody);
-    request.on('build', () => {
-        request.httpRequest.headers['x-scal-s3-version-id'] = vid;
-    });
-    return request.send(next);
+    const command = new PutObjectCommand(paramsWithBody);
+    command.middlewareStack.add(
+        next => async args => {
+            // eslint-disable-next-line no-param-reassign
+            args.request.headers['x-scal-s3-version-id'] = vid;
+            return next(args);
+        },
+        {
+            step: 'build',
+            name: 'addVersionIdHeader', // Add a name to identify the middleware
+        }
+    );
+    
+    try {
+        const res = await s3.send(command);
+        next(null, res);
+    } catch (err) {
+        next(err);
+    }
 }
 
 function checkVersionsAndUpdate(versionsBefore, versionsAfter, indexes) {
@@ -66,22 +89,19 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             s3 = bucketUtil.s3;
             async.series([
                 next => metadata.setup(next),
-                next => s3.createBucket({ Bucket: bucketName }, next),
-                next => s3.createBucket({ Bucket: bucketNameMD, ObjectLockEnabledForBucket: true, }, next),
+                next => s3.send(new CreateBucketCommand({ Bucket: bucketName })).then(() => {
+                    next();
+                }),
+                next => s3.send(new CreateBucketCommand({ Bucket: bucketNameMD, 
+                    ObjectLockEnabledForBucket: true })).then(() => {
+                    next();
+                }),
             ], done);
         });
 
-        afterEach(() => {
-            process.stdout.write('Emptying bucket');
-            return bucketUtil.emptyMany([bucketName, bucketNameMD])
-            .then(() => {
-                process.stdout.write('Deleting bucket');
-                return bucketUtil.deleteMany([bucketName, bucketNameMD]);
-            })
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
-            });
+        afterEach(async () => {
+            await bucketUtil.emptyMany([bucketName, bucketNameMD]);
+            await bucketUtil.deleteMany([bucketName, bucketNameMD]);
         });
 
         describe('error handling validation (without cold storage location)', () => {
@@ -93,10 +113,15 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     }
                 };
                 const params = { Bucket: bucketName, Key: objectName };
+                let vId;
 
                 async.series([
-                    next => s3.putBucketVersioning(vParams, next),
-                    next => s3.putObject(params, next),
+                    next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                    next => s3.send(new PutObjectCommand(params)).then(res => {
+                        vId = res.VersionId;
+                        return next();
+                    }),
+                    next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                     next => putObjectVersion(s3, params, 'aJLWKz4Ko9IjBBgXKj5KQT.G9UHv0g7P', err => {
                         checkError(err, 'InvalidArgument', 400);
                         return next();
@@ -131,8 +156,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 const params = { Bucket: bucketName, Key: objectName };
 
                 async.series([
-                    next => s3.putBucketVersioning(vParams, next),
-                    next => s3.putObject(params, next),
+                    next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
                     next => putObjectVersion(s3, params,
                     '393833343735313131383832343239393939393952473030312020313031', err => {
                         checkError(err, 'NoSuchVersion', 404);
@@ -148,7 +173,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 const params = { Bucket: bucketName, Key: objectName };
 
                 async.series([
-                    next => s3.putObject(params, next),
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
                     next => putObjectVersion(s3, params, '', err => {
                         checkError(err, 'InvalidObjectState', 403);
                         return next();
@@ -170,11 +195,11 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 let vId;
 
                 async.series([
-                    next => s3.putBucketVersioning(vParams, next),
-                    next => s3.putObject(params, next),
-                    next => s3.deleteObject(params, (err, res) => {
+                    next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
+                    next => s3.send(new DeleteObjectCommand(params)).then(res => {
                         vId = res.VersionId;
-                        return next(err);
+                        return next();
                     }),
                     next => putObjectVersion(s3, params, vId, err => {
                         checkError(err, 'MethodNotAllowed', 405);
@@ -189,14 +214,15 @@ describe('PUT object with x-scal-s3-version-id header', () => {
 
         describeSkipNullMdV1('with cold storage location', () => {
             it('should overwrite an object', done => {
-                const params = { Bucket: bucketName, Key: objectName };
+            const params = { Bucket: bucketName, Key: objectName };
                 let objMDBefore;
                 let objMDAfter;
                 let versionsBefore;
                 let versionsAfter;
-
                 async.series([
-                    next => s3.putObject(params, next),
+                    next => s3.send(new PutObjectCommand(params)).then(() => {
+                        next();
+                    }),
                     next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
                     next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                         objMDBefore = objMD;
@@ -243,10 +269,10 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 let vId;
 
                 async.series([
-                    next => s3.putBucketVersioning(vParams, next),
-                    next => s3.putObject(params, (err, res) => {
+                    next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                    next => s3.send(new PutObjectCommand(params)).then(res => {
                         vId = res.VersionId;
-                        return next(err);
+                        return next();
                     }),
                     next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
@@ -294,10 +320,10 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 let vId;
 
                 async.series([
-                    next => s3.putBucketVersioning(vParams, next),
-                    next => s3.putObject(params, (err, res) => {
+                    next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                    next => s3.send(new PutObjectCommand(params)).then(res => {
                         vId = res.VersionId;
-                        return next(err);
+                        return next();
                     }),
                     next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
@@ -344,9 +370,9 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 let objMDAfter;
 
                 async.series([
-                    next => s3.putObject(params, next),
-                    next => s3.putBucketVersioning(vParams, next),
-                    next => s3.putObject(params, next),
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
+                    next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
                     next => fakeMetadataArchive(bucketName, objectName, 'null', archive, next),
                     next => getMetadata(bucketName, objectName, 'null', (err, objMD) => {
                         objMDBefore = objMD;
@@ -393,11 +419,11 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 let vId;
 
                 async.series([
-                    next => s3.putObject(params, next),
-                    next => s3.putBucketVersioning(vParams, next),
-                    next => s3.putObject(params, (err, res) => {
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
+                    next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                    next => s3.send(new PutObjectCommand(params)).then(res => {
                         vId = res.VersionId;
-                        return next(err);
+                        return next();
                     }),
                     next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                     next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
@@ -450,10 +476,10 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 let versionsAfter;
 
                 async.series([
-                    next => s3.putBucketVersioning(vParams, next),
-                    next => s3.putObject(params, next),
-                    next => s3.putBucketVersioning(sParams, next),
-                    next => s3.putObject(params, next),
+                    next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
+                    next => s3.send(new PutBucketVersioningCommand(sParams)).then(() => next()),
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
                     next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
                     next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                         objMDBefore = objMD;
@@ -500,14 +526,14 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 let vId;
 
                 async.series([
-                    next => s3.putBucketVersioning(vParams, next),
-                    next => s3.putObject(params, next),
-                    next => s3.putObject(params, (err, res) => {
+                    next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
+                    next => s3.send(new PutObjectCommand(params)).then(res => {
                         vId = res.VersionId;
-                        return next(err);
+                        return next();
                     }),
                     next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
-                    next => s3.putObject(params, next),
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                         versionsBefore = res.Versions;
                         return next(err);
@@ -553,11 +579,11 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 let vId;
 
                 async.series([
-                    next => s3.putBucketVersioning(vParams, next),
-                    next => s3.putObject(params, next),
-                    next => s3.putObject(params, (err, res) => {
+                    next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
+                    next => s3.send(new PutObjectCommand(params)).then(res => {
                         vId = res.VersionId;
-                        return next(err);
+                        return next();
                     }),
                     next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
@@ -611,11 +637,11 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 let vId;
 
                 async.series([
-                    next => s3.putBucketVersioning(vParams, next),
-                    next => s3.putObject(params, next),
-                    next => s3.putObject(params, (err, res) => {
+                    next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
+                    next => s3.send(new PutObjectCommand(params)).then(res => {
                         vId = res.VersionId;
-                        return next(err);
+                        return next();
                     }),
                     next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
@@ -626,7 +652,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         objMDBefore = objMD;
                         return next(err);
                     }),
-                    next => s3.putBucketVersioning(sParams, next),
+                    next => s3.send(new PutBucketVersioningCommand(sParams)).then(() => next()).catch(next),
                     next => putObjectVersion(s3, params, vId, next),
                     next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
                         objMDAfter = objMD;
@@ -663,7 +689,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 let versionsAfter;
 
                 async.series([
-                    next => s3.putObject(params, next),
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
                     next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                         versionsBefore = res.Versions;
@@ -673,7 +699,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         objMDBefore = objMD;
                         return next(err);
                     }),
-                    next => s3.putBucketVersioning(vParams, next),
+                    next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
                     next => putObjectVersion(s3, params, 'null', next),
                     next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                         objMDAfter = objMD;
@@ -707,7 +733,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 };
 
                 async.series([
-                    next => s3.putObject(params, next),
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
                     next => fakeMetadataArchive(bucketName, objectName, undefined, archiveCompleted, next),
                     next => putObjectVersion(s3, params, '', err => {
                         checkError(err, 'InvalidObjectState', 403);
@@ -728,49 +754,56 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     const params = { Bucket: bucketName, Key: objectName };
                     let objMDBefore;
                     let objMDAfter;
+        
 
                     async.series([
                         next => {
                             if (versioning === 'versioned') {
-                                return s3.putBucketVersioning({
+                                return s3.send(new PutBucketVersioningCommand({
                                     Bucket: bucketName,
                                     VersioningConfiguration: { Status: 'Enabled' }
-                                }, next);
+                                })).then(() => next());
                             } else if (versioning === 'suspended') {
-                                return s3.putBucketVersioning({
+                                return s3.send(new PutBucketVersioningCommand({
                                     Bucket: bucketName,
                                     VersioningConfiguration: { Status: 'Suspended' }
-                                }, next);
+                                })).then(() => next());
                             }
                             return next();
                         },
-                        next => s3.putObject(params, next),
+                        next => s3.send(new PutObjectCommand(params)).then(() => next()),
                         next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
                         next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                             objMDBefore = objMD;
                             return next(err);
                         }),
-                        next => metadata.listObject(bucketName, mdListingParams, log, next),
+                        next => metadata.listObject(bucketName, mdListingParams, log, err => next(err)),
                         next => putObjectVersion(s3, params, '', next),
                         next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                             objMDAfter = objMD;
                             return next(err);
                         }),
-                        next => s3.listObjects({ Bucket: bucketName }, (err, res) => {
-                            assert.ifError(err);
+                        next => s3.send(new ListObjectsCommand({ Bucket: bucketName })).then(res => {
                             assert.strictEqual(res.Contents.length, 1);
                             assert.strictEqual(res.Contents[0].StorageClass, LOCATION_NAME_DMF);
                             return next();
-                        }),
-                        next => s3.headObject(params, (err, res) => {
+                        }).catch(err => {
                             assert.ifError(err);
+                            return next(err);
+                        }),
+                        next => s3.send(new HeadObjectCommand(params)).then(res => {
                             assert.strictEqual(res.StorageClass, LOCATION_NAME_DMF);
                             return next();
-                        }),
-                        next => s3.getObject(params, (err, res) => {
+                        }).catch(err => {
                             assert.ifError(err);
+                            return next(err);
+                        }),
+                        next => s3.send(new GetObjectCommand(params)).then(res => {
                             assert.strictEqual(res.StorageClass, LOCATION_NAME_DMF);
                             return next();
+                        }).catch(err => {
+                            assert.ifError(err);
+                            return next(err);
                         }),
                     ], err => {
                         assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
@@ -797,76 +830,76 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             });
 
             it('should "copy" all but non data-related metadata (data encryption, data size...)', done => {
-                const params = {
-                    Bucket: bucketNameMD,
-                    Key: objectName
-                };
-                const putParams = {
-                    ...params,
-                    Metadata: {
-                        'custom-user-md': 'custom-md',
-                    },
-                    WebsiteRedirectLocation: 'http://custom-redirect'
-                };
-                const aclParams = {
-                    ...params,
-                    // email of user Bart defined in authdata.json
-                    GrantFullControl: 'emailaddress=sampleaccount1@sampling.com',
-                };
-                const tagParams = {
-                    ...params,
-                    Tagging: {
-                        TagSet: [{
-                          Key: 'tag1',
-                          Value: 'value1'
-                        }, {
-                            Key: 'tag2',
-                            Value: 'value2'
-                        }]
-                    }
-                };
-                const legalHoldParams = {
-                    ...params,
-                    LegalHold: {
-                        Status: 'ON'
-                      },
-                };
-                const acl = {
-                    'Canned': '',
-                    'FULL_CONTROL': [
-                        // canonicalID of user Bart
-                        '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
-                    ],
-                    'WRITE_ACP': [],
-                    'READ': [],
-                    'READ_ACP': [],
-                };
-                const tags = { tag1: 'value1', tag2: 'value2' };
-                const replicationInfo = {
-                    'status': 'COMPLETED',
-                    'backends': [
-                            {
-                                    'site': 'azure-normal',
-                                    'status': 'COMPLETED',
-                                    'dataStoreVersionId': '',
+                    const params = {
+                        Bucket: bucketNameMD,
+                        Key: objectName
+                    };
+                    const putParams = {
+                        ...params,
+                        Metadata: {
+                            'custom-user-md': 'custom-md',
+                        },
+                        WebsiteRedirectLocation: 'http://custom-redirect'
+                    };
+                    const aclParams = {
+                        ...params,
+                        // email of user Bart defined in authdata.json
+                        GrantFullControl: 'emailaddress=sampleaccount1@sampling.com',
+                    };
+                    const tagParams = {
+                        ...params,
+                        Tagging: {
+                            TagSet: [{
+                                Key: 'tag1',
+                                Value: 'value1'
+                            }, {
+                                Key: 'tag2',
+                                Value: 'value2'
+                            }]
+                        }
+                    };
+                    const legalHoldParams = {
+                        ...params,
+                        LegalHold: {
+                            Status: 'ON'
                             },
-                    ],
-                    'content': [
-                            'DATA',
-                            'METADATA',
-                    ],
-                    'destination': 'arn:aws:s3:::versioned',
-                    'storageClass': 'azure-normal',
-                    'role': 'arn:aws:iam::root:role/s3-replication-role',
-                    'storageType': 'azure',
-                    'dataStoreVersionId': '',
-                    'isNFS': null,
+                    };
+                    const acl = {
+                        'Canned': '',
+                        'FULL_CONTROL': [
+                            // canonicalID of user Bart
+                            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
+                        ],
+                        'WRITE_ACP': [],
+                        'READ': [],
+                        'READ_ACP': [],
+                    };
+                    const tags = { tag1: 'value1', tag2: 'value2' };
+                    const replicationInfo = {
+                        'status': 'COMPLETED',
+                        'backends': [
+                                {
+                                        'site': 'azure-normal',
+                                        'status': 'COMPLETED',
+                                        'dataStoreVersionId': '',
+                                },
+                        ],
+                        'content': [
+                                'DATA',
+                                'METADATA',
+                        ],
+                        'destination': 'arn:aws:s3:::versioned',
+                        'storageClass': 'azure-normal',
+                        'role': 'arn:aws:iam::root:role/s3-replication-role',
+                        'storageType': 'azure',
+                        'dataStoreVersionId': '',
+                        'isNFS': null,
                 };
                 async.series([
-                    next => s3.putObject(putParams, next),
-                    next => s3.putObjectAcl(aclParams, next),
-                    next => s3.putObjectTagging(tagParams, next),
-                    next => s3.putObjectLegalHold(legalHoldParams, next),
+                    next => s3.send(new PutObjectCommand(putParams)).then(() => next()),
+                    next => s3.send(new PutObjectAclCommand(aclParams)).then(() => next()),
+                    next => s3.send(new PutObjectTaggingCommand(tagParams)).then(() => next()),
+                    next => s3.send(new PutObjectLegalHoldCommand(legalHoldParams)).then(() => next()),
                     next => getMetadata(bucketNameMD, objectName, undefined, (err, objMD) => {
                         if (err) {
                             return next(err);
@@ -909,7 +942,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     // removing legal hold to be able to clean the bucket after the test
                     next => {
                         legalHoldParams.LegalHold.Status = 'OFF';
-                        return s3.putObjectLegalHold(legalHoldParams, next);
+                        return s3.send(new PutObjectLegalHoldCommand(legalHoldParams)).then(() => next());
                     },
                 ], done);
             });
