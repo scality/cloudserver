@@ -53,7 +53,7 @@ class BucketUtility {
         return this.s3.send(new CreateBucketCommand({
             Bucket: bucketName,
             ObjectLockEnabledForBucket: true,
-        })).then(() => bucketName)
+        })).then(() => bucketName);
     }
 
     createMany(bucketNames) {
