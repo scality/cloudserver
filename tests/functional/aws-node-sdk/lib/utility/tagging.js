@@ -5,9 +5,11 @@ const taggingTests = [
         it: 'should return tags if value is an empty string' },
     { tag: { key: 'w'.repeat(129), value: 'foo' },
         error: 'InvalidTag',
+        code: 400,
         it: 'should return InvalidTag if key length is greater than 128' },
     { tag: { key: 'bar', value: 'f'.repeat(257) },
         error: 'InvalidTag',
+        code: 400,
         it: 'should return InvalidTag if key length is greater than 256',
     },
 ];
