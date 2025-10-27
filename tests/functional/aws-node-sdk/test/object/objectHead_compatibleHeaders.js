@@ -2,6 +2,7 @@ const assert = require('assert');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
+const { PutObjectCommand , HeadObjectCommand } = require('@aws-sdk/client-s3');
 
 const bucketName = 'objectheadtestheaders';
 const objectName = 'someObject';
@@ -25,7 +26,7 @@ describe('HEAD object, compatibility headers [Cache-Control, ' +
                 bucketUtil.deleteOne(bucketName)
             )
             .catch(err => {
-                if (err.code !== 'NoSuchBucket') {
+                if (err.name !== 'NoSuchBucket') {
                     process.stdout.write(`${err}\n`);
                     throw err;
                 }
@@ -40,27 +41,20 @@ describe('HEAD object, compatibility headers [Cache-Control, ' +
                     ContentEncoding: contentEncoding,
                     Expires: expires,
                 };
-                return s3.putObject(params).promise();
-            })
-            .catch(err => {
-                process.stdout.write(`Error with putObject: ${err}\n`);
-                throw err;
+                return s3.send(new PutObjectCommand(params));
             });
         });
 
-        after(() => {
+        after(async () => {
             process.stdout.write('deleting bucket');
-            return bucketUtil.empty(bucketName).then(() =>
-            bucketUtil.deleteOne(bucketName));
+            await bucketUtil.empty(bucketName);
+            await bucketUtil.deleteOne(bucketName);
         });
 
         it('should return additional headers if specified in objectPUT ' +
           'request', done => {
-            s3.headObject({ Bucket: bucketName, Key: objectName },
-              (err, res) => {
-                  if (err) {
-                      return done(err);
-                  }
+            s3.send(new HeadObjectCommand({ Bucket: bucketName, Key: objectName }))
+              .then(res => {
                   assert.strictEqual(res.CacheControl,
                     cacheControl);
                   assert.strictEqual(res.ContentDisposition,
@@ -72,7 +66,10 @@ describe('HEAD object, compatibility headers [Cache-Control, ' +
                   assert.strictEqual(res.Expires.toGMTString(),
                       expires.toGMTString());
                   return done();
-              });
+              }).catch(err => {
+                  process.stdout.write(`Error on headObject: ${err}\n`);
+                  return done(err);
+              });   
         });
     });
 });
