@@ -1,17 +1,45 @@
 const assert = require('assert');
-const async = require('async');
+
+const {
+    S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketWebsiteCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+    PutBucketPolicyCommand,
+} = require('@aws-sdk/client-s3');
 const fs = require('fs');
 const path = require('path');
-
-const { S3 } = require('aws-sdk');
+const async = require('async');
 
 const conf = require('../../../../../lib/Config').config;
 const getConfig = require('../support/config');
 const { makeRequest } = require('../../../raw-node/utils/makeRequest');
 const { WebsiteConfigTester } = require('../../lib/utility/website-util');
 
-const config = getConfig('default', { signatureVersion: 'v4' });
-const s3 = new S3(config);
+const config = getConfig('default');
+const s3Client = new S3Client(config);
+const s3 = {
+    createBucket: (params, cb) => {
+        s3Client.send(new CreateBucketCommand(params)).then(d => cb(null, d)).catch(cb);
+    },
+    deleteBucket: (params, cb) => {
+        s3Client.send(new DeleteBucketCommand(params)).then(d => cb(null, d)).catch(cb);
+    },
+    putBucketWebsite: (params, cb) => {
+        s3Client.send(new PutBucketWebsiteCommand(params)).then(d => cb(null, d)).catch(cb);
+    },
+    putObject: (params, cb) => {
+        s3Client.send(new PutObjectCommand(params)).then(d => cb(null, d)).catch(cb);
+    },
+    deleteObject: (params, cb) => {
+        s3Client.send(new DeleteObjectCommand(params)).then(d => cb(null, d)).catch(cb);
+    },
+    putBucketPolicy: (params, cb) => {
+        s3Client.send(new PutBucketPolicyCommand(params)).then(d => cb(null, d)).catch(cb);
+    },
+};
 
 const transport = conf.https ? 'https' : 'http';
 const bucket = process.env.AWS_ON_AIR ? 'awsbucketwebsitetester' :
