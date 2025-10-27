@@ -104,7 +104,6 @@ function putObjectWithCustomHeader(bucket, key, size, vID, cb) {
         Body: Buffer.alloc(size),
     };
 
-    // Add custom header using middleware
     const command = new PutObjectCommand(params);
     command.middlewareStack.add(
         next => async args => {
@@ -323,14 +322,13 @@ function restoreObject(bucket, key, size, callback) {
         RestoreRequest: {
             Days: 1,
         },
-    }))
-        .then(data => {
-            if (!s3Config.isQuotaInflightEnabled()) {
-                mockScuba.incrementBytesForBucket(bucket, size);
-            }
-            return callback(null, data);
-        })
-        .catch(callback);
+    })).then(data => {
+        if (!s3Config.isQuotaInflightEnabled()) {
+            mockScuba.incrementBytesForBucket(bucket, size);
+        }
+        return callback(null, data);
+    })
+    .catch(callback);
 }
 
 function multiObjectDelete(bucket, keys, size, callback) {

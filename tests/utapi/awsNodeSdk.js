@@ -33,7 +33,7 @@ function createBucket(bucket, cb) {
 
 function deleteBucket(bucket, cb) {
     s3Client.send(new DeleteBucketCommand({ Bucket: bucket }))
-        .then(() => cb())
+        .then(() => cb(null))
         .catch(cb);
 }
 
@@ -51,7 +51,7 @@ function putObject(bucket, key, size, cb) {
 
 function deleteObject(bucket, key, cb) {
     s3Client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }))
-        .then(() => cb())
+        .then(() => cb(null))
         .catch(cb);
 }
 
@@ -63,14 +63,14 @@ function deleteObjects(bucket, keys, cb) {
         Delete: deleteRequest,
     };
     s3Client.send(new DeleteObjectsCommand(params))
-        .then(() => cb())
+        .then(() => cb(null))
         .catch(cb);
 }
 
 function copyObject(bucket, key, cb) {
     const params = { Bucket: bucket, CopySource: `${bucket}/${key}`, Key: `${key}-copy` };
     s3Client.send(new CopyObjectCommand(params))
-        .then(() => cb())
+        .then(() => cb(null))
         .catch(cb);
 }
 
@@ -78,7 +78,7 @@ function enableVersioning(bucket, enable, cb) {
     const versioningStatus = { Status: enable ? 'Enabled' : 'Disabled' };
     const params = { Bucket: bucket, VersioningConfiguration: versioningStatus };
     s3Client.send(new PutBucketVersioningCommand(params))
-        .then(() => cb())
+        .then(() => cb(null))
         .catch(cb);
 }
 

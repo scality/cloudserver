@@ -53,11 +53,7 @@ class BucketUtility {
         return this.s3.send(new CreateBucketCommand({
             Bucket: bucketName,
             ObjectLockEnabledForBucket: true,
-        }))
-            .then(() => bucketName)
-            .catch(err => {
-                throw err;
-            });
+        })).then(() => bucketName)
     }
 
     createMany(bucketNames) {
@@ -66,6 +62,7 @@ class BucketUtility {
         );
         return Promise.all(promises);
     }
+
     createRandom(nBuckets = 1) {
         if (nBuckets === 1) {
             const bucketName = projectFixture.generateBucketName();
@@ -78,10 +75,7 @@ class BucketUtility {
     }
 
     deleteOne(bucketName) {
-        return this.s3.send(new DeleteBucketCommand({ Bucket: bucketName }))
-            .catch(err => {
-                throw err;
-            });
+        return this.s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
     }
 
     deleteMany(bucketNames) {
@@ -90,12 +84,12 @@ class BucketUtility {
         );
         return Promise.all(promises);
     }
+
     /**
      * Recursively delete all versions of all objects within the bucket
      * @param bucketName
      * @returns {Promise.<T>}
      */
-
     empty(bucketName, BypassGovernanceRetention = false) {
         const param = {
             Bucket: bucketName,
@@ -104,7 +98,17 @@ class BucketUtility {
         return this.s3.send(new ListObjectVersionsCommand(param))
             .then(data => Promise.all(
                 (data.Versions || [])
-                    .filter(object => !object.Key.endsWith('/'))
+                .filter(object => !object.Key.endsWith('/'))
+                .map(object =>
+                    this.s3.send(new DeleteObjectCommand({
+                        Bucket: bucketName,
+                        Key: object.Key,
+                        VersionId: object.VersionId,
+                        ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
+                    })).then(() => object)
+                )
+                .concat((data.Versions || [])
+                    .filter(object => object.Key.endsWith('/'))
                     .map(object =>
                         this.s3.send(new DeleteObjectCommand({
                             Bucket: bucketName,
@@ -112,31 +116,20 @@ class BucketUtility {
                             VersionId: object.VersionId,
                             ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
                         }))
-                            .then(() => object)
+                        .then(() => object)
                     )
-                    .concat((data.Versions || [])
-                        .filter(object => object.Key.endsWith('/'))
-                        .map(object =>
-                            this.s3.send(new DeleteObjectCommand({
-                                Bucket: bucketName,
-                                Key: object.Key,
-                                VersionId: object.VersionId,
-                                ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
-                            }))
-                            .then(() => object)
-                        )
+                )
+                .concat((data.DeleteMarkers || [])
+                    .map(object =>
+                    this.s3.send(new DeleteObjectCommand({
+                        Bucket: bucketName,
+                        Key: object.Key,
+                        VersionId: object.VersionId,
+                        ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
+                        }))
+                        .then(() => object)
                     )
-                    .concat((data.DeleteMarkers || [])
-                        .map(object =>
-                        this.s3.send(new DeleteObjectCommand({
-                            Bucket: bucketName,
-                            Key: object.Key,
-                            VersionId: object.VersionId,
-                            ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
-                            }))
-                            .then(() => object)
-                        )
-                    )
+                )
             )
         );
     }
@@ -145,7 +138,6 @@ class BucketUtility {
         const promises = bucketNames.map(
             bucketName => this.empty(bucketName)
         );
-
         return Promise.all(promises);
     }
     
