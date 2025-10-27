@@ -1,5 +1,11 @@
 const fs = require('fs');
 const path = require('path');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketWebsiteCommand,
+    PutObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const BucketUtility = require('../../lib/utility/bucket-util');
 const conf = require('../../../../../lib/Config').config;
@@ -27,31 +33,31 @@ const redirectEndpoint = conf.https ? 'https://www.google.com/' :
 
 describe('User visits bucket website endpoint and requests resource ' +
 'that has x-amz-website-redirect-location header ::', () => {
-    beforeEach(done => s3.createBucket({ Bucket: bucket }, done));
+    beforeEach(async () => await s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
-    afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
+    afterEach(async () => await s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
     describe('when x-amz-website-redirect-location: /redirect.html', () => {
-        beforeEach(() => {
+        beforeEach(async () => {
             const webConfig = new WebsiteConfigTester('index.html');
-            return s3.putBucketWebsite({ Bucket: bucket,
-                WebsiteConfiguration: webConfig }).promise()
-            .then(() => s3.putObject({ Bucket: bucket,
+            await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                WebsiteConfiguration: webConfig }));
+            await s3.send(new PutObjectCommand({ Bucket: bucket,
                 Key: 'index.html',
                 ACL: 'public-read',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/index.html')),
                 ContentType: 'text/html',
-                WebsiteRedirectLocation: '/redirect.html' }).promise())
-            .then(() => s3.putObject({ Bucket: bucket,
+                WebsiteRedirectLocation: '/redirect.html' }));
+            await s3.send(new PutObjectCommand({ Bucket: bucket,
                 Key: 'redirect.html',
                 ACL: 'public-read',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/redirect.html')),
-                ContentType: 'text/html' }).promise());
+                ContentType: 'text/html' }));
         });
 
-        afterEach(() => bucketUtil.empty(bucket));
+        afterEach(async () => await bucketUtil.empty(bucket));
 
         it('should serve redirect file on GET request', done => {
             WebsiteConfigTester.checkHTML({
@@ -74,20 +80,20 @@ describe('User visits bucket website endpoint and requests resource ' +
 
     describe('when x-amz-website-redirect-location: https://www.google.com',
     () => {
-        beforeEach(() => {
+        beforeEach(async () => {
             const webConfig = new WebsiteConfigTester('index.html');
-            return s3.putBucketWebsite({ Bucket: bucket,
-                WebsiteConfiguration: webConfig }).promise()
-            .then(() => s3.putObject({ Bucket: bucket,
+            await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                WebsiteConfiguration: webConfig }));
+            await s3.send(new PutObjectCommand({ Bucket: bucket,
                 Key: 'index.html',
                 ACL: 'public-read',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/index.html')),
                 ContentType: 'text/html',
-                WebsiteRedirectLocation: 'https://www.google.com' }).promise());
+                WebsiteRedirectLocation: 'https://www.google.com' }));
         });
 
-        afterEach(() => bucketUtil.empty(bucket));
+        afterEach(async () => await bucketUtil.empty(bucket));
 
         it('should redirect to https://www.google.com', done => {
             WebsiteConfigTester.checkHTML({
@@ -110,19 +116,19 @@ describe('User visits bucket website endpoint and requests resource ' +
     });
 
     describe('when key with header is private', () => {
-        beforeEach(() => {
+        beforeEach(async () => {
             const webConfig = new WebsiteConfigTester('index.html');
-            return s3.putBucketWebsite({ Bucket: bucket,
-                WebsiteConfiguration: webConfig }).promise()
-            .then(() => s3.putObject({ Bucket: bucket,
+            await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                WebsiteConfiguration: webConfig }));
+            await s3.send(new PutObjectCommand({ Bucket: bucket,
                 Key: 'index.html',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/index.html')),
                 ContentType: 'text/html',
-                WebsiteRedirectLocation: 'https://www.google.com' }).promise());
+                WebsiteRedirectLocation: 'https://www.google.com' }));
         });
 
-        afterEach(() => bucketUtil.empty(bucket));
+        afterEach(async () => await bucketUtil.empty(bucket));
 
         it('should return 403 instead of x-amz-website-redirect-location ' +
         'header location', done => {
@@ -145,7 +151,7 @@ describe('User visits bucket website endpoint and requests resource ' +
 
     describe('when key with header is private' +
     'and website config has error condition routing rule', () => {
-        beforeEach(() => {
+        beforeEach(async () => {
             const webConfig = new WebsiteConfigTester('index.html');
             const condition = {
                 HttpErrorCodeReturnedEquals: '403',
@@ -154,23 +160,23 @@ describe('User visits bucket website endpoint and requests resource ' +
                 HostName: 'www.google.com',
             };
             webConfig.addRoutingRule(redirect, condition);
-            return s3.putBucketWebsite({ Bucket: bucket,
-                WebsiteConfiguration: webConfig }).promise()
-            .then(() => s3.putObject({ Bucket: bucket,
+            await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                WebsiteConfiguration: webConfig }));
+            await s3.send(new PutObjectCommand({ Bucket: bucket,
                 Key: 'index.html',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/index.html')),
                 ContentType: 'text/html',
-                WebsiteRedirectLocation: '/redirect.html' }).promise())
-            .then(() => s3.putObject({ Bucket: bucket,
+                WebsiteRedirectLocation: '/redirect.html' }));
+            await s3.send(new PutObjectCommand({ Bucket: bucket,
                 Key: 'redirect.html',
                 ACL: 'public-read',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/redirect.html')),
-                ContentType: 'text/html' }).promise());
+                ContentType: 'text/html' }));
         });
 
-        afterEach(() => bucketUtil.empty(bucket));
+        afterEach(async () => await bucketUtil.empty(bucket));
 
         it(`should redirect to ${redirectEndpoint} since error 403 ` +
         'occurred instead of x-amz-website-redirect-location header ' +
@@ -197,24 +203,24 @@ describe('User visits bucket website endpoint and requests resource ' +
     });
 
     describe(`with redirect all requests to ${redirectEndpoint}`, () => {
-        beforeEach(() => {
+        beforeEach(async () => {
             const redirectAllTo = {
                 HostName: 'www.google.com',
             };
             const webConfig = new WebsiteConfigTester(null, null,
               redirectAllTo);
-            return s3.putBucketWebsite({ Bucket: bucket,
-                WebsiteConfiguration: webConfig }).promise()
-            .then(() => s3.putObject({ Bucket: bucket,
+            await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                WebsiteConfiguration: webConfig }));
+            await s3.send(new PutObjectCommand({ Bucket: bucket,
                 Key: 'index.html',
                 ACL: 'public-read',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/index.html')),
                 ContentType: 'text/html',
-                WebsiteRedirectLocation: '/redirect.html' }).promise());
+                WebsiteRedirectLocation: '/redirect.html' }));
         });
 
-        afterEach(() => bucketUtil.empty(bucket));
+        afterEach(async () => await bucketUtil.empty(bucket));
 
         it(`should redirect to ${redirectEndpoint} instead of ` +
         'x-amz-website-redirect-location header location on GET request',
@@ -241,7 +247,7 @@ describe('User visits bucket website endpoint and requests resource ' +
 
     describe('with routing rule redirect to hostname with prefix condition',
     () => {
-        beforeEach(() => {
+        beforeEach(async () => {
             const webConfig = new WebsiteConfigTester('index.html');
             const condition = {
                 KeyPrefixEquals: 'about/',
@@ -250,18 +256,18 @@ describe('User visits bucket website endpoint and requests resource ' +
                 HostName: 'www.google.com',
             };
             webConfig.addRoutingRule(redirect, condition);
-            return s3.putBucketWebsite({ Bucket: bucket,
-                WebsiteConfiguration: webConfig }).promise()
-            .then(() => s3.putObject({ Bucket: bucket,
+            await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                WebsiteConfiguration: webConfig }));
+            await s3.send(new PutObjectCommand({ Bucket: bucket,
                 Key: 'about/index.html',
                 ACL: 'public-read',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/index.html')),
                 ContentType: 'text/html',
-                WebsiteRedirectLocation: '/redirect.html' }).promise());
+                WebsiteRedirectLocation: '/redirect.html' }));
         });
 
-        afterEach(() => bucketUtil.empty(bucket));
+        afterEach(async () => await bucketUtil.empty(bucket));
 
         it(`should redirect GET request to ${redirectEndpoint}about/ ` +
             'instead of about/ key x-amz-website-redirect-location ' +
@@ -287,7 +293,7 @@ describe('User visits bucket website endpoint and requests resource ' +
     });
 
     describe('with routing rule replaceKeyWith', () => {
-        beforeEach(() => {
+        beforeEach(async () => {
             const webConfig = new WebsiteConfigTester('index.html');
             const condition = {
                 KeyPrefixEquals: 'index.html',
@@ -296,24 +302,24 @@ describe('User visits bucket website endpoint and requests resource ' +
                 ReplaceKeyWith: 'redirect.html',
             };
             webConfig.addRoutingRule(redirect, condition);
-            return s3.putBucketWebsite({ Bucket: bucket,
-                WebsiteConfiguration: webConfig }).promise()
-            .then(() => s3.putObject({ Bucket: bucket,
+            await s3.send(new PutBucketWebsiteCommand({ Bucket: bucket,
+                WebsiteConfiguration: webConfig }));
+            await s3.send(new PutObjectCommand({ Bucket: bucket,
                 Key: 'index.html',
                 ACL: 'public-read',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/index.html')),
                 ContentType: 'text/html',
-                WebsiteRedirectLocation: 'https://www.google.com' }).promise())
-            .then(() => s3.putObject({ Bucket: bucket,
+                WebsiteRedirectLocation: 'https://www.google.com' }));
+            await s3.send(new PutObjectCommand({ Bucket: bucket,
                 Key: 'redirect.html',
                 ACL: 'public-read',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/redirect.html')),
-                ContentType: 'text/html' }).promise());
+                ContentType: 'text/html' }));
         });
 
-        afterEach(() => bucketUtil.empty(bucket));
+        afterEach(async () => await bucketUtil.empty(bucket));
 
         it('should replace key instead of redirecting to key ' +
         'x-amz-website-redirect-location header location on GET request',
