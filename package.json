@@ -22,6 +22,7 @@
     "@aws-sdk/client-s3": "^3.908.0",
     "@aws-sdk/credential-providers": "^3.864.0",
     "@aws-sdk/middleware-retry": "^3.374.0",
+    "@aws-sdk/s3-request-presigner": "^3.901.0",
     "@azure/storage-blob": "^12.28.0",
     "@hapi/joi": "^17.1.1",
     "arsenal": "git+https://github.com/scality/Arsenal#8.2.43",
