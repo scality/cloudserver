@@ -1,5 +1,18 @@
 const assert = require('assert');
 const async = require('async');
+const {
+    CreateBucketCommand,
+    PutObjectCommand,
+    PutBucketVersioningCommand,
+    PutObjectAclCommand,
+    GetObjectAclCommand,
+    DeleteObjectCommand,
+    ListObjectVersionsCommand,
+    PutObjectTaggingCommand,
+    GetObjectTaggingCommand,
+    DeleteObjectTaggingCommand,
+    DeleteBucketCommand,
+} = require('@aws-sdk/client-s3');
 
 const BucketUtility = require('../../lib/utility/bucket-util');
 
@@ -34,23 +47,23 @@ describeSkipIfNotExplicitlyEnabled('legacy null version compatibility tests', ()
     // Cloudserver endpoint that is configured with null version
     // compatibility mode enabled.
     beforeEach(done => async.series([
-        next => s3Compat.createBucket({
+        next => s3Compat.send(new CreateBucketCommand({
             Bucket: bucket,
-        }, next),
-        next => s3Compat.putObject({
+        }), next),
+        next => s3Compat.send(new PutObjectCommand({
             Bucket: bucket,
             Key: 'obj',
             Body: 'nullbody',
-        }, next),
-        next => s3Compat.putBucketVersioning({
+        }), next),
+        next => s3Compat.send(new PutBucketVersioningCommand({
             Bucket: bucket,
             VersioningConfiguration: versioningEnabled,
-        }, next),
-        next => s3Compat.putObject({
+        }), next),
+        next => s3Compat.send(new PutObjectCommand({
             Bucket: bucket,
             Key: 'obj',
             Body: 'versionedbody',
-        }, next),
+        }), next),
     ], done));
 
     afterEach(done => {
@@ -58,36 +71,36 @@ describeSkipIfNotExplicitlyEnabled('legacy null version compatibility tests', ()
             if (err) {
                 return done(err);
             }
-            return s3Compat.deleteBucket({ Bucket: bucket }, done);
+            return s3Compat.send(new DeleteBucketCommand({ Bucket: bucket }), done);
         });
     });
 
     it('updating ACL of legacy null version with non-compat cloudserver', done => {
         async.series([
-            next => s3.putObjectAcl({
+            next => s3.send(new PutObjectAclCommand({
                 Bucket: bucket,
                 Key: 'obj',
                 VersionId: 'null',
                 ACL: 'public-read',
-            }, next),
-            next => s3.getObjectAcl({
+            }), next),
+            next => s3.send(new GetObjectAclCommand({
                 Bucket: bucket,
                 Key: 'obj',
                 VersionId: 'null',
-            }, (err, acl) => {
+            }), (err, acl) => {
                 assert.ifError(err);
                 // check that we fetched the updated null version
                 assert.strictEqual(acl.Grants.length, 2);
                 next();
             }),
-            next => s3.deleteObject({
+            next => s3.send(new DeleteObjectCommand({
                 Bucket: bucket,
                 Key: 'obj',
                 VersionId: 'null',
-            }, next),
-            next => s3.listObjectVersions({
+            }), next),
+            next => s3.send(new ListObjectVersionsCommand({
                 Bucket: bucket,
-            }, (err, listing) => {
+            }), (err, listing) => {
                 assert.ifError(err);
                 // check that the null version has been correctly deleted
                 assert(listing.Versions.every(version => version.VersionId !== 'null'));
@@ -104,48 +117,48 @@ describeSkipIfNotExplicitlyEnabled('legacy null version compatibility tests', ()
             },
         ];
         async.series([
-            next => s3.putObjectTagging({
+            next => s3.send(new PutObjectTaggingCommand({
                 Bucket: bucket,
                 Key: 'obj',
                 VersionId: 'null',
                 Tagging: {
                     TagSet: tagSet,
                 },
-            }, next),
-            next => s3.getObjectTagging({
+            }), next),
+            next => s3.send(new GetObjectTaggingCommand({
                 Bucket: bucket,
                 Key: 'obj',
                 VersionId: 'null',
-            }, (err, tagging) => {
+            }), (err, tagging) => {
                 assert.ifError(err);
                 assert.deepStrictEqual(tagging.TagSet, tagSet);
                 next();
             }),
-            next => s3.deleteObjectTagging({
+            next => s3.send(new DeleteObjectTaggingCommand({
                 Bucket: bucket,
                 Key: 'obj',
                 VersionId: 'null',
-            }, err => {
+            }), err => {
                 assert.ifError(err);
                 next();
             }),
-            next => s3.getObjectTagging({
+            next => s3.send(new GetObjectTaggingCommand({
                 Bucket: bucket,
                 Key: 'obj',
                 VersionId: 'null',
-            }, (err, tagging) => {
+            }), (err, tagging) => {
                 assert.ifError(err);
                 assert.deepStrictEqual(tagging.TagSet, []);
                 next();
             }),
-            next => s3.deleteObject({
+            next => s3.send(new DeleteObjectCommand({
                 Bucket: bucket,
                 Key: 'obj',
                 VersionId: 'null',
-            }, next),
-            next => s3.listObjectVersions({
+            }), next),
+            next => s3.send(new ListObjectVersionsCommand({
                 Bucket: bucket,
-            }, (err, listing) => {
+            }), (err, listing) => {
                 assert.ifError(err);
                 // check that the null version has been correctly deleted
                 assert(listing.Versions.every(version => version.VersionId !== 'null'));
