@@ -8,11 +8,13 @@ const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
 const { makeBackbeatRequest } = require('./utils');
 const { config } = require('../../../lib/Config');
+const { promisify } = require('util');
 
 const testBucket = 'bucket-for-list-lifecycle-noncurrent-tests';
 const emptyBucket = 'empty-bucket-for-list-lifecycle-noncurrent-tests';
 const nonVersionedBucket = 'non-versioned-bucket-for-list-lifecycle-noncurrent-tests';
 
+const removeAllVersionsPromise = promisify(removeAllVersions);
 const bucketUtil = new BucketUtility('default', {});
 const s3 = bucketUtil.s3;
 
@@ -164,7 +166,7 @@ describe('listLifecycleNonCurrents', () => {
     ], done));
 
     after(async () => {
-        await removeAllVersions({ Bucket: testBucket });
+        await removeAllVersionsPromise({ Bucket: testBucket });
         await s3.send(new DeleteBucketCommand({ Bucket: testBucket }));
         await s3.send(new DeleteBucketCommand({ Bucket: emptyBucket }));
         await s3.send(new DeleteBucketCommand({ Bucket: nonVersionedBucket }));
