@@ -1,6 +1,11 @@
 const assert = require('assert');
-const { S3 } = require('aws-sdk');
-const async = require('async');
+const { S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketTaggingCommand,
+    GetBucketTaggingCommand,
+    DeleteBucketTaggingCommand } = require('@aws-sdk/client-s3');
+
 const assertError = require('../../../../utilities/bucketTagging-util');
 
 const getConfig = require('../support/config');
@@ -25,60 +30,62 @@ describe('aws-sdk test delete bucket tagging', () => {
 
     before(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3 = new S3(config);
+        s3 = new S3Client(config);
+        s3.AccountId = '123456789012';
     });
 
-    beforeEach(done => s3.createBucket({ Bucket: bucket }, done));
+    beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
-    afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
+    afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
-    it('should delete tag', done => {
-        async.series([
-            next => s3.putBucketTagging({
-                AccountId: s3.AccountId,
-                Tagging: validTagging, Bucket: bucket,
-            }, (err, res) => next(err, res)),
-            next => s3.getBucketTagging({
+    it('should delete tag', async () => {
+        await s3.send(new PutBucketTaggingCommand({
+            AccountId: s3.AccountId,
+            Tagging: validTagging, 
+            Bucket: bucket,
+        }));
+        const res = await s3.send(new GetBucketTaggingCommand({
+            AccountId: s3.AccountId,
+            Bucket: bucket,
+        }));
+        assert.deepStrictEqual(res.TagSet, validTagging.TagSet);
+        await s3.send(new DeleteBucketTaggingCommand({
+            AccountId: s3.AccountId,
+            Bucket: bucket,
+        }));
+        try {
+            await s3.send(new GetBucketTaggingCommand({
                 AccountId: s3.AccountId,
                 Bucket: bucket,
-            }, (err, res) => {
-                assert.deepStrictEqual(res, validTagging);
-                next(err, res);
-            }),
-            next => s3.deleteBucketTagging({
-                AccountId: s3.AccountId,
-                Bucket: bucket,
-            }, (err, res) => next(err, res)),
-            next => s3.getBucketTagging({
-                AccountId: s3.AccountId,
-                Bucket: bucket,
-            }, next),
-        ], err => {
+            }));
+            throw new Error('Expected NoSuchTagSet error');
+        } catch (err) {
             assertError(err, 'NoSuchTagSet');
-            done();
-        });
+        }
     });
 
-    it('should make no change when deleting tags on bucket with no tags', done => {
-        async.series([
-            next => s3.getBucketTagging({
+    it('should make no change when deleting tags on bucket with no tags', async () => {
+        try {
+            await s3.send(new GetBucketTaggingCommand({
                 AccountId: s3.AccountId,
                 Bucket: bucket,
-            }, err => {
-                assertError(err, 'NoSuchTagSet');
-                next();
-            }),
-            next => s3.deleteBucketTagging({
+            }));
+            throw new Error('Expected NoSuchTagSet error');
+        } catch (err) {
+            assertError(err, 'NoSuchTagSet');
+        }
+        await s3.send(new DeleteBucketTaggingCommand({
+            AccountId: s3.AccountId,
+            Bucket: bucket,
+        }));
+        try {
+            await s3.send(new GetBucketTaggingCommand({
                 AccountId: s3.AccountId,
                 Bucket: bucket,
-            }, (err, res) => next(err, res)),
-            next => s3.getBucketTagging({
-                AccountId: s3.AccountId,
-                Bucket: bucket,
-            }, err => {
-                assertError(err, 'NoSuchTagSet');
-                next();
-            }),
-        ], done);
+            }));
+            throw new Error('Expected NoSuchTagSet error');
+        } catch (err) {
+            assertError(err, 'NoSuchTagSet');
+        }
     });
 });

@@ -1,6 +1,11 @@
 const assert = require('assert');
 const { errors } = require('arsenal');
-const { S3 } = require('aws-sdk');
+const { S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    DeleteBucketPolicyCommand,
+    PutBucketPolicyCommand,
+    GetBucketPolicyCommand } = require('@aws-sdk/client-s3');
 
 const getConfig = require('../support/config');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -18,17 +23,16 @@ const bucketPolicy = {
 };
 
 // Check for the expected error response code and status code.
-function assertError(err, expectedErr, cb) {
+function assertError(err, expectedErr) {
     if (expectedErr === null) {
         assert.strictEqual(err, null, `expected no error but got '${err}'`);
     } else {
-        assert.strictEqual(err.code, expectedErr, 'incorrect error response ' +
-            `code: should be '${expectedErr}' but got '${err.code}'`);
-        assert.strictEqual(err.statusCode, errors[expectedErr].code,
+        assert.strictEqual(err.name, expectedErr, 'incorrect error response ' +
+            `code: should be '${expectedErr}' but got '${err.name}'`);
+        assert.strictEqual(err.$metadata.httpStatusCode, errors[expectedErr].code,
             'incorrect error status code: should be 400 but got ' +
-            `'${err.statusCode}'`);
+            `'${err.$metadata.httpStatusCode}'`);
     }
-    cb();
 }
 
 describe('aws-sdk test delete bucket policy', () => {
@@ -37,42 +41,48 @@ describe('aws-sdk test delete bucket policy', () => {
 
     before(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3 = new S3(config);
+        s3 = new S3Client(config);
         otherAccountS3 = new BucketUtility('lisa', {}).s3;
         return done();
     });
 
-    it('should return NoSuchBucket error if bucket does not exist', done => {
-        s3.deleteBucketPolicy({ Bucket: bucket }, err =>
-            assertError(err, 'NoSuchBucket', done));
+    it('should return NoSuchBucket error if bucket does not exist', async () => {
+        try {
+            await s3.send(new DeleteBucketPolicyCommand({ Bucket: bucket }));
+            throw new Error('Expected NoSuchBucket error');
+        } catch (err) {
+            assertError(err, 'NoSuchBucket');
+        }
     });
 
     describe('policy rules', () => {
-        beforeEach(done => s3.createBucket({ Bucket: bucket }, done));
+        beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
-        afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
+        afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
-        it('should return MethodNotAllowed if user is not bucket owner', done => {
-            otherAccountS3.deleteBucketPolicy({ Bucket: bucket },
-            err => assertError(err, 'MethodNotAllowed', done));
+        it('should return MethodNotAllowed if user is not bucket owner', async () => {
+            try {
+                await otherAccountS3.send(new DeleteBucketPolicyCommand({ Bucket: bucket }));
+                throw new Error('Expected MethodNotAllowed error');
+            } catch (err) {
+                assertError(err, 'MethodNotAllowed');
+            }
         });
 
-        it('should return no error if no policy on bucket', done => {
-            s3.deleteBucketPolicy({ Bucket: bucket }, err =>
-                assertError(err, null, done));
+        it('should return no error if no policy on bucket', () => {
+            s3.send(new DeleteBucketPolicyCommand({ Bucket: bucket }));
         });
 
-        it('should delete policy from bucket', done => {
+        it('should delete policy from bucket', async () => {
             const params = { Bucket: bucket, Policy: JSON.stringify(bucketPolicy) };
-            s3.putBucketPolicy(params, err => {
-                assert.equal(err, null);
-                s3.deleteBucketPolicy({ Bucket: bucket }, err => {
-                    assert.equal(err, null);
-                    s3.getBucketPolicy({ Bucket: bucket },
-                    err =>
-                        assertError(err, 'NoSuchBucketPolicy', done));
-                });
-            });
+            await s3.send(new PutBucketPolicyCommand(params));
+            await s3.send(new DeleteBucketPolicyCommand({ Bucket: bucket }));
+            try {
+                await s3.send(new GetBucketPolicyCommand({ Bucket: bucket }));
+                throw new Error('Expected NoSuchBucketPolicy error');
+            } catch (err) {
+                assertError(err, 'NoSuchBucketPolicy');
+            }
         });
     });
 });
