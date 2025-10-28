@@ -28,15 +28,14 @@ function _deleteVersionList(versionList, bucket, callback) {
     return s3Client.send(new DeleteObjectsCommand(params)).then(() => callback()).catch(err => callback(err));
 }
 
-function checkOneVersion(s3, bucket, versionId, callback) {
+function checkOneVersion(s3, bucket, versionId) {
     return s3Client.send(new ListObjectVersionsCommand({ Bucket: bucket })).then(data => {
             assert.strictEqual(data.Versions.length, 1);
             if (versionId) {
                 assert.strictEqual(data.Versions[0].VersionId, versionId);
             }
-            assert.strictEqual(data.DeleteMarkers.length, 0);
-            callback();
-        }).catch(err => callback(err));
+            assert.strictEqual(data.DeleteMarkers?.length, undefined);
+        });
 }
 
 function removeAllVersions(params, callback) {
