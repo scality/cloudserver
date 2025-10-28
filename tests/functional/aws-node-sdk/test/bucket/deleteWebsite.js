@@ -1,72 +1,70 @@
 const assert = require('assert');
+const { S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    DeleteBucketWebsiteCommand,
+    PutBucketWebsiteCommand } = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
-const BucketUtility = require('../../lib/utility/bucket-util');
+const getConfig = require('../support/config');
 const { WebsiteConfigTester } = require('../../lib/utility/website-util');
 
 const bucketName = 'testdeletewebsitebucket';
 
 describe('DELETE bucket website', () => {
     withV4(sigCfg => {
-        const bucketUtil = new BucketUtility('default', sigCfg);
-        const s3 = bucketUtil.s3;
-        const otherAccountBucketUtility = new BucketUtility('lisa', {});
-        const otherAccountS3 = otherAccountBucketUtility.s3;
+        const config = getConfig('default', sigCfg);
+        const s3 = new S3Client(config);
+        const otherAccountConfig = getConfig('lisa', {});
+        const otherAccountS3 = new S3Client(otherAccountConfig);
 
         describe('without existing bucket', () => {
-            it('should return NoSuchBucket', done => {
-                s3.deleteBucketWebsite({ Bucket: bucketName }, err => {
+            it('should return NoSuchBucket', async () => {
+                try {
+                    await s3.send(new DeleteBucketWebsiteCommand({ Bucket: bucketName }));
+                    throw new Error('Expected NoSuchBucket error');
+                } catch (err) {
                     assert(err);
-                    assert.strictEqual(err.code, 'NoSuchBucket');
-                    assert.strictEqual(err.statusCode, 404);
-                    return done();
-                });
+                    assert.strictEqual(err.name, 'NoSuchBucket');
+                    assert.strictEqual(err.$metadata.httpStatusCode, 404);
+                }
             });
         });
 
         describe('with existing bucket', () => {
-            beforeEach(() => s3.createBucket({ Bucket: bucketName }).promise());
-            afterEach(() => bucketUtil.deleteOne(bucketName));
+            beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucketName })));
+
+            afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucketName })));
 
             describe('without existing configuration', () => {
-                it('should return a 204 response', done => {
-                    const request =
-                    s3.deleteBucketWebsite({ Bucket: bucketName }, err => {
-                        const statusCode =
-                            request.response.httpResponse.statusCode;
-                        assert.strictEqual(statusCode, 204,
-                            `Found unexpected statusCode ${statusCode}`);
-                        assert.strictEqual(err, null,
-                            `Found unexpected err ${err}`);
-                        return done();
-                    });
+                it('should return a 204 response', async () => {
+                    const res = await s3.send(new DeleteBucketWebsiteCommand({ Bucket: bucketName }));
+                    const statusCode = res?.$metadata?.httpStatusCode;
+                    assert.strictEqual(statusCode, 204,
+                        `Found unexpected statusCode ${statusCode}`);
                 });
             });
 
             describe('with existing configuration', () => {
-                beforeEach(done => {
+                beforeEach(() => {
                     const config = new WebsiteConfigTester('index.html');
-                    s3.putBucketWebsite({ Bucket: bucketName,
-                        WebsiteConfiguration: config }, done);
+                    return s3.send(new PutBucketWebsiteCommand({ 
+                        Bucket: bucketName,
+                        WebsiteConfiguration: config 
+                    }));
                 });
 
-                it('should delete bucket configuration successfully', done => {
-                    s3.deleteBucketWebsite({ Bucket: bucketName }, err => {
-                        assert.strictEqual(err, null,
-                            `Found unexpected err ${err}`);
-                        return done();
-                    });
-                });
+                it('should delete bucket configuration successfully', () => s3.send(new 
+                    DeleteBucketWebsiteCommand({ Bucket: bucketName })));
 
-                it('should return AccessDenied if user is not bucket owner',
-                done => {
-                    otherAccountS3.deleteBucketWebsite({ Bucket: bucketName },
-                    err => {
-                        assert(err);
-                        assert.strictEqual(err.code, 'AccessDenied');
-                        assert.strictEqual(err.statusCode, 403);
-                        return done();
-                    });
+                it('should return AccessDenied if user is not bucket owner', async () => {
+                    try {
+                        await otherAccountS3.send(new DeleteBucketWebsiteCommand({ Bucket: bucketName }));
+                        throw new Error('Expected AccessDenied error');
+                    } catch (err) {
+                        assert.strictEqual(err.name, 'AccessDenied');
+                        assert.strictEqual(err.$metadata.httpStatusCode, 403);
+                    }
                 });
             });
         });
