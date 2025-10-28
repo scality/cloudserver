@@ -22,16 +22,16 @@ let location = null;
 
 async function getCredentials() {
     const creds = await s3.config.credentials();
-    return credentials = {
+    const credentials = {
         accessKey: creds.accessKeyId,
         secretKey: creds.secretAccessKey,
     };
+    return credentials;
 }
 
 async function getS3Hostname() {
     const endpoint = await s3.config.endpoint();
     s3Hostname = endpoint.hostname;
-    console.log('S3 hostname for backbeat requests set up', s3Hostname);
     location = config.restEndpoints[s3Hostname] || config.restEndpoints.localhost;
     return s3Hostname;
 }
@@ -68,7 +68,6 @@ describe('listLifecycleNonCurrents', () => {
             getCredentials()
                 .then(creds => {
                     credentials = creds;
-                    console.log('we are here1', credentials);
                     return getS3Hostname();
                 })
                 .then(() => next())

@@ -18,11 +18,11 @@ const s3 = bucketUtil.s3;
 
 async function getCredentials() {
         const creds = await s3.config.credentials();
-        console.log('credential retrieved', creds);
-        return credentials = {
+        const credentials = {
             accessKey: creds.accessKeyId,
             secretKey: creds.secretAccessKey,
         };
+        return credentials;
 }
 
 async function getS3Hostname() {
@@ -91,7 +91,6 @@ describe('excludedDataStoreName', () => {
             next => {
                 s3.send(new PutObjectCommand({ Bucket: testBucket, Key: 'key0' }))
                     .then(data => {
-                        console.log('we are here2');
                         expectedVersions.push(data.VersionId);
                         next();
                     })
@@ -105,7 +104,6 @@ describe('excludedDataStoreName', () => {
             next => {
                 s3.send(new PutObjectCommand({ Bucket: testBucket, Key: 'key1' }))
                     .then(data => {
-                        console.log('we are here');
                         const versionId = data.VersionId;
                         return updateMetadata(
                             { bucket: testBucket, objectKey: 'key1', versionId, authCredentials: credentials },

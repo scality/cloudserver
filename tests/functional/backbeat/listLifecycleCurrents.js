@@ -21,16 +21,16 @@ let location = null;
 
 async function getCredentials() {
     const creds = await s3.config.credentials();
-    return credentials = {
+    const credentials = {
         accessKey: creds.accessKeyId,
         secretKey: creds.secretAccessKey,
     };
+    return credentials;
 }
 
 async function getS3Hostname() {
     const endpoint = await s3.config.endpoint();
     s3Hostname = endpoint.hostname;
-    console.log('S3 hostname for backbeat requests set up', s3Hostname);
     location = config.restEndpoints[s3Hostname] || config.restEndpoints.localhost;
     return s3Hostname;
 }
@@ -69,13 +69,11 @@ function checkContents(contents, expectedKeyVersions) {
         let date;
         const expectedKeyVersions = {};
 
-        before(done => {
-            return async.series([
+        before(done => async.series([
                 next => {
                     getCredentials()
                         .then(creds => {
                             credentials = creds;
-                            console.log('we are here1', credentials);
                             return getS3Hostname();
                         })
                         .then(() => next())
@@ -118,7 +116,6 @@ function checkContents(contents, expectedKeyVersions) {
                         Tagging: 'mykey=myvalue',
                     }))
                         .then(data => {
-                            console.log('we are here1');
                             expectedKeyVersions[keyName] = data.VersionId;
                             cb();
                         })
@@ -141,8 +138,7 @@ function checkContents(contents, expectedKeyVersions) {
                             .catch(cb);
                     }, next);
                 },
-            ], done);
-        });
+            ], done));
 
         after(async () => {
             await removeAllVersions({ Bucket: testBucket });
@@ -456,8 +452,7 @@ describe('listLifecycleCurrents with bucket versioning enabled and maxKeys', () 
     const testBucket = 'bucket-for-list-lifecycle-current-tests-truncated';
     const expectedKeyVersions = {};
 
-    before(done => {
-        return async.series([
+    before(done => async.series([
             next => {
                 getCredentials()
                     .then(creds => {
@@ -518,8 +513,7 @@ describe('listLifecycleCurrents with bucket versioning enabled and maxKeys', () 
                     })
                     .catch(err => cb(err));
             }, next),
-        ], done);
-    });
+        ], done));
 
     after(async () => {
         await removeAllVersions({ Bucket: testBucket });
@@ -619,8 +613,7 @@ describe('listLifecycleCurrents with bucket versioning enabled and delete object
     const keyName2 = 'key2';
     const expectedKeyVersions = {};
 
-    before(done => {
-        return async.series([
+    before(done => async.series([
             next => {
                 getCredentials()
                     .then(creds => {
@@ -686,8 +679,7 @@ describe('listLifecycleCurrents with bucket versioning enabled and delete object
                     .then(() => next())
                     .catch(next))
                 .catch(next),
-        ], done);
-    });
+        ], done));
 
 
     after(async () => {

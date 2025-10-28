@@ -51,14 +51,14 @@ describe('listLifecycle if null version', () => {
                 .then(() => next())
                 .catch(next),
             next => s3.send(new PutObjectCommand({ Bucket: testBucket, Key: 'key1', Body: '123' }))
-                .then(data => {
+                .then(data => 
                     // delete version to create a null current version for key1.
-                    return s3.send(new DeleteObjectCommand({ 
+                     s3.send(new DeleteObjectCommand({ 
                         Bucket: testBucket, 
                         Key: 'key1', 
                         VersionId: data.VersionId 
-                    }));
-                })
+                    }))
+                )
                 .then(() => next())
                 .catch(next),
             next => s3.send(new PutObjectCommand({ Bucket: testBucket, Key: 'key2', Body: '123' }))
@@ -69,7 +69,7 @@ describe('listLifecycle if null version', () => {
                 .catch(next),
         ], done));
 
-    after(async() => {
+    after(async () => {
         await removeAllVersions({ Bucket: testBucket });
         await s3.send(new DeleteBucketCommand({ Bucket: testBucket }));
     });
