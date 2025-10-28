@@ -1,4 +1,9 @@
 const assert = require('assert');
+const {
+    CreateBucketCommand,
+    GetBucketLoggingCommand,
+    PutBucketLoggingCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -39,12 +44,16 @@ describe('GET bucket logging', () => {
             afterEach(done => { cleanUp(bucketUtil, done); });
 
             it('should return NoSuchBucket', done => {
-                s3.getBucketLogging({ Bucket: bucketName }, err => {
-                    assert(err);
-                    assert.strictEqual(err.code, 'NoSuchBucket');
-                    assert.strictEqual(err.statusCode, 404);
-                    return done();
-                });
+                s3.send(new GetBucketLoggingCommand({ Bucket: bucketName }))
+                    .then(() => {
+                        done(new Error('Expected error but succeeded'));
+                    })
+                    .catch(err => {
+                        assert(err);
+                        assert.strictEqual(err.name, 'NoSuchBucket');
+                        assert.strictEqual(err.$metadata.httpStatusCode, 404);
+                        done();
+                    });
             });
         });
 
@@ -53,24 +62,26 @@ describe('GET bucket logging', () => {
 
             beforeEach(done => {
                 process.stdout.write('Creating bucket without logging\n');
-                s3.createBucket({ Bucket: bucketName }, err => {
-                    if (err) {
+                s3.send(new CreateBucketCommand({ Bucket: bucketName }))
+                    .then(() => done())
+                    .catch(err => {
                         process.stdout.write('error creating bucket', err);
-                        return done(err);
-                    }
-                    return done();
-                });
+                        done(err);
+                    });
             });
 
             it('should return empty BucketLoggingStatus', done => {
-                s3.getBucketLogging({ Bucket: bucketName }, (err, data) => {
-                    assert.strictEqual(err, null,
-                        `Found unexpected err ${err}`);
-                    // When no logging is configured, AWS returns empty object
-                    assert(data);
-                    assert.strictEqual(Object.keys(data).length, 0, 'Expected data to have no keys');
-                    return done();
-                });
+                s3.send(new GetBucketLoggingCommand({ Bucket: bucketName }))
+                    .then(data => {
+                        // When no logging is configured, AWS returns empty object
+                        assert(data);
+                        assert.strictEqual(Object.keys(data).length, 1, 'Expected data to have only $metadata key');
+                        assert(data.$metadata);
+                        done();
+                    })
+                    .catch(err => {
+                        done(err);
+                    });
             });
         });
 
@@ -79,34 +90,28 @@ describe('GET bucket logging', () => {
 
             beforeEach(done => {
                 process.stdout.write('Creating buckets and setting logging\n');
-                return s3.createBucket({ Bucket: bucketName }, err => {
-                    if (err) {
-                        return done(err);
-                    }
-                    return s3.createBucket({ Bucket: targetBucket }, err => {
-                        if (err) {
-                            return done(err);
-                        }
-                        return s3.putBucketLogging({
-                            Bucket: bucketName,
-                            BucketLoggingStatus: validLoggingConfig,
-                        }, done);
-                    });
-                });
+                s3.send(new CreateBucketCommand({ Bucket: bucketName }))
+                    .then(() => s3.send(new CreateBucketCommand({ Bucket: targetBucket })))
+                    .then(() => s3.send(new PutBucketLoggingCommand({
+                        Bucket: bucketName,
+                        BucketLoggingStatus: validLoggingConfig,
+                    })))
+                    .then(() => done())
+                    .catch(done);
             });
 
             it('should return bucket logging configuration successfully', done => {
-                s3.getBucketLogging({ Bucket: bucketName }, (err, data) => {
-                    assert.strictEqual(err, null,
-                        `Found unexpected err ${err}`);
-                    assert(data.LoggingEnabled);
-                    assert.strictEqual(data.LoggingEnabled.TargetBucket,
-                        targetBucket);
-                    assert.strictEqual(data.LoggingEnabled.TargetPrefix, 'logs/');
-                    return done();
-                });
+                s3.send(new GetBucketLoggingCommand({ Bucket: bucketName }))
+                    .then(data => {
+                        assert(data.LoggingEnabled);
+                        assert.strictEqual(data.LoggingEnabled.TargetBucket, targetBucket);
+                        assert.strictEqual(data.LoggingEnabled.TargetPrefix, 'logs/');
+                        done();
+                    })
+                    .catch(err => {
+                        done(err);
+                    });
             });
         });
     });
 });
-
