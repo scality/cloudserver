@@ -10,9 +10,10 @@ const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
 const { makeBackbeatRequest, updateMetadata } = require('./utils');
 const { config } = require('../../../lib/Config');
+const { promisify } = require('util');
 
 const testBucket = 'bucket-for-list-lifecycle-current-tests';
-
+const removeAllVersionsPromise = promisify(removeAllVersions);
 const bucketUtil = new BucketUtility('default', {});
 const s3 = bucketUtil.s3;
 
@@ -120,7 +121,7 @@ describe('excludedDataStoreName', () => {
         ], done));
 
     after(async () => {
-        await removeAllVersions({ Bucket: testBucket });
+        await removeAllVersionsPromise({ Bucket: testBucket });
         await s3.send(new DeleteBucketCommand({ Bucket: testBucket }));
     });
 

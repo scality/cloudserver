@@ -11,7 +11,9 @@ const {
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
 const { makeBackbeatRequest } = require('./utils');
+const { promisify } = require('util');
 
+const removeAllVersionsPromise = promisify(removeAllVersions);
 const bucketUtil = new BucketUtility('default', {});
 const s3 = bucketUtil.s3;
 let credentials = null;
@@ -62,7 +64,7 @@ describe('listLifecycle with non-current delete marker', () => {
 
 
     after(async () => {
-        await removeAllVersions({ Bucket: testBucket });
+        await removeAllVersionsPromise({ Bucket: testBucket });
         await s3.send(new DeleteBucketCommand({ Bucket: testBucket }));
     });
 
@@ -157,7 +159,7 @@ describe('listLifecycle with current delete marker version', () => {
         ], done));
 
     after(async () => {
-        await removeAllVersions({ Bucket: testBucket });
+        await removeAllVersionsPromise({ Bucket: testBucket });
         await s3.send(new DeleteBucketCommand({ Bucket: testBucket }));
     });
 
