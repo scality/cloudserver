@@ -1,6 +1,10 @@
 const assert = require('assert');
-const { S3 } = require('aws-sdk');
-const { series } = require('async');
+const { S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    GetBucketReplicationCommand,
+    PutBucketReplicationCommand,
+    PutBucketVersioningCommand } = require('@aws-sdk/client-s3');
 const { errorInstances } = require('arsenal');
 
 const getConfig = require('../support/config');
@@ -25,55 +29,50 @@ describe('aws-node-sdk test getBucketReplication', () => {
     let s3;
     let otherAccountS3;
 
-    beforeEach(done => {
+    beforeEach(async () => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3 = new S3(config);
-        otherAccountS3 = new BucketUtility('lisa', {}).s3;
-        return series([
-            next => s3.createBucket({ Bucket: bucket }, next),
-            next => s3.putBucketVersioning({
-                Bucket: bucket,
-                VersioningConfiguration: {
-                    Status: 'Enabled',
-                },
-            }, next),
-        ], done);
+        s3 = new S3Client(config);
+        otherAccountS3 = new BucketUtility('lisa', {}).s3;        
+        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+        await s3.send(new PutBucketVersioningCommand({
+            Bucket: bucket,
+            VersioningConfiguration: {
+                Status: 'Enabled',
+            },
+        }));
     });
 
-    afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
+    afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
     it("should return 'ReplicationConfigurationNotFoundError' if bucket does " +
-    'not have a replication configuration', done =>
-        s3.getBucketReplication({ Bucket: bucket }, err => {
-            assert(errorInstances.ReplicationConfigurationNotFoundError.is[err.code]);
-            return done();
-        }));
+    'not have a replication configuration', async () => {
+        try {
+            await s3.send(new GetBucketReplicationCommand({ Bucket: bucket }));
+            throw new Error('Expected ReplicationConfigurationNotFoundError');
+        } catch (err) {
+            assert(errorInstances.ReplicationConfigurationNotFoundError.is[err.Code]);
+        }
+    });
 
-    it('should get the replication configuration that was put on a bucket',
-        done => s3.putBucketReplication({
+    it('should get the replication configuration that was put on a bucket', async () => {
+        await s3.send(new PutBucketReplicationCommand({
             Bucket: bucket,
             ReplicationConfiguration: replicationConfig,
-        }, err => {
-            if (err) {
-                return done(err);
-            }
-            return s3.getBucketReplication({ Bucket: bucket }, (err, data) => {
-                if (err) {
-                    return done(err);
-                }
-                const expectedObj = {
-                    ReplicationConfiguration: replicationConfig,
-                };
-                assert.deepStrictEqual(data, expectedObj);
-                return done();
-            });
         }));
+        const data = await s3.send(new GetBucketReplicationCommand({ Bucket: bucket }));
+        const expectedObj = {
+            ReplicationConfiguration: replicationConfig,
+        };
+        assert.deepStrictEqual(data.ReplicationConfiguration, expectedObj.ReplicationConfiguration);
+    });
 
-    it('should return AccessDenied if user is not bucket owner', done =>
-        otherAccountS3.getBucketReplication({ Bucket: bucket }, err => {
-            assert(err);
-            assert.strictEqual(err.code, 'AccessDenied');
-            assert.strictEqual(err.statusCode, 403);
-            return done();
-        }));
+    it('should return AccessDenied if user is not bucket owner', async () => {
+        try {
+            await otherAccountS3.send(new GetBucketReplicationCommand({ Bucket: bucket }));
+            throw new Error('Expected AccessDenied error');
+        } catch (err) {
+            assert.strictEqual(err.name, 'AccessDenied');
+            assert.strictEqual(err.$metadata.httpStatusCode, 403);
+        }
+    });
 });
