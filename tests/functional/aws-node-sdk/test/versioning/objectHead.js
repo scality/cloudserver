@@ -1,5 +1,14 @@
 const assert = require('assert');
 const async = require('async');
+const { promisify } = require('util');
+
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketVersioningCommand,
+    PutObjectCommand,
+    HeadObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -10,6 +19,7 @@ const {
     versioningSuspended,
 } = require('../../lib/utility/versioning-util.js');
 
+const removeAllVersionsPromise = promisify(removeAllVersions);
 const data = ['foo1', 'foo2'];
 const counter = 100;
 let bucket;
@@ -19,7 +29,6 @@ function _assertNoError(err, desc) {
     assert.strictEqual(err, null, `Unexpected err ${desc}: ${err}`);
 }
 
-
 // Same tests as objectPut versioning tests, but head object instead of get
 describe('put and head object with versioning', function testSuite() {
     this.timeout(600000);
@@ -28,69 +37,75 @@ describe('put and head object with versioning', function testSuite() {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
 
-        beforeEach(done => {
+        beforeEach(async () => {
             bucket = `versioning-bucket-${Date.now()}`;
-            s3.createBucket({ Bucket: bucket }, done);
+            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
         });
 
-        afterEach(done => {
-            removeAllVersions({ Bucket: bucket }, err => {
-                if (err) {
-                    return done(err);
-                }
-                return s3.deleteBucket({ Bucket: bucket }, done);
-            });
+        afterEach(async () => {
+            await removeAllVersionsPromise({ Bucket: bucket });
+            await bucketUtil.empty(bucket, true);
+            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
         });
 
         it('should put and head a non-versioned object without including ' +
         'version ids in response headers', done => {
             const params = { Bucket: bucket, Key: key };
-            s3.putObject(params, (err, data) => {
-                _assertNoError(err, 'putting object');
-                assert.strictEqual(data.VersionId, undefined);
-                s3.headObject(params, (err, data) => {
-                    _assertNoError(err, 'heading object');
+            s3.send(new PutObjectCommand(params))
+                .then(data => {
+                    _assertNoError(null, 'putting object');
+                    assert.strictEqual(data.VersionId, undefined);
+                    return s3.send(new HeadObjectCommand(params));
+                })
+                .then(data => {
+                    _assertNoError(null, 'heading object');
                     assert.strictEqual(data.VersionId, undefined);
                     done();
-                });
-            });
+                })
+                .catch(done);
         });
 
         it('version-specific head should still not return version id in ' +
         'response header', done => {
             const params = { Bucket: bucket, Key: key };
-            s3.putObject(params, (err, data) => {
-                _assertNoError(err, 'putting object');
-                assert.strictEqual(data.VersionId, undefined);
-                params.VersionId = 'null';
-                s3.headObject(params, (err, data) => {
-                    _assertNoError(err, 'heading specific version "null"');
+            s3.send(new PutObjectCommand(params))
+                .then(data => {
+                    _assertNoError(null, 'putting object');
+                    assert.strictEqual(data.VersionId, undefined);
+                    params.VersionId = 'null';
+                    return s3.send(new HeadObjectCommand(params));
+                })
+                .then(data => {
+                    _assertNoError(null, 'heading specific version "null"');
                     assert.strictEqual(data.VersionId, undefined);
                     done();
-                });
-            });
+                })
+                .catch(done);
         });
 
         describe('on a version-enabled bucket', () => {
-            beforeEach(done => {
-                s3.putBucketVersioning({
+            beforeEach(async () => {
+                await s3.send(new PutBucketVersioningCommand({
                     Bucket: bucket,
                     VersioningConfiguration: versioningEnabled,
-                }, done);
+                }));
             });
 
             it('should create a new version for an object', done => {
                 const params = { Bucket: bucket, Key: key };
-                s3.putObject(params, (err, data) => {
-                    _assertNoError(err, 'putting object');
-                    params.VersionId = data.VersionId;
-                    s3.headObject(params, (err, data) => {
-                        _assertNoError(err, 'heading object');
+                s3.send(new PutObjectCommand(params))
+                    .then(data => {
+                        _assertNoError(null, 'putting object');
+                        params.VersionId = data.VersionId;
+                        return s3.send(new HeadObjectCommand(params));
+                    })
+                    .then(data => {
+                        _assertNoError(null, 'heading object');
                         assert.strictEqual(params.VersionId, data.VersionId,
                                 'version ids are not equal');
                         done();
-                    });
-                });
+                    })
+                    .catch(done);
             });
         });
 
@@ -98,17 +113,20 @@ describe('put and head object with versioning', function testSuite() {
             const eTags = [];
 
             beforeEach(done => {
-                s3.putObject({ Bucket: bucket, Key: key, Body: data[0] },
-                    (err, data) => {
-                        if (err) {
-                            done(err);
-                        }
+                s3.send(new PutObjectCommand({ 
+                    Bucket: bucket, 
+                    Key: key, 
+                    Body: data[0] 
+                }))
+                    .then(data => {
                         eTags.push(data.ETag);
-                        s3.putBucketVersioning({
+                        return s3.send(new PutBucketVersioningCommand({
                             Bucket: bucket,
                             VersioningConfiguration: versioningEnabled,
-                        }, done);
-                    });
+                        }));
+                    })
+                    .then(() => done())
+                    .catch(done);
             });
 
             afterEach(done => {
@@ -121,35 +139,47 @@ describe('put and head object with versioning', function testSuite() {
             done => {
                 const paramsNull = {
                     Bucket: bucket,
-                    Key: '/', VersionId:
-                    'null',
+                    Key: '/',
+                    VersionId: 'null',
                 };
-                s3.headObject(paramsNull, err => {
-                    _assertNoError(err, 'heading null version');
-                    done();
-                });
+                s3.send(new HeadObjectCommand(paramsNull))
+                    .then(() => {
+                        _assertNoError(null, 'heading null version');
+                        done();
+                    })
+                    .catch(done);
             });
 
             it('should keep null version and create a new version', done => {
                 const params = { Bucket: bucket, Key: key, Body: data[1] };
-                s3.putObject(params, (err, data) => {
-                    const newVersion = data.VersionId;
-                    eTags.push(data.ETag);
-                    s3.headObject({ Bucket: bucket, Key: key,
-                        VersionId: newVersion }, (err, data) => {
-                        assert.strictEqual(err, null);
+                let newVersion;
+                s3.send(new PutObjectCommand(params))
+                    .then(data => {
+                        newVersion = data.VersionId;
+                        eTags.push(data.ETag);
+                        return s3.send(new HeadObjectCommand({ 
+                            Bucket: bucket, 
+                            Key: key,
+                            VersionId: newVersion 
+                        }));
+                    })
+                    .then(data => {
                         assert.strictEqual(data.VersionId, newVersion,
                             'version ids are not equal');
                         assert.strictEqual(data.ETag, eTags[1]);
-                        s3.headObject({ Bucket: bucket, Key: key,
-                            VersionId: 'null' }, (err, data) => {
-                            _assertNoError(err, 'heading null version');
-                            assert.strictEqual(data.VersionId, 'null');
-                            assert.strictEqual(data.ETag, eTags[0]);
-                            done();
-                        });
-                    });
-                });
+                        return s3.send(new HeadObjectCommand({ 
+                            Bucket: bucket, 
+                            Key: key,
+                            VersionId: 'null' 
+                        }));
+                    })
+                    .then(data => {
+                        _assertNoError(null, 'heading null version');
+                        assert.strictEqual(data.VersionId, 'null');
+                        assert.strictEqual(data.ETag, eTags[0]);
+                        done();
+                    })
+                    .catch(done);
             });
 
             it('should create new versions but still keep nullVersionId',
@@ -158,51 +188,58 @@ describe('put and head object with versioning', function testSuite() {
                 const params = { Bucket: bucket, Key: key };
                 const paramsNull = {
                     Bucket: bucket,
-                    Key: '/', VersionId:
-                    'null',
+                    Key: '/',
+                    VersionId: 'null',
                 };
                 // create new versions
-                async.timesSeries(counter, (i, next) => s3.putObject(params,
-                    (err, data) => {
-                        versionIds.push(data.VersionId);
-                        // head the 'null' version
-                        s3.headObject(paramsNull, (err, nullVerData) => {
-                            assert.strictEqual(err, null);
+                async.timesSeries(counter, (i, next) => {
+                    s3.send(new PutObjectCommand(params))
+                        .then(data => {
+                            versionIds.push(data.VersionId);
+                            // head the 'null' version
+                            return s3.send(new HeadObjectCommand(paramsNull));
+                        })
+                        .then(nullVerData => {
                             assert.strictEqual(nullVerData.ETag, eTags[0]);
                             assert.strictEqual(nullVerData.VersionId, 'null');
-                            next(err);
-                        });
-                    }), done);
+                            next();
+                        })
+                        .catch(next);
+                }, done);
             });
         });
 
         describe('on version-suspended bucket', () => {
-            beforeEach(done => {
-                s3.putBucketVersioning({
+            beforeEach(async () => {
+                await s3.send(new PutBucketVersioningCommand({
                     Bucket: bucket,
                     VersioningConfiguration: versioningSuspended,
-                }, done);
+                }));
             });
 
             it('should not return version id for new object', done => {
                 const params = { Bucket: bucket, Key: key, Body: 'foo' };
                 const paramsNull = {
                     Bucket: bucket,
-                    Key: '/', VersionId:
-                    'null',
+                    Key: '/',
+                    VersionId: 'null',
                 };
-                s3.putObject(params, (err, data) => {
-                    const eTag = data.ETag;
-                    _assertNoError(err, 'putting object');
-                    assert.strictEqual(data.VersionId, undefined);
-                    // heading null version should return object we just put
-                    s3.headObject(paramsNull, (err, nullVerData) => {
-                        _assertNoError(err, 'heading null version');
+                let eTag;
+                s3.send(new PutObjectCommand(params))
+                    .then(data => {
+                        eTag = data.ETag;
+                        _assertNoError(null, 'putting object');
+                        assert.strictEqual(data.VersionId, undefined);
+                        // heading null version should return object we just put
+                        return s3.send(new HeadObjectCommand(paramsNull));
+                    })
+                    .then(nullVerData => {
+                        _assertNoError(null, 'heading null version');
                         assert.strictEqual(nullVerData.ETag, eTag);
                         assert.strictEqual(nullVerData.VersionId, 'null');
                         done();
-                    });
-                });
+                    })
+                    .catch(done);
             });
 
             it('should update null version if put object twice', done => {
@@ -211,37 +248,45 @@ describe('put and head object with versioning', function testSuite() {
                 const params2 = { Bucket: bucket, Key: key, Body: data[1] };
                 const paramsNull = {
                     Bucket: bucket,
-                    Key: '/', VersionId:
-                    'null',
+                    Key: '/',
+                    VersionId: 'null',
                 };
                 const eTags = [];
                 async.waterfall([
-                    callback => s3.putObject(params1, (err, data) => {
-                        _assertNoError(err, 'putting first object');
-                        assert.strictEqual(data.VersionId, undefined);
-                        eTags.push(data.ETag);
-                        callback();
-                    }),
-                    callback => s3.headObject(params, (err, data) => {
-                        _assertNoError(err, 'heading master version');
-                        assert.strictEqual(data.VersionId, 'null');
-                        assert.strictEqual(data.ETag, eTags[0],
-                            'wrong object data');
-                        callback();
-                    }),
-                    callback => s3.putObject(params2, (err, data) => {
-                        _assertNoError(err, 'putting second object');
-                        assert.strictEqual(data.VersionId, undefined);
-                        eTags.push(data.ETag);
-                        callback();
-                    }),
-                    callback => s3.headObject(paramsNull, (err, data) => {
-                        _assertNoError(err, 'heading null version');
-                        assert.strictEqual(data.VersionId, 'null');
-                        assert.strictEqual(data.ETag, eTags[1],
-                            'wrong object data');
-                        callback();
-                    }),
+                    callback => s3.send(new PutObjectCommand(params1))
+                        .then(data => {
+                            _assertNoError(null, 'putting first object');
+                            assert.strictEqual(data.VersionId, undefined);
+                            eTags.push(data.ETag);
+                            callback();
+                        })
+                        .catch(callback),
+                    callback => s3.send(new HeadObjectCommand(params))
+                        .then(data => {
+                            _assertNoError(null, 'heading master version');
+                            assert.strictEqual(data.VersionId, 'null');
+                            assert.strictEqual(data.ETag, eTags[0],
+                                'wrong object data');
+                            callback();
+                        })
+                        .catch(callback),
+                    callback => s3.send(new PutObjectCommand(params2))
+                        .then(data => {
+                            _assertNoError(null, 'putting second object');
+                            assert.strictEqual(data.VersionId, undefined);
+                            eTags.push(data.ETag);
+                            callback();
+                        })
+                        .catch(callback),
+                    callback => s3.send(new HeadObjectCommand(paramsNull))
+                        .then(data => {
+                            _assertNoError(null, 'heading null version');
+                            assert.strictEqual(data.VersionId, 'null');
+                            assert.strictEqual(data.ETag, eTags[1],
+                                'wrong object data');
+                            callback();
+                        })
+                        .catch(callback),
                 ], done);
             });
         });
@@ -251,17 +296,20 @@ describe('put and head object with versioning', function testSuite() {
             const eTags = [];
 
             beforeEach(done => {
-                s3.putObject({ Bucket: bucket, Key: key, Body: data[0] },
-                    (err, data) => {
-                        if (err) {
-                            done(err);
-                        }
+                s3.send(new PutObjectCommand({ 
+                    Bucket: bucket, 
+                    Key: key, 
+                    Body: data[0] 
+                }))
+                    .then(data => {
                         eTags.push(data.ETag);
-                        s3.putBucketVersioning({
+                        return s3.send(new PutBucketVersioningCommand({
                             Bucket: bucket,
                             VersioningConfiguration: versioningSuspended,
-                        }, done);
-                    });
+                        }));
+                    })
+                    .then(() => done())
+                    .catch(done);
             });
 
             afterEach(done => {
@@ -274,13 +322,15 @@ describe('put and head object with versioning', function testSuite() {
             done => {
                 const paramsNull = {
                     Bucket: bucket,
-                    Key: '/', VersionId:
-                    'null',
+                    Key: '/',
+                    VersionId: 'null',
                 };
-                s3.headObject(paramsNull, err => {
-                    _assertNoError(err, 'heading null version');
-                    done();
-                });
+                s3.send(new HeadObjectCommand(paramsNull))
+                    .then(() => {
+                        _assertNoError(null, 'heading null version');
+                        done();
+                    })
+                    .catch(done);
             });
 
             it('should update null version in versioning suspended bucket',
@@ -289,35 +339,43 @@ describe('put and head object with versioning', function testSuite() {
                 const putParams = { Bucket: bucket, Key: '/', Body: data[1] };
                 const paramsNull = {
                     Bucket: bucket,
-                    Key: '/', VersionId:
-                    'null',
+                    Key: '/',
+                    VersionId: 'null',
                 };
                 async.waterfall([
-                    callback => s3.headObject(paramsNull, (err, data) => {
-                        _assertNoError(err, 'heading null version');
-                        assert.strictEqual(data.VersionId, 'null');
-                        callback();
-                    }),
-                    callback => s3.putObject(putParams, (err, data) => {
-                        _assertNoError(err, 'putting object');
-                        assert.strictEqual(data.VersionId, undefined);
-                        eTags.push(data.ETag);
-                        callback();
-                    }),
-                    callback => s3.headObject(paramsNull, (err, data) => {
-                        _assertNoError(err, 'heading null version');
-                        assert.strictEqual(data.VersionId, 'null');
-                        assert.strictEqual(data.ETag, eTags[1],
-                            'wrong object data');
-                        callback();
-                    }),
-                    callback => s3.headObject(params, (err, data) => {
-                        _assertNoError(err, 'heading master version');
-                        assert.strictEqual(data.VersionId, 'null');
-                        assert.strictEqual(data.ETag, eTags[1],
-                            'wrong object data');
-                        callback();
-                    }),
+                    callback => s3.send(new HeadObjectCommand(paramsNull))
+                        .then(data => {
+                            _assertNoError(null, 'heading null version');
+                            assert.strictEqual(data.VersionId, 'null');
+                            callback();
+                        })
+                        .catch(callback),
+                    callback => s3.send(new PutObjectCommand(putParams))
+                        .then(data => {
+                            _assertNoError(null, 'putting object');
+                            assert.strictEqual(data.VersionId, undefined);
+                            eTags.push(data.ETag);
+                            callback();
+                        })
+                        .catch(callback),
+                    callback => s3.send(new HeadObjectCommand(paramsNull))
+                        .then(data => {
+                            _assertNoError(null, 'heading null version');
+                            assert.strictEqual(data.VersionId, 'null');
+                            assert.strictEqual(data.ETag, eTags[1],
+                                'wrong object data');
+                            callback();
+                        })
+                        .catch(callback),
+                    callback => s3.send(new HeadObjectCommand(params))
+                        .then(data => {
+                            _assertNoError(null, 'heading master version');
+                            assert.strictEqual(data.VersionId, 'null');
+                            assert.strictEqual(data.ETag, eTags[1],
+                                'wrong object data');
+                            callback();
+                        })
+                        .catch(callback),
                 ], done);
             });
         });
@@ -328,21 +386,24 @@ describe('put and head object with versioning', function testSuite() {
             beforeEach(done => {
                 const params = { Bucket: bucket, Key: key, Body: data[0] };
                 async.waterfall([
-                    callback => s3.putBucketVersioning({
+                    callback => s3.send(new PutBucketVersioningCommand({
                         Bucket: bucket,
                         VersioningConfiguration: versioningSuspended,
-                    }, err => callback(err)),
-                    callback => s3.putObject(params, (err, data) => {
-                        if (err) {
-                            callback(err);
-                        }
-                        eTags.push(data.ETag);
-                        callback();
-                    }),
-                    callback => s3.putBucketVersioning({
+                    }))
+                        .then(() => callback())
+                        .catch(callback),
+                    callback => s3.send(new PutObjectCommand(params))
+                        .then(data => {
+                            eTags.push(data.ETag);
+                            callback();
+                        })
+                        .catch(callback),
+                    callback => s3.send(new PutBucketVersioningCommand({
                         Bucket: bucket,
                         VersioningConfiguration: versioningEnabled,
-                    }, callback),
+                    }))
+                        .then(() => callback())
+                        .catch(callback),
                 ], done);
             });
 
@@ -357,27 +418,34 @@ describe('put and head object with versioning', function testSuite() {
                 const params = { Bucket: bucket, Key: key };
                 const paramsNull = {
                     Bucket: bucket,
-                    Key: '/', VersionId:
-                    'null',
+                    Key: '/',
+                    VersionId: 'null',
                 };
                 async.waterfall([
-                    cb => s3.headObject(paramsNull, (err, nullVerData) => {
-                        _assertNoError(err, 'heading null version');
-                        assert.strictEqual(nullVerData.ETag, eTags[0]);
-                        assert.strictEqual(nullVerData.VersionId, 'null');
-                        cb();
-                    }),
+                    cb => s3.send(new HeadObjectCommand(paramsNull))
+                        .then(nullVerData => {
+                            _assertNoError(null, 'heading null version');
+                            assert.strictEqual(nullVerData.ETag, eTags[0]);
+                            assert.strictEqual(nullVerData.VersionId, 'null');
+                            cb();
+                        })
+                        .catch(cb),
                     cb => async.timesSeries(counter, (i, next) =>
-                        s3.putObject(params, (err, data) => {
-                            _assertNoError(err, `putting object #${i}`);
-                            assert.notEqual(data.VersionId, undefined);
-                            next();
-                        }), err => cb(err)),
-                    cb => s3.headObject(paramsNull, (err, nullVerData) => {
-                        _assertNoError(err, 'heading null version');
-                        assert.strictEqual(nullVerData.ETag, eTags[0]);
-                        cb();
-                    }),
+                        s3.send(new PutObjectCommand(params))
+                            .then(data => {
+                                _assertNoError(null, `putting object #${i}`);
+                                assert.notEqual(data.VersionId, undefined);
+                                next();
+                            })
+                            .catch(next),
+                        err => cb(err)),
+                    cb => s3.send(new HeadObjectCommand(paramsNull))
+                        .then(nullVerData => {
+                            _assertNoError(null, 'heading null version');
+                            assert.strictEqual(nullVerData.ETag, eTags[0]);
+                            cb();
+                        })
+                        .catch(cb),
                 ], done);
             });
 
@@ -390,12 +458,14 @@ describe('put and head object with versioning', function testSuite() {
                     const key = `foo${i}`;
                     const params = { Bucket: bucket, Key: key, Body: value };
                     async.timesLimit(versioncount, 10, (j, next2) =>
-                        s3.putObject(params, (err, data) => {
-                            assert.strictEqual(err, null);
-                            assert(data.VersionId, 'invalid versionId');
-                            vids.push({ Key: key, VersionId: data.VersionId });
-                            next2();
-                        }), next1);
+                        s3.send(new PutObjectCommand(params))
+                            .then(data => {
+                                assert(data.VersionId, 'invalid versionId');
+                                vids.push({ Key: key, VersionId: data.VersionId });
+                                next2();
+                            })
+                            .catch(next2),
+                        next1);
                 }, err => {
                     assert.strictEqual(err, null);
                     assert.strictEqual(vids.length, keycount * versioncount);
