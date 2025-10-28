@@ -1,9 +1,14 @@
 const assert = require('assert');
 const async = require('async');
-const { S3 } = require('aws-sdk');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    GetObjectLockConfigurationCommand,
+    GetBucketVersioningCommand,
+    GetBucketLocationCommand,
+} = require('@aws-sdk/client-s3');
 
 const BucketUtility = require('../../lib/utility/bucket-util');
-const getConfig = require('../support/config');
 const withV4 = require('../support/withV4');
 const configOfficial = require('../../../../../lib/Config').config;
 
@@ -20,25 +25,17 @@ const locationConstraints = configOfficial.locationConstraints;
 
 describe('PUT Bucket - AWS.S3.createBucket', () => {
     describe('When user is unauthorized', () => {
-        let s3;
-        let config;
 
-        beforeEach(() => {
-            config = getConfig('default');
-            s3 = new S3(config);
-        });
-
-        it('should return 403 and AccessDenied', done => {
+        it('should return 403 and AccessDenied', async () => {
             const params = { Bucket: 'mybucket' };
-
-            s3.makeUnauthenticatedRequest('createBucket', params, error => {
-                assert(error);
-
-                assert.strictEqual(error.statusCode, 403);
-                assert.strictEqual(error.code, 'AccessDenied');
-
-                done();
-            });
+            try {
+                const unauthenticatedS3 = new BucketUtility('default', {}, true).s3;
+                await unauthenticatedS3.send(new CreateBucketCommand(params));
+                assert.fail('Expected request to fail with AccessDenied');
+            } catch (error) {
+                assert.strictEqual(error.$metadata?.httpStatusCode, 403);
+                assert.strictEqual(error.name, 'AccessDenied');
+            }
         });
     });
 
@@ -48,45 +45,49 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
         before(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
         });
-
+        
         describe('create bucket twice', () => {
-            beforeEach(done => bucketUtil.s3.createBucket({ Bucket:
-                bucketName,
-                CreateBucketConfiguration: {
-                    LocationConstraint: 'us-east-1',
-                },
-            }, done));
-            afterEach(done => bucketUtil.s3.deleteBucket({ Bucket: bucketName },
-              done));
-            // AWS JS SDK sends a request with locationConstraint us-east-1 if
-            // no locationConstraint provided.
-            // Skip this test on E2E because it is making the asumption that the
-            // default region is us-east-1 which is not the case for the E2E
-            itSkipIfE2E('should return a 200 if no locationConstraints ' +
-            'provided.', done => {
-                bucketUtil.s3.createBucket({ Bucket: bucketName }, done);
-            });
-            it('should return a 200 if us-east behavior', done => {
-                bucketUtil.s3.createBucket({
-                    Bucket: bucketName,
+            let testBucketName;
+        
+            beforeEach(() => {
+                // Use unique bucket name for each test to avoid conflicts
+                testBucketName = `${bucketName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                return bucketUtil.s3.send(new CreateBucketCommand({
+                    Bucket: testBucketName,
                     CreateBucketConfiguration: {
                         LocationConstraint: 'us-east-1',
                     },
-                }, done);
+                }));
             });
-            it('should return a 409 if us-west behavior', done => {
-                bucketUtil.s3.createBucket({
-                    Bucket: bucketName,
+        
+            afterEach(() => bucketUtil.s3.send(new DeleteBucketCommand({ Bucket: testBucketName })));
+        
+            itSkipIfE2E('should return a 200 if no locationConstraints provided.',
+                () => bucketUtil.s3.send(new CreateBucketCommand({ Bucket: testBucketName })));
+
+            it('should return a 200 if us-east behavior', async () => {
+                const res = await bucketUtil.s3.send(new CreateBucketCommand({
+                    Bucket: testBucketName,
                     CreateBucketConfiguration: {
-                        LocationConstraint: 'scality-us-west-1',
+                        LocationConstraint: 'us-east-1',
                     },
-                }, error => {
-                    assert.notEqual(error, null,
-                      'Expected failure but got success');
-                    assert.strictEqual(error.code, 'BucketAlreadyOwnedByYou');
-                    assert.strictEqual(error.statusCode, 409);
-                    done();
-                });
+                }));
+                assert.strictEqual(res.$metadata.httpStatusCode, 200);
+            });
+            
+            it('should return a 409 if us-west behavior', async () => {
+                try {
+                    await bucketUtil.s3.send(new CreateBucketCommand({
+                        Bucket: testBucketName,
+                        CreateBucketConfiguration: {
+                            LocationConstraint: 'scality-us-west-1',
+                        },
+                    }));
+                    assert.fail('Expected failure but got success');
+                } catch (error) {
+                    assert.strictEqual(error.name, 'BucketAlreadyOwnedByYou');
+                    assert.strictEqual(error.$metadata.httpStatusCode, 409);
+                }
             });
         });
 
@@ -106,8 +107,8 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                             return done(e);
                         })
                         .catch(error => {
-                            assert.strictEqual(error.code, expectedCode);
-                            assert.strictEqual(error.statusCode,
+                            assert.strictEqual(error.Code, expectedCode);
+                            assert.strictEqual(error.$metadata.httpStatusCode,
                                 expectedStatus);
                             done();
                         });
@@ -180,13 +181,15 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
 
         describe('bucket creation success', () => {
             function _test(name, done) {
-                bucketUtil.s3.createBucket({ Bucket: name }, (err, res) => {
-                    assert.ifError(err);
-                    assert(res.Location, 'No Location in response');
-                    assert.deepStrictEqual(res.Location, `/${name}`,
-                      'Wrong Location header');
-                    bucketUtil.deleteOne(name).then(() => done()).catch(done);
-                });
+                bucketUtil.s3.send(new CreateBucketCommand({ Bucket: name }))
+                    .then(res => {
+                        assert(res.Location, 'No Location in response');
+                        assert.deepStrictEqual(res.Location, `/${name}`,
+                            'Wrong Location header');
+                        return bucketUtil.deleteOne(name);
+                    })
+                    .then(() => done())
+                    .catch(done);
             }
             it('should create bucket if name is valid', done =>
                 _test('scality-very-valid-bucket-name', done));
@@ -200,52 +203,46 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
 
         describe('bucket creation success with object lock', () => {
             function _testObjectLockEnabled(name, done) {
-                bucketUtil.s3.createBucket({
+                bucketUtil.s3.send(new CreateBucketCommand({
                     Bucket: name,
                     ObjectLockEnabledForBucket: true,
-                }, (err, res) => {
-                    assert.ifError(err);
-                    assert.strictEqual(res.Location, `/${name}`,
-                    'Wrong Location header');
-                    bucketUtil.s3.getObjectLockConfiguration({ Bucket: name }, (err, res) => {
-                        assert.ifError(err);
-                        assert.deepStrictEqual(res.ObjectLockConfiguration,
-                            { ObjectLockEnabled: 'Enabled' });
-                    });
-                    bucketUtil.deleteOne(name).then(() => done()).catch(done);
-                });
+                })).then(res => {
+                    assert.strictEqual(res.Location, `/${name}`, 'Wrong Location header');
+                    return bucketUtil.s3.send(new GetObjectLockConfigurationCommand({ Bucket: name }));
+                }).then(res => {
+                    assert.deepStrictEqual(res.ObjectLockConfiguration,
+                        { ObjectLockEnabled: 'Enabled' });
+                    return bucketUtil.deleteOne(name);
+                }).then(() => done()).catch(done);
             }
+
             function _testObjectLockDisabled(name, done) {
-                bucketUtil.s3.createBucket({
+                bucketUtil.s3.send(new CreateBucketCommand({
                     Bucket: name,
                     ObjectLockEnabledForBucket: false,
-                }, (err, res) => {
-                    assert.ifError(err);
+                })).then(res => {
                     assert(res.Location, 'No Location in response');
-                    assert.strictEqual(res.Location, `/${name}`,
-                        'Wrong Location header');
-                    bucketUtil.s3.getObjectLockConfiguration({ Bucket: name }, err => {
-                        assert.strictEqual(err.code, 'ObjectLockConfigurationNotFoundError');
-                    });
-                    bucketUtil.deleteOne(name).then(() => done()).catch(done);
-                });
+                    assert.strictEqual(res.Location, `/${name}`, 'Wrong Location header');
+                    return bucketUtil.s3.send(new GetObjectLockConfigurationCommand({ Bucket: name }));
+                }).catch(err => {
+                    assert.strictEqual(err.name, 'ObjectLockConfigurationNotFoundError');
+                    return bucketUtil.deleteOne(name);
+                }).then(() => done()).catch(done);
             }
+
             function _testVersioning(name, done) {
-                bucketUtil.s3.createBucket({
+                bucketUtil.s3.send(new CreateBucketCommand({
                     Bucket: name,
                     ObjectLockEnabledForBucket: true,
-                }, (err, res) => {
-                    assert.ifError(err);
+                })).then(res => {
                     assert(res.Location, 'No Location in response');
-                    assert.strictEqual(res.Location, `/${name}`,
-                        'Wrong Location header');
-                    bucketUtil.s3.getBucketVersioning({ Bucket: name }, (err, res) => {
-                        assert.ifError(err);
-                        assert.strictEqual(res.Status, 'Enabled');
-                        assert.strictEqual(res.MFADelete, 'Disabled');
-                    });
-                    bucketUtil.deleteOne(name).then(() => done()).catch(done);
-                });
+                    assert.strictEqual(res.Location, `/${name}`, 'Wrong Location header');
+                    return bucketUtil.s3.send(new GetBucketVersioningCommand({ Bucket: name }));
+                }).then(res => {
+                    assert.strictEqual(res.Status, 'Enabled');
+                    assert.strictEqual(res.MFADelete, 'Disabled');
+                    return bucketUtil.deleteOne(name);
+                }).then(() => done()).catch(done);
             }
             it('should create bucket without error', done =>
                 _testObjectLockEnabled('bucket-with-object-lock', done));
@@ -265,92 +262,89 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                     bucketUtil.deleteOne(bucketName).finally(done);
                 });
                 it(`should create bucket with location: ${location}`, done => {
-                    bucketUtil.s3.createBucket(
-                        {
-                            Bucket: bucketName,
-                            CreateBucketConfiguration: {
-                                LocationConstraint: location,
-                            },
-                        }, err => {
-                            if (location === LOCATION_NAME_DMF) {
-                                assert.strictEqual(
-                                    err.code,
-                                    'InvalidLocationConstraint'
-                                );
-                                assert.strictEqual(err.statusCode, 400);
-                            }
-                            return done();
-                        });
+                    bucketUtil.s3.send(new CreateBucketCommand({
+                        Bucket: bucketName,
+                        CreateBucketConfiguration: {
+                            LocationConstraint: location,
+                        },
+                    })).then(() => {
+                        done();
+                    }).catch(err => {
+                        if (location === LOCATION_NAME_DMF) {
+                            assert.strictEqual(
+                                err.name,
+                                'InvalidLocationConstraint'
+                            );
+                            assert.strictEqual(err.$metadata.httpStatusCode, 400);
+                        }
+                        done();
+                    });
                 });
             });
         });
 
         describe('bucket creation with invalid location', () => {
             it('should return errors InvalidLocationConstraint', done => {
-                bucketUtil.s3.createBucket(
-                    {
-                        Bucket: bucketName,
-                        CreateBucketConfiguration: {
-                            LocationConstraint: 'coco',
-                        },
-                    }, err => {
+                bucketUtil.s3.send(new CreateBucketCommand({
+                    Bucket: bucketName,
+                    CreateBucketConfiguration: {
+                        LocationConstraint: 'coco',
+                    },
+                })).catch(err => {
                     assert.strictEqual(
-                        err.code,
+                        err.name,
                         'InvalidLocationConstraint'
                     );
-                    assert.strictEqual(err.statusCode, 400);
+                    assert.strictEqual(err.$metadata.httpStatusCode, 400);
                     done();
                 });
             });
 
             it('should return error InvalidLocationConstraint for location constraint dmf', done => {
-                bucketUtil.s3.createBucket(
-                    {
-                        Bucket: bucketName,
-                        CreateBucketConfiguration: {
-                            LocationConstraint: LOCATION_NAME_DMF,
-                        },
-                    }, err => {
-                        assert.strictEqual(
-                            err.code,
-                            'InvalidLocationConstraint',
-                        );
-                        assert.strictEqual(err.statusCode, 400);
-                        done();
-                    });
+                bucketUtil.s3.send(new CreateBucketCommand({
+                    Bucket: bucketName,
+                    CreateBucketConfiguration: {
+                        LocationConstraint: LOCATION_NAME_DMF,
+                    },
+                })).catch(err => {
+                    assert.strictEqual(
+                        err.name,
+                        'InvalidLocationConstraint'
+                    );
+                    assert.strictEqual(err.$metadata.httpStatusCode, 400);
+                    done();
+                });
             });
         });
 
         describe('bucket creation with ingestion location', () => {
-            after(done =>
-                bucketUtil.s3.deleteBucket({ Bucket: bucketName }, done));
+            after(() =>  bucketUtil.s3.send(new DeleteBucketCommand({ Bucket: bucketName })));
+            
             it('should create bucket with location and ingestion', done => {
                 async.waterfall([
-                    next => bucketUtil.s3.createBucket(
-                        {
-                            Bucket: bucketName,
-                            CreateBucketConfiguration: {
-                                LocationConstraint: 'us-east-2:ingest',
-                            },
-                        }, (err, res) => {
-                        assert.ifError(err);
+                    next => bucketUtil.s3.send(new CreateBucketCommand({
+                        Bucket: bucketName,
+                        CreateBucketConfiguration: {
+                            LocationConstraint: 'us-east-2:ingest',
+                        },
+                    })).then(res => {
                         assert.strictEqual(res.Location, `/${bucketName}`);
-                        return next();
-                    }),
-                    next => bucketUtil.s3.getBucketLocation(
-                        {
-                            Bucket: bucketName,
-                        }, (err, res) => {
-                        assert.ifError(err);
+                        next();
+                    }).catch(next),
+
+                    next => bucketUtil.s3.send(new GetBucketLocationCommand({
+                        Bucket: bucketName,
+                    })).then(res => {
                         assert.strictEqual(res.LocationConstraint, 'us-east-2');
-                        return next();
-                    }),
-                    next => bucketUtil.s3.getBucketVersioning(
-                        { Bucket: bucketName }, (err, res) => {
-                            assert.ifError(err);
-                            assert.strictEqual(res.Status, 'Enabled');
-                            return next();
-                    }),
+                        next();
+                    }).catch(next),
+
+                    next => bucketUtil.s3.send(new GetBucketVersioningCommand({
+                        Bucket: bucketName,
+                    })).then(res => {
+                        assert.strictEqual(res.Status, 'Enabled');
+                        next();
+                    }).catch(next),
                 ], done);
             });
         });
