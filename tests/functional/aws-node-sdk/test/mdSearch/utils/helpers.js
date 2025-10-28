@@ -91,24 +91,24 @@ testUtils.runAndCheckSearch = (s3Client, bucketName, encodedSearch, listVersions
             } else {
                 if (testResult && typeof testResult === 'object' && testResult.code) {
                     // This was expected to be an error, but we got success
-                    return done(new Error('Expected error but got success'));
+                    done(new Error('Expected error but got success'));
                 }
                 if (testResult) {
                     assert(res.Contents[0], 'should be Contents listed');
                     assert.strictEqual(res.Contents[0].Key, testResult);
                     assert.strictEqual(res.Contents.length, 1);
                 } else {
-                    assert.strictEqual(res.Contents?.length, undefined || res.Contents.length === 0);
+                    assert.strictEqual(res.Contents?.length, undefined);
                 }
             }
-            return done();
+            done();
         } catch (err) {
             if (testResult && typeof testResult === 'object' && testResult.code) {
                 assert.strictEqual(err.name, testResult.code);
                 assert.strictEqual(err.message, testResult.message);
-                return done();
+                done();
             }
-            return done(err);
+            done(err);
         }
     };
     makeRequest();
