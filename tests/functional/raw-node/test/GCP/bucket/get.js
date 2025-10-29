@@ -88,12 +88,13 @@ describe('GCP: GET Bucket', function testSuite() {
     describe('without existing bucket', () => {
         it('should return 404 and NoSuchBucket', done => {
             const badBucketName = `nonexistingbucket-${genUniqID()}`;
-            gcpClient.getBucket({
+            gcpClient.listObjects({
                 Bucket: badBucketName,
             }, err => {
                 assert(err);
-                assert.strictEqual(err.statusCode, 404);
-                assert.strictEqual(err.code, 'NoSuchBucket');
+                // SDK v3 compatible error properties
+                assert.strictEqual(err.$metadata?.httpStatusCode || err.statusCode, 404);
+                assert.strictEqual(err.name , 'NoSuchBucket');
                 return done();
             });
         });
