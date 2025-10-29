@@ -1,6 +1,6 @@
 const assert = require('assert');
 const arsenal = require('arsenal');
-const GCP = arsenal.storage.data.external.GCP;
+const { GCP } = arsenal.storage.data.external.GCP;
 const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
