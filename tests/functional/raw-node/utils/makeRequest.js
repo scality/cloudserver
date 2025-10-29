@@ -8,7 +8,7 @@ const crypto = require('crypto');
 const conf = require('../../../../lib/Config').config;
 
 // Use arsenal's v2 signing directly (GcpSigner class was removed in arsenal's SDK v3 migration)
-const constructStringToSignV2 = require('arsenal/lib/auth/v2/constructStringToSign').default;
+const constructStringToSignV2 = require('arsenal/build/lib/auth/v2/constructStringToSign').default;
 
 function signGcpRequest(request, credentials, date) {
     // Set x-goog-date header
