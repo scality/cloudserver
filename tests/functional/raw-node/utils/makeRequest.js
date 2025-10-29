@@ -11,6 +11,11 @@ const conf = require('../../../../lib/Config').config;
 const constructStringToSignV2 = require('arsenal/build/lib/auth/v2/constructStringToSign').default;
 
 function signGcpRequest(request, credentials, date) {
+    if (!credentials || !credentials.secretKey || !credentials.accessKey) {
+        throw new Error('Invalid GCP credentials: must have accessKey and secretKey properties. ' +
+            `Got: ${JSON.stringify(credentials)}`);
+    }
+    
     // Set x-goog-date header
     // eslint-disable-next-line no-param-reassign
     request.headers['x-goog-date'] = date.toUTCString();
@@ -201,11 +206,26 @@ function makeS3Request(params, callback) {
  * @param {function} callback - with error and response parameters
  * @return {undefined} - and call callback
  */
-function makeGcpRequest(params, callback) {
+async function makeGcpRequest(params, callback) {
     const { method, queryObj, headers, bucket, objectKey, authCredentials,
         requestBody } = params;
+    
+    let resolvedCredentials = authCredentials;
+    if (authCredentials && typeof authCredentials === 'function') {
+        try {
+            resolvedCredentials = await authCredentials();
+            // Convert SDK v3 format to GCP format
+            resolvedCredentials = {
+                accessKey: resolvedCredentials.accessKeyId,
+                secretKey: resolvedCredentials.secretAccessKey,
+            };
+        } catch (err) {
+            return callback(err);
+        }
+    }
+    
     const options = {
-        authCredentials,
+        authCredentials: resolvedCredentials,
         requestBody,
         hostname: 'storage.googleapis.com',
         port: 80,
