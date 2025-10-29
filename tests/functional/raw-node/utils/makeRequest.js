@@ -95,13 +95,17 @@ function makeRequest(params, callback) {
     const qs = querystring.stringify(queryObj);
 
     if (params.GCP && authCredentials) {
-        const gcpPath = queryObj ? `${options.path}?${qs}` : options.path;
+        const bucketMatch = options.path.match(/^\/([^\/]+)/);
+        const bucketName = bucketMatch ? bucketMatch[1] : undefined;
+        
         const requestForSigning = {
-            endpoint: { host: hostname },
             method,
-            path: gcpPath || '/',
             headers: options.headers || {},
-            query: {},
+            url: options.path,  // Path without query string
+            path: options.path,
+            endpoint: { host: hostname },
+            bucketName,
+            query: queryObj || {},  // Query params separate for proper canonicalization
         };
         
         // Use arsenal's signing function directly
@@ -112,6 +116,10 @@ function makeRequest(params, callback) {
             Authorization: requestForSigning.headers.Authorization,
             Date: requestForSigning.headers['x-goog-date'],
         });
+    }
+    
+    if (qs) {
+        options.path += `?${qs}`;
     }
 
     const req = transport.request(options, res => {
