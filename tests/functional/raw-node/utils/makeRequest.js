@@ -1,11 +1,34 @@
-const { auth, storage } = require('arsenal');
+const { auth } = require('arsenal');
 
 const http = require('http');
 const https = require('https');
 const querystring = require('querystring');
+const crypto = require('crypto');
 
 const conf = require('../../../../lib/Config').config;
-const { GcpSigner } = storage.data.external;
+
+// Use arsenal's v2 signing directly (GcpSigner class was removed in arsenal's SDK v3 migration)
+const constructStringToSignV2 = require('arsenal/lib/auth/v2/constructStringToSign').default;
+
+function signGcpRequest(request, credentials, date) {
+    // Set x-goog-date header
+    // eslint-disable-next-line no-param-reassign
+    request.headers['x-goog-date'] = date.toUTCString();
+    
+    // Build string to sign using arsenal's v2 signing function
+    const data = {};
+    const logger = { trace: () => {} };
+    const stringToSign = constructStringToSignV2(request, data, logger, 'GCP');
+    
+    // Sign with HMAC-SHA1
+    const signature = crypto.createHmac('sha1', credentials.secretKey)
+        .update(stringToSign)
+        .digest('base64');
+    
+    // Set Authorization header
+    // eslint-disable-next-line no-param-reassign
+    request.headers['Authorization'] = `GOOG1 ${credentials.accessKey}:${signature}`;
+}
 
 const transport = conf.https ? https : http;
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
@@ -68,17 +91,21 @@ function makeRequest(params, callback) {
 
     if (params.GCP && authCredentials) {
         const gcpPath = queryObj ? `${options.path}?${qs}` : options.path;
-        const getAuthObject = {
+        const requestForSigning = {
             endpoint: { host: hostname },
             method,
             path: gcpPath || '/',
-            headers,
+            headers: options.headers || {},
+            query: {},
         };
-        const signer = new GcpSigner(getAuthObject);
-        signer.addAuthorization(authCredentials, new Date());
+        
+        // Use arsenal's signing function directly
+        signGcpRequest(requestForSigning, authCredentials, new Date());
+        
+        // Copy signed headers back to options
         Object.assign(options.headers, {
-            Authorization: getAuthObject.headers.Authorization,
-            Date: getAuthObject.headers['x-goog-date'],
+            Authorization: requestForSigning.headers.Authorization,
+            Date: requestForSigning.headers['x-goog-date'],
         });
     }
 
