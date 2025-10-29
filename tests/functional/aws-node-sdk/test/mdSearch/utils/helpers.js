@@ -98,7 +98,7 @@ testUtils.runAndCheckSearch = (s3Client, bucketName, encodedSearch, listVersions
                 assert.strictEqual(res.Contents.length, 1);
                 done();
             } else {
-                assert.strictEqual(res.Contents?.length, 0);
+                assert.strictEqual(res.Contents?.length, undefined);
                 done();
             }
         } catch (err) {
