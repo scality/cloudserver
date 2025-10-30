@@ -14,6 +14,9 @@ const bucketName = `somebucket-${genUniqID()}`;
 const smallSize = 20;
 const bigSize = listingHardLimit + 1;
 const config = getRealAwsConfig(credentialOne);
+console.log('Config for GCP:', JSON.stringify(config, null, 2));
+console.log('Config.s3Params:', config.s3Params);
+console.log('Config.s3Params.region:', config.s3Params?.region);
 const gcpClient = new GCP(config);
 
 function populateBucket(createdObjects, callback) {
@@ -26,6 +29,7 @@ function populateBucket(createdObjects, callback) {
             bucket: bucketName,
             objectKey: object,
             authCredentials: config.credentials,
+            region: config.s3Params?.region,
         }, err => moveOn(err));
     }, err => {
         if (err) {

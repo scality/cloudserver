@@ -7,7 +7,6 @@ const crypto = require('crypto');
 
 const conf = require('../../../../lib/Config').config;
 
-// Use arsenal's v2 signing directly (GcpSigner class was removed in arsenal's SDK v3 migration)
 const constructStringToSignV2 = require('arsenal/build/lib/auth/v2/constructStringToSign').default;
 
 function signGcpRequest(request, credentials, date) {
@@ -101,11 +100,11 @@ function makeRequest(params, callback) {
         const requestForSigning = {
             method,
             headers: options.headers || {},
-            url: options.path,  // Path without query string
+            url: options.path, 
             path: options.path,
             endpoint: { host: hostname },
             bucketName,
-            query: queryObj || {},  // Query params separate for proper canonicalization
+            query: queryObj || {},
         };
         
         // Use arsenal's signing function directly
@@ -211,17 +210,18 @@ function makeS3Request(params, callback) {
  * @param {object} [params.authCredentials] - authentication credentials
  * @param {object} params.authCredentials.accessKey - access key
  * @param {object} params.authCredentials.secretKey - secret key
+ * @param {string} [params.region] - request body contents
  * @param {function} callback - with error and response parameters
  * @return {undefined} - and call callback
  */
 async function makeGcpRequest(params, callback) {
     const { method, queryObj, headers, bucket, objectKey, authCredentials,
-        requestBody } = params;
+        requestBody, region } = params;
     
     let resolvedCredentials = authCredentials;
     if (authCredentials && typeof authCredentials === 'function') {
         try {
-            resolvedCredentials = await authCredentials();
+           resolvedCredentials = await authCredentials();
             // Convert SDK v3 format to GCP format
             resolvedCredentials = {
                 accessKey: resolvedCredentials.accessKeyId,
@@ -242,6 +242,7 @@ async function makeGcpRequest(params, callback) {
         headers: headers || {},
         path: bucket ? `/${bucket}/` : '/',
         GCP: true,
+        region,
     };
     if (objectKey) {
         options.path = `${options.path}${objectKey}`;
