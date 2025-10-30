@@ -28,7 +28,7 @@
     "@azure/storage-blob": "^12.28.0",
     "@hapi/joi": "^17.1.1",
     "@smithy/node-http-handler": "^3.0.0",
-    "arsenal": "git+https://github.com/scality/Arsenal#9050d1db0aaf42486816ab7575c6684ae808ab32",
+    "arsenal": "git+https://github.com/scality/Arsenal#537edef02c4bf044e59a811b17778e073b33a6d5",
     "async": "2.6.4",
     "bucketclient": "scality/bucketclient#8.2.7",
     "bufferutil": "^4.0.8",
