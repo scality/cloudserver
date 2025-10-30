@@ -18,6 +18,7 @@ console.log('Config for GCP:', JSON.stringify(config, null, 2));
 console.log('Config.s3Params:', config.s3Params);
 console.log('Config.s3Params.region:', config.s3Params?.region);
 const gcpClient = new GCP(config);
+gcpClient.middlewareStack.remove('httpSigningMiddleware');
 console.log('Middleware stack identify:', gcpClient.middlewareStack.identify());
 function populateBucket(createdObjects, callback) {
     process.stdout.write(
