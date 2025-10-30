@@ -30,7 +30,7 @@ function populateBucket(createdObjects, callback) {
     }, err => {
         if (err) {
             process.stdout
-                .write(`err putting objects ${err.code}`);
+                .write(`err putting objects ${err.code}\n`);
         }
         return callback(err);
     });
@@ -50,7 +50,7 @@ function removeObjects(createdObjects, callback) {
     }, err => {
         if (err) {
             process.stdout
-                .write(`err deleting objects ${err.code}`);
+                .write(`err deleting objects ${err.code}\n`);
         }
         return callback(err);
     });
@@ -86,15 +86,16 @@ describe('GCP: GET Bucket', function testSuite() {
     });
 
     describe('without existing bucket', () => {
-        it('should return 404 and NoSuchBucket', done => {
+        it.only('should return 404 and NoSuchBucket', done => {
             const badBucketName = `nonexistingbucket-${genUniqID()}`;
             gcpClient.listObjects({
                 Bucket: badBucketName,
             }, err => {
+                //eslint-disable-next-line no-console
+                console.log('HEEEEERE IS THE ERRORRR', err);
                 assert(err);
-                // SDK v3 compatible error properties
                 assert.strictEqual(err.$metadata?.httpStatusCode || err.statusCode, 404);
-                assert.strictEqual(err.name , 'NoSuchBucket');
+                assert.strictEqual(err.name, 'NoSuchBucket');
                 return done();
             });
         });
