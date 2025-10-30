@@ -107,10 +107,8 @@ function makeRequest(params, callback) {
             query: queryObj || {},
         };
         
-        // Use arsenal's signing function directly
         signGcpRequest(requestForSigning, authCredentials, new Date());
         
-        // Copy signed headers back to options
         Object.assign(options.headers, {
             Authorization: requestForSigning.headers.Authorization,
             Date: requestForSigning.headers['x-goog-date'],

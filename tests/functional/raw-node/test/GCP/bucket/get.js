@@ -26,7 +26,6 @@ function populateBucket(createdObjects, callback) {
             bucket: bucketName,
             objectKey: object,
             authCredentials: config.credentials,
-            region: config.s3Params?.region,
         }, err => moveOn(err));
     }, err => {
         if (err) {
