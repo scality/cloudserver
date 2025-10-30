@@ -1,4 +1,3 @@
-const { fromIni } = require('@aws-sdk/credential-providers');
 const fs = require('fs');
 const path = require('path');
 const { config } = require('../../../../../lib/Config');
@@ -30,9 +29,6 @@ function getAwsCredentials(profile, credFile = '/.aws/credentials') {
     if (!accessKeyMatch || !secretKeyMatch) {
         throw new Error(`Missing credentials in profile "${profile}"`);
     }
-    console.log(`Loaded AWS credentials for profile "${profile}" from ${filename}`);
-    console.log(`Access Key ID: ${accessKeyMatch[1].trim()}`);
-    console.log(`Secret Access Key: ${secretKeyMatch[1].trim()}`);
 
     return {
         accessKeyId: accessKeyMatch[1].trim(),
@@ -51,6 +47,8 @@ function getRealAwsConfig(location) {
         region: 'us-east-1',
         endpoint: gcpEndpoint ?
             `${proto}://${gcpEndpoint}` : `${proto}://${awsEndpoint}`,
+        // Disable AWS signature for GCP
+        ...(isGcp && { disableS3ExpressSessionAuth: true }),
     };
     if (isGcp) {
         params.mainBucket = bucketName;
@@ -118,7 +116,21 @@ function getRealAwsConfig(location) {
     return params;
 }
 
+function createGcpClient(location) {
+    const arsenal = require('arsenal');
+    const { GCP } = arsenal.storage.data.external.GCP;
+    const config = getRealAwsConfig(location);
+    const gcpClient = new GCP(config);
+    
+    // Remove AWS auth middleware since GCP uses its own signing
+    // Arsenal's addRelativeTo doesn't work properly in SDK v3, so both middlewares run
+    gcpClient.middlewareStack.remove('httpSigningMiddleware');
+    
+    return gcpClient;
+}
+
 module.exports = {
     getRealAwsConfig,
     getAwsCredentials,
+    createGcpClient,
 };
