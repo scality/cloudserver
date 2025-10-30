@@ -1,9 +1,11 @@
 const assert = require('assert');
 const async = require('async');
+const arsenal = require('arsenal');
+const { GCP } = arsenal.storage.data.external.GCP;
 
 const { makeGcpRequest } = require('../../../utils/makeRequest');
 const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
-const { getRealAwsConfig, createGcpClient } =
+const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 const { listingHardLimit } = require('../../../../../../constants');
 
@@ -12,7 +14,12 @@ const bucketName = `somebucket-${genUniqID()}`;
 const smallSize = 20;
 const bigSize = listingHardLimit + 1;
 const config = getRealAwsConfig(credentialOne);
-const gcpClient = createGcpClient(credentialOne);
+const gcpClient = new GCP(config);
+
+console.log('gcpClient:', gcpClient);
+console.log('gcpClient.middlewareStack:', gcpClient.middlewareStack);
+console.log('config:', config);
+console.log('config.credentials:', config.credentials);
 
 function populateBucket(createdObjects, callback) {
     process.stdout.write(
@@ -67,6 +74,7 @@ describe('GCP: GET Bucket', function testSuite() {
             bucket: bucketName,
             authCredentials: config.credentials,
         }, 0, err => {
+            console.log('Create bucket callback err:', err);
             if (err) {
                 process.stdout.write(`err in creating bucket ${err}\n`);
             }
@@ -94,8 +102,19 @@ describe('GCP: GET Bucket', function testSuite() {
                 Bucket: badBucketName,
             }, err => {
                 assert(err);
-                assert.strictEqual(err.$metadata?.httpStatusCode || err.statusCode, 404);
+                assert.strictEqual(err.$metadata?.httpStatusCode, 404);
                 assert.strictEqual(err.name, 'NoSuchBucket');
+                return done();
+            });
+        });
+
+        it('should return 200', done => {
+            gcpClient.listObjects({
+                Bucket: bucketName,
+            }, (err, res) => {
+                console.log('listObjects callback err:', err, 'res:', res);
+                assert.equal(err, null, `Expected success, but got ${err}`);
+                assert.strictEqual(res.$metadata?.httpStatusCode, 200);
                 return done();
             });
         });
@@ -111,10 +130,11 @@ describe('GCP: GET Bucket', function testSuite() {
             after(done => removeObjects(createdObjects, done));
 
             it(`should list all ${smallSize} created objects`, done => {
+                console.log('About to call listObjects...');
                 gcpClient.listObjects({
                     Bucket: bucketName,
                 }, (err, res) => {
-                    console.log('here the error and result returned', err, res);
+                    console.log('Callback called! err:', err, 'res keys:', res ? Object.keys(res) : null);
                     assert.equal(err, null, `Expected success, but got ${err}`);
                     assert.strictEqual(res.Contents.length, smallSize);
                     return done();
