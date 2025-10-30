@@ -47,10 +47,12 @@ function getRealAwsConfig(location) {
         region: 'us-east-1',
         endpoint: gcpEndpoint ?
             `${proto}://${gcpEndpoint}` : `${proto}://${awsEndpoint}`,
-        // Disable AWS signature for GCP
-        ...(isGcp && { disableS3ExpressSessionAuth: true }),
     };
+    
     if (isGcp) {
+        params.disableS3ExpressSessionAuth = true;
+        params.useGlobalEndpoint = false;
+        params.s3DisableBodySigning = true;
         params.mainBucket = bucketName;
         params.mpuBucket = mpuBucketName;
     }  
@@ -116,21 +118,7 @@ function getRealAwsConfig(location) {
     return params;
 }
 
-function createGcpClient(location) {
-    const arsenal = require('arsenal');
-    const { GCP } = arsenal.storage.data.external.GCP;
-    const config = getRealAwsConfig(location);
-    const gcpClient = new GCP(config);
-    
-    // Remove AWS auth middleware since GCP uses its own signing
-    // Arsenal's addRelativeTo doesn't work properly in SDK v3, so both middlewares run
-    gcpClient.middlewareStack.remove('httpSigningMiddleware');
-    
-    return gcpClient;
-}
-
 module.exports = {
     getRealAwsConfig,
     getAwsCredentials,
-    createGcpClient,
 };
