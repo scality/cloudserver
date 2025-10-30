@@ -24,15 +24,16 @@ function getRealAwsConfig(location) {
         config.locationConstraints[location].details;
     const useHTTPS = config.locationConstraints[location].details.https;
     const proto = useHTTPS ? 'https' : 'http';
+    const isGcp = config.locationConstraints[location].type === 'gcp';
     const params = {
         region: 'us-east-1',
         endpoint: gcpEndpoint ?
             `${proto}://${gcpEndpoint}` : `${proto}://${awsEndpoint}`,
     };
-    if (config.locationConstraints[location].type === 'gcp') {
+    if (isGcp) {
         params.mainBucket = bucketName;
         params.mpuBucket = mpuBucketName;
-    }
+    }  
     if (useHTTPS) {
         params.requestHandler = {
             httpsAgent: new https.Agent({ keepAlive: true }),
@@ -42,19 +43,57 @@ function getRealAwsConfig(location) {
             httpAgent: new http.Agent({ keepAlive: true }),
         };
     }
-    if (credentialsProfile) {
-        const credentials = getAwsCredentials(credentialsProfile,
-            '/.aws/credentials');
-        params.credentials = credentials;
-        return params;
-    }
+    
     if (pathStyle) {
         params.forcePathStyle = true;
     }
-    params.credentials = {
+    
+    if (!useHTTPS) {
+        params.sslEnabled = false;
+    }
+    
+    if (credentialsProfile) {
+        console.log('Using credentialsProfile:', credentialsProfile);
+        const credentials = getAwsCredentials(credentialsProfile, '/.aws/credentials');
+        params.credentials = credentials;
+        
+        if (isGcp) {
+            console.log('Returning GCP nested structure with credentialsProfile');
+            return {
+                s3Params: params,
+                bucketName,
+                mpuBucket: mpuBucketName || bucketName,
+                credentials,  // Credential provider for raw HTTP (will be resolved in makeGcpRequest)
+            };
+        }
+        return params;
+    }
+    
+    console.log('Using locCredentials:', locCredentials);
+   params.credentials = {
         accessKeyId: locCredentials.accessKey,
         secretAccessKey: locCredentials.secretKey,
     };
+    
+    // For GCP with plain credentials, return nested structure
+    if (isGcp) {
+        return {
+            s3Params: {
+                ...params,
+                credentials: {
+                    accessKeyId: locCredentials.accessKey,
+                    secretAccessKey: locCredentials.secretKey,
+                },
+            },
+            bucketName,
+            mpuBucket: mpuBucketName || bucketName,
+            credentials: {
+                accessKey: locCredentials.accessKey,
+                secretKey: locCredentials.secretKey,
+            },
+        };
+    }
+    
     return params;
 }
 
