@@ -14,12 +14,8 @@ const bucketName = `somebucket-${genUniqID()}`;
 const smallSize = 20;
 const bigSize = listingHardLimit + 1;
 const config = getRealAwsConfig(credentialOne);
-console.log('Config for GCP:', JSON.stringify(config, null, 2));
-console.log('Config.s3Params:', config.s3Params);
-console.log('Config.s3Params.region:', config.s3Params?.region);
 const gcpClient = new GCP(config);
-gcpClient.middlewareStack.remove('httpSigningMiddleware');
-console.log('Middleware stack identify:', gcpClient.middlewareStack.identify());
+
 function populateBucket(createdObjects, callback) {
     process.stdout.write(
         `Putting ${createdObjects.length} objects into bucket\n`);
@@ -91,13 +87,11 @@ describe('GCP: GET Bucket', function testSuite() {
     });
 
     describe('without existing bucket', () => {
-        it.only('should return 404 and NoSuchBucket', done => {
+        it('should return 404 and NoSuchBucket', done => {
             const badBucketName = `nonexistingbucket-${genUniqID()}`;
             gcpClient.listObjects({
                 Bucket: badBucketName,
             }, err => {
-                //eslint-disable-next-line no-console
-                console.log('HEEEEERE IS THE ERRORRR', err);
                 assert(err);
                 assert.strictEqual(err.$metadata?.httpStatusCode || err.statusCode, 404);
                 assert.strictEqual(err.name, 'NoSuchBucket');

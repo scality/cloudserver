@@ -247,7 +247,7 @@ async function makeGcpRequest(params, callback) {
     if (objectKey) {
         options.path = `${options.path}${objectKey}`;
     }
-    makeRequest(options, callback);
+    return makeRequest(options, callback);
 }
 
 /** makeBackbeatRequest - utility function to generate a request going
