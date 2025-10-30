@@ -16,6 +16,26 @@ const bigSize = listingHardLimit + 1;
 const config = getRealAwsConfig(credentialOne);
 const gcpClient = new GCP(config);
 
+// Remove any x-amz-* headers that SDK v3 adds (GCP doesn't accept them)
+gcpClient.middlewareStack.add(
+    (next) => async (args) => {
+        const { request } = args;
+        if (request.headers) {
+            Object.keys(request.headers).forEach(header => {
+                if (header.toLowerCase().startsWith('x-amz-')) {
+                    delete request.headers[header];
+                }
+            });
+        }
+        return next(args);
+    },
+    {
+        step: 'finalizeRequest',
+        name: 'removeAmzHeaders',
+        priority: 'low',  // Run after GCP signing
+    }
+);
+
 console.log('Middleware stack:', gcpClient.middlewareStack.identify());
 console.log('config.s3Params.credentials:', config.s3Params.credentials);
 console.log('gcpClient._config:', gcpClient._config);
