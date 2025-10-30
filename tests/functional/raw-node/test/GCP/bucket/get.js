@@ -1,11 +1,9 @@
 const assert = require('assert');
 const async = require('async');
-const arsenal = require('arsenal');
-const { GCP } = arsenal.storage.data.external.GCP;
 
 const { makeGcpRequest } = require('../../../utils/makeRequest');
 const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
-const { getRealAwsConfig } =
+const { getRealAwsConfig, createGcpClient } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 const { listingHardLimit } = require('../../../../../../constants');
 
@@ -14,19 +12,23 @@ const bucketName = `somebucket-${genUniqID()}`;
 const smallSize = 20;
 const bigSize = listingHardLimit + 1;
 const config = getRealAwsConfig(credentialOne);
-const gcpClient = new GCP(config);
+const gcpClient = createGcpClient(credentialOne);
 
 function populateBucket(createdObjects, callback) {
     process.stdout.write(
         `Putting ${createdObjects.length} objects into bucket\n`);
     async.mapLimit(createdObjects, 10,
     (object, moveOn) => {
+        console.log('Putting object:', object);
         makeGcpRequest({
             method: 'PUT',
             bucket: bucketName,
             objectKey: object,
             authCredentials: config.credentials,
-        }, err => moveOn(err));
+        }, err => {
+            console.log('Put object callback err:', err);
+            moveOn(err);
+        });
     }, err => {
         if (err) {
             process.stdout
@@ -112,6 +114,7 @@ describe('GCP: GET Bucket', function testSuite() {
                 gcpClient.listObjects({
                     Bucket: bucketName,
                 }, (err, res) => {
+                    console.log('here the error and result returned', err, res);
                     assert.equal(err, null, `Expected success, but got ${err}`);
                     assert.strictEqual(res.Contents.length, smallSize);
                     return done();
