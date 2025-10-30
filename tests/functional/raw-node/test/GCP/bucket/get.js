@@ -16,10 +16,10 @@ const bigSize = listingHardLimit + 1;
 const config = getRealAwsConfig(credentialOne);
 const gcpClient = new GCP(config);
 
-console.log('gcpClient:', gcpClient);
-console.log('gcpClient.middlewareStack:', gcpClient.middlewareStack);
-console.log('config:', config);
-console.log('config.credentials:', config.credentials);
+console.log('Middleware stack:', gcpClient.middlewareStack.identify());
+console.log('config.s3Params.credentials:', config.s3Params.credentials);
+console.log('gcpClient._config:', gcpClient._config);
+console.log('gcpClient._config.s3Params.credentials:', gcpClient._config.s3Params.credentials);
 
 function populateBucket(createdObjects, callback) {
     process.stdout.write(
