@@ -15,7 +15,29 @@ function getAwsCredentials(profile, credFile = '/.aws/credentials') {
         throw new Error(msg);
     }
 
-    return fromIni({ profile, filepath: filename });
+    // Parse the INI file manually for synchronous access
+    // SDK v3's fromIni is async, but arsenal's GCP client needs sync access to credentials
+    const content = fs.readFileSync(filename, 'utf-8');
+    const profileMatch = content.match(new RegExp(`\\[${profile}\\][\\s\\S]*?(?=\\n\\[|$)`));
+    
+    if (!profileMatch) {
+        throw new Error(`Profile "${profile}" not found in ${filename}`);
+    }
+    
+    const accessKeyMatch = profileMatch[0].match(/aws_access_key_id\s*=\s*(.+)/);
+    const secretKeyMatch = profileMatch[0].match(/aws_secret_access_key\s*=\s*(.+)/);
+    
+    if (!accessKeyMatch || !secretKeyMatch) {
+        throw new Error(`Missing credentials in profile "${profile}"`);
+    }
+    console.log(`Loaded AWS credentials for profile "${profile}" from ${filename}`);
+    console.log(`Access Key ID: ${accessKeyMatch[1].trim()}`);
+    console.log(`Secret Access Key: ${secretKeyMatch[1].trim()}`);
+
+    return {
+        accessKeyId: accessKeyMatch[1].trim(),
+        secretAccessKey: secretKeyMatch[1].trim(),
+    };
 }
 
 function getRealAwsConfig(location) {
@@ -53,23 +75,22 @@ function getRealAwsConfig(location) {
     }
     
     if (credentialsProfile) {
-        console.log('Using credentialsProfile:', credentialsProfile);
         const credentials = getAwsCredentials(credentialsProfile, '/.aws/credentials');
         params.credentials = credentials;
         
         if (isGcp) {
-            console.log('Returning GCP nested structure with credentialsProfile');
             return {
                 s3Params: params,
                 bucketName,
                 mpuBucket: mpuBucketName || bucketName,
-                credentials,  // Credential provider for raw HTTP (will be resolved in makeGcpRequest)
+                credentials: {  // For raw HTTP requests (GCP format)
+                    accessKey: credentials.accessKeyId,
+                    secretKey: credentials.secretAccessKey,
+                },
             };
         }
         return params;
     }
-    
-    console.log('Using locCredentials:', locCredentials);
    params.credentials = {
         accessKeyId: locCredentials.accessKey,
         secretAccessKey: locCredentials.secretKey,
