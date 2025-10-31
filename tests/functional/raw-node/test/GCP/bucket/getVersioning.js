@@ -58,7 +58,7 @@ describe('GCP: GET Bucket Versioning', () => {
                 method: 'PUT',
                 bucket: this.test.bucketName,
                 authCredentials: config.credentials,
-                queryObj: { versioning: {} },
+                queryObj: { versioning: '' },
                 requestBody: xmlEnable,
             }, err => {
                 if (err) {
@@ -83,7 +83,7 @@ describe('GCP: GET Bucket Versioning', () => {
                 method: 'PUT',
                 bucket: this.test.bucketName,
                 authCredentials: config.credentials,
-                queryObj: { versioning: {} },
+                queryObj: { versioning: '' },
                 requestBody: xmlDisable,
             }, err => {
                 if (err) {
