@@ -114,10 +114,6 @@ function makeRequest(params, callback) {
             Date: requestForSigning.headers['x-goog-date'],
         });
     }
-    
-    if (qs) {
-        options.path += `?${qs}`;
-    }
 
     const req = transport.request(options, res => {
         const body = [];
