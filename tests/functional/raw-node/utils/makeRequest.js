@@ -19,8 +19,7 @@ function signGcpRequest(request, credentials, date) {
     // eslint-disable-next-line no-param-reassign
     request.headers['x-goog-date'] = date.toUTCString();
     
-    // Build string to sign using arsenal's v2 signing function
-    const data = {};
+    const data = Object.assign({}, request.headers);
     const logger = { trace: () => {} };
     const stringToSign = constructStringToSignV2(request, data, logger, 'GCP');
     
