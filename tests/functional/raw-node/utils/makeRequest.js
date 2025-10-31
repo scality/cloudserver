@@ -96,11 +96,12 @@ function makeRequest(params, callback) {
     if (params.GCP && authCredentials) {
         const bucketMatch = options.path.match(/^\/([^\/]+)/);
         const bucketName = bucketMatch ? bucketMatch[1] : undefined;
+        const gcpPath = queryObj ? `${options.path}?${qs}` : options.path;
         
         const requestForSigning = {
             method,
             headers: options.headers || {},
-            url: options.path, 
+            url: gcpPath,
             path: options.path,
             endpoint: { host: hostname },
             bucketName,
