@@ -19,14 +19,25 @@ function signGcpRequest(request, credentials, date) {
     // eslint-disable-next-line no-param-reassign
     request.headers['x-goog-date'] = date.toUTCString();
     
+    console.log('[signGcpRequest] Signing request:', {
+        method: request.method,
+        path: request.path,
+        bucketName: request.bucketName,
+        query: request.query,
+    });
+    
     const data = Object.assign({}, request.headers);
     const logger = { trace: () => {} };
     const stringToSign = constructStringToSignV2(request, data, logger, 'GCP');
+    
+    console.log('[signGcpRequest] String to sign:', stringToSign);
     
     // Sign with HMAC-SHA1
     const signature = crypto.createHmac('sha1', credentials.secretKey)
         .update(stringToSign)
         .digest('base64');
+    
+    console.log('[signGcpRequest] Generated signature:', signature);
     
     // Set Authorization header
     // eslint-disable-next-line no-param-reassign
