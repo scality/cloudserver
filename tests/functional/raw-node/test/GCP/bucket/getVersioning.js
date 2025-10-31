@@ -33,7 +33,7 @@ describe('GCP: GET Bucket Versioning', () => {
             authCredentials: config.credentials,
         }, 0, err => {
             if (err) {
-                process.stdout.write(`err in creating bucket ${err}\n`);
+                process.stdout.write(`err in creating bucket ${err.code}\n`);
             }
             return done(err);
         });
@@ -46,7 +46,7 @@ describe('GCP: GET Bucket Versioning', () => {
             authCredentials: config.credentials,
         }, 0, err => {
             if (err) {
-                process.stdout.write(`err in deleting bucket ${err}\n`);
+                process.stdout.write(`err in deleting bucket ${err.code}\n`);
             }
             return done(err);
         });
@@ -62,7 +62,7 @@ describe('GCP: GET Bucket Versioning', () => {
                 requestBody: xmlEnable,
             }, err => {
                 if (err) {
-                    process.stdout.write(`err in setting versioning ${err}`);
+                    process.stdout.write(`err in setting versioning ${err.code}`);
                 }
                 return next(err);
             }),
