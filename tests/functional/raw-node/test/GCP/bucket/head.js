@@ -67,6 +67,9 @@ describe('GCP: HEAD Bucket', () => {
             gcpClient.headBucket({
                 Bucket: this.test.bucketName,
             }, (err, res) => {
+                console.log('[HEAD Bucket Test] Callback - err:', err);
+                console.log('[HEAD Bucket Test] Callback - res:', res);
+                console.log('[HEAD Bucket Test] Callback - data:', this.test.bucketObj);
                 assert.equal(err, null, `Expected success, but got ${err}`);
                 const { $metadata, ...data } = res;
                 console.log('[HEAD Bucket Test] Callback - res:', res);
