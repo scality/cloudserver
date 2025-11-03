@@ -12,7 +12,7 @@
     "test-aws": "AWS_ON_AIR=true mocha -t 40000 test/ --exit",
     "test-gcp": "mocha -t 40000 test/GCP/ --exit",
     "test-routes": "mocha -t 40000 test/routes/ --exit",
-    "test": "mocha -t 40000 test/GCP/bucket/get.js --exit",
+    "test": "mocha -t 40000 test/GCP/bucket/ --exit",
     "test-debug": "_mocha -t 40000 test/ --exit"
   },
   "author": "",
