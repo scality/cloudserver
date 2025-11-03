@@ -65,7 +65,7 @@ describe('GCP: HEAD Bucket', () => {
 
         it('should get bucket information', function testFn(done) {
             gcpClient.headBucket({
-                Bucket: this.test.bucketName,
+                Bucket: this.currentTest.bucketName,
             }, (err, res) => {
                 console.log('[HEAD Bucket Test] Callback - err:', err);
                 console.log('[HEAD Bucket Test] Callback - res:', res);
