@@ -70,7 +70,7 @@ describe('GCP: PUT Bucket Versioning', () => {
                 method: 'GET',
                 bucket: this.test.bucketName,
                 authCredentials: config.credentials,
-                queryObj: { versioning: {} },
+                queryObj: { versioning: '' },
             }, (err, res) => {
                 if (err) {
                     process.stdout.write(`err in retrieving bucket ${err}`);
@@ -97,7 +97,7 @@ describe('GCP: PUT Bucket Versioning', () => {
                 method: 'GET',
                 bucket: this.test.bucketName,
                 authCredentials: config.credentials,
-                queryObj: { versioning: {} },
+                queryObj: { versioning: '' },
             }, (err, res) => {
                 if (err) {
                     process.stdout.write(`err in retrieving bucket ${err}`);

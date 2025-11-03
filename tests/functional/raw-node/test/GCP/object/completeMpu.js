@@ -26,6 +26,8 @@ const bigMD5 = '9c8a62e2c04a512ce348d8280497b49e-1024';
 
 function gcpMpuSetupWrapper(params, callback) {
     gcpMpuSetup(params, (err, result) => {
+        console.log('[GCP MPU Setup] Callback - err:', err ? err.code : 'success');
+        console.log('[GCP MPU Setup] Result:', result);
         assert.ifError(err, `Unable to setup MPU test, error ${err}`);
         const { uploadId, etagList } = result;
         this.currentTest.uploadId = uploadId;
