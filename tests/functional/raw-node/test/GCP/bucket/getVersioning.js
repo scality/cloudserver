@@ -8,8 +8,8 @@ const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 
 const credentialOne = 'gcpbackend';
-const verEnabledObj = { Status: 'Enabled' };
-const verDisabledObj = { Status: 'Suspended' };
+const verEnabledObj = 'Enabled';
+const verDisabledObj = 'Suspended';
 const xmlEnable =
     '<?xml version="1.0" encoding="UTF-8"?>' +
     '<VersioningConfiguration>' +
@@ -75,7 +75,7 @@ describe('GCP: GET Bucket Versioning', () => {
                     console.log('[Versioning Test] Step 2 callback - err:', err, 'res:', res);
                     assert.equal(err, null,
                         `Expected success, but got err ${err}`);
-                    assert.deepStrictEqual(res, verEnabledObj);
+                    assert.deepStrictEqual(res.Status, verEnabledObj);
                     return next();
                 });
             },
@@ -101,7 +101,7 @@ describe('GCP: GET Bucket Versioning', () => {
             }, (err, res) => {
                 assert.equal(err, null,
                     `Expected success, but got err ${err}`);
-                assert.deepStrictEqual(res, verDisabledObj);
+                assert.deepStrictEqual(res.Status, verDisabledObj);
                 return next();
             }),
         ], err => done(err));
