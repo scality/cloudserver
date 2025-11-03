@@ -19,7 +19,7 @@ describe('GCP: HEAD Bucket', () => {
 
         it('should return 404', function testFn(done) {
             gcpClient.headBucket({
-                Bucket: this.currentTest.bucketName,
+                Bucket: this.test.bucketName,
             }, err => {
                 console.log('[HEAD Bucket Test] Callback - err:', err ? err.code : 'success');
                 assert(err);
@@ -42,6 +42,7 @@ describe('GCP: HEAD Bucket', () => {
                 if (err) {
                     return done(err);
                 }
+                console.log('[HEAD Bucket Test] Bucket created - res:', res);
                 this.currentTest.bucketObj = {
                     MetaVersionId: res.headers['x-goog-metageneration'],
                 };
@@ -64,19 +65,20 @@ describe('GCP: HEAD Bucket', () => {
         });
 
         it('should get bucket information', function testFn(done) {
+            console.log('[HEAD Bucket Test] Getting info for bucket:', this.test.bucketName);
             gcpClient.headBucket({
-                Bucket: this.currentTest.bucketName,
+                Bucket: this.test.bucketName,
             }, (err, res) => {
                 console.log('[HEAD Bucket Test] Callback - err:', err);
                 console.log('[HEAD Bucket Test] Callback - res:', res);
-                console.log('[HEAD Bucket Test] Callback - data:', this.currentTest.bucketObj);
+                console.log('[HEAD Bucket Test] Callback - data:', this.test.bucketObj);
                 assert.equal(err, null, `Expected success, but got ${err}`);
                 const { $metadata, ...data } = res;
                 console.log('[HEAD Bucket Test] Callback - res:', res);
                 console.log('[HEAD Bucket Test] Callback - $metadata:', $metadata);
-                console.log('[HEAD Bucket Test] Callback - data:', this.currentTest.bucketObj);
+                console.log('[HEAD Bucket Test] Callback - data:', this.test.bucketObj);
                 assert.strictEqual($metadata.httpStatusCode, 200);
-                assert.deepStrictEqual(this.currentTest.bucketObj, data);
+                assert.deepStrictEqual(this.test.bucketObj, data);
                 return done();
             });
         });
