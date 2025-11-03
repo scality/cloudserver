@@ -61,19 +61,24 @@ describe('GCP: GET Bucket Versioning', () => {
                 queryObj: { versioning: '' },
                 requestBody: xmlEnable,
             }, err => {
+                console.log('[Versioning Test] Step 1 callback - err:', err ? err.code : 'success');
                 if (err) {
                     process.stdout.write(`err in setting versioning ${err.code}`);
                 }
                 return next(err);
             }),
-            next => gcpClient.getBucketVersioning({
-                Bucket: this.test.bucketName,
-            }, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
-                assert.deepStrictEqual(res, verEnabledObj);
-                return next();
-            }),
+            next => {
+                console.log('[Versioning Test] Step 2: Getting versioning...');
+                gcpClient.getBucketVersioning({
+                    Bucket: this.test.bucketName,
+                }, (err, res) => {
+                    console.log('[Versioning Test] Step 2 callback - err:', err, 'res:', res);
+                    assert.equal(err, null,
+                        `Expected success, but got err ${err}`);
+                    assert.deepStrictEqual(res, verEnabledObj);
+                    return next();
+                });
+            },
         ], err => done(err));
     });
 
