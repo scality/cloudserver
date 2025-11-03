@@ -30,8 +30,8 @@ describe('GCP: HEAD Bucket', () => {
     });
 
     describe('with existing bucket', () => {
+        this.currentTest.bucketName = `somebucket-${genUniqID()}`;
         beforeEach(function beforeFn(done) {
-            this.currentTest.bucketName = `somebucket-${genUniqID()}`;
             process.stdout
                 .write(`Creating test bucket ${this.currentTest.bucketName}\n`);
             gcpRequestRetry({
