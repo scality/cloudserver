@@ -69,6 +69,9 @@ describe('GCP: HEAD Bucket', () => {
             }, (err, res) => {
                 assert.equal(err, null, `Expected success, but got ${err}`);
                 const { $metadata, ...data } = res;
+                console.log('[HEAD Bucket Test] Callback - res:', res);
+                console.log('[HEAD Bucket Test] Callback - $metadata:', $metadata);
+                console.log('[HEAD Bucket Test] Callback - data:', this.test.bucketObj);
                 assert.strictEqual($metadata.httpStatusCode, 200);
                 assert.deepStrictEqual(this.test.bucketObj, data);
                 return done();
