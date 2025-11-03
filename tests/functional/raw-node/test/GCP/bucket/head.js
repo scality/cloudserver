@@ -19,7 +19,7 @@ describe('GCP: HEAD Bucket', () => {
 
         it('should return 404', function testFn(done) {
             gcpClient.headBucket({
-                Bucket: this.test.bucketName,
+                Bucket: this.currentTest.bucketName,
             }, err => {
                 console.log('[HEAD Bucket Test] Callback - err:', err ? err.code : 'success');
                 assert(err);
@@ -30,8 +30,8 @@ describe('GCP: HEAD Bucket', () => {
     });
 
     describe('with existing bucket', () => {
-        this.currentTest.bucketName = `somebucket-${genUniqID()}`;
         beforeEach(function beforeFn(done) {
+            this.currentTest.bucketName = `somebucket-${genUniqID()}`;
             process.stdout
                 .write(`Creating test bucket ${this.currentTest.bucketName}\n`);
             gcpRequestRetry({
@@ -69,14 +69,14 @@ describe('GCP: HEAD Bucket', () => {
             }, (err, res) => {
                 console.log('[HEAD Bucket Test] Callback - err:', err);
                 console.log('[HEAD Bucket Test] Callback - res:', res);
-                console.log('[HEAD Bucket Test] Callback - data:', this.test.bucketObj);
+                console.log('[HEAD Bucket Test] Callback - data:', this.currentTest.bucketObj);
                 assert.equal(err, null, `Expected success, but got ${err}`);
                 const { $metadata, ...data } = res;
                 console.log('[HEAD Bucket Test] Callback - res:', res);
                 console.log('[HEAD Bucket Test] Callback - $metadata:', $metadata);
-                console.log('[HEAD Bucket Test] Callback - data:', this.test.bucketObj);
+                console.log('[HEAD Bucket Test] Callback - data:', this.currentTest.bucketObj);
                 assert.strictEqual($metadata.httpStatusCode, 200);
-                assert.deepStrictEqual(this.test.bucketObj, data);
+                assert.deepStrictEqual(this.currentTest.bucketObj, data);
                 return done();
             });
         });
