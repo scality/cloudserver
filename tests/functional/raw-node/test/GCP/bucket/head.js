@@ -23,7 +23,7 @@ describe('GCP: HEAD Bucket', () => {
             }, err => {
                 console.log('[HEAD Bucket Test] Callback - err:', err ? err.code : 'success');
                 assert(err);
-                assert.strictEqual(err.statusCode, 404);
+                assert.strictEqual(err.$metadata?.httpStatusCode, 404);
                 return done();
             });
         });
