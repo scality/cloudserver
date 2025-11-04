@@ -149,7 +149,9 @@ describe('GCP: Complete MPU', function testSuite() {
                 UploadId: this.test.uploadId,
                 MultipartUpload: { Parts: parts },
             };
+            console.log('[Test] Calling completeMultipartUpload...');
             gcpClient.completeMultipartUpload(params, (err, res) => {
+                console.log('[Test] completeMultipartUpload callback - err:', err, 'res:', res);
                 assert.equal(err, null,
                     `Expected success, but got error ${err}`);
                 assert.strictEqual(res.ETag, `"${smallMD5}"`);
