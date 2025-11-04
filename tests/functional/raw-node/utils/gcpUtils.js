@@ -42,6 +42,7 @@ function gcpMpuSetup(params, callback) {
             Bucket: bucketNames.mpu.Name,
             Key: key,
         }, (err, res) => {
+            console.log('[MPU Setup] Create MPU callback - err:', err , 'res:', res);
             assert.equal(err, null,
                 `Expected success, but got error ${err}`);
             return next(null, res.UploadId);
@@ -69,14 +70,17 @@ function gcpMpuSetup(params, callback) {
                     if (!(++count % 100)) {
                         process.stdout.write(`Uploaded Parts: ${count}\n`);
                     }
+                    console.log('[MPU Setup] Upload Part callback - err:', err , 'res:', res);
                     etagList[info] = res.ETag;
                     return moveOn(null);
                 });
             }, err => {
+                console.log('[MPU Setup] All parts uploaded callback - err:', err);
                 next(err, { uploadId, etagList });
             });
         },
     ], (err, result) => {
+        console.log('[MPU Setup] Final callback - err:', err, 'result:', result);
         if (err) {
             if (err === 'SkipPutPart') {
                 return callback(null, result);
