@@ -160,7 +160,8 @@ describe('GCP: Complete MPU', function testSuite() {
         });
     });
 
-    describe('when MPU has 1024 uploaded parts', () => {
+    describe('when MPU has 1024 uploaded parts', function() {
+        this.timeout(1200000);  // 20 minutes for large MPU test
         beforeEach(function beforeFn(done) {
             this.currentTest.key = `somekey-${genUniqID()}`;
             gcpMpuSetupWrapper.call(this, {
