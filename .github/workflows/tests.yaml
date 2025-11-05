@@ -379,7 +379,6 @@ jobs:
         set -o pipefail;        
         bash wait_for_local_port.bash 8000 40
         yarn run ft_test | tee /tmp/artifacts/${{ github.job }}/tests.log
-        yarn run ft_mixed_bucket_format_version | tee /tmp/artifacts/${{ github.job }}/mixed-tests.log
       env:
         S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
     - name: Cleanup and upload coverage

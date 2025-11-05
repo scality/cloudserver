@@ -186,8 +186,9 @@ describe('GCP: Complete MPU', function testSuite() {
                 MultipartUpload: { Parts: parts },
             };
             gcpClient.completeMultipartUpload(params, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got error ${err}`);
+                if (err) {
+                    return done(err);
+                }
                 assert.strictEqual(res.ETag, `"${bigMD5}"`);
                 return done();
             });
