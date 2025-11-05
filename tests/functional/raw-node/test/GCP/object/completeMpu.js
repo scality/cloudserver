@@ -193,6 +193,8 @@ describe('GCP: Complete MPU', function testSuite() {
                 console.log('[Test] completeMultipartUpload callback - err:', err, 'res:', res);
                 assert.equal(err, null,
                     `Expected success, but got error ${err}`);
+                console.log('[Test] completeMultipartUpload result ETag:', res.ETag);
+                console.log('[Test] Expected ETag:', `"${bigMD5}"`);
                 assert.strictEqual(res.ETag, `"${bigMD5}"`);
                 return done();
             });
