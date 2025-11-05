@@ -26,8 +26,6 @@ const bigMD5 = '9c8a62e2c04a512ce348d8280497b49e-1024';
 
 function gcpMpuSetupWrapper(params, callback) {
     gcpMpuSetup(params, (err, result) => {
-        console.log('[GCP MPU Setup] Callback - err:', err ? err.code : 'success');
-        console.log('[GCP MPU Setup] Result:', result);
         assert.ifError(err, `Unable to setup MPU test, error ${err}`);
         const { uploadId, etagList } = result;
         this.currentTest.uploadId = uploadId;
@@ -149,9 +147,7 @@ describe('GCP: Complete MPU', function testSuite() {
                 UploadId: this.test.uploadId,
                 MultipartUpload: { Parts: parts },
             };
-            console.log('[Test] Calling completeMultipartUpload...');
             gcpClient.completeMultipartUpload(params, (err, res) => {
-                console.log('[Test] completeMultipartUpload callback - err:', err, 'res:', res);
                 assert.equal(err, null,
                     `Expected success, but got error ${err}`);
                 assert.strictEqual(res.ETag, `"${smallMD5}"`);
@@ -161,7 +157,6 @@ describe('GCP: Complete MPU', function testSuite() {
     });
 
     describe('when MPU has 1024 uploaded parts', function() {
-        this.timeout(1200000);  // 20 minutes for large MPU test
         beforeEach(function beforeFn(done) {
             this.currentTest.key = `somekey-${genUniqID()}`;
             gcpMpuSetupWrapper.call(this, {
@@ -191,11 +186,8 @@ describe('GCP: Complete MPU', function testSuite() {
                 MultipartUpload: { Parts: parts },
             };
             gcpClient.completeMultipartUpload(params, (err, res) => {
-                console.log('[Test] completeMultipartUpload callback - err:', err, 'res:', res);
                 assert.equal(err, null,
                     `Expected success, but got error ${err}`);
-                console.log('[Test] completeMultipartUpload result ETag:', res.ETag);
-                console.log('[Test] Expected ETag:', `"${bigMD5}"`);
                 assert.strictEqual(res.ETag, `"${bigMD5}"`);
                 return done();
             });
