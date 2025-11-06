@@ -3896,6 +3896,7 @@ arraybuffer.prototype.slice@^1.0.4:
     ioctl "^2.0.2"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 "arsenal@git+https://github.com/scality/Arsenal#bd349b355e0400580f3bed9c16bb68a04a17f256":
   version "8.2.35"
@@ -3940,6 +3941,8 @@ arraybuffer.prototype.slice@^1.0.4:
     ioctl "^2.0.2"
 
 >>>>>>> 622e18dd3 (wip)
+=======
+>>>>>>> acb3a913c (wip)
 asn1@~0.2.3:
   version "0.2.6"
   resolved "https://registry.yarnpkg.com/asn1/-/asn1-0.2.6.tgz#0d3a7bb6e64e02a90c0303b31f292868ea09a08d"
