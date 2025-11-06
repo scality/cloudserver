@@ -671,7 +671,7 @@ describe('routeBackbeat', () => {
                 getName: () => 'bucket0',
                 getQuota: () => 0n,
             };
-            sandbox.stub(metadata, 'getBucket').callsFake((bucket, log, cb) => cb(null, bucketMD));
+            sandbox.stub(metadata, 'getBucket').callsFake((bucket, log, cb) => cb(null, bucketMD, undefined));
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
             await endPromise;
@@ -787,6 +787,39 @@ describe('routeBackbeat', () => {
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
         void await endPromise;
+
+        assert.strictEqual(mockResponse.statusCode, 200);
+        assert.deepStrictEqual(mockResponse.body, null);
+    });
+
+    it('should handle raftSessionId parameter from metadata.getBucket', async () => {
+        sandbox.stub(config, 'isQuotaEnabled').returns(true);
+        const testRaftSessionId = 12345;
+        const bucketMD = {
+            getName: () => 'bucket0',
+            getQuota: () => 0n,
+        };
+
+        const getBucketStub = sandbox.stub(metadata, 'getBucket')
+            .callsFake((bucket, log, cb) => cb(null, bucketMD, testRaftSessionId));
+
+        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+        void await endPromise;
+
+        sinon.assert.calledOnce(getBucketStub);
+
+        sinon.assert.calledOnce(validateQuotasSpy);
+        sinon.assert.calledWith(validateQuotasSpy,
+            mockRequest,
+            bucketMD,
+            mockRequest.accountQuotas,
+            ['objectDelete'],
+            'objectDelete',
+            -100,
+            false,
+            log,
+            sinon.match.any,
+        );
 
         assert.strictEqual(mockResponse.statusCode, 200);
         assert.deepStrictEqual(mockResponse.body, null);

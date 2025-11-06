@@ -48,7 +48,7 @@ describe('Veeam routes - comprehensive unit tests', () => {
         utilizationStub = sinon.stub(UtilizationService, 'getUtilizationMetrics');
         metadataStub = sinon.stub(metadata, 'getBucket');
         // By default, metadata.getBucket succeeds
-        metadataStub.callsArgWith(2, null, bucketMd);
+        metadataStub.callsArgWith(2, null, bucketMd, undefined);
     });
 
     afterEach(() => {
@@ -301,7 +301,7 @@ describe('Veeam routes - HEAD request UtilizationService error handling', () => 
         log.debug = sinon.stub();
 
         metadataStub = sinon.stub(metadata, 'getBucket');
-        metadataStub.callsArgWith(2, null, bucketMd);
+        metadataStub.callsArgWith(2, null, bucketMd, undefined);
     });
 
     afterEach(() => {
@@ -438,7 +438,7 @@ describe('Veeam routes - LIST request handling', () => {
         log.trace = sinon.stub();
 
         metadataStub = sinon.stub(metadata, 'getBucket');
-        metadataStub.callsArgWith(2, null, bucketMd);
+        metadataStub.callsArgWith(2, null, bucketMd, undefined);
     });
 
     afterEach(() => {

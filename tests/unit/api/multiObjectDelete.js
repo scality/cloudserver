@@ -400,7 +400,7 @@ describe('multiObjectDelete function', () => {
                 'accountA',
                 new Date().toISOString(),
                 15,
-            )));
+            ), undefined));
 
         multiObjectDelete.multiObjectDelete(authInfo, request, log, (err, res) => {
             // Expected result is an access denied on the object, and no error, as the API was authorized
@@ -443,7 +443,7 @@ describe('multiObjectDelete function', () => {
                 'accountA',
                 new Date().toISOString(),
                 15,
-            )));
+            ), undefined));
 
         multiObjectDelete.multiObjectDelete(authInfo, request, log, (err, res) => {
             // Expected result is an access denied on the object, and no error, as the API was authorized
