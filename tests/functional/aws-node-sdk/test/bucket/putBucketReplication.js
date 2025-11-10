@@ -377,3 +377,61 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
             return checkError(config, 'MalformedXML', done);
         });
 });
+
+describe('aws-node-sdk test putBucketReplication CORS', () => {
+    let s3;
+    const bucket = 'source-bucket-cors';
+
+    beforeEach(done => {
+        const config = getConfig('default', { signatureVersion: 'v4' });
+        s3 = new S3(config);
+        series([
+            next => s3.createBucket({ Bucket: bucket }, next),
+            next => s3.putBucketVersioning({
+                Bucket: bucket,
+                VersioningConfiguration: { Status: 'Enabled' },
+            }, next),
+            next => s3.putBucketCors({
+                Bucket: bucket,
+                CORSConfiguration: {
+                    CORSRules: [{
+                        AllowedOrigins: ['*'],
+                        AllowedMethods: ['PUT'],
+                        AllowedHeaders: ['*'],
+                    }],
+                },
+            }, next),
+        ], done);
+    });
+
+    afterEach(done => {
+        series([
+            next => s3.deleteBucketCors({ Bucket: bucket }, err => {
+                if (err && err.code !== 'NoSuchCORSConfiguration') {
+                    return next(err);
+                }
+                return next();
+            }),
+            next => s3.deleteBucket({ Bucket: bucket }, next),
+        ], done);
+    });
+
+    it('should return CORS headers on malformed XML error', done => {
+        const replicationParams = {
+            Bucket: bucket,
+            ReplicationConfiguration: {
+                Role: 'arn:aws:iam::account-id:role/src-resource,' +
+                    'arn:aws:iam::account-id:role/dest-resource',
+                Rules: [],
+            },
+        };
+        const request = s3.putBucketReplication(replicationParams);
+        request.on('build', () => {
+            request.httpRequest.headers.Origin = 'http://example.com';
+        });
+        request.send(err => {
+            assertError(err, 'MalformedXML');
+            done();
+        });
+    });
+});
