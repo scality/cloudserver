@@ -155,12 +155,12 @@
         "nodeCount": 1,
         "default": {
             "maxRps": 1000,
-            "burstCapacity": 30
+            "burstCapacity": 1
         },
         "bucket": {
             "configCacheTTL": 30000
         },
-        "serviceUserArn": "arn:aws:iam::000000000000:",
+        "serviceUserArn": "arn:aws:iam::000000000000:user/ratelimit-admin",
         "error": {
             "code": 429,
             "description": "Too Many Requests - Rate limit exceeded for this bucket"
