@@ -46,6 +46,7 @@ services:
       - S3QUOTA
       - QUOTA_ENABLE_INFLIGHTS
       - S3_VERSION_ID_ENCODING_TYPE
+      - RATE_LIMIT_SERVICE_USER_ARN=arn:aws:iam::123456789013:root
     env_file:
       - creds.env
     depends_on:
