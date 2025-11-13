@@ -60,7 +60,7 @@
     },
     "clusters": 1,
     "log": {
-        "logLevel": "info",
+        "logLevel": "debug",
         "dumpLevel": "error"
     },
     "healthChecks": {
@@ -149,5 +149,25 @@
     },
     "integrityChecks": {
         "objectPutRetention": true
+    },
+    "localCache": {
+        "host": "127.0.0.1",
+        "port": 6379
+    },
+    "rateLimiting": {
+        "enabled": true,
+        "nodeCount": 10,
+        "serviceUserArn": "arn:aws:iam::123456789012:root",
+        "default": {
+            "maxRps": 100
+        },
+        "bucket": {
+            "burstCapacity": 1,
+            "configCacheTTL": 30000
+        },
+        "error": {
+            "code": 429,
+            "description": "Too Many Requests - Rate limit exceeded for this bucket"
+        }
     }
 }
