@@ -61,5 +61,9 @@
             "host": "localhost:6000"
         }
     ],
-    "enableVeeamRoute": false
+    "enableVeeamRoute": false,
+    "serverAccessLogs": {
+        "enabled": true,
+        "outputFile": "/logs/server-access.log"
+    }
 }
