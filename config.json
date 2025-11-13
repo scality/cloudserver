@@ -58,7 +58,7 @@
         "host": "localhost",
         "port": 8500
     },
-    "clusters": 1,
+    "clusters": 10,
     "log": {
         "logLevel": "debug",
         "dumpLevel": "error"
@@ -156,7 +156,7 @@
     },
     "rateLimiting": {
         "enabled": true,
-        "nodeCount": 10,
+        "nodeCount": 1,
         "serviceUserArn": "arn:aws:iam::123456789012:root",
         "default": {
             "maxRps": 100
