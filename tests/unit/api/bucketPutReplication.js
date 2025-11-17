@@ -1,6 +1,8 @@
 const assert = require('assert');
 
-const { DummyRequestLogger } = require('../helpers');
+const bucketPutReplication =
+    require('../../../lib/api/bucketPutReplication');
+const { DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const { getReplicationConfiguration } =
     require('../../../lib/api/apiUtils/bucket/getReplicationConfiguration');
 const validateReplicationConfig =
@@ -40,9 +42,9 @@ function checkGeneratedID(xml, cb) {
 // Create replication configuration XML with an tag optionally omitted.
 function createReplicationXML(missingTag, tagValue) {
     let Role = missingTag === 'Role' ? '' :
-        '<Role>' +
-            'arn:aws:iam::account-id:role/src-resource,' +
-            'arn:aws:iam::account-id:role/dest-resource' +
+        '<Role>' + 
+            'arn:aws:iam::account-id:role/src-resource,' + 
+            'arn:aws:iam::account-id:role/dest-resource' + 
         '</Role>';
     Role = tagValue && tagValue.Role ? `<Role>${tagValue.Role}</Role>` : Role;
     let ID = missingTag === 'ID' ? '' : '<ID>foo</ID>';
@@ -60,8 +62,8 @@ function createReplicationXML(missingTag, tagValue) {
     const Rule = missingTag === 'Rule' ? '' :
         `<Rule>${ID + Prefix + Status + Destination}</Rule>`;
     const content = missingTag === null ? '' : `${Role}${Rule}`;
-    return '<ReplicationConfiguration ' +
-            `xmlns="http://s3.amazonaws.com/doc/2006-03-01/">${content}` +
+    return '<ReplicationConfiguration ' + 
+            `xmlns="http://s3.amazonaws.com/doc/2006-03-01/">${content}` + 
         '</ReplicationConfiguration>';
 }
 
@@ -167,5 +169,22 @@ describe('\'validateReplicationConfig\' function', () => {
         const result = validateReplicationConfig(withoutPreferredRead,
                                                  transientBucket);
         assert.strictEqual(result, false);
+    });
+});
+
+describe('bucketPutReplication API', () => {
+    it('should return an XMLMalformed error if the XML is malformed', done => {
+        const authInfo = makeAuthInfo('accessKey1');
+        const malformedXML = createReplicationXML(null);
+        const request = {
+            bucketName: 'test-bucket',
+            post: malformedXML,
+            headers: {},
+            actionImplicitDenies: false,
+        };
+        bucketPutReplication(authInfo, request, log, err => {
+            assert(err.is.MalformedXML);
+            done();
+        });
     });
 });
