@@ -416,7 +416,7 @@ describe('aws-node-sdk test putBucketReplication CORS', () => {
         ], done);
     });
 
-    it('should return CORS headers on malformed XML error', done => {
+    it('should return malformed XML error in XML is invalid', done => {
         const replicationParams = {
             Bucket: bucket,
             ReplicationConfiguration: {
