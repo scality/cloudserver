@@ -288,7 +288,7 @@ describe('Rate limit helpers', () => {
             });
             sandbox.stub(config, 'clusters').value(5);
 
-            helpers.checkRateLimitWithConfig(bucketName, limitConfig, mockLog, (err, rateLimited) => {
+            helpers.checkRateLimitWithConfig(bucketName, limitConfig, mockLog, err => {
                 assert.strictEqual(err, null);
                 // Should work correctly with distributed calculation
                 done();
