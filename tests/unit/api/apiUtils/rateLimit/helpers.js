@@ -4,6 +4,7 @@ const { config } = require('../../../../../lib/Config');
 const cache = require('../../../../../lib/api/apiUtils/rateLimit/cache');
 const helpers = require('../../../../../lib/api/apiUtils/rateLimit/helpers');
 const constants = require('../../../../../constants');
+const tokenBucket = require('../../../../../lib/api/apiUtils/rateLimit/tokenBucket');
 
 describe('Rate limit helpers', () => {
     let sandbox;
@@ -20,6 +21,8 @@ describe('Rate limit helpers', () => {
         // Clear cache before each test
         cache.counters.clear();
         cache.configCache.clear();
+        // Clear token buckets
+        tokenBucket.getAllTokenBuckets().clear();
     });
 
     afterEach(() => {
@@ -212,12 +215,15 @@ describe('Rate limit helpers', () => {
             const bucketName = 'test-bucket';
             const limitConfig = { limit: 100, source: 'bucket' };
 
+            // Pre-populate token bucket with tokens
+            const bucket = tokenBucket.getTokenBucket(bucketName, limitConfig, mockLog);
+            bucket.tokens = 50;
+
             helpers.checkRateLimitWithConfig(bucketName, limitConfig, mockLog, (err, rateLimited) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(rateLimited, false);
-                // Verify counter was updated
-                const counter = cache.getCounter(`bucket:${bucketName}:rps`);
-                assert(counter > 0);
+                // Verify token was consumed
+                assert.strictEqual(bucket.tokens, 49);
                 done();
             });
         });
@@ -226,9 +232,8 @@ describe('Rate limit helpers', () => {
             const bucketName = 'test-bucket';
             const limitConfig = { limit: 100, source: 'bucket' };
 
-            // Pre-fill the bucket by setting counter to future
-            const now = Date.now();
-            cache.setCounter(`bucket:${bucketName}:rps`, now + 10000);
+            // Token bucket starts with 0 tokens (no pre-population)
+            // This simulates exhausted quota
 
             helpers.checkRateLimitWithConfig(bucketName, limitConfig, mockLog, (err, rateLimited) => {
                 assert.strictEqual(err, null);
@@ -249,6 +254,10 @@ describe('Rate limit helpers', () => {
                 },
             });
 
+            // Pre-populate token bucket
+            const bucket = tokenBucket.getTokenBucket(bucketName, limitConfig, mockLog);
+            bucket.tokens = 50;
+
             helpers.checkRateLimitWithConfig(bucketName, limitConfig, mockLog, (err, rateLimited) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(rateLimited, false);
@@ -267,6 +276,10 @@ describe('Rate limit helpers', () => {
             });
 
             sandbox.stub(constants, 'rateLimitDefaultBurstCapacity').value(1);
+
+            // Pre-populate token bucket
+            const bucket = tokenBucket.getTokenBucket(bucketName, limitConfig, mockLog);
+            bucket.tokens = 50;
 
             helpers.checkRateLimitWithConfig(bucketName, limitConfig, mockLog, (err, rateLimited) => {
                 assert.strictEqual(err, null);
@@ -295,13 +308,18 @@ describe('Rate limit helpers', () => {
             });
         });
 
-        it('should log debug info before GCRA evaluation', done => {
+        it('should log debug info when using token bucket', done => {
             const bucketName = 'test-bucket';
             const limitConfig = { limit: 100, source: 'bucket' };
 
+            // Token bucket with 0 tokens will log denial
             helpers.checkRateLimitWithConfig(bucketName, limitConfig, mockLog, () => {
-                assert(mockLog.debug.calledWith('Checking rate limit with GCRA'));
-                const logArgs = mockLog.debug.firstCall.args[1];
+                // Check for token bucket denial log
+                const deniedCall = mockLog.debug.getCalls().find(
+                    call => call.args[0] === 'Rate limit check: denied (no tokens available)'
+                );
+                assert(deniedCall, 'Should have logged denied message');
+                const logArgs = deniedCall.args[1];
                 assert.strictEqual(logArgs.bucketName, bucketName);
                 assert.strictEqual(logArgs.limit, 100);
                 assert.strictEqual(logArgs.source, 'bucket');
@@ -309,42 +327,43 @@ describe('Rate limit helpers', () => {
             });
         });
 
-        it('should log debug info when request allowed', done => {
+        it('should log trace info when request allowed', done => {
             const bucketName = 'test-bucket';
             const limitConfig = { limit: 100, source: 'bucket' };
 
+            // Pre-populate token bucket
+            const bucket = tokenBucket.getTokenBucket(bucketName, limitConfig, mockLog);
+            bucket.tokens = 50;
+
             helpers.checkRateLimitWithConfig(bucketName, limitConfig, mockLog, (err, rateLimited) => {
                 assert.strictEqual(rateLimited, false);
-                // Find the "allowed" log call
-                const allowedCall = mockLog.debug.getCalls().find(
-                    call => call.args[0] === 'Rate limit check: allowed'
+                // Check for trace log (token consumed)
+                const allowedCall = mockLog.trace.getCalls().find(
+                    call => call.args[0] === 'Rate limit check: allowed (token consumed)'
                 );
                 assert(allowedCall, 'Should have logged allowed message');
                 assert.strictEqual(allowedCall.args[1].bucketName, bucketName);
-                assert(allowedCall.args[1].newEmptyAt > 0);
+                assert.strictEqual(allowedCall.args[1].tokensRemaining, 49);
                 done();
             });
         });
 
-        it('should log debug info when request denied with retry info', done => {
+        it('should log debug info when request denied (no tokens)', done => {
             const bucketName = 'test-bucket';
             const limitConfig = { limit: 100, source: 'bucket' };
 
-            // Pre-fill the bucket
-            const now = Date.now();
-            cache.setCounter(`bucket:${bucketName}:rps`, now + 10000);
+            // Token bucket starts with 0 tokens
 
             helpers.checkRateLimitWithConfig(bucketName, limitConfig, mockLog, (err, rateLimited) => {
                 assert.strictEqual(rateLimited, true);
                 // Find the "denied" log call
                 const deniedCall = mockLog.debug.getCalls().find(
-                    call => call.args[0] === 'Rate limit check: denied'
+                    call => call.args[0] === 'Rate limit check: denied (no tokens available)'
                 );
                 assert(deniedCall, 'Should have logged denied message');
                 assert.strictEqual(deniedCall.args[1].bucketName, bucketName);
                 assert.strictEqual(deniedCall.args[1].limit, 100);
-                assert(deniedCall.args[1].allowAt > now);
-                assert(deniedCall.args[1].retryAfterMs > 0);
+                assert.strictEqual(deniedCall.args[1].source, 'bucket');
                 done();
             });
         });
@@ -353,15 +372,21 @@ describe('Rate limit helpers', () => {
             const bucketName = 'test-bucket';
             const limitConfig = { limit: 100, source: 'bucket' };
 
+            // Pre-populate token bucket with multiple tokens
+            const bucket = tokenBucket.getTokenBucket(bucketName, limitConfig, mockLog);
+            bucket.tokens = 50;
+
             // First request should be allowed
             helpers.checkRateLimitWithConfig(bucketName, limitConfig, mockLog, (err, rateLimited) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(rateLimited, false);
+                assert.strictEqual(bucket.tokens, 49);
 
-                // Second request should also be allowed (has capacity)
+                // Second request should also be allowed (still has tokens)
                 helpers.checkRateLimitWithConfig(bucketName, limitConfig, mockLog, (err2, rateLimited2) => {
                     assert.strictEqual(err2, null);
                     assert.strictEqual(rateLimited2, false);
+                    assert.strictEqual(bucket.tokens, 48);
                     done();
                 });
             });
