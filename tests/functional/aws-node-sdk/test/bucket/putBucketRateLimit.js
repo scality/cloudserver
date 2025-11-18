@@ -3,6 +3,7 @@ const S3 = AWS.S3;
 const assert = require('assert');
 const getConfig = require('../support/config');
 const { sendRateLimitRequest, skipIfRateLimitDisabled } = require('../rateLimit/tooling');
+const { config } = require('../../../../../lib/Config');
 
 const bucket = 'putratelimitestbucket';
 const nonExistentBucket = 'putratelimitestnonexistentbucket';
@@ -109,5 +110,58 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
         } catch (err) {
             assert.ifError(err);
         }
+    });
+
+    describe('validation against node and worker count', () => {
+        it('should reject limits less than (nodes × workers)', async () => {
+            const nodes = config.rateLimiting?.nodes || 1;
+            const workers = config.clusters || 1;
+            const minLimit = nodes * workers;
+
+            try {
+                const invalidConfig = { RequestsPerSecond: minLimit - 1 };
+                await sendRateLimitRequest('PUT', '127.0.0.1:8000',
+                    `/${bucket}/?rate-limit`, JSON.stringify(invalidConfig));
+                assert.fail('Should have thrown an error');
+            } catch (err) {
+                assert.strictEqual(err.Error.Code[0], 'InvalidArgument');
+            }
+        });
+
+        it('should accept limits equal to (nodes × workers)', async () => {
+            const nodes = config.rateLimiting?.nodes || 1;
+            const workers = config.clusters || 1;
+            const minLimit = nodes * workers;
+
+            try {
+                const validConfig = { RequestsPerSecond: minLimit };
+                await sendRateLimitRequest('PUT', '127.0.0.1:8000',
+                    `/${bucket}/?rate-limit`, JSON.stringify(validConfig));
+
+                const data = await sendRateLimitRequest('GET', '127.0.0.1:8000',
+                    `/${bucket}/?rate-limit`);
+                assert.strictEqual(data.RequestsPerSecond.Limit, minLimit);
+            } catch (err) {
+                assert.ifError(err);
+            }
+        });
+
+        it('should accept limits greater than (nodes × workers)', async () => {
+            const nodes = config.rateLimiting?.nodes || 1;
+            const workers = config.clusters || 1;
+            const minLimit = nodes * workers;
+
+            try {
+                const validConfig = { RequestsPerSecond: minLimit + 1000 };
+                await sendRateLimitRequest('PUT', '127.0.0.1:8000',
+                    `/${bucket}/?rate-limit`, JSON.stringify(validConfig));
+
+                const data = await sendRateLimitRequest('GET', '127.0.0.1:8000',
+                    `/${bucket}/?rate-limit`);
+                assert.strictEqual(data.RequestsPerSecond.Limit, minLimit + 1000);
+            } catch (err) {
+                assert.ifError(err);
+            }
+        });
     });
 });

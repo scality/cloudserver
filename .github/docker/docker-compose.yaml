@@ -49,6 +49,7 @@ services:
       - S3_SERVER_ACCESS_LOGS_MODE=ENABLED
       - S3_ENABLE_SERVER_ACCESS_LOGS=true
       - RATE_LIMIT_SERVICE_USER_ARN=arn:aws:iam::123456789013:root
+      - RATE_LIMIT_NODES=6
     env_file:
       - creds.env
     depends_on:
