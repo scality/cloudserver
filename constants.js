@@ -275,9 +275,10 @@ const constants = {
         'bucketPutLogging',
         'bucketGetLogging',
     ],
-    // Default value for rate limiting config cache TTL
-    rateLimitDefaultConfigCacheTTL: 30000,
+    // Rate limiting defaults
+    rateLimitDefaultConfigCacheTTL: 30000, // 30 seconds
     rateLimitDefaultBurstCapacity: 1,
+    rateLimitCleanupInterval: 10000, // 10 seconds
 };
 
 module.exports = constants;
