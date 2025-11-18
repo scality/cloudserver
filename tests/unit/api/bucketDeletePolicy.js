@@ -56,7 +56,7 @@ describe('deleteBucketPolicy API', () => {
             next => metadata.getBucket(bucketName, log, next),
         ], (err, results) => {
             assert.equal(err, null, `Expected success, got error: ${err}`);
-            const bucket = results[2];
+            const bucket = results[2][0];
             const bucketPolicy = bucket.getBucketPolicy();
             assert.equal(bucketPolicy, null);
             done();
