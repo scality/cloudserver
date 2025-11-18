@@ -30,7 +30,7 @@ describe('Rate limit config resolver', () => {
     });
 
     describe('cache behavior', () => {
-        it('should return cached config on cache hit', (done) => {
+        it('should return cached config on cache hit', done => {
             const cachedConfig = { limit: 100, source: 'bucket' };
             getCachedConfigStub.returns(cachedConfig);
 
@@ -44,7 +44,7 @@ describe('Rate limit config resolver', () => {
             });
         });
 
-        it('should return cached null on cache hit for no limit', (done) => {
+        it('should return cached null on cache hit for no limit', done => {
             getCachedConfigStub.returns(null);
 
             resolveRateLimit('test-bucket', mockLog, (err, result) => {
@@ -56,7 +56,7 @@ describe('Rate limit config resolver', () => {
             });
         });
 
-        it('should fetch from metadata on cache miss', (done) => {
+        it('should fetch from metadata on cache miss', done => {
             getCachedConfigStub.returns(undefined);
             getBucketStub.callsFake((bucketName, log, cb) => {
                 cb(null, {
@@ -64,7 +64,7 @@ describe('Rate limit config resolver', () => {
                 });
             });
 
-            resolveRateLimit('test-bucket', mockLog, (err, result) => {
+            resolveRateLimit('test-bucket', mockLog, err => {
                 assert.ifError(err);
                 assert(mockLog.trace.calledWith('Rate limit config cache miss'));
                 assert(getBucketStub.calledOnce);
@@ -74,7 +74,7 @@ describe('Rate limit config resolver', () => {
     });
 
     describe('per-bucket config resolution', () => {
-        it('should resolve per-bucket config with highest priority', (done) => {
+        it('should resolve per-bucket config with highest priority', done => {
             getCachedConfigStub.returns(undefined);
 
             const mockBucketConfig = {
@@ -108,7 +108,7 @@ describe('Rate limit config resolver', () => {
             });
         });
 
-        it('should cache per-bucket config with correct TTL', (done) => {
+        it('should cache per-bucket config with correct TTL', done => {
             getCachedConfigStub.returns(undefined);
 
             const mockBucketConfig = {
@@ -125,7 +125,7 @@ describe('Rate limit config resolver', () => {
                 });
             });
 
-            resolveRateLimit('test-bucket', mockLog, (err, result) => {
+            resolveRateLimit('test-bucket', mockLog, err => {
                 assert.ifError(err);
                 const ttl = setCachedConfigStub.firstCall.args[2];
                 assert.strictEqual(ttl, constants.rateLimitDefaultConfigCacheTTL);
@@ -135,7 +135,7 @@ describe('Rate limit config resolver', () => {
     });
 
     describe('global default config fallback', () => {
-        it('should fall back to global default when no per-bucket config', (done) => {
+        it('should fall back to global default when no per-bucket config', done => {
             getCachedConfigStub.returns(undefined);
 
             getBucketStub.callsFake((bucketName, log, cb) => {
@@ -166,7 +166,7 @@ describe('Rate limit config resolver', () => {
             });
         });
 
-        it('should skip global default if limit is 0', (done) => {
+        it('should skip global default if limit is 0', done => {
             getCachedConfigStub.returns(undefined);
 
             getBucketStub.callsFake((bucketName, log, cb) => {
@@ -192,7 +192,7 @@ describe('Rate limit config resolver', () => {
             });
         });
 
-        it('should skip global default if undefined', (done) => {
+        it('should skip global default if undefined', done => {
             getCachedConfigStub.returns(undefined);
 
             getBucketStub.callsFake((bucketName, log, cb) => {
@@ -219,7 +219,7 @@ describe('Rate limit config resolver', () => {
     });
 
     describe('no config case', () => {
-        it('should return null when no config exists anywhere', (done) => {
+        it('should return null when no config exists anywhere', done => {
             getCachedConfigStub.returns(undefined);
 
             getBucketStub.callsFake((bucketName, log, cb) => {
@@ -243,7 +243,7 @@ describe('Rate limit config resolver', () => {
             });
         });
 
-        it('should cache null when no config exists', (done) => {
+        it('should cache null when no config exists', done => {
             getCachedConfigStub.returns(undefined);
 
             getBucketStub.callsFake((bucketName, log, cb) => {
@@ -256,7 +256,7 @@ describe('Rate limit config resolver', () => {
             const originalBucket = config.rateLimiting.bucket;
             config.rateLimiting.bucket = undefined;
 
-            resolveRateLimit('test-bucket', mockLog, (err, result) => {
+            resolveRateLimit('test-bucket', mockLog, err => {
                 assert.ifError(err);
                 assert(setCachedConfigStub.calledOnce);
                 assert.strictEqual(setCachedConfigStub.firstCall.args[0], 'bucket:test-bucket');
@@ -270,7 +270,7 @@ describe('Rate limit config resolver', () => {
     });
 
     describe('error handling', () => {
-        it('should return null when bucket does not exist (NoSuchBucket)', (done) => {
+        it('should return null when bucket does not exist (NoSuchBucket)', done => {
             getCachedConfigStub.returns(undefined);
 
             const noSuchBucketError = { NoSuchBucket: true };
@@ -288,7 +288,7 @@ describe('Rate limit config resolver', () => {
             });
         });
 
-        it('should handle metadata service errors', (done) => {
+        it('should handle metadata service errors', done => {
             getCachedConfigStub.returns(undefined);
 
             const testError = new Error('Metadata service unavailable');
@@ -296,7 +296,7 @@ describe('Rate limit config resolver', () => {
                 cb(testError);
             });
 
-            resolveRateLimit('test-bucket', mockLog, (err, result) => {
+            resolveRateLimit('test-bucket', mockLog, err => {
                 assert.strictEqual(err, testError);
                 assert(mockLog.debug.calledWith('Failed to fetch bucket metadata for rate limit config'));
                 assert(setCachedConfigStub.notCalled);
@@ -306,7 +306,7 @@ describe('Rate limit config resolver', () => {
     });
 
     describe('TTL configuration', () => {
-        it('should use custom TTL from config when available', (done) => {
+        it('should use custom TTL from config when available', done => {
             getCachedConfigStub.returns(undefined);
 
             getBucketStub.callsFake((bucketName, log, cb) => {
@@ -321,7 +321,7 @@ describe('Rate limit config resolver', () => {
                 configCacheTTL: 60000,
             };
 
-            resolveRateLimit('test-bucket', mockLog, (err, result) => {
+            resolveRateLimit('test-bucket', mockLog, err => {
                 assert.ifError(err);
                 const ttl = setCachedConfigStub.firstCall.args[2];
                 assert.strictEqual(ttl, 60000);
@@ -332,7 +332,7 @@ describe('Rate limit config resolver', () => {
             });
         });
 
-        it('should use default TTL constant when config TTL not set', (done) => {
+        it('should use default TTL constant when config TTL not set', done => {
             getCachedConfigStub.returns(undefined);
 
             getBucketStub.callsFake((bucketName, log, cb) => {
@@ -345,7 +345,7 @@ describe('Rate limit config resolver', () => {
             const originalBucket = config.rateLimiting.bucket;
             config.rateLimiting.bucket = undefined;
 
-            resolveRateLimit('test-bucket', mockLog, (err, result) => {
+            resolveRateLimit('test-bucket', mockLog, err => {
                 assert.ifError(err);
                 const ttl = setCachedConfigStub.firstCall.args[2];
                 assert.strictEqual(ttl, constants.rateLimitDefaultConfigCacheTTL);
