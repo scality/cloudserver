@@ -3,13 +3,13 @@ const replicationUtils = {
         'Role',
         'Rules',
         'Status',
-        'Prefix',
         'Destination',
         'Bucket',
     ],
     optionalConfigProperties: [
         'ID',
         'StorageClass',
+        'Prefix',
     ],
     invalidRoleARNs: [
         '',
