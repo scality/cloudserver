@@ -203,6 +203,10 @@ if [[ "$TESTING_MODE" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .testingMode=true"
 fi
 
+if [[ "$RATE_LIMIT_SERVICE_USER_ARN" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .rateLimiting = {enabled: true, serviceUserArn: \"$RATE_LIMIT_SERVICE_USER_ARN\"}"
+fi
+
 if [[ $JQ_FILTERS_CONFIG != "." ]]; then
     jq "$JQ_FILTERS_CONFIG" config.json > config.json.tmp
     mv config.json.tmp config.json
