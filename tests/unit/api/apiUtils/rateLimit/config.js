@@ -691,12 +691,13 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            const result = parseRateLimitConfig(config, 5); // 5 workers
+            const result = parseRateLimitConfig(config, 5); // 5 workers (ignored)
 
-            // Per-worker rate = 100 / 2 nodes / 5 workers = 10 req/s
-            // Interval = 1000ms / 10 = 100ms
+            // NEW BEHAVIOR: Per-NODE rate = 100 / 2 nodes = 50 req/s (workers NOT divided)
+            // Interval = 1000ms / 50 = 20ms
+            // Workers can dynamically share node quota via Redis reconciliation
             const interval = result.bucket.defaultConfig.requestsPerSecond.interval;
-            assert.strictEqual(interval, 100);
+            assert.strictEqual(interval, 20);
         });
 
         it('should calculate correct bucketSize from burstCapacity', () => {
@@ -753,12 +754,13 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            const result = parseRateLimitConfig(config, 20); // 20 workers per node
+            const result = parseRateLimitConfig(config, 20); // 20 workers per node (ignored)
 
-            // Per-worker rate = 10000 / 10 nodes / 20 workers = 50 req/s
-            // Interval = 1000ms / 50 = 20ms
+            // NEW BEHAVIOR: Per-NODE rate = 10000 / 10 nodes = 1000 req/s (workers NOT divided)
+            // Interval = 1000ms / 1000 = 1ms
+            // Workers dynamically share the 1000 req/s node quota via Redis
             const interval = result.bucket.defaultConfig.requestsPerSecond.interval;
-            assert.strictEqual(interval, 20);
+            assert.strictEqual(interval, 1);
         });
     });
 });
