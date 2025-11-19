@@ -73,3 +73,60 @@ describe('GCRA calculateInterval function', () => {
         // Redis sync distributes capacity across active workers
     });
 });
+<<<<<<< HEAD
+=======
+
+describe('GCRA integration scenarios', () => {
+    it('should handle burst capacity allowing multiple requests', () => {
+        const limit = 10;
+        const nodes = 1;
+        const workers = 10;
+        const bucketSize = 2000; // 2 second burst
+
+        // With new implementation: interval is based on NODE quota (10 req/s), not worker quota
+        const interval = calculateInterval(limit, nodes, workers);
+        assert.strictEqual(interval, 100); // 10 req/s per node (NOT divided by workers)
+
+        let emptyAt = 0;
+        const baseTime = 5000;
+
+        // First request: emptyAt becomes 5000 + 100 = 5100
+        let result = evaluate(emptyAt, baseTime, interval, bucketSize);
+        assert.strictEqual(result.allowed, true);
+        emptyAt = result.newEmptyAt;
+        assert.strictEqual(emptyAt, 5100);
+
+        // Second request: emptyAt becomes 5100 + 100 = 5200
+        // Check: 5100 > 5001 + 2000 (7001)? No, allowed
+        result = evaluate(emptyAt, baseTime + 1, interval, bucketSize);
+        assert.strictEqual(result.allowed, true);
+        emptyAt = result.newEmptyAt;
+        assert.strictEqual(emptyAt, 5200);
+
+        // Many more requests can succeed because interval is 100ms (not 1000ms)
+        // With 2000ms burst capacity, we can have ~20 requests in quick succession
+        for (let i = 0; i < 18; i++) {
+            result = evaluate(emptyAt, baseTime + 2 + i, interval, bucketSize);
+            assert.strictEqual(result.allowed, true, `Request ${i + 3} should be allowed`);
+            emptyAt = result.newEmptyAt;
+        }
+
+        // After 20 requests: emptyAt ~= 5000 + (20 * 100) = 7000
+        // With burst capacity of 2000ms, requests arriving up to 7000 - 2000 = 5000 + 2000 = 7000 are allowed
+        // So we need to send more requests to exceed the burst capacity
+        // Let's send requests without time passing to fill the bucket
+        for (let i = 0; i < 5; i++) {
+            result = evaluate(emptyAt, baseTime + 20, interval, bucketSize);
+            if (!result.allowed) {
+                break; // Found the limit
+            }
+            emptyAt = result.newEmptyAt;
+        }
+
+        // Now emptyAt should be > arrivedAt + bucketSize, so next request denied
+        result = evaluate(emptyAt, baseTime + 20, interval, bucketSize);
+        assert.strictEqual(result.allowed, false, 'Should eventually deny when burst capacity exceeded');
+    });
+
+});
+>>>>>>> 32964604d (CLDSRV-783: Rename burstCapacity to bucketSize in GCRA)
