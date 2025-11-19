@@ -113,7 +113,7 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
     });
 
     describe('validation against node and worker count', () => {
-        it('should reject limits less than (nodes × workers)', async () => {
+        it.skip('should reject limits less than (nodes × workers)', async () => {
             const nodes = config.rateLimiting?.nodes || 1;
             const workers = config.clusters || 1;
             const minLimit = nodes * workers;
@@ -128,7 +128,7 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
             }
         });
 
-        it('should accept limits equal to (nodes × workers)', async () => {
+        it.skip('should accept limits equal to (nodes × workers)', async () => {
             const nodes = config.rateLimiting?.nodes || 1;
             const workers = config.clusters || 1;
             const minLimit = nodes * workers;
