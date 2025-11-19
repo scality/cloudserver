@@ -3,52 +3,11 @@ const sinon = require('sinon');
 
 const constants = require('../../../../../constants');
 const {
-    counters,
     configCache,
-    getCounter,
-    setCounter,
-    expireCounters,
     getCachedConfig,
     setCachedConfig,
     expireCachedConfigs,
 } = require('../../../../../lib/api/apiUtils/rateLimit/cache');
-
-describe('test counter storage', () => {
-    it('setCounter() should set a counter', () => {
-        setCounter('foo', 10);
-        assert.strictEqual(counters.get('foo'), 10);
-    });
-
-    it('getCounter() should get a counter', () => {
-        setCounter('foo', 10);
-        assert.strictEqual(getCounter('foo'), 10);
-    });
-
-    it('should maintain order when updating a counter', () => {
-        setCounter('foo', 10);
-        setCounter('bar', 20);
-        setCounter('foo', 30);
-
-        const items = Array.from(counters.entries());
-        assert.deepStrictEqual(items, [
-            ['bar', 20],
-            ['foo', 30],
-        ]);
-    });
-
-    it('should expire counters less than or equal to the given timestamp', () => {
-        const now = Date.now();
-        const past = now - 100;
-        const future = now + 100;
-        setCounter('past', past);
-        setCounter('present', now);
-        setCounter('future', future);
-        expireCounters(now);
-        assert.strictEqual(getCounter('past'), undefined);
-        assert.strictEqual(getCounter('present'), undefined);
-        assert.strictEqual(getCounter('future'), future);
-    });
-});
 
 describe('test limit config cache storage', () => {
     const now = Date.now();
