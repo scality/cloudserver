@@ -10,9 +10,9 @@ describe('GCRA evaluate function', () => {
         const emptyAt = 1000;
         const arrivedAt = 2000; // After bucket is empty
         const interval = 100;
-        const burstCapacity = 500;
+        const bucketSize = 500;
 
-        const result = evaluate(emptyAt, arrivedAt, interval, burstCapacity);
+        const result = evaluate(emptyAt, arrivedAt, interval, bucketSize);
 
         assert.strictEqual(result.allowed, true);
         assert.strictEqual(result.newEmptyAt, arrivedAt + interval);
@@ -22,9 +22,9 @@ describe('GCRA evaluate function', () => {
         const emptyAt = 2000;
         const arrivedAt = 1500;
         const interval = 100;
-        const burstCapacity = 1000;
+        const bucketSize = 1000;
 
-        const result = evaluate(emptyAt, arrivedAt, interval, burstCapacity);
+        const result = evaluate(emptyAt, arrivedAt, interval, bucketSize);
 
         assert.strictEqual(result.allowed, true);
         assert.strictEqual(result.newEmptyAt, emptyAt + interval);
@@ -32,11 +32,11 @@ describe('GCRA evaluate function', () => {
 
     it('should deny request when bucket is full', () => {
         const arrivedAt = 1000;
-        const burstCapacity = 500;
-        const emptyAt = arrivedAt + burstCapacity + 100; // Over capacity
+        const bucketSize = 500;
+        const emptyAt = arrivedAt + bucketSize + 100; // Over capacity
         const interval = 100;
 
-        const result = evaluate(emptyAt, arrivedAt, interval, burstCapacity);
+        const result = evaluate(emptyAt, arrivedAt, interval, bucketSize);
 
         assert.strictEqual(result.allowed, false);
         assert.strictEqual(result.newEmptyAt, emptyAt); // Unchanged on rejection
@@ -44,11 +44,11 @@ describe('GCRA evaluate function', () => {
 
     it('should allow request at exact burst capacity threshold', () => {
         const arrivedAt = 1000;
-        const burstCapacity = 500;
-        const emptyAt = arrivedAt + burstCapacity; // Exactly at threshold
+        const bucketSize = 500;
+        const emptyAt = arrivedAt + bucketSize; // Exactly at threshold
         const interval = 100;
 
-        const result = evaluate(emptyAt, arrivedAt, interval, burstCapacity);
+        const result = evaluate(emptyAt, arrivedAt, interval, bucketSize);
 
         assert.strictEqual(result.allowed, true);
         assert.strictEqual(result.newEmptyAt, emptyAt + interval);
@@ -58,9 +58,9 @@ describe('GCRA evaluate function', () => {
         const emptyAt = 1000;
         const arrivedAt = 1000;
         const interval = 100;
-        const burstCapacity = 0;
+        const bucketSize = 0;
 
-        const result = evaluate(emptyAt, arrivedAt, interval, burstCapacity);
+        const result = evaluate(emptyAt, arrivedAt, interval, bucketSize);
 
         assert.strictEqual(result.allowed, true);
         assert.strictEqual(result.newEmptyAt, emptyAt + interval);
@@ -70,9 +70,9 @@ describe('GCRA evaluate function', () => {
         const arrivedAt = 1000;
         const emptyAt = 1100;
         const interval = 100;
-        const burstCapacity = 0;
+        const bucketSize = 0;
 
-        const result = evaluate(emptyAt, arrivedAt, interval, burstCapacity);
+        const result = evaluate(emptyAt, arrivedAt, interval, bucketSize);
 
         assert.strictEqual(result.allowed, false);
         assert.strictEqual(result.newEmptyAt, emptyAt);
@@ -156,7 +156,7 @@ describe('GCRA integration scenarios', () => {
         const limit = 10;
         const nodes = 1;
         const workers = 10;
-        const burstCapacity = 2000; // 2 second burst
+        const bucketSize = 2000; // 2 second burst
 
         // With new implementation: interval is based on NODE quota (10 req/s), not worker quota
         const interval = calculateInterval(limit, nodes, workers);
@@ -166,14 +166,14 @@ describe('GCRA integration scenarios', () => {
         const baseTime = 5000;
 
         // First request: emptyAt becomes 5000 + 100 = 5100
-        let result = evaluate(emptyAt, baseTime, interval, burstCapacity);
+        let result = evaluate(emptyAt, baseTime, interval, bucketSize);
         assert.strictEqual(result.allowed, true);
         emptyAt = result.newEmptyAt;
         assert.strictEqual(emptyAt, 5100);
 
         // Second request: emptyAt becomes 5100 + 100 = 5200
         // Check: 5100 > 5001 + 2000 (7001)? No, allowed
-        result = evaluate(emptyAt, baseTime + 1, interval, burstCapacity);
+        result = evaluate(emptyAt, baseTime + 1, interval, bucketSize);
         assert.strictEqual(result.allowed, true);
         emptyAt = result.newEmptyAt;
         assert.strictEqual(emptyAt, 5200);
@@ -181,7 +181,7 @@ describe('GCRA integration scenarios', () => {
         // Many more requests can succeed because interval is 100ms (not 1000ms)
         // With 2000ms burst capacity, we can have ~20 requests in quick succession
         for (let i = 0; i < 18; i++) {
-            result = evaluate(emptyAt, baseTime + 2 + i, interval, burstCapacity);
+            result = evaluate(emptyAt, baseTime + 2 + i, interval, bucketSize);
             assert.strictEqual(result.allowed, true, `Request ${i + 3} should be allowed`);
             emptyAt = result.newEmptyAt;
         }
@@ -191,15 +191,15 @@ describe('GCRA integration scenarios', () => {
         // So we need to send more requests to exceed the burst capacity
         // Let's send requests without time passing to fill the bucket
         for (let i = 0; i < 5; i++) {
-            result = evaluate(emptyAt, baseTime + 20, interval, burstCapacity);
+            result = evaluate(emptyAt, baseTime + 20, interval, bucketSize);
             if (!result.allowed) {
                 break; // Found the limit
             }
             emptyAt = result.newEmptyAt;
         }
 
-        // Now emptyAt should be > arrivedAt + burstCapacity, so next request denied
-        result = evaluate(emptyAt, baseTime + 20, interval, burstCapacity);
+        // Now emptyAt should be > arrivedAt + bucketSize, so next request denied
+        result = evaluate(emptyAt, baseTime + 20, interval, bucketSize);
         assert.strictEqual(result.allowed, false, 'Should eventually deny when burst capacity exceeded');
     });
 
