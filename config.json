@@ -152,6 +152,9 @@
     },
     "serverAccessLogs": {
         "enabled": false,
-        "outputFile": "/logs/server-access.log"
+        "outputFile": "/logs/server-access.log",
+        "highWaterMarkBytes": 10485760,
+        "retryReopenDelayMS": 1000,
+        "checkFileRotationIntervalMS": 10000
     }
 }
