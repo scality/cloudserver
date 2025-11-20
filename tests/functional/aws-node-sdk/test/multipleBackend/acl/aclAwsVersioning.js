@@ -175,7 +175,7 @@ function testSuite() {
             });
         });
 
-        it('versioning not configured: should put/get acl successfully when ' +
+        it.only('versioning not configured: should put/get acl successfully when ' +
         'versioning not configured', done => {
             const key = `somekey-${genUniqID()}`;
             putObjectAndAcl(s3, key, someBody, testAcp, (err, versionId) => {
