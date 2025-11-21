@@ -35,10 +35,7 @@ local burstLimit = arrivedAt + burstCapacity
 
 if allowAt <= burstLimit then
     -- Full request allowed
-    local newEmptyAt = expectedTime + cost
-    redis.call('SET', key, newEmptyAt)
-    redis.call('PEXPIRE', key, burstCapacity + 10000) -- TTL = burst + 10s buffer
-
+    redis.call('SET', key, allowAt, 'PX', burstCapacity + 10000) -- TTL = burst + 10s buffer
     return requested
 else
     -- Request exceeds capacity, grant partial tokens
@@ -47,15 +44,13 @@ else
 
     if availableCapacity > 0 then
         -- Grant partial tokens
-        local granted = math.floor(availableCapacity / interval)
+        local grantedTokens = math.floor(availableCapacity / interval)
 
-        if granted > 0 then
-            local actualCost = granted * interval
-            local newEmptyAt = expectedTime + actualCost
-            redis.call('SET', key, newEmptyAt)
-            redis.call('PEXPIRE', key, burstCapacity + 10000)
-
-            return granted
+        if grantedTokens > 0 then
+            local grantedCost = granted * interval
+            local newEmptyAt = expectedTime + grantedCost
+            redis.call('SET', key, newEmptyAt, 'PX', burstCapacity + 10000)
+            return grantedTokens
         end
     end
 
