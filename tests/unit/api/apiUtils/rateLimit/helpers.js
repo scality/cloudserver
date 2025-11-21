@@ -19,7 +19,6 @@ describe('Rate limit helpers', () => {
             error: sinon.stub(),
         };
         // Clear cache before each test
-        cache.counters.clear();
         cache.configCache.clear();
         // Clear token buckets
         tokenBucket.getAllTokenBuckets().clear();
