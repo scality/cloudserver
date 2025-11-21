@@ -3,11 +3,7 @@ const sinon = require('sinon');
 
 const constants = require('../../../../../constants');
 const {
-    counters,
     configCache,
-    getCounter,
-    setCounter,
-    expireCounters,
     getCachedConfig,
     setCachedConfig,
     expireCachedConfigs,
