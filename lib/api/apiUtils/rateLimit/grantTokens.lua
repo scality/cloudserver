@@ -4,7 +4,7 @@
 -- This script implements token reservation: workers request capacity
 -- in advance, and this script enforces the node-level quota using GCRA.
 --
--- KEYS[1]: Counter key (e.g., "throttling:bucket:mybucket:rps")
+-- KEYS[1]: Counter key (e.g., "ratelimit:bucket:mybucket:rps")
 -- ARGV[1]: Requested token count (number of requests)
 -- ARGV[2]: Interval per request in milliseconds
 -- ARGV[3]: Burst capacity in milliseconds (bucket size)
