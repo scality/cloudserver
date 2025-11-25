@@ -305,4 +305,47 @@ describe('bucketPutLogging API', () => {
             done();
         });
     });
+
+    it('should allow logging when target bucket is owned by requester', done => {
+        // Both buckets are created by authInfo, so this should succeed
+        const loggingXML = createValidLoggingXML(targetBucket);
+        const request = createLoggingRequest(bucketName, loggingXML);
+
+        bucketPutLogging(authInfo, request, log, err => {
+            assert.ifError(err);
+            metadata.getBucket(bucketName, log, (err, bucket) => {
+                assert.ifError(err);
+                const loggingConfig = bucket.getBucketLoggingStatus();
+                assert(loggingConfig);
+                assert.strictEqual(loggingConfig.getLoggingEnabled().TargetBucket, targetBucket);
+                done();
+            });
+        });
+    });
+
+    it('should reject logging when source and target bucket account mismatch', done => {
+        // Create a target bucket with different account
+        const otherAccountTargetBucket = 'other-account-target-bucket';
+        const otherAccountRequest = {
+            bucketName: otherAccountTargetBucket,
+            namespace,
+            headers: { host: `${otherAccountTargetBucket}.s3.amazonaws.com` },
+            url: '/',
+            actionImplicitDenies: false,
+        };
+
+        bucketPut(otherAuthInfo, otherAccountRequest, log, err => {
+            assert.ifError(err);
+
+            // Now try to set logging from authInfo's bucket to otherAuthInfo's bucket
+            const loggingXML = createValidLoggingXML(otherAccountTargetBucket);
+            const request = createLoggingRequest(bucketName, loggingXML);
+
+            bucketPutLogging(authInfo, request, log, err => {
+                assert(err);
+                assert.strictEqual(err.is.InvalidTargetBucketForLogging, true);
+                done();
+            });
+        });
+    });
 });
