@@ -220,6 +220,7 @@ utils.putToAwsBackend = (s3, bucket, key, body, cb) => {
     s3.putObject({ Bucket: bucket, Key: key, Body: body,
     Metadata: { 'scal-location-constraint': awsLocation } },
         (err, result) => {
+            console.log('Put object to AWS backend', result);
             cb(err, result.VersionId);
         }
     );
