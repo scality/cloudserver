@@ -173,11 +173,18 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => putToAwsBackend(s3, bucket, key, someBody,
-                    err => next(err)),
+                    err => {
+                        console.log('Put to AWS backend complete');
+                        next(err);
+                }),
                 next => awsGetLatestVerId(key, someBody, next),
                 (awsVerId, next) => delAndAssertResult(s3, { bucket,
                     key, versionId: 'null', resultType: deleteVersion },
-                    err => next(err, awsVerId)),
+                    err => {
+                        console.log('Delete from S3 complete', err);
+                        console.log('awsVerId:', awsVerId);
+                        next(err, awsVerId);
+                }),
                 (awsVerId, next) => {
                     const wanted = isCEPH ? 'NoSuchKey' : 'NoSuchVersion';
                     _awsGetAssertDeleted({ key,
