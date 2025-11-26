@@ -65,6 +65,7 @@ function delAndAssertResult(s3, params, cb) {
     const { bucket, key, versionId, resultType, resultError } = params;
     return s3.deleteObject({ Bucket: bucket, Key: key, VersionId:
         versionId }, (err, result) => {
+        console.log('DeleteObject result:', err, result);
         if (resultError) {
             assert(err, `expected ${resultError} but found no error`);
             assert.strictEqual(err.code, resultError);
