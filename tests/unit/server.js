@@ -242,11 +242,113 @@ describe('S3Server request timeout', () => {
             ...defaultConfig,
             https: false
         });
-        
+
         // Call _startServer which should set requestTimeout = 0
         server._startServer(() => {}, 8000, '127.0.0.1');
-        
+
         // Verify that requestTimeout was set to 0
         assert.strictEqual(mockServer.requestTimeout, 0);
+    });
+});
+
+describe('S3Server requireHostHeader option', () => {
+    let sandbox;
+    let createServerArgs;
+
+    beforeEach(() => {
+        sandbox = sinon.createSandbox();
+        createServerArgs = null;
+
+        // Create a mock server that captures constructor arguments
+        const mockServer = {
+            requestTimeout: null,
+            on: sandbox.stub(),
+            listen: sandbox.stub(),
+            address: sandbox.stub().returns({ address: '127.0.0.1', port: 8000 }),
+        };
+
+        // Stub http.createServer to capture the options argument
+        sandbox.stub(http, 'createServer').callsFake((options) => {
+            createServerArgs = options;
+            return mockServer;
+        });
+
+        // Stub https.createServer to capture the options argument
+        sandbox.stub(https, 'createServer').callsFake((options) => {
+            createServerArgs = options;
+            return mockServer;
+        });
+    });
+
+    afterEach(() => {
+        sandbox.restore();
+    });
+
+    it('should pass requireHostHeader: false to http.createServer when configured', () => {
+        const server = new S3Server({
+            ...defaultConfig,
+            https: false,
+            httpServerOptions: {
+                requireHostHeader: false
+            }
+        });
+
+        server._startServer(() => {}, 8000, '127.0.0.1');
+
+        assert.strictEqual(http.createServer.calledOnce, true);
+        assert.strictEqual(createServerArgs.requireHostHeader, false);
+    });
+
+    it('should pass requireHostHeader: true to http.createServer when configured', () => {
+        const server = new S3Server({
+            ...defaultConfig,
+            https: false,
+            httpServerOptions: {
+                requireHostHeader: true
+            }
+        });
+
+        server._startServer(() => {}, 8000, '127.0.0.1');
+
+        assert.strictEqual(http.createServer.calledOnce, true);
+        assert.strictEqual(createServerArgs.requireHostHeader, true);
+    });
+
+    it('should pass requireHostHeader: false to https.createServer when configured', () => {
+        const server = new S3Server({
+            ...defaultConfig,
+            https: {
+                cert: 'fake-cert',
+                key: 'fake-key',
+                ca: 'fake-ca'
+            },
+            httpServerOptions: {
+                requireHostHeader: false
+            }
+        });
+
+        server._startServer(() => {}, 8000, '127.0.0.1');
+
+        assert.strictEqual(https.createServer.calledOnce, true);
+        assert.strictEqual(createServerArgs.requireHostHeader, false);
+    });
+
+    it('should pass requireHostHeader: true to https.createServer when configured', () => {
+        const server = new S3Server({
+            ...defaultConfig,
+            https: {
+                cert: 'fake-cert',
+                key: 'fake-key',
+                ca: 'fake-ca'
+            },
+            httpServerOptions: {
+                requireHostHeader: true
+            }
+        });
+
+        server._startServer(() => {}, 8000, '127.0.0.1');
+
+        assert.strictEqual(https.createServer.calledOnce, true);
+        assert.strictEqual(createServerArgs.requireHostHeader, true);
     });
 });
