@@ -175,7 +175,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             async.waterfall([
                 next => putToAwsBackend(s3, bucket, key, someBody,
                     err => {
-                        console.log('Put to AWS backend complete');
+                        console.log('Put to AWS backend complete', err);
                         next(err);
                 }),
                 next => awsGetLatestVerId(key, someBody, next),
