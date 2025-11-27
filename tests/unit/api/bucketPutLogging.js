@@ -10,9 +10,9 @@ const otherAuthInfo = makeAuthInfo('accessKey2');
 const bucketName = 'bucketputloggingtest';
 const targetBucket = 'loggingbucket';
 const namespace = 'default';
-const { config } = require('../../../lib/Config');
+const { config, serverAccessLogsModes } = require('../../../lib/Config');
 
-config.serverAccessLogs.enabled = true;
+config.serverAccessLogs.mode = serverAccessLogsModes.ENABLED;
 
 const testBucketPutRequest = {
     bucketName,

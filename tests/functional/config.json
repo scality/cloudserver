@@ -8,7 +8,7 @@
         "port": 6379
     },
     "serverAccessLogs": {
-        "enabled": true,
+        "mode": "ENABLED",
         "outputFile": "/logs/server-access.log"
     }
 }

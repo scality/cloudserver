@@ -63,7 +63,7 @@
     ],
     "enableVeeamRoute": false,
     "serverAccessLogs": {
-        "enabled": true,
+        "mode": "ENABLED",
         "outputFile": "/logs/server-access.log"
     }
 }
