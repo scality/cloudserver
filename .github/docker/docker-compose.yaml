@@ -46,7 +46,7 @@ services:
       - S3QUOTA
       - QUOTA_ENABLE_INFLIGHTS
       - S3_VERSION_ID_ENCODING_TYPE
-      - S3_ENABLE_SERVER_ACCESS_LOGS=true
+      - S3_SERVER_ACCESS_LOGS_MODE=ENABLED
     env_file:
       - creds.env
     depends_on:
