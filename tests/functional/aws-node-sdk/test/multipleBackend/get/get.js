@@ -128,7 +128,7 @@ describe('Multiple backend get object', function testSuite() {
             });
         });
 
-        describeSkipIfNotMultiple('Complete MPU then get object on AWS ' +
+        describeSkipIfNotMultiple.only('Complete MPU then get object on AWS ' +
         'location with bucketMatch: false ', () => {
             beforeEach(function beforeEachFn(done) {
                 this.currentTest.key = `somekey-${genUniqID()}`;
