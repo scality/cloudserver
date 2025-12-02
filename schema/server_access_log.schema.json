@@ -1,0 +1,248 @@
+{
+    "$id": "https://github.com/scality/cloudserver/tree/development/9.2/schema/lib/server_access_log.schema.json",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Server Access Log",
+    "description": "A server access log. AWS fields are documented in https://docs.aws.amazon.com/AmazonS3/latest/userguide/LogFormat.html.",
+    "type": "object",
+    "properties": {
+        "time": {
+            "description": "Epoch timestamp in seconds, recorded when the log record is created.",
+            "type": "integer",
+            "minimum": 0
+        },
+        "hostname": {
+            "description": "Hostname of the worker as returned by os.hostname().",
+            "type": "string"
+        },
+        "pid": {
+            "description": "PID of the worker.",
+            "type": "integer",
+            "minimum": 0
+        },
+        "action": {
+            "description": "S3 API action name.",
+            "type": "string"
+        },
+        "accountName": {
+            "description": "Requester account display name.",
+            "type": ["string", "null"]
+        },
+        "accountDisplayName": {
+            "description": "Requester account display name.",
+            "type": ["string", "null"]
+        },
+        "userName": {
+            "description": "Requester IAM display name, or null if the requester is not an IAM user.",
+            "type": ["string", "null"]
+        },
+        "clientPort": {
+            "description": "Requester remote connection port.",
+            "type": "integer",
+            "maximum": 65535,
+            "minimum": 1
+        },
+        "httpMethod": {
+            "description": "Request HTTP method.",
+            "type": "string",
+            "enum": ["GET", "HEAD", "OPTIONS", "TRACE", "PUT", "DELETE", "POST", "PATCH", "CONNECT"]
+        },
+        "bytesDeleted": {
+            "description": "For DeleteObject: size in bytes of the deleted object, for DeleteObjects: sum of all the deleted objects.",
+            "type": ["integer", "null"],
+            "minimum": 0
+        },
+        "bytesReceived": {
+            "description": "For PutObject and UploadPart: size of the object in bytes.",
+            "type": "integer",
+            "minimum": 0
+        },
+        "bodyLength": {
+            "description": "Size in bytes of the request body, copied from the HTTP Content-Length header.",
+            "type": "integer",
+            "minimum": 0
+        },
+        "contentLength": {
+            "description": "Size in bytes of the request content.",
+            "type": "integer",
+            "minimum": 0
+        },
+        "elapsed_ms": {
+            "description": "Total duration of the request in milliseconds. The timer starts when the server first routes the request and stops when the request completes or is closed prematurely.",
+            "type": "number",
+            "minimum": 0
+        },
+        "httpURL": {
+            "description": "Request URL string. This contains only the URL that is present in the actual HTTP request.",
+            "type": "string"
+        },
+        "startTime": {
+            "description": "Timestamp formatted as: 'seconds.milliseconds', recorded when the server first routes the request. Represents the AWS server access log 'Time' field. String type compatible with Clickhouse DateTime64(3) type.",
+            "type": "string"
+        },
+        "requester": {
+            "description": "AWS server access log 'Requester' field. From AWS 'The canonical user ID of the requester, or a - for unauthenticated requests. If the requester was an IAM user, this field returns the requester's IAM user name along with the AWS account that the IAM user belongs to. This identifier is the same one used for access control purposes.'. We don't use null instead of '-' when the requester is missing.",
+            "type": ["string", "null"]
+        },
+        "operation": {
+            "description": "AWS server access log 'Operation' field. From AWS 'The operation listed here is declared as SOAP.operation, REST.HTTP_method.resource_type, WEBSITE.HTTP_method.resource_type, or BATCH.DELETE.OBJECT, or S3.action.resource_type for S3 Lifecycle and logging. For Compute checksum job requests, the operation is listed as S3.COMPUTE.OBJECT.CHECKSUM.'.",
+            "type": "string"
+        },
+        "requestURI": {
+            "description": "AWS server access log 'Request URI' field. From AWS 'The Request-URI part of the HTTP request message.'.",
+            "type": "string"
+        },
+        "errorCode": {
+            "description": "AWS server access log 'Error Code' field. From AWS 'The Amazon S3 Error responses , or - if no error occurred.'. We use null to signal no error.",
+            "type": ["string", "null"]
+        },
+        "objectSize": {
+            "description": "AWS server access log 'Object Size' field.",
+            "type": ["integer", "null"]
+        },
+        "totalTime": {
+            "description": "AWS server access log 'Total Time' field. From AWS 'The number of milliseconds that the request was in flight from the server's perspective. This value is measured from the time that your request is received to the time that the last byte of the response is sent. Measurements made from the client's perspective might be longer because of network latency.'.",
+            "type": "string"
+        },
+        "turnAroundTime": {
+            "description": "AWS server access log 'Turn Around Time' field. From AWS 'The number of milliseconds that Amazon S3 spent processing your request. This value is measured from the time that the last byte of your request was received until the time that the first byte of the response was sent.'.",
+            "type": ["string", "null"]
+        },
+        "referer": {
+            "description": "AWS server access log 'Referer' field. From AWS 'The value of the HTTP Referer header, if present. HTTP user-agents (for example, browsers) typically set this header to the URL of the linking or embedding page when making a request.'.",
+            "type": ["string", "null"]
+        },
+        "userAgent": {
+            "description": "AWS server access log 'User Agent' field. From AWS 'The value of the HTTP User-Agent header.'.",
+            "type": ["string", "null"]
+        },
+        "versionID": {
+            "description": "AWS server access log 'Version ID' field. From AWS 'The version ID of the object being copied, or - if the x-amz-copy-source header didn't specify a versionId parameter as part of the copy source.'. We use null to signal no versionId.",
+            "type": ["string", "null"]
+        },
+        "signatureVersion": {
+            "description": "AWS server access log 'Signature Version' field. From AWS 'The signature version, SigV2 or SigV4, that was used to authenticate the request, or a - for unauthenticated requests.'. We use null for unauthenticated requests.",
+            "type": ["string", "null"]
+        },
+        "cipherSuite": {
+            "description": "AWS server access log 'Cipher Suite' field. From AWS 'The Transport Layer Security (TLS) cipher that was negotiated for an HTTPS request, or a - for HTTP.'. We use null for HTTP.",
+            "type": ["string", "null"]
+        },
+        "authenticationType": {
+            "description": "AWS server access log 'Authentication Type' field. From AWS 'The type of request authentication used: AuthHeader for authentication headers, QueryString for query strings (presigned URLs), or a - for unauthenticated requests.'. We use null for unauthenticated requests.",
+            "type": ["string", "null"]
+        },
+        "hostHeader": {
+            "description": "AWS server access log 'Host Header' field. From AWS 'The endpoint that was used to connect to Amazon S3.'.",
+            "type": "string"
+        },
+        "tlsVersion": {
+            "description": "AWS server access log 'TLS Version' field. From AWS 'The Transport Layer Security (TLS) version negotiated by the client. The value is one of following: TLSv1.1, TLSv1.2, TLSv1.3, or - if TLS wasn't used.'. We use null if TLS was not used.",
+            "type": ["string", "null"]
+        },
+        "aclRequired": {
+            "description": "AWS server access log 'ACL Required' field.",
+            "type": ["null"]
+        },
+        "bucketOwner": {
+            "description": "AWS server access log 'Bucket Owner' field. From AWS 'The canonical user ID of the owner of the source bucket. The canonical user ID is another form of the AWS account ID'.",
+            "type": ["string", "null"]
+        },
+        "bucketName": {
+            "description": "AWS server access log 'Bucket' field. Null for ListBuckets.",
+            "type": ["string", "null"]
+        },
+        "req_id": {
+            "description": "AWS server access log 'Request ID' field. Matches the req_id field in logs.",
+            "type": "string"
+        },
+        "bytesSent": {
+            "description": "AWS server access log 'Bytes Sent' field. From AWS 'The number of response bytes sent, excluding HTTP protocol overhead, or - if zero.'. We 0 and null are possible values in our implementation.",
+            "type": ["integer", "null"]
+        },
+        "clientIP": {
+            "description": "AWS server access log 'Remote IP' field. From AWS 'The apparent IP address of the requester. Intermediate proxies and firewalls might obscure the actual IP address of the machine that's making the request.'.",
+            "type": "string"
+        },
+        "httpCode": {
+            "description": "AWS server access log 'HTTP Status' field. From AWS 'The numeric HTTP status code of the response.'.",
+            "type": "integer"
+        },
+        "objectKey": {
+            "description": "AWS server access log 'Key' field. From AWS 'The key (object name) part of the request.'.",
+            "type": ["string", "null"]
+        },
+        "logFormatVersion": {
+            "description": "Version of the server access log schema.",
+            "type": ["string"],
+            "const": "0"
+        },
+        "loggingEnabled": {
+            "description": "True if the target bucket has bucket logging configured and enabled.",
+            "type": "boolean"
+        },
+        "loggingTargetBucket": {
+            "description": "Target bucket where server access logs should be uploaded. https://docs.aws.amazon.com/AmazonS3/latest/API/API_LoggingEnabled.html",
+            "type": ["string", "null"]
+        },
+        "loggingTargetPrefix": {
+            "description": "Prefix used when creating the log object in the Target bucket. https://docs.aws.amazon.com/AmazonS3/latest/API/API_LoggingEnabled.html",
+            "type": ["string", "null"]
+        },
+        "awsAccessKeyID": {
+            "description": "Requester AWS access key ID.",
+            "type": ["string", "null"]
+        },
+        "raftSessionID": {
+            "description": "Raft session ID.",
+            "type": ["integer", "null"]
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "time",
+        "hostname",
+        "pid",
+        "action",
+        "accountName",
+        "accountDisplayName",
+        "userName",
+        "clientPort",
+        "httpMethod",
+        "bytesDeleted",
+        "bytesReceived",
+        "bodyLength",
+        "contentLength",
+        "elapsed_ms",
+        "httpURL",
+        "startTime",
+        "requester",
+        "operation",
+        "requestURI",
+        "errorCode",
+        "objectSize",
+        "totalTime",
+        "turnAroundTime",
+        "referer",
+        "userAgent",
+        "versionID",
+        "signatureVersion",
+        "cipherSuite",
+        "authenticationType",
+        "hostHeader",
+        "tlsVersion",
+        "aclRequired",
+        "bucketOwner",
+        "bucketName",
+        "req_id",
+        "bytesSent",
+        "clientIP",
+        "httpCode",
+        "objectKey",
+        "logFormatVersion",
+        "loggingEnabled",
+        "loggingTargetBucket",
+        "loggingTargetPrefix",
+        "awsAccessKeyID",
+        "raftSessionID"
+    ]
+}
