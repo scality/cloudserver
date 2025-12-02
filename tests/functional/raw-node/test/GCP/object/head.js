@@ -1,6 +1,6 @@
 const assert = require('assert');
 const arsenal = require('arsenal');
-const { GCP } = arsenal.storage.data.external;
+const { GCP } = arsenal.storage.data.external.GCP;
 const { makeGcpRequest } = require('../../../utils/makeRequest');
 const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
@@ -96,7 +96,7 @@ describe('GCP: HEAD Object', function testSuite() {
                 Key: badObjectkey,
             }, err => {
                 assert(err);
-                assert.strictEqual(err.statusCode, 404);
+                assert.strictEqual(err.$metadata.httpStatusCode, 404);
                 return done();
             });
         });

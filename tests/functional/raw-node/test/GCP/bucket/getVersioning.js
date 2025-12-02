@@ -1,15 +1,15 @@
 const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
-const { GCP } = arsenal.storage.data.external;
+const { GCP } = arsenal.storage.data.external.GCP;
 const { makeGcpRequest } = require('../../../utils/makeRequest');
 const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 
 const credentialOne = 'gcpbackend';
-const verEnabledObj = { Status: 'Enabled' };
-const verDisabledObj = { Status: 'Suspended' };
+const verEnabledObj = 'Enabled';
+const verDisabledObj = 'Suspended';
 const xmlEnable =
     '<?xml version="1.0" encoding="UTF-8"?>' +
     '<VersioningConfiguration>' +
@@ -33,7 +33,7 @@ describe('GCP: GET Bucket Versioning', () => {
             authCredentials: config.credentials,
         }, 0, err => {
             if (err) {
-                process.stdout.write(`err in creating bucket ${err}\n`);
+                process.stdout.write(`err in creating bucket ${err.code}\n`);
             }
             return done(err);
         });
@@ -46,7 +46,7 @@ describe('GCP: GET Bucket Versioning', () => {
             authCredentials: config.credentials,
         }, 0, err => {
             if (err) {
-                process.stdout.write(`err in deleting bucket ${err}\n`);
+                process.stdout.write(`err in deleting bucket ${err.code}\n`);
             }
             return done(err);
         });
@@ -58,22 +58,24 @@ describe('GCP: GET Bucket Versioning', () => {
                 method: 'PUT',
                 bucket: this.test.bucketName,
                 authCredentials: config.credentials,
-                queryObj: { versioning: {} },
+                queryObj: { versioning: '' },
                 requestBody: xmlEnable,
             }, err => {
                 if (err) {
-                    process.stdout.write(`err in setting versioning ${err}`);
+                    process.stdout.write(`err in setting versioning ${err.code}`);
                 }
                 return next(err);
             }),
-            next => gcpClient.getBucketVersioning({
-                Bucket: this.test.bucketName,
-            }, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
-                assert.deepStrictEqual(res, verEnabledObj);
-                return next();
-            }),
+            next => {
+                gcpClient.getBucketVersioning({
+                    Bucket: this.test.bucketName,
+                }, (err, res) => {
+                    assert.equal(err, null,
+                        `Expected success, but got err ${err}`);
+                    assert.deepStrictEqual(res.Status, verEnabledObj);
+                    return next();
+                });
+            },
         ], err => done(err));
     });
 
@@ -83,7 +85,7 @@ describe('GCP: GET Bucket Versioning', () => {
                 method: 'PUT',
                 bucket: this.test.bucketName,
                 authCredentials: config.credentials,
-                queryObj: { versioning: {} },
+                queryObj: { versioning: '' },
                 requestBody: xmlDisable,
             }, err => {
                 if (err) {
@@ -96,7 +98,7 @@ describe('GCP: GET Bucket Versioning', () => {
             }, (err, res) => {
                 assert.equal(err, null,
                     `Expected success, but got err ${err}`);
-                assert.deepStrictEqual(res, verDisabledObj);
+                assert.deepStrictEqual(res.Status, verDisabledObj);
                 return next();
             }),
         ], err => done(err));
