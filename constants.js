@@ -1,4 +1,10 @@
 const crypto = require('crypto');
+// HACK TODO: need to export this from arsenal actionMap.ts
+const actionMapBucketRateLimit = {
+    bucketGetRateLimit: 'scality:GetBucketRateLimit',
+    bucketPutRateLimit: 'scality:PutBucketRateLimit',
+    bucketDeleteRateLimit: 'scality:DeleteBucketRateLimit',
+};
 
 const constants = {
     /*
@@ -279,6 +285,7 @@ const constants = {
     rateLimitDefaultConfigCacheTTL: 30000, // 30 seconds
     rateLimitDefaultBurstCapacity: 1,
     rateLimitCleanupInterval: 10000, // 10 seconds
+    rateLimitApiActions: Object.keys(actionMapBucketRateLimit),
 };
 
 module.exports = constants;
