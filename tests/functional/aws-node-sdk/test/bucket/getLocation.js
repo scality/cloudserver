@@ -92,7 +92,7 @@ describeSkipAWS('GET bucket location ', () => {
                     try {
                         const url = new URL(clientConfig.endpoint);
                         host = url.hostname;
-                    } catch (err) {
+                    } catch {
                         // If endpoint is not a valid URL, use it as-is
                         host = clientConfig.endpoint;
                     }
