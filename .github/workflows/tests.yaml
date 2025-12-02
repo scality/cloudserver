@@ -313,11 +313,19 @@ jobs:
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       JOB_NAME: ${{ github.job }}
+      S3_SERVER_ACCESS_LOGS_MODE: ENABLED
     steps:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
+    - name: Setup server access logs file and directory
+      shell: bash
+      run: |
+        set -exu
+        sudo mkdir -p /logs
+        sudo chmod 0777 /logs
+        sudo touch /logs/server-access.log && sudo chmod 0666 /logs/server-access.log
     - name: Setup CI services
       run: docker compose --profile mongo up -d
       working-directory: .github/docker
@@ -366,11 +374,19 @@ jobs:
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       JOB_NAME: ${{ github.job }}
+      S3_SERVER_ACCESS_LOGS_MODE: ENABLED
     steps:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
+    - name: Setup server access logs file and directory
+      shell: bash
+      run: |
+        set -exu
+        sudo mkdir -p /logs
+        sudo chmod 0777 /logs
+        sudo touch /logs/server-access.log && sudo chmod 0666 /logs/server-access.log
     - name: Setup CI services
       run: docker compose --profile mongo up -d
       working-directory: .github/docker
@@ -426,6 +442,7 @@ jobs:
       MPU_TESTING: "yes"
       ENABLE_NULL_VERSION_COMPAT_MODE: "${{ matrix.enable-null-compat }}"
       JOB_NAME: ${{ matrix.job-name }}
+      S3_SERVER_ACCESS_LOGS_MODE: ENABLED
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -436,6 +453,13 @@ jobs:
       run: |
         set -exu
         mkdir -p /tmp/artifacts/${{ matrix.job-name }}/
+    - name: Setup server access logs file and directory
+      shell: bash
+      run: |
+        set -exu
+        sudo mkdir -p /logs
+        sudo chmod 0777 /logs
+        sudo touch /logs/server-access.log && sudo chmod 0666 /logs/server-access.log
     - name: Setup CI services
       run: docker compose up -d
       working-directory: .github/docker
@@ -499,6 +523,7 @@ jobs:
       VAULT_IMAGE: ghcr.io/scality/vault:7.76.0
       S3_END_TO_END: true
       S3_TESTVAL_OWNERCANONICALID: 79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be
+      S3_SERVER_ACCESS_LOGS_MODE: ENABLED
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -515,6 +540,13 @@ jobs:
       run: |
         set -exu
         mkdir -p /tmp/artifacts/${{ matrix.job-name }}/
+    - name: Setup server access logs file and directory
+      shell: bash
+      run: |
+        set -exu
+        sudo mkdir -p /logs
+        sudo chmod 0777 /logs
+        sudo touch /logs/server-access.log && sudo chmod 0666 /logs/server-access.log
     - name: Modify md-config.json for vformat
       run: |
         sed -i 's/\("METADATA_NEW_BUCKETS_VFORMAT":\s*\)"[^"]*"/\1"${{ matrix.vformat }}"/' .github/docker/md-config.json
@@ -830,6 +862,7 @@ jobs:
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       JOB_NAME: ${{ github.job }}
       ENABLE_NULL_VERSION_COMPAT_MODE: true # needed with mongodb backend
+      S3_SERVER_ACCESS_LOGS_MODE: ENABLED
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -841,6 +874,13 @@ jobs:
         password: ${{ github.token }}
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
+    - name: Setup server access logs file and directory
+      shell: bash
+      run: |
+        set -exu
+        sudo mkdir -p /logs
+        sudo chmod 0777 /logs
+        sudo touch /logs/server-access.log && sudo chmod 0666 /logs/server-access.log
     - uses: ruby/setup-ruby@v1
       with:
         ruby-version: '3.2'

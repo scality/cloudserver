@@ -8,6 +8,7 @@ services:
       - ${HOME}/.aws/credentials:/root/.aws/credentials
       - /tmp/artifacts/${JOB_NAME}:/artifacts
       - /tmp/coverage/${JOB_NAME}:/coverage/test
+      - /logs:/logs
     environment:
       - CI=true
       - ENABLE_LOCAL_CACHE=true
