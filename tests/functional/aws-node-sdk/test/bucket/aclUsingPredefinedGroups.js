@@ -88,7 +88,7 @@ withV4(sigCfg => {
             try {
                 assert.notStrictEqual(err, null);
                 assert.strictEqual(err.$metadata?.httpStatusCode, 403);
-                assert.strictEqual(err.Code, 'AccessDenied');
+                assert.strictEqual(err.name, 'AccessDenied');
                 done();
             } catch (assertError) {
                 done(assertError);
