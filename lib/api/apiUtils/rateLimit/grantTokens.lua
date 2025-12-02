@@ -47,7 +47,7 @@ else
         local grantedTokens = math.floor(availableCapacity / interval)
 
         if grantedTokens > 0 then
-            local grantedCost = granted * interval
+            local grantedCost = grantedTokens * interval
             local newEmptyAt = expectedTime + grantedCost
             redis.call('SET', key, newEmptyAt, 'PX', burstCapacity + 10000)
             return grantedTokens
