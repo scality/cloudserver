@@ -183,6 +183,7 @@ function assertGetObjects(testParams, cb) {
                 .then(async res => {
                     const bodyBuffer = await loadBodyBuffer(res);
                     if (bodyBuffer !== undefined) {
+                        // eslint-disable-next-line no-param-reassign
                         res.Body = bodyBuffer;
                     }
                     cb(null, res);
@@ -194,6 +195,7 @@ function assertGetObjects(testParams, cb) {
                 .then(async res => {
                     const bodyBuffer = await loadBodyBuffer(res);
                     if (bodyBuffer !== undefined) {
+                        // eslint-disable-next-line no-param-reassign
                         res.Body = bodyBuffer;
                     }
                     cb(null, res);

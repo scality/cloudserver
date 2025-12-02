@@ -89,11 +89,11 @@ function putObjectAndAcl(s3, key, body, acp, cb) {
     
     s3.send(command)
         .then(putData => {
-            putObjectAcl(s3, key, putData.VersionId, acp, (err) => {
+            putObjectAcl(s3, key, putData.VersionId, acp, err => {
                 if (err) {
                     return cb(err);
                 }
-                cb(null, putData.VersionId);
+                return cb(null, putData.VersionId);
             });
         })
         .catch(cb);
@@ -119,7 +119,7 @@ function putVersionsWithAclToAws(s3, key, data, acps, cb) {
             if (err) {
                 return cb(err);
             }
-            cb(null, results);
+            return cb(null, results);
         });
     });
 }
@@ -142,7 +142,8 @@ function getObjectAndAssertAcl(s3, params, cb) {
         })
         .then(data => {
             // eslint-disable-next-line no-unused-vars
-            let {$metadata, ...aclData} = data;
+            const {$metadata, ...aclData} = data;
+            // eslint-disable-next-line no-param-reassign
             data = aclData;
             assert.deepEqual(data, expectedResult);
             cb();
@@ -223,7 +224,7 @@ function testSuite() {
                 if (err) {
                     return done(err);
                 }
-                putObjectAndAcl(s3, key, someBody, testAcp, (err, versionId) => {
+                return putObjectAndAcl(s3, key, someBody, testAcp, (err, versionId) => {
                     assert.strictEqual(versionId, undefined);
                     getObjectAndAssertAcl(s3, { bucket, key, body: someBody,
                         expectedResult: testAcp }, done);

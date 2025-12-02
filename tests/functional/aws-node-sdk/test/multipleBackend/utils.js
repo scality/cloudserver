@@ -216,44 +216,39 @@ utils.expectedETag = (body, getStringified = true) => {
 
 utils.waitForVersioningBeforePut = async (s3, bucket, callback) => {
     const MAX_VERSIONING_CHECKS = 10;
-    const VERSIONING_CHECK_INTERVAL = 1000; // 1 second
-    
-    const waitForVersioning = async () => {
+    const VERSIONING_CHECK_INTERVAL = 1000;
+    const sleep = () => new Promise(resolve => setTimeout(resolve, VERSIONING_CHECK_INTERVAL));
+
+    const waitForVersioning = (async () => {
         for (let attempt = 1; attempt <= MAX_VERSIONING_CHECKS; attempt++) {
+            let versioningEnabled = false;
             try {
-                const versioningResult = await s3.send(new GetBucketVersioningCommand({ Bucket: bucket }));                
-                if (versioningResult.Status === 'Enabled') {
-                    if (callback) {
-                        return callback();
-                    }
-                    return;
+                const versioningResult = await s3.send(new GetBucketVersioningCommand({
+                    Bucket: bucket,
+                }));
+                versioningEnabled = versioningResult.Status === 'Enabled';
+            } catch {
+                if (attempt === MAX_VERSIONING_CHECKS) {
+                    break;
                 }
-                
-                if (attempt < MAX_VERSIONING_CHECKS) {
-                    await new Promise(resolve => setTimeout(resolve, VERSIONING_CHECK_INTERVAL));
-                } else {
-                    if (callback) {
-                        return callback();
-                    }
-                    return;
-                }
-            } catch (err) {
-                if (attempt < MAX_VERSIONING_CHECKS) {
-                    await new Promise(resolve => setTimeout(resolve, VERSIONING_CHECK_INTERVAL));
-                } else {
-                    if (callback) {
-                        return callback();
-                    }
-                    return;
-                }
+                await sleep();
+                continue;
+            }
+            if (versioningEnabled) {
+                break;
+            }
+
+            if (attempt < MAX_VERSIONING_CHECKS) {
+                await sleep();
             }
         }
-    };
-    
+    })();
+
     if (callback) {
-        return waitForVersioning().catch(err => callback(err));
+        waitForVersioning.then(() => callback()).catch(err => callback(err));
+        return waitForVersioning;
     }
-    return waitForVersioning();
+    return waitForVersioning;
 };
 
 utils.putToAwsBackend = (s3, bucket, key, body, callback) => {
@@ -263,7 +258,7 @@ utils.putToAwsBackend = (s3, bucket, key, body, callback) => {
         Body: body,
         Metadata: { 'scal-location-constraint': awsLocation } 
     }));
-    if(callback) {
+    if (callback) {
         return result.then(data => {
             callback(null, data.VersionId);
         }).catch(err => {
@@ -316,12 +311,14 @@ utils.mapToAwsPuts = async (s3, bucket, key, dataArray, callback) => {
             results.push(versionId);
         }
         if (callback) {
-            return callback(null, results);
+            callback(null, results);
+            return undefined;
         }
         return results;
     } catch (err) {
         if (callback) {
-            return callback(err);
+            callback(err);
+            return undefined;
         }
         throw err;
     }
@@ -334,12 +331,14 @@ utils.putVersionsToAws = async (s3, bucket, key, versions, callback) => {
         await utils.waitForVersioningBeforePut(s3, bucket);
         const results = await utils.mapToAwsPuts(s3, bucket, key, versions);
         if (callback) {
-            return callback(null, results);
+            callback(null, results);
+            return undefined;
         }
         return results;
     } catch (err) {
         if (callback) {
-            return callback(err);
+            callback(err);
+            return undefined;
         }
         throw err;
     }
@@ -352,12 +351,14 @@ utils.putNullVersionsToAws = async (s3, bucket, key, versions, callback) => {
         // The wait is only needed when enabling versioning to ensure Ceph returns VersionId
         const results = await utils.mapToAwsPuts(s3, bucket, key, versions);
         if (callback) {
-            return callback(null, results);
+            callback(null, results);
+            return undefined;
         }
         return results;
     } catch (err) {
         if (callback) {
-            return callback(err);
+            callback(err);
+            return undefined;
         }
         throw err;
     }
@@ -465,9 +466,7 @@ utils.getAwsRetry = (params, retryNumber, assertCb) => {
                 }
                 return assertCb(err);
             })
-            .catch(e => {
-                return assertCb(e);
-            });
+            .catch(e => assertCb(e));
     }, timeout);
 };
 

@@ -173,9 +173,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return s3.send(new CreateBucketCommand({ Bucket: bucket }))
-            .then(() => {
-                return s3.send(new GetBucketVersioningCommand({ Bucket: bucket }));
-            })
+            .then(() => s3.send(new GetBucketVersioningCommand({ Bucket: bucket })))
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
@@ -204,7 +202,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                     if (err) {
                         return next(err);
                     }
-                    next();
+                    return next();
                 }),
                 next => putToAwsBackend(s3, bucket, key, someBody,
                     err => next(err)),
@@ -246,7 +244,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                     if (err) {
                         return next(err);
                     }
-                    next();
+                    return next();
                 }),
                 next => putNullVersionsToAws(s3, bucket, key, [someBody],
                     err => next(err)),
@@ -270,7 +268,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                     if (err) {
                         return next(err);
                     }
-                    next();
+                    return next();
                 }),
                 next => putVersionsToAws(s3, bucket, key, [someBody],
                     (err, versionIds) => next(err, versionIds[0])),
@@ -430,7 +428,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                     if (err) {
                         return next(err);
                     }
-                    next();
+                    return next();
                 }),
                 next => putVersionsToAws(s3, bucket, key, [someBody],
                     (err, versionIds) => next(err, versionIds[0])),
@@ -458,7 +456,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                     if (err) {
                         return next(err);
                     }
-                    next();
+                    return next();
                 }),
                 next => putVersionsToAws(s3, bucket, key, [someBody],
                     (err, versionIds) => next(err, versionIds[0])),
@@ -742,7 +740,7 @@ describeSkipIfNotMultiple('AWS backend delete multiple objects w. versioning: ' 
                     if (err) {
                         return next(err);
                     }
-                    next();
+                    return next();
                 }),
                 next => putVersionsToAws(s3, bucket, key, [someBody],
                     (err, versionIds) => next(err, versionIds[0])),
