@@ -113,17 +113,12 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     }
                 };
                 const params = { Bucket: bucketName, Key: objectName };
-                let vId;
-
                 async.series([
                     next => s3.send(new PutBucketVersioningCommand(vParams)).then(() => next()),
-                    next => s3.send(new PutObjectCommand(params)).then(res => {
-                        vId = res.VersionId;
-                        return next();
-                    }),
-                    next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
+                    next => s3.send(new PutObjectCommand(params)).then(() => next()),
                     next => putObjectVersion(s3, params, 'aJLWKz4Ko9IjBBgXKj5KQT.G9UHv0g7P', err => {
-                        checkError(err, 'InvalidArgument', 400);
+                        assert.strictEqual(err.name, 'InvalidArgument');
+                        assert.strictEqual(err.$metadata.httpStatusCode, 400);
                         return next();
                     }),
                 ], err => {

@@ -79,36 +79,36 @@ testUtils.runAndCheckSearch = (s3Client, bucketName, encodedSearch, listVersions
                             assert.strictEqual(res.Versions[i].Key, expected);
                             next();
                         }, done);
-                        return;
                     } else {
                         assert(res.Versions[0], 'should be Contents listed');
                         assert.strictEqual(res.Versions[0].Key, testResult);
                         assert.strictEqual(res.Versions.length, 1);
+                        done();
                     }
                 } else {
                     assert.strictEqual(res.Versions.length, 0);
+                    done();
                 }
+            } else if (testResult && typeof testResult === 'object' && testResult.code) {
+                // This was expected to be an error, but we got success
+                done(new Error('Expected error but got success'));
+            } else if (testResult) {
+                assert(res.Contents[0], 'should be Contents listed');
+                assert.strictEqual(res.Contents[0].Key, testResult);
+                assert.strictEqual(res.Contents.length, 1);
+                done();
             } else {
-                if (testResult && typeof testResult === 'object' && testResult.code) {
-                    // This was expected to be an error, but we got success
-                    done(new Error('Expected error but got success'));
-                }
-                if (testResult) {
-                    assert(res.Contents[0], 'should be Contents listed');
-                    assert.strictEqual(res.Contents[0].Key, testResult);
-                    assert.strictEqual(res.Contents.length, 1);
-                } else {
-                    assert.strictEqual(res.Contents?.length, undefined);
-                }
+                assert.strictEqual(res.Contents?.length, undefined);
+                done();
             }
-            done();
         } catch (err) {
             if (testResult && typeof testResult === 'object' && testResult.code) {
                 assert.strictEqual(err.name, testResult.code);
                 assert.strictEqual(err.message, testResult.message);
                 done();
+            } else {
+                done(err);
             }
-            done(err);
         }
     };
     makeRequest();
