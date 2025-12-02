@@ -180,10 +180,10 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(result, 'REST.GET.LOGGING_STATUS');
         });
 
-        it('should return REST.POST.OBJECT for completeMultipartUpload', () => {
+        it('should return REST.POST.UPLOAD for completeMultipartUpload', () => {
             const req = { method: 'POST', apiMethod: 'completeMultipartUpload' };
             const result = getOperation(req);
-            assert.strictEqual(result, 'REST.POST.OBJECT');
+            assert.strictEqual(result, 'REST.POST.UPLOAD');
         });
 
         it('should return REST.method.UNKNOWN for unknown apiMethod', () => {
@@ -328,7 +328,7 @@ describe('serverAccessLogger utility functions', () => {
                 getHeader: name => name === 'Content-Length' ? '12345' : null,
             };
             const result = getObjectSize(request, response);
-            assert.strictEqual(result, '12345');
+            assert.strictEqual(result, 12345);
         });
 
         it('should return Content-Length from request for objectPut', () => {
@@ -340,7 +340,7 @@ describe('serverAccessLogger utility functions', () => {
                 getHeader: () => null,
             };
             const result = getObjectSize(request, response);
-            assert.strictEqual(result, '54321');
+            assert.strictEqual(result, 54321);
         });
 
         it('should return Content-Length from request for objectPutPart', () => {
@@ -352,7 +352,7 @@ describe('serverAccessLogger utility functions', () => {
                 getHeader: () => null,
             };
             const result = getObjectSize(request, response);
-            assert.strictEqual(result, '67890');
+            assert.strictEqual(result, 67890);
         });
 
         it('should handle Content-Length of 0 for objectGet', () => {
@@ -361,7 +361,7 @@ describe('serverAccessLogger utility functions', () => {
                 getHeader: name => name === 'Content-Length' ? '0' : null,
             };
             const result = getObjectSize(request, response);
-            assert.strictEqual(result, '0');
+            assert.strictEqual(result, 0);
         });
 
         it('should handle Content-Length of number 0 for objectGet', () => {
@@ -382,7 +382,7 @@ describe('serverAccessLogger utility functions', () => {
                 getHeader: () => null,
             };
             const result = getObjectSize(request, response);
-            assert.strictEqual(result, '0');
+            assert.strictEqual(result, 0);
         });
 
         it('should handle Content-Length of number 0 for objectPut', () => {
@@ -821,7 +821,7 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.operation, 'REST.GET.OBJECT');
             assert.strictEqual(loggedData.requestURI, 'GET /test-bucket/test-key.txt HTTP/1.1');
             assert.strictEqual(loggedData.errorCode, null);
-            assert.strictEqual(loggedData.objectSize, '2048');
+            assert.strictEqual(loggedData.objectSize, 2048);
             assert.strictEqual(loggedData.totalTime, '9');
             assert.strictEqual(loggedData.turnAroundTime, '1');
             assert.strictEqual(loggedData.referer, 'https://example.com');
@@ -992,7 +992,7 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(mockLogger.write.callCount, 1);
             const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
             assert.strictEqual(loggedData.operation, 'REST.PUT.OBJECT');
-            assert.strictEqual(loggedData.objectSize, '5000');
+            assert.strictEqual(loggedData.objectSize, 5000);
             assert.strictEqual(loggedData.bytesReceived, 5000);
             assert.strictEqual(loggedData.totalTime, '2');
         });
