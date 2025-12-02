@@ -1,69 +1,129 @@
 const assert = require('assert');
 const async = require('async');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketVersioningCommand,
+    PutObjectCommand,
+} = require('@aws-sdk/client-s3');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
 const { makeBackbeatRequest, updateMetadata } = require('./utils');
 const { config } = require('../../../lib/Config');
+const { promisify } = require('util');
 
 const testBucket = 'bucket-for-list-lifecycle-current-tests';
-
-const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+const removeAllVersionsPromise = promisify(removeAllVersions);
+const bucketUtil = new BucketUtility('default', {});
 const s3 = bucketUtil.s3;
-const credentials = {
-    accessKey: s3.config.credentials.accessKeyId,
-    secretKey: s3.config.credentials.secretAccessKey,
-};
 
-// for S3C it is dc-1, in Integration it's node1.scality.com, otherwise us-east-1
-const s3Hostname = s3.endpoint.hostname;
-const location1 = config.restEndpoints[s3Hostname] || config.restEndpoints.localhost;
-const location2 = 'us-east-2';
+async function getCredentials() {
+        const creds = await s3.config.credentials();
+        const credentials = {
+            accessKey: creds.accessKeyId,
+            secretKey: creds.secretAccessKey,
+        };
+        return credentials;
+}
+
+async function getS3Hostname() {
+    const s3Hostname = await s3.config.endpoint();
+    return s3Hostname.hostname;
+}
 
 describe('excludedDataStoreName', () => {
     const expectedVersions = [];
+    let credentials;
+    let s3Hostname;
+    let location1;
+    let location2;
 
     before(done => async.series([
-            next => s3.createBucket({ Bucket: testBucket }, next),
-            next => s3.putBucketVersioning({
-                Bucket: testBucket,
-                VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
-            next => s3.putObject({ Bucket: testBucket, Key: 'key0' }, (err, data) => {
-                expectedVersions.push(data.VersionId);
-                return next(err);
-            }),
-            next => s3.putObject({ Bucket: testBucket, Key: 'key0' }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                const versionId = data.VersionId;
-                return updateMetadata(
-                    { bucket: testBucket, objectKey: 'key0', versionId, authCredentials: credentials },
-                    { dataStoreName: location2 },
-                    next);
-            }),
-            next => s3.putObject({ Bucket: testBucket, Key: 'key0' }, (err, data) => {
-                expectedVersions.push(data.VersionId);
-                return next(err);
-            }),
-            next => s3.putObject({ Bucket: testBucket, Key: 'key0' }, next),
-            next => s3.putObject({ Bucket: testBucket, Key: 'key1' }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                const versionId = data.VersionId;
-                return updateMetadata(
-                    { bucket: testBucket, objectKey: 'key1', versionId, authCredentials: credentials },
-                    { dataStoreName: location2 },
-                    next);
-            }),
-            next => s3.putObject({ Bucket: testBucket, Key: 'key2' }, next),
+            next => {
+                getCredentials()
+                    .then(creds => {
+                        credentials = creds;
+                        next();
+                    })
+                    .catch(next);
+            },
+            next => {
+                getS3Hostname()
+                    .then(hostname => {
+                        s3Hostname = hostname;
+                        location1 = config.restEndpoints[s3Hostname] || config.restEndpoints.localhost;
+                        location2 = 'us-east-2';
+                        next();
+                    })
+                    .catch(next);
+            },
+            next => {
+                s3.send(new CreateBucketCommand({ Bucket: testBucket }))
+                    .then(() => next())
+                    .catch(next);
+            },
+            next => {
+                s3.send(new PutBucketVersioningCommand({
+                    Bucket: testBucket,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }))
+                    .then(() => next())
+                    .catch(next);
+            },
+            next => {
+                s3.send(new PutObjectCommand({ Bucket: testBucket, Key: 'key0' }))
+                    .then(data => {
+                        expectedVersions.push(data.VersionId);
+                        next();
+                    })
+                    .catch(next);
+            },
+            next => {
+                s3.send(new PutObjectCommand({ Bucket: testBucket, Key: 'key0' }))
+                    .then(data => {
+                        const versionId = data.VersionId;
+                        return updateMetadata(
+                            { bucket: testBucket, objectKey: 'key0', versionId, authCredentials: credentials },
+                            { dataStoreName: location2 },
+                            next);
+                    })
+                    .catch(next);
+            },
+            next => {
+                s3.send(new PutObjectCommand({ Bucket: testBucket, Key: 'key0' }))
+                    .then(data => {
+                        expectedVersions.push(data.VersionId);
+                        next();
+                    })
+                    .catch(next);
+            },
+            next => {
+                s3.send(new PutObjectCommand({ Bucket: testBucket, Key: 'key0' }))
+                    .then(() => next())
+                    .catch(next);
+            },
+            next => {
+                s3.send(new PutObjectCommand({ Bucket: testBucket, Key: 'key1' }))
+                    .then(data => {
+                        const versionId = data.VersionId;
+                        return updateMetadata(
+                            { bucket: testBucket, objectKey: 'key1', versionId, authCredentials: credentials },
+                            { dataStoreName: location2 },
+                            next);
+                    })
+                    .catch(next);
+            },
+            next => {
+                s3.send(new PutObjectCommand({ Bucket: testBucket, Key: 'key2' }))
+                    .then(() => next())
+                    .catch(next);
+            },
         ], done));
 
-    after(done => async.series([
-        next => removeAllVersions({ Bucket: testBucket }, next),
-        next => s3.deleteBucket({ Bucket: testBucket }, next),
-    ], done));
+    after(async () => {
+        await removeAllVersionsPromise({ Bucket: testBucket });
+        await s3.send(new DeleteBucketCommand({ Bucket: testBucket }));
+    });
 
     it('should return error when listing current versions if excluded-data-store-name is not in config', done => {
         makeBackbeatRequest({
@@ -280,3 +340,4 @@ describe('excludedDataStoreName', () => {
         });
     });
 });
+

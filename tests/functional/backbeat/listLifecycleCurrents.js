@@ -1,20 +1,41 @@
 const assert = require('assert');
 const async = require('async');
+const {
+    CreateBucketCommand,
+    PutObjectCommand,
+    PutBucketVersioningCommand,
+    DeleteObjectCommand,
+    DeleteBucketCommand,
+} = require('@aws-sdk/client-s3');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
 const { makeBackbeatRequest } = require('./utils');
 const { config } = require('../../../lib/Config');
+const { promisify } = require('util');
 
-const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+const removeAllVersionsPromise = promisify(removeAllVersions);
+const bucketUtil = new BucketUtility('default', {});
 const s3 = bucketUtil.s3;
-const credentials = {
-    accessKey: s3.config.credentials.accessKeyId,
-    secretKey: s3.config.credentials.secretAccessKey,
-};
 
-// for S3C it is dc-1, in Integration it's node1.scality.com, otherwise us-east-1
-const s3Hostname = s3.endpoint.hostname;
-const location = config.restEndpoints[s3Hostname] || config.restEndpoints.localhost;
+let credentials = null;
+let s3Hostname = null;
+let location = null;
+
+async function getCredentials() {
+    const creds = await s3.config.credentials();
+    const credentials = {
+        accessKey: creds.accessKeyId,
+        secretKey: creds.secretAccessKey,
+    };
+    return credentials;
+}
+
+async function getS3Hostname() {
+    const endpoint = await s3.config.endpoint();
+    s3Hostname = endpoint.hostname;
+    location = config.restEndpoints[s3Hostname] || config.restEndpoints.localhost;
+    return s3Hostname;
+}
 
 function checkContents(contents, expectedKeyVersions) {
     contents.forEach(d => {
@@ -51,58 +72,81 @@ function checkContents(contents, expectedKeyVersions) {
         const expectedKeyVersions = {};
 
         before(done => async.series([
-                next => s3.createBucket({ Bucket: testBucket }, next),
-                next => s3.createBucket({ Bucket: emptyBucket }, next),
+                next => {
+                    getCredentials()
+                        .then(creds => {
+                            credentials = creds;
+                            return getS3Hostname();
+                        })
+                        .then(() => next())
+                        .catch(next);
+                },
+                next => s3.send(new CreateBucketCommand({ Bucket: testBucket }))
+                    .then(() => next())
+                    .catch(next),
+                next => s3.send(new CreateBucketCommand({ Bucket: emptyBucket }))
+                    .then(() => next())
+                    .catch(next),
                 next => {
                     if (versioning !== 'Enabled') {
                         return process.nextTick(next);
                     }
-                    return s3.putBucketVersioning({
+                    return s3.send(new PutBucketVersioningCommand({
                         Bucket: testBucket,
                         VersioningConfiguration: { Status: 'Enabled' },
-                    }, next);
+                    }))
+                        .then(() => next())
+                        .catch(next);
                 },
                 next => {
                     if (versioning !== 'Enabled') {
                         return process.nextTick(next);
                     }
-                    return s3.putBucketVersioning({
+                    return s3.send(new PutBucketVersioningCommand({
                         Bucket: emptyBucket,
                         VersioningConfiguration: { Status: 'Enabled' },
-                    }, next);
+                    }))
+                        .then(() => next())
+                        .catch(next);
                 },
                 next => async.times(3, (n, cb) => {
                     const keyName = `oldkey${n}`;
-                    s3.putObject({ Bucket: testBucket, Key: keyName, Body: '123', Tagging: 'mykey=myvalue' },
-                    (err, data) => {
-                        if (err) {
-                            cb(err);
-                        }
-                        expectedKeyVersions[keyName] = data.VersionId;
-                        return cb();
-                    });
+                    s3.send(new PutObjectCommand({
+                        Bucket: testBucket,
+                        Key: keyName,
+                        Body: '123',
+                        Tagging: 'mykey=myvalue',
+                    }))
+                        .then(data => {
+                            expectedKeyVersions[keyName] = data.VersionId;
+                            cb();
+                        })
+                        .catch(cb);
                 }, next),
                 next => {
                     date = new Date(Date.now()).toISOString();
                     return async.times(5, (n, cb) => {
                         const keyName = `key${n}`;
-                        s3.putObject({ Bucket: testBucket, Key: keyName, Body: '123', Tagging: 'mykey=myvalue' },
-                        (err, data) => {
-                            if (err) {
-                                cb(err);
-                            }
-                            expectedKeyVersions[keyName] = data.VersionId;
-                            return cb();
-                        });
+                        s3.send(new PutObjectCommand({
+                            Bucket: testBucket,
+                            Key: keyName,
+                            Body: '123',
+                            Tagging: 'mykey=myvalue',
+                        }))
+                            .then(data => {
+                                expectedKeyVersions[keyName] = data.VersionId;
+                                cb();
+                            })
+                            .catch(cb);
                     }, next);
                 },
             ], done));
 
-        after(done => async.series([
-            next => removeAllVersions({ Bucket: testBucket }, next),
-            next => s3.deleteBucket({ Bucket: testBucket }, next),
-            next => s3.deleteBucket({ Bucket: emptyBucket }, next),
-        ], done));
+        after(async () => {
+            await removeAllVersionsPromise({ Bucket: testBucket });
+            await s3.send(new DeleteBucketCommand({ Bucket: testBucket }));
+            await s3.send(new DeleteBucketCommand({ Bucket: emptyBucket })); 
+        });
 
         it('should return empty list of current versions if bucket is empty', done => {
             makeBackbeatRequest({
@@ -411,50 +455,72 @@ describe('listLifecycleCurrents with bucket versioning enabled and maxKeys', () 
     const expectedKeyVersions = {};
 
     before(done => async.series([
-            next => s3.createBucket({ Bucket: testBucket }, next),
-            next => s3.putBucketVersioning({
+            next => {
+                getCredentials()
+                    .then(creds => {
+                        credentials = creds;
+                        return getS3Hostname();
+                    })
+                    .then(() => next())
+                    .catch(next);
+            },
+            next => s3.send(new CreateBucketCommand({ Bucket: testBucket }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutBucketVersioningCommand({
                 Bucket: testBucket,
                 VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
+            }))
+                .then(() => next())
+                .catch(next),
             next => async.times(3, (n, cb) => {
                 const keyName = 'key0';
-                s3.putObject({ Bucket: testBucket, Key: keyName, Body: '123', Tagging: 'mykey=myvalue' },
-                (err, data) => {
-                    if (err) {
-                        cb(err);
-                    }
-                    expectedKeyVersions[keyName] = data.VersionId;
-                    return cb();
-                });
+                s3.send(new PutObjectCommand({
+                    Bucket: testBucket,
+                    Key: keyName,
+                    Body: '123',
+                    Tagging: 'mykey=myvalue',
+                }))
+                    .then(data => {
+                        expectedKeyVersions[keyName] = data.VersionId;
+                        cb();
+                    })
+                    .catch(err => cb(err));
             }, next),
             next => async.times(5, (n, cb) => {
                 const keyName = 'key1';
-                s3.putObject({ Bucket: testBucket, Key: keyName, Body: '123', Tagging: 'mykey=myvalue' },
-                (err, data) => {
-                    if (err) {
-                        cb(err);
-                    }
-                    expectedKeyVersions[keyName] = data.VersionId;
-                    return cb();
-                });
+                s3.send(new PutObjectCommand({
+                    Bucket: testBucket,
+                    Key: keyName,
+                    Body: '123',
+                    Tagging: 'mykey=myvalue',
+                }))
+                    .then(data => {
+                        expectedKeyVersions[keyName] = data.VersionId;
+                        cb();
+                    })
+                    .catch(err => cb(err));
             }, next),
             next => async.times(3, (n, cb) => {
                 const keyName = 'key2';
-                s3.putObject({ Bucket: testBucket, Key: keyName, Body: '123', Tagging: 'mykey=myvalue' },
-                (err, data) => {
-                    if (err) {
-                        cb(err);
-                    }
-                    expectedKeyVersions[keyName] = data.VersionId;
-                    return cb();
-                });
+                s3.send(new PutObjectCommand({
+                    Bucket: testBucket,
+                    Key: keyName,
+                    Body: '123',
+                    Tagging: 'mykey=myvalue',
+                }))
+                    .then(data => {
+                        expectedKeyVersions[keyName] = data.VersionId;
+                        cb();
+                    })
+                    .catch(err => cb(err));
             }, next),
         ], done));
 
-    after(done => async.series([
-        next => removeAllVersions({ Bucket: testBucket }, next),
-        next => s3.deleteBucket({ Bucket: testBucket }, next),
-    ], done));
+    after(async () => {
+        await removeAllVersionsPromise({ Bucket: testBucket });
+        await s3.send(new DeleteBucketCommand({ Bucket: testBucket }));
+    });
 
     it('should return truncated lists - part 1', done => {
         makeBackbeatRequest({
@@ -542,7 +608,6 @@ describe('listLifecycleCurrents with bucket versioning enabled and maxKeys', () 
     });
 });
 
-
 describe('listLifecycleCurrents with bucket versioning enabled and delete object', () => {
     const testBucket = 'bucket-for-list-lifecycle-current-tests-truncated';
     const keyName0 = 'key0';
@@ -551,44 +616,78 @@ describe('listLifecycleCurrents with bucket versioning enabled and delete object
     const expectedKeyVersions = {};
 
     before(done => async.series([
-            next => s3.createBucket({ Bucket: testBucket }, next),
-            next => s3.putBucketVersioning({
+            next => {
+                getCredentials()
+                    .then(creds => {
+                        credentials = creds;
+                        return getS3Hostname();
+                    })
+                    .then(() => next())
+                    .catch(next);
+            },
+            next => s3.send(new CreateBucketCommand({ Bucket: testBucket }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutBucketVersioningCommand({
                 Bucket: testBucket,
                 VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
-            next => {
-                s3.putObject({ Bucket: testBucket, Key: keyName0, Body: '123', Tagging: 'mykey=myvalue' },
-                (err, data) => {
-                    if (err) {
-                        next(err);
-                    }
+            }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutObjectCommand({
+                Bucket: testBucket,
+                Key: keyName0,
+                Body: '123',
+                Tagging: 'mykey=myvalue',
+            }))
+                .then(data => {
                     expectedKeyVersions[keyName0] = data.VersionId;
-                    return next();
-                });
-            },
-            next => s3.putObject({ Bucket: testBucket, Key: keyName1, Body: '123', Tagging: 'mykey=myvalue' }, next),
-            next => s3.deleteObject({ Bucket: testBucket, Key: keyName1 }, next),
-            next => s3.putObject({ Bucket: testBucket, Key: keyName2, Body: '123', Tagging: 'mykey=myvalue' },
-                (err, data) => {
-                    if (err) {
-                        next(err);
-                    }
+                    next();
+                })
+                .catch(next),
+            next => s3.send(new PutObjectCommand({
+                Bucket: testBucket,
+                Key: keyName1,
+                Body: '123',
+                Tagging: 'mykey=myvalue',
+            }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new DeleteObjectCommand({ Bucket: testBucket, Key: keyName1 }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutObjectCommand({
+                Bucket: testBucket,
+                Key: keyName2,
+                Body: '123',
+                Tagging: 'mykey=myvalue',
+            }))
+                .then(data => {
                     expectedKeyVersions[keyName2] = data.VersionId;
-                    return next();
-                }),
-            next => s3.putObject({ Bucket: testBucket, Key: keyName2, Body: '123', Tagging: 'mykey=myvalue' },
-                (err, data) => {
-                    if (err) {
-                        return next(err);
-                    }
-                    return s3.deleteObject({ Bucket: testBucket, Key: keyName2, VersionId: data.VersionId }, next);
-                }),
+                    next();
+                })
+                .catch(next),
+            next => s3.send(new PutObjectCommand({
+                Bucket: testBucket,
+                Key: keyName2,
+                Body: '123',
+                Tagging: 'mykey=myvalue',
+            }))
+                .then(data => s3.send(new DeleteObjectCommand({
+                    Bucket: testBucket,
+                    Key: keyName2,
+                    VersionId: data.VersionId,
+                }))
+                    .then(() => next())
+                    .catch(next))
+                .catch(next),
         ], done));
 
-    after(done => async.series([
-        next => removeAllVersions({ Bucket: testBucket }, next),
-        next => s3.deleteBucket({ Bucket: testBucket }, next),
-    ], done));
+
+    after(async () => {
+        await removeAllVersionsPromise({ Bucket: testBucket });
+        await s3.send(new DeleteBucketCommand({ Bucket: testBucket }));
+    });
 
     it('should return truncated lists - part 1', done => {
         makeBackbeatRequest({
