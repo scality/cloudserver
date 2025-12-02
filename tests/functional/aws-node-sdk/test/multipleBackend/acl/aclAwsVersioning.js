@@ -19,6 +19,7 @@ const {
     describeSkipIfNotMultiple,
     getOwnerInfo,
     genUniqID,
+    waitForVersioningBeforePut,
 } = require('../utils');
 
 const someBody = 'testbody';
@@ -71,16 +72,12 @@ function putObjectAcl(s3, key, versionId, acp, cb) {
     if (versionId) {
         params.VersionId = versionId;
     }
-    
     const command = new PutObjectAclCommand(params);
     s3.send(command)
         .then(() => {
             cb();
         })
-        .catch(err => {
-            assert.strictEqual(err, null, 'Expected success ' +
-                `putting object acl, got error ${err}`);
-        });
+        .catch(cb);
 }
 
 function putObjectAndAcl(s3, key, body, acp, cb) {
@@ -92,13 +89,14 @@ function putObjectAndAcl(s3, key, body, acp, cb) {
     
     s3.send(command)
         .then(putData => {
-            putObjectAcl(s3, key, putData.VersionId, acp, () =>
-                cb(null, putData.VersionId));
+            putObjectAcl(s3, key, putData.VersionId, acp, (err) => {
+                if (err) {
+                    return cb(err);
+                }
+                cb(null, putData.VersionId);
+            });
         })
-        .catch(err => {
-            assert.strictEqual(err, null, 'Expected success ' +
-                `putting object, got error ${err}`);
-        });
+        .catch(cb);
 }
 
 /** putVersionsWithAclToAws - enable versioning and put multiple versions
@@ -118,8 +116,9 @@ function putVersionsWithAclToAws(s3, key, data, acps, cb) {
         async.timesLimit(data.length, 1, (i, next) => {
             putObjectAndAcl(s3, key, data[i], acps[i], next);
         }, (err, results) => {
-            assert.strictEqual(err, null, 'Expected success ' +
-                `putting versions with acl, got error ${err}`);
+            if (err) {
+                return cb(err);
+            }
             cb(null, results);
         });
     });
@@ -128,8 +127,8 @@ function putVersionsWithAclToAws(s3, key, data, acps, cb) {
 function getObjectAndAssertAcl(s3, params, cb) {
     const { bucket, key, versionId, body, expectedVersionId, expectedResult }
         = params;
-    getAndAssertResult(s3, { bucket, key, versionId, expectedVersionId, body },
-        () => {
+    getAndAssertResult(s3, { bucket, key, versionId, expectedVersionId, body })
+        .then(() => {
             const aclParams = {
                 Bucket: bucket,
                 Key: key,
@@ -139,16 +138,16 @@ function getObjectAndAssertAcl(s3, params, cb) {
             }
             
             const command = new GetObjectAclCommand(aclParams);
-            s3.send(command)
-                .then(data => {
-                    assert.deepEqual(data, expectedResult);
-                    cb();
-                })
-                .catch(err => {
-                    assert.strictEqual(err, null, 'Expected success ' +
-                        `getting object acl, got error ${err}`);
-                });
-        });
+            return s3.send(command);
+        })
+        .then(data => {
+            // eslint-disable-next-line no-unused-vars
+            let {$metadata, ...aclData} = data;
+            data = aclData;
+            assert.deepEqual(data, expectedResult);
+            cb();
+        })
+        .catch(cb);
 }
 
 /** getObjectsAndAssertAcls - enable versioning and put multiple versions
@@ -220,12 +219,18 @@ function testSuite() {
         it('versioning not configured: should put/get acl successfully when ' +
         'versioning not configured', done => {
             const key = `somekey-${genUniqID()}`;
-            putObjectAndAcl(s3, key, someBody, testAcp, (err, versionId) => {
-                assert.strictEqual(versionId, undefined);
-                getObjectAndAssertAcl(s3, { bucket, key, body: someBody,
-                    expectedResult: testAcp }, done);
+            waitForVersioningBeforePut(s3, bucket, err => {
+                if (err) {
+                    return done(err);
+                }
+                putObjectAndAcl(s3, key, someBody, testAcp, (err, versionId) => {
+                    assert.strictEqual(versionId, undefined);
+                    getObjectAndAssertAcl(s3, { bucket, key, body: someBody,
+                        expectedResult: testAcp }, done);
+                });
             });
         });
+
 
         it('versioning suspended then enabled: should put/get acl on null ' +
         'version successfully even when latest version is not null version',
@@ -236,7 +241,9 @@ function testSuite() {
                     err => next(err)),
                 next => putVersionsToAws(s3, bucket, key, [someBody],
                     err => next(err)),
-                next => putObjectAcl(s3, key, 'null', testAcp, next),
+                next => {
+                    putObjectAcl(s3, key, 'null', testAcp, next);
+                },
                 next => getObjectAndAssertAcl(s3, { bucket, key, body: '',
                     versionId: 'null', expectedResult: testAcp,
                     expectedVersionId: 'null' }, next),
@@ -255,16 +262,22 @@ function testSuite() {
             const data = [...Array(acps.length).keys()].map(i => i.toString());
             const versionIds = ['null'];
             async.waterfall([
-                next => putObjectAndAcl(s3, key, data[0], acps[0],
-                    () => next()),
-                next => putVersionsWithAclToAws(s3, key, data.slice(1),
-                    acps.slice(1), next),
+                next => {
+                    putObjectAndAcl(s3, key, data[0], acps[0],
+                    () => next());
+                },
+                next => {
+                    putVersionsWithAclToAws(s3, key, data.slice(1),
+                    acps.slice(1), next);
+                },
                 (ids, next) => {
                     versionIds.push(...ids);
                     next();
                 },
-                next => getObjectsAndAssertAcls(s3, key, versionIds, data, acps,
-                    next),
+                next => {
+                    getObjectsAndAssertAcls(s3, key, versionIds, data, acps,
+                    next);
+                },
             ], done);
         });
 

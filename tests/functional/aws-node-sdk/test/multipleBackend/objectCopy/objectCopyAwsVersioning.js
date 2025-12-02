@@ -1,5 +1,12 @@
 const assert = require('assert');
 const async = require('async');
+const {
+    CreateBucketCommand,
+    PutObjectCommand,
+    CopyObjectCommand,
+    GetObjectCommand,
+    DeleteObjectCommand,
+} = require('@aws-sdk/client-s3');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const {
@@ -45,10 +52,16 @@ function createBuckets(testParams, cb) {
     const sourceParams = _getCreateBucketParams(sourceBucket, sourceLocation);
     const destParams = _getCreateBucketParams(destBucket, destLocation);
     if (sourceBucket === destBucket) {
-        return s3.createBucket(sourceParams, err => cb(err));
+        return s3.send(new CreateBucketCommand(sourceParams))
+            .then(() => cb())
+            .catch(err => cb(err));
     }
     return async.map([sourceParams, destParams],
-        (createParams, next) => s3.createBucket(createParams, next),
+        (createParams, next) => {
+            s3.send(new CreateBucketCommand(createParams))
+                .then(() => next())
+                .catch(next);
+        },
         err => cb(err));
 }
 
@@ -63,20 +76,20 @@ function putSourceObj(testParams, cb) {
     if (!isEmptyObj) {
         sourceParams.Body = someBody;
     }
-    s3.putObject(sourceParams, (err, result) => {
-        assert.strictEqual(err, null,
-            `Error putting source object: ${err}`);
-        if (isEmptyObj) {
-            assert.strictEqual(result.ETag, `"${emptyMD5}"`);
-        } else {
-            assert.strictEqual(result.ETag, `"${correctMD5}"`);
-        }
-        Object.assign(testParams, {
-            sourceKey,
-            sourceVersionId: result.VersionId,
-        });
-        cb();
-    });
+    s3.send(new PutObjectCommand(sourceParams))
+        .then(result => {
+            if (isEmptyObj) {
+                assert.strictEqual(result.ETag, `"${emptyMD5}"`);
+            } else {
+                assert.strictEqual(result.ETag, `"${correctMD5}"`);
+            }
+            Object.assign(testParams, {
+                sourceKey,
+                sourceVersionId: result.VersionId,
+            });
+            cb();
+        })
+        .catch(err => cb(new Error(`Error putting source object: ${err}`)));
 }
 
 function copyObject(testParams, cb) {
@@ -97,28 +110,52 @@ function copyObject(testParams, cb) {
         copyParams.CopySource =
             `${copyParams.CopySource}?versionId=null`;
     }
-    s3.copyObject(copyParams, (err, data) => {
-        assert.strictEqual(err, null,
-            `Error copying object to destination: ${err}`);
-        if (destVersioningState === 'Enabled') {
-            assert.notEqual(data.VersionId, undefined);
-        } else {
-            assert.strictEqual(data.VersionId, undefined);
-        }
-        const expectedBody = isEmptyObj ? '' : someBody;
-        return awsGetLatestVerId(destKey, expectedBody, (err, awsVersionId) => {
-            Object.assign(testParams, {
-                destKey,
-                destVersionId: data.VersionId,
-                awsVersionId,
-            });
-            if (!data.VersionId && destVersioningState === 'Suspended') {
-                // eslint-disable-next-line no-param-reassign
-                testParams.destVersionId = 'null';
+    s3.send(new CopyObjectCommand(copyParams))
+        .then(data => {
+            if (destVersioningState === 'Enabled') {
+                assert.notEqual(data.VersionId, undefined);
+            } else {
+                assert.strictEqual(data.VersionId, undefined);
             }
-            cb();
-        });
-    });
+            const expectedBody = isEmptyObj ? '' : someBody;
+            return awsGetLatestVerId(destKey, expectedBody,
+                (err, awsVersionId) => {
+                    if (err) {
+                        cb(err);
+                        return;
+                    }
+                    Object.assign(testParams, {
+                        destKey,
+                        destVersionId: data.VersionId,
+                        awsVersionId,
+                    });
+                    if (!data.VersionId && destVersioningState === 'Suspended') {
+                        // eslint-disable-next-line no-param-reassign
+                        testParams.destVersionId = 'null';
+                    }
+                    cb();
+                });
+        })
+        .catch(err => cb(new Error(
+            `Error copying object to destination: ${err}`)));
+}
+
+async function loadBodyBuffer(res) {
+    if (!res || !res.Body) {
+        return undefined;
+    }
+    if (typeof res.Body.transformToByteArray === 'function') {
+        const byteArray = await res.Body.transformToByteArray();
+        return Buffer.from(byteArray);
+    }
+    if (Buffer.isBuffer(res.Body)) {
+        return res.Body;
+    }
+    const chunks = [];
+    for await (const chunk of res.Body) {
+        chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+    }
+    return Buffer.concat(chunks);
 }
 
 function assertGetObjects(testParams, cb) {
@@ -141,8 +178,28 @@ function assertGetObjects(testParams, cb) {
         VersionId: awsVersionId };
 
     async.series([
-        cb => s3.getObject(sourceGetParams, cb),
-        cb => s3.getObject(destGetParams, cb),
+        cb => {
+            s3.send(new GetObjectCommand(sourceGetParams))
+                .then(async res => {
+                    const bodyBuffer = await loadBodyBuffer(res);
+                    if (bodyBuffer !== undefined) {
+                        res.Body = bodyBuffer;
+                    }
+                    cb(null, res);
+                })
+                .catch(cb);
+        },
+        cb => {
+            s3.send(new GetObjectCommand(destGetParams))
+                .then(async res => {
+                    const bodyBuffer = await loadBodyBuffer(res);
+                    if (bodyBuffer !== undefined) {
+                        res.Body = bodyBuffer;
+                    }
+                    cb(null, res);
+                })
+                .catch(cb);
+        },
         cb => awsS3.getObject(awsParams, cb),
     ], (err, results) => {
         assert.strictEqual(err, null, `Error in assertGetObjects: ${err}`);
@@ -333,16 +390,21 @@ function testSuite() {
                     next();
                 },
                 next => putSourceObj(testParams, next),
-                next => s3.copyObject({
-                    Bucket: testParams.destBucket,
-                    Key: destKey,
-                    CopySource: `/${testParams.sourceBucket}` +
-                        `/${testParams.sourceKey}`,
-                    MetadataDirective: testParams.directive,
-                    Metadata: {
-                        'scal-location-constraint': testParams.destLocation,
-                    },
-                }, next),
+                next => {
+                    s3.send(new CopyObjectCommand({
+                        Bucket: testParams.destBucket,
+                        Key: destKey,
+                        CopySource: `/${testParams.sourceBucket}` +
+                            `/${testParams.sourceKey}`,
+                        MetadataDirective: testParams.directive,
+                        Metadata: {
+                            'scal-location-constraint':
+                                testParams.destLocation,
+                        },
+                    }))
+                        .then(res => next(null, res))
+                        .catch(next);
+                },
                 (copyResult, next) => awsGetLatestVerId(destKey, '',
                     (err, awsVersionId) => {
                         testParams.destKey = destKey;
@@ -350,8 +412,15 @@ function testSuite() {
                         testParams.awsVersionId = awsVersionId;
                         next();
                     }),
-                next => s3.deleteObject({ Bucket: testParams.destBucket,
-                    Key: testParams.destKey, VersionId: 'null' }, next),
+                next => {
+                    s3.send(new DeleteObjectCommand({
+                        Bucket: testParams.destBucket,
+                        Key: testParams.destKey,
+                        VersionId: 'null',
+                    }))
+                        .then(res => next(null, res))
+                        .catch(next);
+                },
                 (delData, next) => getAndAssertResult(s3, { bucket:
                     testParams.destBucket, key: testParams.destKey,
                     expectedError: 'NoSuchKey' }, next),

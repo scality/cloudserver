@@ -51,7 +51,7 @@ describe('Requests to ip endpoint not in config', () => {
             'defaulting to us-east-1',
             async () => {
                 const res = await s3.send(new GetBucketLocationCommand({ Bucket: bucket }));
-                assert.strictEqual(res.LocationConstraint, '');
+                assert.strictEqual(res.LocationConstraint, undefined);
             });
 
         it('should accept put object request ' +

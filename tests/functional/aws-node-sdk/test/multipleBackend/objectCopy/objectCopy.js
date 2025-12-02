@@ -6,6 +6,7 @@ const {
     CopyObjectCommand,
     PutObjectAclCommand,
     CreateBucketCommand,
+    DeleteObjectCommand,
 } = require('@aws-sdk/client-s3');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
@@ -162,319 +163,253 @@ function testSuite() {
 
         it('should copy an object from mem to AWS relying on ' +
         'destination bucket location',
-        done => {
-            putSourceObj(memLocation, false, bucket, key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: bucketAws,
-                    Key: copyKey,
-                    CopySource: `/${bucket}/${key}`,
-                    MetadataDirective: 'COPY',
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
-                    assertGetObjects(key, bucket, memLocation, copyKey,
-                        bucketAws, awsLocation, copyKey, 'COPY', false, awsS3,
-                        awsLocation, done);
-                });
-            });
+        async () => {
+            const key = await putSourceObj(memLocation, false, bucket);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: bucketAws,
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'COPY',
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${correctMD5}"`);
+            await assertGetObjects(key, bucket, memLocation, copyKey,
+                bucketAws, awsLocation, copyKey, 'COPY', false, awsS3,
+                awsLocation);
         });
 
         it('should copy an object from Azure to AWS relying on ' +
         'destination bucket location',
-        done => {
-            putSourceObj(azureLocation, false, bucket, key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: bucketAws,
-                    Key: copyKey,
-                    CopySource: `/${bucket}/${key}`,
-                    MetadataDirective: 'COPY',
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
-                    assertGetObjects(key, bucket, azureLocation, copyKey,
-                        bucketAws, awsLocation, copyKey, 'COPY', false, awsS3,
-                        awsLocation, done);
-                });
-            });
+        async () => {
+            const key = await putSourceObj(azureLocation, false, bucket);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: bucketAws,
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'COPY',
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${correctMD5}"`);
+            await assertGetObjects(key, bucket, azureLocation, copyKey,
+                bucketAws, awsLocation, copyKey, 'COPY', false, awsS3,
+                awsLocation);
         });
 
         it('should copy an object without location contraint from mem ' +
         'to AWS relying on destination bucket location',
-        done => {
-            putSourceObj(null, false, bucket, key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: bucketAws,
-                    Key: copyKey,
-                    CopySource: `/${bucket}/${key}`,
-                    MetadataDirective: 'COPY',
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
-                    assertGetObjects(key, bucket, undefined, copyKey,
-                        bucketAws, undefined, copyKey, 'COPY', false, awsS3,
-                        awsLocation, done);
-                });
-            });
+        async () => {
+            const key = await putSourceObj(null, false, bucket);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: bucketAws,
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'COPY',
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${correctMD5}"`);
+            await assertGetObjects(key, bucket, undefined, copyKey,
+                bucketAws, undefined, copyKey, 'COPY', false, awsS3,
+                awsLocation);
         });
 
         it('should copy an object from AWS to mem relying on destination ' +
         'bucket location',
-        done => {
-            putSourceObj(awsLocation, false, bucketAws, key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: bucket,
-                    Key: copyKey,
-                    CopySource: `/${bucketAws}/${key}`,
-                    MetadataDirective: 'COPY',
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
-                    assertGetObjects(key, bucketAws, awsLocation, copyKey,
-                      bucket, memLocation, key, 'COPY', false, awsS3,
-                        awsLocation, done);
-                });
-            });
+        async () => {
+            const key = await putSourceObj(awsLocation, false, bucketAws);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: bucket,
+                Key: copyKey,
+                CopySource: `/${bucketAws}/${key}`,
+                MetadataDirective: 'COPY',
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${correctMD5}"`);
+            await assertGetObjects(key, bucketAws, awsLocation, copyKey,
+              bucket, memLocation, key, 'COPY', false, awsS3,
+                awsLocation);
         });
 
-        it('should copy an object from mem to AWS', done => {
-            putSourceObj(memLocation, false, bucket, key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: bucket,
-                    Key: copyKey,
-                    CopySource: `/${bucket}/${key}`,
-                    MetadataDirective: 'REPLACE',
-                    Metadata: {
-                        'scal-location-constraint': awsLocation },
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
-                    assertGetObjects(key, bucket, memLocation, copyKey, bucket,
-                        awsLocation, copyKey, 'REPLACE', false, awsS3,
-                        awsLocation, done);
-                });
-            });
+        it('should copy an object from mem to AWS', async () => {
+            const key = await putSourceObj(memLocation, false, bucket);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: bucket,
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'REPLACE',
+                Metadata: {
+                    'scal-location-constraint': awsLocation },
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${correctMD5}"`);
+            await assertGetObjects(key, bucket, memLocation, copyKey, bucket,
+                awsLocation, copyKey, 'REPLACE', false, awsS3,
+                awsLocation);
         });
 
         itSkipCeph('should copy an object from mem to AWS with aws server ' +
-        'side encryption', done => {
-            putSourceObj(memLocation, false, bucket, key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: bucket,
-                    Key: copyKey,
-                    CopySource: `/${bucket}/${key}`,
-                    MetadataDirective: 'REPLACE',
-                    Metadata: {
-                        'scal-location-constraint': awsLocationEncryption },
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
-                    assertGetObjects(key, bucket, memLocation, copyKey, bucket,
-                        awsLocationEncryption, copyKey, 'REPLACE', false,
-                        awsS3, awsLocation, done);
-                });
-            });
+        'side encryption', async () => {
+            const key = await putSourceObj(memLocation, false, bucket);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: bucket,
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'REPLACE',
+                Metadata: {
+                    'scal-location-constraint': awsLocationEncryption },
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${correctMD5}"`);
+            await assertGetObjects(key, bucket, memLocation, copyKey, bucket,
+                awsLocationEncryption, copyKey, 'REPLACE', false,
+                awsS3, awsLocation);
         });
 
         it('should copy an object from AWS to mem with encryption with ' +
-        'REPLACE directive but no location constraint', done => {
-            putSourceObj(awsLocation, false, bucket, key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: bucket,
-                    Key: copyKey,
-                    CopySource: `/${bucket}/${key}`,
-                    MetadataDirective: 'REPLACE',
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
-                    assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
-                        undefined, key, 'REPLACE', false,
-                        awsS3, awsLocation, done);
-                });
-            });
+        'REPLACE directive but no location constraint', async () => {
+            const key = await putSourceObj(awsLocation, false, bucket);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: bucket,
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'REPLACE',
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${correctMD5}"`);
+            await assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
+                undefined, key, 'REPLACE', false,
+                awsS3, awsLocation);
         });
 
         itSkipCeph('should copy an object on AWS with aws server side ' +
         'encryption',
-        done => {
-            putSourceObj(awsLocation, false, bucket, key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: bucket,
-                    Key: copyKey,
-                    CopySource: `/${bucket}/${key}`,
-                    MetadataDirective: 'REPLACE',
-                    Metadata: {
-                        'scal-location-constraint': awsLocationEncryption },
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
-                    assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
-                        awsLocationEncryption, copyKey, 'REPLACE', false, awsS3,
-                        awsLocation, done);
-                });
-            });
+        async () => {
+            const key = await putSourceObj(awsLocation, false, bucket);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: bucket,
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'REPLACE',
+                Metadata: {
+                    'scal-location-constraint': awsLocationEncryption },
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${correctMD5}"`);
+            await assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
+                awsLocationEncryption, copyKey, 'REPLACE', false, awsS3,
+                awsLocation);
         });
 
         itSkipCeph('should copy an object on AWS with aws server side ' +
-        'encrypted bucket', done => {
-            putSourceObj(awsLocation, false, awsServerSideEncryptionbucket,
-            key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: awsServerSideEncryptionbucket,
-                    Key: copyKey,
-                    CopySource: `/${awsServerSideEncryptionbucket}/${key}`,
-                    MetadataDirective: 'COPY',
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
-                    assertGetObjects(key, awsServerSideEncryptionbucket,
-                        awsLocation, copyKey, awsServerSideEncryptionbucket,
-                        awsLocationEncryption, copyKey, 'COPY',
-                        false, awsS3, awsLocation, done);
-                });
-            });
+        'encrypted bucket', async () => {
+            const key = await putSourceObj(awsLocation, false, awsServerSideEncryptionbucket);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: awsServerSideEncryptionbucket,
+                Key: copyKey,
+                CopySource: `/${awsServerSideEncryptionbucket}/${key}`,
+                MetadataDirective: 'COPY',
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${correctMD5}"`);
+            await assertGetObjects(key, awsServerSideEncryptionbucket,
+                awsLocation, copyKey, awsServerSideEncryptionbucket,
+                awsLocationEncryption, copyKey, 'COPY',
+                false, awsS3, awsLocation);
         });
 
         it('should copy an object from mem to AWS with encryption with ' +
-        'REPLACE directive but no location constraint', done => {
-            putSourceObj(null, false, bucket, key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: bucketAws,
-                    Key: copyKey,
-                    CopySource: `/${bucket}/${key}`,
-                    MetadataDirective: 'REPLACE',
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
-                    assertGetObjects(key, bucket, undefined, copyKey,
-                        bucketAws, undefined, copyKey, 'REPLACE', false,
-                        awsS3, awsLocation, done);
-                });
-            });
+        'REPLACE directive but no location constraint', async () => {
+            const key = await putSourceObj(null, false, bucket);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: bucketAws,
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'REPLACE',
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${correctMD5}"`);
+            await assertGetObjects(key, bucket, undefined, copyKey,
+                bucketAws, undefined, copyKey, 'REPLACE', false,
+                awsS3, awsLocation);
         });
 
         it('should copy an object from AWS to mem with "COPY" ' +
         'directive and aws location metadata',
-        done => {
-            putSourceObj(awsLocation, false, bucket, key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: bucket,
-                    Key: copyKey,
-                    CopySource: `/${bucket}/${key}`,
-                    MetadataDirective: 'COPY',
-                    Metadata: {
-                        'scal-location-constraint': awsLocation },
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
-                    assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
-                        memLocation, key, 'COPY', false, awsS3,
-                        awsLocation, done);
-                });
-            });
+        async () => {
+            const key = await putSourceObj(awsLocation, false, bucket);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: bucket,
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'COPY',
+                Metadata: {
+                    'scal-location-constraint': awsLocation },
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${correctMD5}"`);
+            await assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
+                memLocation, key, 'COPY', false, awsS3,
+                awsLocation);
         });
 
-        it('should copy an object on AWS', done => {
-            putSourceObj(awsLocation, false, bucket, key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: bucket,
-                    Key: copyKey,
-                    CopySource: `/${bucket}/${key}`,
-                    MetadataDirective: 'REPLACE',
-                    Metadata: { 'scal-location-constraint': awsLocation },
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
-                    assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
-                        awsLocation, copyKey, 'REPLACE', false, awsS3,
-                        awsLocation, done);
-                });
-            });
+        it('should copy an object on AWS', async () => {
+            const key = await putSourceObj(awsLocation, false, bucket);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: bucket,
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'REPLACE',
+                Metadata: { 'scal-location-constraint': awsLocation },
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${correctMD5}"`);
+            await assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
+                awsLocation, copyKey, 'REPLACE', false, awsS3,
+                awsLocation);
         });
 
         it('should copy an object on AWS location with bucketMatch equals ' +
         'false to a different AWS location with bucketMatch equals true',
-        done => {
-            putSourceObj(awsLocationMismatch, false, bucket, key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: bucket,
-                    Key: copyKey,
-                    CopySource: `/${bucket}/${key}`,
-                    MetadataDirective: 'REPLACE',
-                    Metadata: {
-                        'scal-location-constraint': awsLocation },
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
-                    assertGetObjects(key, bucket, awsLocationMismatch, copyKey,
-                        bucket, awsLocation, copyKey, 'REPLACE', false, awsS3,
-                        awsLocation, done);
-                });
-            });
+        async () => {
+            const key = await putSourceObj(awsLocationMismatch, false, bucket);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: bucket,
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'REPLACE',
+                Metadata: {
+                    'scal-location-constraint': awsLocation },
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${correctMD5}"`);
+            await assertGetObjects(key, bucket, awsLocationMismatch, copyKey,
+                bucket, awsLocation, copyKey, 'REPLACE', false, awsS3,
+                awsLocation);
         });
 
         it('should copy an object on AWS to a different AWS location ' +
@@ -513,117 +448,105 @@ function testSuite() {
 
         itSkipCeph('should return error AccessDenied copying an object on ' +
         'AWS to a different AWS account without source object READ access',
-        done => {
-            putSourceObj(awsLocation, false, bucket, key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: bucket,
-                    Key: copyKey,
-                    CopySource: `/${bucket}/${key}`,
-                    MetadataDirective: 'REPLACE',
-                    Metadata: {
-                        'scal-location-constraint': awsLocation2 },
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, err => {
-                    assert.strictEqual(err.code, 'AccessDenied');
-                    done();
-                });
-            });
+        async () => {
+            const key = await putSourceObj(awsLocation, false, bucket);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: bucket,
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'REPLACE',
+                Metadata: {
+                    'scal-location-constraint': awsLocation2 },
+            };
+            process.stdout.write('Copying object\n');
+            try {
+                await s3.send(new CopyObjectCommand(copyParams));
+                assert.fail('Expected AccessDenied error');
+            } catch (err) {
+                assert.strictEqual(err.name, 'AccessDenied');
+            }
         });
 
-        it('should copy an object on AWS with REPLACE', done => {
-            putSourceObj(awsLocation, false, bucket, key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: bucket,
-                    Key: copyKey,
-                    CopySource: `/${bucket}/${key}`,
-                    MetadataDirective: 'REPLACE',
-                    Metadata: {
-                        'scal-location-constraint': awsLocation },
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
-                    assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
-                        awsLocation, copyKey, 'REPLACE', false, awsS3,
-                        awsLocation, done);
-                });
-            });
+        it('should copy an object on AWS with REPLACE', async () => {
+            const key = await putSourceObj(awsLocation, false, bucket);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: bucket,
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'REPLACE',
+                Metadata: {
+                    'scal-location-constraint': awsLocation },
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${correctMD5}"`);
+            await assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
+                awsLocation, copyKey, 'REPLACE', false, awsS3,
+                awsLocation);
         });
 
-        it('should copy a 0-byte object from mem to AWS', done => {
-            putSourceObj(memLocation, true, bucket, key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: bucket,
-                    Key: copyKey,
-                    CopySource: `/${bucket}/${key}`,
-                    MetadataDirective: 'REPLACE',
-                    Metadata: {
-                        'scal-location-constraint': awsLocation },
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${emptyMD5}"`);
-                    assertGetObjects(key, bucket, memLocation, copyKey, bucket,
-                        awsLocation, copyKey, 'REPLACE', true, awsS3,
-                        awsLocation, done);
-                });
-            });
+        it('should copy a 0-byte object from mem to AWS', async () => {
+            const key = await putSourceObj(memLocation, true, bucket);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: bucket,
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'REPLACE',
+                Metadata: {
+                    'scal-location-constraint': awsLocation },
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${emptyMD5}"`);
+            await assertGetObjects(key, bucket, memLocation, copyKey, bucket,
+                awsLocation, copyKey, 'REPLACE', true, awsS3,
+                awsLocation);
         });
 
-        it('should copy a 0-byte object on AWS', done => {
-            putSourceObj(awsLocation, true, bucket, key => {
-                const copyKey = `copyKey-${genUniqID()}`;
-                const copyParams = {
-                    Bucket: bucket,
-                    Key: copyKey,
-                    CopySource: `/${bucket}/${key}`,
-                    MetadataDirective: 'REPLACE',
-                    Metadata: { 'scal-location-constraint': awsLocation },
-                };
-                process.stdout.write('Copying object\n');
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${emptyMD5}"`);
-                    assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
-                        awsLocation, copyKey, 'REPLACE', true, awsS3,
-                        awsLocation, done);
-                });
-            });
+        it('should copy a 0-byte object on AWS', async () => {
+            const key = await putSourceObj(awsLocation, true, bucket);
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = {
+                Bucket: bucket,
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'REPLACE',
+                Metadata: { 'scal-location-constraint': awsLocation },
+            };
+            process.stdout.write('Copying object\n');
+            const result = await s3.send(new CopyObjectCommand(copyParams));
+            assert.strictEqual(result.CopyObjectResult.ETag, `"${emptyMD5}"`);
+            await assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
+                awsLocation, copyKey, 'REPLACE', true, awsS3,
+                awsLocation);
         });
 
         it('should return error if AWS source object has ' +
-        'been deleted', done => {
-            putSourceObj(awsLocation, false, bucket, key => {
-                const awsBucket =
-                    config.locationConstraints[awsLocation].details.bucketName;
-                awsS3.deleteObject({ Bucket: awsBucket, Key: key }, err => {
-                    assert.equal(err, null, 'Error deleting object from AWS: ' +
-                        `${err}`);
-                    const copyKey = `copyKey-${genUniqID()}`;
-                    const copyParams = { Bucket: bucket, Key: copyKey,
-                        CopySource: `/${bucket}/${key}`,
-                        MetadataDirective: 'REPLACE',
-                        Metadata: { 'scal-location-constraint': awsLocation },
-                    };
-                    process.stdout.write('Copying object\n');
-                    s3.copyObject(copyParams, err => {
-                        assert.strictEqual(err.code, 'ServiceUnavailable');
-                        done();
-                    });
-                });
-            });
+        'been deleted', async () => {
+            const key = await putSourceObj(awsLocation, false, bucket);
+            const awsBucket =
+                config.locationConstraints[awsLocation].details.bucketName;
+            
+            await awsS3.send(new DeleteObjectCommand({ Bucket: awsBucket, Key: key }));
+            
+            const copyKey = `copyKey-${genUniqID()}`;
+            const copyParams = { 
+                Bucket: bucket, 
+                Key: copyKey,
+                CopySource: `/${bucket}/${key}`,
+                MetadataDirective: 'REPLACE',
+                Metadata: { 'scal-location-constraint': awsLocation },
+            };
+            process.stdout.write('Copying object\n');
+            try {
+                await s3.send(new CopyObjectCommand(copyParams));
+                assert.fail('Expected ServiceUnavailable error');
+            } catch (err) {
+                assert.strictEqual(err.name, 'ServiceUnavailable');
+            }
         });
     });
 });

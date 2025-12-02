@@ -1,6 +1,17 @@
 const async = require('async');
 const assert = require('assert');
 
+const {
+    CreateBucketCommand,
+    PutObjectCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCopyCommand,
+    UploadPartCommand,
+    ListPartsCommand,
+    AbortMultipartUploadCommand,
+    CompleteMultipartUploadCommand,
+} = require('@aws-sdk/client-s3');
+
 const { config } = require('../../../../../../lib/Config');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
@@ -59,21 +70,24 @@ function assertCopyPart(infos, cb) {
     resultCopy.Key = keyName;
     resultCopy.UploadId = uploadId;
     async.waterfall([
-        next => s3.listParts({
-            Bucket: bucketName,
-            Key: keyName,
-            UploadId: uploadId,
-        }, (err, res) => {
-            assert.ifError(err, 'listParts: Expected success,' +
-            ` got error: ${err}`);
-            resultCopy.Parts =
-             [{ PartNumber: 1,
-                 LastModified: res.Parts[0].LastModified,
-                 ETag: `"${md5}"`,
-                 Size: totalSize }];
-            assert.deepStrictEqual(res, resultCopy);
-            next();
-        }),
+        next => {
+            s3.send(new ListPartsCommand({
+                Bucket: bucketName,
+                Key: keyName,
+                UploadId: uploadId,
+            }))
+                .then(res => {
+                    resultCopy.Parts =
+                     [{ PartNumber: 1,
+                         LastModified: res.Parts[0].LastModified,
+                         ETag: `"${md5}"`,
+                         Size: totalSize }];
+                    assert.deepStrictEqual(res, resultCopy);
+                    next();
+                })
+                .catch(err => next(new Error(
+                    `listParts: Expected success, got error: ${err}`)));
+        },
         next => gcpClient.listParts({
             Bucket: gcpBucketMPU,
             Key: keyName,
@@ -93,11 +107,14 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to GCP', function describeFn() {
         beforeEach(done => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            s3.createBucket({ Bucket: bucket,
+            s3.send(new CreateBucketCommand({
+                Bucket: bucket,
                 CreateBucketConfiguration: {
                     LocationConstraint: gcpLocation,
                 },
-            }, done);
+            }))
+                .then(() => done())
+                .catch(done);
         });
 
         afterEach(() => {
@@ -152,56 +169,84 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to GCP', function describeFn() {
                     Metadata: { 'scal-location-constraint': awsLocation },
                 };
                 async.waterfall([
-                    next => s3.createBucket({ Bucket: bucket },
-                      err => next(err)),
-                    next => s3.createBucket({ Bucket: memBucketName },
-                      err => next(err)),
-                    next => s3.putObject({
-                        Bucket: bucket,
-                        Key: this.currentTest.keyNameNormalGcp,
-                        Body: normalBody,
-                        Metadata: { 'scal-location-constraint': gcpLocation },
-                    }, err => next(err)),
-                    next => s3.putObject({
-                        Bucket: bucket,
-                        Key: this.currentTest.keyNameNormalGcpMismatch,
-                        Body: normalBody,
-                        Metadata: { 'scal-location-constraint':
-                        gcpLocationMismatch },
-                    }, err => next(err)),
-                    next => s3.putObject({
-                        Bucket: bucket,
-                        Key: this.currentTest.keyNameFiveMbGcp,
-                        Body: fiveMbBody,
-                        Metadata: { 'scal-location-constraint': gcpLocation },
-                    }, err => next(err)),
-                    next => s3.putObject({
-                        Bucket: bucket,
-                        Key: this.currentTest.keyNameFiveMbMem,
-                        Body: fiveMbBody,
-                        Metadata: { 'scal-location-constraint': memLocation },
-                    }, err => next(err)),
-                    next => s3.createMultipartUpload(paramsGcp,
-                    (err, res) => {
-                        assert.ifError(err, 'createMultipartUpload ' +
-                        `on gcp: Expected success, got error: ${err}`);
-                        this.currentTest.uploadId = res.UploadId;
-                        next();
-                    }),
-                    next => s3.createMultipartUpload(paramsMem,
-                    (err, res) => {
-                        assert.ifError(err, 'createMultipartUpload ' +
-                        `in memory: Expected success, got error: ${err}`);
-                        this.currentTest.uploadIdMem = res.UploadId;
-                        next();
-                    }),
-                    next => s3.createMultipartUpload(paramsAWS,
-                    (err, res) => {
-                        assert.ifError(err, 'createMultipartUpload ' +
-                        `on AWS: Expected success, got error: ${err}`);
-                        this.currentTest.uploadIdAWS = res.UploadId;
-                        next();
-                    }),
+                    next => {
+                        s3.send(new CreateBucketCommand({ Bucket: bucket }))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new CreateBucketCommand({ Bucket: memBucketName }))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: this.currentTest.keyNameNormalGcp,
+                            Body: normalBody,
+                            Metadata: { 'scal-location-constraint': gcpLocation },
+                        }))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: this.currentTest.keyNameNormalGcpMismatch,
+                            Body: normalBody,
+                            Metadata: { 'scal-location-constraint':
+                            gcpLocationMismatch },
+                        }))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: this.currentTest.keyNameFiveMbGcp,
+                            Body: fiveMbBody,
+                            Metadata: { 'scal-location-constraint': gcpLocation },
+                        }))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: this.currentTest.keyNameFiveMbMem,
+                            Body: fiveMbBody,
+                            Metadata: { 'scal-location-constraint': memLocation },
+                        }))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new CreateMultipartUploadCommand(paramsGcp))
+                            .then(res => {
+                                this.currentTest.uploadId = res.UploadId;
+                                next();
+                            })
+                            .catch(err => next(new Error(
+                                `createMultipartUpload on gcp: Expected success, got error: ${err}`)));
+                    },
+                    next => {
+                        s3.send(new CreateMultipartUploadCommand(paramsMem))
+                            .then(res => {
+                                this.currentTest.uploadIdMem = res.UploadId;
+                                next();
+                            })
+                            .catch(err => next(new Error(
+                                `createMultipartUpload in memory: Expected success, got error: ${err}`)));
+                    },
+                    next => {
+                        s3.send(new CreateMultipartUploadCommand(paramsAWS))
+                            .then(res => {
+                                this.currentTest.uploadIdAWS = res.UploadId;
+                                next();
+                            })
+                            .catch(err => next(new Error(
+                                `createMultipartUpload on AWS: Expected success, got error: ${err}`)));
+                    },
                 ], done);
             });
 
@@ -222,12 +267,21 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to GCP', function describeFn() {
                     UploadId: this.currentTest.uploadIdAWS,
                 };
                 async.waterfall([
-                    next => s3.abortMultipartUpload(paramsGcp,
-                      err => next(err)),
-                    next => s3.abortMultipartUpload(paramsMem,
-                      err => next(err)),
-                    next => s3.abortMultipartUpload(paramsAWS,
-                      err => next(err)),
+                                        next => {
+                                                s3.send(new AbortMultipartUploadCommand(paramsGcp))
+                                                        .then(() => next())
+                                                        .catch(next);
+                                        },
+                                        next => {
+                                                s3.send(new AbortMultipartUploadCommand(paramsMem))
+                                                        .then(() => next())
+                                                        .catch(next);
+                                        },
+                                        next => {
+                                                s3.send(new AbortMultipartUploadCommand(paramsAWS))
+                                                        .then(() => next())
+                                                        .catch(next);
+                                        },
                 ], done);
             });
 
@@ -242,12 +296,15 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to GCP', function describeFn() {
                     UploadId: this.test.uploadId,
                 };
                 async.waterfall([
-                    next => s3.uploadPartCopy(params, (err, res) => {
-                        assert.ifError(err, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${normalMD5}"`);
-                        next(err);
-                    }),
+                    next => {
+                        s3.send(new UploadPartCopyCommand(params))
+                            .then(res => {
+                                assert.strictEqual(res.ETag, `"${normalMD5}"`);
+                                next();
+                            })
+                            .catch(err => next(new Error(
+                                `uploadPartCopy: Expected success, got error: ${err}`)));
+                    },
                     next => {
                         const infos = {
                             bucketName: bucket,
@@ -273,12 +330,15 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to GCP', function describeFn() {
                     UploadId: this.test.uploadId,
                 };
                 async.waterfall([
-                    next => s3.uploadPartCopy(params, (err, res) => {
-                        assert.ifError(err, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${normalMD5}"`);
-                        next(err);
-                    }),
+                    next => {
+                        s3.send(new UploadPartCopyCommand(params))
+                            .then(res => {
+                                assert.strictEqual(res.ETag, `"${normalMD5}"`);
+                                next();
+                            })
+                            .catch(err => next(new Error(
+                                `uploadPartCopy: Expected success, got error: ${err}`)));
+                    },
                     next => {
                         const infos = {
                             bucketName: bucket,
@@ -303,12 +363,15 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to GCP', function describeFn() {
                     UploadId: this.test.uploadId,
                 };
                 async.waterfall([
-                    next => s3.uploadPartCopy(params, (err, res) => {
-                        assert.ifError(err, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
-                        next(err);
-                    }),
+                    next => {
+                        s3.send(new UploadPartCopyCommand(params))
+                            .then(res => {
+                                assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
+                                next();
+                            })
+                            .catch(err => next(new Error(
+                                `uploadPartCopy: Expected success, got error: ${err}`)));
+                    },
                     next => {
                         const infos = {
                             bucketName: bucket,
@@ -333,34 +396,37 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to GCP', function describeFn() {
                     UploadId: this.test.uploadIdMem,
                 };
                 async.waterfall([
-                    next => s3.uploadPartCopy(params, (err, res) => {
-                        assert.ifError(err, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${normalMD5}"`);
-                        next(err);
-                    }),
                     next => {
-                        s3.listParts({
+                        s3.send(new UploadPartCopyCommand(params))
+                            .then(res => {
+                                assert.strictEqual(res.ETag, `"${normalMD5}"`);
+                                next();
+                            })
+                            .catch(err => next(new Error(
+                                `uploadPartCopy: Expected success, got error: ${err}`)));
+                    },
+                    next => {
+                        s3.send(new ListPartsCommand({
                             Bucket: memBucketName,
                             Key: this.test.mpuKeyNameMem,
                             UploadId: this.test.uploadIdMem,
-                        }, (err, res) => {
-                            assert.ifError(err,
-                            'listParts: Expected success,' +
-                            ` got error: ${err}`);
-                            const resultCopy =
-                            JSON.parse(JSON.stringify(result));
-                            resultCopy.Bucket = memBucketName;
-                            resultCopy.Key = this.test.mpuKeyNameMem;
-                            resultCopy.UploadId = this.test.uploadIdMem;
-                            resultCopy.Parts =
-                             [{ PartNumber: 1,
-                                 LastModified: res.Parts[0].LastModified,
-                                 ETag: `"${normalMD5}"`,
-                                 Size: normalBodySize }];
-                            assert.deepStrictEqual(res, resultCopy);
-                            next();
-                        });
+                        }))
+                            .then(res => {
+                                const resultCopy =
+                                JSON.parse(JSON.stringify(result));
+                                resultCopy.Bucket = memBucketName;
+                                resultCopy.Key = this.test.mpuKeyNameMem;
+                                resultCopy.UploadId = this.test.uploadIdMem;
+                                resultCopy.Parts =
+                                 [{ PartNumber: 1,
+                                     LastModified: res.Parts[0].LastModified,
+                                     ETag: `"${normalMD5}"`,
+                                     Size: normalBodySize }];
+                                assert.deepStrictEqual(res, resultCopy);
+                                next();
+                            })
+                            .catch(err => next(new Error(
+                                `listParts: Expected success, got error: ${err}`)));
                     },
                 ], done);
             });
@@ -376,12 +442,15 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to GCP', function describeFn() {
                     UploadId: this.test.uploadIdAWS,
                 };
                 async.waterfall([
-                    next => s3.uploadPartCopy(params, (err, res) => {
-                        assert.ifError(err, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${normalMD5}"`);
-                        next(err);
-                    }),
+                    next => {
+                        s3.send(new UploadPartCopyCommand(params))
+                            .then(res => {
+                                assert.strictEqual(res.ETag, `"${normalMD5}"`);
+                                next();
+                            })
+                            .catch(err => next(new Error(
+                                `uploadPartCopy: Expected success, got error: ${err}`)));
+                    },
                     next => {
                         const awsBucket =
                           config.locationConstraints[awsLocation]
@@ -423,12 +492,15 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to GCP', function describeFn() {
                     UploadId: this.test.uploadIdAWS,
                 };
                 async.waterfall([
-                    next => s3.uploadPartCopy(params, (err, res) => {
-                        assert.ifError(err, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${sixBytesMD5}"`);
-                        next(err);
-                    }),
+                    next => {
+                        s3.send(new UploadPartCopyCommand(params))
+                            .then(res => {
+                                assert.strictEqual(res.ETag, `"${sixBytesMD5}"`);
+                                next();
+                            })
+                            .catch(err => next(new Error(
+                                `uploadPartCopy: Expected success, got error: ${err}`)));
+                    },
                     next => {
                         const awsBucket =
                           config.locationConstraints[awsLocation]
@@ -469,12 +541,15 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to GCP', function describeFn() {
                     UploadId: this.test.uploadId,
                 };
                 async.waterfall([
-                    next => s3.uploadPartCopy(params, (err, res) => {
-                        assert.ifError(err, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
-                        next(err);
-                    }),
+                    next => {
+                        s3.send(new UploadPartCopyCommand(params))
+                            .then(res => {
+                                assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
+                                next();
+                            })
+                            .catch(err => next(new Error(
+                                `uploadPartCopy: Expected success, got error: ${err}`)));
+                    },
                     next => {
                         const infos = {
                             bucketName: bucket,
@@ -497,7 +572,9 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to GCP', function describeFn() {
                         PartNumber: 1,
                         UploadId: this.currentTest.uploadId,
                     };
-                    s3.uploadPart(params, done);
+                    s3.send(new UploadPartCommand(params))
+                        .then(() => done())
+                        .catch(done);
                 });
                 it('should copy part from GCP to GCP with existing ' +
                 'parts', function ifF(done) {
@@ -511,36 +588,41 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to GCP', function describeFn() {
                         UploadId: this.test.uploadId,
                     };
                     async.waterfall([
-                        next => s3.uploadPartCopy(params, (err, res) => {
-                            assert.ifError(err,
-                              'uploadPartCopy: Expected success, got ' +
-                              `error: ${err}`);
-                            assert.strictEqual(res.ETag, `"${normalMD5}"`);
-                            next(err);
-                        }),
-                        next => s3.listParts({
-                            Bucket: bucket,
-                            Key: this.test.mpuKeyNameGcp,
-                            UploadId: this.test.uploadId,
-                        }, (err, res) => {
-                            assert.ifError(err, 'listParts: Expected ' +
-                            `success, got error: ${err}`);
-                            resultCopy.Bucket = bucket;
-                            resultCopy.Key = this.test.mpuKeyNameGcp;
-                            resultCopy.UploadId = this.test.uploadId;
-                            resultCopy.Parts =
-                             [{ PartNumber: 1,
-                                 LastModified: res.Parts[0].LastModified,
-                                 ETag: `"${oneKbMD5}"`,
-                                 Size: oneKb },
-                               { PartNumber: 2,
-                                   LastModified: res.Parts[1].LastModified,
-                                   ETag: `"${normalMD5}"`,
-                                   Size: 11 },
-                             ];
-                            assert.deepStrictEqual(res, resultCopy);
-                            next();
-                        }),
+                        next => {
+                            s3.send(new UploadPartCopyCommand(params))
+                                .then(res => {
+                                    assert.strictEqual(res.ETag, `"${normalMD5}"`);
+                                    next();
+                                })
+                                .catch(err => next(new Error(
+                                    `uploadPartCopy: Expected success, got error: ${err}`)));
+                        },
+                        next => {
+                            s3.send(new ListPartsCommand({
+                                Bucket: bucket,
+                                Key: this.test.mpuKeyNameGcp,
+                                UploadId: this.test.uploadId,
+                            }))
+                                .then(res => {
+                                    resultCopy.Bucket = bucket;
+                                    resultCopy.Key = this.test.mpuKeyNameGcp;
+                                    resultCopy.UploadId = this.test.uploadId;
+                                    resultCopy.Parts =
+                                     [{ PartNumber: 1,
+                                         LastModified: res.Parts[0].LastModified,
+                                         ETag: `"${oneKbMD5}"`,
+                                         Size: oneKb },
+                                       { PartNumber: 2,
+                                           LastModified: res.Parts[1].LastModified,
+                                           ETag: `"${normalMD5}"`,
+                                           Size: 11 },
+                                     ];
+                                    assert.deepStrictEqual(res, resultCopy);
+                                    next();
+                                })
+                                .catch(err => next(new Error(
+                                    `listParts: Expected success, got error: ${err}`)));
+                        },
                         next => gcpClient.listParts({
                             Bucket: gcpBucketMPU,
                             Key: this.test.mpuKeyNameGcp,
@@ -604,23 +686,35 @@ function describeF() {
                     Metadata: { 'scal-location-constraint': gcpLocation },
                 };
                 async.waterfall([
-                    next => s3.createBucket({ Bucket: awsBucketName },
-                      err => next(err)),
-                    next => s3.createBucket({ Bucket: bucket },
-                      err => next(err)),
-                    next => s3.putObject({
-                        Bucket: awsBucketName,
-                        Key: this.currentTest.keyNameAws,
-                        Body: fiveMbBody,
-                        Metadata: { 'scal-location-constraint': awsLocation },
-                    }, err => next(err)),
-                    next => s3.createMultipartUpload(createMpuParams,
-                    (err, res) => {
-                        assert.equal(err, null, 'createMultipartUpload: ' +
-                        `Expected success, got error: ${err}`);
-                        this.currentTest.uploadId = res.UploadId;
-                        next();
-                    }),
+                    next => {
+                        s3.send(new CreateBucketCommand({ Bucket: awsBucketName }))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new CreateBucketCommand({ Bucket: bucket }))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new PutObjectCommand({
+                            Bucket: awsBucketName,
+                            Key: this.currentTest.keyNameAws,
+                            Body: fiveMbBody,
+                            Metadata: { 'scal-location-constraint': awsLocation },
+                        }))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new CreateMultipartUploadCommand(createMpuParams))
+                            .then(res => {
+                                this.currentTest.uploadId = res.UploadId;
+                                next();
+                            })
+                            .catch(err => next(new Error(
+                                `createMultipartUpload: Expected success, got error: ${err}`)));
+                    },
                 ], done);
             });
 
@@ -645,18 +739,24 @@ function describeF() {
                     UploadId: this.test.uploadId,
                 };
                 async.waterfall([
-                    next => s3.uploadPartCopy(uploadParams, (err, res) => {
-                        assert.equal(err, null, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
-                        next(err);
-                    }),
-                    next => s3.uploadPartCopy(uploadParams2, (err, res) => {
-                        assert.equal(err, null, 'uploadPartCopy: Expected ' +
-                        `success, got error: ${err}`);
-                        assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
-                        next(err);
-                    }),
+                    next => {
+                        s3.send(new UploadPartCopyCommand(uploadParams))
+                            .then(res => {
+                                assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
+                                next();
+                            })
+                            .catch(err => next(new Error(
+                                `uploadPartCopy: Expected success, got error: ${err}`)));
+                    },
+                    next => {
+                        s3.send(new UploadPartCopyCommand(uploadParams2))
+                            .then(res => {
+                                assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
+                                next();
+                            })
+                            .catch(err => next(new Error(
+                                `uploadPartCopy: Expected success, got error: ${err}`)));
+                    },
                     next => {
                         const completeMpuParams = {
                             Bucket: bucket,
@@ -675,15 +775,15 @@ function describeF() {
                             },
                             UploadId: this.test.uploadId,
                         };
-                        s3.completeMultipartUpload(completeMpuParams,
-                        (err, res) => {
-                            assert.equal(err, null, 'completeMultipartUpload:' +
-                            ` Expected success, got error: ${err}`);
-                            assert.strictEqual(res.Bucket, bucket);
-                            assert.strictEqual(res.Key,
-                              this.test.mpuKeyNameGcp);
-                            next();
-                        });
+                        s3.send(new CompleteMultipartUploadCommand(completeMpuParams))
+                            .then(res => {
+                                assert.strictEqual(res.Bucket, bucket);
+                                assert.strictEqual(res.Key,
+                                  this.test.mpuKeyNameGcp);
+                                next();
+                            })
+                            .catch(err => next(new Error(
+                                `completeMultipartUpload: Expected success, got error: ${err}`)));
                     },
                 ], done);
             });

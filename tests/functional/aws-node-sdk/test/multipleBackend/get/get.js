@@ -94,36 +94,40 @@ describe('Multiple backend get object', function testSuite() {
 
         describeSkipIfNotMultiple('Complete MPU then get object on AWS ' +
         'location with bucketMatch: true ', () => {
-            beforeEach(function beforeEachFn(done) {
+            beforeEach(function beforeEachFn() {
                 this.currentTest.key = `somekey-${genUniqID()}`;
                 bucketUtil = new BucketUtility('default', sigCfg);
                 s3 = bucketUtil.s3;
 
-                async.waterfall([
-                    next => {
-                        const command = new CreateMultipartUploadCommand({
-                            Bucket: bucket, 
-                            Key: this.currentTest.key,
-                            Metadata: { 'scal-location-constraint': awsLocation }
-                        });
-                        s3.send(command)
-                            .then(res => next(null, res.UploadId))
-                            .catch(err => next(err));
-                    },
-                    (uploadId, next) => {
-                        const command = new UploadPartCommand({
-                            Bucket: bucket,
-                            Key: this.currentTest.key,
-                            PartNumber: 1,
-                            UploadId: uploadId,
-                            Body: 'helloworld'
-                        });
-                        s3.send(command)
-                            .then(res => next(null, uploadId, res.ETag))
-                            .catch(err => next(err));
-                    },
-                    (uploadId, eTag, next) => {
-                        const command = new CompleteMultipartUploadCommand({
+                return s3.send(new CreateMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: this.currentTest.key,
+                    Metadata: { 'scal-location-constraint': awsLocation },
+                }))
+                .then(res => {
+                    const uploadId = res.UploadId;
+                    const partBody = Buffer.from('helloworld', 'utf8');
+                    const uploadPartInput = {
+                        Bucket: bucket,
+                        Key: this.currentTest.key,
+                        PartNumber: 1,
+                        UploadId: uploadId,
+                        Body: partBody,
+                        ContentLength: partBody.length,
+                    };
+                    const uploadPartCommand = new UploadPartCommand(uploadPartInput);
+                    uploadPartCommand.middlewareStack.add(next => async args => {
+                        const headers = args.request?.headers;
+                        if (headers) {
+                            headers['Content-Length'] = `${partBody.length}`;
+                            headers['x-amz-decoded-content-length'] = `${partBody.length}`;
+                        }
+                        return next(args);
+                    }, { step: 'build' });
+                    return s3.send(uploadPartCommand)
+                    .then(partRes => {
+                        const eTag = partRes.ETag;
+                        return s3.send(new CompleteMultipartUploadCommand({
                             Bucket: bucket,
                             Key: this.currentTest.key,
                             MultipartUpload: {
@@ -135,12 +139,13 @@ describe('Multiple backend get object', function testSuite() {
                                 ],
                             },
                             UploadId: uploadId,
-                        });
-                        s3.send(command)
-                            .then(() => next())
-                            .catch(err => next(err));
-                    },
-                ], done);
+                        }));
+                    });
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in beforeEach: ${err}\n`);
+                    throw err;
+                });
             });
             it('should get object from MPU on AWS ' +
             'location with bucketMatch: true ', function it(done) {
@@ -166,36 +171,40 @@ describe('Multiple backend get object', function testSuite() {
 
         describeSkipIfNotMultiple('Complete MPU then get object on AWS ' +
         'location with bucketMatch: false ', () => {
-            beforeEach(function beforeEachFn(done) {
+            beforeEach(function beforeEachFn() {
                 this.currentTest.key = `somekey-${genUniqID()}`;
                 bucketUtil = new BucketUtility('default', sigCfg);
                 s3 = bucketUtil.s3;
 
-                async.waterfall([
-                    next => {
-                        const command = new CreateMultipartUploadCommand({
-                            Bucket: bucket, 
-                            Key: this.currentTest.key,
-                            Metadata: { 'scal-location-constraint': awsLocationMismatch }
-                        });
-                        s3.send(command)
-                            .then(res => next(null, res.UploadId))
-                            .catch(err => next(err));
-                    },
-                    (uploadId, next) => {
-                        const command = new UploadPartCommand({
-                            Bucket: bucket,
-                            Key: this.currentTest.key,
-                            PartNumber: 1,
-                            UploadId: uploadId,
-                            Body: 'helloworld'
-                        });
-                        s3.send(command)
-                            .then(res => next(null, uploadId, res.ETag))
-                            .catch(err => next(err));
-                    },
-                    (uploadId, eTag, next) => {
-                        const command = new CompleteMultipartUploadCommand({
+                return s3.send(new CreateMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: this.currentTest.key,
+                    Metadata: { 'scal-location-constraint': awsLocationMismatch },
+                }))
+                .then(res => {
+                    const uploadId = res.UploadId;
+                    const partBody = Buffer.from('helloworld', 'utf8');
+                    const uploadPartInput = {
+                        Bucket: bucket,
+                        Key: this.currentTest.key,
+                        PartNumber: 1,
+                        UploadId: uploadId,
+                        Body: partBody,
+                        ContentLength: partBody.length,
+                    };
+                    const uploadPartCommand = new UploadPartCommand(uploadPartInput);
+                    uploadPartCommand.middlewareStack.add(next => async args => {
+                        const headers = args.request?.headers;
+                        if (headers) {
+                            headers['content-length'] = `${partBody.length}`;
+                            headers['x-amz-decoded-content-length'] = `${partBody.length}`;
+                        }
+                        return next(args);
+                    }, { step: 'build' });
+                    return s3.send(uploadPartCommand)
+                    .then(partRes => {
+                        const eTag = partRes.ETag;
+                        return s3.send(new CompleteMultipartUploadCommand({
                             Bucket: bucket,
                             Key: this.currentTest.key,
                             MultipartUpload: {
@@ -207,12 +216,13 @@ describe('Multiple backend get object', function testSuite() {
                                 ],
                             },
                             UploadId: uploadId,
-                        });
-                        s3.send(command)
-                            .then(() => next())
-                            .catch(err => next(err));
-                    },
-                ], done);
+                        }));
+                    });
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in beforeEach: ${err}\n`);
+                    throw err;
+                });
             });
             it('should get object from MPU on AWS ' +
             'location with bucketMatch: false ', function it(done) {

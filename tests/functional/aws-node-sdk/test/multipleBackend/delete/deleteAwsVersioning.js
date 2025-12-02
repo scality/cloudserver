@@ -7,6 +7,7 @@ const {
     DeleteObjectsCommand,
     GetObjectCommand,
     PutObjectCommand,
+    GetBucketVersioningCommand
 } = require('@aws-sdk/client-s3');
 
 const withV4 = require('../../support/withV4');
@@ -28,6 +29,7 @@ const {
     getAwsRetry,
     genUniqID,
     isCEPH,
+    waitForVersioningBeforePut,
 } = require('../utils');
 
 const someBody = 'testbody';
@@ -171,6 +173,9 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return s3.send(new CreateBucketCommand({ Bucket: bucket }))
+            .then(() => {
+                return s3.send(new GetBucketVersioningCommand({ Bucket: bucket }));
+            })
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
@@ -195,6 +200,12 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
         'delete specific version in AWS backend', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
+                next => waitForVersioningBeforePut(s3, bucket, err => {
+                    if (err) {
+                        return next(err);
+                    }
+                    next();
+                }),
                 next => putToAwsBackend(s3, bucket, key, someBody,
                     err => next(err)),
                 next => awsGetLatestVerId(key, someBody, next),
@@ -231,6 +242,12 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
         'backend successfully', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
+                next => waitForVersioningBeforePut(s3, bucket, err => {
+                    if (err) {
+                        return next(err);
+                    }
+                    next();
+                }),
                 next => putNullVersionsToAws(s3, bucket, key, [someBody],
                     err => next(err)),
                 next => awsGetLatestVerId(key, someBody, next),
@@ -249,6 +266,12 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
         'backend successfully', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
+                next => waitForVersioningBeforePut(s3, bucket, err => {
+                    if (err) {
+                        return next(err);
+                    }
+                    next();
+                }),
                 next => putVersionsToAws(s3, bucket, key, [someBody],
                     (err, versionIds) => next(err, versionIds[0])),
                 (s3vid, next) => awsGetLatestVerId(key, someBody,
@@ -403,6 +426,12 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
         'aws successfully', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
+                next => waitForVersioningBeforePut(s3, bucket, err => {
+                    if (err) {
+                        return next(err);
+                    }
+                    next();
+                }),
                 next => putVersionsToAws(s3, bucket, key, [someBody],
                     (err, versionIds) => next(err, versionIds[0])),
                 // create a delete marker
@@ -425,6 +454,12 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
         'versions after creating and deleting several delete markers', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
+                next => waitForVersioningBeforePut(s3, bucket, err => {
+                    if (err) {
+                        return next(err);
+                    }
+                    next();
+                }),
                 next => putVersionsToAws(s3, bucket, key, [someBody],
                     (err, versionIds) => next(err, versionIds[0])),
                 (s3vid, next) => _createDeleteMarkers(s3, bucket, key, 3,
@@ -703,6 +738,12 @@ describeSkipIfNotMultiple('AWS backend delete multiple objects w. versioning: ' 
         'backend successfully', done => {
             const key = `somekey-${Date.now()}`;
             async.waterfall([
+                next => waitForVersioningBeforePut(s3, bucket, err => {
+                    if (err) {
+                        return next(err);
+                    }
+                    next();
+                }),
                 next => putVersionsToAws(s3, bucket, key, [someBody],
                     (err, versionIds) => next(err, versionIds[0])),
                 (s3vid, next) => awsGetLatestVerId(key, someBody,
