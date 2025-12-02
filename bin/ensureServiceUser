@@ -3,55 +3,39 @@
 // TODO
 // - deduplicate with Vault's seed script at https://github.com/scality/Vault/pull/1627
 // - add permission boundaries to user when https://scality.atlassian.net/browse/VAULT-4 is implemented
-const fs = require('fs');
-
-const { errors, errorUtils } = require('arsenal');
+process.env.AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE = '1';
+const { errors } = require('arsenal');
 const { program } = require('commander');
 const werelogs = require('werelogs');
-const version = require('../package.json').version;
 const async = require('async');
-const { IAM, STS } = require('aws-sdk');
+const { IAM } = require('aws-sdk');
+const { version } = require('../package.json');
 
 const systemPrefix = '/scality-internal/';
 
-function generateUserAssumeRolePolicyDocument(roleName, targetAccount) {
-    return {
-        Version: '2012-10-17',
-        Statement: {
-            Effect: 'Allow',
-            Action: 'sts:AssumeRole',
-            Resource: `arn:aws:iam::${targetAccount}:role${systemPrefix}${roleName}`,
-        }
-    };
-}
 
-function generateRoleTrustPolicyDocument(userArn) {
+function generateUserPolicyDocument() {
     return {
         Version: '2012-10-17',
         Statement: [
-          {
-            Effect: 'Allow',
-            Principal: {
-              AWS: userArn,
+            {
+                Sid: 'RateLimitAdminAPIs',
+                Effect: 'Allow',
+                Action: [
+                    'scality:GetBucketRateLimit',
+                    'scality:PutBucketRateLimit',
+                    'scality:DeleteBucketRateLimit',
+                ],
+                Resource: 'arn:aws:s3:::bucket/*',
             },
-            Action: 'sts:AssumeRole',
-            Condition: {}
-          }
-        ]
-     };
+        ],
+    };
 }
 
 function createIAMClient(opts) {
     return new IAM({
         endpoint: opts.iamEndpoint,
-        region: opts.region,
-    });
-}
-
-function createSTSClient(opts) {
-    return new STS({
-        endpoint: opts.stsEndpoint,
-        region: opts.region,
+        region: 'us-east-1',
     });
 }
 
@@ -64,68 +48,72 @@ function needsCreation(v) {
 }
 
 class BaseHandler {
-    constructor(serviceName, iamClient, log, options) {
+    resourceType;
+
+    constructor(serviceName, iamClient, log
+    ) {
         this.serviceName = serviceName;
         this.iamClient = iamClient;
         this.log = log;
-        this.options = options || {};
-        this.name = this.options.name;
-        this.resourceTypeSuffix = this.name ? `_${this.name}` : '';
-        this.resourceNameSuffix = this.name ? `-${this.name}` : '';
-        this.resourceName = `${this.serviceName}${this.resourceNameSuffix}`;
-        this.stsClient = this.options.stsClient;
     }
 
-    get fqResourceType() {
-        return `${this.resourceType}${this.resourceTypeSuffix}`;
-    }
+    collect() {};
+    create(values) {};
+    conflicts(v) {}
 
     applyWaterfall(values, done) {
-        this.log.debug('applyWaterfall', { values, type: this.fqResourceType });
+        this.log.debug('applyWaterfall', { values, type: this.resourceType });
 
-        const v = values[this.fqResourceType];
+        const v = values[this.resourceType];
 
         if (needsCreation(v)) {
-            this.log.debug('creating', { v, type: this.fqResourceType });
+            this.log.debug('creating', { v, type: this.resourceType });
             return this.create(values)
                 .then(res =>
-                    done(null, Object.assign(values, {
-                        [this.fqResourceType]: res,
-                    })))
+                    done(
+                        null,
+                        Object.assign(values, {
+                            [this.resourceType]: res,
+                        }),
+                    ),
+                )
                 .catch(done);
         }
 
-        this.log.debug('conflicts check', { v, type: this.fqResourceType });
+        this.log.debug('conflicts check', { v, type: this.resourceType });
         if (this.conflicts(v)) {
-            return done(errors.EntityAlreadyExists.customizeDescription(
-                `${this.fqResourceType} ${this.serviceName} already exists and conflicts with the expected value.`));
+            return done(
+                errors.EntityAlreadyExists.customizeDescription(
+                    `${this.resourceType} ${this.serviceName} already exists and conflicts with the expected value.`,
+                ),
+            );
         }
 
-        this.log.debug('nothing to do', { v, type: this.fqResourceType });
+        this.log.debug('nothing to do', { v, type: this.resourceType });
         return done(null, values);
     }
 }
 
 class UserHandler extends BaseHandler {
-    get resourceType() {
-        return 'user';
+    resourceType = 'user';
+
+    async collect() {
+        return this.iamClient
+            .getUser({
+                UserName: this.serviceName,
+            })
+            .promise()
+            .then(res => res.User);
     }
 
-    collect() {
-        return this.iamClient.getUser({
-            UserName: this.resourceName,
-        })
-        .promise()
-        .then(res => res.User);
-    }
-
-    create(allResources) {
-        return this.iamClient.createUser({
-            UserName: this.resourceName,
-            Path: systemPrefix,
-        })
-        .promise()
-        .then(res => res.User);
+    async create() {
+        return this.iamClient
+            .createUser({
+                UserName: this.serviceName,
+                Path: systemPrefix,
+            })
+            .promise()
+            .then(res => res.User);
     }
 
     conflicts(u) {
@@ -133,168 +121,62 @@ class UserHandler extends BaseHandler {
     }
 }
 
-class PolicyHandler extends BaseHandler {
-    get resourceType() {
-        return 'policy';
-    }
+class UserPolicyHandler extends BaseHandler {
+    resourceType = 'userPolicy';
 
-    collect() {
-        return this.iamClient.listPolicies({
-            MaxItems: 100,
-            OnlyAttached: false,
-            Scope: 'All',
-        })
-        .promise()
-        .then(res => res.Policies.find(p => p.PolicyName === this.resourceName));
-    }
-
-    create(allResources) {
-        return new Promise((resolve, reject) => {
-            if (!this.options.constrainToThisAccount) {
-                return resolve('*');
-            }
-
-            return this.stsClient.getCallerIdentity((err, res) => {
-                if (err) {
-                    // return reject(err);
-                    // Workaround a Vault issue on 8.3 branch
-                    // https://scality.atlassian.net/browse/VAULT-238
-                    return resolve('000000000000');
-                }
-
-                return resolve(res.Account);
-            });
-        })
-        .then(accountId => {
-            if (this.options.policy) {
-                return this.options.policy;
-            }
-
-            return generateUserAssumeRolePolicyDocument(this.serviceName, accountId);
-        })
-        .then(policyDocument =>
-            this.iamClient.createPolicy({
-                PolicyName: this.resourceName,
-                PolicyDocument: JSON.stringify(policyDocument),
-                Path: systemPrefix,
+    async collect() {
+        return this.iamClient
+            .getUserPolicy({
+                UserName: this.serviceName,
+                PolicyName: this.serviceName,
             })
             .promise()
-        )
-        .then(res => res.Policy);
+            .then(() => true);
     }
 
-    conflicts(p) {
-        return p.Path !== systemPrefix;
-    }
-}
+    async create() {
+        const doc = generateUserPolicyDocument();
 
-class RoleHandler extends BaseHandler {
-    get resourceType() {
-        return 'role';
-    }
-
-    collect() {
-        return this.iamClient.getRole({
-            RoleName: this.resourceName,
-        })
-        .promise()
-        .then(res => res.Role);
+        return this.iamClient
+            .putUserPolicy({
+                UserName: this.serviceName,
+                PolicyName: this.serviceName,
+                PolicyDocument: JSON.stringify(doc),
+            })
+            .promise()
+            .then(() => true);
     }
 
-    create(allResources) {
-        const trustPolicy = generateRoleTrustPolicyDocument(allResources.user.Arn);
-
-        return this.iamClient.createRole({
-            RoleName: this.resourceName,
-            Path: systemPrefix,
-            AssumeRolePolicyDocument: JSON.stringify(trustPolicy),
-        })
-        .promise()
-        .then(res => res.Role);
-    }
-
-    conflicts(p) {
-        return p.Path !== systemPrefix;
-    }
-}
-
-class PolicyUserAttachmentHandler extends BaseHandler {
-    get resourceType() {
-        return 'policyAttachment';
-    }
-
-    collect() {
-        return this.iamClient.listAttachedUserPolicies({
-            UserName: this.resourceName,
-            MaxItems: 100,
-        })
-        .promise()
-        .then(res => res.AttachedPolicies);
-    }
-
-    create(allResources) {
-        return this.iamClient.attachUserPolicy({
-            PolicyArn: allResources.policy_user.Arn,
-            UserName: this.resourceName,
-        })
-        .promise();
-    }
-
-    conflicts(p) {
-        return false;
-    }
-}
-
-class PolicyRoleAttachmentHandler extends BaseHandler {
-    get resourceType() {
-        return 'policyRoleAttachment';
-    }
-
-    collect() {
-        return this.iamClient.listAttachedRolePolicies({
-            RoleName: this.resourceName,
-            MaxItems: 100,
-        })
-        .promise()
-        .then(res => res.AttachedPolicies);
-    }
-
-    create(allResources) {
-        return this.iamClient.attachRolePolicy({
-            PolicyArn: allResources.policy_role.Arn,
-            RoleName: this.resourceName,
-        })
-        .promise();
-    }
-
-    conflicts(p) {
+    conflicts() {
         return false;
     }
 }
 
 class AccessKeyHandler extends BaseHandler {
-    get resourceType() {
-        return 'accessKey';
+    resourceType = 'accessKey';
+
+    async collect() {
+        // if at least one key already exists, the script won't create a new key
+        // and will display the list of existing keys
+        return this.iamClient
+            .listAccessKeys({
+                UserName: this.serviceName,
+                MaxItems: 100,
+            })
+            .promise()
+            .then(res => res.AccessKeyMetadata);
     }
 
-    collect() {
-        return this.iamClient.listAccessKeys({
-            UserName: this.resourceName,
-            MaxItems: 100,
-        })
-        .promise()
-        .then(res => res.AccessKeyMetadata);
+    async create() {
+        return this.iamClient
+            .createAccessKey({
+                UserName: this.serviceName,
+            })
+            .promise()
+            .then(res => res.AccessKey);
     }
 
-    create(allResources) {
-        return this.iamClient.createAccessKey({
-            UserName: this.resourceName,
-        })
-        .promise()
-        .then(res => res.AccessKey);
-    }
-
-    conflicts(a) {
+    conflicts() {
         return false;
     }
 }
@@ -302,91 +184,60 @@ class AccessKeyHandler extends BaseHandler {
 function collectResource(v, done) {
     v.collect()
         .then(res => done(null, res))
-        .catch(err => {
+        .catch((err) => {
             if (err.code === 'NoSuchEntity') {
-                return done(null, null);
+                return done();
             }
-            done(err);
+
+            return done(err);
         });
 }
 
 function collectResourcesFromHandlers(handlers, cb) {
-    const tasks = handlers.reduce((acc, v) => ({
-        [v.fqResourceType]: done => collectResource(v, done),
-        ...acc,
-    }), {});
+    const tasks = handlers.reduce(
+        (acc, v) => ({
+            [v.resourceType]: (done) => collectResource(v, done),
+            ...acc,
+        }),
+        {},
+    );
     async.parallel(tasks, cb);
 }
 
-function buildServiceUserForCrossAccountAssumeRoleHandlers(serviceName, client, log) {
-    return [
-        new UserHandler(serviceName, client, log),
-        new PolicyHandler(serviceName, client, log, {
-            name: 'user',
-            policy: generateUserAssumeRolePolicyDocument(serviceName, '*'),
-        }),
-        new PolicyUserAttachmentHandler(serviceName, client, log),
-        new AccessKeyHandler(serviceName, client, log),
-    ];
+function buildServiceUserHandlers(serviceName, client, log) {
+    return [UserHandler, UserPolicyHandler, AccessKeyHandler].map(Handler => new Handler(serviceName, client, log));
 }
 
-function buildServiceUserForInAccountAssumeRoleHandlers(serviceName, policy, iamClient, stsClient, log) {
-    return [
-        // try permission policy first so that the waterfall
-        // fails early if it contains forbidden actions
-        new PolicyHandler(serviceName, iamClient, log, {
-            policy,
-            name: 'role',
-        }),
-        new UserHandler(serviceName, iamClient, log),
-        new PolicyHandler(serviceName, iamClient, log, {
-            stsClient,
-            name: 'user',
-            constrainToThisAccount: true,
-        }),
-        new PolicyUserAttachmentHandler(serviceName, iamClient, log),
-        new RoleHandler(serviceName, iamClient, log),
-        new PolicyRoleAttachmentHandler(serviceName, iamClient, log),
-        new AccessKeyHandler(serviceName, iamClient, log),
-    ];
+function apply(client, serviceName, log, cb) {
+    const handlers = buildServiceUserHandlers(serviceName, client, log);
+
+    async.waterfall(
+        [
+            (done) => collectResourcesFromHandlers(handlers, done),
+            ...handlers.map(h => h.applyWaterfall.bind(h)),
+            (values, done) => done(null, values.accessKey),
+        ],
+        cb,
+    );
 }
 
-function apply(iamClient, stsClient, serviceName, policyFile, log, cb) {
-    let handlers;
-
-    if (policyFile) {
-        const policyStr = fs.readFileSync(policyFile);
-        const policy = JSON.parse(policyStr);
-        handlers = buildServiceUserForInAccountAssumeRoleHandlers(serviceName, policy, iamClient, stsClient, log);
-    } else {
-        handlers = buildServiceUserForCrossAccountAssumeRoleHandlers(serviceName, iamClient, log);
-    }
-
-    async.waterfall([
-        done => collectResourcesFromHandlers(handlers, done),
-        ...handlers.map(h => h.applyWaterfall.bind(h)),
-        (values, done) => done(null, values.accessKey),
-    ], cb);
-}
-
-function wrapAction(actionFunc, serviceName, _, cmd) {
-    const options = cmd.optsWithGlobals();
-
+function wrapAction(actionFunc, serviceName, options) {
     werelogs.configure({
         level: options.logLevel,
         dump: options.logDumpLevel,
     });
 
     const log = new werelogs.Logger(process.argv[1]).newRequestLogger();
-    const iamClient = createIAMClient(options);
-    const stsClient = createSTSClient(options);
-
-    actionFunc(iamClient, stsClient, serviceName, options.policy, log, (err, data) => {
+    const client = createIAMClient(options);
+    actionFunc(client, serviceName, log, (err, data) => {
         if (err) {
             log.error('failed', {
                 data,
-                error: errorUtils.reshapeExceptionError(err),
+                error: err,
             });
+            if (err.EntityAlreadyExists) {
+                log.error(`run "${process.argv[1]} purge ${serviceName}" to fix.`);
+            }
             process.exit(1);
         }
         log.info('success', { data });
@@ -396,19 +247,19 @@ function wrapAction(actionFunc, serviceName, _, cmd) {
 
 program.version(version);
 
-program
-    .option('--iam-endpoint <url>', 'IAM endpoint', 'http://localhost:8600')
-    .option('--sts-endpoint <url>', 'STS endpoint', 'http://localhost:8800')
-    .option('--region <region>', 'AWS region', 'us-east-1')
-    .option('--log-level <level>', 'log level', 'info')
-    .option('--log-dump-level <level>', 'log level that triggers a dump of the debug buffer', 'error');
-
-program
-    .command('apply <service-name>')
-    .option('-p, --policy <policy-file.json>', 'Create a policy using the provided document' +
-        ' and attach it to a role that the service user is allowed to assume, instead' +
-        ' of only allowing the user to assume one (seeded) role named <service-name> in all accounts.')
-    .action(wrapAction.bind(null, apply));
+[
+    {
+        name: 'apply <service-name>',
+        actionFunc: apply,
+    },
+].forEach(cmd => {
+    program
+        .command(cmd.name)
+        .option('--iam-endpoint <url>', 'IAM endpoint', 'http://localhost:8600')
+        .option('--log-level <level>', 'log level', 'info')
+        .option('--log-dump-level <level>', 'log level that triggers a dump of the debug buffer', 'error')
+        .action(wrapAction.bind(null, cmd.actionFunc));
+});
 
 const validCommands = program.commands.map(n => n._name);
 
