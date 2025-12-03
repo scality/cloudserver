@@ -1274,7 +1274,120 @@ describe(`backbeat routes for replication (${name})`, () => {
 
         return done();
     });
-});
+    });
+
+    it('should replicate/put metadata to a destination that has a previously updated null version', done => {
+        let objMD;
+        let objMDNull;
+        let versionId;
+
+        async.series({
+            putObjectDestinationInitial: next => dstS3.send(new PutObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                Body: Buffer.from(testData),
+            })).then(data => next(null, data)).catch(err => next(err)),
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' },
+            })).then(data => next(null, data)).catch(err => next(err)),
+            getMetadataNullVersion: next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                queryObj: {
+                    versionId: 'null',
+                },
+                authCredentials: destinationAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                objMDNull = JSON.parse(data.body).Body;
+                return next();
+            }),
+            updateMetadataNullVersion: next => makeBackbeatRequest({
+                method: 'PUT',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                queryObj: {
+                    versionId: 'null',
+                },
+                authCredentials: destinationAuthCredentials,
+                requestBody: objMDNull,
+            }, next),
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' },
+            })).then(data => next(null, data)).catch(err => next(err)),
+            putObjectSource: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData),
+            })).then(data => {
+                versionId = data.VersionId;
+                return next(null, data);
+            }).catch(err => next(err)),
+            getMetadata: next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketSource,
+                objectKey: keyName,
+                queryObj: {
+                    versionId,
+                },
+                authCredentials: sourceAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
+                return next();
+            }),
+            replicateMetadata: next => makeBackbeatRequest({
+                method: 'PUT',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                queryObj: {
+                    versionId,
+                },
+                authCredentials: destinationAuthCredentials,
+                requestBody: objMD,
+            }, next),
+            headObjectNullVersion: next => dstS3.send(new HeadObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                VersionId: 'null',
+            })).then(data => next(null, data)).catch(err => next(err)),
+            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination,
+            })).then(data => next(null, data)).catch(err => next(err)),
+        }, (err, results) => {
+            if (err) {
+                return done(err);
+            }
+
+            const headObjectRes = results.headObjectNullVersion;
+            assert.strictEqual(headObjectRes.VersionId, 'null');
+
+            const listObjectVersionsRes = results.listObjectVersions;
+            const { Versions } = listObjectVersionsRes;
+
+            assert.strictEqual(Versions.length, 2);
+            const [currentVersion, nonCurrentVersion] = Versions;
+
+            assert.strictEqual(currentVersion.VersionId, versionId);
+            assert.strictEqual(currentVersion.IsLatest, true);
+
+            assert.strictEqual(nonCurrentVersion.VersionId, 'null');
+            assert.strictEqual(nonCurrentVersion.IsLatest, false);
+
+            return done();
+        });
+    });
 
     it(
         'should replicate/put metadata to a destination that has a suspended null version with internal version',
