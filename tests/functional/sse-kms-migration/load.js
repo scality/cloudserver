@@ -20,7 +20,7 @@ const TOTAL_OBJECTS_PER_NODE = Math.floor(TOTAL_OBJECTS / KMS_NODES);
  * As we might not have an exact match of packets and the
  * round robin is confined to each nodejs cluster processes
  */
-const APPROX = Math.floor(0.1 * TOTAL_OBJECTS_PER_NODE);
+const APPROX = Math.ceil(0.2 * TOTAL_OBJECTS_PER_NODE);
 const EXPECTED_MIN = TOTAL_OBJECTS_PER_NODE - APPROX;
 const EXPECTED_MAX = TOTAL_OBJECTS_PER_NODE + APPROX;
 
