@@ -80,17 +80,34 @@ describe('PUT bucket logging', () => {
 
             afterEach(async () => {
                 process.stdout.write('Deleting buckets\n');
-                const results = await Promise.allSettled([
-                    bucketUtil.deleteOne(bucketName),
-                    bucketUtil.deleteOne(targetBucket),
-                ]);
-                const errors = results
-                    .filter(r => r.status === 'rejected'
-                        && r.reason?.code !== 'NoSuchBucket'
-                        && r.reason?.name !== 'NoSuchBucket')
-                    .map(r => r.reason);
-                if (errors.length > 0) {
-                    throw errors[0];
+                try {
+                    await s3.send(new PutBucketLoggingCommand({
+                        Bucket: bucketName,
+                        BucketLoggingStatus: {},
+                    }));
+                } catch (err) {
+                    if (err.name !== 'NoSuchBucket' && err.code !== 'NoSuchBucket') {
+                        throw err;
+                    }
+                }
+
+                const bucketsToDelete = [bucketName, targetBucket];
+                for (const name of bucketsToDelete) {
+                    try {
+                        await bucketUtil.empty(name);
+                    } catch (err) {
+                        if (err.name !== 'NoSuchBucket' && err.code !== 'NoSuchBucket') {
+                            throw err;
+                        }
+                    }
+
+                    try {
+                        await bucketUtil.deleteOne(name);
+                    } catch (err) {
+                        if (err.name !== 'NoSuchBucket' && err.code !== 'NoSuchBucket') {
+                            throw err;
+                        }
+                    }
                 }
             });
 
@@ -169,17 +186,27 @@ describe('PUT bucket logging', () => {
 
             afterEach(async () => {
                 process.stdout.write('Deleting buckets\n');
-                const results = await Promise.allSettled([
-                    bucketUtil.deleteOne(bucketName),
-                    otherAccountBucketUtility.deleteOne(otherAccountTargetBucket),
-                ]);
-                const errors = results
-                    .filter(r => r.status === 'rejected'
-                        && r.reason?.code !== 'NoSuchBucket'
-                        && r.reason?.name !== 'NoSuchBucket')
-                    .map(r => r.reason);
-                if (errors.length > 0) {
-                    throw errors[0];
+                const cleanupPlan = [
+                    { util: bucketUtil, name: bucketName },
+                    { util: otherAccountBucketUtility, name: otherAccountTargetBucket },
+                ];
+
+                for (const { util, name } of cleanupPlan) {
+                    try {
+                        await util.empty(name);
+                    } catch (err) {
+                        if (err.name !== 'NoSuchBucket') {
+                            throw err;
+                        }
+                    }
+
+                    try {
+                        await util.deleteOne(name);
+                    } catch (err) {
+                        if (err.name !== 'NoSuchBucket') {
+                            throw err;
+                        }
+                    }
                 }
             });
 
