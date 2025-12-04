@@ -4645,9 +4645,9 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#fda7ce332f354b0587d25ad5795b51a4700ba01a":
-  version "8.2.35"
-  resolved "git+https://github.com/scality/Arsenal#fda7ce332f354b0587d25ad5795b51a4700ba01a"
+"arsenal@git+https://github.com/scality/Arsenal#9f45f9f995bf95e2a5f858017974dc635beb457c":
+  version "8.2.41"
+  resolved "git+https://github.com/scality/Arsenal#9f45f9f995bf95e2a5f858017974dc635beb457c"
   dependencies:
     "@aws-sdk/client-kms" "^3.901.0"
     "@aws-sdk/client-s3" "^3.901.0"
@@ -4657,10 +4657,8 @@ arraybuffer.prototype.slice@^1.0.4:
     "@azure/storage-blob" "^12.28.0"
     "@js-sdsl/ordered-set" "^4.4.2"
     "@scality/hdclient" "^1.3.1"
-    "@smithy/hash-node" "^4.2.5"
     "@smithy/node-http-handler" "^4.3.0"
     "@smithy/protocol-http" "^5.3.5"
-    "@smithy/signature-v4" "^5.3.5"
     JSONStream "^1.3.5"
     agentkeepalive "^4.6.0"
     ajv "6.12.3"
