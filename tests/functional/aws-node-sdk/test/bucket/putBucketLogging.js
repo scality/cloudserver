@@ -183,7 +183,8 @@ describe('PUT bucket logging', () => {
                 }
             });
 
-            it('should return InvalidTargetBucketForLogging when target bucket is owned by different account', async () => {
+            it('should return InvalidTargetBucketForLogging when target bucket is owned by different account', 
+                async () => {
                 const crossAccountConfig = {
                     LoggingEnabled: {
                         TargetBucket: otherAccountTargetBucket,
