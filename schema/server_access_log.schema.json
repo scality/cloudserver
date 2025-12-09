@@ -195,6 +195,15 @@
         "raftSessionID": {
             "description": "Raft session ID.",
             "type": ["integer", "null"]
+        },
+        "rateLimited": {
+            "description": "True when the request was rate-limited. This field is emitted only when rate limiting occurs; if absent, the request was not rate-limited.",
+            "type": "boolean"
+        },
+        "rateLimitSource": {
+            "description": "Source of the rate-limit configuration that applied to this request. 'global' means the global default bucket rate limit; 'bucket' means a bucket-specific override. This field is only emitted when the request was rate-limited.",
+            "type": "string",
+            "enum": ["global", "bucket"]
         }
     },
     "additionalProperties": false,
