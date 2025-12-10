@@ -13,23 +13,31 @@ const validLoggingConfig = {
     },
 };
 
+function cleanUp(bucketUtil, cb) {
+    Promise.all([
+        bucketUtil.deleteOne(bucketName).catch(err => {
+            if (err && err.code !== 'NoSuchBucket') {
+                throw err;
+            }
+        }),
+        bucketUtil.deleteOne(targetBucket).catch(err => {
+            if (err && err.code !== 'NoSuchBucket') {
+                throw err;
+            }
+        }),
+    ]).then(() => cb()).catch(err => cb(err));
+}
+
 describe('GET bucket logging', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
 
-        afterEach(done => {
-            process.stdout.write('Deleting buckets\n');
-            bucketUtil.deleteOne(bucketName).then(() => bucketUtil.deleteOne(targetBucket)).then(() => done())
-            .catch(err => {
-                if (err && err.code !== 'NoSuchBucket') {
-                    return done(err);
-                }
-                return done();
-            });
-        });
+        after(done => { cleanUp(bucketUtil, done); });
 
         describe('without existing bucket', () => {
+            afterEach(done => { cleanUp(bucketUtil, done); });
+
             it('should return NoSuchBucket', done => {
                 s3.getBucketLogging({ Bucket: bucketName }, err => {
                     assert(err);
@@ -41,7 +49,9 @@ describe('GET bucket logging', () => {
         });
 
         describe('on bucket without logging configuration', () => {
-            before(done => {
+            afterEach(done => { cleanUp(bucketUtil, done); });
+
+            beforeEach(done => {
                 process.stdout.write('Creating bucket without logging\n');
                 s3.createBucket({ Bucket: bucketName }, err => {
                     if (err) {
@@ -65,7 +75,9 @@ describe('GET bucket logging', () => {
         });
 
         describe('with existing logging configuration', () => {
-            before(done => {
+            afterEach(done => { cleanUp(bucketUtil, done); });
+
+            beforeEach(done => {
                 process.stdout.write('Creating buckets and setting logging\n');
                 return s3.createBucket({ Bucket: bucketName }, err => {
                     if (err) {

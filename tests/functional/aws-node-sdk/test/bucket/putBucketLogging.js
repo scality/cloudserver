@@ -38,6 +38,21 @@ const validLoggingConfigWithGrants = {
 
 const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
 
+function cleanUp(bucketUtil, cb) {
+    Promise.all([
+        bucketUtil.deleteOne(bucketName).catch(err => {
+            if (err && err.code !== 'NoSuchBucket') {
+                throw err;
+            }
+        }),
+        bucketUtil.deleteOne(targetBucket).catch(err => {
+            if (err && err.code !== 'NoSuchBucket') {
+                throw err;
+            }
+        }),
+    ]).then(() => cb()).catch(err => cb(err));
+}
+
 describe('PUT bucket logging', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
@@ -57,6 +72,10 @@ describe('PUT bucket logging', () => {
             });
         }
 
+        after(done => {
+            cleanUp(bucketUtil, done);
+        });
+
         describe('without existing bucket', () => {
             it('should return NoSuchBucket', done => {
                 _testPutBucketLoggingError(s3, validLoggingConfig, 404, 'NoSuchBucket', done);
@@ -75,14 +94,7 @@ describe('PUT bucket logging', () => {
             });
 
             afterEach(done => {
-                process.stdout.write('Deleting buckets\n');
-                bucketUtil.deleteOne(bucketName).then(() => bucketUtil.deleteOne(targetBucket)).then(() => done())
-                    .catch(err => {
-                        if (err && err.code !== 'NoSuchBucket') {
-                            return done(err);
-                        }
-                        return done();
-                    });
+                cleanUp(bucketUtil, done);
             });
 
             it('should put bucket logging configuration successfully', done => {
@@ -209,7 +221,6 @@ describe('PUT bucket logging', () => {
                         TargetPrefix: 'logs/',
                     },
                 };
-                
                 s3.putBucketLogging({
                     Bucket: bucketName,
                     BucketLoggingStatus: crossAccountConfig,
