@@ -148,15 +148,8 @@ function testSuite() {
             await bucketUtil.empty(bucket);
             await bucketUtil.empty(bucketAws);
             await bucketUtil.empty(awsServerSideEncryptionbucket);
-            
-            process.stdout.write(`Deleting bucket ${bucket}\n`);
             await bucketUtil.deleteOne(bucket);
-            
-            process.stdout.write('Deleting bucket ' +
-            `${awsServerSideEncryptionbucket}\n`);
             await bucketUtil.deleteOne(awsServerSideEncryptionbucket);
-            
-            process.stdout.write(`Deleting bucket ${bucketAws}\n`);
             await bucketUtil.deleteOne(bucketAws);
         });
 

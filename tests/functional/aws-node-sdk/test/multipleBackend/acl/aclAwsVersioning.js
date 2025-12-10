@@ -74,9 +74,7 @@ function putObjectAcl(s3, key, versionId, acp, cb) {
     
     const command = new PutObjectAclCommand(params);
     s3.send(command)
-        .then(() => {
-            cb();
-        })
+        .then(() => cb())
         .catch(err => {
             assert.strictEqual(err, null, 'Expected success ' +
                 `putting object acl, got error ${err}`);
