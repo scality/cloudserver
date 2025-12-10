@@ -50,5 +50,5 @@ runs:
     - name: enable rate limiting in config and set the lisa account as the service user
       shell: bash
       run: |
-        cat config.json | jq -r '.rateLimiting = {enabled: true, serviceUserArn: "arn:aws:iam::123456789013:root"}' > config.json.new
+        cat config.json | jq -r '.rateLimiting = {enabled: true, nodes: 6, serviceUserArn: "arn:aws:iam::123456789013:root"}' > config.json.new
         mv config.json.new config.json

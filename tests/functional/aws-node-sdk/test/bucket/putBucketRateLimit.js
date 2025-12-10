@@ -113,26 +113,30 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
     });
 
     describe('validation against node and worker count', () => {
-        it.skip('should reject limits less than (nodes × workers)', async () => {
-            const nodes = config.rateLimiting?.nodes || 1;
-            const workers = config.clusters || 1;
-            const minLimit = nodes * workers;
 
+        const nodes = config.rateLimiting?.nodes || 1;
+        const workers = config.clusters || 1;
+        const minLimit = nodes * workers;
+        const skipIfSingleNode = nodes === 1 ? it.skip : it;
+
+        // Test requires multiple nodes to pass
+        // With only 1 node and 1 worker the minLimit is 1.
+        // This leaves no invalid values to test as 0 is also a valid setting (unlimited)
+        skipIfSingleNode('should reject limits less than (nodes x workers)', async () => {
+            let error;
             try {
                 const invalidConfig = { RequestsPerSecond: minLimit - 1 };
                 await sendRateLimitRequest('PUT', '127.0.0.1:8000',
                     `/${bucket}/?rate-limit`, JSON.stringify(invalidConfig));
-                assert.fail('Should have thrown an error');
             } catch (err) {
-                assert.strictEqual(err.Error.Code[0], 'InvalidArgument');
+                error = err;
+            } finally {
+                assert(error !== undefined, 'error expected');
+                assert.strictEqual(error.Error.Code[0], 'InvalidArgument');
             }
         });
 
-        it.skip('should accept limits equal to (nodes × workers)', async () => {
-            const nodes = config.rateLimiting?.nodes || 1;
-            const workers = config.clusters || 1;
-            const minLimit = nodes * workers;
-
+        it('should accept limits equal to (nodes x workers)', async () => {
             try {
                 const validConfig = { RequestsPerSecond: minLimit };
                 await sendRateLimitRequest('PUT', '127.0.0.1:8000',
@@ -146,11 +150,7 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
             }
         });
 
-        it('should accept limits greater than (nodes × workers)', async () => {
-            const nodes = config.rateLimiting?.nodes || 1;
-            const workers = config.clusters || 1;
-            const minLimit = nodes * workers;
-
+        it('should accept limits greater than (nodes x workers)', async () => {
             try {
                 const validConfig = { RequestsPerSecond: minLimit + 1000 };
                 await sendRateLimitRequest('PUT', '127.0.0.1:8000',
