@@ -51,6 +51,72 @@ describe('WorkerTokenBucket', () => {
             assert.strictEqual(bucket.refillInProgress, false);
             assert.strictEqual(bucket.refillCount, 0);
         });
+
+        it('should use custom bufferSize from config.rateLimiting', () => {
+            sandbox.restore();
+            sandbox.stub(config, 'rateLimiting').value({
+                nodes: 1,
+                tokenBucketBufferSize: 100,
+                bucket: {
+                    defaultConfig: {
+                        requestsPerSecond: { burstCapacity: 2 },
+                    },
+                },
+            });
+
+            const bucket = new tokenBucket.WorkerTokenBucket('test-bucket', { limit: 100 }, mockLog);
+
+            assert.strictEqual(bucket.bufferSize, 100);
+            assert.strictEqual(bucket.tokens, 100); // tokens = bufferSize
+        });
+
+        it('should use custom refillThreshold from config.rateLimiting', () => {
+            sandbox.restore();
+            sandbox.stub(config, 'rateLimiting').value({
+                nodes: 1,
+                tokenBucketRefillThreshold: 30,
+                bucket: {
+                    defaultConfig: {
+                        requestsPerSecond: { burstCapacity: 2 },
+                    },
+                },
+            });
+
+            const bucket = new tokenBucket.WorkerTokenBucket('test-bucket', { limit: 100 }, mockLog);
+
+            assert.strictEqual(bucket.refillThreshold, 30);
+        });
+
+        it('should use both custom bufferSize and refillThreshold from config', () => {
+            sandbox.restore();
+            sandbox.stub(config, 'rateLimiting').value({
+                nodes: 1,
+                tokenBucketBufferSize: 75,
+                tokenBucketRefillThreshold: 25,
+                bucket: {
+                    defaultConfig: {
+                        requestsPerSecond: { burstCapacity: 2 },
+                    },
+                },
+            });
+
+            const bucket = new tokenBucket.WorkerTokenBucket('test-bucket', { limit: 100 }, mockLog);
+
+            assert.strictEqual(bucket.bufferSize, 75);
+            assert.strictEqual(bucket.refillThreshold, 25);
+            assert.strictEqual(bucket.tokens, 75); // tokens = bufferSize
+        });
+
+        it('should fallback to defaults when rateLimiting is undefined', () => {
+            sandbox.restore();
+            sandbox.stub(config, 'rateLimiting').value(undefined);
+
+            const bucket = new tokenBucket.WorkerTokenBucket('test-bucket', { limit: 100 }, mockLog);
+
+            assert.strictEqual(bucket.bufferSize, 50);
+            assert.strictEqual(bucket.refillThreshold, 20);
+            assert.strictEqual(bucket.tokens, 50);
+        });
     });
 
     describe('tryConsume', () => {
