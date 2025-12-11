@@ -48,7 +48,6 @@ describe('listObject - Delimiter master', function testSuite() {
             await s3.send(new CreateBucketCommand({ Bucket: bucket }));
         });
 
-
         after(done => {
             removeAllVersions({ Bucket: bucket }, err => {
                 if (err) {
@@ -87,7 +86,6 @@ describe('listObject - Delimiter master', function testSuite() {
 
         it('put objects inside bucket', async () => {
             for (const obj of objects) {
-                // Handle versioning state changes
                 if (!versioning && obj.isNull !== true) {
                     const params = {
                         Bucket: bucket,
@@ -108,9 +106,7 @@ describe('listObject - Delimiter master', function testSuite() {
                     await s3.send(new PutBucketVersioningCommand(params));
                 }
 
-                // Handle object operations
                 if (obj.value === null) {
-                    // For delete operations, we need to check the response headers
                         const result = await s3.send(new DeleteObjectCommand({
                             Bucket: bucket,
                             Key: obj.name,

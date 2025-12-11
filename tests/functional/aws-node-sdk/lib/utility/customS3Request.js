@@ -6,8 +6,6 @@ const getConfig = require('../../test/support/config');
 
 const config = getConfig('default');
 
-
-// Custom middleware to modify requests without mutating args
 const customRequestMiddleware = buildParams => next => async args => {
 
     const { headers, query } = buildParams;
@@ -36,23 +34,23 @@ const customRequestMiddleware = buildParams => next => async args => {
 };
 
 async function customS3Request(CommandClass, params, buildParams) {
-        const customS3 = new S3Client({ ...config });
+    const customS3 = new S3Client({ ...config });
 
-        customS3.middlewareStack.add(
-            customRequestMiddleware(buildParams),
-            { step: 'build', name: 'customRequestMiddleware', tags: ['CUSTOM'] }
-        );
+    customS3.middlewareStack.add(
+        customRequestMiddleware(buildParams),
+        { step: 'build', name: 'customRequestMiddleware', tags: ['CUSTOM'] }
+    );
 
-        const command = new CommandClass(params);
-        const response = await customS3.send(command);
+    const command = new CommandClass(params);
+    const response = await customS3.send(command);
 
-        const resData = {
-            statusCode: 200,
-            headers: response.$metadata?.httpHeaders || {},
-            body: JSON.stringify(response),
-        };
+    const resData = {
+        statusCode: 200,
+        headers: response.$metadata?.httpHeaders || {},
+        body: JSON.stringify(response),
+    };
 
-        return resData;
+    return resData;
 
 }
 

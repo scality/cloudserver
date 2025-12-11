@@ -38,7 +38,7 @@ describe('aws-node-sdk test delete bucket', () => {
         });
 
         // empty and delete bucket after testing if bucket exists
-         afterEach(done => {
+        afterEach(done => {
             removeAllVersions({ Bucket: bucketName }, err => {
                 if (err?.name === 'NoSuchBucket') {
                     return done();
