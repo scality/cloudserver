@@ -61,7 +61,6 @@ describe('large mpu', function tester() {
         // another request after first request has already deleted parts,
         // causing InvalidPart. Meanwhile, if request takes too long to finish,
         // sdk will create SocketHangUp error before response.
-        // Custom request handler with no timeouts
         const requestHandler = new NodeHttpHandler({
             requestTimeout: 0,
             connectionTimeout: 0,
@@ -94,19 +93,17 @@ describe('large mpu', function tester() {
     itSkipIfAWS('should intiate, put parts and complete mpu ' +
         `with ${partCount} parts`, done => {
         process.stdout.write('***Running large MPU test***\n');
-        let uploadId;     
+        let uploadId;
         return waterfall([
             next => {
                 s3.send(new CreateMultipartUploadCommand({ Bucket: bucket, Key: key }))
                     .then(data => {
-                        process.stdout.write('initiated mpu\n');
                         uploadId = data.UploadId;
                         return next();
                     })
                     .catch(err => next(err));
             },
             next => {
-                process.stdout.write('putting parts\n');
                 return timesLimit(partCount, 20, (n, cb) =>
                     uploadPart(n, uploadId, s3, cb), err => {
                         if (err) {
@@ -135,19 +132,14 @@ describe('large mpu', function tester() {
                     },
                 };
                 return s3.send(new CompleteMultipartUploadCommand(params))
-                    .then(() => {
-                        process.stdout.write('mpu completed successfully\n');
-                        next();
-                    })
+                    .then(() => next())
                     .catch(err => next(err));
             },
             next => {
-                process.stdout.write('about to get object\n');
                 s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
                     .then(data => {
                         assert.strictEqual(data.ETag,
                                 `"${finalETag}-${partCount}"`);
-                        process.stdout.write('get object successful\n');
                         return next();
                     })
                     .catch(err => next(err));

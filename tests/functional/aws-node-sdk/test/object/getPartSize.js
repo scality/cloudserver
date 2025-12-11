@@ -59,18 +59,12 @@ describe('Part size tests with object head', () => {
         before(async () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-
-            // Create bucket
             await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-
-            // Create multipart upload
             const uploadResult = await s3.send(new CreateMultipartUploadCommand({
                 Bucket: bucket,
                 Key: object
             }));
             uploadId = uploadResult.UploadId;
-
-            // Upload parts
             const uploadPromises = partNumbers.map(async partNumber => {
                 const uploadPartParams = {
                     Bucket: bucket,
@@ -82,24 +76,17 @@ describe('Part size tests with object head', () => {
                 const result = await s3.send(new UploadPartCommand(uploadPartParams));
                 return result.ETag;
             });
-
             ETags = await Promise.all(uploadPromises);
-
-            // Put empty object
             await s3.send(new PutObjectCommand({
                 Bucket: bucket,
                 Key: emptyObject,
                 Body: '',
             }));
-
-            // Put non-MPU object
             await s3.send(new PutObjectCommand({
                 Bucket: bucket,
                 Key: nonMpuObject,
                 Body: generateContent(0),
             }));
-
-            // Complete multipart upload
             const completeParams = {
                 Bucket: bucket,
                 Key: object,

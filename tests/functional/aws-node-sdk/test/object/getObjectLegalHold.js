@@ -104,7 +104,8 @@ describeSkipIfCeph('GET object legal hold', () => {
                     throw new Error('Expected NoSuchKey error');
                 }).catch(err => {
                     checkError(err, 'NoSuchKey', 404);
-                })).catch(err => {
+                })
+            ).catch(err => {
                 assert.ifError(err);
             })
         );
