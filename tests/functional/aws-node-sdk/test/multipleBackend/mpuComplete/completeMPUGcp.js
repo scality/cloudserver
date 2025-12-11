@@ -143,11 +143,7 @@ function testSuite() {
                 setTimeout(() => {
                     s3.send(new CompleteMultipartUploadCommand(params))
                         .then(() => getCheck(this.test.key, true, done))
-                        .catch(err => {
-                            assert.equal(err, null,
-                                `Err completing MPU: ${err}`);
-                            done(err);
-                        });
+                        .catch(done);
                 }, gcpTimeout);
             });
         });
@@ -165,11 +161,7 @@ function testSuite() {
                 setTimeout(() => {
                     s3.send(new CompleteMultipartUploadCommand(params))
                         .then(() => getCheck(this.test.key, false, done))
-                        .catch(err => {
-                            assert.equal(err, null,
-                                `Err completing MPU: ${err}`);
-                            done(err);
-                        });
+                            .catch(done);
                 }, gcpTimeout);
             });
         });
@@ -195,11 +187,7 @@ function testSuite() {
                         setTimeout(() => {
                             s3.send(new CompleteMultipartUploadCommand(params))
                                 .then(() => getCheck(this.test.key, true, done))
-                                .catch(err => {
-                                    assert.equal(err, null,
-                                        `Err completing MPU: ${err}`);
-                                    done(err);
-                                });
+                                .catch(done);
                         }, gcpTimeout);
                     });
                 })
@@ -230,11 +218,7 @@ function testSuite() {
                         setTimeout(() => {
                             s3.send(new CompleteMultipartUploadCommand(params))
                                 .then(() => getCheck(this.test.key, true, done))
-                                .catch(err => {
-                                    assert.equal(err, null,
-                                        `Err completing MPU: ${err}`);
-                                    done(err);
-                                });
+                                .catch(done);
                         }, gcpTimeout);
                     });
                 })
@@ -273,10 +257,7 @@ function testSuite() {
                                     });
                                 }, gcpTimeout);
                             })
-                            .catch(err => {
-                                assert.equal(err, null, `Err completing MPU: ${err}`);
-                                done(err);
-                            });
+                            .catch(done);
                     });
                 })
                 .catch(err => {
