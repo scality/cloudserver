@@ -231,8 +231,9 @@ describe('Rate limit helpers', () => {
             const bucketName = 'test-bucket';
             const limitConfig = { limit: 100, source: 'bucket' };
 
-            // Token bucket starts with 0 tokens (no pre-population)
-            // This simulates exhausted quota
+            const bucket = tokenBucket.getTokenBucket(bucketName, limitConfig, mockLog);
+            // Explicitly set tokens to 0 to simulate exhausted quota
+            bucket.tokens = 0;
 
             helpers.checkRateLimitWithConfig(bucketName, limitConfig, mockLog, (err, rateLimited) => {
                 assert.strictEqual(err, null);
@@ -311,7 +312,10 @@ describe('Rate limit helpers', () => {
             const bucketName = 'test-bucket';
             const limitConfig = { limit: 100, source: 'bucket' };
 
-            // Token bucket with 0 tokens will log denial
+            const bucket = tokenBucket.getTokenBucket(bucketName, limitConfig, mockLog);
+            // Explicitly set tokens to 0 to trigger denial log
+            bucket.tokens = 0;
+
             helpers.checkRateLimitWithConfig(bucketName, limitConfig, mockLog, () => {
                 // Check for token bucket denial log
                 const deniedCall = mockLog.debug.getCalls().find(
@@ -351,7 +355,9 @@ describe('Rate limit helpers', () => {
             const bucketName = 'test-bucket';
             const limitConfig = { limit: 100, source: 'bucket' };
 
-            // Token bucket starts with 0 tokens
+            const bucket = tokenBucket.getTokenBucket(bucketName, limitConfig, mockLog);
+            // Explicitly set tokens to 0 to simulate exhausted quota
+            bucket.tokens = 0;
 
             helpers.checkRateLimitWithConfig(bucketName, limitConfig, mockLog, (err, rateLimited) => {
                 assert.strictEqual(rateLimited, true);
