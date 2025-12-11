@@ -45,9 +45,9 @@ describe('WorkerTokenBucket', () => {
 
             assert.strictEqual(bucket.bucketName, 'test-bucket');
             assert.deepStrictEqual(bucket.limitConfig, { limit: 100 });
-            assert.strictEqual(bucket.tokens, 0);
             assert.strictEqual(bucket.bufferSize, 50);
             assert.strictEqual(bucket.refillThreshold, 20);
+            assert.strictEqual(bucket.tokens, 50); // Starts with full buffer for fail-open
             assert.strictEqual(bucket.refillInProgress, false);
             assert.strictEqual(bucket.refillCount, 0);
         });
