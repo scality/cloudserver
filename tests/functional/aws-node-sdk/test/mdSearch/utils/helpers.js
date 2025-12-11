@@ -90,7 +90,6 @@ testUtils.runAndCheckSearch = (s3Client, bucketName, encodedSearch, listVersions
                 }
             } else {
                 if (testResult && typeof testResult === 'object' && testResult.code) {
-                    // This was expected to be an error, but we got success
                     done(new Error('Expected error but got success'));
                 }
                 if (testResult) {

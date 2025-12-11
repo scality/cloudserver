@@ -5,7 +5,6 @@ const {
     DeleteObjectsCommand,
 } = require('@aws-sdk/client-s3');
 const s3Client = require('./utils/s3SDK');
-
 const { runAndCheckSearch, runIfMongo } = require('./utils/helpers');
 
 const objectKey = 'findMe';
@@ -18,21 +17,19 @@ const updatedUserMetadata = { food: 'cake' };
 runIfMongo('Basic search', () => {
     const bucketName = `basicsearchmebucket${Date.now()}`;
     
-    before(done => {
-        s3Client.send(new CreateBucketCommand({ Bucket: bucketName }))
-            .then(() => s3Client.send(new PutObjectCommand({
-                Bucket: bucketName,
-                Key: objectKey,
-                Metadata: userMetadata,
-                Tagging: objectTagData,
-            })))
-            .then(() => s3Client.send(new PutObjectCommand({
-                Bucket: bucketName,
-                Key: hiddenKey,
-                Tagging: hiddenTagData,
-            })))
-            .then(() => done())
-            .catch(done);
+    before(async () => {
+        await s3Client.send(new CreateBucketCommand({ Bucket: bucketName }));
+        await s3Client.send(new PutObjectCommand({
+            Bucket: bucketName,
+            Key: objectKey,
+            Metadata: userMetadata,
+            Tagging: objectTagData,
+        }));
+        await s3Client.send(new PutObjectCommand({
+            Bucket: bucketName,
+            Key: hiddenKey,
+            Tagging: hiddenTagData,
+        }));
     });
 
     after(async () => {
