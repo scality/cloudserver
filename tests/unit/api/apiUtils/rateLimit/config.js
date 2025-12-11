@@ -187,6 +187,120 @@ describe('parseRateLimitConfig', () => {
         });
     });
 
+    describe('tokenBucketBufferSize validation', () => {
+        it('should use default tokenBucketBufferSize when not specified', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+            };
+
+            const result = parseRateLimitConfig(config, 1);
+            assert.strictEqual(result.tokenBucketBufferSize, 50);
+        });
+
+        it('should accept custom tokenBucketBufferSize', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                tokenBucketBufferSize: 100,
+            };
+
+            const result = parseRateLimitConfig(config, 1);
+            assert.strictEqual(result.tokenBucketBufferSize, 100);
+        });
+
+        it('should throw if tokenBucketBufferSize is not a positive integer', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                tokenBucketBufferSize: -10,
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config, 1),
+                /rateLimiting.tokenBucketBufferSize must be a positive integer/
+            );
+        });
+
+        it('should throw if tokenBucketBufferSize is zero', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                tokenBucketBufferSize: 0,
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config, 1),
+                /rateLimiting.tokenBucketBufferSize must be a positive integer/
+            );
+        });
+
+        it('should throw if tokenBucketBufferSize is not an integer', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                tokenBucketBufferSize: 50.5,
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config, 1),
+                /rateLimiting.tokenBucketBufferSize must be a positive integer/
+            );
+        });
+    });
+
+    describe('tokenBucketRefillThreshold validation', () => {
+        it('should use default tokenBucketRefillThreshold when not specified', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+            };
+
+            const result = parseRateLimitConfig(config, 1);
+            assert.strictEqual(result.tokenBucketRefillThreshold, 20);
+        });
+
+        it('should accept custom tokenBucketRefillThreshold', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                tokenBucketRefillThreshold: 30,
+            };
+
+            const result = parseRateLimitConfig(config, 1);
+            assert.strictEqual(result.tokenBucketRefillThreshold, 30);
+        });
+
+        it('should throw if tokenBucketRefillThreshold is not a positive integer', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                tokenBucketRefillThreshold: -5,
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config, 1),
+                /rateLimiting.tokenBucketRefillThreshold must be a positive integer/
+            );
+        });
+
+        it('should throw if tokenBucketRefillThreshold is zero', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                tokenBucketRefillThreshold: 0,
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config, 1),
+                /rateLimiting.tokenBucketRefillThreshold must be a positive integer/
+            );
+        });
+
+        it('should throw if tokenBucketRefillThreshold is not an integer', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                tokenBucketRefillThreshold: 20.5,
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config, 1),
+                /rateLimiting.tokenBucketRefillThreshold must be a positive integer/
+            );
+        });
+    });
+
     describe('bucket validation', () => {
         it('should throw if bucket is not an object', () => {
             const config = {
