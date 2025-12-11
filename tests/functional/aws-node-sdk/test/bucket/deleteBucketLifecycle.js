@@ -47,7 +47,6 @@ describe('aws-sdk test delete bucket lifecycle', () => {
     it('should return NoSuchBucket error if bucket does not exist', async () => {
         try {
             await s3.send(new DeleteBucketLifecycleCommand({ Bucket: bucket }));
-            // Should not reach here
             throw new Error('Expected NoSuchBucket error');
         } catch (err) {
             assertError(err, 'NoSuchBucket');
@@ -62,7 +61,6 @@ describe('aws-sdk test delete bucket lifecycle', () => {
         it('should return AccessDenied if user is not bucket owner', async () => {
             try {
                 await otherAccountS3.send(new DeleteBucketLifecycleCommand({ Bucket: bucket }));
-                // Should not reach here
                 throw new Error('Expected AccessDenied error');
             } catch (err) {
                 assertError(err, 'AccessDenied');

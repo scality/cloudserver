@@ -20,8 +20,10 @@ async function deleteBucket(s3, bucket) {
     try {
         await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
     } catch (err) {
-        // eslint-disable-next-line no-console
-        console.log(err);
+        if (err?.name === 'NoSuchBucket') {
+            return;
+        }
+        throw err;
     }
 }
 

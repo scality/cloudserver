@@ -15,26 +15,26 @@ function cutAttributes(data) {
         data.Contents.forEach(item => {
             newContent.push(item.Key);
         });
-        /* eslint-disable no-param-reassign */
+        /* eslint-disable-next-line no-param-reassign */
         data.Contents = newContent;
     }
     if (data.CommonPrefixes) {
         data.CommonPrefixes.forEach(item => {
             newPrefixes.push(item.Prefix);
         });
-        /* eslint-disable no-param-reassign */
+        /* eslint-disable-next-line no-param-reassign */
         data.CommonPrefixes = newPrefixes;
     }
     if (data.NextMarker === '') {
-        /* eslint-disable no-param-reassign */
+        /* eslint-disable-next-line no-param-reassign */
         delete data.NextMarker;
     }
     if (data.EncodingType === '') {
-        /* eslint-disable no-param-reassign */
+        /* eslint-disable-next-line no-param-reassign */
         delete data.EncodingType;
     }
     if (data.Delimiter === '') {
-        /* eslint-disable no-param-reassign */
+        /* eslint-disable-next-line no-param-reassign */
         delete data.Delimiter;
     }
 }
