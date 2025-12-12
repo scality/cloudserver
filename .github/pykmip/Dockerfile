@@ -17,9 +17,10 @@ RUN apk add --no-cache \
     pip3 install --upgrade typing-extensions>=4.13.2 && \
     git clone https://github.com/openkmip/pykmip.git && \
     cd pykmip && \
-    python3 setup.py install && \
+    git checkout 6cd44b572b0ca55adf01a8a12078b2284602e64c && \
+    pip3 install . && \
     apk del .build-deps && \
-    rm -rf /pykmip && \
+    rm -rf /var/cache/apk/* /pykmip && \
     mkdir /pykmip
 
 ADD ./bin /usr/local/bin
