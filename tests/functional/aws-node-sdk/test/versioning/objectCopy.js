@@ -380,6 +380,7 @@ describe('Object Version Copy', () => {
             assert.strictEqual(getRes.ETag, emptyFileETag);
         });
 
+        // TODO: remove (or update to use different location constraint) in CLDSRV-639
         if (constants.validStorageClasses.includes('REDUCED_REDUNDANCY')) {
             it('should copy a 0 byte object to same destination', async () => {
                 const emptyFileETag = '"d41d8cd98f00b204e9800998ecf8427e"';
@@ -841,6 +842,8 @@ describe('Object Version Copy', () => {
                 CopySourceIfModifiedSince: dateFromNow(-1) });
         });
 
+        // Skipping this test, because real AWS does not provide error as
+        // expected
         it.skip('If-None-Match match & If-Modified-Since not match', async () => {
             try {
                 await requestCopy({

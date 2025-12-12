@@ -63,17 +63,14 @@ describe('delete marker creation in bucket with null version', () => {
                 VersioningConfiguration: versioningEnabled,
             }));
 
-            // List versions to check null version exists
             const listData = await s3.send(new ListObjectVersionsCommand({ Bucket: bucket }));
             assert.strictEqual(listData.Versions.length, 1);
             assert.strictEqual(listData.Versions[0].VersionId, 'null');
 
-            // Delete object to create delete marker
             const deleteData = await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
             assert.strictEqual(deleteData.DeleteMarker, true);
             assert(deleteData.VersionId);
 
-            // List versions again to verify null version still exists with delete marker
             const listData2 = await s3.send(new ListObjectVersionsCommand({ Bucket: bucket }));
             assert.strictEqual(listData2.Versions.length, 1);
             assert.strictEqual(listData2.Versions[0].VersionId, 'null');
@@ -87,17 +84,14 @@ describe('delete marker creation in bucket with null version', () => {
                 VersioningConfiguration: versioningSuspended,
             }));
 
-            // List versions to check null version exists
             const listData = await s3.send(new ListObjectVersionsCommand({ Bucket: bucket }));
             assert.strictEqual(listData.Versions.length, 1);
             assert.strictEqual(listData.Versions[0].VersionId, 'null');
 
-            // Delete object to create delete marker
             const deleteData = await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
             assert.strictEqual(deleteData.DeleteMarker, true);
             assert.strictEqual(deleteData.VersionId, 'null');
 
-            // List versions again to verify null version was overwritten
             const listData2 = await s3.send(new ListObjectVersionsCommand({ Bucket: bucket }));
             assert.strictEqual(listData2.Versions, undefined);
             assert.strictEqual(listData2.DeleteMarkers[0].VersionId, deleteData.VersionId);

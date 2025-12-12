@@ -5,7 +5,6 @@ const querystring = require('querystring');
 const getConfig = require('../../test/support/config');
 
 const config = getConfig('default');
-
 const customRequestMiddleware = buildParams => next => async args => {
 
     const { headers, query } = buildParams;
