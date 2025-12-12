@@ -77,6 +77,117 @@ describe('RouteVeeam: checkBucketAndKey', () => {
             assert.strictEqual(routeVeeam.checkBucketAndKey(...test), undefined);
         });
     });
+
+    it('should allow SigV4 presigned GET query parameters in mixed case', () => {
+        const err = routeVeeam.checkBucketAndKey(
+            'test',
+            '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml',
+            {
+                'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
+                'X-Amz-Credential': 'cred',
+                'X-Amz-Date': '20240101T000000Z',
+                'X-Amz-Expires': '900',
+                'X-Amz-SignedHeaders': 'host',
+                'X-Amz-Signature': 'signature',
+                'X-Amz-Security-Token': 'token',
+            },
+            'GET',
+            log,
+        );
+        assert.strictEqual(err, undefined);
+    });
+
+    it('should allow SigV4-style query parameters on non-GET when they are presigned', () => {
+        const err = routeVeeam.checkBucketAndKey(
+            'test',
+            '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml',
+            {
+                'x-amz-algorithm': 'AWS4-HMAC-SHA256',
+                'x-amz-credential': 'cred',
+                'x-amz-date': '20240101T000000Z',
+                'x-amz-expires': '900',
+                'x-amz-signedheaders': 'host',
+                'x-amz-signature': 'signature',
+            },
+            'DELETE',
+            log,
+        );
+        assert.strictEqual(err, undefined);
+    });
+
+    it('should reject unexpected query parameters even when presigned GET keys are present', () => {
+        const err = routeVeeam.checkBucketAndKey(
+            'test',
+            '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml',
+            {
+                'X-Amz-Credential': 'a',
+                extra: 'not-allowed',
+            },
+            'GET',
+            log,
+        );
+        assert.strictEqual(err.is.InvalidRequest, true);
+    });
+
+    it('should allow AWS SDK x-id=PutObject query on PUT for system.xml', () => {
+        const err = routeVeeam.checkBucketAndKey(
+            'test',
+            '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml',
+            { 'x-id': 'PutObject' },
+            'PUT',
+            log,
+        );
+        assert.strictEqual(err, undefined);
+    });
+
+    it('should allow AWS SDK auxiliary x-amz-sdk-* query params on PUT for system.xml', () => {
+        const err = routeVeeam.checkBucketAndKey(
+            'test',
+            '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml',
+            {
+                'x-id': 'PutObject',
+                'x-amz-sdk-request': 'attempt=1',
+                'x-amz-sdk-invocation-id': 'abc-123',
+                'x-amz-user-agent': 'aws-sdk-js-v3',
+            },
+            'PUT',
+            log,
+        );
+        assert.strictEqual(err, undefined);
+    });
+
+    it('should reject mismatched x-id value on PUT for system.xml', () => {
+        const err = routeVeeam.checkBucketAndKey(
+            'test',
+            '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml',
+            { 'x-id': 'GetObject' },
+            'PUT',
+            log,
+        );
+        assert.strictEqual(err.is.InvalidRequest, true);
+    });
+
+    it('should reject mismatched x-id value on GET for system.xml', () => {
+        const err = routeVeeam.checkBucketAndKey(
+            'test',
+            '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml',
+            { 'x-id': 'PutObject' },
+            'GET',
+            log,
+        );
+        assert.strictEqual(err.is.InvalidRequest, true);
+    });
+
+    it('should accept x-id with different casing when value matches action', () => {
+        const err = routeVeeam.checkBucketAndKey(
+            'test',
+            '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml',
+            { 'X-Id': 'GetObject' },
+            'GET',
+            log,
+        );
+        assert.strictEqual(err, undefined);
+    });
 });
 
 describe('RouteVeeam: checkBucketAndKey', () => {
