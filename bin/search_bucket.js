@@ -78,7 +78,8 @@ function _performSearch(host,
  */
 function searchBucket() {
     // TODO: Include other bucket listing possible query params?
-    commander
+    const program = new commander.Command();
+    program
         .version('0.0.1')
         .option('-a, --access-key <accessKey>', 'Access key id')
         .option('-k, --secret-key <secretKey>', 'Secret access key')
@@ -93,11 +94,11 @@ function searchBucket() {
         .option('-v, --verbose')
         .parse(process.argv);
     const { host, port, accessKey, secretKey, sessionToken, bucket, query, listVersions, verbose, ssl } =
-        commander;
+        program.opts();
 
     if (!host || !port || !accessKey || !secretKey || !bucket || !query) {
         logger.error('missing parameter');
-        commander.outputHelp();
+        program.outputHelp();
         process.exit(1);
     }
 
