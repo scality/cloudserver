@@ -4562,9 +4562,9 @@ arraybuffer.prototype.slice@^1.0.4:
     get-intrinsic "^1.2.6"
     is-array-buffer "^3.0.4"
 
-"arsenal@git+https://github.com/scality/Arsenal#1a64222090b62369f1555af43f4cb27f6d2f5b32":
+"arsenal@git+https://github.com/scality/Arsenal#06a61a295e4d8da64d323ce482080a419eb0f409":
   version "8.2.41"
-  resolved "git+https://github.com/scality/Arsenal#1a64222090b62369f1555af43f4cb27f6d2f5b32"
+  resolved "git+https://github.com/scality/Arsenal#06a61a295e4d8da64d323ce482080a419eb0f409"
   dependencies:
     "@aws-sdk/client-kms" "^3.901.0"
     "@aws-sdk/client-s3" "^3.901.0"
