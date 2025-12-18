@@ -7,7 +7,7 @@ const services = require('../../../lib/services');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutACL = require('../../../lib/api/bucketPutACL');
 const constants = require('../../../constants');
-const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils} = require('../helpers');
 const objectPut = require('../../../lib/api/objectPut');
 const { objectDelete, objectDeleteInternal } = require('../../../lib/api/objectDelete');
 const objectGet = require('../../../lib/api/objectGet');
@@ -16,6 +16,7 @@ const mpuUtils = require('../utils/mpuUtils');
 const metadataswitch = require('../metadataswitch');
 const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
 const bucketPutNotification = require('../../../lib/api/bucketPutNotification');
+const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 
 const any = sinon.match.any;
 const originalDeleteObject = services.deleteObject;
@@ -31,6 +32,8 @@ const earlyDate = new Date();
 const lateDate = new Date();
 earlyDate.setMinutes(earlyDate.getMinutes() - 30);
 lateDate.setMinutes(lateDate.getMinutes() + 30);
+
+const enableVersioningRequest = versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
 
 function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
     log, cb) {
@@ -369,5 +372,67 @@ describe('objectDelete API', () => {
                 });
             });
         });
+    });
+});
+
+describe('objectDelete API with versioning', () => {
+    let testPutObjectRequest;
+
+    beforeEach(() => {
+        cleanup();
+        testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey,
+            headers: {},
+            url: `/${bucketName}/${objectKey}`,
+        }, postBody);
+
+        sinon.stub(services, 'deleteObject').callsFake(originalDeleteObject);
+        sinon.spy(metadataswitch, 'putObjectMD');
+        sinon.spy(metadataswitch, 'deleteObjectMD');
+    });
+
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    const testBucketPutRequest = new DummyRequest({
+        bucketName,
+        namespace,
+        headers: {},
+        url: `/${bucketName}`,
+    });
+    const testDeleteRequest = new DummyRequest({
+        bucketName,
+        namespace,
+        objectKey,
+        headers: {},
+        url: `/${bucketName}/${objectKey}`,
+    });
+
+    it('should upgrade master-only document to a version document when storing a delete marker version', done => {
+        async.series([
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
+            next => objectDelete(authInfo, testDeleteRequest, log, next),
+            async () => {
+                const calls = metadataswitch.putObjectMD.getCalls();
+                sinon.assert.calledWith(calls[calls.length - 2],
+                    bucketName, objectKey, sinon.match({
+                        versionId: sinon.match.truthy,
+                        isNull: true,
+                        originOp: 's3:StoreNullVersion',
+                    }), any, any, any);
+            },
+            async () => {
+                // New version document (delete marker) was created with the right originOp.
+                sinon.assert.calledWith(metadataswitch.putObjectMD.lastCall,
+                    bucketName, objectKey, sinon.match({
+                        _data: { originOp: 's3:ObjectRemoved:DeleteMarkerCreated' },
+                    }), any, any, any);
+            },
+        ], done);
     });
 });
