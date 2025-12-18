@@ -26,7 +26,10 @@ docker pull ghcr.io/scality/cloudserver:<tag>
 
 To release a production image:
 
-* Create a PR to bump the package version : update Cloudserver's `package.json` by bumping it to the relevant next version in a new PR. Per example if the last released version was `8.4.7`, the next version would be `8.4.8`.
+* Create a PR to bump the package version :
+  update Cloudserver's `package.json` by bumping it to the relevant next
+  version in a new PR. Per example if the last released version was `8.4.7`,
+  the next version would be `8.4.8`.
 
   ```js
   {
@@ -48,7 +51,8 @@ To release a production image:
 
   This workflow will create the tag and push the Docker images.
 
-  This should be done as soon as the PR is merged, so that the tag is put on the "version bump" commit.
+  This should be done as soon as the PR is merged,
+  so that the tag is put on the "version bump" commit.
 
 * Release the release version on Jira
 
