@@ -334,14 +334,15 @@ describe('bucketGet API V2', () => {
         });
     });
 
-    describe.only('z-amz-optional-attributes header', () => {
+    describe('z-amz-optional-attributes header', () => {
         it('should return an error if the user does not have the permission', done => {
             const authInfoNoPerm = makeAuthInfo('accessKey2'); // A new user without specific permissions
             const testGetRequest = Object.assign({
                 query: {},
                 url: baseUrl,
-                headers: { 'x-amz-optional-attributes': 'x-amz-meta-department' },
             }, baseGetRequest);
+            testGetRequest.headers['x-amz-optional-object-attributes'] = 'x-amz-meta-department';
+
 
             async.series([
                 next => bucketPut(authInfo, testPutBucketRequest, log, next),
@@ -356,8 +357,8 @@ describe('bucketGet API V2', () => {
             const testGetRequest = Object.assign({
                 query: {},
                 url: baseUrl,
-                headers: { 'x-amz-optional-attributes': 'RestoreStatus' },
             }, baseGetRequest);
+            testGetRequest.headers['x-amz-optional-object-attributes'] = 'RestoreStatus';
 
             async.waterfall(
                 [
@@ -377,8 +378,8 @@ describe('bucketGet API V2', () => {
             const testGetRequest = Object.assign({
                 query: {},
                 url: baseUrl,
-                headers: { 'x-amz-optional-attributes': 'x-amz-meta-department' },
             }, baseGetRequest);
+            testGetRequest.headers['x-amz-optional-object-attributes'] = 'x-amz-meta-department';
 
             async.waterfall([
                 next => bucketPut(authInfo, testPutBucketRequest, log, next),
@@ -387,8 +388,7 @@ describe('bucketGet API V2', () => {
             ],
             (err, result) => {
                 assert.strictEqual(err, null);
-                assert.strictEqual(result.ListBucketResult.$.xmlns,
-                    'http://s3.amazonaws.com/doc/2006-03-01/');
+                assert.strictEqual(result.ListBucketResult.$.xmlns, 'http://s3.amazonaws.com/doc/2006-03-01/');
                 done();
             });
         });
@@ -398,8 +398,8 @@ describe('bucketGet API V2', () => {
             const testGetRequest = Object.assign({
                 query: {},
                 url: baseUrl,
-                headers: { 'x-amz-optional-attributes': 'RestoreStatus,x-amz-meta-department' },
             }, baseGetRequest);
+            testGetRequest.headers['x-amz-optional-object-attributes'] = 'RestoreStatus,x-amz-meta-department';
 
             async.series([
                 next => bucketPut(authInfo, testPutBucketRequest, log, next),
@@ -410,12 +410,45 @@ describe('bucketGet API V2', () => {
             });
         });
 
-        it('should ignore the header if the value is empty', done => {
+        it('should return an error if the header is empty', done => {
             const testGetRequest = Object.assign({
                 query: {},
                 url: baseUrl,
-                headers: { 'x-amz-optional-attributes': '' },
             }, baseGetRequest);
+            testGetRequest.headers['x-amz-optional-object-attributes'] = '';
+
+            async.waterfall([
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                (_, next) => bucketGet(authInfo, testGetRequest, log, next),
+                (result, _, next) => parseString(result, next),
+            ], err => {
+                assert.strictEqual(err.is.InvalidArgument, true);
+                done();
+            });
+        });
+
+        it('should return an error for invalid optional attributes', done => {
+            const testGetRequest = Object.assign({
+                query: {},
+                url: baseUrl,
+            }, baseGetRequest);
+            testGetRequest.headers['x-amz-optional-object-attributes'] = 'InvalidAttribute';
+
+            async.series([
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                next =>  bucketGet(authInfo, testGetRequest, log, next),
+            ], err => {
+                assert.strictEqual(err.is.InvalidArgument, true);
+                done();
+            });
+        });
+
+        it('should accept wildcard value', done => {
+            const testGetRequest = Object.assign({
+                query: {},
+                url: baseUrl,
+            }, baseGetRequest);
+            testGetRequest.headers['x-amz-optional-object-attributes'] = 'x-amz-meta-*';
 
             async.waterfall([
                 next => bucketPut(authInfo, testPutBucketRequest, log, next),
@@ -423,8 +456,61 @@ describe('bucketGet API V2', () => {
                 (result, _, next) => parseString(result, next),
             ], (err, result) => {
                 assert.strictEqual(err, null);
-                assert.strictEqual(result.ListBucketResult.$.xmlns,
-                    'http://s3.amazonaws.com/doc/2006-03-01/');
+                assert.strictEqual(result.ListBucketResult.$.xmlns, 'http://s3.amazonaws.com/doc/2006-03-01/');
+                done();
+            });
+        });
+
+        it('should return an error for a mix of valid and invalid attributes', done => {
+            const testGetRequest = Object.assign({
+                query: {},
+                url: baseUrl,
+            }, baseGetRequest);
+            testGetRequest.headers['x-amz-optional-object-attributes'] = 'RestoreStatus,InvalidAttribute';
+
+            async.series([
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                next =>  bucketGet(authInfo, testGetRequest, log, next),
+            ], err => {
+                assert.strictEqual(err.is.InvalidArgument, true);
+                done();
+            });
+        });
+
+        it('should handle attributes with leading/trailing whitespace', done => {
+            const testGetRequest = Object.assign({
+                query: {},
+                url: baseUrl,
+            }, baseGetRequest);
+            testGetRequest.headers['x-amz-optional-object-attributes'] = 'x-amz-meta-foo';
+
+            async.waterfall([
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                (_, next) => bucketGet(authInfo, testGetRequest, log, next),
+                (result, _, next) => parseString(result, next),
+            ],
+            (err, result) => {
+                assert.strictEqual(err, null);
+                assert.strictEqual(result.ListBucketResult.$.xmlns, 'http://s3.amazonaws.com/doc/2006-03-01/');
+                done();
+            });
+        });
+
+        it('should handle multiple valid attributes', done => {
+            const testGetRequest = Object.assign({
+                query: {},
+                url: baseUrl,
+            }, baseGetRequest);
+            testGetRequest.headers['x-amz-optional-object-attributes'] = 'RestoreStatus,x-amz-meta-foo,x-amz-meta-bar';
+
+            async.waterfall([
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                (_, next) => bucketGet(authInfo, testGetRequest, log, next),
+                (result, _, next) => parseString(result, next),
+            ],
+            (err, result) => {
+                assert.strictEqual(err, null);
+                assert.strictEqual(result.ListBucketResult.$.xmlns, 'http://s3.amazonaws.com/doc/2006-03-01/');
                 done();
             });
         });
