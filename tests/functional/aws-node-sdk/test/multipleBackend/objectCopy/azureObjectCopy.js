@@ -43,6 +43,8 @@ let bucketUtil;
 let s3;
 
 function normalizeMetadata(metadata) {
+    // Azure returns user metadata in lowercase and may swap dashes/underscores;
+    // normalize here so we can compare S3 and Azure responses without flaky casing.
     const normalized = {};
     if (!metadata) {
         return normalized;

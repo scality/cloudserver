@@ -22,6 +22,7 @@ let bucketUtil;
 let s3;
 
 const retryTimeout = 10000;
+const maxGetRetries = 3;
 
 function checkGcp(key, gcpMD5, location, callback) {
     gcpClient.getObject({
@@ -59,6 +60,7 @@ function checkGcpError(key, expectedError, callback) {
 function gcpGetCheck(objectKey, s3MD5, gcpMD5, location, callback) {
     process.stdout.write('Getting object\n');
     const params = { Bucket: bucket, Key: objectKey };
+    let retries = 0;
     function attempt() {
         s3.send(new GetObjectCommand(params))
             .then(res => {
@@ -71,6 +73,10 @@ function gcpGetCheck(objectKey, s3MD5, gcpMD5, location, callback) {
             })
             .catch(err => {
                 if (err && err.name === 'NetworkingError') {
+                    if (retries >= maxGetRetries) {
+                        assert.fail(`GetObject retry limit reached (${maxGetRetries}) due to NetworkingError: ${err}`);
+                    }
+                    retries += 1;
                     setTimeout(() => {
                         process.stdout.write('Getting object retry\n');
                         attempt();

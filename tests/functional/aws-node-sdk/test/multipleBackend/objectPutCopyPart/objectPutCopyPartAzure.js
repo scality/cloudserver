@@ -265,7 +265,7 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE', function describeF() {
                     },
                 ], done);
             });
-            afterEach(function afterEachF(done) {
+            afterEach(async function afterEachF() {
                 const paramsAzure = {
                     Bucket: azureContainerName,
                     Key: this.currentTest.mpuKeyNameAzure,
@@ -281,23 +281,10 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE', function describeF() {
                     Key: this.currentTest.mpuKeyNameAWS,
                     UploadId: this.currentTest.uploadIdAWS,
                 };
-                async.waterfall([
-                    next => {
-                            s3.send(new AbortMultipartUploadCommand(paramsAzure))
-                                    .then(() => next())
-                                    .catch(next);
-                    },
-                    next => {
-                            s3.send(new AbortMultipartUploadCommand(paramsMem))
-                                    .then(() => next())
-                                    .catch(next);
-                    },
-                    next => {
-                            s3.send(new AbortMultipartUploadCommand(paramsAWS))
-                                    .then(() => next())
-                                    .catch(next);
-                    },
-                ], done);
+                const abortSequence = [paramsAzure, paramsMem, paramsAWS];
+                for (const params of abortSequence) {
+                    await s3.send(new AbortMultipartUploadCommand(params));
+                }
             });
             it('should copy small part from Azure to MPU with Azure location',
             function ifF(done) {

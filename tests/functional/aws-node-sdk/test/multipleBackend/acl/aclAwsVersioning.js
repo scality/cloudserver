@@ -232,7 +232,6 @@ function testSuite() {
             });
         });
 
-
         it('versioning suspended then enabled: should put/get acl on null ' +
         'version successfully even when latest version is not null version',
         done => {

@@ -89,7 +89,7 @@ describe('GCP: GET Bucket', function testSuite() {
     describe('without existing bucket', () => {
         it('should return 404 and NoSuchBucket', done => {
             const badBucketName = `nonexistingbucket-${genUniqID()}`;
-            gcpClient.listObjects({
+            gcpClient.getBucket({
                 Bucket: badBucketName,
             }, err => {
                 assert(err);
