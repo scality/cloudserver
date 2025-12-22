@@ -112,7 +112,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         Status: 'Enabled',
                     }
                 };
-                const params = { Bucket: bucketName, Key: objectName };
+                const params = { Bucket: bucketName, Key: objectName, Body: '' };
                 let vId;
 
                 async.series([
