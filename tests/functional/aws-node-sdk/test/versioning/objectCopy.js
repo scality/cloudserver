@@ -435,6 +435,7 @@ describe('Object Version Copy', () => {
             assert.strictEqual(body, content);
         });
 
+        // skipping test as object level encryption is not implemented yet
         it.skip('should copy an object and change the server side encryption' +
             'option if server side encryption header provided', async () => {
             await s3.send(new CopyObjectCommand({ Bucket: destBucketName, Key: destObjName,
@@ -781,6 +782,8 @@ describe('Object Version Copy', () => {
             }
         });
 
+        // Skipping this test, because real AWS does not provide error as
+        // expected
         it.skip('If-Match match & If-Modified-Since not match', async () => {
             await requestCopy({ CopySourceIfMatch: etagTrim, CopySourceIfModifiedSince: dateFromNow(1) });
         });
