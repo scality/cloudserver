@@ -80,7 +80,7 @@ function enableVersioningThenPutObject(bucket, object, callback) {
         if (err) {
             callback(err);
         }
-        s3Client.send(new PutObjectCommand({ Bucket: bucket, Key: object })).then(() => 
+        s3Client.send(new PutObjectCommand({ Bucket: bucket, Key: object, Body: '' })).then(() => 
             callback()).catch(err => callback(err));
     });
 }
@@ -105,12 +105,12 @@ function enableVersioningThenPutObject(bucket, object, callback) {
 function createDualNullVersion(s3, bucketName, keyName, cb) {
     async.waterfall([
         // put null version
-        next => s3Client.send(new PutObjectCommand({ Bucket: bucketName, Key: keyName, Body: null })).then(() => 
+        next => s3Client.send(new PutObjectCommand({ Bucket: bucketName, Key: keyName, Body: '' })).then(() => 
             next()).catch(err => next(err)),
         next => enableVersioning(bucketName, err => next(err)),
         // should store null version as separate version before
         // putting new version
-        next => s3Client.send(new PutObjectCommand({ Bucket: bucketName, Key: keyName })).then(data => {
+        next => s3Client.send(new PutObjectCommand({ Bucket: bucketName, Key: keyName, Body: '' })).then(data => {
             assert(data.VersionId);
             next(null, data.VersionId);
         }).catch(err => {
