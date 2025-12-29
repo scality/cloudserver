@@ -28,6 +28,16 @@ describe('Test update bucket quota', () => {
     it('should update the quota', () => sendRequest('PUT', 
         '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota)));
 
+    it('should update quota with XML format', async () => {
+        try {
+            const xmlQuota = '<QuotaConfiguration><Quota>3000</Quota></QuotaConfiguration>';
+            await sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, xmlQuota);
+            assert.ok(true);
+        } catch (err) {
+            assert.fail(`Expected no error, but got ${err}`);
+        }
+    });
+
     it('should return no such bucket error', async () => {
         try {
             await sendRequest('PUT', '127.0.0.1:8000', `/${nonExistantBucket}/?quota=true`, JSON.stringify(quota));
