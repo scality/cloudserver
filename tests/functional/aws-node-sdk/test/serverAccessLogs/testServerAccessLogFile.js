@@ -2642,6 +2642,12 @@ describe('Server Access Logs - File Output', async () => {
 
                     const properties = operation.expected[operationIdx];
                     for (const [key, val] of Object.entries(properties)) {
+                        if (val === null) {
+                            // Verify that null fields are omitted (not present in log)
+                            assert.strictEqual(key in logEntries[logEntryIdx], false,
+                                `Field ${key} should be omitted when null, action ${properties.action}`);
+                            continue;
+                        }
                         assert.strictEqual(logEntries[logEntryIdx][key], val,
                             `Invalid value for ${key}, action ${properties.action}`);
                     }
