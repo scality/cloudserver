@@ -980,6 +980,31 @@ describe('objectPut API with versioning', () => {
         });
     });
 
+    it('should set originOp when moving master-only document to a version document', done => {
+        async.series([
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+            async () => {
+                // Old master-only document was moved to a proper version, with originOp overridden to prevent
+                // unexpected bucket notifications.
+                const calls = metadata.putObjectMD.getCalls();
+                sinon.assert.calledWith(calls[calls.length - 2],
+                    bucketName, objectName, sinon.match({
+                        originOp: 's3:StoreNullVersion',
+                    }), any, any, any);
+            },
+            async () => {
+                // New version document was created with the right originOp.
+                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                    bucketName, objectName, sinon.match({
+                       _data: { originOp: 's3:ObjectCreated:Put' },
+                    }), any, any, any);
+            },
+        ], done);
+    });
+
     it('should not pass needOplogUpdate when writing new object', done => {
         async.series([
             next => bucketPut(authInfo, testPutBucketRequest, log, next),

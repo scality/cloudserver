@@ -2396,6 +2396,7 @@ describe('complete mpu with versioning', () => {
                             assert.strictEqual(objVal.completeInProgress, true);
                         } else {
                             assert.strictEqual(params.replayId, testUploadId);
+                            assert.strictEqual(objVal.originOp, 's3:ObjectCreated:CompleteMultipartUpload');
                             metadataBackend.putObject = origPutObject;
                         }
                         origPutObject(
@@ -2413,6 +2414,7 @@ describe('complete mpu with versioning', () => {
                 metadataBackend.putObject =
                     (putBucketName, objName, objVal, params, log, cb) => {
                         assert.strictEqual(params.oldReplayId, testUploadId);
+                        assert.strictEqual(objVal.originOp, 's3:ObjectCreated:Put');
                         metadataBackend.putObject = origPutObject;
                         origPutObject(
                             putBucketName, objName, objVal, params, log, cb);
