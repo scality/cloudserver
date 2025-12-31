@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
-const { GCP } = arsenal.storage.data.external;
+const { GCP } = arsenal.storage.data.external.GCP;
 const { makeGcpRequest } = require('../../../utils/makeRequest');
 const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
@@ -90,8 +90,8 @@ describe('GCP: DELETE Object', function testSuite() {
                 Key: badObjectKey,
             }, err => {
                 assert(err);
-                assert.strictEqual(err.statusCode, 404);
-                assert.strictEqual(err.code, 'NoSuchKey');
+                assert.strictEqual(err.$metadata.httpStatusCode, 404);
+                assert.strictEqual(err.name, 'NoSuchKey');
                 return done();
             });
         });

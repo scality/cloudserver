@@ -1,6 +1,9 @@
-const AWS = require('aws-sdk');
-const S3 = AWS.S3;
 const assert = require('assert');
+const {
+    S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+} = require('@aws-sdk/client-s3');
 const getConfig = require('../support/config');
 const { sendRateLimitRequest, skipIfRateLimitDisabled } = require('../rateLimit/tooling');
 
@@ -12,13 +15,22 @@ skipIfRateLimitDisabled('Test delete bucket rate limit', () => {
 
     before(() => {
         const config = getConfig('lisa', { signatureVersion: 'v4' });
-        s3 = new S3(config);
-        AWS.config.update(config);
+        s3 = new S3Client({ ...config, forcePathStyle: true });
     });
 
-    beforeEach(done => s3.createBucket({ Bucket: bucket }, done));
+    beforeEach(async () => {
+        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+    });
 
-    afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
+    afterEach(async () => {
+        try {
+            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+        } catch (err) {
+            if (err.name !== 'NoSuchBucket') {
+                throw err;
+            }
+        }
+    });
 
     it('should delete the bucket rate limit config', async () => {
         try {

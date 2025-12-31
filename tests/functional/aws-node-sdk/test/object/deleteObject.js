@@ -29,7 +29,7 @@ describe('DELETE object', () => {
         const testfile = Buffer.alloc(1024 * 1024 * 54, 0);
 
         describe('with multipart upload', () => {
-            const bucketName = 'testdeletempu';
+            const bucketName = `testdeletempu-${Date.now()}`;
             before(async () => {
                 try {
                     process.stdout.write('creating bucket\n');

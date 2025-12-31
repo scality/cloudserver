@@ -3,6 +3,7 @@ const { HttpRequest } = require('@aws-sdk/protocol-http');
 const { SignatureV4 } = require('@aws-sdk/signature-v4');
 const { Sha256 } = require('@aws-crypto/sha256-js');
 const xml2js = require('xml2js');
+const { getCredentials } = require('../support/credentials');
 
 const sendRequest = async (method, host, path, body = '', config = null, signingDate = new Date()) => {
     const service = 's3';
@@ -36,9 +37,17 @@ const sendRequest = async (method, host, path, body = '', config = null, signing
     request.headers['X-Amz-Content-SHA256'] = Buffer.from(hash).toString('hex');
     request.region = region;
 
-    // Get credentials
-    const accessKeyId = config?.accessKey || config?.accessKeyId || 'accessKey1';
-    const secretAccessKey = config?.secretKey || config?.secretAccessKey || 'verySecretKey1';
+    // Get credentials - use same source as S3 client configuration
+    let accessKeyId = config?.accessKey || config?.accessKeyId;
+    let secretAccessKey = config?.secretKey || config?.secretAccessKey;
+    
+    // If not provided in config, use getCredentials (matches S3 client credential source)
+    if (!accessKeyId || !secretAccessKey) {
+        const defaultCreds = getCredentials('default');
+        accessKeyId = accessKeyId || defaultCreds.accessKeyId;
+        secretAccessKey = secretAccessKey || defaultCreds.secretAccessKey;
+    }
+    
     if (!accessKeyId || !secretAccessKey) {
         throw new Error('Missing accessKeyId or secretAccessKey in config');
     }

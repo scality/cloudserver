@@ -96,12 +96,11 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
 
         it('should delete object from mem', async () => {
             await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: memObject }));
-            
             try {
                 await s3.send(new GetObjectCommand({ Bucket: bucket, Key: memObject }));
                 assert.fail('Expected NoSuchKey error but got success');
             } catch (err) {
-                assert.strictEqual(err.code, 'NoSuchKey');
+                assert.strictEqual(err.name, 'NoSuchKey');
             }
         });
 
@@ -112,7 +111,7 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
                 await s3.send(new GetObjectCommand({ Bucket: bucket, Key: fileObject }));
                 assert.fail('Expected NoSuchKey error but got success');
             } catch (err) {
-                assert.strictEqual(err.code, 'NoSuchKey');
+                assert.strictEqual(err.name, 'NoSuchKey');
             }
         });
 
@@ -123,7 +122,7 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
                 await s3.send(new GetObjectCommand({ Bucket: bucket, Key: awsObject }));
                 assert.fail('Expected NoSuchKey error but got success');
             } catch (err) {
-                assert.strictEqual(err.code, 'NoSuchKey');
+                assert.strictEqual(err.name, 'NoSuchKey');
             }
         });
 
@@ -134,7 +133,7 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
                 await s3.send(new GetObjectCommand({ Bucket: bucket, Key: emptyObject }));
                 assert.fail('Expected NoSuchKey error but got success');
             } catch (err) {
-                assert.strictEqual(err.code, 'NoSuchKey');
+                assert.strictEqual(err.name, 'NoSuchKey');
             }
         });
 
@@ -145,7 +144,7 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
                 await s3.send(new GetObjectCommand({ Bucket: bucket, Key: bigObject }));
                 assert.fail('Expected NoSuchKey error but got success');
             } catch (err) {
-                assert.strictEqual(err.code, 'NoSuchKey');
+                assert.strictEqual(err.name, 'NoSuchKey');
             }
         });
 
@@ -159,7 +158,7 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
                 }));
                 assert.fail('Expected NoSuchKey error but got success');
             } catch (err) {
-                assert.strictEqual(err.code, 'NoSuchKey');
+                assert.strictEqual(err.name, 'NoSuchKey');
             }
         });
     });

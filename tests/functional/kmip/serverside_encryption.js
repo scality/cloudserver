@@ -1,4 +1,9 @@
-const AWS = require('aws-sdk');
+const { 
+    S3Client, 
+    PutObjectCommand, 
+    CopyObjectCommand, 
+    CreateMultipartUploadCommand 
+} = require('@aws-sdk/client-s3');
 const { v4: uuidv4 } = require('uuid');
 const config = require('../config.json');
 const { auth } = require('arsenal');
@@ -64,14 +69,23 @@ function _createBucket(name, encrypt, done) {
 
 function _buildS3() {
     const { transport, ipAddress, accessKey, secretKey } = config;
-    AWS.config.update({
+    const agent = transport === 'https' 
+        ? new https.Agent({ keepAlive: false })
+        : new http.Agent({ keepAlive: false });
+    
+    return new S3Client({
         endpoint: `${transport}://${ipAddress}:8000`,
-        accessKeyId: accessKey,
-        secretAccessKey: secretKey,
-        sslEnabled: transport === 'https',
-        s3ForcePathStyle: true,
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: accessKey,
+            secretAccessKey: secretKey,
+        },
+        forcePathStyle: true,
+        requestHandler: {
+            httpAgent: transport === 'http' ? agent : undefined,
+            httpsAgent: transport === 'https' ? agent : undefined,
+        },
     });
-    return new AWS.S3();
 }
 const s3 = _buildS3();
 
@@ -88,7 +102,9 @@ function _putObject(bucketName, objectName, encrypt, cb) {
         });
     }
 
-    s3.putObject(params, cb);
+    s3.send(new PutObjectCommand(params))
+        .then(() => cb(null))
+        .catch(err => cb(err));
 }
 
 function _copyObject(sourceBucket, sourceObject, targetBucket, targetObject,
@@ -105,7 +121,9 @@ function _copyObject(sourceBucket, sourceObject, targetBucket, targetObject,
         });
     }
 
-    s3.copyObject(params, cb);
+    s3.send(new CopyObjectCommand(params))
+        .then(() => cb(null))
+        .catch(err => cb(err));
 }
 
 function _initiateMultipartUpload(bucketName, objectName, encrypt, cb) {
@@ -120,7 +138,9 @@ function _initiateMultipartUpload(bucketName, objectName, encrypt, cb) {
         });
     }
 
-    s3.createMultipartUpload(params, cb);
+    s3.send(new CreateMultipartUploadCommand(params))
+        .then(() => cb(null))
+        .catch(err => cb(err));
 }
 
 describe('KMIP backed server-side encryption', () => {

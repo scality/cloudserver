@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
 const xml2js = require('xml2js');
-const { GCP } = arsenal.storage.data.external;
+const { GCP } = arsenal.storage.data.external.GCP;
 const { makeGcpRequest } = require('../../../utils/makeRequest');
 const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
@@ -70,7 +70,7 @@ describe('GCP: PUT Bucket Versioning', () => {
                 method: 'GET',
                 bucket: this.test.bucketName,
                 authCredentials: config.credentials,
-                queryObj: { versioning: {} },
+                queryObj: { versioning: '' },
             }, (err, res) => {
                 if (err) {
                     process.stdout.write(`err in retrieving bucket ${err}`);
@@ -97,7 +97,7 @@ describe('GCP: PUT Bucket Versioning', () => {
                 method: 'GET',
                 bucket: this.test.bucketName,
                 authCredentials: config.credentials,
-                queryObj: { versioning: {} },
+                queryObj: { versioning: '' },
             }, (err, res) => {
                 if (err) {
                     process.stdout.write(`err in retrieving bucket ${err}`);

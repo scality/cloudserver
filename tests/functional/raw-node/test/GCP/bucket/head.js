@@ -1,6 +1,6 @@
 const assert = require('assert');
 const arsenal = require('arsenal');
-const { GCP } = arsenal.storage.data.external;
+const { GCP } = arsenal.storage.data.external.GCP;
 const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
@@ -22,7 +22,7 @@ describe('GCP: HEAD Bucket', () => {
                 Bucket: this.test.bucketName,
             }, err => {
                 assert(err);
-                assert.strictEqual(err.statusCode, 404);
+                assert.strictEqual(err.$metadata?.httpStatusCode, 404);
                 return done();
             });
         });
@@ -67,7 +67,9 @@ describe('GCP: HEAD Bucket', () => {
                 Bucket: this.test.bucketName,
             }, (err, res) => {
                 assert.equal(err, null, `Expected success, but got ${err}`);
-                assert.deepStrictEqual(this.test.bucketObj, res);
+                const { $metadata, ...data } = res;
+                assert.strictEqual($metadata.httpStatusCode, 200);
+                assert.deepStrictEqual(this.test.bucketObj, data);
                 return done();
             });
         });

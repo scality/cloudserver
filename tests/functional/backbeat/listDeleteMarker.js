@@ -1,15 +1,31 @@
 const assert = require('assert');
 const async = require('async');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketVersioningCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+} = require('@aws-sdk/client-s3');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
 const { makeBackbeatRequest } = require('./utils');
+const { promisify } = require('util');
 
-const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+const removeAllVersionsPromise = promisify(removeAllVersions);
+const bucketUtil = new BucketUtility('default', {});
 const s3 = bucketUtil.s3;
-const credentials = {
-    accessKey: s3.config.credentials.accessKeyId,
-    secretKey: s3.config.credentials.secretAccessKey,
-};
+let credentials = null;
+
+async function getCredentials() {
+    const creds = await s3.config.credentials();
+    credentials = {
+        accessKey: creds.accessKeyId,
+        secretKey: creds.secretAccessKey,
+    };
+    return credentials;
+}
+
 
 describe('listLifecycle with non-current delete marker', () => {
     let expectedVersionId;
@@ -18,31 +34,38 @@ describe('listLifecycle with non-current delete marker', () => {
     const keyName = 'key0';
 
     before(done => async.series([
-            next => s3.createBucket({ Bucket: testBucket }, next),
-            next => s3.putBucketVersioning({
+            next => getCredentials().then(creds => {
+                credentials = creds;
+                next();
+            }).catch(next),
+            next => s3.send(new CreateBucketCommand({ Bucket: testBucket }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutBucketVersioningCommand({
                 Bucket: testBucket,
                 VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
-            next => s3.deleteObject({ Bucket: testBucket, Key: keyName }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                expectedDMVersionId = data.VersionId;
-                return next();
-            }),
-            next => s3.putObject({ Bucket: testBucket, Key: keyName }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                expectedVersionId = data.VersionId;
-                return next();
-            }),
+            }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new DeleteObjectCommand({ Bucket: testBucket, Key: keyName }))
+                .then(data => {
+                    expectedDMVersionId = data.VersionId;
+                    next();
+                })
+                .catch(next),
+            next => s3.send(new PutObjectCommand({ Bucket: testBucket, Key: keyName }))
+                .then(data => {
+                    expectedVersionId = data.VersionId;
+                    next();
+                })
+                .catch(next),
         ], done));
 
-    after(done => async.series([
-        next => removeAllVersions({ Bucket: testBucket }, next),
-        next => s3.deleteBucket({ Bucket: testBucket }, next),
-    ], done));
+
+    after(async () => {
+        await removeAllVersionsPromise({ Bucket: testBucket });
+        await s3.send(new DeleteBucketCommand({ Bucket: testBucket }));
+    });
 
     it('should return the current version', done => {
         makeBackbeatRequest({
@@ -114,25 +137,30 @@ describe('listLifecycle with current delete marker version', () => {
     const keyName = 'key0';
 
     before(done => async.series([
-            next => s3.createBucket({ Bucket: testBucket }, next),
-            next => s3.putBucketVersioning({
+            next => s3.send(new CreateBucketCommand({ Bucket: testBucket }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutBucketVersioningCommand({
                 Bucket: testBucket,
                 VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
-            next => s3.putObject({ Bucket: testBucket, Key: keyName }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                expectedVersionId = data.VersionId;
-                return next();
-            }),
-            next => s3.deleteObject({ Bucket: testBucket, Key: keyName }, next),
+            }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutObjectCommand({ Bucket: testBucket, Key: keyName }))
+                .then(data => {
+                    expectedVersionId = data.VersionId;
+                    next();
+                })
+                .catch(next),
+            next => s3.send(new DeleteObjectCommand({ Bucket: testBucket, Key: keyName }))
+                .then(() => next())
+                .catch(next),
         ], done));
 
-    after(done => async.series([
-        next => removeAllVersions({ Bucket: testBucket }, next),
-        next => s3.deleteBucket({ Bucket: testBucket }, next),
-    ], done));
+    after(async () => {
+        await removeAllVersionsPromise({ Bucket: testBucket });
+        await s3.send(new DeleteBucketCommand({ Bucket: testBucket }));
+    });
 
     it('should return no current object if current version is a delete marker', done => {
         makeBackbeatRequest({

@@ -593,12 +593,12 @@ describe('Object Part Copy', () => {
                           UploadId: uploadId,
                         }))
                         .catch(err => {
-                          const completeMPUFinishedEarlier =
-                            err.name === 'NoSuchKey';
-                          if (completeMPUFinishedEarlier) {
-                            return Promise.resolve(null);
-                          }
-                          throw err;
+                            const completeMPUFinishedEarlier =
+                            err.name === 'NoSuchKey' || err.name === 'NoSuchUpload';
+                            if (completeMPUFinishedEarlier) {
+                                return Promise.resolve(null);
+                            }
+                            throw err;
                         }),
                     ],
                 );

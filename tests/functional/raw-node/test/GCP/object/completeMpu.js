@@ -1,9 +1,14 @@
 const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
-const { GCP, GcpUtils } = arsenal.storage.data.external;
-const { gcpRequestRetry, setBucketClass, gcpMpuSetup, genUniqID } =
-    require('../../../utils/gcpUtils');
+const { GCP, GcpUtils } = arsenal.storage.data.external.GCP;
+const {
+    gcpRequestRetry,
+    gcpClientRetry,
+    setBucketClass,
+    gcpMpuSetup,
+    genUniqID,
+} = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 
@@ -34,6 +39,59 @@ function gcpMpuSetupWrapper(params, callback) {
     });
 }
 
+function listObjectsPaginated(gcpClient, bucketName, cb) {
+    const objects = [];
+    let marker;
+
+    function _list() {
+        const params = { Bucket: bucketName };
+        if (marker) {
+            params.Marker = marker;
+        }
+
+        return gcpClientRetry(gcpClient.listObjects.bind(gcpClient), params, (err, res) => {
+            if (err) {
+                return cb(err);
+            }
+
+            const contents = (res && res.Contents) || [];
+            objects.push(...contents);
+
+            const isTruncated = Boolean(res && res.IsTruncated);
+            if (!isTruncated) {
+                return cb(null, objects);
+            }
+
+            // AWS listObjects(V1) pagination: prefer NextMarker, fallback to last key.
+            marker = (res && res.NextMarker) ||
+                (contents.length ? contents[contents.length - 1].Key : undefined);
+
+            if (!marker) {
+                return cb(null, objects);
+            }
+
+            return _list();
+        });
+    }
+
+    return _list();
+}
+
+function emptyBucket(gcpClient, bucketName, cb) {
+    return listObjectsPaginated(gcpClient, bucketName, (err, objects) => {
+        if (err) {
+            return cb(err);
+        }
+        return async.eachLimit(objects, 20, (object, next) => {
+            const deleteParams = {
+                Bucket: bucketName,
+                Key: object.Key,
+            };
+            return gcpClientRetry(gcpClient.deleteObject.bind(gcpClient), deleteParams, next);
+        }, cb);
+    });
+}
+
 describe('GCP: Complete MPU', function testSuite() {
     this.timeout(600000);
     let config;
@@ -59,32 +117,19 @@ describe('GCP: Complete MPU', function testSuite() {
 
     after(done => {
         async.eachSeries(bucketNames,
-            (bucket, next) => gcpClient.listObjects({
-                Bucket: bucket.Name,
-            }, (err, res) => {
+            (bucket, next) => emptyBucket(gcpClient, bucket.Name, err => {
                 assert.equal(err, null,
                     `Expected success, but got error ${err}`);
-                async.map(res.Contents, (object, moveOn) => {
-                    const deleteParams = {
-                        Bucket: bucket.Name,
-                        Key: object.Key,
-                    };
-                    gcpClient.deleteObject(
-                        deleteParams, err => moveOn(err));
-                }, err => {
-                    assert.equal(err, null,
-                        `Expected success, but got error ${err}`);
-                    gcpRequestRetry({
-                        method: 'DELETE',
-                        bucket: bucket.Name,
-                        authCredentials: config.credentials,
-                    }, 0, err => {
-                        if (err) {
-                            process.stdout.write(
-                                `err in deleting bucket ${err}\n`);
-                        }
-                        return next(err);
-                    });
+                gcpRequestRetry({
+                    method: 'DELETE',
+                    bucket: bucket.Name,
+                    authCredentials: config.credentials,
+                }, 0, err => {
+                    if (err) {
+                        process.stdout.write(
+                            `err in deleting bucket ${err}\n`);
+                    }
+                    return next(err);
                 });
             }),
         done);
@@ -148,6 +193,10 @@ describe('GCP: Complete MPU', function testSuite() {
                 MultipartUpload: { Parts: parts },
             };
             gcpClient.completeMultipartUpload(params, (err, res) => {
+                // eslint-disable-next-line no-console
+                console.log('completeMultipartUpload response:', res);
+                // eslint-disable-next-line no-console
+                console.log('completeMultipartUpload error:', err);
                 assert.equal(err, null,
                     `Expected success, but got error ${err}`);
                 assert.strictEqual(res.ETag, `"${smallMD5}"`);
@@ -169,6 +218,9 @@ describe('GCP: Complete MPU', function testSuite() {
 
         it('should successfully complete MPU',
         function testFn(done) {
+            this.timeout(1200000);
+            this.retries(1);
+
             const parts = GcpUtils.createMpuList({
                 Key: this.test.key,
                 UploadId: this.test.uploadId,

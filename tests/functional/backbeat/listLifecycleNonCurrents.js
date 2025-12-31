@@ -1,24 +1,42 @@
 const assert = require('assert');
 const async = require('async');
+const { CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketVersioningCommand,
+    PutObjectCommand } = require('@aws-sdk/client-s3');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
 const { makeBackbeatRequest } = require('./utils');
 const { config } = require('../../../lib/Config');
+const { promisify } = require('util');
 
 const testBucket = 'bucket-for-list-lifecycle-noncurrent-tests';
 const emptyBucket = 'empty-bucket-for-list-lifecycle-noncurrent-tests';
 const nonVersionedBucket = 'non-versioned-bucket-for-list-lifecycle-noncurrent-tests';
 
-const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+const removeAllVersionsPromise = promisify(removeAllVersions);
+const bucketUtil = new BucketUtility('default', {});
 const s3 = bucketUtil.s3;
-const credentials = {
-    accessKey: s3.config.credentials.accessKeyId,
-    secretKey: s3.config.credentials.secretAccessKey,
-};
 
-// for S3C it is dc-1, in Integration it's node1.scality.com, otherwise us-east-1
-const s3Hostname = s3.endpoint.hostname;
-const location = config.restEndpoints[s3Hostname] || config.restEndpoints.localhost;
+let credentials = null;
+let s3Hostname = null;
+let location = null;
+
+async function getCredentials() {
+    const creds = await s3.config.credentials();
+    const credentials = {
+        accessKey: creds.accessKeyId,
+        secretKey: creds.secretAccessKey,
+    };
+    return credentials;
+}
+
+async function getS3Hostname() {
+    const endpoint = await s3.config.endpoint();
+    s3Hostname = endpoint.hostname;
+    location = config.restEndpoints[s3Hostname] || config.restEndpoints.localhost;
+    return s3Hostname;
+}
 
 function checkContents(contents) {
     contents.forEach(d => {
@@ -48,54 +66,111 @@ describe('listLifecycleNonCurrents', () => {
     let expectedKey2VersionIds = [];
 
     before(done => async.series([
-            next => s3.createBucket({ Bucket: testBucket }, next),
-            next => s3.createBucket({ Bucket: emptyBucket }, next),
-            next => s3.createBucket({ Bucket: nonVersionedBucket }, next),
-            next => s3.putBucketVersioning({
+        next => {
+            getCredentials()
+                .then(creds => {
+                    credentials = creds;
+                    return getS3Hostname();
+                })
+                .then(() => next())
+                .catch(next);
+        },
+        next => {
+            s3.send(new CreateBucketCommand({ Bucket: testBucket }))
+                .then(() => next())
+                .catch(next);
+        },
+        next => {
+            s3.send(new CreateBucketCommand({ Bucket: emptyBucket }))
+                .then(() => next())
+                .catch(next);
+        },
+        next => {
+            s3.send(new CreateBucketCommand({ Bucket: nonVersionedBucket }))
+                .then(() => next())
+                .catch(next);
+        },
+        next => {
+            s3.send(new PutBucketVersioningCommand({
                 Bucket: testBucket,
                 VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
-            next => s3.putBucketVersioning({
+            }))
+                .then(() => next())
+                .catch(next);
+        },
+        next => {
+            s3.send(new PutBucketVersioningCommand({
                 Bucket: emptyBucket,
                 VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
-            next => async.timesSeries(3, (n, cb) => {
-                s3.putObject({ Bucket: testBucket, Key: 'key1', Body: '123', Tagging: 'mykey=myvalue' }, cb);
-            }, (err, res) => {
-                // Only the two first ones are kept, since the stale date of the last one (3rd)
-                // Will be the last-modified of the next one (4th) that is created after the "date".
-                // The array is reverse since, for a specific key, we expect the listing to be ordered
-                // by last-modified date in descending order due to the way version id is generated.
-                expectedKey1VersionIds = res.map(r => r.VersionId).slice(0, 2).reverse();
-                return next(err);
-            }),
-            next => async.timesSeries(3, (n, cb) => {
-                s3.putObject({ Bucket: testBucket, Key: 'key2', Body: '123', Tagging: 'mykey=myvalue' }, cb);
-            }, (err, res) => {
-                // Only the two first ones are kept, since the stale date of the last one (3rd)
-                // Will be the last-modified of the next one (4th) that is created after the "date".
-                // The array is reverse since, for a specific key, we expect the listing to be ordered
-                // by last-modified date in descending order due to the way version id is generated.
-                expectedKey2VersionIds = res.map(r => r.VersionId).slice(0, 2).reverse();
-                return next(err);
-            }),
-            next => {
-                date = new Date(Date.now()).toISOString();
-                return async.times(5, (n, cb) => {
-                    s3.putObject({ Bucket: testBucket, Key: 'key1', Body: '123', Tagging: 'mykey=myvalue' }, cb);
-                }, next);
-            },
-            next => async.times(5, (n, cb) => {
-                s3.putObject({ Bucket: testBucket, Key: 'key2', Body: '123', Tagging: 'mykey=myvalue' }, cb);
-            }, next),
-        ], done));
-
-    after(done => async.series([
-        next => removeAllVersions({ Bucket: testBucket }, next),
-        next => s3.deleteBucket({ Bucket: testBucket }, next),
-        next => s3.deleteBucket({ Bucket: emptyBucket }, next),
-        next => s3.deleteBucket({ Bucket: nonVersionedBucket }, next),
+            }))
+                .then(() => next())
+                .catch(next);
+        },
+        next => async.timesSeries(3, (n, cb) => {
+            s3.send(new PutObjectCommand({ 
+                Bucket: testBucket, 
+                Key: 'key1', 
+                Body: '123', 
+                Tagging: 'mykey=myvalue' 
+            }))
+                .then(data => cb(null, data))
+                .catch(cb);
+        }, (err, res) => {
+            // Only the two first ones are kept, since the stale date of the last one (3rd)
+            // Will be the last-modified of the next one (4th) that is created after the "date".
+            // The array is reverse since, for a specific key, we expect the listing to be ordered
+            // by last-modified date in descending order due to the way version id is generated.
+            expectedKey1VersionIds = res.map(r => r.VersionId).slice(0, 2).reverse();
+            return next(err);
+        }),
+        next => async.timesSeries(3, (n, cb) => {
+            s3.send(new PutObjectCommand({ 
+                Bucket: testBucket, 
+                Key: 'key2', 
+                Body: '123', 
+                Tagging: 'mykey=myvalue' 
+            }))
+                .then(data => cb(null, data))
+                .catch(cb);
+        }, (err, res) => {
+            // Only the two first ones are kept, since the stale date of the last one (3rd)
+            // Will be the last-modified of the next one (4th) that is created after the "date".
+            // The array is reverse since, for a specific key, we expect the listing to be ordered
+            // by last-modified date in descending order due to the way version id is generated.
+            expectedKey2VersionIds = res.map(r => r.VersionId).slice(0, 2).reverse();
+            return next(err);
+        }),
+        next => {
+            date = new Date(Date.now()).toISOString();
+            return async.times(5, (n, cb) => {
+                s3.send(new PutObjectCommand({ 
+                    Bucket: testBucket, 
+                    Key: 'key1', 
+                    Body: '123', 
+                    Tagging: 'mykey=myvalue' 
+                }))
+                    .then(() => cb())
+                    .catch(cb);
+            }, next);
+        },
+        next => async.times(5, (n, cb) => {
+            s3.send(new PutObjectCommand({ 
+                Bucket: testBucket, 
+                Key: 'key2', 
+                Body: '123', 
+                Tagging: 'mykey=myvalue' 
+            }))
+                .then(() => cb())
+                .catch(cb);
+        }, next),
     ], done));
+
+    after(async () => {
+        await removeAllVersionsPromise({ Bucket: testBucket });
+        await s3.send(new DeleteBucketCommand({ Bucket: testBucket }));
+        await s3.send(new DeleteBucketCommand({ Bucket: emptyBucket }));
+        await s3.send(new DeleteBucketCommand({ Bucket: nonVersionedBucket }));
+    });
 
     it('should return empty list of noncurrent versions if bucket is empty', done => {
         makeBackbeatRequest({

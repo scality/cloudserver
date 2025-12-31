@@ -6,15 +6,17 @@ const {
     PutObjectCommand,
     GetObjectCommand,
     PutBucketVersioningCommand,
+    GetBucketVersioningCommand,
     PutObjectTaggingCommand,
     GetObjectTaggingCommand,
     DeleteObjectTaggingCommand,
+    ListObjectVersionsCommand,
 } = require('@aws-sdk/client-s3');
 const { v4: uuidv4 } = require('uuid');
 
 const azure = require('@azure/storage-blob');
 
-const { GCP } = storage.data.external;
+const { GCP } = storage.data.external.GCP;
 
 const { getRealAwsConfig } = require('../support/awsConfig');
 const { config } = require('../../../../../lib/Config');
@@ -212,92 +214,217 @@ utils.expectedETag = (body, getStringified = true) => {
     return `"${eTagValue}"`;
 };
 
-utils.putToAwsBackend = async (s3, bucket, key, body) => {
-    const result = await s3.send(new PutObjectCommand({ 
+utils.waitForVersioningBeforePut = async (s3, bucket, callback) => {
+    const MAX_VERSIONING_CHECKS = 10;
+    const VERSIONING_CHECK_INTERVAL = 1000;
+    const sleep = () => new Promise(resolve => setTimeout(resolve, VERSIONING_CHECK_INTERVAL));
+
+    const waitForVersioning = (async () => {
+        for (let attempt = 1; attempt <= MAX_VERSIONING_CHECKS; attempt++) {
+            let versioningEnabled = false;
+            try {
+                const versioningResult = await s3.send(new GetBucketVersioningCommand({
+                    Bucket: bucket,
+                }));
+                versioningEnabled = versioningResult.Status === 'Enabled';
+            } catch {
+                if (attempt === MAX_VERSIONING_CHECKS) {
+                    break;
+                }
+                await sleep();
+                continue;
+            }
+            if (versioningEnabled) {
+                break;
+            }
+
+            if (attempt < MAX_VERSIONING_CHECKS) {
+                await sleep();
+            }
+        }
+    })();
+
+    if (callback) {
+        waitForVersioning.then(() => callback()).catch(err => callback(err));
+        return waitForVersioning;
+    }
+    return waitForVersioning;
+};
+
+utils.putToAwsBackend = (s3, bucket, key, body, callback) => {
+    const result = s3.send(new PutObjectCommand({ 
         Bucket: bucket, 
         Key: key, 
         Body: body,
         Metadata: { 'scal-location-constraint': awsLocation } 
     }));
-    return result.VersionId;
+    if (callback) {
+        return result.then(data => {
+            callback(null, data.VersionId);
+        }).catch(err => {
+            s3.send(new ListObjectVersionsCommand({
+                Bucket: bucket,
+                Prefix: key,
+            })).then(data => {
+            callback(err, data.VersionId);
+            }).catch(listErr => {
+                callback(listErr);
+            });
+        });
+    }
+    return result;
 };
 
-utils.enableVersioning = async (s3, bucket) => {
-    await s3.send(new PutBucketVersioningCommand({ 
+utils.enableVersioning = (s3, bucket, callback) => {
+    // Support both callback and promise patterns
+    const promise = s3.send(new PutBucketVersioningCommand({ 
         Bucket: bucket,
         VersioningConfiguration: versioningEnabled 
     }));
+
+    if (callback) {
+        return promise.then(() => callback()).catch(err => callback(err));
+    }
+    return promise;
 };
 
-utils.suspendVersioning = async (s3, bucket) => {
-    await s3.send(new PutBucketVersioningCommand({ 
+utils.suspendVersioning = (s3, bucket, callback) => {
+    // Support both callback and promise patterns
+    const promise = s3.send(new PutBucketVersioningCommand({ 
         Bucket: bucket,
         VersioningConfiguration: versioningSuspended 
     }));
-};
-
-utils.mapToAwsPuts = async (s3, bucket, key, dataArray) => {
-    const results = [];
-    for (const data of dataArray) {
-        const versionId = await utils.putToAwsBackend(s3, bucket, key, data);
-        results.push(versionId);
-    }
-    return results;
-};
-
-utils.putVersionsToAws = async (s3, bucket, key, versions) => {
-    await utils.enableVersioning(s3, bucket);
-    return utils.mapToAwsPuts(s3, bucket, key, versions);
-};
-
-utils.putNullVersionsToAws = async (s3, bucket, key, versions) => {
-    await utils.suspendVersioning(s3, bucket);
-    return utils.mapToAwsPuts(s3, bucket, key, versions);
-};
-
-utils.getAndAssertResult = async (s3, params) => {
-    const { bucket, key, body, versionId, expectedVersionId, expectedTagCount,
-    expectedError } = params;
     
+    if (callback) {
+        return promise.then(() => callback()).catch(err => callback(err));
+    }
+    return promise;
+};
+
+utils.mapToAwsPuts = async (s3, bucket, key, dataArray, callback) => {
     try {
-        const data = await s3.send(new GetObjectCommand({ 
-            Bucket: bucket, 
-            Key: key, 
-            VersionId: versionId 
-        }));
-        
-        if (expectedError) {
-            throw new Error(`Expected error ${expectedError} but got success`);
+        const results = [];
+        for (const data of dataArray) {
+            // Don't pass callback to putToAwsBackend - we need the version ID from the promise
+            const result = await utils.putToAwsBackend(s3, bucket, key, data);
+            const versionId = result.VersionId;
+            results.push(versionId);
         }
-        
-        if (body) {
-            assert(data.Body, 'expected object body in response');
-            assert.equal(data.Body.length, data.ContentLength,
-                `received data of length ${data.Body.length} does not ` +
-                'equal expected based on ' +
-                `content length header of ${data.ContentLength}`);
-            const expectedMD5 = utils.expectedETag(body, false);
-            const resultMD5 = utils.expectedETag(data.Body, false);
-            assert.strictEqual(resultMD5, expectedMD5);
+        if (callback) {
+            callback(null, results);
+            return undefined;
         }
-        if (!expectedVersionId) {
-            assert.strictEqual(data.VersionId, undefined);
-        } else {
-            assert.strictEqual(data.VersionId, expectedVersionId);
-        }
-        if (expectedTagCount && expectedTagCount === '0') {
-            assert.strictEqual(data.TagCount, undefined);
-        } else if (expectedTagCount) {
-            assert.strictEqual(data.TagCount, parseInt(expectedTagCount, 10));
-        }
-        return undefined;
+        return results;
     } catch (err) {
-        if (expectedError) {
-            assert.strictEqual(err.name, expectedError);
+        if (callback) {
+            callback(err);
             return undefined;
         }
         throw err;
     }
+};
+
+utils.putVersionsToAws = async (s3, bucket, key, versions, callback) => {
+    try {
+        await utils.enableVersioning(s3, bucket);
+        // Wait for versioning to be enabled before PUT to ensure Ceph returns VersionId
+        await utils.waitForVersioningBeforePut(s3, bucket);
+        const results = await utils.mapToAwsPuts(s3, bucket, key, versions);
+        if (callback) {
+            callback(null, results);
+            return undefined;
+        }
+        return results;
+    } catch (err) {
+        if (callback) {
+            callback(err);
+            return undefined;
+        }
+        throw err;
+    }
+};
+
+utils.putNullVersionsToAws = async (s3, bucket, key, versions, callback) => {
+    try {
+        await utils.suspendVersioning(s3, bucket);
+        // Note: When versioning is suspended, we don't need to wait for "Enabled" status
+        // The wait is only needed when enabling versioning to ensure Ceph returns VersionId
+        const results = await utils.mapToAwsPuts(s3, bucket, key, versions);
+        if (callback) {
+            callback(null, results);
+            return undefined;
+        }
+        return results;
+    } catch (err) {
+        if (callback) {
+            callback(err);
+            return undefined;
+        }
+        throw err;
+    }
+};
+
+utils.getAndAssertResult = (s3, params, callback) => {
+    const run = async () => {
+        const { bucket, key, body, versionId, expectedVersionId,
+            expectedTagCount, expectedError } = params;
+        const getParams = {
+            Bucket: bucket,
+            Key: key,
+        };
+        if (versionId) {
+            getParams.VersionId = versionId;
+        }
+
+        try {
+            const data = await s3.send(new GetObjectCommand(getParams));
+            if (expectedError) {
+                throw new Error(`Expected error ${expectedError} but got success`);
+            }
+            if (body) {
+                assert(data.Body, 'expected object body in response');
+
+                // SDK v3 returns a stream; buffer it before running assertions
+                const chunks = [];
+                for await (const chunk of data.Body) {
+                    chunks.push(chunk);
+                }
+                const bodyBuffer = Buffer.concat(chunks);
+                assert.equal(bodyBuffer.length, data.ContentLength,
+                    `received data of length ${bodyBuffer.length} does not ` +
+                    'equal expected based on ' +
+                    `content length header of ${data.ContentLength}`);
+                const expectedMD5 = utils.expectedETag(body, false);
+                const resultMD5 = utils.expectedETag(bodyBuffer, false);
+                assert.strictEqual(resultMD5, expectedMD5);
+            }
+            if (!expectedVersionId) {
+                assert.strictEqual(data.VersionId, undefined,
+                    `Expected undefined VersionId but got ${data.VersionId}`);
+            } else {
+                assert.strictEqual(data.VersionId, expectedVersionId,
+                    `Expected VersionId ${expectedVersionId} but got ${data.VersionId}`);
+            }
+            if (expectedTagCount && expectedTagCount === '0') {
+                assert.strictEqual(data.TagCount, undefined);
+            } else if (expectedTagCount) {
+                assert.strictEqual(data.TagCount, parseInt(expectedTagCount, 10));
+            }
+        } catch (err) {
+            if (expectedError) {
+                assert.strictEqual(err.name, expectedError);
+                return;
+            }
+            throw err;
+        }
+    };
+
+    const promise = run();
+    if (callback) {
+        promise.then(() => callback()).catch(err => callback(err));
+        return undefined;
+    }
+    return promise;
 };
 
 utils.getAwsRetry = (params, retryNumber, assertCb) => {
@@ -312,32 +439,48 @@ utils.getAwsRetry = (params, retryNumber, assertCb) => {
     
     const executeGet = async () => {
         try {
-            const res = await awsS3.send(new GetObjectCommand({ 
+            const params = { 
                 Bucket: awsBucket, 
                 Key: key,
-                VersionId: versionId 
-            }));
-            return assertCb(null, res);
+                VersionId: versionId,
+            };
+            const res = await awsS3.send(new GetObjectCommand(params));
+            return { success: true, data: res };
         } catch (err) {
-            return assertCb(err);
+            return { success: false, error: err };
         }
     };
     
     return setTimeout(() => {
-        executeGet().catch(e => {
-            if (retryNumber !== maxRetries) {
-                return utils.getAwsRetry(params, retryNumber + 1, assertCb);
-            }
-            throw e;
-        });
+        executeGet()
+            .then(result => {
+                if (result.success) {
+                    return assertCb(null, result.data);
+                }
+                const err = result.error;
+                if (err.$metadata?.httpStatusCode === 404) {
+                    return assertCb(err);
+                }
+                if (retryNumber < maxRetries) {
+                    return utils.getAwsRetry(params, retryNumber + 1, assertCb);
+                }
+                return assertCb(err);
+            })
+            .catch(e => assertCb(e));
     }, timeout);
 };
 
 utils.awsGetLatestVerId = (key, body, cb) =>
-    utils.getAwsRetry({ key }, 0, (err, result) => {
+    utils.getAwsRetry({ key }, 0, async (err, result) => {
         assert.strictEqual(err, null, 'Expected success ' +
             `getting object from AWS, got error ${err}`);
-        const resultMD5 = utils.expectedETag(result.Body, false);
+        
+        const chunks = [];
+        for await (const chunk of result.Body) {
+            chunks.push(chunk);
+        }
+        const bodyBuffer = Buffer.concat(chunks);
+        const resultMD5 = utils.expectedETag(bodyBuffer, false);
         const expectedMD5 = utils.expectedETag(body, false);
         assert.strictEqual(resultMD5, expectedMD5, 'expected different body');
         return cb(null, result.VersionId);
