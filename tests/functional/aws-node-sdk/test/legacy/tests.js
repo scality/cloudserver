@@ -1,6 +1,19 @@
 const assert = require('assert');
 const crypto = require('crypto');
-const { S3 } = require('aws-sdk');
+const {
+    S3Client,
+    ListBucketsCommand,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    AbortMultipartUploadCommand,
+    ListPartsCommand,
+    CompleteMultipartUploadCommand,
+    PutObjectCommand,
+    GetObjectCommand,
+    DeleteObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const getConfig = require('../support/config');
 const { testsRangeOnEmptyFile } = require('../../../../unit/helpers');
@@ -33,192 +46,134 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     // setup test
     before(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-
-        s3 = new S3(config);
+        s3 = new S3Client(config);
     });
 
     // bucketListing test
-    it('should do bucket listing', done => {
-        s3.listBuckets((err, data) => {
-            if (err) {
-                return done(new Error(`error listing buckets: ${err}`));
-            }
-
-            assert(data.Buckets, 'No buckets Info sent back');
-            assert(data.Owner, 'No owner Info sent back');
-            assert(data.Owner.ID, 'Owner ID not sent back');
-            assert(data.Owner.DisplayName, 'DisplayName not sent back');
-            const owner = Object.keys(data.Owner);
-            assert.strictEqual(owner.length, 2, 'Too much fields in owner');
-            return done();
-        });
+    it('should do bucket listing', async () => {
+        const data = await s3.send(new ListBucketsCommand({}));
+        assert(data.Buckets, 'No buckets Info sent back');
+        assert(data.Owner, 'No owner Info sent back');
+        assert(data.Owner.ID, 'Owner ID not sent back');
+        assert(data.Owner.DisplayName, 'DisplayName not sent back');
+        const owner = Object.keys(data.Owner);
+        assert.strictEqual(owner.length, 2, 'Too much fields in owner');
     });
 
     // createbucket test
-    it('should create a bucket', done => {
-        s3.createBucket({ Bucket: bucket }, err => {
-            if (err) {
-                return done(new Error(`error creating bucket: ${err}`));
-            }
-            return done();
-        });
+    it('should create a bucket', async () => {
+        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
     });
 
     // createMPU test
-    it('should create a multipart upload', done => {
-        s3.createMultipartUpload({ Bucket: bucket, Key: objectKey },
-            (err, data) => {
-                if (err) {
-                    return done(new Error(
-                        `error initiating multipart upload: ${err}`));
-                }
-                assert.strictEqual(data.Bucket, bucket);
-                assert.strictEqual(data.Key, objectKey);
-                assert.ok(data.UploadId);
-                multipartUploadData.firstUploadId = data.UploadId;
-                return done();
-            });
+    it('should create a multipart upload', async () => {
+        const data = await s3.send(new CreateMultipartUploadCommand({ Bucket: bucket, Key: objectKey }));
+        assert.strictEqual(data.Bucket, bucket);
+        assert.strictEqual(data.Key, objectKey);
+        assert.ok(data.UploadId);
+        multipartUploadData.firstUploadId = data.UploadId;
     });
 
-    it('should upload a part of a multipart upload to be aborted',
+    it('should upload a part of a multipart upload to be aborted', async () => {
         // uploadpart test
-        done => {
-            const params = {
-                Bucket: bucket,
-                Key: objectKey,
-                PartNumber: 1,
-                UploadId: multipartUploadData.firstUploadId,
-                Body: firstBufferBody,
-            };
-            s3.uploadPart(params, (err, data) => {
-                if (err) {
-                    return done(new Error(`error uploading a part: ${err}`));
-                }
-                assert.strictEqual(data.ETag, `"${calculatedFirstPartHash}"`);
-                return done();
-            });
-        });
+        const params = {
+            Bucket: bucket,
+            Key: objectKey,
+            PartNumber: 1,
+            UploadId: multipartUploadData.firstUploadId,
+            Body: firstBufferBody,
+        };
+        const data = await s3.send(new UploadPartCommand(params));
+        assert.strictEqual(data.ETag, `"${calculatedFirstPartHash}"`);
+    });
 
     // abortMPU test
-    it('should abort a multipart upload', done => {
+    it('should abort a multipart upload', async () => {
         const params = {
             Bucket: bucket,
             Key: objectKey,
             UploadId: multipartUploadData.firstUploadId,
         };
-        s3.abortMultipartUpload(params, (err, data) => {
-            if (err) {
-                return done(new Error(
-                    `error aborting multipart upload: ${err}`));
-            }
-            assert.ok(data);
-            return done();
-        });
+        const data = await s3.send(new AbortMultipartUploadCommand(params));
+        assert.ok(data);
     });
 
     // createMPU test
-    it('should upload a part of a multipart upload', done => {
-        s3.createMultipartUpload({ Bucket: bucket, Key: 'toComplete' },
-            (err, data) => {
-                if (err) {
-                    return done(new Error(
-                        `error initiating multipart upload: ${err}`));
-                }
-                const uploadId = data.UploadId;
-                multipartUploadData.secondUploadId = data.UploadId;
-                const params = {
-                    Bucket: bucket,
-                    Key: 'toComplete',
-                    PartNumber: 1,
-                    UploadId: uploadId,
-                    Body: firstBufferBody,
-                };
-                s3.uploadPart(params, (err, data) => {
-                    if (err) {
-                        return done(
-                            new Error(`error uploading a part: ${err}`));
-                    }
-                    assert.strictEqual(data.ETag,
-                        `"${calculatedFirstPartHash}"`);
-                    return done();
-                });
-                return undefined;
-            });
+    it('should upload a part of a multipart upload', async () => {
+        const data = await s3.send(new CreateMultipartUploadCommand({ Bucket: bucket, Key: 'toComplete' }));
+        const uploadId = data.UploadId;
+        multipartUploadData.secondUploadId = data.UploadId;
+        const params = {
+            Bucket: bucket,
+            Key: 'toComplete',
+            PartNumber: 1,
+            UploadId: uploadId,
+            Body: firstBufferBody,
+        };
+        const uploadData = await s3.send(new UploadPartCommand(params));
+        assert.strictEqual(uploadData.ETag, `"${calculatedFirstPartHash}"`);
     });
 
-    it('should upload a second part of a multipart upload',
+    it('should upload a second part of a multipart upload', async () => {
         // createMPU test
-        done => {
-            const params = {
-                Bucket: bucket,
-                Key: 'toComplete',
-                PartNumber: 2,
-                UploadId: multipartUploadData.secondUploadId,
-                Body: secondBufferBody,
-            };
-            s3.uploadPart(params, (err, data) => {
-                if (err) {
-                    return done(new Error(`error uploading a part: ${err}`));
-                }
-                assert.strictEqual(data.ETag, `"${calculatedSecondPartHash}"`);
-                return done();
-            });
-        });
+        const params = {
+            Bucket: bucket,
+            Key: 'toComplete',
+            PartNumber: 2,
+            UploadId: multipartUploadData.secondUploadId,
+            Body: secondBufferBody,
+        };
+        const data = await s3.send(new UploadPartCommand(params));
+        assert.strictEqual(data.ETag, `"${calculatedSecondPartHash}"`);
+    });
 
     // listparts test
-    it('should list the parts of a multipart upload', done => {
+    it('should list the parts of a multipart upload', async () => {
         const params = {
             Bucket: bucket,
             Key: 'toComplete',
             UploadId: multipartUploadData.secondUploadId,
         };
-        s3.listParts(params, (err, data) => {
-            if (err) {
-                return done(new Error(`error listing parts: ${err}`));
-            }
-            assert.strictEqual(data.Bucket, bucket);
-            assert.strictEqual(data.Key, 'toComplete');
-            assert.strictEqual(data.UploadId, multipartUploadData
-                .secondUploadId);
-            assert.strictEqual(data.IsTruncated, false);
-            assert.strictEqual(data.Parts[0].PartNumber, 1);
-            assert.strictEqual(data.Parts[0].ETag,
-              `"${calculatedFirstPartHash}"`);
-            assert.strictEqual(data.Parts[0].Size, 5242880);
-            assert.strictEqual(data.Parts[1].PartNumber, 2);
-            assert.strictEqual(data.Parts[1].ETag,
-              `"${calculatedSecondPartHash}"`);
-            assert.strictEqual(data.Parts[1].Size, 5242880);
-            // Must disable for now when running with Vault
-            // since will need to pull actual ARN and canonicalId
-            // assert.strictEqual(data.Initiator.ID, accessKey1ARN);
-            // Note that for in memory implementation, "accessKey1"
-            // is both the access key and the canonicalId so this
-            // call works.  For real implementation with vault,
-            // will need the canonicalId.
-            // assert.strictEqual(data.Owner.ID, config.accessKeyId);
-            assert.strictEqual(data.StorageClass, 'STANDARD');
-            return {};
-        });
-        return done();
+        const data = await s3.send(new ListPartsCommand(params));
+        assert.strictEqual(data.Bucket, bucket);
+        assert.strictEqual(data.Key, 'toComplete');
+        assert.strictEqual(data.UploadId, multipartUploadData.secondUploadId);
+        assert.strictEqual(data.IsTruncated, false);
+        assert.strictEqual(data.Parts[0].PartNumber, 1);
+        assert.strictEqual(data.Parts[0].ETag, `"${calculatedFirstPartHash}"`);
+        assert.strictEqual(data.Parts[0].Size, 5242880);
+        assert.strictEqual(data.Parts[1].PartNumber, 2);
+        assert.strictEqual(data.Parts[1].ETag, `"${calculatedSecondPartHash}"`);
+        assert.strictEqual(data.Parts[1].Size, 5242880);
+        // Must disable for now when running with Vault
+        // since will need to pull actual ARN and canonicalId
+        // assert.strictEqual(data.Initiator.ID, accessKey1ARN);
+        // Note that for in memory implementation, "accessKey1"
+        // is both the access key and the canonicalId so this
+        // call works.  For real implementation with vault,
+        // will need the canonicalId.
+        // assert.strictEqual(data.Owner.ID, config.accessKeyId);
+        assert.strictEqual(data.StorageClass, 'STANDARD');
     });
 
     it('should return an error if do not provide correct ' +
         // completempu test
-        'xml when completing a multipart upload', done => {
+        'xml when completing a multipart upload', async () => {
         const params = {
             Bucket: bucket,
             Key: 'toComplete',
             UploadId: multipartUploadData.secondUploadId,
         };
-        s3.completeMultipartUpload(params, err => {
-            assert.strictEqual(err.code, 'MalformedXML');
-            return done();
-        });
+        try {
+            await s3.send(new CompleteMultipartUploadCommand(params));
+            throw new Error('Expected MalformedXML error');
+        } catch (err) {
+            assert.strictEqual(err.Code, 'MalformedXML');
+        }
     });
 
     // completempu test
-    it('should complete a multipart upload', done => {
+    it('should complete a multipart upload', async () => {
         const params = {
             Bucket: bucket,
             Key: 'toComplete',
@@ -236,34 +191,26 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 ],
             },
         };
-        s3.completeMultipartUpload(params, (err, data) => {
-            if (err) {
-                return done(new Error(`error completing mpu: ${err}`));
-            }
-            assert.strictEqual(data.Bucket, bucket);
-            assert.strictEqual(data.Key, 'toComplete');
-            assert.strictEqual(data.ETag, combinedETag);
-            return done();
-        });
+        const data = await s3.send(new CompleteMultipartUploadCommand(params));
+        assert.strictEqual(data.Bucket, bucket);
+        assert.strictEqual(data.Key, 'toComplete');
+        assert.strictEqual(data.ETag, combinedETag);
     });
 
-    it('should get an object put by multipart upload', done => {
+    it('should get an object put by multipart upload', async () => {
         const params = {
             Bucket: bucket,
             Key: 'toComplete',
         };
-        s3.getObject(params, (err, data) => {
-            if (err) {
-                return done(new Error(
-                    `error getting object put by mpu: ${err}`));
-            }
-            assert.strictEqual(data.ETag,
-                combinedETag);
-            const uploadedObj = Buffer.concat([firstBufferBody,
-                secondBufferBody]);
-            assert.deepStrictEqual(data.Body, uploadedObj);
-            return done();
-        });
+        const data = await s3.send(new GetObjectCommand(params));
+        assert.strictEqual(data.ETag, combinedETag);
+        const uploadedObj = Buffer.concat([firstBufferBody, secondBufferBody]);
+        const chunks = [];
+        for await (const chunk of data.Body) {
+            chunks.push(chunk);
+        }
+        const body = Buffer.concat(chunks);
+        assert.deepStrictEqual(body, uploadedObj);
     });
 
     const mpuRangeGetTests = [
@@ -316,73 +263,59 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     ];
 
     mpuRangeGetTests.forEach(test => {
-        it(test.it, done => {
+        it(test.it, async () => {
             const params = {
                 Bucket: bucket,
                 Key: 'toComplete',
                 Range: test.range,
             };
-            s3.getObject(params, (err, data) => {
-                if (err) {
-                    return done(new Error(
-                        `error getting object range put by mpu: ${err}`));
-                }
-                assert.strictEqual(data.ContentLength, test.contentLength);
-                assert.strictEqual(data.AcceptRanges, 'bytes');
-                assert.strictEqual(data.ContentRange, test.contentRange);
-                assert.strictEqual(data.ETag,
-                    combinedETag);
-                assert.deepStrictEqual(data.Body, test.expectedBuff);
-                return done();
-            });
+            const data = await s3.send(new GetObjectCommand(params));
+            assert.strictEqual(data.ContentLength, test.contentLength);
+            assert.strictEqual(data.AcceptRanges, 'bytes');
+            assert.strictEqual(data.ContentRange, test.contentRange);
+            assert.strictEqual(data.ETag, combinedETag);
+            const chunks = [];
+            for await (const chunk of data.Body) {
+                chunks.push(chunk);
+            }
+            const body = Buffer.concat(chunks);
+            assert.deepStrictEqual(body, test.expectedBuff);
         });
     });
 
-    it('should delete object created by multipart upload',
+    it('should delete object created by multipart upload', async () => {
         // deleteObject test
-        done => {
-            const params = {
-                Bucket: bucket,
-                Key: 'toComplete',
-            };
-            s3.deleteObject(params, (err, data) => {
-                if (err) {
-                    return done(new Error(`error deleting object: ${err}`));
-                }
-                assert.ok(data);
-                return done();
-            });
-        });
+        const params = {
+            Bucket: bucket,
+            Key: 'toComplete',
+        };
+        const data = await s3.send(new DeleteObjectCommand(params));
+        assert.ok(data);
+    });
 
-    it('should put an object regularly (non-MPU)', done => {
+    it('should put an object regularly (non-MPU)', async () => {
         const params = {
             Bucket: bucket,
             Key: 'normalput',
             Body: Buffer.allocUnsafe(200).fill(0, 0, 50).fill(1, 50),
         };
-        s3.putObject(params, (err, data) => {
-            if (err) {
-                return done(new Error(
-                    `error putting object regularly: ${err}`));
-            }
-            assert.ok(data);
-            return done();
-        });
+        const data = await s3.send(new PutObjectCommand(params));
+        assert.ok(data);
     });
 
     it('should return InvalidRange if the range of the resource does ' +
-    'not cover the byte range',
-    done => {
+    'not cover the byte range', async () => {
         const params = {
             Bucket: bucket,
             Key: 'normalput',
             Range: 'bytes=200-200',
         };
-        s3.getObject(params, err => {
-            assert.notEqual(err, null, 'Expected failure but got success');
-            assert.strictEqual(err.code, 'InvalidRange');
-            return done();
-        });
+        try {
+            await s3.send(new GetObjectCommand(params));
+            throw new Error('Expected InvalidRange error');
+        } catch (err) {
+            assert.strictEqual(err.Code, 'InvalidRange');
+        }
     });
 
     describe('Get range on empty object', () => {
@@ -390,56 +323,41 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             Bucket: bucketEmptyObj,
             Key: 'emptyobj',
         };
-        beforeEach(done => {
-            s3.createBucket({ Bucket: bucketEmptyObj }, err => {
-                if (err) {
-                    return done(new Error(`error creating bucket: ${err}`));
-                }
-                return s3.putObject(params, err => {
-                    if (err) {
-                        return done(new Error(
-                            `error putting object regularly: ${err}`));
-                    }
-                    return done();
-                });
-            });
+        beforeEach(async () => {
+            await s3.send(new CreateBucketCommand({ Bucket: bucketEmptyObj }));
+            await s3.send(new PutObjectCommand(params));
         });
-        afterEach(done => {
-            s3.deleteObject(params, err => {
-                if (err) {
-                    return done(new Error(
-                        `error deletting object regularly: ${err}`));
-                }
-                return s3.deleteBucket({ Bucket: bucketEmptyObj }, err => {
-                    if (err) {
-                        return done(new Error(`error deleting bucket: ${err}`));
-                    }
-                    return done();
-                });
-            });
+        afterEach(async () => {
+            await s3.send(new DeleteObjectCommand(params));
+            await s3.send(new DeleteBucketCommand({ Bucket: bucketEmptyObj }));
         });
         testsRangeOnEmptyFile.forEach(test => {
             const validText = test.valid ? 'InvalidRange error' : 'empty file';
             it(`should return ${validText} if get range ${test.range} on ` +
-            'empty object',
-            done => {
-                const params = {
+            'empty object', async () => {
+                const getParams = {
                     Bucket: bucketEmptyObj,
                     Key: 'emptyobj',
                     Range: test.range,
                 };
-                s3.getObject(params, (err, data) => {
+                try {
+                    const data = await s3.send(new GetObjectCommand(getParams));
                     if (test.valid) {
-                        assert.notEqual(err, null, 'Expected failure but ' +
-                        'got success');
-                        assert.strictEqual(err.code, 'InvalidRange');
-                    } else {
-                        assert.equal(err, null, 'Expected success but ' +
-                        `got failure: ${err}`);
-                        assert.strictEqual(data.Body.toString(), '');
+                        throw new Error('Expected failure but got success');
                     }
-                    return done();
-                });
+                    const chunks = [];
+                    for await (const chunk of data.Body) {
+                        chunks.push(chunk);
+                    }
+                    const body = Buffer.concat(chunks);
+                    assert.strictEqual(body.toString(), '');
+                } catch (err) {
+                    if (test.valid) {
+                        assert.strictEqual(err.Code, 'InvalidRange');
+                    } else {
+                        throw err;
+                    }
+                }
             });
         });
     });
@@ -477,49 +395,37 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     ];
 
     regularObjectRangeGetTests.forEach(test => {
-        it(test.it, done => {
+        it(test.it, async () => {
             const params = {
                 Bucket: bucket,
                 Key: 'normalput',
                 Range: test.range,
             };
-            s3.getObject(params, (err, data) => {
-                if (err) {
-                    return done(new Error(
-                        `error getting object range: ${err}`));
-                }
-                assert.strictEqual(data.AcceptRanges, 'bytes');
-                assert.strictEqual(data.ContentLength, test.contentLength);
-                assert.strictEqual(data.ContentRange, test.contentRange);
-                assert.deepStrictEqual(data.Body, test.expectedBuff);
-                return done();
-            });
+            const data = await s3.send(new GetObjectCommand(params));
+            assert.strictEqual(data.AcceptRanges, 'bytes');
+            assert.strictEqual(data.ContentLength, test.contentLength);
+            assert.strictEqual(data.ContentRange, test.contentRange);
+            const chunks = [];
+            for await (const chunk of data.Body) {
+                chunks.push(chunk);
+            }
+            const body = Buffer.concat(chunks);
+            assert.deepStrictEqual(body, test.expectedBuff);
         });
     });
 
-    it('should delete an object put without MPU',
+    it('should delete an object put without MPU', async () => {
         // deleteObject test
-        done => {
-            const params = {
-                Bucket: bucket,
-                Key: 'normalput',
-            };
-            s3.deleteObject(params, (err, data) => {
-                if (err) {
-                    return done(new Error(`error deleting object: ${err}`));
-                }
-                assert.ok(data);
-                return done();
-            });
-        });
+        const params = {
+            Bucket: bucket,
+            Key: 'normalput',
+        };
+        const data = await s3.send(new DeleteObjectCommand(params));
+        assert.ok(data);
+    });
 
     // deletebucket test
-    it('should delete a bucket', done => {
-        s3.deleteBucket({ Bucket: bucket }, err => {
-            if (err) {
-                return done(new Error(`error deleting bucket: ${err}`));
-            }
-            return done();
-        });
+    it('should delete a bucket', async () => {
+        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
     });
 });
