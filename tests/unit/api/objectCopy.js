@@ -117,6 +117,15 @@ describe('objectCopy with versioning', () => {
         objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
             undefined, log, err => {
                 assert.ifError(err, `Unexpected err: ${err}`);
+                sinon.assert.calledWith(
+                    metadata.putObjectMD.lastCall,
+                    destBucketName,
+                    objectKey,
+                    sinon.match({ _data: { originOp: 's3:ObjectCreated:Copy' } }),
+                    sinon.match.any,
+                    sinon.match.any,
+                    sinon.match.any
+                );
                 setImmediate(() => {
                     versioningTestUtils
                         .assertDataStoreValues(ds, expectedValues);
@@ -281,7 +290,9 @@ describe('non-versioned objectCopy', () => {
                 undefined, log, next),
             async () => {
                 sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                    destBucketName, objectKey, any, sinon.match({
+                    destBucketName, objectKey, sinon.match({
+                        _data: { originOp: 's3:ObjectCreated:Copy' },
+                    }), sinon.match({
                         needOplogUpdate: undefined,
                         originOp: undefined,
                     }), any, any);
@@ -296,7 +307,9 @@ describe('non-versioned objectCopy', () => {
                 undefined, log, next),
             async () => {
                 sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                    destBucketName, objectKey, any, sinon.match({
+                    destBucketName, objectKey, sinon.match({
+                        _data: { originOp: 's3:ObjectCreated:Copy' },
+                    }), sinon.match({
                         needOplogUpdate: undefined,
                         originOp: undefined,
                     }), any, any);
