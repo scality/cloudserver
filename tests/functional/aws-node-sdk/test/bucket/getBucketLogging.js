@@ -21,12 +21,12 @@ const validLoggingConfig = {
 function cleanUp(bucketUtil, cb) {
     Promise.all([
         bucketUtil.deleteOne(bucketName).catch(err => {
-            if (err && err.code !== 'NoSuchBucket') {
+            if (err && err.name !== 'NoSuchBucket') {
                 throw err;
             }
         }),
         bucketUtil.deleteOne(targetBucket).catch(err => {
-            if (err && err.code !== 'NoSuchBucket') {
+            if (err && err.name !== 'NoSuchBucket') {
                 throw err;
             }
         }),

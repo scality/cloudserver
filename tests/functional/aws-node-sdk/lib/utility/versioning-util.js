@@ -28,15 +28,13 @@ function _deleteVersionList(versionList, bucket, callback) {
     return s3Client.send(new DeleteObjectsCommand(params)).then(() => callback()).catch(err => callback(err));
 }
 
-function checkOneVersion(s3, bucket, versionId, callback) {
-    return s3Client.send(new ListObjectVersionsCommand({ Bucket: bucket })).then(data => {
-            assert.strictEqual(data.Versions.length, 1);
-            if (versionId) {
-                assert.strictEqual(data.Versions[0].VersionId, versionId);
-            }
-            assert.strictEqual(data.DeleteMarkers.length, 0);
-            callback();
-        }).catch(err => callback(err));
+async function checkOneVersion(s3, bucket, versionId) {
+    const data = await s3.send(new ListObjectVersionsCommand({ Bucket: bucket }));
+    assert.strictEqual(data.Versions.length, 1);
+    if (versionId) {
+        assert.strictEqual(data.Versions[0].VersionId, versionId);
+    }
+    assert.strictEqual((data.DeleteMarkers || []).length, 0);
 }
 
 function removeAllVersions(params, callback) {
@@ -106,7 +104,11 @@ function enableVersioningThenPutObject(bucket, object, callback) {
 function createDualNullVersion(s3, bucketName, keyName, cb) {
     async.waterfall([
         // put null version
-        next => s3Client.send(new PutObjectCommand({ Bucket: bucketName, Key: keyName, Body: null })).then(() => 
+        next => s3Client.send(new PutObjectCommand({
+            Bucket: bucketName,
+            Key: keyName,
+            Body: Buffer.from(''),
+        })).then(() =>
             next()).catch(err => next(err)),
         next => enableVersioning(bucketName, err => next(err)),
         // should store null version as separate version before
