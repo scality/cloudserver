@@ -1,15 +1,21 @@
 const assert = require('assert');
 const async = require('async');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketVersioningCommand,
+    PutBucketReplicationCommand,
+    DeleteBucketReplicationCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucketName = `versioning-bucket-${Date.now()}`;
 
-
 function checkError(err, code) {
     assert.notEqual(err, null, 'Expected failure but got success');
-    assert.strictEqual(err.code, code);
+    assert.strictEqual(err.name, code);
 }
 
 function checkNoError(err) {
@@ -17,8 +23,10 @@ function checkNoError(err) {
 }
 
 function testVersioning(s3, versioningStatus, replicationStatus, removeReplication, cb) {
-    const versioningParams = { Bucket: bucketName,
-        VersioningConfiguration: { Status: versioningStatus } };
+    const versioningParams = { 
+        Bucket: bucketName,
+        VersioningConfiguration: { Status: versioningStatus } 
+    };
     const replicationParams = {
         Bucket: bucketName,
         ReplicationConfiguration: {
@@ -36,15 +44,22 @@ function testVersioning(s3, versioningStatus, replicationStatus, removeReplicati
             ],
         },
     };
+    
     async.waterfall([
-        cb => s3.putBucketReplication(replicationParams, e => cb(e)),
+        cb => s3.send(new PutBucketReplicationCommand(replicationParams))
+            .then(() => cb())
+            .catch(cb),
         cb => {
             if (removeReplication) {
-                return s3.deleteBucketReplication({ Bucket: bucketName }, e => cb(e));
+                return s3.send(new DeleteBucketReplicationCommand({ Bucket: bucketName }))
+                    .then(() => cb())
+                    .catch(cb);
             }
             return process.nextTick(() => cb());
         },
-        cb => s3.putBucketVersioning(versioningParams, e => cb(e)),
+        cb => s3.send(new PutBucketVersioningCommand(versioningParams))
+            .then(() => cb())
+            .catch(cb),
     ], cb);
 }
 
@@ -55,17 +70,23 @@ describe('Versioning on a replication source bucket', () => {
 
         beforeEach(done => {
             async.waterfall([
-                cb => s3.createBucket({ Bucket: bucketName }, e => cb(e)),
-                cb => s3.putBucketVersioning({
+                cb => s3.send(new CreateBucketCommand({ Bucket: bucketName }))
+                    .then(() => cb())
+                    .catch(cb),
+                cb => s3.send(new PutBucketVersioningCommand({
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',
                     },
-                }, err => cb(err)),
+                }))
+                    .then(() => cb())
+                    .catch(cb),
             ], done);
         });
 
-        afterEach(done => s3.deleteBucket({ Bucket: bucketName }, done));
+        afterEach(async () => {
+            await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
+        });
 
         it('should not be able to disable versioning if replication enabled',
         done => {

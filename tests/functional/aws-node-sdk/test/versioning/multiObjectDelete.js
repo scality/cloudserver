@@ -1,5 +1,13 @@
 const assert = require('assert');
-const async = require('async');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketVersioningCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+    DeleteObjectsCommand,
+    ListObjectVersionsCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -19,11 +27,6 @@ const key = 'key';
 const nonExistingId = process.env.AWS_ON_AIR ?
     'MhhyTHhmZ4cxSi4Y9SMe5P7UJAz7HLJ9' :
     '3939393939393939393936493939393939393939756e6437';
-
-function checkNoError(err) {
-    assert.equal(err, null,
-        `Expected success, got error ${JSON.stringify(err)}`);
-}
 
 function sortList(list) {
     return list.sort((a, b) => {
@@ -79,7 +82,30 @@ describe('Multi-Object Versioning Delete Success', function success() {
                         return next();
                     });
                 },
-            ], err => done(err));
+            }));
+
+            const objects = [];
+            for (let i = 1; i < 1001; i++) {
+                objects.push(`${key}${i}`);
+            }
+
+            // Create objects in batches of 20 concurrently
+            const results = [];
+            for (let i = 0; i < objects.length; i += 20) {
+                const batch = objects.slice(i, i + 20);
+                const batchPromises = batch.map(async keyName => {
+                    const res = await s3.send(new PutObjectCommand({
+                        Bucket: bucketName,
+                        Key: keyName,
+                        Body: 'somebody',
+                    }));
+                    res.Key = keyName;
+                    return res;
+                });
+                const batchResults = await Promise.all(batchPromises);
+                results.push(...batchResults);
+            }
+            objectsRes = results;
         });
 
         afterEach(async () => {
@@ -105,7 +131,7 @@ describe('Multi-Object Versioning Delete Success', function success() {
             });
         });
 
-        it('should batch delete 1000 objects', () => {
+        it('should batch delete 1000 objects', async () => {
             const objects = objectsRes.slice(0, 1000).map(obj =>
                 ({ Key: obj.Key, VersionId: obj.VersionId }));
             return s3.send(new DeleteObjectsCommand({
@@ -126,7 +152,7 @@ describe('Multi-Object Versioning Delete Success', function success() {
         });
 
         it('should return NoSuchVersion in errors if one versionId is ' +
-        'invalid', () => {
+        'invalid', async () => {
             const objects = objectsRes.slice(0, 1000).map(obj =>
                 ({ Key: obj.Key, VersionId: obj.VersionId }));
             objects[0].VersionId = 'invalid-version-id';
@@ -146,7 +172,7 @@ describe('Multi-Object Versioning Delete Success', function success() {
         });
 
         it('should not send back any error if a versionId does not exist ' +
-        'and should not create a new delete marker', () => {
+        'and should not create a new delete marker', async () => {
             const objects = objectsRes.slice(0, 1000).map(obj =>
                 ({ Key: obj.Key, VersionId: obj.VersionId }));
             objects[0].VersionId = nonExistingId;
@@ -168,7 +194,7 @@ describe('Multi-Object Versioning Delete Success', function success() {
             });
         });
 
-        it('should not crash when deleting a null versionId that does not exist', () => {
+        it('should not crash when deleting a null versionId that does not exist', async () => {
             const objects = [{ Key: objectsRes[0].Key, VersionId: 'null' }];
             return s3.send(new DeleteObjectsCommand({
                 Bucket: bucketName,

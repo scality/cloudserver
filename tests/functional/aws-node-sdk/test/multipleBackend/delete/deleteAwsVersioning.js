@@ -150,6 +150,7 @@ function _getAssertDeleted(s3, params, cb) {
     });
 }
 
+// Update AWS S3 direct calls
 function _awsGetAssertDeleted(params, cb) {
     const { key, versionId, errorCode } = params;
     return getAwsRetry({ key, versionId }, 0, err => {

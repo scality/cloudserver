@@ -93,7 +93,7 @@ describe('large mpu', function tester() {
     itSkipIfAWS('should intiate, put parts and complete mpu ' +
         `with ${partCount} parts`, done => {
         process.stdout.write('***Running large MPU test***\n');
-        let uploadId;
+        let uploadId;     
         return waterfall([
             next => {
                 s3.send(new CreateMultipartUploadCommand({ Bucket: bucket, Key: key }))
@@ -140,6 +140,7 @@ describe('large mpu', function tester() {
                     .then(data => {
                         assert.strictEqual(data.ETag,
                                 `"${finalETag}-${partCount}"`);
+                        process.stdout.write('get object successful\n');
                         return next();
                     })
                     .catch(err => next(err));

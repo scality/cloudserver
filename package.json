@@ -27,6 +27,7 @@
     "@aws-sdk/signature-v4": "^3.374.0",
     "@azure/storage-blob": "^12.28.0",
     "@hapi/joi": "^17.1.1",
+    "@smithy/node-http-handler": "^3.0.0",
     "arsenal": "git+https://github.com/scality/Arsenal#8.2.43",
     "async": "2.6.4",
     "bucketclient": "scality/bucketclient#8.2.7",

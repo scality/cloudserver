@@ -1,12 +1,21 @@
 const assert = require('assert');
-const async = require('async');
+const { promisify } = require('util');
+const {
+    S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketVersioningCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+    ListObjectVersionsCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
-const BucketUtility = require('../../lib/utility/bucket-util');
-
+const getConfig = require('../support/config');
 const { removeAllVersions } = require('../../lib/utility/versioning-util');
 
 const bucket = `versioning-bucket-${Date.now()}`;
+const removeAllVersionsAsync = promisify(removeAllVersions);
 
 const resultElements = [
     'VersionId',
@@ -23,6 +32,7 @@ const versionResultElements = [
 function _assertResultElements(entry, type) {
     const elements = type === 'DeleteMarker' ? resultElements :
         resultElements.concat(versionResultElements);
+
     elements.forEach(elem => {
         assert.notStrictEqual(entry[elem], undefined,
             `Expected ${elem} in result but did not find it`);
@@ -34,33 +44,12 @@ function _assertResultElements(entry, type) {
     });
 }
 
+
 describe('listObject - Delimiter version', function testSuite() {
     this.timeout(600000);
 
     withV4(sigCfg => {
-        const bucketUtil = new BucketUtility('default', sigCfg);
-        const s3 = bucketUtil.s3;
-
-        // setup test
-        before(done => {
-            s3.createBucket({ Bucket: bucket }, done);
-        });
-
-        // delete bucket after testing
-        after(done => {
-            removeAllVersions({ Bucket: bucket }, err => {
-                if (err) {
-                    return done(err);
-                }
-                return s3.deleteBucket({ Bucket: bucket }, err => {
-                    assert.strictEqual(err, null,
-                        `Error deleting bucket: ${err}`);
-                    return done();
-                });
-            });
-        });
-
-        let versioning = false;
+        let s3;
 
         const objects = [
             { name: 'notes/summer/august/1.txt', value: 'foo', isNull: true },
@@ -86,63 +75,52 @@ describe('listObject - Delimiter version', function testSuite() {
             { name: 'notes/summer/44444.txt', value: null },
         ];
 
-        it('put objects inside bucket', done => {
-            async.eachSeries(objects, (obj, next) => {
-                async.waterfall([
-                    next => {
-                        if (!versioning && obj.isNull !== true) {
-                            const params = {
-                                Bucket: bucket,
-                                VersioningConfiguration: {
-                                    Status: 'Enabled',
-                                },
-                            };
-                            versioning = true;
-                            return s3.putBucketVersioning(params,
-                                err => next(err));
-                        } else if (versioning && obj.isNull === true) {
-                            const params = {
-                                Bucket: bucket,
-                                VersioningConfiguration: {
-                                    Status: 'Suspended',
-                                },
-                            };
-                            versioning = false;
-                            return s3.putBucketVersioning(params,
-                                err => next(err));
-                        }
-                        return next();
-                    },
-                    next => {
-                        if (obj.value === null) {
-                            return s3.deleteObject({
-                                Bucket: bucket,
-                                Key: obj.name,
-                            }, function test(err) {
-                                const headers = this.httpResponse.headers;
-                                assert.strictEqual(
-                                    headers['x-amz-delete-marker'],
-                                    'true');
-                                // eslint-disable-next-line no-param-reassign
-                                obj.versionId = headers['x-amz-version-id'];
-                                return next(err);
-                            });
-                        }
-                        return s3.putObject({
-                            Bucket: bucket,
-                            Key: obj.name,
-                            Body: obj.value,
-                        }, (err, res) => {
-                            if (err) {
-                                return next(err);
-                            }
-                            // eslint-disable-next-line no-param-reassign
-                            obj.versionId = res.VersionId || 'null';
-                            return next();
-                        });
-                    },
-                ], err => next(err));
-            }, err => done(err));
+        before(async () => {
+            s3 = new S3Client(getConfig('default', sigCfg));
+            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+        });
+
+        after(async () => {
+            await removeAllVersionsAsync({ Bucket: bucket });
+            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+        });
+
+        it('put objects inside bucket', async () => {
+            let versioning = false;
+
+            for (const obj of objects) {
+                // Toggle bucket versioning state according to the original logic
+                if (!versioning && obj.isNull !== true) {
+                    await s3.send(new PutBucketVersioningCommand({
+                        Bucket: bucket,
+                        VersioningConfiguration: { Status: 'Enabled' },
+                    }));
+                    versioning = true;
+                } else if (versioning && obj.isNull === true) {
+                    await s3.send(new PutBucketVersioningCommand({
+                        Bucket: bucket,
+                        VersioningConfiguration: { Status: 'Suspended' },
+                    }));
+                    versioning = false;
+                }
+
+                if (obj.value === null) {
+                    // Create a delete marker, capture headers as in original test
+                    const delRes = await s3.send(new DeleteObjectCommand({
+                        Bucket: bucket,
+                        Key: obj.name,
+                    }));
+                    assert.strictEqual(String(delRes.DeleteMarker), 'true');
+                    obj.versionId = delRes.VersionId;
+                } else {
+                    const putRes = await s3.send(new PutObjectCommand({
+                        Bucket: bucket,
+                        Key: obj.name,
+                        Body: obj.value,
+                    }));
+                    obj.versionId = putRes.VersionId || 'null';
+                }
+            }
         });
 
         [
@@ -344,64 +322,61 @@ describe('listObject - Delimiter version', function testSuite() {
                 nextVersionIdMarker: undefined,
             },
         ].forEach(test => {
-            it(test.name, done => {
+            it(test.name, async () => {
                 const expectedResult = test.expectedResult;
-                s3.listObjectVersions(
-                    Object.assign({ Bucket: bucket }, test.params),
-                    (err, res) => {
-                        if (err) {
-                            return done(err);
-                        }
-                        res.Versions.forEach(result => {
-                            const item = expectedResult.find(obj => {
-                                if (obj.name === result.Key &&
-                                    obj.versionId === result.VersionId &&
-                                    obj.value !== null) {
-                                    return true;
-                                }
-                                return false;
-                            });
-                            if (!item) {
-                                throw new Error('listing fail, ' +
-                                    `unexpected key ${result.Key} ` +
-                                    `with version ${result.VersionId}`);
-                            }
-                            _assertResultElements(result, 'Version');
-                        });
-                        res.DeleteMarkers.forEach(result => {
-                            const item = expectedResult.find(obj => {
-                                if (obj.name === result.Key &&
-                                    obj.versionId === result.VersionId &&
-                                    obj.value === null) {
-                                    return true;
-                                }
-                                return false;
-                            });
-                            if (!item) {
-                                throw new Error('listing fail, ' +
-                                    `unexpected key ${result.Key} ` +
-                                    `with version ${result.VersionId}`);
-                            }
-                            _assertResultElements(result, 'DeleteMarker');
-                        });
-                        res.CommonPrefixes.forEach(cp => {
-                            if (!test.commonPrefix.find(
-                                item => item === cp.Prefix)) {
-                                throw new Error('listing fail, ' +
-                                    `unexpected prefix ${cp.Prefix}`);
-                            }
-                        });
-                        assert.strictEqual(res.IsTruncated, test.isTruncated);
-                        assert.strictEqual(res.NextKeyMarker,
-                            test.nextKeyMarker);
-                        if (!test.nextVersionIdMarker) {
-                            // eslint-disable-next-line no-param-reassign
-                            test.nextVersionIdMarker = {};
-                        }
-                        assert.strictEqual(res.NextVersionIdMarker,
-                            test.nextVersionIdMarker.versionId);
-                        return done();
-                    });
+                const res = await s3.send(new ListObjectVersionsCommand({
+                    Bucket: bucket,
+                    ...test.params,
+                }));
+
+                (res.Versions || []).forEach(result => {
+                    const item = expectedResult.find(obj => (
+                        obj.name === result.Key
+                        && obj.versionId === result.VersionId
+                        && obj.value !== null
+                    ));
+
+                    if (!item) {
+                        throw new Error('listing fail, '
+                            + `unexpected key ${result.Key} `
+                            + `with version ${result.VersionId}`);
+                    }
+                    _assertResultElements(result, 'Version');
+                });
+
+                (res.DeleteMarkers || []).forEach(result => {
+                    const item = expectedResult.find(obj => (
+                        obj.name === result.Key
+                        && obj.versionId === result.VersionId
+                        && obj.value === null
+                    ));
+
+                    if (!item) {
+                        throw new Error('listing fail, '
+                            + `unexpected key ${result.Key} `
+                            + `with version ${result.VersionId}`);
+                    }
+                    _assertResultElements(result, 'DeleteMarker');
+                });
+
+                (res.CommonPrefixes || []).forEach(cp => {
+                    if (!test.commonPrefix.find(
+                        item => item === cp.Prefix,
+                    )) {
+                        throw new Error('listing fail, '
+                            + `unexpected prefix ${cp.Prefix}`);
+                    }
+                });
+
+                assert.strictEqual(res.IsTruncated, test.isTruncated);
+                assert.strictEqual(res.NextKeyMarker,
+                    test.nextKeyMarker);
+                if (!test.nextVersionIdMarker) {
+                    // eslint-disable-next-line no-param-reassign
+                    test.nextVersionIdMarker = {};
+                }
+                assert.strictEqual(res.NextVersionIdMarker,
+                    test.nextVersionIdMarker.versionId);
             });
         });
     });
