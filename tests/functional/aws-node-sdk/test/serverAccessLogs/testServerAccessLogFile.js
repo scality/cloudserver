@@ -118,7 +118,6 @@ describe('Server Access Logs - File Output', async () => {
             // 'pid': '', // UNKNOWN
             'action': 'REQUIRED', // DYNAMIC
             'accountName': 'Bart', // STATIC
-            'accountDisplayName': 'Bart', // STATIC
             'userName': null, // TODO: Add test with IAM user to get a non null userName.
             // 'clientPort': '', // UNKNOWN
             'httpMethod': 'REQUIRED', // DYNAMIC

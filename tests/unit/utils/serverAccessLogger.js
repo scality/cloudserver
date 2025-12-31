@@ -803,7 +803,6 @@ describe('serverAccessLogger utility functions', () => {
             // Verify analytics fields
             assert.strictEqual(loggedData.action, 'ObjectGet');
             assert.strictEqual(loggedData.accountName, 'testAccount');
-            assert.strictEqual(loggedData.accountDisplayName, 'testAccount');
             assert.strictEqual(loggedData.userName, 'testUser');
             assert.strictEqual(loggedData.httpMethod, 'GET');
             assert.strictEqual(loggedData.bytesDeleted, 0);
@@ -890,7 +889,6 @@ describe('serverAccessLogger utility functions', () => {
 
             assert.strictEqual(mockLogger.write.callCount, 1);
             const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
-            assert.strictEqual('accountDisplayName' in loggedData, false);
             assert.strictEqual('requester' in loggedData, false);
             assert.strictEqual('signatureVersion' in loggedData, false);
             assert.strictEqual('authenticationType' in loggedData, false);

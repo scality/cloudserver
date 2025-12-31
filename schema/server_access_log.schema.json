@@ -27,10 +27,6 @@
             "description": "Requester account display name.",
             "type": ["string", "null"]
         },
-        "accountDisplayName": {
-            "description": "Requester account display name.",
-            "type": ["string", "null"]
-        },
         "userName": {
             "description": "Requester IAM display name, or null if the requester is not an IAM user.",
             "type": ["string", "null"]
