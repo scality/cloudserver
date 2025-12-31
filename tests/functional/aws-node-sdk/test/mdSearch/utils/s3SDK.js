@@ -1,17 +1,4 @@
-const S3 = require('aws-sdk').S3;
+const { S3Client } = require('@aws-sdk/client-s3');
+const getConfig = require('../../support/config');
 
-const config = {
-    sslEnabled: false,
-    endpoint: 'http://127.0.0.1:8000',
-    apiVersions: { s3: '2006-03-01' },
-    signatureCache: false,
-    signatureVersion: 'v4',
-    region: 'us-east-1',
-    s3ForcePathStyle: true,
-    accessKeyId: 'accessKey1',
-    secretAccessKey: 'verySecretKey1',
-};
-
-const client = new S3(config);
-
-module.exports = client;
+module.exports = new S3Client(getConfig('default'));
