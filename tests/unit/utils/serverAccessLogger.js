@@ -805,14 +805,12 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.accountName, 'testAccount');
             assert.strictEqual(loggedData.accountDisplayName, 'testAccount');
             assert.strictEqual(loggedData.userName, 'testUser');
-            assert.strictEqual(loggedData.clientPort, 54321);
             assert.strictEqual(loggedData.httpMethod, 'GET');
             assert.strictEqual(loggedData.bytesDeleted, 0);
             assert.strictEqual(loggedData.bytesReceived, 1024);
             assert.strictEqual(loggedData.bodyLength, 1024);
             assert.strictEqual(loggedData.contentLength, 1024);
             assert.strictEqual(loggedData.elapsed_ms, 20.5);
-            assert.strictEqual(loggedData.httpURL, '/test-bucket/test-key.txt');
 
             // Verify AWS access server log fields
             assert.strictEqual(loggedData.startTime, '1234567890.000');

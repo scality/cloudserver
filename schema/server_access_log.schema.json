@@ -35,12 +35,6 @@
             "description": "Requester IAM display name, or null if the requester is not an IAM user.",
             "type": ["string", "null"]
         },
-        "clientPort": {
-            "description": "Requester remote connection port.",
-            "type": "integer",
-            "maximum": 65535,
-            "minimum": 1
-        },
         "httpMethod": {
             "description": "Request HTTP method.",
             "type": "string",
@@ -70,10 +64,6 @@
             "description": "Total duration of the request in milliseconds. The timer starts when the server first routes the request and stops when the request completes or is closed prematurely.",
             "type": "number",
             "minimum": 0
-        },
-        "httpURL": {
-            "description": "Request URL string. This contains only the URL that is present in the actual HTTP request.",
-            "type": "string"
         },
         "startTime": {
             "description": "Timestamp formatted as: 'seconds.milliseconds', recorded when the server first routes the request. Represents the AWS server access log 'Time' field. String type compatible with Clickhouse DateTime64(3) type.",
