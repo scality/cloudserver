@@ -14,7 +14,6 @@ const {
     timestampToDateTime643,
 } = require('../../../lib/utilities/serverAccessLogger');
 
-
 describe('serverAccessLogger utility functions', () => {
     describe('getRemoteIPFromRequest', () => {
         it('should return IP from x-forwarded-for header', () => {
@@ -820,7 +819,7 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.requester, 'canonical123');
             assert.strictEqual(loggedData.operation, 'REST.GET.OBJECT');
             assert.strictEqual(loggedData.requestURI, 'GET /test-bucket/test-key.txt HTTP/1.1');
-            assert.strictEqual(loggedData.errorCode, null);
+            assert.strictEqual('errorCode' in loggedData, false);
             assert.strictEqual(loggedData.objectSize, 2048);
             assert.strictEqual(loggedData.totalTime, '9');
             assert.strictEqual(loggedData.turnAroundTime, '1');
@@ -832,7 +831,7 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.authenticationType, 'REST-HEADER');
             assert.strictEqual(loggedData.hostHeader, 's3.amazonaws.com');
             assert.strictEqual(loggedData.tlsVersion, 'TLSv1.3');
-            assert.strictEqual(loggedData.aclRequired, null);
+            assert.strictEqual('aclRequired' in loggedData, false);
 
             // Verify shared fields
             assert.strictEqual(loggedData.bucketOwner, 'bucketOwner123');
@@ -893,11 +892,11 @@ describe('serverAccessLogger utility functions', () => {
 
             assert.strictEqual(mockLogger.write.callCount, 1);
             const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
-            assert.strictEqual(loggedData.accountDisplayName, null);
-            assert.strictEqual(loggedData.requester, null);
-            assert.strictEqual(loggedData.signatureVersion, null);
-            assert.strictEqual(loggedData.authenticationType, null);
-            assert.strictEqual(loggedData.awsAccessKeyID, null);
+            assert.strictEqual('accountDisplayName' in loggedData, false);
+            assert.strictEqual('requester' in loggedData, false);
+            assert.strictEqual('signatureVersion' in loggedData, false);
+            assert.strictEqual('authenticationType' in loggedData, false);
+            assert.strictEqual('awsAccessKeyID' in loggedData, false);
         });
 
         it('should handle non-encrypted connection', () => {
@@ -918,8 +917,8 @@ describe('serverAccessLogger utility functions', () => {
 
             assert.strictEqual(mockLogger.write.callCount, 1);
             const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
-            assert.strictEqual(loggedData.cipherSuite, null);
-            assert.strictEqual(loggedData.tlsVersion, null);
+            assert.strictEqual('cipherSuite' in loggedData, false);
+            assert.strictEqual('tlsVersion' in loggedData, false);
         });
 
         it('should handle missing query parameters', () => {
@@ -939,7 +938,7 @@ describe('serverAccessLogger utility functions', () => {
 
             assert.strictEqual(mockLogger.write.callCount, 1);
             const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
-            assert.strictEqual(loggedData.versionID, null);
+            assert.strictEqual('versionID' in loggedData, false);
         });
 
         it('should handle loggingEnabled without TargetBucket/TargetPrefix', () => {
@@ -960,8 +959,8 @@ describe('serverAccessLogger utility functions', () => {
 
             assert.strictEqual(mockLogger.write.callCount, 1);
             const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
-            assert.strictEqual(loggedData.loggingTargetBucket, null);
-            assert.strictEqual(loggedData.loggingTargetPrefix, null);
+            assert.strictEqual('loggingTargetBucket' in loggedData, false);
+            assert.strictEqual('loggingTargetPrefix' in loggedData, false);
         });
 
         it('should handle PUT request with objectPut', () => {
@@ -1018,6 +1017,114 @@ describe('serverAccessLogger utility functions', () => {
             // Should be valid JSON without the newline
             const jsonData = writtenData.trim();
             assert.doesNotThrow(() => JSON.parse(jsonData));
+        });
+
+        it('should omit null fields from log output', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {},
+                headers: {},
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {},
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+
+            // Verify null fields are omitted
+            assert.strictEqual('errorCode' in loggedData, false);
+            assert.strictEqual('bytesDeleted' in loggedData, false);
+            assert.strictEqual('turnAroundTime' in loggedData, false);
+            assert.strictEqual('referer' in loggedData, false);
+            assert.strictEqual('versionID' in loggedData, false);
+            assert.strictEqual('cipherSuite' in loggedData, false);
+            assert.strictEqual('tlsVersion' in loggedData, false);
+            assert.strictEqual('aclRequired' in loggedData, false);
+
+            // Verify non-null fields are present
+            assert.strictEqual('time' in loggedData, true);
+            assert.strictEqual('hostname' in loggedData, true);
+            assert.strictEqual('pid' in loggedData, true);
+        });
+
+        it('should preserve zero values in logs', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {
+                    analyticsBytesDeleted: 0,
+                },
+                headers: { 'content-length': '0' },
+                parsedContentLength: 0,
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {},
+                statusCode: 0,
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+
+            // Verify zero values are preserved
+            assert.strictEqual(loggedData.bytesDeleted, 0);
+            assert.strictEqual(loggedData.contentLength, 0);
+            assert.strictEqual(loggedData.httpCode, 0);
+        });
+
+        it('should preserve false values in logs', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {
+                    enabled: false,
+                },
+                headers: {},
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {},
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+
+            // Verify false is preserved
+            assert.strictEqual(loggedData.loggingEnabled, false);
+            assert.strictEqual('loggingEnabled' in loggedData, true);
+        });
+
+        it('should include error code when present', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {},
+                headers: {},
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {
+                    errorCode: 'NoSuchKey',
+                },
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+
+            // Verify error code is included
+            assert.strictEqual(loggedData.errorCode, 'NoSuchKey');
+            assert.strictEqual('errorCode' in loggedData, true);
         });
     });
 });
