@@ -22,6 +22,7 @@
     "@aws-sdk/client-iam": "^3.930.0",
     "@aws-sdk/client-s3": "^3.908.0",
     "@aws-sdk/client-sts": "^3.930.0",
+    "aws-sdk": "^2.1692.0",
     "@aws-sdk/credential-providers": "^3.864.0",
     "@aws-sdk/middleware-retry": "^3.374.0",
     "@aws-sdk/protocol-http": "^3.374.0",

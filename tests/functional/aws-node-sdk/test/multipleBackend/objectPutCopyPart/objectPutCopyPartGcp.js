@@ -267,21 +267,21 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to GCP', function describeFn() {
                     UploadId: this.currentTest.uploadIdAWS,
                 };
                 async.waterfall([
-                                        next => {
-                                                s3.send(new AbortMultipartUploadCommand(paramsGcp))
-                                                        .then(() => next())
-                                                        .catch(next);
-                                        },
-                                        next => {
-                                                s3.send(new AbortMultipartUploadCommand(paramsMem))
-                                                        .then(() => next())
-                                                        .catch(next);
-                                        },
-                                        next => {
-                                                s3.send(new AbortMultipartUploadCommand(paramsAWS))
-                                                        .then(() => next())
-                                                        .catch(next);
-                                        },
+                    next => {
+                        s3.send(new AbortMultipartUploadCommand(paramsGcp))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new AbortMultipartUploadCommand(paramsMem))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new AbortMultipartUploadCommand(paramsAWS))
+                            .then(() => next())
+                            .catch(next);
+                    },
                 ], done);
             });
 

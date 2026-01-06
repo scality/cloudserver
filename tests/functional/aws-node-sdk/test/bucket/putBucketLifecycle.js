@@ -506,7 +506,6 @@ describe('aws-sdk test put bucket lifecycle', () => {
                 try {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                 } catch (err) {
-                    // Feature not implemented in CloudServer - skip test
                     if (err.name === 'NotImplemented') {
                         this.skip();
                     }
@@ -527,7 +526,6 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected error');
                 } catch (err) {
-                    // Accept either NotImplemented or InvalidRequest depending on implementation status
                     if (err.name === 'NotImplemented') {
                         // CloudServer returns NotImplemented for NoncurrentVersionTransitions
                         assert(err.name === 'NotImplemented');
@@ -551,7 +549,6 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected MalformedXML error');
                 } catch (err) {
-                    // Accept either NotImplemented or MalformedXML depending on implementation status
                     assert(err.name === 'MalformedXML' || err.name === 'NotImplemented',
                         `Expected MalformedXML or NotImplemented, got ${err.name}`);
                 }
@@ -567,7 +564,6 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected MalformedXML error');
                 } catch (err) {
-                    // Accept either NotImplemented or MalformedXML depending on implementation status
                     assert(err.name === 'MalformedXML' || err.name === 'NotImplemented',
                         `Expected MalformedXML or NotImplemented, got ${err.name}`);
                 }
@@ -583,7 +579,6 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected error');
                 } catch (err) {
-                    // Accept either NotImplemented or InvalidArgument depending on implementation status
                     assert(err.name === 'InvalidArgument' || err.name === 'NotImplemented',
                         `Expected InvalidArgument or NotImplemented, got ${err.name}`);
                     if (err.name === 'InvalidArgument') {
@@ -603,7 +598,6 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected error');
                 } catch (err) {
-                    // Accept either NotImplemented or MalformedXML depending on implementation status
                     assert(err.name === 'MalformedXML' || err.name === 'NotImplemented',
                         `Expected MalformedXML or NotImplemented, got ${err.name}`);
                 }
@@ -618,7 +612,6 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     await s3.send(new PutBucketLifecycleConfigurationCommand(params));
                     throw new Error('Expected error');
                 } catch (err) {
-                    // Accept either NotImplemented or MalformedXML depending on implementation status
                     assert(err.name === 'MalformedXML' || err.name === 'NotImplemented',
                         `Expected MalformedXML or NotImplemented, got ${err.name}`);
                 }

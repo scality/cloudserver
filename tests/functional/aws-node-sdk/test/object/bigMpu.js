@@ -103,15 +103,12 @@ describe('large mpu', function tester() {
                     })
                     .catch(err => next(err));
             },
-            next => {
-                return timesLimit(partCount, 20, (n, cb) =>
-                    uploadPart(n, uploadId, s3, cb), err => {
-                        if (err) {
-                            process.stdout.write(`Error in timesLimit: ${err}\n`);
-                        }
-                        return next(err);
-                    });
-            },
+            next => timesLimit(partCount, 20, (n, cb) => uploadPart(n, uploadId, s3, cb), err => {
+                if (err) {
+                    process.stdout.write(`Error in timesLimit: ${err}\n`);
+                }
+                return next(err);
+            }),
             next => {
                 const parts = [];
                 for (let i = 0; i < partCount; i++) {

@@ -46,12 +46,12 @@ const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
 function cleanUp(bucketUtil, cb) {
     Promise.all([
         bucketUtil.deleteOne(bucketName).catch(err => {
-            if (err && err.code !== 'NoSuchBucket') {
+            if (err && err.name !== 'NoSuchBucket') {
                 throw err;
             }
         }),
         bucketUtil.deleteOne(targetBucket).catch(err => {
-            if (err && err.code !== 'NoSuchBucket') {
+            if (err && err.name !== 'NoSuchBucket') {
                 throw err;
             }
         }),

@@ -143,9 +143,7 @@ function getObjectAndAssertAcl(s3, params, cb) {
         .then(data => {
             // eslint-disable-next-line no-unused-vars
             const {$metadata, ...aclData} = data;
-            // eslint-disable-next-line no-param-reassign
-            data = aclData;
-            assert.deepEqual(data, expectedResult);
+            assert.deepEqual(aclData, expectedResult);
             cb();
         })
         .catch(cb);

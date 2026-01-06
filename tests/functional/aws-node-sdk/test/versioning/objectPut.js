@@ -50,7 +50,7 @@ describe('put and get object with versioning', function testSuite() {
         });
 
         it('should return InvalidArgument for a request with versionId query', async () => {
-            const params = { Bucket: bucket, Key: key, Body: '' };
+            const params = { Bucket: bucket, Key: key, Body: Buffer.from('') };
             const query = { versionId: 'testVersionId' };
             try {
                 await customS3Request(PutObjectCommand, params, { query });
@@ -62,7 +62,7 @@ describe('put and get object with versioning', function testSuite() {
         });
 
         it('should return InvalidArgument for a request with empty string versionId query', async () => {
-            const params = { Bucket: bucket, Key: key, Body: '' };
+            const params = { Bucket: bucket, Key: key, Body: Buffer.from('') };
             const query = { versionId: '' };
             try {
                 await customS3Request(PutObjectCommand, params, { query });
@@ -74,10 +74,10 @@ describe('put and get object with versioning', function testSuite() {
         });
 
         it('should put and get a non-versioned object without including version ids in response headers', async () => {
-            const params = { Bucket: bucket, Key: key, Body: '' };
+            const params = { Bucket: bucket, Key: key, Body: Buffer.from('') };
             const putRes = await s3.send(new PutObjectCommand({
                 ...params,
-                Body: '',
+                Body: Buffer.from(''),
             }));
             assert.strictEqual(putRes.VersionId, undefined);
 
@@ -86,10 +86,10 @@ describe('put and get object with versioning', function testSuite() {
         });
 
         it('version-specific get should still not return version id in response header', async () => {
-            const params = { Bucket: bucket, Key: key, Body: '' };
+            const params = { Bucket: bucket, Key: key, Body: Buffer.from('') };
             const putRes = await s3.send(new PutObjectCommand({
                 ...params,
-                Body: '',
+                Body: Buffer.from(''),
             }));
             assert.strictEqual(putRes.VersionId, undefined);
 
@@ -110,7 +110,7 @@ describe('put and get object with versioning', function testSuite() {
             });
 
             it('should create a new version for an object', async () => {
-                const params = { Bucket: bucket, Key: key, Body: '' };
+                const params = { Bucket: bucket, Key: key, Body: Buffer.from('') };
                 const putRes = await s3.send(new PutObjectCommand(params));
 
                 const getRes = await s3.send(new GetObjectCommand({
@@ -218,7 +218,7 @@ describe('put and get object with versioning', function testSuite() {
             });
 
             it('should create new versions but still keep the null version', async () => {
-                const params = { Bucket: bucket, Key: key, Body: '' };
+                const params = { Bucket: bucket, Key: key, Body: Buffer.from('') };
                 const paramsNull = {
                     Bucket: bucket,
                     Key: key,
@@ -302,7 +302,7 @@ describe('put and get object with versioning', function testSuite() {
             });
 
             it('should update null version if put object twice', async () => {
-                const params = { Bucket: bucket, Key: key, Body: '' };
+                const params = { Bucket: bucket, Key: key, Body: Buffer.from('') };
                 const params1 = { Bucket: bucket, Key: key, Body: data[0] };
                 const params2 = { Bucket: bucket, Key: key, Body: data[1] };
                 const paramsNull = {
@@ -338,7 +338,7 @@ describe('put and get object with versioning', function testSuite() {
             'latest version should not result in two null version with ' +
             'different version ids', async () => {                
                 // create new null version (master version in metadata)
-                await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: '' }));
+                await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: Buffer.from('') }));
                 await checkOneVersion(s3, bucket, 'null');
 
                 // apply ACL on null version
@@ -350,7 +350,7 @@ describe('put and get object with versioning', function testSuite() {
                 }));
 
                 // before overwriting master version, put object should clean up latest null version
-                await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: '' }));
+                await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: Buffer.from('') }));
 
                 // if clean-up did not occur, would see two null versions with different version IDs
                 await checkOneVersion(s3, bucket, 'null');
@@ -369,7 +369,7 @@ describe('put and get object with versioning', function testSuite() {
                 }));
 
                 // before overwriting master version, put object should clean up latest null version
-                await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: '' }));
+                await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: Buffer.from('') }));
 
                 // if clean-up did not occur, would see two null versions with different version IDs
                 await checkOneVersion(s3, bucket, 'null');
@@ -419,7 +419,7 @@ describe('put and get object with versioning', function testSuite() {
             });
 
             it('should update null version in versioning suspended bucket', async () => {
-                const params = { Bucket: bucket, Key: key, Body: '' };
+                const params = { Bucket: bucket, Key: key, Body: Buffer.from('') };
                 const putParams = { Bucket: bucket, Key: key, Body: data[1] };
                 const paramsNull = {
                     Bucket: bucket,
@@ -470,7 +470,7 @@ describe('put and get object with versioning', function testSuite() {
             });
 
             it('should preserve the null version when creating new versions', async () => {
-                const params = { Bucket: bucket, Key: key, Body: '' };
+                const params = { Bucket: bucket, Key: key, Body: Buffer.from('') };
                 const paramsNull = {
                     Bucket: bucket,
                     Key: key,

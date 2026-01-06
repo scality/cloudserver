@@ -276,7 +276,6 @@ utils.putToAwsBackend = (s3, bucket, key, body, callback) => {
 };
 
 utils.enableVersioning = (s3, bucket, callback) => {
-    // Support both callback and promise patterns
     const promise = s3.send(new PutBucketVersioningCommand({ 
         Bucket: bucket,
         VersioningConfiguration: versioningEnabled 
@@ -289,7 +288,6 @@ utils.enableVersioning = (s3, bucket, callback) => {
 };
 
 utils.suspendVersioning = (s3, bucket, callback) => {
-    // Support both callback and promise patterns
     const promise = s3.send(new PutBucketVersioningCommand({ 
         Bucket: bucket,
         VersioningConfiguration: versioningSuspended 
@@ -305,7 +303,6 @@ utils.mapToAwsPuts = async (s3, bucket, key, dataArray, callback) => {
     try {
         const results = [];
         for (const data of dataArray) {
-            // Don't pass callback to putToAwsBackend - we need the version ID from the promise
             const result = await utils.putToAwsBackend(s3, bucket, key, data);
             const versionId = result.VersionId;
             results.push(versionId);

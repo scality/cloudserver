@@ -193,10 +193,6 @@ describe('GCP: Complete MPU', function testSuite() {
                 MultipartUpload: { Parts: parts },
             };
             gcpClient.completeMultipartUpload(params, (err, res) => {
-                // eslint-disable-next-line no-console
-                console.log('completeMultipartUpload response:', res);
-                // eslint-disable-next-line no-console
-                console.log('completeMultipartUpload error:', err);
                 assert.equal(err, null,
                     `Expected success, but got error ${err}`);
                 assert.strictEqual(res.ETag, `"${smallMD5}"`);
@@ -218,7 +214,6 @@ describe('GCP: Complete MPU', function testSuite() {
 
         it('should successfully complete MPU',
         function testFn(done) {
-            this.timeout(1200000);
             this.retries(1);
 
             const parts = GcpUtils.createMpuList({

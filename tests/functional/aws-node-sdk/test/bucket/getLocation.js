@@ -75,10 +75,10 @@ describeSkipAWS('GET bucket location ', () => {
             after(() => {
                 process.stdout.write('Deleting bucket\n');
                 return bucketUtil.deleteOne(bucketName)
-                .catch(err => {
-                    process.stdout.write(`Error in after: ${err}\n`);
-                    throw err;
-                });
+                    .catch(err => {
+                        process.stdout.write(`Error in after: ${err}\n`);
+                        throw err;
+                    });
             });
 
             it('should return request endpoint as location', async () => {
