@@ -1,5 +1,14 @@
 const assert = require('assert');
 const async = require('async');
+const {
+    CreateBucketCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    AbortMultipartUploadCommand,
+    DeleteBucketCommand,
+    DeleteObjectCommand,
+    PutObjectCommand,
+} = require('@aws-sdk/client-s3');
 const arsenal = require('arsenal');
 
 const withV4 = require('../../support/withV4');
@@ -50,31 +59,42 @@ describeFn() {
         describe('with bucket location header', () => {
             beforeEach(function beforeEachFn(done) {
                 async.waterfall([
-                    next => s3.createBucket({ Bucket: bucket,
-                    }, err => next(err)),
-                    next => s3.createMultipartUpload({
-                        Bucket: bucket,
-                        Key: this.currentTest.key,
-                        Metadata: { 'scal-location-constraint': gcpLocation },
-                    }, (err, res) => {
-                        if (err) {
-                            return next(err);
-                        }
-                        this.currentTest.uploadId = res.UploadId;
-                        return next();
-                    }),
+                    next => {
+                        s3.send(new CreateBucketCommand({ Bucket: bucket }))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new CreateMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: this.currentTest.key,
+                            Metadata: { 'scal-location-constraint': gcpLocation },
+                        }))
+                            .then(res => {
+                                this.currentTest.uploadId = res.UploadId;
+                                next();
+                            })
+                            .catch(next);
+                    },
                 ], done);
             });
 
             afterEach(function afterEachFn(done) {
                 async.waterfall([
-                    next => s3.abortMultipartUpload({
-                        Bucket: bucket,
-                        Key: this.currentTest.key,
-                        UploadId: this.currentTest.uploadId,
-                    }, err => next(err)),
-                    next => s3.deleteBucket({ Bucket: bucket },
-                      err => next(err)),
+                    next => {
+                        s3.send(new AbortMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: this.currentTest.key,
+                            UploadId: this.currentTest.uploadId,
+                        }))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new DeleteBucketCommand({ Bucket: bucket }))
+                            .then(() => next())
+                            .catch(next);
+                    },
                 ], err => {
                     assert.equal(err, null, `Error aborting MPU: ${err}`);
                     done();
@@ -89,12 +109,17 @@ describeFn() {
                     PartNumber: 1,
                 };
                 async.waterfall([
-                    next => s3.uploadPart(params, (err, res) => {
-                        assert.ifError(err,
-                            `Expected success, but got err ${err}`);
-                        assert.strictEqual(res.ETag, `"${emptyMD5}"`);
-                        next();
-                    }),
+                    next => {
+                        s3.send(new UploadPartCommand({
+                            ...params,
+                            Body: Buffer.alloc(0),
+                        }))
+                            .then(res => {
+                                assert.strictEqual(res.ETag, `"${emptyMD5}"`);
+                                next();
+                            })
+                            .catch(next);
+                    },
                     next => {
                         const mpuKey =
                             createMpuKey(this.test.key, this.test.uploadId, 1);
@@ -123,14 +148,14 @@ describeFn() {
                                 Body: body,
                                 PartNumber: n + 1,
                             };
-                            s3.uploadPart(params, (err, res) => {
-                                assert.ifError(err,
-                                    `Expected success, but got err ${err}`);
-                                assert.strictEqual(
-                                    res.ETag, `"${correctMD5}"`);
-                                cb();
-                            });
-                        }, () => next());
+                            s3.send(new UploadPartCommand(params))
+                                .then(res => {
+                                    assert.strictEqual(
+                                        res.ETag, `"${correctMD5}"`);
+                                    cb();
+                                })
+                                .catch(cb);
+                        }, err => next(err));
                     },
                     next => checkMPUResult(
                         gcpBucketMPU, this.test.key, this.test.uploadId,
@@ -151,14 +176,14 @@ describeFn() {
                                 Body: partBody[n],
                                 PartNumber: 1,
                             };
-                            s3.uploadPart(params, (err, res) => {
-                                assert.ifError(err,
-                                    `Expected success, but got err ${err}`);
-                                assert.strictEqual(
-                                    res.ETag, `"${partMD5[n]}"`);
-                                cb();
-                            });
-                        }, () => next());
+                            s3.send(new UploadPartCommand(params))
+                                .then(res => {
+                                    assert.strictEqual(
+                                        res.ETag, `"${partMD5[n]}"`);
+                                    cb();
+                                })
+                                .catch(cb);
+                        }, err => next(err));
                     },
                     next => checkMPUResult(
                         gcpBucketMPU, this.test.key, this.test.uploadId,
@@ -170,32 +195,35 @@ describeFn() {
         describe('with same key as preexisting part', () => {
             beforeEach(function beforeEachFn(done) {
                 async.waterfall([
-                    next => s3.createBucket({ Bucket: bucket },
-                        err => next(err)),
                     next => {
-                        s3.putObject({
+                        s3.send(new CreateBucketCommand({ Bucket: bucket }))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new PutObjectCommand({
                             Bucket: bucket,
                             Key: this.currentTest.key,
                             Metadata: {
                                 'scal-location-constraint': gcpLocation },
                             Body: body,
-                        }, err => {
-                            assert.equal(err, null, 'Err putting object to ' +
-                            `GCP: ${err}`);
-                            return next();
-                        });
+                        }))
+                            .then(() => next())
+                            .catch(err => next(new Error(
+                                `Err putting object to GCP: ${err}`)));
                     },
-                    next => s3.createMultipartUpload({
-                        Bucket: bucket,
-                        Key: this.currentTest.key,
-                        Metadata: { 'scal-location-constraint': gcpLocation },
-                    }, (err, res) => {
-                        if (err) {
-                            return next(err);
-                        }
-                        this.currentTest.uploadId = res.UploadId;
-                        return next();
-                    }),
+                    next => {
+                        s3.send(new CreateMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: this.currentTest.key,
+                            Metadata: { 'scal-location-constraint': gcpLocation },
+                        }))
+                            .then(res => {
+                                this.currentTest.uploadId = res.UploadId;
+                                next();
+                            })
+                            .catch(next);
+                    },
                 ], done);
             });
 
@@ -203,24 +231,30 @@ describeFn() {
                 async.waterfall([
                     next => {
                         process.stdout.write('Aborting multipart upload\n');
-                        s3.abortMultipartUpload({
+                        s3.send(new AbortMultipartUploadCommand({
                             Bucket: bucket,
                             Key: this.currentTest.key,
-                            UploadId: this.currentTest.uploadId },
-                        err => next(err));
+                            UploadId: this.currentTest.uploadId,
+                        }))
+                            .then(() => next())
+                            .catch(next);
                     },
                     next => {
                         process.stdout.write('Deleting object\n');
-                        s3.deleteObject({
+                        s3.send(new DeleteObjectCommand({
                             Bucket: bucket,
-                            Key: this.currentTest.key },
-                        err => next(err));
+                            Key: this.currentTest.key,
+                        }))
+                            .then(() => next())
+                            .catch(next);
                     },
                     next => {
                         process.stdout.write('Deleting bucket\n');
-                        s3.deleteBucket({
-                            Bucket: bucket },
-                        err => next(err));
+                        s3.send(new DeleteBucketCommand({
+                            Bucket: bucket,
+                        }))
+                            .then(() => next())
+                            .catch(next);
                     },
                 ], err => {
                     assert.equal(err, null, `Err in afterEach: ${err}`);
@@ -231,25 +265,26 @@ describeFn() {
             it('should put a part without overwriting existing object',
             function itFn(done) {
                 const body = Buffer.alloc(20);
-                s3.uploadPart({
+                s3.send(new UploadPartCommand({
                     Bucket: bucket,
                     Key: this.test.key,
                     UploadId: this.test.uploadId,
                     PartNumber: 1,
                     Body: body,
-                }, err => {
-                    assert.strictEqual(err, null, 'Err putting part to ' +
-                    `GCP: ${err}`);
-                    gcpClient.getObject({
-                        Bucket: gcpBucket,
-                        Key: this.test.key,
-                    }, (err, res) => {
-                        assert.ifError(err,
-                            `Expected success, but got err ${err}`);
-                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                        done();
-                    });
-                });
+                }))
+                    .then(() => {
+                        gcpClient.getObject({
+                            Bucket: gcpBucket,
+                            Key: this.test.key,
+                        }, (err, res) => {
+                            assert.ifError(err,
+                                `Expected success, but got err ${err}`);
+                            assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                            done();
+                        });
+                    })
+                    .catch(err => done(new Error(
+                        `Err putting part to GCP: ${err}`)));
             });
         });
     });
@@ -268,32 +303,43 @@ describeF() {
         describe('with bucket location header', () => {
             beforeEach(function beforeEachFn(done) {
                 async.waterfall([
-                    next => s3.createBucket({ Bucket: bucket,
-                    }, err => next(err)),
-                    next => s3.createMultipartUpload({
-                        Bucket: bucket,
-                        Key: this.currentTest.key,
-                        Metadata: { 'scal-location-constraint':
-                        gcpLocationMismatch },
-                    }, (err, res) => {
-                        if (err) {
-                            return next(err);
-                        }
-                        this.currentTest.uploadId = res.UploadId;
-                        return next();
-                    }),
+                    next => {
+                        s3.send(new CreateBucketCommand({ Bucket: bucket }))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new CreateMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: this.currentTest.key,
+                            Metadata: { 'scal-location-constraint':
+                            gcpLocationMismatch },
+                        }))
+                            .then(res => {
+                                this.currentTest.uploadId = res.UploadId;
+                                next();
+                            })
+                            .catch(next);
+                    },
                 ], done);
             });
 
             afterEach(function afterEachFn(done) {
                 async.waterfall([
-                    next => s3.abortMultipartUpload({
-                        Bucket: bucket,
-                        Key: this.currentTest.key,
-                        UploadId: this.currentTest.uploadId,
-                    }, err => next(err)),
-                    next => s3.deleteBucket({ Bucket: bucket },
-                      err => next(err)),
+                    next => {
+                        s3.send(new AbortMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: this.currentTest.key,
+                            UploadId: this.currentTest.uploadId,
+                        }))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new DeleteBucketCommand({ Bucket: bucket }))
+                            .then(() => next())
+                            .catch(next);
+                    },
                 ], err => {
                     assert.equal(err, null, `Error aborting MPU: ${err}`);
                     done();
@@ -313,10 +359,14 @@ describeF() {
                 const eTagExpected =
                     '"441018525208457705bf09a8ee3c1093"';
                 async.waterfall([
-                    next => s3.uploadPart(params, (err, res) => {
-                        assert.strictEqual(res.ETag, eTagExpected);
-                        next(err);
-                    }),
+                    next => {
+                        s3.send(new UploadPartCommand(params))
+                            .then(res => {
+                                assert.strictEqual(res.ETag, eTagExpected);
+                                next();
+                            })
+                            .catch(next);
+                    },
                     next => {
                         const key =
                             createMpuKey(this.test.key, this.test.uploadId, 1);

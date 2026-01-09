@@ -1,5 +1,13 @@
 const assert = require('assert');
 const async = require('async');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    AbortMultipartUploadCommand,
+    PutObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
@@ -43,24 +51,35 @@ descrbeFn() {
         describe('with bucket location header', () => {
             beforeEach(function beforeEachFn(done) {
                 async.waterfall([
-                    next => s3.createBucket({ Bucket: bucket },
-                        err => next(err)),
-                    next => s3.createMultipartUpload({
-                        Bucket: bucket,
-                        Key: this.currentTest.key,
-                        Metadata: { 'scal-location-constraint': gcpLocation },
-                    }, (err, res) => {
-                        if (err) {
-                            return next(err);
-                        }
-                        this.currentTest.uploadId = res.UploadId;
-                        return next();
-                    }),
+                    next => {
+                        s3.send(new CreateBucketCommand({
+                            Bucket: bucket,
+                        }))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new CreateMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: this.currentTest.key,
+                            Metadata: { 'scal-location-constraint': gcpLocation },
+                        }))
+                            .then(res => {
+                                this.currentTest.uploadId = res.UploadId;
+                                next();
+                            })
+                            .catch(next);
+                    },
                 ], done);
             });
 
-            afterEach(done => s3.deleteBucket({ Bucket: bucket },
-                done));
+            afterEach(done => {
+                s3.send(new DeleteBucketCommand({
+                    Bucket: bucket,
+                }))
+                    .then(() => done())
+                    .catch(done);
+            });
 
             it('should abort a MPU with 0 parts', function itFn(done) {
                 const params = {
@@ -69,7 +88,11 @@ descrbeFn() {
                     UploadId: this.test.uploadId,
                 };
                 async.waterfall([
-                    next => s3.abortMultipartUpload(params, () => next()),
+                    next => {
+                        s3.send(new AbortMultipartUploadCommand(params))
+                            .then(() => next())
+                            .catch(next);
+                    },
                     next => setTimeout(() => checkMPUList(
                         gcpBucketMPU, this.test.key, this.test.uploadId, next),
                     gcpTimeout),
@@ -85,23 +108,31 @@ descrbeFn() {
                 async.waterfall([
                     next => {
                         async.times(2, (n, cb) => {
-                            const params = {
+                            const uploadParams = {
                                 Bucket: bucket,
                                 Key: this.test.key,
                                 UploadId: this.test.uploadId,
                                 Body: body,
                                 PartNumber: n + 1,
                             };
-                            s3.uploadPart(params, (err, res) => {
-                                assert.ifError(err,
-                                    `Expected success, but got err ${err}`);
-                                assert.strictEqual(
-                                    res.ETag, `"${correctMD5}"`);
-                                cb();
-                            });
-                        }, () => next());
+                            s3.send(new UploadPartCommand(uploadParams))
+                                .then(res => {
+                                    assert.strictEqual(
+                                        res.ETag, `"${correctMD5}"`);
+                                    cb();
+                                })
+                                .catch(err => {
+                                    assert.ifError(err,
+                                        `Expected success, but got err ${err}`);
+                                    cb(err);
+                                });
+                        }, err => next(err));
                     },
-                    next => s3.abortMultipartUpload(params, () => next()),
+                    next => {
+                        s3.send(new AbortMultipartUploadCommand(params))
+                            .then(() => next())
+                            .catch(next);
+                    },
                     next => setTimeout(() => checkMPUList(
                         gcpBucketMPU, this.test.key, this.test.uploadId, next),
                     gcpTimeout),
@@ -112,32 +143,40 @@ descrbeFn() {
         describe('with previously existing object with same key', () => {
             beforeEach(function beforeEachFn(done) {
                 async.waterfall([
-                    next => s3.createBucket({ Bucket: bucket },
-                        err => next(err)),
                     next => {
-                        s3.putObject({
+                        s3.send(new CreateBucketCommand({
+                            Bucket: bucket,
+                        }))
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        s3.send(new PutObjectCommand({
                             Bucket: bucket,
                             Key: this.currentTest.key,
                             Metadata: {
                                 'scal-location-constraint': gcpLocation },
                             Body: body,
-                        }, err => {
-                            assert.ifError(err,
-                                `Expected success, got error: ${err}`);
-                            return next();
-                        });
+                        }))
+                            .then(() => next())
+                            .catch(err => {
+                                assert.ifError(err,
+                                    `Expected success, got error: ${err}`);
+                                next(err);
+                            });
                     },
-                    next => s3.createMultipartUpload({
-                        Bucket: bucket,
-                        Key: this.currentTest.key,
-                        Metadata: { 'scal-location-constraint': gcpLocation },
-                    }, (err, res) => {
-                        if (err) {
-                            return next(err);
-                        }
-                        this.currentTest.uploadId = res.UploadId;
-                        return next();
-                    }),
+                    next => {
+                        s3.send(new CreateMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: this.currentTest.key,
+                            Metadata: { 'scal-location-constraint': gcpLocation },
+                        }))
+                            .then(res => {
+                                this.currentTest.uploadId = res.UploadId;
+                                next();
+                            })
+                            .catch(next);
+                    },
                 ], done);
             });
 
@@ -167,13 +206,19 @@ descrbeFn() {
                         const body = Buffer.alloc(10);
                         const partParams = Object.assign(
                             { PartNumber: 1, Body: body }, params);
-                        s3.uploadPart(partParams, err => {
-                            assert.ifError(err,
-                                `Expected success, got error: ${err}`);
-                            return next();
-                        });
+                        s3.send(new UploadPartCommand(partParams))
+                            .then(() => next())
+                            .catch(err => {
+                                assert.ifError(err,
+                                    `Expected success, got error: ${err}`);
+                                next(err);
+                            });
                     },
-                    next => s3.abortMultipartUpload(params, () => next()),
+                    next => {
+                        s3.send(new AbortMultipartUploadCommand(params))
+                            .then(() => next())
+                            .catch(next);
+                    },
                     next => setTimeout(() => {
                         const params = {
                             Bucket: gcpBucket,

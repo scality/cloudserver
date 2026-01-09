@@ -1,7 +1,12 @@
 const assert = require('assert');
 const tv4 = require('tv4');
 const async = require('async');
-const { S3 } = require('aws-sdk');
+const {
+    S3Client,
+    ListBucketsCommand,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+} = require('@aws-sdk/client-s3');
 
 const BucketUtility = require('../../lib/utility/bucket-util');
 const getConfig = require('../support/config');
@@ -14,31 +19,25 @@ const describeFn = process.env.AWS_ON_AIR
 
 async function cleanBucket(bucketUtils, s3, Bucket) {
     try {
-        await bucketUtils.empty(Bucket);
-        await s3.deleteBucket({ Bucket }).promise();
-    } catch (err) {
+        await bucketUtils.empty(Bucket, true);
+        await bucketUtils.deleteOne(Bucket);
+    } catch (error) {
         process.stdout
-            .write(`Error emptying and deleting bucket: ${err}\n`);
+            .write(`Error emptying and deleting bucket: ${error}\n`);
         // ignore the error and continue
     }
 }
 
 async function cleanAllBuckets(bucketUtils, s3) {
-    let listingLoop = true;
-    let ContinuationToken;
-
     process.stdout.write('Try cleaning all buckets before running the test\n');
 
-    while (listingLoop) {
-        const list = await s3.listBuckets({ ContinuationToken }).promise();
-        ContinuationToken = list.ContinuationToken;
-        listingLoop = !!ContinuationToken;
+    // ListBuckets doesn't support pagination, it returns all buckets at once
+    const list = await s3.send(new ListBucketsCommand({}));
 
-        if (list.Buckets.length) {
-            process.stdout
-                .write(`Found ${list.Buckets.length} buckets to clean:\n${
-                    JSON.stringify(list.Buckets, null, 2)}\n`);
-        }
+    if (list.Buckets && list.Buckets.length) {
+        process.stdout
+            .write(`Found ${list.Buckets.length} buckets to clean:\n${
+                JSON.stringify(list.Buckets, null, 2)}\n`);
 
         // clean sequentially to avoid overloading
         for (const bucket of list.Buckets) {
@@ -49,25 +48,25 @@ async function cleanAllBuckets(bucketUtils, s3) {
 
 describeFn('GET Service - AWS.S3.listBuckets', function getService() {
     this.timeout(600000);
+    let unauthenticatedBucketUtil;
 
     describe('When user is unauthorized', () => {
-        let s3;
-        let config;
 
         beforeEach(() => {
-            config = getConfig('default');
-            s3 = new S3(config);
+            const config = getConfig('default');
+            unauthenticatedBucketUtil = new BucketUtility('default', config, true);
         });
 
-        it('should return 403 and AccessDenied', done => {
-            s3.makeUnauthenticatedRequest('listBuckets', error => {
-                assert(error);
+        it('should return 403 and AccessDenied', async () => {
+            const s3Unauth = unauthenticatedBucketUtil.s3;
 
-                assert.strictEqual(error.statusCode, 403);
-                assert.strictEqual(error.code, 'AccessDenied');
-
-                done();
-            });
+            try {
+                await s3Unauth.send(new ListBucketsCommand({}));
+                throw new Error('Should have thrown an error');
+            } catch (error) {
+                assert.strictEqual(error.$metadata?.httpStatusCode || error.statusCode, 403);
+                assert.strictEqual(error.name, 'AccessDenied');
+            }
         });
     });
 
@@ -76,27 +75,27 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
             let testFn;
 
             before(() => {
-                testFn = function testFn(config, code, statusCode, done) {
-                    const s3 = new S3(config);
-                    s3.listBuckets((err, data) => {
-                        assert(err);
-                        assert.ifError(data);
-
-                        assert.strictEqual(err.statusCode, statusCode);
-                        assert.strictEqual(err.code, code);
-                        done();
-                    });
+                testFn = async function testFn(config, code, statusCode) {
+                    const s3 = new S3Client(config);
+                    try {
+                        await s3.send(new ListBucketsCommand({}));
+                        throw new Error('Should have thrown an error');
+                    } catch (err) {
+                        assert.strictEqual(err.$metadata?.httpStatusCode || err.statusCode, statusCode);
+                        assert.strictEqual(err.name, code);
+                    }
                 };
             });
 
             it('should return 403 and InvalidAccessKeyId ' +
-                'if accessKeyId is invalid', done => {
+                'if accessKeyId is invalid', async () => {
                 const invalidAccess = getConfig('default',
                     Object.assign({},
                         {
-                            credentials: null,
-                            accessKeyId: 'wrong',
-                            secretAccessKey: 'wrong again',
+                            credentials: {
+                                accessKeyId: 'wrong',
+                                secretAccessKey: 'wrong again',
+                            },
                         },
                         sigCfg
                     )
@@ -104,18 +103,18 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                 const expectedCode = 'InvalidAccessKeyId';
                 const expectedStatus = 403;
 
-                testFn(invalidAccess, expectedCode, expectedStatus, done);
+                await testFn(invalidAccess, expectedCode, expectedStatus);
             });
 
             it('should return 403 and SignatureDoesNotMatch ' +
-                'if credential is polluted', done => {
+                'if credential is polluted', async () => {
                 const pollutedConfig = getConfig('default', sigCfg);
                 pollutedConfig.credentials.secretAccessKey = 'wrong';
 
                 const expectedCode = 'SignatureDoesNotMatch';
                 const expectedStatus = 403;
 
-                testFn(pollutedConfig, expectedCode, expectedStatus, done);
+                await testFn(pollutedConfig, expectedCode, expectedStatus);
             });
         });
 
@@ -131,42 +130,46 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
             before(done => {
                 bucketUtil = new BucketUtility('default', sigCfg);
                 s3 = bucketUtil.s3;
-                s3.config.update({ maxRetries: 0 });
-                s3.config.update({ httpOptions: { timeout: 0 } });
                 async.series([
-                    // if other tests failed to delete their buckets, listings might be wrong
-                    // try toclean all buckets before running the test
-                    next => cleanAllBuckets(bucketUtil, s3).then(next).catch(next),
+                    next => cleanAllBuckets(bucketUtil, s3).then(() => next()).catch(next),
                     next =>
                         async.eachLimit(createdBuckets, 10, (bucketName, moveOn) => {
-                            s3.createBucket({ Bucket: bucketName }, err => {
-                                if (bucketName.endsWith('000')) {
-                                    // log to keep ci alive
-                                    process.stdout
-                                        .write(`creating bucket: ${bucketName}\n`);
-                                }
-                                moveOn(err);
-                            });
+                            s3.send(new CreateBucketCommand({ Bucket: bucketName }))
+                                .then(() => {
+                                    if (bucketName.endsWith('000')) {
+                                        process.stdout
+                                            .write(`creating bucket: ${bucketName}\n`);
+                                    }
+                                    moveOn();
+                                })
+                                .catch(err => {
+                                    moveOn(err);
+                                });
                         },
                         err => {
                             if (err) {
-                                process.stdout.write(`err creating buckets: ${err}`);
+                                process.stdout.write(`err creating buckets: ${err}\n`);
+                                return next(err);
                             }
-                            next(err);
+                            return next(err);
                         })
                 ], done);
             });
 
             after(done => {
                 async.eachLimit(createdBuckets, 10, (bucketName, moveOn) => {
-                    s3.deleteBucket({ Bucket: bucketName }, err => {
-                        if (bucketName.endsWith('000')) {
-                            // log to keep ci alive
-                            process.stdout
-                            .write(`deleting bucket: ${bucketName}\n`);
-                        }
-                        moveOn(err);
-                    });
+                    s3.send(new DeleteBucketCommand({ Bucket: bucketName }))
+                        .then(() => {
+                            if (bucketName.endsWith('000')) {
+                                // log to keep ci alive
+                                process.stdout
+                                    .write(`deleting bucket: ${bucketName}\n`);
+                            }
+                            moveOn();
+                        })
+                        .catch(() => {
+                            moveOn();
+                        });
                 },
                 err => {
                     if (err) {
@@ -178,12 +181,18 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
 
             it('should list buckets concurrently', done => {
                 async.times(20, (n, next) => {
-                    s3.listBuckets((err, result) => {
-                        assert.equal(result.Buckets.length,
-                            createdBuckets.length,
-                            'Created buckets are missing in response');
-                        next(err);
-                    });
+                    s3.send(new ListBucketsCommand({}))
+                        .then(result => {
+                            // Filter for our test buckets only
+                            const ourBuckets = result.Buckets.filter(bucket => 
+                                bucket.Name.startsWith('getservicebuckets-')
+                            );
+                            assert.equal(ourBuckets.length,
+                                createdBuckets.length,
+                                'Created buckets are missing in response');
+                            next();
+                        })
+                        .catch(next);
                 },
                 err => {
                     assert.ifError(err, `error listing buckets: ${err}`);
@@ -192,8 +201,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
             });
 
             it('should list buckets', done => {
-                s3
-                    .listBuckets().promise()
+                s3.send(new ListBucketsCommand({}))
                     .then(data => {
                         const isValidResponse = tv4.validate(data, svcSchema);
                         if (!isValidResponse) {
@@ -230,19 +238,17 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                     .catch(done);
             });
 
-            const filterFn = bucket => createdBuckets.indexOf(bucket.name) > -1;
+            const filterFn = bucket => createdBuckets.indexOf(bucket.Name) > -1;
 
             describe('two accounts are given', () => {
                 let anotherS3;
 
                 before(() => {
-                    anotherS3 = new S3(getConfig('lisa'));
-                    anotherS3.config.setPromisesDependency(Promise);
+                    anotherS3 = new S3Client(getConfig('lisa'));
                 });
 
                 it('should not return other accounts bucket list', done => {
-                    anotherS3
-                        .listBuckets().promise()
+                    anotherS3.send(new ListBucketsCommand({}))
                         .then(data => {
                             const hasSameBuckets = data.Buckets
                                 .filter(filterFn)

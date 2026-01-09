@@ -1,12 +1,17 @@
 const assert = require('assert');
-const AWS = require('aws-sdk');
+const {
+    CreateBucketCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+    PutObjectLegalHoldCommand,
+    PutBucketPolicyCommand,
+} = require('@aws-sdk/client-s3');
 const { errorInstances } = require('arsenal');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const checkError = require('../../lib/utility/checkError');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
-const { VALIDATE_CREDENTIALS, SIGN } = AWS.EventListeners.Core;
 
 const bucket = 'mock-bucket-lock';
 const unlockedBucket = 'mock-bucket-no-lock';
@@ -54,39 +59,36 @@ describeSkipIfCeph('PUT object legal hold', () => {
         const otherAccountS3 = otherAccountBucketUtility.s3;
         let versionId;
 
-        beforeEach(() => {
-            process.stdout.write('Putting buckets and objects\n');
-            return s3.createBucket({
+        beforeEach(async () => {
+            await s3.send(new CreateBucketCommand({
                 Bucket: bucket,
                 ObjectLockEnabledForBucket: true,
-            }).promise()
-            .then(() => s3.createBucket({ Bucket: unlockedBucket }).promise())
-            .then(() => s3.putObject({ Bucket: unlockedBucket, Key: key }).promise())
-            .then(() => s3.putObject({ Bucket: bucket, Key: key }).promise())
-            .then(res => {
-                versionId = res.VersionId;
-            })
-            .catch(err => {
-                process.stdout.write('Error in beforeEach\n');
-                throw err;
-            });
+            }));
+            await s3.send(new CreateBucketCommand({ Bucket: unlockedBucket }));
+            await s3.send(new PutObjectCommand({ Bucket: unlockedBucket, Key: key }));
+            await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key }));
+            const res = await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key }));
+            versionId = res.VersionId;
         });
 
         afterEach(() => {
             process.stdout.write('Emptying and deleting buckets\n');
-            return bucketUtil.empty(bucket)
-            .then(() => bucketUtil.empty(unlockedBucket))
-            .then(() => bucketUtil.deleteMany([bucket, unlockedBucket]))
-            .catch(err => {
-                process.stdout.write('Error in afterEach\n');
-                throw err;
-            });
+            return new Promise(resolve => {
+                changeObjectLock([{ bucket, key, versionId }], '', () => {
+                    resolve();
+                });
+            })
+            .then(() => bucketUtil.empty(bucket, true))
+            .then(() => bucketUtil.empty(unlockedBucket, true))
+            .then(() => bucketUtil.deleteMany([bucket, unlockedBucket]));
         });
 
         it('should return AccessDenied putting legal hold with another account',
         done => {
             const params = createLegalHoldParams(bucket, key, 'ON');
-            otherAccountS3.putObjectLegalHold(params, err => {
+            otherAccountS3.send(new PutObjectLegalHoldCommand(params)).then(() => {
+                throw new Error('Expected AccessDenied error');
+            }).catch(err => {
                 checkError(err, 'AccessDenied', 403);
                 done();
             });
@@ -94,19 +96,23 @@ describeSkipIfCeph('PUT object legal hold', () => {
 
         it('should return NoSuchKey error if key does not exist', done => {
             const params = createLegalHoldParams(bucket, 'keynotexist', 'ON');
-            s3.putObjectLegalHold(params, err => {
+            s3.send(new PutObjectLegalHoldCommand(params)).then(() => {
+                throw new Error('Expected NoSuchKey error');
+            }).catch(err => {
                 checkError(err, 'NoSuchKey', 404);
                 done();
             });
         });
 
         it('should return NoSuchVersion error if version does not exist', done => {
-            s3.putObjectLegalHold({
+            s3.send(new PutObjectLegalHoldCommand({
                 Bucket: bucket,
                 Key: key,
                 VersionId: '012345678901234567890123456789012',
                 LegalHold: mockLegalHold.on,
-            }, err => {
+            })).then(() => {
+                throw new Error('Expected NoSuchVersion error');
+            }).catch(err => {
                 checkError(err, 'NoSuchVersion', 404);
                 done();
             });
@@ -115,7 +121,9 @@ describeSkipIfCeph('PUT object legal hold', () => {
         it('should return InvalidRequest error putting legal hold to object ' +
         'in bucket with no object lock enabled', done => {
             const params = createLegalHoldParams(unlockedBucket, key, 'ON');
-            s3.putObjectLegalHold(params, err => {
+            s3.send(new PutObjectLegalHoldCommand(params)).then(() => {
+                throw new Error('Expected InvalidRequest error');
+            }).catch(err => {
                 checkError(err, 'InvalidRequest', 400);
                 done();
             });
@@ -123,46 +131,53 @@ describeSkipIfCeph('PUT object legal hold', () => {
 
         it('should return MethodNotAllowed if object version is delete marker',
         done => {
-            s3.deleteObject({ Bucket: bucket, Key: key }, err => {
-                assert.ifError(err);
+            s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }))
+            .then(() => {
                 const params = createLegalHoldParams(bucket, key, 'ON');
-                s3.putObjectLegalHold(params, err => {
-                    checkError(err, 'MethodNotAllowed', 405);
-                    done();
-                });
+                return s3.send(new PutObjectLegalHoldCommand(params));
+            })
+            .then(() => {
+                throw new Error('Expected MethodNotAllowed error');
+            })
+            .catch(err => {
+                checkError(err, 'MethodNotAllowed', 405);
+                done();
             });
         });
 
         it('should put object legal hold ON', done => {
             const params = createLegalHoldParams(bucket, key, 'ON');
-            s3.putObjectLegalHold(params, err => {
-                assert.ifError(err);
+            s3.send(new PutObjectLegalHoldCommand(params)).then(() => {
                 changeObjectLock([{ bucket, key, versionId }], '', done);
             });
         });
+
 
         it('should put object legal hold OFF', done => {
             const params = createLegalHoldParams(bucket, key, 'OFF');
-            s3.putObjectLegalHold(params, err => {
-                assert.ifError(err);
-                changeObjectLock([{ bucket, key, versionId }], '', done);
+            s3.send(new PutObjectLegalHoldCommand(params)).then(() => {
+                 changeObjectLock([{ bucket, key, versionId }], '', done);
             });
         });
 
-        it('should error if request has empty or undefined Status', done => {
+        it('should return error if request has empty or undefined Status', done => {
             const params = createLegalHoldParams(bucket, key, '');
-            s3.putObjectLegalHold(params, err => {
+            s3.send(new PutObjectLegalHoldCommand(params)).then(() => {
+                throw new Error('Expected MalformedXML error');
+            }).catch(err => {
                 checkError(err, 'MalformedXML', 400);
                 changeObjectLock([{ bucket, key, versionId }], '', done);
             });
         });
 
         it('should return error if request does not contain Status', done => {
-            s3.putObjectLegalHold({
+            s3.send(new PutObjectLegalHoldCommand({
                 Bucket: bucket,
                 Key: key,
                 LegalHold: {},
-            }, err => {
+            })).then(() => {
+                throw new Error('Expected MalformedXML error');
+            }).catch(err => {
                 checkError(err, 'MalformedXML', 400);
                 changeObjectLock([{ bucket, key, versionId }], '', done);
             });
@@ -170,15 +185,19 @@ describeSkipIfCeph('PUT object legal hold', () => {
 
         it('expects params.LegalHold.Status to be a string', done => {
             const params = createLegalHoldParams(bucket, key, true);
-            s3.putObjectLegalHold(params, err => {
-                checkError(err, 'InvalidParameterType');
+            s3.send(new PutObjectLegalHoldCommand(params)).then(() => {
+                throw new Error('Expected InvalidParameterType error');
+            }).catch(err => {
+                checkError(err, 'MalformedXML', 400);
                 changeObjectLock([{ bucket, key, versionId }], '', done);
             });
         });
 
         it('expects Status request xml must be one of "ON", "OFF"', done => {
             const params = createLegalHoldParams(bucket, key, 'on');
-            s3.putObjectLegalHold(params, err => {
+            s3.send(new PutObjectLegalHoldCommand(params)).then(() => {
+                throw new Error('Expected MalformedXML error');
+            }).catch(err => {
                 checkError(err, 'MalformedXML', 400);
                 changeObjectLock([{ bucket, key, versionId }], '', done);
             });
@@ -186,8 +205,7 @@ describeSkipIfCeph('PUT object legal hold', () => {
 
         it('should support request with versionId parameter', done => {
             const params = createLegalHoldParams(bucket, key, 'ON', versionId);
-            s3.putObjectLegalHold(params, err => {
-                assert.ifError(err);
+            s3.send(new PutObjectLegalHoldCommand(params)).then(() => {
                 changeObjectLock([{ bucket, key, versionId }], '', done);
             });
         });
@@ -208,13 +226,17 @@ describeSkipIfCeph('PUT object legal hold iam action and version id', () => {
 
         function awsRequest(auth, operation, params, callback) {
             if (auth) {
-                bucketUtil.s3[operation](params, callback);
+                const CommandClass = eval(operation);
+                s3.send(new CommandClass(params))
+                    .then(data => callback(null, data))
+                    .catch(err => callback(err));
             } else {
-                const unauthBucketUtil = new BucketUtility('default', sigCfg);
-                const request = unauthBucketUtil.s3[operation](params);
-                request.removeListener('validate', VALIDATE_CREDENTIALS);
-                request.removeListener('sign', SIGN);
-                request.send(callback);
+                const unauthBucketUtil = new BucketUtility('default', sigCfg, true);
+                const unauthS3 = unauthBucketUtil.s3;
+                const CommandClass = eval(operation);
+                unauthS3.send(new CommandClass(params))
+                    .then(data => callback(null, data))
+                    .catch(err => callback(err));
             }
         }
 
@@ -227,18 +249,18 @@ describeSkipIfCeph('PUT object legal hold iam action and version id', () => {
 
         function cbWithError(done) {
             return err => {
-                assert.strictEqual(err.statusCode, errorInstances.AccessDenied.code);
+                assert.strictEqual(err.$metadata.httpStatusCode, errorInstances.AccessDenied.code);
                 done();
             };
         }
 
         beforeEach(() => {
             process.stdout.write('Setting up bucket policy legal hold tests\n');
-            return s3.createBucket({
+            return s3.send(new CreateBucketCommand({
                 Bucket: testBucket,
                 ObjectLockEnabledForBucket: true,
-            }).promise()
-            .then(() => s3.putObject({ Bucket: testBucket, Key: key }).promise())
+            }))
+            .then(() => s3.send(new PutObjectCommand({ Bucket: testBucket, Key: key })))
             .then(res => {
                 versionId = res.VersionId;
             })
@@ -248,14 +270,9 @@ describeSkipIfCeph('PUT object legal hold iam action and version id', () => {
             });
         });
 
-        afterEach(() => {
-            process.stdout.write('Cleaning up bucket policy legal hold tests\n');
-            return bucketUtil.empty(testBucket)
-            .then(() => bucketUtil.deleteMany([testBucket]))
-            .catch(err => {
-                process.stdout.write('Error in afterEach\n');
-                throw err;
-            });
+        afterEach(async () => {
+            await bucketUtil.empty(testBucket, true);
+            await bucketUtil.deleteMany([testBucket]);
         });
 
         const policyTestCases = [
@@ -285,10 +302,12 @@ describeSkipIfCeph('PUT object legal hold iam action and version id', () => {
                         Version: '2012-10-17',
                         Statement: [statement],
                     };
-                    s3.putBucketPolicy({
+                    s3.send(new PutBucketPolicyCommand({
                         Bucket: testBucket,
                         Policy: JSON.stringify(bucketPolicy),
-                    }, err => {
+                    })).then(() => {
+                        done();
+                    }).catch(err => {
                         assert.ifError(err);
                         done();
                     });
@@ -296,17 +315,17 @@ describeSkipIfCeph('PUT object legal hold iam action and version id', () => {
 
                 if (testCase.expectedResult === 'allow') {
                     afterEach(() =>
-                        s3.putObjectLegalHold({
+                        s3.send(new PutObjectLegalHoldCommand({
                             Bucket: testBucket,
                             Key: key,
                             LegalHold: { Status: 'OFF' },
-                        }).promise()
-                        .then(() => s3.putObjectLegalHold({
+                        }))
+                        .then(() => s3.send(new PutObjectLegalHoldCommand({
                             Bucket: testBucket,
                             Key: key,
                             VersionId: versionId,
                             LegalHold: { Status: 'OFF' },
-                        }).promise())
+                        })))
                     );
                 }
 
@@ -316,7 +335,7 @@ describeSkipIfCeph('PUT object legal hold iam action and version id', () => {
                         Key: key,
                         LegalHold: legalHoldConfig,
                     };
-                    awsRequest(false, 'putObjectLegalHold', params, testCase.callback(done));
+                    awsRequest(false, 'PutObjectLegalHoldCommand', params, testCase.callback(done));
                 });
 
                 it(`should ${testCase.expectedResult} unauthenticated putObjectLegalHold with VersionId`, done => {
@@ -326,7 +345,7 @@ describeSkipIfCeph('PUT object legal hold iam action and version id', () => {
                         LegalHold: legalHoldConfig,
                         VersionId: versionId,
                     };
-                    awsRequest(false, 'putObjectLegalHold', params, testCase.callback(done));
+                    awsRequest(false, 'PutObjectLegalHoldCommand', params, testCase.callback(done));
                 });
             });
         });

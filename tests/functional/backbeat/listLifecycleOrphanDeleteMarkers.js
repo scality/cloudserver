@@ -1,20 +1,35 @@
 const assert = require('assert');
 const async = require('async');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketVersioningCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+} = require('@aws-sdk/client-s3');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
 const { makeBackbeatRequest } = require('./utils');
 const { config } = require('../../../lib/Config');
+const { promisify } = require('util');
 
 const testBucket = 'bucket-for-list-lifecycle-orphans-tests';
 const emptyBucket = 'empty-bucket-for-list-lifecycle-orphans-tests';
 const nonVersionedBucket = 'non-versioned-bucket-for-list-lifecycle-orphans-tests';
 
-const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+const removeAllVersionsPromise = promisify(removeAllVersions);
+const bucketUtil = new BucketUtility('default', {});
 const s3 = bucketUtil.s3;
-const credentials = {
-    accessKey: s3.config.credentials.accessKeyId,
-    secretKey: s3.config.credentials.secretAccessKey,
-};
+let credentials = null;
+
+async function getCredentials() {
+    const creds = await s3.config.credentials();
+    credentials = {
+        accessKey: creds.accessKeyId,
+        secretKey: creds.secretAccessKey,
+    };
+    return credentials;
+}
 
 function checkContents(contents) {
     contents.forEach(d => {
@@ -35,24 +50,40 @@ function checkContents(contents) {
 
 function createDeleteMarker(s3, bucketName, keyName, cb) {
     return async.series([
-        next => s3.putObject({ Bucket: bucketName, Key: keyName, Body: '123', Tagging: 'mykey=myvalue' }, next),
-        next => s3.deleteObject({ Bucket: bucketName, Key: keyName }, next),
+        next => s3.send(new PutObjectCommand({ 
+            Bucket: bucketName, 
+            Key: keyName, 
+            Body: '123', 
+            Tagging: 'mykey=myvalue' 
+        }))
+            .then(() => next())
+            .catch(next),
+        next => s3.send(new DeleteObjectCommand({ Bucket: bucketName, Key: keyName }))
+            .then(() => next())
+            .catch(next),
     ], cb);
 }
 
 function createOrphanDeleteMarker(s3, bucketName, keyName, cb) {
     let versionId;
     return async.series([
-        next => s3.putObject({ Bucket: bucketName, Key: keyName, Body: '123', Tagging: 'mykey=myvalue' },
-            (err, data) => {
-                if (err) {
-                    return next(err);
-                }
+        next => s3.send(new PutObjectCommand({ 
+            Bucket: bucketName, 
+            Key: keyName, 
+            Body: '123', 
+            Tagging: 'mykey=myvalue' 
+        }))
+            .then(data => {
                 versionId = data.VersionId;
-                return next();
-            }),
-        next => s3.deleteObject({ Bucket: bucketName, Key: keyName }, next),
-        next => s3.deleteObject({ Bucket: bucketName, Key: keyName, VersionId: versionId }, next),
+                next();
+            })
+            .catch(next),
+        next => s3.send(new DeleteObjectCommand({ Bucket: bucketName, Key: keyName }))
+            .then(() => next())
+            .catch(next),
+        next => s3.send(new DeleteObjectCommand({ Bucket: bucketName, Key: keyName, VersionId: versionId }))
+            .then(() => next())
+            .catch(next),
     ], cb);
 }
 
@@ -60,17 +91,31 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
     let date;
 
     before(done => async.series([
-            next => s3.createBucket({ Bucket: testBucket }, next),
-            next => s3.createBucket({ Bucket: emptyBucket }, next),
-            next => s3.createBucket({ Bucket: nonVersionedBucket }, next),
-            next => s3.putBucketVersioning({
+            next => getCredentials().then(creds => {
+                credentials = creds;
+                next();
+            }).catch(next),
+            next => s3.send(new CreateBucketCommand({ Bucket: testBucket }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new CreateBucketCommand({ Bucket: emptyBucket }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new CreateBucketCommand({ Bucket: nonVersionedBucket }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutBucketVersioningCommand({
                 Bucket: testBucket,
                 VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
-            next => s3.putBucketVersioning({
+            }))
+                .then(() => next())
+                .catch(next),
+            next => s3.send(new PutBucketVersioningCommand({
                 Bucket: emptyBucket,
                 VersioningConfiguration: { Status: 'Enabled' },
-            }, next),
+            }))
+                .then(() => next())
+                .catch(next),
             next => async.times(3, (n, cb) => {
                 createOrphanDeleteMarker(s3, testBucket, `key${n}old`, cb);
             }, next),
@@ -83,12 +128,12 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             },
         ], done));
 
-    after(done => async.series([
-        next => removeAllVersions({ Bucket: testBucket }, next),
-        next => s3.deleteBucket({ Bucket: testBucket }, next),
-        next => s3.deleteBucket({ Bucket: emptyBucket }, next),
-        next => s3.deleteBucket({ Bucket: nonVersionedBucket }, next),
-    ], done));
+    after(async () => {
+        await removeAllVersionsPromise({ Bucket: testBucket });
+        await s3.send(new DeleteBucketCommand({ Bucket: testBucket }));
+        await s3.send(new DeleteBucketCommand({ Bucket: emptyBucket }));
+        await s3.send(new DeleteBucketCommand({ Bucket: nonVersionedBucket }));
+    });
 
     it('should return empty list of orphan delete markers if bucket is empty', done => {
         makeBackbeatRequest({

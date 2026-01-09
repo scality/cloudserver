@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
-const { GCP } = arsenal.storage.data.external;
+const { GCP } = arsenal.storage.data.external.GCP;
 const { gcpRequestRetry, setBucketClass, gcpMpuSetup, genUniqID } =
     require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
@@ -122,7 +122,7 @@ describe('GCP: Abort MPU', function testSuite() {
                         Key: keyName,
                     }, err => {
                         assert(err);
-                        assert.strictEqual(err.code, 404);
+                        assert.strictEqual(err.$metadata.httpStatusCode, 404);
                         return next();
                     });
                 },
@@ -164,7 +164,7 @@ describe('GCP: Abort MPU', function testSuite() {
                         Key: keyName,
                     }, err => {
                         assert(err);
-                        assert.strictEqual(err.code, 404);
+                        assert.strictEqual(err.$metadata.httpStatusCode, 404);
                         return next();
                     });
                 },

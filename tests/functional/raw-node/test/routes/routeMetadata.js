@@ -1,5 +1,8 @@
 const assert = require('assert');
 const http = require('http');
+const { CreateBucketCommand, 
+    PutObjectCommand, 
+    DeleteBucketCommand } = require('@aws-sdk/client-s3');
 
 const { makeRequest } = require('../../utils/makeRequest');
 const MetadataMock = require('../../utils/MetadataMock');
@@ -44,21 +47,17 @@ describe('metadata routes with metadata', () => {
 
     // E2E tests use S3C metadata, whereas functional tests use mocked metadata.
     if (process.env.S3_END_TO_END) {
-        before(done => {
-            s3.createBucket({ Bucket: bucket1 }).promise()
-            .then(() => s3.putObject({ Bucket: bucket1, Key: keyName, Body: '' }).promise())
-            .then(() => s3.createBucket({ Bucket: bucket2 }).promise())
-            .then(() => done())
-            .catch(err => done(err));
+        before(async () => {
+            await s3.send(new CreateBucketCommand({ Bucket: bucket1 }));
+            await s3.send(new PutObjectCommand({ Bucket: bucket1, Key: keyName, Body: '' }));
+            await s3.send(new CreateBucketCommand({ Bucket: bucket2 }));
         });
 
-        after(done => {
-            bucketUtil.empty(bucket1)
-            .then(() => s3.deleteBucket({ Bucket: bucket1 }).promise())
-            .then(() => bucketUtil.empty(bucket2))
-            .then(() => s3.deleteBucket({ Bucket: bucket2 }).promise())
-            .then(() => done())
-            .catch(err => done(err));
+        after(async () => {
+            await bucketUtil.empty(bucket1);
+            await s3.send(new DeleteBucketCommand({ Bucket: bucket1 }));
+            await bucketUtil.empty(bucket2);
+            await s3.send(new DeleteBucketCommand({ Bucket: bucket2 }));
         });
     } else {
         let httpServer;

@@ -1,28 +1,46 @@
-const { S3 } = require('aws-sdk');
+const { S3Client, ListObjectsCommand } = require('@aws-sdk/client-s3');
+const { NodeHttpHandler } = require('@smithy/node-http-handler');
+const http = require('http');
+
 const config = {
-    sslEnabled: false,
     endpoint: 'http://127.0.0.1:8000',
-    signatureCache: false,
-    signatureVersion: 'v4',
     region: 'us-east-1',
-    s3ForcePathStyle: true,
-    accessKeyId: 'accessKey1',
-    secretAccessKey: 'verySecretKey1',
+    forcePathStyle: true,
+    credentials: {
+        accessKeyId: 'accessKey1',
+        secretAccessKey: 'verySecretKey1',
+    },
+    requestHandler: new NodeHttpHandler({
+        httpAgent: new http.Agent({ keepAlive: false }),
+    }),
 };
-const s3Client = new S3(config);
 
-const encodedSearch =
-    encodeURIComponent('x-amz-meta-color="blue"');
-const req = s3Client.listObjects({ Bucket: 'bucketname' });
+const s3Client = new S3Client(config);
 
-// the build event
-req.on('build', () => {
-    req.httpRequest.path = `${req.httpRequest.path}?search=${encodedSearch}`;
-});
-req.on('success', res => {
-    process.stdout.write(`Result ${res.data}`);
-});
-req.on('error', err => {
-    process.stdout.write(`Error ${err}`);
-});
-req.send();
+const encodedSearch = encodeURIComponent('x-amz-meta-color="blue"');
+
+const command = new ListObjectsCommand({ Bucket: 'bucketname' });
+
+command.middlewareStack.add(
+    next => async args => {
+        if (args.request && args.request.path) {
+            // eslint-disable-next-line no-param-reassign
+            args.request.path = `${args.request.path}?search=${encodedSearch}`;
+        }
+        return next(args);
+    },
+    {
+        step: 'build',
+        name: 'addSearchParameter',
+        priority: 'high'
+    }
+);
+
+// Send command and handle response
+s3Client.send(command)
+    .then(data => {
+        process.stdout.write(`Result ${JSON.stringify(data)}`);
+    })
+    .catch(err => {
+        process.stdout.write(`Error ${err}`);
+    });

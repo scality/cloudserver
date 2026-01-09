@@ -2,9 +2,10 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const tv4 = require('tv4');
+const { S3 } = require('aws-sdk');
 
 const withV4 = require('../support/withV4');
-const BucketUtility = require('../../lib/utility/bucket-util');
+const { getCredentials } = require('../support/credentials');
 const { config, serverAccessLogsModes } = require('../../../../../lib/Config');
 
 const TEST_CONFIG = {
@@ -67,6 +68,37 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function emptyBucket(s3, bucketName, BypassGovernanceRetention = false) {
+    const data = await s3.listObjectVersions({ Bucket: bucketName }).promise();
+    const versions = data.Versions || [];
+    const deleteMarkers = data.DeleteMarkers || [];
+
+    for (const obj of versions.filter(o => !o.Key.endsWith('/'))) {
+        await s3.deleteObject({
+            Bucket: bucketName,
+            Key: obj.Key,
+            VersionId: obj.VersionId,
+            ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
+        }).promise();
+    }
+    for (const obj of versions.filter(o => o.Key.endsWith('/'))) {
+        await s3.deleteObject({
+            Bucket: bucketName,
+            Key: obj.Key,
+            VersionId: obj.VersionId,
+            ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
+        }).promise();
+    }
+    for (const obj of deleteMarkers) {
+        await s3.deleteObject({
+            Bucket: bucketName,
+            Key: obj.Key,
+            VersionId: obj.VersionId,
+            ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
+        }).promise();
+    }
+}
+
 async function cleanupBuckets(s3) {
     let lastAction = 'ListBuckets';
     const bucketsResponse = await s3.listBuckets().promise();
@@ -82,14 +114,12 @@ async function cleanupBuckets(s3) {
             ));
         }
 
-        await bu.empty(bucket.Name, true);
+        await emptyBucket(s3, bucket.Name, true);
         await s3.deleteBucket({ Bucket: bucket.Name }).promise();
         lastAction = 'DeleteBucket';
     }
     return lastAction;
 }
-
-var bu;
 
 // TODO:
 // - [ ] We skip websiteGet and websiteHead because they need to be tested with HTTP requests to the website endpoint.
@@ -99,9 +129,13 @@ var bu;
 // - We skip objectRestore because it is not supported in CloudServer.
 describe('Server Access Logs - File Output', async () => {
     withV4(async sigCfg => {
-        const bucketUtil = new BucketUtility('default', sigCfg);
-        bu = bucketUtil;
-        const s3 = bucketUtil.s3;
+        const s3 = new S3({
+            endpoint: 'http://127.0.0.1:8000',
+            s3ForcePathStyle: true,
+            credentials: getCredentials('default', sigCfg),
+            region: 'us-east-1',
+            maxRetries: 0,
+        });
         const logFilePath = config.serverAccessLogs.outputFile;
         const bucketName = 'test-server-access-log-bucket';
         const objectKey = 'test-object-key';

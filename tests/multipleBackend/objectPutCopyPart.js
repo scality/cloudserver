@@ -1,7 +1,11 @@
 const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
-const AWS = require('aws-sdk');
+const {
+    S3Client,
+    ListPartsCommand,
+    AbortMultipartUploadCommand,
+} = require('@aws-sdk/client-s3');
 const { storage, errors } = require('arsenal');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo }
@@ -13,10 +17,12 @@ const objectPut = require('../../lib/api/objectPut');
 const objectPutCopyPart = require('../../lib/api/objectPutCopyPart');
 const DummyRequest = require('../unit/DummyRequest');
 const constants = require('../../constants');
+const { getRealAwsConfig } = require('../functional/aws-node-sdk/test/support/awsConfig');
 const { metadata } = storage.metadata.inMemory.metadata;
 const { ds } = storage.data.inMemory.datastore;
 
-const s3 = new AWS.S3();
+const awsConfig = getRealAwsConfig('awsbackend');
+const s3 = new S3Client(awsConfig);
 
 const splitter = constants.splitter;
 const log = new DummyRequestLogger();
@@ -211,14 +217,18 @@ function testSuite() {
         (keys, uploadId) => {
             assert.strictEqual(ds.length, 2);
             const awsReq = getAwsParams(keys.destObjName, uploadId);
-            s3.listParts(awsReq, (err, partList) => {
-                assertPartList(partList, uploadId);
-                s3.abortMultipartUpload(awsReq, err => {
-                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-                    `You must abort MPU with upload ID ${uploadId} manually.`);
+            s3.send(new ListPartsCommand(awsReq))
+                .then(partList => {
+                    assertPartList(partList, uploadId);
+                    return s3.send(new AbortMultipartUploadCommand(awsReq));
+                })
+                .then(() => {
                     done();
+                })
+                .catch(err => {
+                    assert.fail(`Error with AWS operations: ${err}. ` +
+                        `You may need to abort MPU with upload ID ${uploadId} manually.`);
                 });
-            });
         });
     });
 
@@ -253,14 +263,18 @@ function testSuite() {
         copyPutPart(awsLocation, null, null, 'localhost', (keys, uploadId) => {
             assert.deepStrictEqual(ds, []);
             const awsReq = getAwsParams(keys.destObjName, uploadId);
-            s3.listParts(awsReq, (err, partList) => {
-                assertPartList(partList, uploadId);
-                s3.abortMultipartUpload(awsReq, err => {
-                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-                    `You must abort MPU with upload ID ${uploadId} manually.`);
+            s3.send(new ListPartsCommand(awsReq))
+                .then(partList => {
+                    assertPartList(partList, uploadId);
+                    return s3.send(new AbortMultipartUploadCommand(awsReq));
+                })
+                .then(() => {
                     done();
+                })
+                .catch(err => {
+                    assert.fail(`Error with AWS operations: ${err}. ` +
+                        `You may need to abort MPU with upload ID ${uploadId} manually.`);
                 });
-            });
         });
     });
 
@@ -270,14 +284,18 @@ function testSuite() {
         (keys, uploadId) => {
             assert.deepStrictEqual(ds, []);
             const awsReq = getAwsParams(keys.destObjName, uploadId);
-            s3.listParts(awsReq, (err, partList) => {
-                assertPartList(partList, uploadId);
-                s3.abortMultipartUpload(awsReq, err => {
-                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-                    `You must abort MPU with upload ID ${uploadId} manually.`);
+            s3.send(new ListPartsCommand(awsReq))
+                .then(partList => {
+                    assertPartList(partList, uploadId);
+                    return s3.send(new AbortMultipartUploadCommand(awsReq));
+                })
+                .then(() => {
                     done();
+                })
+                .catch(err => {
+                    assert.fail(`Error with AWS operations: ${err}. ` +
+                        `You may need to abort MPU with upload ID ${uploadId} manually.`);
                 });
-            });
         });
     });
 
@@ -288,14 +306,18 @@ function testSuite() {
             assert.deepStrictEqual(ds, []);
             const awsReq = getAwsParamsBucketMismatch(keys.destObjName,
                 uploadId);
-            s3.listParts(awsReq, (err, partList) => {
-                assertPartList(partList, uploadId);
-                s3.abortMultipartUpload(awsReq, err => {
-                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-                    `You must abort MPU with upload ID ${uploadId} manually.`);
+            s3.send(new ListPartsCommand(awsReq))
+                .then(partList => {
+                    assertPartList(partList, uploadId);
+                    return s3.send(new AbortMultipartUploadCommand(awsReq));
+                })
+                .then(() => {
                     done();
+                })
+                .catch(err => {
+                    assert.fail(`Error with AWS operations: ${err}. ` +
+                        `You may need to abort MPU with upload ID ${uploadId} manually.`);
                 });
-            });
         });
     });
 

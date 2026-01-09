@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
-const { GCP } = arsenal.storage.data.external;
+const { GCP } = arsenal.storage.data.external.GCP;
 const { makeGcpRequest } = require('../../../utils/makeRequest');
 const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
@@ -25,11 +25,13 @@ function populateBucket(createdObjects, callback) {
             bucket: bucketName,
             objectKey: object,
             authCredentials: config.credentials,
-        }, err => moveOn(err));
+        }, err => {
+            moveOn(err);
+        });
     }, err => {
         if (err) {
             process.stdout
-                .write(`err putting objects ${err.code}`);
+                .write(`err putting objects ${err.code}\n`);
         }
         return callback(err);
     });
@@ -49,7 +51,7 @@ function removeObjects(createdObjects, callback) {
     }, err => {
         if (err) {
             process.stdout
-                .write(`err deleting objects ${err.code}`);
+                .write(`err deleting objects ${err.code}\n`);
         }
         return callback(err);
     });
@@ -91,8 +93,18 @@ describe('GCP: GET Bucket', function testSuite() {
                 Bucket: badBucketName,
             }, err => {
                 assert(err);
-                assert.strictEqual(err.statusCode, 404);
-                assert.strictEqual(err.code, 'NoSuchBucket');
+                assert.strictEqual(err.$metadata?.httpStatusCode, 404);
+                assert.strictEqual(err.name, 'NoSuchBucket');
+                return done();
+            });
+        });
+
+        it('should return 200', done => {
+            gcpClient.listObjects({
+                Bucket: bucketName,
+            }, (err, res) => {
+                assert.equal(err, null, `Expected success, but got ${err}`);
+                assert.strictEqual(res.$metadata?.httpStatusCode, 200);
                 return done();
             });
         });

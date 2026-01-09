@@ -57,7 +57,9 @@
             "bucketName": "multitester555",
             "bucketMatch": true,
             "credentialsProfile": "default",
-            "serverSideEncryption": true
+            "serverSideEncryption": true,
+            "region": "us-east-1",
+            "https": true
         }
     },
     "awsbackend": {
@@ -68,7 +70,9 @@
             "awsEndpoint": "s3.amazonaws.com",
             "bucketName": "multitester555",
             "bucketMatch": true,
-            "credentialsProfile": "default"
+            "credentialsProfile": "default",
+            "region": "us-east-1",
+            "https": true
         }
     },
     "awsbackendhttp": {
@@ -80,7 +84,8 @@
             "bucketName": "multitester555",
             "bucketMatch": true,
             "credentialsProfile": "default",
-            "https": false
+            "https": false,
+            "region": "us-east-1"
         }
     },
     "awsbackendmismatch": {
@@ -91,7 +96,9 @@
             "awsEndpoint": "s3.amazonaws.com",
             "bucketName": "multitester555",
             "bucketMatch": false,
-            "credentialsProfile": "default"
+            "credentialsProfile": "default",
+            "region": "us-east-1",
+            "https": true
         }
     },
     "awsbackend2": {
@@ -102,7 +109,9 @@
             "awsEndpoint": "s3.amazonaws.com",
             "bucketName": "multitester222",
             "bucketMatch": true,
-            "credentialsProfile": "default_2"
+            "credentialsProfile": "default_2",
+            "region": "us-east-1",
+            "https": true
         }
     },
     "awsbackendPathStyle": {
@@ -114,7 +123,9 @@
             "bucketName": "multitester555",
             "bucketMatch": true,
             "credentialsProfile": "default",
-            "pathStyle": true
+            "pathStyle": true,
+            "region": "us-east-1",
+            "https": true
         }
     },
     "azurebackend": {
@@ -246,7 +257,9 @@
             "bucketName": "multitester555",
             "bucketMatch": true,
             "credentialsProfile": "default",
-            "supportsVersioning": true
+            "supportsVersioning": true,
+            "region": "us-east-1",
+            "https": true
         }
     },
     "withoutversioning": {
@@ -258,7 +271,9 @@
             "bucketName": "multitester555",
             "bucketMatch": true,
             "credentialsProfile": "default",
-            "supportsVersioning": false
+            "supportsVersioning": false,
+            "region": "us-east-1",
+            "https": true
         }
     },
     "transientfile": {

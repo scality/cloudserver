@@ -1,5 +1,9 @@
 const assert = require('assert');
 const async = require('async');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+} = require('@aws-sdk/client-s3');
 
 const { makeRequest } = require('../../functional/raw-node/utils/makeRequest');
 const BucketUtility =
@@ -7,12 +11,20 @@ const BucketUtility =
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 
-const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+const bucketUtil = new BucketUtility('default', {});
 const s3 = bucketUtil.s3;
-const backbeatAuthCredentials = {
-    accessKey: s3.config.credentials.accessKeyId,
-    secretKey: s3.config.credentials.secretAccessKey,
-};
+
+let credentials = null;
+let backbeatAuthCredentials = null;
+
+async function getCredentials() {
+        const creds = await s3.config.credentials();
+        credentials = {
+            accessKey: creds.accessKeyId,
+            secretKey: creds.secretAccessKey,
+        };
+    return credentials;
+}
 
 const TEST_BUCKET = 'bucket-for-bucket-indexing';
 
@@ -106,7 +118,11 @@ const describeIfNotMongo = process.env.S3METADATA !== 'mongodb' ? describe : des
 
 describe('Indexing Routes', () => {
     before(done => {
-        s3.createBucket({ Bucket: TEST_BUCKET }).promise()
+        getCredentials()
+            .then(creds => {
+                backbeatAuthCredentials = creds;
+                return s3.send(new CreateBucketCommand({ Bucket: TEST_BUCKET }));
+            })
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
@@ -114,10 +130,9 @@ describe('Indexing Routes', () => {
             });
     });
 
-    after(done => {
-        bucketUtil.empty(TEST_BUCKET)
-            .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
-            .then(() => done());
+    after(async () => {
+        await bucketUtil.empty(TEST_BUCKET);
+        await s3.send(new DeleteBucketCommand({ Bucket: TEST_BUCKET }));
     });
 
     it('should reject non-authenticated requests', done => {

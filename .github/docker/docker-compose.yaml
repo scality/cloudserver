@@ -96,7 +96,9 @@ services:
   ceph:
     network_mode: "host"
     profiles: ['ceph']
-    image: ghcr.io/scality/cloudserver/ci-ceph
+    image: ghcr.io/scality/cloudserver/ci-ceph 
+    volumes:
+      - /tmp/artifacts/${JOB_NAME}/ceph:/artifacts
   sproxyd:
     network_mode: "host"
     profiles: ['sproxyd']

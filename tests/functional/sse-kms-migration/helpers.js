@@ -1,5 +1,27 @@
 const getConfig = require('../aws-node-sdk/test/support/config');
-const { S3 } = require('aws-sdk');
+const { S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketEncryptionCommand,
+    GetBucketEncryptionCommand,
+    CopyObjectCommand,
+    ListObjectVersionsCommand,
+    HeadObjectCommand,
+    ListBucketsCommand,
+    ListMultipartUploadsCommand,
+    ListPartsCommand,
+    GetObjectCommand,
+    PutObjectCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    UploadPartCopyCommand,
+    CompleteMultipartUploadCommand,
+    PutBucketVersioningCommand,
+    HeadBucketCommand,
+} = require('@aws-sdk/client-s3');
+const { NodeHttpHandler } = require('@smithy/node-http-handler');
+const { Agent: HttpAgent } = require('http');
+const { Agent: HttpsAgent } = require('https');
 const kms = require('../../../lib/kms/wrapper');
 const { promisify } = require('util');
 const { DummyRequestLogger } = require('../../unit/helpers');
@@ -14,20 +36,106 @@ function getKey(key) {
     return config.kmsHideScalityArn ? getKeyIdFromArn(key) : key;
 }
 
-// for Integration use default profile, in cloudserver use vault profile
+// For Integration use default profile, in cloudserver use vault profile
 const credsProfile = process.env.S3_END_TO_END === 'true' ? 'default' : 'vault';
-const s3config = getConfig(credsProfile, { signatureVersion: 'v4' });
-const s3 = new S3(s3config);
+
+const httpAgent = new HttpAgent({
+    keepAlive: true,
+    keepAliveMsecs: 30000,
+    maxSockets: 50,
+    maxFreeSockets: 10,
+    timeout: 120000,
+});
+
+const httpsAgent = new HttpsAgent({
+    keepAlive: true,
+    keepAliveMsecs: 30000,
+    maxSockets: 50,
+    maxFreeSockets: 10,
+    timeout: 120000, 
+});
+
+const s3config = {
+    ...getConfig(credsProfile, {}),
+    requestHandler: new NodeHttpHandler({
+        connectionTimeout: 120000,
+        socketTimeout: 120000,
+        httpAgent,
+        httpsAgent,
+    }),
+    maxAttempts: 3,
+};
+
+const s3Client = new S3Client(s3config);
+
+// Remove logger middleware to avoid noisy logs during testing
+if (s3Client.middlewareStack.identify().includes('loggerMiddleware')) {
+    s3Client.middlewareStack.remove('loggerMiddleware');
+}
+
 const bucketUtil = new BucketUtility(credsProfile);
 
-function hydrateSSEConfig({ algo: SSEAlgorithm, masterKeyId: KMSMasterKeyID }) {
-    // stringify and parse to strip undefined values
-    return JSON.parse(JSON.stringify({ Rules: [{
-        ApplyServerSideEncryptionByDefault: {
-            SSEAlgorithm,
-            KMSMasterKeyID,
+const wrap = exec => exec();
+const s3 = {
+    createBucket: params => wrap(() => s3Client.send(new CreateBucketCommand(params))),
+    deleteBucket: params => wrap(() => s3Client.send(new DeleteBucketCommand(params))),
+    putBucketEncryption: params => wrap(() => s3Client.send(new PutBucketEncryptionCommand(params))),
+    getBucketEncryption: params => wrap(() => s3Client.send(new GetBucketEncryptionCommand(params))),
+    putObject: params => wrap(() => s3Client.send(new PutObjectCommand(params))),
+    getObject: params => wrap(async () => {
+        const response = await s3Client.send(new GetObjectCommand(params));
+        const body = await response.Body.transformToString();
+        return { ...response, Body: body };
+    }),
+    listBuckets: params => wrap(() => s3Client.send(new ListBucketsCommand(params || {}))),
+    copyObject: params => wrap(() => s3Client.send(new CopyObjectCommand(params))),
+    listObjectVersions: params => wrap(async () => {
+        const response = await s3Client.send(new ListObjectVersionsCommand(params));
+        return {
+            ...response,
+            Versions: response.Versions || [],
+            DeleteMarkers: response.DeleteMarkers || [],
+            CommonPrefixes: response.CommonPrefixes || []
+        };
+    }),
+    headObject: params => wrap(() => s3Client.send(new HeadObjectCommand(params))),
+    createMultipartUpload: params => wrap(() => s3Client.send(new CreateMultipartUploadCommand(params))),
+    uploadPart: params => wrap(() => s3Client.send(new UploadPartCommand(params))),
+    uploadPartCopy: params => wrap(() => s3Client.send(new UploadPartCopyCommand(params))),
+    completeMultipartUpload: params => wrap(() => s3Client.send(new CompleteMultipartUploadCommand(params))),
+    putBucketVersioning: params => wrap(() => s3Client.send(new PutBucketVersioningCommand(params))),
+    headBucket: params => wrap(() => s3Client.send(new HeadBucketCommand(params))),
+    listMultipartUploads: params => wrap(async () => {
+        const response = await s3Client.send(new ListMultipartUploadsCommand(params));
+        return {
+            ...response,
+            Uploads: response.Uploads || [],
+            CommonPrefixes: response.CommonPrefixes || []
+        };
+    }),
+    listParts: params => wrap(() => s3Client.send(new ListPartsCommand(params))),
+    _compat: bucketUtil.s3,
+    config: {
+        credentials: s3config.credentials || {
+            accessKeyId: s3config.accessKeyId,
+            secretAccessKey: s3config.secretAccessKey,
         },
-    }] }));
+        endpoint: {
+            hostname: s3config.endpoint.hostname,
+            port: s3config.port,
+        },
+    },
+};
+
+function hydrateSSEConfig({ algo: SSEAlgorithm, masterKeyId: KMSMasterKeyID }) {
+    // Stringify and parse to strip undefined values
+    return JSON.parse(JSON.stringify({ Rules: [{
+            ApplyServerSideEncryptionByDefault: {
+                SSEAlgorithm,
+                KMSMasterKeyID,
+            },
+        }],
+    }));
 }
 
 function putObjParams(Bucket, Key, sseConfig, kmsKeyId) {
@@ -51,29 +159,29 @@ const MD = {
 };
 
 async function getBucketSSE(Bucket) {
-    const sse = await s3.getBucketEncryption({ Bucket }).promise();
-    return sse
-        .ServerSideEncryptionConfiguration
-        .Rules[0]
-        .ApplyServerSideEncryptionByDefault;
+    try {
+        const sse = await s3.getBucketEncryption({ Bucket });
+        return sse.ServerSideEncryptionConfiguration.Rules[0].ApplyServerSideEncryptionByDefault;
+    } catch (error) {
+        if (error.name === 'ServerSideEncryptionConfigurationNotFoundError') {
+            return null;
+        }
+        throw error;
+    }
 }
 
 async function putEncryptedObject(Bucket, Key, sseConfig, kmsKeyId, Body) {
     return s3.putObject({
         ...putObjParams(Bucket, Key, sseConfig, kmsKeyId),
         Body,
-    }).promise();
+    });
 }
 
 async function getObjectMDSSE(Bucket, Key) {
     const objMD = await MD.getObject(Bucket, Key, {}, log);
-
-    const sse = objMD['x-amz-server-side-encryption'];
-    const key = objMD['x-amz-server-side-encryption-aws-kms-key-id'];
-
     return {
-        ServerSideEncryption: sse,
-        SSEKMSKeyId: key,
+        ServerSideEncryption: objMD['x-amz-server-side-encryption'],
+        SSEKMSKeyId: objMD['x-amz-server-side-encryption-aws-kms-key-id'],
     };
 }
 
@@ -97,7 +205,7 @@ const destroyKmsKey = promisify(kms.destroyBucketKey);
 
 async function cleanup(Bucket) {
     await bucketUtil.empty(Bucket);
-    await s3.deleteBucket({ Bucket }).promise();
+    await s3.deleteBucket({ Bucket });
 }
 
 module.exports = {
@@ -105,6 +213,7 @@ module.exports = {
     getKey,
     credsProfile,
     s3,
+    s3Client,
     bucketUtil,
     hydrateSSEConfig,
     putObjParams,

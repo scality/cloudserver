@@ -1,4 +1,10 @@
 const assert = require('assert');
+const {
+    CreateBucketCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+    GetObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
@@ -26,133 +32,134 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
         let bucketUtil;
         let s3;
 
-        before(() => {
+        before(async () => {
             process.stdout.write('Creating bucket\n');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucket({ Bucket: bucket }).promise()
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
-            })
-            .then(() => {
-                process.stdout.write('Putting object to mem\n');
-                const params = { Bucket: bucket, Key: memObject, Body: body,
-                    Metadata: { 'scal-location-constraint': memLocation } };
-                return s3.putObject(params).promise();
-            })
-            .then(() => {
-                process.stdout.write('Putting object to file\n');
-                const params = { Bucket: bucket, Key: fileObject, Body: body,
-                    Metadata: { 'scal-location-constraint': fileLocation } };
-                return s3.putObject(params).promise();
-            })
-            .then(() => {
-                process.stdout.write('Putting object to AWS\n');
-                const params = { Bucket: bucket, Key: awsObject, Body: body,
-                    Metadata: { 'scal-location-constraint': awsLocation } };
-                return s3.putObject(params).promise();
-            })
-            .then(() => {
-                process.stdout.write('Putting 0-byte object to AWS\n');
-                const params = { Bucket: bucket, Key: emptyObject,
-                    Metadata: { 'scal-location-constraint': awsLocation } };
-                return s3.putObject(params).promise();
-            })
-            .then(() => {
-                process.stdout.write('Putting large object to AWS\n');
-                const params = { Bucket: bucket, Key: bigObject,
-                    Body: bigBody,
-                    Metadata: { 'scal-location-constraint': awsLocation } };
-                return s3.putObject(params).promise();
-            })
-            .then(() => {
-                process.stdout.write('Putting object to AWS\n');
-                const params = { Bucket: bucket, Key: mismatchObject,
-                    Body: body, Metadata:
-                    { 'scal-location-constraint': awsLocationMismatch } };
-                return s3.putObject(params).promise();
-            })
-            .catch(err => {
-                process.stdout.write(`Error putting objects: ${err}\n`);
-                throw err;
-            });
-        });
-        after(() => {
-            process.stdout.write('Deleting bucket\n');
-            return bucketUtil.deleteOne(bucket)
-            .catch(err => {
-                process.stdout.write(`Error deleting bucket: ${err}\n`);
-                throw err;
-            });
+            
+            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+            
+            process.stdout.write('Putting object to mem\n');
+            await s3.send(new PutObjectCommand({ 
+                Bucket: bucket, 
+                Key: memObject, 
+                Body: body,
+                Metadata: { 'scal-location-constraint': memLocation } 
+            }));
+            
+            process.stdout.write('Putting object to file\n');
+            await s3.send(new PutObjectCommand({ 
+                Bucket: bucket, 
+                Key: fileObject, 
+                Body: body,
+                Metadata: { 'scal-location-constraint': fileLocation } 
+            }));
+            
+            process.stdout.write('Putting object to AWS\n');
+            await s3.send(new PutObjectCommand({ 
+                Bucket: bucket, 
+                Key: awsObject, 
+                Body: body,
+                Metadata: { 'scal-location-constraint': awsLocation } 
+            }));
+            
+            process.stdout.write('Putting 0-byte object to AWS\n');
+            await s3.send(new PutObjectCommand({ 
+                Bucket: bucket, 
+                Key: emptyObject,
+                Metadata: { 'scal-location-constraint': awsLocation } 
+            }));
+            
+            process.stdout.write('Putting large object to AWS\n');
+            await s3.send(new PutObjectCommand({ 
+                Bucket: bucket, 
+                Key: bigObject, 
+                Body: bigBody,
+                Metadata: { 'scal-location-constraint': awsLocation } 
+            }));
+
+            process.stdout.write('Putting object to AWS\n');
+            await s3.send(new PutObjectCommand({ 
+                Bucket: bucket, 
+                Key: mismatchObject, 
+                Body: body,
+                Metadata: { 'scal-location-constraint': awsLocationMismatch } 
+            }));
         });
 
-        it('should delete object from mem', done => {
-            s3.deleteObject({ Bucket: bucket, Key: memObject }, err => {
-                assert.strictEqual(err, null,
-                    `Expected success, got error ${JSON.stringify(err)}`);
-                s3.getObject({ Bucket: bucket, Key: memObject }, err => {
-                    assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
-                        'error but got success');
-                    done();
-                });
-            });
+        after(async () => {
+            process.stdout.write('Emptying bucket\n');
+            await bucketUtil.empty(bucket);
+            process.stdout.write('Deleting bucket\n');
+            await bucketUtil.deleteOne(bucket);
         });
-        it('should delete object from file', done => {
-            s3.deleteObject({ Bucket: bucket, Key: fileObject }, err => {
-                assert.strictEqual(err, null,
-                    `Expected success, got error ${JSON.stringify(err)}`);
-                s3.getObject({ Bucket: bucket, Key: fileObject }, err => {
-                    assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
-                        'error but got success');
-                    done();
-                });
-            });
+
+        it('should delete object from mem', async () => {
+            await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: memObject }));
+            try {
+                await s3.send(new GetObjectCommand({ Bucket: bucket, Key: memObject }));
+                assert.fail('Expected NoSuchKey error but got success');
+            } catch (err) {
+                assert.strictEqual(err.name, 'NoSuchKey');
+            }
         });
-        it('should delete object from AWS', done => {
-            s3.deleteObject({ Bucket: bucket, Key: awsObject }, err => {
-                assert.strictEqual(err, null,
-                    `Expected success, got error ${JSON.stringify(err)}`);
-                s3.getObject({ Bucket: bucket, Key: awsObject }, err => {
-                    assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
-                        'error but got success');
-                    done();
-                });
-            });
+
+        it('should delete object from file', async () => {
+            await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: fileObject }));
+            
+            try {
+                await s3.send(new GetObjectCommand({ Bucket: bucket, Key: fileObject }));
+                assert.fail('Expected NoSuchKey error but got success');
+            } catch (err) {
+                assert.strictEqual(err.name, 'NoSuchKey');
+            }
         });
-        it('should delete 0-byte object from AWS', done => {
-            s3.deleteObject({ Bucket: bucket, Key: emptyObject }, err => {
-                assert.strictEqual(err, null,
-                    `Expected success, got error ${JSON.stringify(err)}`);
-                s3.getObject({ Bucket: bucket, Key: emptyObject }, err => {
-                    assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
-                        'error but got success');
-                    done();
-                });
-            });
+
+        it('should delete an object from AWS', async () => {
+            await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: awsObject }));
+            
+            try {
+                await s3.send(new GetObjectCommand({ Bucket: bucket, Key: awsObject }));
+                assert.fail('Expected NoSuchKey error but got success');
+            } catch (err) {
+                assert.strictEqual(err.name, 'NoSuchKey');
+            }
         });
-        it('should delete large object from AWS', done => {
-            s3.deleteObject({ Bucket: bucket, Key: bigObject }, err => {
-                assert.strictEqual(err, null,
-                    `Expected success, got error ${JSON.stringify(err)}`);
-                s3.getObject({ Bucket: bucket, Key: bigObject }, err => {
-                    assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
-                        'error but got success');
-                    done();
-                });
-            });
+
+        it('should delete 0-byte object from AWS', async () => {
+            await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: emptyObject }));
+            
+            try {
+                await s3.send(new GetObjectCommand({ Bucket: bucket, Key: emptyObject }));
+                assert.fail('Expected NoSuchKey error but got success');
+            } catch (err) {
+                assert.strictEqual(err.name, 'NoSuchKey');
+            }
         });
-        it('should delete object from AWS location with bucketMatch set to ' +
-        'false', done => {
-            s3.deleteObject({ Bucket: bucket, Key: mismatchObject }, err => {
-                assert.equal(err, null,
-                    `Expected success, got error ${JSON.stringify(err)}`);
-                s3.getObject({ Bucket: bucket, Key: mismatchObject }, err => {
-                    assert.strictEqual(err.code, 'NoSuchKey',
-                        'Expected error but got success');
-                    done();
-                });
-            });
+
+        it('should delete large object from AWS', async () => {
+            await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: bigObject }));
+            
+            try {
+                await s3.send(new GetObjectCommand({ Bucket: bucket, Key: bigObject }));
+                assert.fail('Expected NoSuchKey error but got success');
+            } catch (err) {
+                assert.strictEqual(err.name, 'NoSuchKey');
+            }
+        });
+
+         it('should delete object from AWS location with bucketMatch set to ' +
+            'false', async () => {
+            try {
+                await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: mismatchObject }));
+                await s3.send(new GetObjectCommand({ 
+                    Bucket: bucket, 
+                    Key: mismatchObject
+                }));
+                assert.fail('Expected NoSuchKey error but got success');
+            } catch (err) {
+                assert.strictEqual(err.name, 'NoSuchKey');
+            }
         });
     });
 });

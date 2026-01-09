@@ -1,11 +1,31 @@
-const { auth, storage } = require('arsenal');
+const { auth } = require('arsenal');
 
 const http = require('http');
 const https = require('https');
 const querystring = require('querystring');
+const crypto = require('crypto');
 
 const conf = require('../../../../lib/Config').config;
-const { GcpSigner } = storage.data.external;
+
+const constructStringToSignV2 = require('arsenal/build/lib/auth/v2/constructStringToSign').default;
+
+function signGcpRequest(request, credentials, date) {
+    if (!credentials || !credentials.secretKey || !credentials.accessKey) {
+        throw new Error('Invalid GCP credentials: must have accessKey and secretKey properties. ' +
+            `Got: ${JSON.stringify(credentials)}`);
+    }    
+    // eslint-disable-next-line no-param-reassign
+    request.headers['x-goog-date'] = date.toUTCString();
+    const data = Object.assign({}, request.headers);
+    const logger = { trace: () => {} };
+    const stringToSign = constructStringToSignV2(request, data, logger, 'GCP');
+    // Sign with HMAC-SHA1
+    const signature = crypto.createHmac('sha1', credentials.secretKey)
+        .update(stringToSign)
+        .digest('base64');        
+    // eslint-disable-next-line no-param-reassign
+    request.headers['Authorization'] = `GOOG1 ${credentials.accessKey}:${signature}`;
+}
 
 const transport = conf.https ? https : http;
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
@@ -67,18 +87,22 @@ function makeRequest(params, callback) {
     const qs = querystring.stringify(queryObj);
 
     if (params.GCP && authCredentials) {
+        const bucketMatch = options.path.match(/^\/([^\/]+)/);
+        const bucketName = bucketMatch ? bucketMatch[1] : undefined;
         const gcpPath = queryObj ? `${options.path}?${qs}` : options.path;
-        const getAuthObject = {
-            endpoint: { host: hostname },
+        const requestForSigning = {
             method,
-            path: gcpPath || '/',
-            headers,
+            headers: options.headers || {},
+            url: gcpPath,
+            path: options.path,
+            endpoint: { host: hostname },
+            bucketName,
+            query: queryObj || {},
         };
-        const signer = new GcpSigner(getAuthObject);
-        signer.addAuthorization(authCredentials, new Date());
+        signGcpRequest(requestForSigning, authCredentials, new Date());
         Object.assign(options.headers, {
-            Authorization: getAuthObject.headers.Authorization,
-            Date: getAuthObject.headers['x-goog-date'],
+            Authorization: requestForSigning.headers.Authorization,
+            Date: requestForSigning.headers['x-goog-date'],
         });
     }
 
@@ -171,14 +195,29 @@ function makeS3Request(params, callback) {
  * @param {object} [params.authCredentials] - authentication credentials
  * @param {object} params.authCredentials.accessKey - access key
  * @param {object} params.authCredentials.secretKey - secret key
+ * @param {string} [params.region] - request body contents
  * @param {function} callback - with error and response parameters
  * @return {undefined} - and call callback
  */
-function makeGcpRequest(params, callback) {
+async function makeGcpRequest(params, callback) {
     const { method, queryObj, headers, bucket, objectKey, authCredentials,
-        requestBody } = params;
+        requestBody, region } = params;
+    
+    let resolvedCredentials = authCredentials;
+    if (authCredentials && typeof authCredentials === 'function') {
+        try {
+           resolvedCredentials = await authCredentials();
+            resolvedCredentials = {
+                accessKey: resolvedCredentials.accessKeyId,
+                secretKey: resolvedCredentials.secretAccessKey,
+            };
+        } catch (err) {
+            return callback(err);
+        }
+    }
+    
     const options = {
-        authCredentials,
+        authCredentials: resolvedCredentials,
         requestBody,
         hostname: 'storage.googleapis.com',
         port: 80,
@@ -187,11 +226,12 @@ function makeGcpRequest(params, callback) {
         headers: headers || {},
         path: bucket ? `/${bucket}/` : '/',
         GCP: true,
+        region,
     };
     if (objectKey) {
         options.path = `${options.path}${objectKey}`;
     }
-    makeRequest(options, callback);
+    return makeRequest(options, callback);
 }
 
 /** makeBackbeatRequest - utility function to generate a request going
