@@ -5,7 +5,7 @@ const { Sha256 } = require('@aws-crypto/sha256-js');
 const xml2js = require('xml2js');
 const { getCredentials } = require('../support/credentials');
 
-const sendRequest = async (method, host, path, body = '', config = null, signingDate = new Date()) => {
+const sendRequest = async (method, host, path, body = '', config = null, signingDate = new Date(), headers = {}) => {
     const service = 's3';
     const region = 'us-east-1';
 
@@ -27,6 +27,7 @@ const sendRequest = async (method, host, path, body = '', config = null, signing
         headers: {
             Host: host, // Explicitly set Host: 127.0.0.1:8000
             'X-Amz-Date': signingDate.toISOString().replace(/[:\-]|\.\d{3}/g, ''),
+            ...headers,
         },
     });
 
