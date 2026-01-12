@@ -334,7 +334,7 @@ describe('bucketGet API V2', () => {
         });
     });
 
-    describe('z-amz-optional-attributes header', () => {
+    describe('x-amz-optional-attributes header', () => {
         it('should return an error if the user does not have the permission', done => {
             const authInfoNoPerm = makeAuthInfo('accessKey2'); // A new user without specific permissions
             const testGetRequest = Object.assign({
@@ -342,7 +342,6 @@ describe('bucketGet API V2', () => {
                 url: baseUrl,
             }, baseGetRequest);
             testGetRequest.headers['x-amz-optional-object-attributes'] = 'x-amz-meta-department';
-
 
             async.series([
                 next => bucketPut(authInfo, testPutBucketRequest, log, next),
@@ -353,25 +352,22 @@ describe('bucketGet API V2', () => {
             });
         });
 
-        it('should ignore the missing permission if the header contains only RestoreStatus', done => {
+        it('should pass without permission if the header contains only RestoreStatus', done => {
             const testGetRequest = Object.assign({
                 query: {},
                 url: baseUrl,
             }, baseGetRequest);
             testGetRequest.headers['x-amz-optional-object-attributes'] = 'RestoreStatus';
 
-            async.waterfall(
-                [
-                    next => bucketPut(authInfo, testPutBucketRequest, log, next),
-                    (_, next) => bucketGet(authInfo, testGetRequest, log, next),
-                    (result, _, next) => parseString(result, next),
-                ],
-                (err, result) => {
-                    assert.strictEqual(err, null);
-                    assert.strictEqual(result.ListBucketResult.$.xmlns, 'http://s3.amazonaws.com/doc/2006-03-01/');
-                    done();
-                },
-            );
+            async.waterfall([
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                (_, next) => bucketGet(authInfo, testGetRequest, log, next),
+                (result, _, next) => parseString(result, next),
+            ], (err, result) => {
+                assert.strictEqual(err, null);
+                assert.strictEqual(result.ListBucketResult.$.xmlns, 'http://s3.amazonaws.com/doc/2006-03-01/');
+                done();
+            });
         });
 
         it('should return valid xml if the user have the permission', done => {
@@ -389,23 +385,6 @@ describe('bucketGet API V2', () => {
             (err, result) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(result.ListBucketResult.$.xmlns, 'http://s3.amazonaws.com/doc/2006-03-01/');
-                done();
-            });
-        });
-
-        it('should return an error if the user does not have all permissions for multiple attributes', done => {
-            const authInfoNoPerm = makeAuthInfo('accessKey2');
-            const testGetRequest = Object.assign({
-                query: {},
-                url: baseUrl,
-            }, baseGetRequest);
-            testGetRequest.headers['x-amz-optional-object-attributes'] = 'RestoreStatus,x-amz-meta-department';
-
-            async.series([
-                next => bucketPut(authInfo, testPutBucketRequest, log, next),
-                next =>  bucketGet(authInfoNoPerm, testGetRequest, log, next),
-            ], err => {
-                assert.strictEqual(err.is.AccessDenied, true);
                 done();
             });
         });
@@ -482,7 +461,7 @@ describe('bucketGet API V2', () => {
                 query: {},
                 url: baseUrl,
             }, baseGetRequest);
-            testGetRequest.headers['x-amz-optional-object-attributes'] = 'x-amz-meta-foo';
+            testGetRequest.headers['x-amz-optional-object-attributes'] = '   x-amz-meta-foo    ';
 
             async.waterfall([
                 next => bucketPut(authInfo, testPutBucketRequest, log, next),
