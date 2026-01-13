@@ -1,5 +1,6 @@
 const assert = require('assert');
 const tv4 = require('tv4');
+const { parseString } = require('xml2js');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -371,6 +372,64 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 }
                 test.assertions(data, Bucket);
             });
+        });
+
+        it('should manage the x-amz-optional-attributes header', async () => {
+            const s3 = bucketUtil.s3;
+            const Bucket = bucketName;
+
+            await s3.putObject({
+                Bucket,
+                Key: 'super-power-object',
+                Metadata: {
+                    Department: 'sales',
+                    HR: 'true',
+                },
+            }).promise();
+
+            const result = await new Promise((resolve, reject) => {
+                let rawXml = '';
+                const req = s3.listObjectsV2({ Bucket });
+
+                req.on('build', () => {
+                    req.httpRequest.headers['x-amz-optional-object-attributes'] = 'x-amz-meta-*';
+                    req.httpRequest.headers['x-amz-optional-object-attributes'] += ',RestoreStatus';
+                    req.httpRequest.headers['x-amz-optional-object-attributes'] += ',x-amz-meta-department';
+                });
+                req.on('httpData', chunk => { rawXml += chunk; });
+                req.on('error', err => reject(err));
+                req.on('success', response => {
+                    parseString(rawXml, (err, parsedXml) => {
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        const contents = response.data.Contents;
+                        const parsedContents = parsedXml.ListBucketResult.Contents;
+
+                        if (!contents || !parsedContents) {
+                            return resolve(response.data);
+                        }
+
+                        if (parsedContents[0]?.['x-amz-meta-department']) {
+                            contents[0]['x-amz-meta-department'] = parsedContents[0]['x-amz-meta-department'][0];
+                        }
+
+                        if (parsedContents[0]?.['x-amz-meta-hr']) {
+                            contents[0]['x-amz-meta-hr'] = parsedContents[0]['x-amz-meta-hr'][0];
+                        }
+
+                        return resolve(response.data);
+                    });
+                });
+
+                req.send();
+            });
+
+            assert.strictEqual(result.Contents.length, 1);
+            assert.strictEqual(result.Contents[0].Key, 'super-power-object');
+            assert.strictEqual(result.Contents[0]['x-amz-meta-department'], 'sales');
+            assert.strictEqual(result.Contents[0]['x-amz-meta-hr'], 'true');
         });
 
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
