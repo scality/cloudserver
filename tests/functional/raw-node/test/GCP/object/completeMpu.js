@@ -1,6 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
+const { ListObjectsCommand } = require('@aws-sdk/client-s3');
 const { GCP, GcpUtils } = arsenal.storage.data.external.GCP;
 const {
     gcpRequestRetry,
@@ -100,6 +101,18 @@ describe('GCP: Complete MPU', function testSuite() {
     before(done => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
+        gcpClient.listObjects = (params, callback) => {
+            const command = new ListObjectsCommand(params);
+            return gcpClient.send(command)
+                .then(data => callback(null, data))
+                .catch(err => {
+                    if (err && err.$metadata && err.$metadata.httpStatusCode &&
+                        err.statusCode === undefined) {
+                        err.statusCode = err.$metadata.httpStatusCode;
+                    }
+                    return callback(err);
+                });
+        };
         async.eachSeries(bucketNames,
             (bucket, next) => gcpRequestRetry({
                 method: 'PUT',

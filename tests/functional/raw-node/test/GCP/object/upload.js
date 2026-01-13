@@ -1,6 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
+const { ListObjectsCommand } = require('@aws-sdk/client-s3');
 const { GCP } = arsenal.storage.data.external.GCP;
 const { gcpRequestRetry, setBucketClass, genUniqID } =
     require('../../../utils/gcpUtils');
@@ -32,6 +33,18 @@ describe('GCP: Upload Object', function testSuite() {
     before(done => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
+        gcpClient.listObjects = (params, callback) => {
+            const command = new ListObjectsCommand(params);
+            return gcpClient.send(command)
+                .then(data => callback(null, data))
+                .catch(err => {
+                    if (err && err.$metadata && err.$metadata.httpStatusCode &&
+                        err.statusCode === undefined) {
+                        err.statusCode = err.$metadata.httpStatusCode;
+                    }
+                    return callback(err);
+                });
+        };
         async.eachSeries(bucketNames,
             (bucket, next) => gcpRequestRetry({
                 method: 'PUT',
