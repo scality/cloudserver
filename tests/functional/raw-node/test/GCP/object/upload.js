@@ -40,6 +40,7 @@ describe('GCP: Upload Object', function testSuite() {
                 .catch(err => {
                     if (err && err.$metadata && err.$metadata.httpStatusCode &&
                         err.statusCode === undefined) {
+                        // eslint-disable-next-line no-param-reassign
                         err.statusCode = err.$metadata.httpStatusCode;
                     }
                     return callback(err);

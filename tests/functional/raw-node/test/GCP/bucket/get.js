@@ -23,7 +23,7 @@ gcpClient.listObjects = (params, callback) => {
         .catch(err => {
             if (err && err.$metadata && err.$metadata.httpStatusCode &&
                 err.statusCode === undefined) {
-                // Surface HTTP status like aws-sdk v2 for retry logic.
+                // eslint-disable-next-line no-param-reassign
                 err.statusCode = err.$metadata.httpStatusCode;
             }
             return callback(err);
@@ -35,9 +35,11 @@ gcpClient.getBucket = (params, callback) =>
         if (err) {
             if (err.$metadata && err.$metadata.httpStatusCode &&
                 err.statusCode === undefined) {
+                // eslint-disable-next-line no-param-reassign
                 err.statusCode = err.$metadata.httpStatusCode;
             }
             if (err.$metadata && err.$metadata.httpStatusCode === 404) {
+                // eslint-disable-next-line no-param-reassign
                 err.name = 'NoSuchBucket';
             }
             return callback(err);
