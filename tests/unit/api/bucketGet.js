@@ -533,5 +533,36 @@ describe('bucketGet API V2', () => {
                 done();
             });
         });
+
+        it('should return user metadata as case insentive (lowercase header)', done => {
+            const objectNameMeta = 'objectWithMeta';
+            const putRequest = new DummyRequest({
+                bucketName,
+                headers: { 'x-amz-meta-color': 'yellow' },
+                url: `/${bucketName}/${objectNameMeta}`,
+                namespace,
+                objectKey: objectNameMeta,
+            }, postBody);
+
+            const testGetRequest = Object.assign({
+                query: {},
+                url: baseUrl,
+            }, baseGetRequest);
+            testGetRequest.headers['x-amz-optional-object-attributes'] = 'x-amz-meta-coLor';
+
+            async.waterfall([
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                (_, next) => objectPut(authInfo, putRequest, undefined, log, next),
+                (_, next) => bucketGet(authInfo, testGetRequest, log, next),
+                (result, _, next) => parseString(result, next),
+            ],
+            (err, result) => {
+                assert.strictEqual(err, null);
+                const content = result.ListBucketResult.Contents[0];
+                assert.strictEqual(content.Key[0], objectNameMeta);
+                assert.strictEqual(content['x-amz-meta-color'][0], 'yellow');
+                done();
+            });
+        });
     });
 });
