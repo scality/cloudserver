@@ -12,6 +12,8 @@ const { IAM } = AWS;
 const getConfig = require('../support/config');
 const { config } = require('../../../../../lib/Config');
 
+const isVaultScality = config.backends.auth !== 'mem';
+const internalPortBypassBP = config.internalPort;
 const vaultHost = config.vaultd?.host || 'localhost';
 
 const tests = [
@@ -497,7 +499,8 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
             });
         });
 
-        describe('x-amz-optional-attributes header', () => {
+        const describeBypass = isVaultScality && internalPortBypassBP ? describe : describe.skip;
+        describeBypass('x-amz-optional-attributes header', () => {
             let policyWithoutPermission;
             let userWithoutPermission;
             let s3ClientWithoutPermission;
@@ -630,7 +633,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 }).promise();
 
                 try {
-                    const result = await listObjectsV2WithOptionalAttributes(
+                    await listObjectsV2WithOptionalAttributes(
                         s3ClientWithoutPermission,
                         Bucket,
                         'x-amz-meta-*,RestoreStatus,x-amz-meta-department',
