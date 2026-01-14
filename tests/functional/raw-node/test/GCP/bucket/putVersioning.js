@@ -1,6 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
+const { PutBucketVersioningCommand } = require('@aws-sdk/client-s3');
 const xml2js = require('xml2js');
 const { GCP } = arsenal.storage.data.external.GCP;
 const { makeGcpRequest } = require('../../../utils/makeRequest');
@@ -56,16 +57,21 @@ describe('GCP: PUT Bucket Versioning', () => {
 
     it('should enable bucket versioning', function testFn(done) {
         return async.waterfall([
-            next => gcpClient.putBucketVersioning({
-                Bucket: this.test.bucketName,
-                VersioningConfiguration: {
-                    Status: 'Enabled',
-                },
-            }, err => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
-                return next();
-            }),
+            next => {
+                const command = new PutBucketVersioningCommand({
+                    Bucket: this.test.bucketName,
+                    VersioningConfiguration: {
+                        Status: 'Enabled',
+                    },
+                });
+                return gcpClient.send(command)
+                    .then(() => next())
+                    .catch(err => {
+                        assert.equal(err, null,
+                            `Expected success, but got err ${err}`);
+                        return next(err);
+                    });
+            },
             next => makeGcpRequest({
                 method: 'GET',
                 bucket: this.test.bucketName,
@@ -83,16 +89,21 @@ describe('GCP: PUT Bucket Versioning', () => {
 
     it('should disable bucket versioning', function testFn(done) {
         return async.waterfall([
-            next => gcpClient.putBucketVersioning({
-                Bucket: this.test.bucketName,
-                VersioningConfiguration: {
-                    Status: 'Suspended',
-                },
-            }, err => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
-                return next();
-            }),
+            next => {
+                const command = new PutBucketVersioningCommand({
+                    Bucket: this.test.bucketName,
+                    VersioningConfiguration: {
+                        Status: 'Suspended',
+                    },
+                });
+                return gcpClient.send(command)
+                    .then(() => next())
+                    .catch(err => {
+                        assert.equal(err, null,
+                            `Expected success, but got err ${err}`);
+                        return next(err);
+                    });
+            },
             next => makeGcpRequest({
                 method: 'GET',
                 bucket: this.test.bucketName,

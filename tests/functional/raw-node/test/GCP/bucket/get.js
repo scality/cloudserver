@@ -1,6 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
+const { ListObjectsCommand } = require('@aws-sdk/client-s3');
 const { GCP } = arsenal.storage.data.external.GCP;
 const { makeGcpRequest } = require('../../../utils/makeRequest');
 const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
@@ -14,6 +15,35 @@ const smallSize = 20;
 const bigSize = listingHardLimit + 1;
 const config = getRealAwsConfig(credentialOne);
 const gcpClient = new GCP(config);
+
+gcpClient.listObjects = (params, callback) => {
+    const command = new ListObjectsCommand(params);
+    return gcpClient.send(command)
+        .then(data => callback(null, data))
+        .catch(err => {
+            if ( err.statusCode === undefined) {
+                // eslint-disable-next-line no-param-reassign
+                err.statusCode = err.$metadata.httpStatusCode;
+            }
+            return callback(err);
+        });
+};
+
+gcpClient.getBucket = (params, callback) =>
+    gcpClient.headBucket(params, (err, res) => {
+        if (err) {
+            if (err.statusCode === undefined) {
+                // eslint-disable-next-line no-param-reassign
+                err.statusCode = err.$metadata.httpStatusCode;
+            }
+            if (err.$metadata && err.$metadata.httpStatusCode === 404) {
+                // eslint-disable-next-line no-param-reassign
+                err.name = 'NoSuchBucket';
+            }
+            return callback(err);
+        }
+        return callback(null, res);
+    });
 
 function populateBucket(createdObjects, callback) {
     process.stdout.write(
