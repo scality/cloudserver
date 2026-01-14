@@ -1,6 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
+const { GetBucketVersioningCommand } = require('@aws-sdk/client-s3');
 const { GCP } = arsenal.storage.data.external.GCP;
 const { makeGcpRequest } = require('../../../utils/makeRequest');
 const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
@@ -67,14 +68,19 @@ describe('GCP: GET Bucket Versioning', () => {
                 return next(err);
             }),
             next => {
-                gcpClient.getBucketVersioning({
+                const command = new GetBucketVersioningCommand({
                     Bucket: this.test.bucketName,
-                }, (err, res) => {
-                    assert.equal(err, null,
-                        `Expected success, but got err ${err}`);
-                    assert.deepStrictEqual(res.Status, verEnabledObj);
-                    return next();
                 });
+                return gcpClient.send(command)
+                    .then(res => {
+                        assert.deepStrictEqual(res.Status, verEnabledObj);
+                        return next();
+                    })
+                    .catch(err => {
+                        assert.equal(err, null,
+                            `Expected success, but got err ${err}`);
+                        return next(err);
+                    });
             },
         ], err => done(err));
     });
@@ -93,14 +99,21 @@ describe('GCP: GET Bucket Versioning', () => {
                 }
                 return next(err);
             }),
-            next => gcpClient.getBucketVersioning({
-                Bucket: this.test.bucketName,
-            }, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
-                assert.deepStrictEqual(res.Status, verDisabledObj);
-                return next();
-            }),
+            next => {
+                const command = new GetBucketVersioningCommand({
+                    Bucket: this.test.bucketName,
+                });
+                return gcpClient.send(command)
+                    .then(res => {
+                        assert.deepStrictEqual(res.Status, verDisabledObj);
+                        return next();
+                    })
+                    .catch(err => {
+                        assert.equal(err, null,
+                            `Expected success, but got err ${err}`);
+                        return next(err);
+                    });
+            },
         ], err => done(err));
     });
 });
