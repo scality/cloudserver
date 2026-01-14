@@ -6,8 +6,13 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const bucketSchema = require('../../schema/bucket');
 const bucketSchemaV2 = require('../../schema/bucketV2');
-const { generateToken, decryptToken } =
-    require('../../../../../lib/api/apiUtils/object/continueToken');
+const { generateToken, decryptToken } = require('../../../../../lib/api/apiUtils/object/continueToken');
+const AWS = require('aws-sdk');
+const { IAM } = AWS;
+const getConfig = require('../support/config');
+const { config } = require('../../../../../lib/Config');
+
+const vaultHost = config.vaultd?.host || 'localhost';
 
 const tests = [
     {
@@ -374,64 +379,6 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
             });
         });
 
-        it('should manage the x-amz-optional-attributes header', async () => {
-            const s3 = bucketUtil.s3;
-            const Bucket = bucketName;
-
-            await s3.putObject({
-                Bucket,
-                Key: 'super-power-object',
-                Metadata: {
-                    Department: 'sales',
-                    HR: 'true',
-                },
-            }).promise();
-
-            const result = await new Promise((resolve, reject) => {
-                let rawXml = '';
-                const req = s3.listObjectsV2({ Bucket });
-
-                req.on('build', () => {
-                    req.httpRequest.headers['x-amz-optional-object-attributes'] = 'x-amz-meta-*';
-                    req.httpRequest.headers['x-amz-optional-object-attributes'] += ',RestoreStatus';
-                    req.httpRequest.headers['x-amz-optional-object-attributes'] += ',x-amz-meta-department';
-                });
-                req.on('httpData', chunk => { rawXml += chunk; });
-                req.on('error', err => reject(err));
-                req.on('success', response => {
-                    parseString(rawXml, (err, parsedXml) => {
-                        if (err) {
-                            return reject(err);
-                        }
-
-                        const contents = response.data.Contents;
-                        const parsedContents = parsedXml.ListBucketResult.Contents;
-
-                        if (!contents || !parsedContents) {
-                            return resolve(response.data);
-                        }
-
-                        if (parsedContents[0]?.['x-amz-meta-department']) {
-                            contents[0]['x-amz-meta-department'] = parsedContents[0]['x-amz-meta-department'][0];
-                        }
-
-                        if (parsedContents[0]?.['x-amz-meta-hr']) {
-                            contents[0]['x-amz-meta-hr'] = parsedContents[0]['x-amz-meta-hr'][0];
-                        }
-
-                        return resolve(response.data);
-                    });
-                });
-
-                req.send();
-            });
-
-            assert.strictEqual(result.Contents.length, 1);
-            assert.strictEqual(result.Contents[0].Key, 'super-power-object');
-            assert.strictEqual(result.Contents[0]['x-amz-meta-department'], 'sales');
-            assert.strictEqual(result.Contents[0]['x-amz-meta-hr'], 'true');
-        });
-
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
             it(`should list objects with key ${k} as Prefix`, async () => {
                 const s3 = bucketUtil.s3;
@@ -547,6 +494,176 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 }
                 assert.strictEqual(
                     decryptToken(data.NextContinuationToken), k);
+            });
+        });
+
+        describe('x-amz-optional-attributes header', () => {
+            let policyWithoutPermission;
+            let userWithoutPermission;
+            let s3ClientWithoutPermission;
+
+            const iamConfig = getConfig('default', { region: 'us-east-1' });
+            iamConfig.endpoint = `http://${vaultHost}:8600`;
+            const iamClient = new IAM(iamConfig);
+
+            before(async () => {
+                const policyRes = await iamClient
+                    .createPolicy({
+                        PolicyName: 'bp-bypass-policy',
+                        PolicyDocument: JSON.stringify({
+                            Version: '2012-10-17',
+                            Statement: [{
+                                Sid: 'AllowS3ListBucket',
+                                Effect: 'Allow',
+                                Action: [
+                                    's3:ListBucket',
+                                ],
+                                Resource: ['*'],
+                            }],
+                        }),
+                    })
+                    .promise();
+                policyWithoutPermission = policyRes.Policy;
+                const userRes = await iamClient.createUser({ UserName: 'user-without-permission' }).promise();
+                userWithoutPermission = userRes.User;
+                await iamClient
+                    .attachUserPolicy({
+                        UserName: userWithoutPermission.UserName,
+                        PolicyArn: policyWithoutPermission.Arn,
+                    })
+                    .promise();
+
+                const accessKeyRes = await iamClient.createAccessKey({
+                    UserName: userWithoutPermission.UserName,
+                }).promise();
+                const accessKey = accessKeyRes.AccessKey;
+                const s3Config = getConfig('default', {
+                    credentials: new AWS.Credentials(accessKey.AccessKeyId, accessKey.SecretAccessKey),
+                });
+                s3ClientWithoutPermission = new AWS.S3(s3Config);
+            });
+
+            after(async () => {
+                await iamClient
+                    .detachUserPolicy({
+                        UserName: userWithoutPermission.UserName,
+                        PolicyArn: policyWithoutPermission.Arn,
+                    })
+                    .promise();
+                await iamClient.deletePolicy({ PolicyArn: policyWithoutPermission.Arn }).promise();
+                await iamClient.deleteUser({ UserName: userWithoutPermission.UserName }).promise();
+            });
+
+            // eslint-disable-next-line max-len
+            const listObjectsV2WithOptionalAttributes = async (s3, bucket, headerValue) => await new Promise((resolve, reject) => {
+                let rawXml = '';
+                const req = s3.listObjectsV2({ Bucket: bucket });
+
+                req.on('build', () => {
+                    req.httpRequest.headers['x-amz-optional-object-attributes'] = headerValue;
+                });
+                req.on('httpData', chunk => { rawXml += chunk; });
+                req.on('error', err => reject(err));
+                req.on('success', response => {
+                    parseString(rawXml, (err, parsedXml) => {
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        const contents = response.data.Contents;
+                        const parsedContents = parsedXml.ListBucketResult.Contents;
+
+                        if (!contents || !parsedContents) {
+                            return resolve(response.data);
+                        }
+
+                        if (parsedContents[0]?.['x-amz-meta-department']) {
+                            contents[0]['x-amz-meta-department'] = parsedContents[0]['x-amz-meta-department'][0];
+                        }
+
+                        if (parsedContents[0]?.['x-amz-meta-hr']) {
+                            contents[0]['x-amz-meta-hr'] = parsedContents[0]['x-amz-meta-hr'][0];
+                        }
+
+                        return resolve(response.data);
+                    });
+                });
+
+                req.send();
+            });
+            
+            it('should return an XML if the header is set', async () => {
+                const s3 = bucketUtil.s3;
+                const Bucket = bucketName;
+
+                await s3.putObject({
+                    Bucket,
+                    Key: 'super-power-object',
+                    Metadata: {
+                        Department: 'sales',
+                        HR: 'true',
+                    },
+                }).promise();
+                const result = await listObjectsV2WithOptionalAttributes(
+                    s3,
+                    Bucket,
+                    'x-amz-meta-*,RestoreStatus,x-amz-meta-department',
+                );
+
+                assert.strictEqual(result.Contents.length, 1);
+                assert.strictEqual(result.Contents[0].Key, 'super-power-object');
+                assert.strictEqual(result.Contents[0]['x-amz-meta-department'], 'sales');
+                assert.strictEqual(result.Contents[0]['x-amz-meta-hr'], 'true');
+            });
+
+            it('should reject the request if the user does not have the permission', async () => {
+                const s3 = bucketUtil.s3;
+                const Bucket = bucketName;
+
+                await s3.putObject({
+                    Bucket,
+                    Key: 'super-power-object',
+                    Metadata: {
+                        Department: 'sales',
+                        HR: 'true',
+                    },
+                }).promise();
+
+                try {
+                    const result = await listObjectsV2WithOptionalAttributes(
+                        s3ClientWithoutPermission,
+                        Bucket,
+                        'x-amz-meta-*,RestoreStatus,x-amz-meta-department',
+                    );
+                    throw new Error('Request should have been rejected');
+                } catch (err) {
+                    assert.strictEqual(err.statusCode, 403);
+                    assert.strictEqual(err.code, 'AccessDenied');
+                }
+            });
+
+            it('should return an XML if the header is only RestoreStatus even without permission', async () => {
+                const s3 = bucketUtil.s3;
+                const Bucket = bucketName;
+
+                await s3.putObject({
+                    Bucket,
+                    Key: 'super-power-object',
+                    Metadata: {
+                        Department: 'sales',
+                        HR: 'true',
+                    },
+                }).promise();
+                const result = await listObjectsV2WithOptionalAttributes(
+                    s3ClientWithoutPermission,
+                    Bucket,
+                    'RestoreStatus',
+                );
+
+                assert.strictEqual(result.Contents.length, 1);
+                assert.strictEqual(result.Contents[0].Key, 'super-power-object');
+                assert.strictEqual(result.Contents[0]['x-amz-meta-department'], undefined);
+                assert.strictEqual(result.Contents[0]['x-amz-meta-hr'], undefined);
             });
         });
     });
