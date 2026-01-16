@@ -377,6 +377,46 @@ describe('Token bucket management functions', () => {
             assert.strictEqual(bucket1.bucketName, 'bucket-1');
             assert.strictEqual(bucket2.bucketName, 'bucket-2');
         });
+
+        it('should update limitConfig when limit changes', () => {
+            const bucket1 = tokenBucket.getTokenBucket('test-bucket', { limit: 100, source: 'bucket' }, mockLog);
+            assert.strictEqual(bucket1.limitConfig.limit, 100);
+
+            // Simulate rate limit change
+            const bucket2 = tokenBucket.getTokenBucket('test-bucket', { limit: 200, source: 'bucket' }, mockLog);
+
+            assert.strictEqual(bucket1, bucket2); // Same bucket instance
+            assert.strictEqual(bucket2.limitConfig.limit, 200); // Limit updated
+            assert(mockLog.info.calledOnce);
+            assert(mockLog.info.firstCall.args[0].includes('Updated token bucket limit config'));
+        });
+
+        it('should not log update when limit is unchanged', () => {
+            tokenBucket.getTokenBucket('test-bucket', { limit: 100 }, mockLog);
+            mockLog.info.resetHistory();
+
+            tokenBucket.getTokenBucket('test-bucket', { limit: 100 }, mockLog);
+
+            assert.strictEqual(mockLog.info.called, false);
+        });
+    });
+
+    describe('removeTokenBucket', () => {
+        it('should remove existing bucket and return true', () => {
+            tokenBucket.getTokenBucket('test-bucket', { limit: 100 }, mockLog);
+            assert.strictEqual(tokenBucket.getAllTokenBuckets().size, 1);
+
+            const result = tokenBucket.removeTokenBucket('test-bucket');
+
+            assert.strictEqual(result, true);
+            assert.strictEqual(tokenBucket.getAllTokenBuckets().size, 0);
+        });
+
+        it('should return false when bucket does not exist', () => {
+            const result = tokenBucket.removeTokenBucket('non-existent-bucket');
+
+            assert.strictEqual(result, false);
+        });
     });
 
     describe('getAllTokenBuckets', () => {
