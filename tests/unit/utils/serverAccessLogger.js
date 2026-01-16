@@ -196,6 +196,68 @@ describe('serverAccessLogger utility functions', () => {
             const result = getOperation(req);
             assert.strictEqual(result, 'REST.GET.UNKNOWN');
         });
+
+        it('should return REST.GET.BACKBEAT when backbeat is enabled for GET', () => {
+            const req = {
+                method: 'GET',
+                apiMethod: 'objectGet',
+                serverAccessLog: { backbeat: true },
+            };
+            const result = getOperation(req);
+            assert.strictEqual(result, 'REST.GET.BACKBEAT');
+        });
+
+        it('should return REST.PUT.BACKBEAT when backbeat is enabled for PUT', () => {
+            const req = {
+                method: 'PUT',
+                apiMethod: 'objectPut',
+                serverAccessLog: { backbeat: true },
+            };
+            const result = getOperation(req);
+            assert.strictEqual(result, 'REST.PUT.BACKBEAT');
+        });
+
+        it('should return REST.DELETE.BACKBEAT when backbeat is enabled for DELETE', () => {
+            const req = {
+                method: 'DELETE',
+                apiMethod: 'objectDelete',
+                serverAccessLog: { backbeat: true },
+            };
+            const result = getOperation(req);
+            assert.strictEqual(result, 'REST.DELETE.BACKBEAT');
+        });
+
+        it('should return REST.POST.BACKBEAT when backbeat is enabled for POST', () => {
+            const req = {
+                method: 'POST',
+                apiMethod: 'completeMultipartUpload',
+                serverAccessLog: { backbeat: true },
+            };
+            const result = getOperation(req);
+            assert.strictEqual(result, 'REST.POST.BACKBEAT');
+        });
+
+        it('should prioritize backbeat over normal apiMethod mapping', () => {
+            const req = {
+                method: 'GET',
+                apiMethod: 'bucketGetVersioning',
+                serverAccessLog: { backbeat: true },
+            };
+            const result = getOperation(req);
+            // Should return BACKBEAT instead of normal REST.GET.VERSIONING
+            assert.strictEqual(result, 'REST.GET.BACKBEAT');
+        });
+
+        it('should return REST.method.BACKBEAT even with unknown apiMethod', () => {
+            const req = {
+                method: 'GET',
+                apiMethod: 'unknownMethod',
+                serverAccessLog: { backbeat: true },
+            };
+            const result = getOperation(req);
+            // Should return BACKBEAT instead of UNKNOWN
+            assert.strictEqual(result, 'REST.GET.BACKBEAT');
+        });
     });
 
     describe('getRequester', () => {
@@ -1145,6 +1207,90 @@ describe('serverAccessLogger utility functions', () => {
             // NaN values should be omitted from the log output
             assert.strictEqual('bytesReceived' in loggedData, false);
             assert.strictEqual('contentLength' in loggedData, false);
+        });
+
+        it('should log with loggingEnabled false when backbeat is enabled', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {
+                    backbeat: true,
+                    enabled: true,
+                },
+                method: 'GET',
+                apiMethod: 'objectGet',
+                headers: {},
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {},
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+
+            // Verify loggingEnabled is false in the logged data
+            assert.strictEqual(loggedData.loggingEnabled, false);
+        });
+
+        it('should log REST.GET.BACKBEAT operation when backbeat is enabled', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {
+                    backbeat: true,
+                },
+                method: 'GET',
+                apiMethod: 'objectGet',
+                headers: {},
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {},
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+            
+            // Verify operation is REST.GET.BACKBEAT
+            assert.strictEqual(loggedData.operation, 'REST.GET.BACKBEAT');
+        });
+
+        it('should override loggingEnabled when backbeat is enabled with logging config', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {
+                    backbeat: true,
+                    enabled: true,
+                    loggingEnabled: {
+                        TargetBucket: 'log-bucket',
+                        TargetPrefix: 'logs/',
+                    },
+                },
+                method: 'PUT',
+                apiMethod: 'objectPut',
+                headers: {},
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {},
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+            
+            // Verify loggingEnabled is false (overridden by backbeat)
+            assert.strictEqual(loggedData.loggingEnabled, false);
+            // But TargetBucket and TargetPrefix should still be logged
+            assert.strictEqual(loggedData.loggingTargetBucket, 'log-bucket');
+            assert.strictEqual(loggedData.loggingTargetPrefix, 'logs/');
         });
     });
 });
