@@ -38,10 +38,11 @@ ENV no_proxy=localhost,127.0.0.1
 EXPOSE 8000
 EXPOSE 8002
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
         jq \
         tini \
+        python3-redis \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
