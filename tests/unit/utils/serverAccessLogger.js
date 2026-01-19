@@ -1122,6 +1122,29 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.errorCode, 'NoSuchKey');
             assert.strictEqual('errorCode' in loggedData, true);
         });
+
+        it('should omit NaN fields from log output', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {},
+                headers: {},
+                parsedContentLength: NaN, // Simulates Number.parseInt('', 10)
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {},
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+
+            // NaN values should be omitted from the log output
+            assert.strictEqual('bytesReceived' in loggedData, false);
+            assert.strictEqual('contentLength' in loggedData, false);
+        });
     });
 });
 
