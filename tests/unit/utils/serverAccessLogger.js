@@ -808,7 +808,7 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.bytesDeleted, 0);
             assert.strictEqual(loggedData.bytesReceived, 1024);
             assert.strictEqual(loggedData.bodyLength, 1024);
-            assert.strictEqual(loggedData.contentLength, 1024);
+            assert.strictEqual(loggedData.contentLength, 2048);
             assert.strictEqual(loggedData.elapsed_ms, 20.5);
 
             // Verify AWS access server log fields
@@ -1054,6 +1054,7 @@ describe('serverAccessLogger utility functions', () => {
                 serverAccessLog: {
                     analyticsBytesDeleted: 0,
                 },
+                apiMethod: 'objectPut',
                 headers: { 'content-length': '0' },
                 parsedContentLength: 0,
                 socket: {},
