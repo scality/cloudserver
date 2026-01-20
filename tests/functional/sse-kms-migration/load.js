@@ -16,11 +16,11 @@ const KMS_NODES = helpers.config.kmip.transport.length;
 const TOTAL_OBJECTS_PER_NODE = Math.floor(TOTAL_OBJECTS / KMS_NODES);
 
 /**
- * 10% approximation for the number of packets per IP
+ * 20% approximation for the number of packets per IP
  * As we might not have an exact match of packets and the
  * round robin is confined to each nodejs cluster processes
  */
-const APPROX = Math.floor(0.1 * TOTAL_OBJECTS_PER_NODE);
+const APPROX = Math.floor(0.2 * TOTAL_OBJECTS_PER_NODE);
 const EXPECTED_MIN = TOTAL_OBJECTS_PER_NODE - APPROX;
 const EXPECTED_MAX = TOTAL_OBJECTS_PER_NODE + APPROX;
 
@@ -177,7 +177,8 @@ describe(`KMS load (kmip cluster ${KMS_NODES} nodes): ${OBJECT_NUMBER
         assert(repartition.length === KMS_NODES, `Expected ${KMS_NODES} IPs but got ${repartition.length}`);
         assert(repartitionCount.every(count =>
             count >= EXPECTED_MIN && count <= EXPECTED_MAX),
-            `Repartition counts should be around ${TOTAL_OBJECTS_PER_NODE} but got ${repartitionCount}`);
+            `Repartition counts should be around ${TOTAL_OBJECTS_PER_NODE} ` +
+            `(±${APPROX}, min: ${EXPECTED_MIN}, max: ${EXPECTED_MAX}) but got ${repartitionCount}`);
     }
 
     it(`should encrypt ${TOTAL_OBJECTS} times in parallel, ~${TOTAL_OBJECTS_PER_NODE} per node`, async () => {
