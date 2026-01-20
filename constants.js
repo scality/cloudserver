@@ -279,6 +279,14 @@ const constants = {
     rateLimitDefaultConfigCacheTTL: 30000, // 30 seconds
     rateLimitDefaultBurstCapacity: 1,
     rateLimitCleanupInterval: 10000, // 10 seconds
+    // Metadata allowed to be returned by getObjectAttributes API
+    allowedObjectAttributes: new Set([
+        'StorageClass',
+        'ObjectSize',
+        'ObjectParts',
+        'Checksum',
+        'ETag',
+    ]),
 };
 
 module.exports = constants;
