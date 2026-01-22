@@ -1,10 +1,15 @@
 const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
-const { ListObjectsCommand } = require('@aws-sdk/client-s3');
+const {
+    ListObjectsCommand,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+} = require('@aws-sdk/client-s3');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
+const { genUniqID } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 const { listingHardLimit } = require('../../../../../../constants');
@@ -21,7 +26,7 @@ gcpClient.listObjects = (params, callback) => {
     return gcpClient.send(command)
         .then(data => callback(null, data))
         .catch(err => {
-            if ( err.statusCode === undefined) {
+            if (err.statusCode === undefined) {
                 // eslint-disable-next-line no-param-reassign
                 err.statusCode = err.$metadata.httpStatusCode;
             }
@@ -48,72 +53,78 @@ gcpClient.getBucket = (params, callback) =>
 function populateBucket(createdObjects, callback) {
     process.stdout.write(
         `Putting ${createdObjects.length} objects into bucket\n`);
-    async.mapLimit(createdObjects, 10,
-    (object, moveOn) => {
-        makeGcpRequest({
-            method: 'PUT',
-            bucket: bucketName,
-            objectKey: object,
-            authCredentials: config.credentials,
-        }, err => {
-            moveOn(err);
-        });
-    }, err => {
-        if (err) {
-            process.stdout
-                .write(`err putting objects ${err.code}\n`);
+    async.mapLimit(
+        createdObjects,
+        10,
+        (object, moveOn) => {
+            const command = new PutObjectCommand({
+                Bucket: bucketName,
+                Key: object,
+            });
+            gcpClient.send(command)
+                .then(() => moveOn())
+                .catch(err => moveOn(err));
+        },
+        err => {
+            if (err) {
+                process.stdout
+                    .write(`err putting objects ${err}\n`);
+            }
+            return callback(err);
         }
-        return callback(err);
-    });
+    );
 }
 
 function removeObjects(createdObjects, callback) {
     process.stdout.write(
         `Deleting ${createdObjects.length} objects from bucket\n`);
-    async.mapLimit(createdObjects, 10,
-    (object, moveOn) => {
-        makeGcpRequest({
-            method: 'DELETE',
-            bucket: bucketName,
-            objectKey: object,
-            authCredentials: config.credentials,
-        }, err => moveOn(err));
-    }, err => {
-        if (err) {
-            process.stdout
-                .write(`err deleting objects ${err.code}\n`);
+    async.mapLimit(
+        createdObjects,
+        10,
+        (object, moveOn) => {
+            const command = new DeleteObjectCommand({
+                Bucket: bucketName,
+                Key: object,
+            });
+            gcpClient.send(command)
+                .then(() => moveOn())
+                .catch(err => moveOn(err));
+        },
+        err => {
+            if (err) {
+                process.stdout
+                    .write(`err deleting objects ${err}\n`);
+            }
+            return callback(err);
         }
-        return callback(err);
-    });
+    );
 }
 
 describe('GCP: GET Bucket', function testSuite() {
     this.timeout(180000);
 
     before(done => {
-        gcpRequestRetry({
-            method: 'PUT',
-            bucket: bucketName,
-            authCredentials: config.credentials,
-        }, 0, err => {
-            if (err) {
-                process.stdout.write(`err in creating bucket ${err}\n`);
-            }
-            return done(err);
+        const command = new CreateBucketCommand({
+            Bucket: bucketName,
         });
+        gcpClient.send(command)
+            .then(() => done())
+            .catch(err => {
+                process.stdout.write(`err in creating bucket ${err}\n`);
+                return done(err);
+            });
     });
 
     after(done => {
-        gcpRequestRetry({
-            method: 'DELETE',
-            bucket: bucketName,
-            authCredentials: config.credentials,
-        }, 0, err => {
-            if (err) {
-                process.stdout.write(`err in deleting bucket ${err}\n`);
-            }
-            return done(err);
+        const command = new DeleteBucketCommand({
+            Bucket: bucketName,
         });
+        gcpClient.send(command)
+            .then(() => done())
+            .catch(err => {
+                process.stdout.write(`err in deleting bucket ${err}\n`);
+                return done(err);
+            });
     });
 
     describe('without existing bucket', () => {
