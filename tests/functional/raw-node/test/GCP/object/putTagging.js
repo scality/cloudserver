@@ -2,16 +2,19 @@ const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry, genPutTagObj, genUniqID } =
+const { genPutTagObj, genUniqID } =
     require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 const { gcpTaggingPrefix } = require('../../../../../../constants');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
 const bucketName = `somebucket-${genUniqID()}`;
-const gcpTagPrefix = `x-goog-meta-${gcpTaggingPrefix}`;
 
 describe('GCP: PUT Object Tagging', () => {
     let config;
@@ -20,42 +23,37 @@ describe('GCP: PUT Object Tagging', () => {
     before(done => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
-        gcpRequestRetry({
-            method: 'PUT',
-            bucket: bucketName,
-            authCredentials: config.credentials,
-        }, 0, err => {
-            if (err) {
+        const cmd = new CreateBucketCommand({ Bucket: bucketName });
+        gcpClient.send(cmd)
+            .then(() => done())
+            .catch(err => {
                 process.stdout.write(`err in creating bucket ${err}`);
-            }
-            return done(err);
-        });
+                return done(err);
+            });
     });
 
     beforeEach(function beforeFn(done) {
         this.currentTest.key = `somekey-${genUniqID()}`;
         this.currentTest.specialKey = `veryspecial-${genUniqID()}`;
-        makeGcpRequest({
-            method: 'PUT',
-            bucket: bucketName,
-            objectKey: this.currentTest.key,
-            authCredentials: config.credentials,
-        }, (err, res) => {
-            if (err) {
+        const cmd = new PutObjectCommand({
+            Bucket: bucketName,
+            Key: this.currentTest.key,
+        });
+        gcpClient.send(cmd)
+            .then(res => {
+                this.currentTest.versionId = res.VersionId;
+                return done();
+            })
+            .catch(err => {
                 process.stdout.write(`err in creating object ${err}`);
                 return done(err);
-            }
-            this.currentTest.versionId = res.headers['x-goog-generation'];
-            return done();
-        });
+            });
     });
 
     afterEach(function afterFn(done) {
-        makeGcpRequest({
-            method: 'DELETE',
-            bucket: bucketName,
-            objectKey: this.currentTest.key,
-            authCredentials: config.credentials,
+        gcpClient.deleteObject({
+            Bucket: bucketName,
+            Key: this.currentTest.key,
         }, err => {
             if (err) {
                 process.stdout.write(`err in deleting object ${err}`);
@@ -65,16 +63,13 @@ describe('GCP: PUT Object Tagging', () => {
     });
 
     after(done => {
-        gcpRequestRetry({
-            method: 'DELETE',
-            bucket: bucketName,
-            authCredentials: config.credentials,
-        }, 0, err => {
-            if (err) {
+        const cmd = new DeleteBucketCommand({ Bucket: bucketName });
+        gcpClient.send(cmd)
+            .then(() => done())
+            .catch(err => {
                 process.stdout.write(`err in deleting bucket ${err}`);
-            }
-            return done(err);
-        });
+                return done(err);
+            });
     });
 
     it('should successfully put object tags', function testFn(done) {
@@ -96,21 +91,17 @@ describe('GCP: PUT Object Tagging', () => {
                     `Expected success, got error ${err}`);
                 return next();
             }),
-            next => makeGcpRequest({
-                method: 'HEAD',
-                bucket: bucketName,
-                objectKey: this.test.key,
-                authCredentials: config.credentials,
-                headers: {
-                    'x-goog-generation': this.test.versionId,
-                },
+            next => gcpClient.headObject({
+                Bucket: bucketName,
+                Key: this.test.key,
+                VersionId: this.test.versionId,
             }, (err, res) => {
                 if (err) {
                     process.stdout.write(`err in retrieving object ${err}`);
                     return next(err);
                 }
-                const toCompare =
-                    res.headers[`${gcpTagPrefix}${this.test.specialKey}`];
+                const metaKey = `${gcpTaggingPrefix}${this.test.specialKey}`;
+                const toCompare = res.Metadata[metaKey];
                 assert.strictEqual(toCompare, this.test.specialKey);
                 return next();
             }),

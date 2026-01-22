@@ -3,20 +3,22 @@ const async = require('async');
 const arsenal = require('arsenal');
 const { ListObjectsCommand } = require('@aws-sdk/client-s3');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { gcpRequestRetry, setBucketClass, genUniqID } =
+const { genUniqID } =
     require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+} = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
 const bucketNames = {
     main: {
         Name: `somebucket-${genUniqID()}`,
-        Type: 'MULTI_REGIONAL',
     },
     mpu: {
         Name: `mpubucket-${genUniqID()}`,
-        Type: 'MULTI_REGIONAL',
     },
 };
 
@@ -46,23 +48,21 @@ describe('GCP: Upload Object', function testSuite() {
                     return callback(err);
                 });
         };
-        async.eachSeries(bucketNames,
-            (bucket, next) => gcpRequestRetry({
-                method: 'PUT',
-                bucket: bucket.Name,
-                authCredentials: config.credentials,
-                requestBody: setBucketClass(bucket.Type),
-            }, 0, err => {
-                if (err) {
-                    process.stdout.write(`err in creating bucket ${err}\n`);
-                }
-                return next(err);
-            }),
+        async.eachSeries(Object.values(bucketNames),
+            (bucket, next) => {
+                const cmd = new CreateBucketCommand({ Bucket: bucket.Name });
+                gcpClient.send(cmd)
+                    .then(() => next())
+                    .catch(err => {
+                        process.stdout.write(`err in creating bucket ${err}\n`);
+                        return next(err);
+                    });
+            },
         err => done(err));
     });
 
     after(done => {
-        async.eachSeries(bucketNames,
+        async.eachSeries(Object.values(bucketNames),
             (bucket, next) => gcpClient.listObjects({
                 Bucket: bucket.Name,
             }, (err, res) => {
@@ -78,17 +78,16 @@ describe('GCP: Upload Object', function testSuite() {
                 }, err => {
                     assert.equal(err, null,
                         `Expected success, but got error ${err}`);
-                    gcpRequestRetry({
-                        method: 'DELETE',
-                        bucket: bucket.Name,
-                        authCredentials: config.credentials,
-                    }, 0, err => {
-                        if (err) {
-                            process.stdout.write(
-                                `err in deleting bucket ${err}\n`);
-                        }
-                        return next(err);
-                    });
+                    const cmd = new DeleteBucketCommand({ Bucket: bucket.Name });
+                    gcpClient.send(cmd)
+                        .then(() => next())
+                        .catch(error => {
+                            if (error) {
+                                process.stdout.write(
+                                    `err in deleting bucket ${error}\n`);
+                            }
+                            return next(error);
+                        });
                 });
             }),
         err => done(err));

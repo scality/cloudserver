@@ -3,20 +3,22 @@ const async = require('async');
 const arsenal = require('arsenal');
 const { ListObjectsCommand } = require('@aws-sdk/client-s3');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { gcpRequestRetry, setBucketClass, gcpMpuSetup, genUniqID } =
+const { gcpMpuSetup, genUniqID } =
     require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+} = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
 const bucketNames = {
     main: {
         Name: `somebucket-${genUniqID()}`,
-        Type: 'MULTI_REGIONAL',
     },
     mpu: {
         Name: `mpubucket-${genUniqID()}`,
-        Type: 'MULTI_REGIONAL',
     },
 };
 const numParts = 10;
@@ -54,23 +56,37 @@ describe('GCP: Abort MPU', function testSuite() {
                     return callback(err);
                 });
         };
-        async.eachSeries(bucketNames,
-            (bucket, next) => gcpRequestRetry({
-                method: 'PUT',
-                bucket: bucket.Name,
-                authCredentials: config.credentials,
-                requestBody: setBucketClass(bucket.Type),
-            }, 0, err => {
-                if (err) {
-                    process.stdout.write(`err in creating bucket ${err}\n`);
+
+        const maxAttempts = 3;
+        const buckets = Object.values(bucketNames);
+        const createBuckets = attempt => {
+            async.eachSeries(buckets,
+                (bucket, next) => {
+                    const cmd = new CreateBucketCommand({ Bucket: bucket.Name });
+                    gcpClient.send(cmd)
+                        .then(() => next())
+                        .catch(err => {
+                            process.stdout.write(
+                                `err in creating bucket (attempt ${attempt + 1}) ${err}\n`);
+                            return next(err);
+                        });
+                },
+            err => {
+                if (err && (err.name === 'SlowDown'
+                    || err.$metadata?.httpStatusCode === 429)
+                    && attempt < maxAttempts - 1) {
+                    const delay = Math.pow(2, attempt) * 1000;
+                    return setTimeout(() => createBuckets(attempt + 1), delay);
                 }
-                return next(err);
-            }),
-        done);
+                return done(err);
+            });
+        };
+
+        createBuckets(0);
     });
 
     after(done => {
-        async.eachSeries(bucketNames,
+        async.eachSeries(Object.values(bucketNames),
             (bucket, next) => gcpClient.listObjects({
                 Bucket: bucket.Name,
             }, (err, res) => {
@@ -86,17 +102,16 @@ describe('GCP: Abort MPU', function testSuite() {
                 }, err => {
                     assert.equal(err, null,
                         `Expected success, but got error ${err}`);
-                    gcpRequestRetry({
-                        method: 'DELETE',
-                        bucket: bucket.Name,
-                        authCredentials: config.credentials,
-                    }, 0, err => {
-                        if (err) {
-                            process.stdout.write(
-                                `err in deleting bucket ${err}\n`);
-                        }
-                        return next(err);
-                    });
+                    const cmd = new DeleteBucketCommand({ Bucket: bucket.Name });
+                    gcpClient.send(cmd)
+                        .then(() => next())
+                        .catch(error => {
+                            if (error) {
+                                process.stdout.write(
+                                    `err in deleting bucket ${error}\n`);
+                            }
+                            return next(error);
+                        });
                 });
             }),
         done);

@@ -2,37 +2,7 @@ const async = require('async');
 const assert = require('assert');
 const { v4: uuidv4 } = require('uuid');
 
-const { makeGcpRequest } = require('./makeRequest');
-
 const genUniqID = () => uuidv4().replace(/-/g, '');
-
-function gcpRequestRetry(params, retry, callback) {
-    const maxRetries = 4;
-    const timeout = Math.pow(2, retry) * 1000;
-    return setTimeout(makeGcpRequest, timeout, params, (err, res) => {
-        if (err) {
-            if (retry <= maxRetries && err.statusCode === 429) {
-                return gcpRequestRetry(params, retry + 1, callback);
-            }
-            return callback(err);
-        }
-        return callback(null, res);
-    });
-}
-
-function gcpClientRetry(fn, params, callback, retry = 0) {
-    const maxRetries = 4;
-    const timeout = Math.pow(2, retry) * 1000;
-    return setTimeout(fn, timeout, params, (err, res) => {
-        if (err) {
-            if (retry <= maxRetries && err.statusCode === 429) {
-                return gcpClientRetry(fn, params, callback, retry + 1);
-            }
-            return callback(err);
-        }
-        return callback(null, res);
-    });
-}
 
 // mpu test helpers
 function gcpMpuSetup(params, callback) {
@@ -142,8 +112,6 @@ function setBucketClass(storageClass) {
 }
 
 module.exports = {
-    gcpRequestRetry,
-    gcpClientRetry,
     setBucketClass,
     gcpMpuSetup,
     genPutTagObj,

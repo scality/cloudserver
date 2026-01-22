@@ -185,55 +185,6 @@ function makeS3Request(params, callback) {
     makeRequest(options, callback);
 }
 
-/** makeGcpRequest - utility function to generate a request against GCP
- * @param {object} params - params for making request
- * @param {string} params.method - request method
- * @param {object} [params.queryObj] - query fields and their string values
- * @param {object} [params.headers] - headers and their string values
- * @param {string} [params.bucket] - bucket name
- * @param {string} [params.objectKey] - object key name
- * @param {object} [params.authCredentials] - authentication credentials
- * @param {object} params.authCredentials.accessKey - access key
- * @param {object} params.authCredentials.secretKey - secret key
- * @param {string} [params.region] - request body contents
- * @param {function} callback - with error and response parameters
- * @return {undefined} - and call callback
- */
-async function makeGcpRequest(params, callback) {
-    const { method, queryObj, headers, bucket, objectKey, authCredentials,
-        requestBody, region } = params;
-    
-    let resolvedCredentials = authCredentials;
-    if (authCredentials && typeof authCredentials === 'function') {
-        try {
-           resolvedCredentials = await authCredentials();
-            resolvedCredentials = {
-                accessKey: resolvedCredentials.accessKeyId,
-                secretKey: resolvedCredentials.secretAccessKey,
-            };
-        } catch (err) {
-            return callback(err);
-        }
-    }
-    
-    const options = {
-        authCredentials: resolvedCredentials,
-        requestBody,
-        hostname: 'storage.googleapis.com',
-        port: 80,
-        method,
-        queryObj,
-        headers: headers || {},
-        path: bucket ? `/${bucket}/` : '/',
-        GCP: true,
-        region,
-    };
-    if (objectKey) {
-        options.path = `${options.path}${objectKey}`;
-    }
-    return makeRequest(options, callback);
-}
-
 /** makeBackbeatRequest - utility function to generate a request going
  * through backbeat route
  * @param {object} params - params for making request
@@ -270,6 +221,5 @@ function makeBackbeatRequest(params, callback) {
 module.exports = {
     makeRequest,
     makeS3Request,
-    makeGcpRequest,
     makeBackbeatRequest,
 };

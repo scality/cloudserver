@@ -15,14 +15,14 @@ const { getRealAwsConfig } =
 const credentialOne = 'gcpbackend';
 const verEnabledStatus = 'Enabled';
 const verDisabledStatus = 'Suspended';
+const bucketName = `somebucket-${genUniqID()}`;
 
 describe('GCP: PUT Bucket Versioning', () => {
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 
-    beforeEach(function beforeFn(done) {
-        this.currentTest.bucketName = `somebucket-${genUniqID()}`;
-        const cmd = new CreateBucketCommand({ Bucket: this.currentTest.bucketName });
+    before(done => {
+        const cmd = new CreateBucketCommand({ Bucket: bucketName });
         gcpClient.send(cmd)
             .then(() => done())
             .catch(err => {
@@ -31,8 +31,8 @@ describe('GCP: PUT Bucket Versioning', () => {
             });
     });
 
-    afterEach(function afterFn(done) {
-        const cmd = new DeleteBucketCommand({ Bucket: this.currentTest.bucketName });
+    after(done => {
+        const cmd = new DeleteBucketCommand({ Bucket: bucketName });
         gcpClient.send(cmd)
             .then(() => done())
             .catch(err => {
@@ -41,11 +41,10 @@ describe('GCP: PUT Bucket Versioning', () => {
             });
     });
 
-    it('should enable bucket versioning', function testFn(done) {
-        return async.waterfall([
+    it('should enable bucket versioning', done => async.waterfall([
             next => {
                 const cmd = new PutBucketVersioningCommand({
-                    Bucket: this.test.bucketName,
+                    Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',
                     },
@@ -56,7 +55,7 @@ describe('GCP: PUT Bucket Versioning', () => {
             },
             next => {
                 const cmd = new GetBucketVersioningCommand({
-                    Bucket: this.test.bucketName,
+                    Bucket: bucketName,
                 });
                 return gcpClient.send(cmd)
                     .then(res => {
@@ -65,14 +64,12 @@ describe('GCP: PUT Bucket Versioning', () => {
                     })
                     .catch(err => next(err));
             },
-        ], err => done(err));
-    });
+        ], err => done(err)));
 
-    it('should disable bucket versioning', function testFn(done) {
-        return async.waterfall([
+    it('should disable bucket versioning', done => async.waterfall([
             next => {
                 const cmd = new PutBucketVersioningCommand({
-                    Bucket: this.test.bucketName,
+                    Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Suspended',
                     },
@@ -83,7 +80,7 @@ describe('GCP: PUT Bucket Versioning', () => {
             },
             next => {
                 const cmd = new GetBucketVersioningCommand({
-                    Bucket: this.test.bucketName,
+                    Bucket: bucketName,
                 });
                 return gcpClient.send(cmd)
                     .then(res => {
@@ -92,6 +89,5 @@ describe('GCP: PUT Bucket Versioning', () => {
                     })
                     .catch(err => next(err));
             },
-        ], err => done(err));
-    });
+        ], err => done(err)));
 });
