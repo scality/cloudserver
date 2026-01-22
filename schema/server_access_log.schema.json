@@ -20,7 +20,7 @@
             "minimum": 0
         },
         "action": {
-            "description": "S3 API action name.",
+            "description": "S3 API action name or the Backbeat route.",
             "type": "string"
         },
         "accountName": {
