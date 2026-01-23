@@ -43,6 +43,7 @@ RUN apt-get update \
         jq \
         tini \
         python3-redis \
+        python3-requests \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
