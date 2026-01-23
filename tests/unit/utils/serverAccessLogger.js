@@ -11,6 +11,7 @@ const {
     getBytesSent,
     calculateTotalTime,
     calculateTurnAroundTime,
+    timestampToDateTime643,
 } = require('../../../lib/utilities/serverAccessLogger');
 
 describe('serverAccessLogger utility functions', () => {
@@ -679,6 +680,48 @@ describe('serverAccessLogger utility functions', () => {
         });
     });
 
+    describe('timestampToDateTime643', () => {
+        it('should convert milliseconds to seconds with 3 decimal places', () => {
+            const startTimeUnixMS = 1234567890000;
+            const result = timestampToDateTime643(startTimeUnixMS);
+            assert.strictEqual(result, '1234567890.000');
+        });
+
+        it('should handle timestamp with milliseconds', () => {
+            const startTimeUnixMS = 1234567890123;
+            const result = timestampToDateTime643(startTimeUnixMS);
+            assert.strictEqual(result, '1234567890.123');
+        });
+
+        it('should handle 0', () => {
+            const startTimeUnixMS = 0;
+            const result = timestampToDateTime643(startTimeUnixMS);
+            assert.strictEqual(result, '0.000');
+        });
+
+        it('should return null when startTimeUnixMS is null', () => {
+            const result = timestampToDateTime643(null);
+            assert.strictEqual(result, null);
+        });
+
+        it('should return null when startTimeUnixMS is undefined', () => {
+            const result = timestampToDateTime643(undefined);
+            assert.strictEqual(result, null);
+        });
+
+        it('should handle small timestamps', () => {
+            const startTimeUnixMS = 1000;
+            const result = timestampToDateTime643(startTimeUnixMS);
+            assert.strictEqual(result, '1.000');
+        });
+
+        it('should handle timestamps with partial milliseconds', () => {
+            const startTimeUnixMS = 1500;
+            const result = timestampToDateTime643(startTimeUnixMS);
+            assert.strictEqual(result, '1.500');
+        });
+    });
+
     describe('logServerAccess', () => {
         let mockLogger;
         let sandbox;
@@ -831,7 +874,7 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.elapsed_ms, 20.5);
 
             // Verify AWS access server log fields
-            assert.strictEqual(loggedData.startTime, 1234567890000);
+            assert.strictEqual(loggedData.startTime, '1234567890.000');
             assert.strictEqual(loggedData.requester, 'canonical123');
             assert.strictEqual(loggedData.operation, 'REST.GET.OBJECT');
             assert.strictEqual(loggedData.requestURI, 'GET /test-bucket/test-key.txt HTTP/1.1');
