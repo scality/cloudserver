@@ -1711,7 +1711,7 @@ describe('Server Access Logs - File Output', async () => {
                         },
                         {
                             ...commonProperties,
-                            operation: 'REST.POST.OBJECT',
+                            operation: 'REST.POST.MULTI_OBJECT_DELETE',
                             action: 'DeleteObjects',
                             httpMethod: 'POST',
                         }
