@@ -156,7 +156,7 @@ describe('Server Access Logs - File Output', async () => {
             'loggingTargetBucket': null, // DYNAMIC
             'loggingTargetPrefix': null, // DYNAMIC
             'awsAccessKeyID': 'accessKey1', // STATIC
-            'raftSessionID': null, // UNKNOWN
+            'raftSessionID': null, // UNKNOWN but available with scality backend, null otherwise
         };
 
         const operations = [
@@ -2649,6 +2649,16 @@ describe('Server Access Logs - File Output', async () => {
                         }
                         assert.strictEqual(logEntries[logEntryIdx][key], val,
                             `Invalid value for ${key}, action ${properties.action}`);
+                    }
+
+                    // Verify raftSessionID is present when using scality backend
+                    if (config.backends.metadata === 'scality') {
+                        assert.strictEqual('raftSessionID' in logEntries[logEntryIdx], true,
+                            `raftSessionID should be present for action ${properties.action}`);
+                        assert.strictEqual(typeof logEntries[logEntryIdx].raftSessionID, 'string',
+                            `raftSessionID should be a string for action ${properties.action}`);
+                        assert.strictEqual(logEntries[logEntryIdx].raftSessionID.length > 0, true,
+                            `raftSessionID should not be empty for action ${properties.action}`);
                     }
                 }
             });
