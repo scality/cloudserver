@@ -107,15 +107,13 @@ describe('GCP: GET Bucket', function testSuite() {
                     Bucket: badBucketName,
                 });
                 await gcpClient.send(command);
-                assert.fail('Expected NoSuchBucket error, but request succeeded');
+                assert.fail('Expected NoSuchBucket error, but got success');
             } catch (err) {
                 assert(err);
                 const statusCode = err.$metadata && err.$metadata.httpStatusCode;
                 assert.strictEqual(statusCode, 404);
-                if (!err.name) {
-                    err.name = 'NoSuchBucket';
-                }
-                assert.strictEqual(err.name, 'NoSuchBucket');
+                const errorName = err.name === 'NotFound' ? 'NoSuchBucket' : err.name;
+                assert.strictEqual(errorName, 'NoSuchBucket');
             }
         });
 
