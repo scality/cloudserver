@@ -113,7 +113,6 @@ describe('GCP: GET Bucket', function testSuite() {
                 const statusCode = err.$metadata && err.$metadata.httpStatusCode;
                 assert.strictEqual(statusCode, 404);
                 if (!err.name) {
-                    // eslint-disable-next-line no-param-reassign
                     err.name = 'NoSuchBucket';
                 }
                 assert.strictEqual(err.name, 'NoSuchBucket');
