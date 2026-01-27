@@ -1710,29 +1710,41 @@ describe('Server Access Logs - File Output', async () => {
                             objectKey: `${objectKey}2`,
                             httpMethod: 'PUT',
                         },
+                        // Objects are deleted concurrently, they might get logged in any order
+                        // for example errors or non-existent objects might get logged first
                         {
-                            ...commonProperties,
-                            operation: 'BATCH.DELETE.OBJECT',
-                            action: 'DeleteObject',
-                            objectKey,
-                            httpCode: 204,
-                            httpMethod: 'POST',
-                        },
-                        {
-                            ...commonProperties,
-                            operation: 'BATCH.DELETE.OBJECT',
-                            action: 'DeleteObject',
-                            objectKey: `${objectKey}2`,
-                            httpCode: 204,
-                            httpMethod: 'POST',
-                        },
-                        {
-                            ...commonProperties,
-                            operation: 'BATCH.DELETE.OBJECT',
-                            action: 'DeleteObject',
-                            objectKey: `${objectKey}-non-existent`,
-                            httpCode: 204,
-                            httpMethod: 'POST',
+                            unordered: [
+                                {
+                                    ...commonProperties,
+                                    operation: 'BATCH.DELETE.OBJECT',
+                                    action: 'DeleteObjects',
+                                    objectKey,
+                                    httpCode: 204,
+                                    httpMethod: 'POST',
+                                    referer: null,
+                                    userAgent: null,
+                                },
+                                {
+                                    ...commonProperties,
+                                    operation: 'BATCH.DELETE.OBJECT',
+                                    action: 'DeleteObjects',
+                                    objectKey: `${objectKey}2`,
+                                    httpCode: 204,
+                                    httpMethod: 'POST',
+                                    referer: null,
+                                    userAgent: null,
+                                },
+                                {
+                                    ...commonProperties,
+                                    operation: 'BATCH.DELETE.OBJECT',
+                                    action: 'DeleteObjects',
+                                    objectKey: `${objectKey}-non-existent`,
+                                    httpCode: 204,
+                                    httpMethod: 'POST',
+                                    referer: null,
+                                    userAgent: null,
+                                },
+                            ],
                         },
                         {
                             ...commonProperties,
@@ -2679,13 +2691,46 @@ describe('Server Access Logs - File Output', async () => {
         for (const operation of operations) {
             it(`should log correct ${operation.methodName} operation with all required fields`, async () => {
                 await operation.method();
-                const logEntries = await waitForLogs(logFilePath, operation.expected.length,
+                // Count total expected logs, including unordered entries
+                let totalExpected = 0;
+                for (const exp of operation.expected) {
+                    totalExpected += exp.unordered ? exp.unordered.length : 1;
+                }
+                const logEntries = await waitForLogs(logFilePath, totalExpected,
                     TEST_CONFIG.MAX_LOG_WAIT_RETRIES, TEST_CONFIG.LOG_POLL_DELAY_MS);
-                assert.strictEqual(logEntries.length, operation.expected.length,
-                    `Expected ${operation.expected.length} log entries, got ${logEntries.length}`);
+                assert.strictEqual(logEntries.length, totalExpected,
+                    `Expected ${totalExpected} log entries, got ${logEntries.length}`);
 
+                let logIdx = 0;
+
+                // Validate entries (ordered or unordered)
                 for (let i = 0; i < operation.expected.length; i++) {
-                    validateLogEntry(logEntries[i], operation.expected[i]);
+                    const expected = operation.expected[i];
+
+                    if (expected.unordered) {
+                        // Handle unordered entries
+                        const unorderedLogs = logEntries.slice(logIdx, logIdx + expected.unordered.length);
+                        const remaining = [...expected.unordered];
+
+                        for (const logEntry of unorderedLogs) {
+                            const matchIdx = remaining.findIndex(exp => exp.objectKey === logEntry.objectKey);
+
+                            assert.notStrictEqual(matchIdx, -1,
+                                `Unexpected log entry with objectKey: ${logEntry.objectKey}`);
+
+                            validateLogEntry(logEntry, remaining[matchIdx]);
+                            remaining.splice(matchIdx, 1);
+                        }
+
+                        assert.strictEqual(remaining.length, 0,
+                            `Missing expected entries: ${JSON.stringify(remaining)}`);
+
+                        logIdx += expected.unordered.length;
+                    } else {
+                        // Handle ordered entry
+                        validateLogEntry(logEntries[logIdx], expected);
+                        logIdx++;
+                    }
                 }
             });
         }
