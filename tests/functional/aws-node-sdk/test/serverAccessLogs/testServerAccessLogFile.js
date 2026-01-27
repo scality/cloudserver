@@ -1669,7 +1669,7 @@ describe('Server Access Logs - File Output', async () => {
                 };
             })(),
             (() => {
-                // This operation tests deleting multiple objects.
+                // This operation tests deleting multiple objects including a non-existent one.
                 const method = async () => {
                     await s3.createBucket({ Bucket: bucketName }).promise();
                     await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' }).promise();
@@ -1679,7 +1679,8 @@ describe('Server Access Logs - File Output', async () => {
                         Delete: {
                             Objects: [
                                 { Key: objectKey },
-                                { Key: `${objectKey}2` }
+                                { Key: `${objectKey}2` },
+                                { Key: `${objectKey}-non-existent` }
                             ]
                         }
                     }).promise();
@@ -1711,9 +1712,34 @@ describe('Server Access Logs - File Output', async () => {
                         },
                         {
                             ...commonProperties,
+                            operation: 'BATCH.DELETE.OBJECT',
+                            action: 'DeleteObject',
+                            objectKey,
+                            httpCode: 204,
+                            httpMethod: 'POST',
+                        },
+                        {
+                            ...commonProperties,
+                            operation: 'BATCH.DELETE.OBJECT',
+                            action: 'DeleteObject',
+                            objectKey: `${objectKey}2`,
+                            httpCode: 204,
+                            httpMethod: 'POST',
+                        },
+                        {
+                            ...commonProperties,
+                            operation: 'BATCH.DELETE.OBJECT',
+                            action: 'DeleteObject',
+                            objectKey: `${objectKey}-non-existent`,
+                            httpCode: 204,
+                            httpMethod: 'POST',
+                        },
+                        {
+                            ...commonProperties,
                             operation: 'REST.POST.MULTI_OBJECT_DELETE',
                             action: 'DeleteObjects',
                             httpMethod: 'POST',
+                            objectKey: null,
                         }
                     ],
                 };
