@@ -2650,6 +2650,32 @@ describe('Server Access Logs - File Output', async () => {
             truncateLogFileIfExists(logFilePath);
         });
 
+        // Helper function to validate a log entry against expected properties
+        const validateLogEntry = (logEntry, properties) => {
+            const result = tv4.validateResult(logEntry, schema);
+            assert.strictEqual(result.valid, true,
+                `Log entry should match schema: ${JSON.stringify(result.error)}`);
+
+            for (const [key, val] of Object.entries(properties)) {
+                if (val === null) {
+                    assert.strictEqual(key in logEntry, false,
+                        `Field ${key} should be omitted when null, action ${properties.action}`);
+                } else {
+                    assert.strictEqual(logEntry[key], val,
+                        `Invalid value for ${key}, action ${properties.action}`);
+                }
+            }
+
+            if (config.backends.metadata === 'scality') {
+                assert.strictEqual('raftSessionID' in logEntry, true,
+                    `raftSessionID should be present for action ${properties.action}`);
+                assert.strictEqual(typeof logEntry.raftSessionID, 'string',
+                    `raftSessionID should be a string for action ${properties.action}`);
+                assert.strictEqual(logEntry.raftSessionID.length > 0, true,
+                    `raftSessionID should not be empty for action ${properties.action}`);
+            }
+        };
+
         for (const operation of operations) {
             it(`should log correct ${operation.methodName} operation with all required fields`, async () => {
                 await operation.method();
@@ -2658,34 +2684,8 @@ describe('Server Access Logs - File Output', async () => {
                 assert.strictEqual(logEntries.length, operation.expected.length,
                     `Expected ${operation.expected.length} log entries, got ${logEntries.length}`);
 
-                for (let logEntryIdx = 0, operationIdx = 0;
-                    operationIdx < operation.expected.length;
-                    logEntryIdx++, operationIdx++) {
-                    const result = tv4.validateResult(logEntries[logEntryIdx], schema);
-                    assert.strictEqual(result.valid, true,
-                        `Log entry should match schema: ${JSON.stringify(result.error)}`);
-
-                    const properties = operation.expected[operationIdx];
-                    for (const [key, val] of Object.entries(properties)) {
-                        if (val === null) {
-                            // Verify that null fields are omitted (not present in log)
-                            assert.strictEqual(key in logEntries[logEntryIdx], false,
-                                `Field ${key} should be omitted when null, action ${properties.action}`);
-                            continue;
-                        }
-                        assert.strictEqual(logEntries[logEntryIdx][key], val,
-                            `Invalid value for ${key}, action ${properties.action}`);
-                    }
-
-                    // Verify raftSessionID is present when using scality backend
-                    if (config.backends.metadata === 'scality') {
-                        assert.strictEqual('raftSessionID' in logEntries[logEntryIdx], true,
-                            `raftSessionID should be present for action ${properties.action}`);
-                        assert.strictEqual(typeof logEntries[logEntryIdx].raftSessionID, 'string',
-                            `raftSessionID should be a string for action ${properties.action}`);
-                        assert.strictEqual(logEntries[logEntryIdx].raftSessionID.length > 0, true,
-                            `raftSessionID should not be empty for action ${properties.action}`);
-                    }
+                for (let i = 0; i < operation.expected.length; i++) {
+                    validateLogEntry(logEntries[i], operation.expected[i]);
                 }
             });
         }
