@@ -3,6 +3,7 @@ const async = require('async');
 const arsenal = require('arsenal');
 const {
     ListObjectsCommand,
+    HeadBucketCommand,
     CreateBucketCommand,
     DeleteBucketCommand,
     PutObjectCommand,
@@ -20,35 +21,6 @@ const smallSize = 20;
 const bigSize = listingHardLimit + 1;
 const config = getRealAwsConfig(credentialOne);
 const gcpClient = new GCP(config);
-
-gcpClient.listObjects = (params, callback) => {
-    const command = new ListObjectsCommand(params);
-    return gcpClient.send(command)
-        .then(data => callback(null, data))
-        .catch(err => {
-            if (err.statusCode === undefined) {
-                // eslint-disable-next-line no-param-reassign
-                err.statusCode = err.$metadata.httpStatusCode;
-            }
-            return callback(err);
-        });
-};
-
-gcpClient.getBucket = (params, callback) =>
-    gcpClient.headBucket(params, (err, res) => {
-        if (err) {
-            if (err.statusCode === undefined) {
-                // eslint-disable-next-line no-param-reassign
-                err.statusCode = err.$metadata.httpStatusCode;
-            }
-            if (err.$metadata && err.$metadata.httpStatusCode === 404) {
-                // eslint-disable-next-line no-param-reassign
-                err.name = 'NoSuchBucket';
-            }
-            return callback(err);
-        }
-        return callback(null, res);
-    });
 
 function populateBucket(createdObjects, callback) {
     process.stdout.write(
@@ -128,26 +100,32 @@ describe('GCP: GET Bucket', function testSuite() {
     });
 
     describe('without existing bucket', () => {
-        it('should return 404 and NoSuchBucket', done => {
+        it('should return 404 and NoSuchBucket', async () => {
             const badBucketName = `nonexistingbucket-${genUniqID()}`;
-            gcpClient.getBucket({
-                Bucket: badBucketName,
-            }, err => {
+            try {
+                const command = new HeadBucketCommand({
+                    Bucket: badBucketName,
+                });
+                await gcpClient.send(command);
+                assert.fail('Expected NoSuchBucket error, but request succeeded');
+            } catch (err) {
                 assert(err);
-                assert.strictEqual(err.$metadata?.httpStatusCode, 404);
+                const statusCode = err.$metadata && err.$metadata.httpStatusCode;
+                assert.strictEqual(statusCode, 404);
+                if (!err.name) {
+                    // eslint-disable-next-line no-param-reassign
+                    err.name = 'NoSuchBucket';
+                }
                 assert.strictEqual(err.name, 'NoSuchBucket');
-                return done();
-            });
+            }
         });
 
-        it('should return 200', done => {
-            gcpClient.listObjects({
+        it('should return 200', async () => {
+            const command = new ListObjectsCommand({
                 Bucket: bucketName,
-            }, (err, res) => {
-                assert.equal(err, null, `Expected success, but got ${err}`);
-                assert.strictEqual(res.$metadata?.httpStatusCode, 200);
-                return done();
             });
+            const res = await gcpClient.send(command);
+            assert.strictEqual(res.$metadata?.httpStatusCode, 200);
         });
     });
 
@@ -160,27 +138,22 @@ describe('GCP: GET Bucket', function testSuite() {
 
             after(done => removeObjects(createdObjects, done));
 
-            it(`should list all ${smallSize} created objects`, done => {
-                gcpClient.listObjects({
+            it(`should list all ${smallSize} created objects`, async () => {
+                const command = new ListObjectsCommand({
                     Bucket: bucketName,
-                }, (err, res) => {
-                    assert.equal(err, null, `Expected success, but got ${err}`);
-                    assert.strictEqual(res.Contents.length, smallSize);
-                    return done();
                 });
+                const res = await gcpClient.send(command);
+                assert.strictEqual(res.Contents.length, smallSize);
             });
 
             describe('with MaxKeys at 10', () => {
-                it('should list MaxKeys number of objects', done => {
-                    gcpClient.listObjects({
+                it('should list MaxKeys number of objects', async () => {
+                    const command = new ListObjectsCommand({
                         Bucket: bucketName,
                         MaxKeys: 10,
-                    }, (err, res) => {
-                        assert.equal(err, null,
-                            `Expected success, but got ${err}`);
-                        assert.strictEqual(res.Contents.length, 10);
-                        return done();
                     });
+                    const res = await gcpClient.send(command);
+                    assert.strictEqual(res.Contents.length, 10);
                 });
             });
         });
@@ -193,15 +166,12 @@ describe('GCP: GET Bucket', function testSuite() {
 
             after(done => removeObjects(createdObjects, done));
 
-            it('should list at max 1000 of objects created', done => {
-                gcpClient.listObjects({
+            it('should list at max 1000 of objects created', async () => {
+                const command = new ListObjectsCommand({
                     Bucket: bucketName,
-                }, (err, res) => {
-                    assert.equal(err, null, `Expected success, but got ${err}`);
-                    assert.strictEqual(res.Contents.length,
-                        listingHardLimit);
-                    return done();
                 });
+                const res = await gcpClient.send(command);
+                assert.strictEqual(res.Contents.length, listingHardLimit);
             });
 
             describe('with MaxKeys at 1001', () => {
@@ -216,17 +186,13 @@ describe('GCP: GET Bucket', function testSuite() {
                 //
                 // Actual behavior: it returns a list longer than 1000 objects when
                 // max-keys is greater than 1000
-                it.skip('should list at max 1000, ignoring MaxKeys', done => {
-                    gcpClient.listObjects({
+                it.skip('should list at max 1000, ignoring MaxKeys', async () => {
+                    const command = new ListObjectsCommand({
                         Bucket: bucketName,
                         MaxKeys: 1001,
-                    }, (err, res) => {
-                        assert.equal(err, null,
-                            `Expected success, but got ${err}`);
-                        assert.strictEqual(res.Contents.length,
-                            listingHardLimit);
-                        return done();
                     });
+                    const res = await gcpClient.send(command);
+                    assert.strictEqual(res.Contents.length, listingHardLimit);
                 });
             });
         });
