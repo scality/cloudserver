@@ -2142,7 +2142,7 @@ describe('Server Access Logs - File Output', async () => {
                         },
                         {
                             ...commonProperties,
-                            operation: 'REST.PUT.COPY',
+                            operation: 'REST.COPY.OBJECT',
                             action: 'CopyObject',
                             objectKey: `${objectKey}-copy`,
                             httpMethod: 'PUT',
@@ -2377,7 +2377,7 @@ describe('Server Access Logs - File Output', async () => {
                         },
                         {
                             ...commonProperties,
-                            operation: 'REST.PUT.COPY',
+                            operation: 'REST.COPY.PART',
                             action: 'UploadPartCopy',
                             objectKey: `${objectKey}-mpu`,
                             httpMethod: 'PUT',
