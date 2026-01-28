@@ -1,7 +1,6 @@
 const assert = require('assert');
-const async = require('async');
 const crypto = require('crypto');
-const { parseString } = require('xml2js');
+const { parseStringPromise } = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
@@ -23,645 +22,471 @@ const body = 'hello world!';
 const postBody = Buffer.from(body, 'utf8');
 const expectedMD5 = 'fc3ff98e8c6a0d3087d515c0473f8677';
 
-describe('objectGetAttributes API', () => {
-  let testPutObjectRequest;
+// Promisify helper for functions with non-standard callback signatures
+const promisify = fn => (...args) => new Promise((resolve, reject) => {
+    fn(...args, (err, ...results) => {
+        if (err) {
+            reject(err);
+        } else {
+            resolve(results);
+        }
+    });
+});
 
-  const testPutBucketRequest = {
+const bucketPutAsync = promisify(bucketPut);
+const bucketPutVersioningAsync = promisify(bucketPutVersioning);
+const objectPutAsync = promisify(objectPut);
+const objectDeleteAsync = promisify(objectDelete);
+const objectGetAttributesAsync = promisify(objectGetAttributes);
+const initiateMultipartUploadAsync = promisify(initiateMultipartUpload);
+const objectPutPartAsync = promisify(objectPutPart);
+const completeMultipartUploadAsync = promisify(completeMultipartUpload);
+
+const testPutBucketRequest = {
     bucketName,
     namespace,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: `/${bucketName}`,
     actionImplicitDenies: false,
-  };
+};
 
-  beforeEach(() => {
-    cleanup();
-    testPutObjectRequest = new DummyRequest(
-      {
+const createGetAttributesRequest = (attributes, options = {}) => {
+    const key = options.objectKey || objectName;
+    return {
         bucketName,
         namespace,
-        objectKey: objectName,
+        objectKey: key,
         headers: {
-          'content-length': `${postBody.length}`,
+            'x-amz-object-attributes': attributes.join(','),
+            ...options.headers,
         },
-        parsedContentLength: postBody.length,
-        url: `/${bucketName}/${objectName}`,
-      },
-      postBody,
-    );
-  });
-
-  const createGetAttributesRequest = (attributes, options = {}) => ({
-    bucketName,
-    namespace,
-    objectKey: options.objectKey || objectName,
-    headers: {
-      'x-amz-object-attributes': attributes.join(','),
-      ...options.headers,
-    },
-    url: `/${bucketName}/${options.objectKey || objectName}`,
-    query: options.query || {},
-    actionImplicitDenies: false,
-  });
-
-  it('should fail because attributes header is missing', done => {
-    const testGetRequest = {
-      bucketName,
-      namespace,
-      objectKey: objectName,
-      headers: {},
-      url: `/${bucketName}/${objectName}`,
-      query: {},
-      actionImplicitDenies: false,
+        url: `/${bucketName}/${key}`,
+        query: options.query || {},
+        actionImplicitDenies: false,
     };
+};
 
-    bucketPut(authInfo, testPutBucketRequest, log, () => {
-      objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-        assert.ifError(err);
-        objectGetAttributes(authInfo, testGetRequest, log, err => {
-          assert.strictEqual(err.is.InvalidRequest, true);
-          assert.strictEqual(
-              err.description,
-              'The x-amz-object-attributes header specifying the attributes ' +
-              'to be retrieved is either missing or empty',
-          );
-          done();
+describe('objectGetAttributes API', () => {
+    beforeEach(async () => {
+        cleanup();
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'content-length': `${postBody.length}`,
+                },
+                parsedContentLength: postBody.length,
+                url: `/${bucketName}/${objectName}`,
+            },
+            postBody,
+        );
+        await bucketPutAsync(authInfo, testPutBucketRequest, log);
+        await objectPutAsync(authInfo, testPutObjectRequest, undefined, log);
+    });
+
+    it('should fail because attributes header is missing', async () => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+            query: {},
+            actionImplicitDenies: false,
+        };
+
+        try {
+            await objectGetAttributesAsync(authInfo, testGetRequest, log);
+            assert.fail('Expected error was not thrown');
+        } catch (err) {
+            assert.strictEqual(err.is.InvalidRequest, true);
+            assert.strictEqual(
+                err.description,
+                'The x-amz-object-attributes header specifying the attributes ' +
+                'to be retrieved is either missing or empty',
+            );
+        }
+    });
+
+    it('should fail because attributes header is empty', async () => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                'x-amz-object-attributes': '',
+            },
+            url: `/${bucketName}/${objectName}`,
+            query: {},
+            actionImplicitDenies: false,
+        };
+
+        try {
+            await objectGetAttributesAsync(authInfo, testGetRequest, log);
+            assert.fail('Expected error was not thrown');
+        } catch (err) {
+            assert.strictEqual(err.is.InvalidRequest, true);
+            assert.strictEqual(
+                err.description,
+                'The x-amz-object-attributes header specifying the attributes ' +
+                'to be retrieved is either missing or empty',
+            );
+        }
+    });
+
+    it('should fail because attribute name is invalid', async () => {
+        const testGetRequest = createGetAttributesRequest(['InvalidAttribute']);
+
+        try {
+            await objectGetAttributesAsync(authInfo, testGetRequest, log);
+            assert.fail('Expected error was not thrown');
+        } catch (err) {
+            assert.strictEqual(err.is.InvalidArgument, true);
+            assert.strictEqual(err.description, 'Invalid attribute name specified.');
+        }
+    });
+
+    it('should return NoSuchKey for non-existent object', async () => {
+        const testGetRequest = createGetAttributesRequest(['ETag'], {
+            objectKey: 'nonexistent',
         });
-      });
+
+        try {
+            await objectGetAttributesAsync(authInfo, testGetRequest, log);
+            assert.fail('Expected error was not thrown');
+        } catch (err) {
+            assert.strictEqual(err.is.NoSuchKey, true);
+            assert.strictEqual(err.description, 'The specified key does not exist.');
+        }
     });
-  });
 
-  it('should fail because attributes header is empty', done => {
-    const testGetRequest = {
-      bucketName,
-      namespace,
-      objectKey: objectName,
-      headers: {
-        'x-amz-object-attributes': '',
-      },
-      url: `/${bucketName}/${objectName}`,
-      query: {},
-      actionImplicitDenies: false,
-    };
-
-    bucketPut(authInfo, testPutBucketRequest, log, () => {
-      objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-        assert.ifError(err);
-        objectGetAttributes(authInfo, testGetRequest, log, err => {
-          assert.strictEqual(err.is.InvalidRequest, true);
-          assert.strictEqual(
-              err.description,
-              'The x-amz-object-attributes header specifying the attributes ' +
-              'to be retrieved is either missing or empty',
-          );
-          done();
+    it('should fail because of bad bucket owner', async () => {
+        const testGetRequest = createGetAttributesRequest(['ETag'], {
+            headers: {
+                'x-amz-expected-bucket-owner': 'wrongAccountId',
+            },
         });
-      });
-    });
-  });
 
-  it('should fail because attribute name is invalid', done => {
-    const testGetRequest = createGetAttributesRequest(['InvalidAttribute']);
-
-    bucketPut(authInfo, testPutBucketRequest, log, () => {
-      objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-        assert.ifError(err);
-        objectGetAttributes(authInfo, testGetRequest, log, err => {
-          assert.strictEqual(err.is.InvalidArgument, true);
-          assert.strictEqual(err.description, 'Invalid attribute name specified.');
-          done();
-        });
-      });
-    });
-  });
-
-  it('should return NoSuchKey for non-existent object', done => {
-    const testGetRequest = createGetAttributesRequest(['ETag'], {
-      objectKey: 'nonexistent',
+        try {
+            await objectGetAttributesAsync(authInfo, testGetRequest, log);
+            assert.fail('Expected error was not thrown');
+        } catch (err) {
+            assert.strictEqual(err.is.AccessDenied, true);
+            assert.strictEqual(err.description, 'Access Denied');
+        }
     });
 
-    bucketPut(authInfo, testPutBucketRequest, log, () => {
-      objectGetAttributes(authInfo, testGetRequest, log, err => {
-        assert.strictEqual(err.is.NoSuchKey, true);
-        assert.strictEqual(err.description, 'The specified key does not exist.');
-        done();
-      });
+    it('should return all attributes', async () => {
+        const testGetRequest = createGetAttributesRequest([
+            'ETag',
+            'Checksum',
+            'ObjectParts',
+            'StorageClass',
+            'ObjectSize',
+        ]);
+
+        const [xml, headers] = await objectGetAttributesAsync(authInfo, testGetRequest, log);
+        assert(xml, 'Response XML should be present');
+        assert(headers['Last-Modified'], 'Last-Modified header should be present');
+
+        const result = await parseStringPromise(xml);
+        const response = result.GetObjectAttributesResponse;
+
+        assert.strictEqual(response.ETag[0], expectedMD5);
+        assert.strictEqual(response.StorageClass[0], 'STANDARD');
+        assert.strictEqual(response.ObjectSize[0], String(body.length));
+        assert.deepStrictEqual(response.Checksum[0], '', 'Checksum should be empty');
+        assert.strictEqual(response.ObjectParts, undefined, "ObjectParts shouldn't be present for non-MPU object");
+        assert(headers['Last-Modified'], 'LastModified should be present');
     });
-  });
 
-  it('should fail because of bad bucket owner', done => {
-    const testGetRequest = createGetAttributesRequest(['ETag'], {
-      headers: {
-        'x-amz-expected-bucket-owner': 'wrongAccountId',
-      },
+    it('should return ETag', async () => {
+        const testGetRequest = createGetAttributesRequest(['ETag']);
+
+        const [xml] = await objectGetAttributesAsync(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        assert.strictEqual(result.GetObjectAttributesResponse.ETag[0], expectedMD5);
     });
 
-    bucketPut(authInfo, testPutBucketRequest, log, () => {
-      objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-        assert.ifError(err);
-        objectGetAttributes(authInfo, testGetRequest, log, err => {
-          assert.strictEqual(err.is.AccessDenied, true);
-          assert.strictEqual(err.description, 'Access Denied');
-          done();
-        });
-      });
+    it('should return Checksum', async () => {
+        const testGetRequest = createGetAttributesRequest(['Checksum']);
+
+        const [xml] = await objectGetAttributesAsync(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        assert.deepStrictEqual(result.GetObjectAttributesResponse.Checksum[0], '', 'Checksum should be empty');
     });
-  });
 
-  it('should return all attributes', done => {
-    const testGetRequest = createGetAttributesRequest([
-        'ETag',
-        'Checksum',
-        'ObjectParts',
-        'StorageClass',
-        'ObjectSize',
-    ]);
+    it("shouldn't return ObjectParts for non-MPU object", async () => {
+        const testGetRequest = createGetAttributesRequest(['ObjectParts']);
 
-    bucketPut(authInfo, testPutBucketRequest, log, () => {
-      objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-        assert.ifError(err);
-        objectGetAttributes(authInfo, testGetRequest, log, (err, xml, headers) => {
-          assert.ifError(err);
-          assert(xml, 'Response XML should be present');
-          assert(headers['Last-Modified'], 'Last-Modified header should be present');
-
-          parseString(xml, (err, result) => {
-            const response = result.GetObjectAttributesResponse;
-
-            assert.ifError(err);
-            assert.strictEqual(response.ETag[0], expectedMD5);
-            assert.strictEqual(response.StorageClass[0], 'STANDARD');
-            assert.strictEqual(response.ObjectSize[0], String(body.length));
-            assert(response.Checksum, 'Checksum should be present');
-            assert(!response.ObjectParts, 'ObjectParts should not be present for non-MPU object');
-            assert(headers['Last-Modified'], 'LastModified should be present');
-            done();
-          });
-        });
-      });
+        const [xml] = await objectGetAttributesAsync(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        assert.strictEqual(
+            result.GetObjectAttributesResponse.ObjectParts,
+            undefined,
+            "ObjectParts shouldn't be present",
+        );
     });
-  });
 
-  it('should return ETag', done => {
-    const testGetRequest = createGetAttributesRequest(['ETag']);
+    it('should return StorageClass', async () => {
+        const testGetRequest = createGetAttributesRequest(['StorageClass']);
 
-    bucketPut(authInfo, testPutBucketRequest, log, () => {
-      objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-        assert.ifError(err);
-        objectGetAttributes(authInfo, testGetRequest, log, (err, xml) => {
-          assert.ifError(err);
-          parseString(xml, (err, result) => {
-            assert.ifError(err);
-            assert.strictEqual(result.GetObjectAttributesResponse.ETag[0], expectedMD5);
-            done();
-          });
-        });
-      });
+        const [xml] = await objectGetAttributesAsync(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        assert.strictEqual(result.GetObjectAttributesResponse.StorageClass[0], 'STANDARD');
     });
-  });
 
-  it('should return Checksum', done => {
-    const testGetRequest = createGetAttributesRequest(['Checksum']);
+    it('should return ObjectSize', async () => {
+        const testGetRequest = createGetAttributesRequest(['ObjectSize']);
 
-    bucketPut(authInfo, testPutBucketRequest, log, () => {
-      objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-        assert.ifError(err);
-        objectGetAttributes(authInfo, testGetRequest, log, (err, xml) => {
-          assert.ifError(err);
-          parseString(xml, (err, result) => {
-            assert.ifError(err);
-            assert(result.GetObjectAttributesResponse.Checksum, 'Checksum should be present');
-            done();
-          });
-        });
-      });
+        const [xml] = await objectGetAttributesAsync(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        assert.strictEqual(result.GetObjectAttributesResponse.ObjectSize[0], String(body.length));
     });
-  });
 
-  it('should not return ObjectParts for non-MPU object', done => {
-    const testGetRequest = createGetAttributesRequest(['ObjectParts']);
+    it('should return LastModified in response headers', async () => {
+        const testGetRequest = createGetAttributesRequest(['ETag']);
 
-    bucketPut(authInfo, testPutBucketRequest, log, () => {
-      objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-        assert.ifError(err);
-        objectGetAttributes(authInfo, testGetRequest, log, (err, xml) => {
-          assert.ifError(err);
-          parseString(xml, (err, result) => {
-            assert.ifError(err);
-            assert(!result.GetObjectAttributesResponse.ObjectParts, 'ObjectParts should not be present');
-            done();
-          });
-        });
-      });
+        const [, headers] = await objectGetAttributesAsync(authInfo, testGetRequest, log);
+        assert(headers['Last-Modified'], 'Last-Modified should be present');
+        assert(!isNaN(new Date(headers['Last-Modified']).getTime()), 'Last-Modified should be a valid date');
     });
-  });
-
-  it('should return StorageClass', done => {
-    const testGetRequest = createGetAttributesRequest(['StorageClass']);
-
-    bucketPut(authInfo, testPutBucketRequest, log, () => {
-      objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-        assert.ifError(err);
-        objectGetAttributes(authInfo, testGetRequest, log, (err, xml) => {
-          assert.ifError(err);
-          parseString(xml, (err, result) => {
-            assert.ifError(err);
-            assert.strictEqual(result.GetObjectAttributesResponse.StorageClass[0], 'STANDARD');
-            done();
-          });
-        });
-      });
-    });
-  });
-
-  it('should return ObjectSize', done => {
-    const testGetRequest = createGetAttributesRequest(['ObjectSize']);
-
-    bucketPut(authInfo, testPutBucketRequest, log, () => {
-      objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-        assert.ifError(err);
-        objectGetAttributes(authInfo, testGetRequest, log, (err, xml) => {
-          assert.ifError(err);
-          parseString(xml, (err, result) => {
-            assert.ifError(err);
-            assert.strictEqual(result.GetObjectAttributesResponse.ObjectSize[0], String(body.length));
-            done();
-          });
-        });
-      });
-    });
-  });
-
-  it('should return LastModified in response headers', done => {
-    const testGetRequest = createGetAttributesRequest(['ETag']);
-
-    bucketPut(authInfo, testPutBucketRequest, log, () => {
-      objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-        assert.ifError(err);
-        objectGetAttributes(authInfo, testGetRequest, log, (err, _xml, headers) => {
-          assert.ifError(err);
-          assert(headers['Last-Modified'], 'Last-Modified should be present');
-          assert(!isNaN(new Date(headers['Last-Modified']).getTime()), 'Last-Modified should be a valid date');
-          done();
-        });
-      });
-    });
-  });
 });
 
 describe('objectGetAttributes API with multipart upload', () => {
-  const mpuObjectName = 'mpuObject';
-  const partCount = 2;
-  const partBody = Buffer.from('I am a part\n', 'utf8');
+    const partCount = 2;
+    const partBody = Buffer.from('I am a part\n', 'utf8');
 
-  const testPutBucketRequest = {
-    bucketName,
-    namespace,
-    headers: { host: `${bucketName}.s3.amazonaws.com` },
-    url: `/${bucketName}`,
-    actionImplicitDenies: false,
-  };
-
-  beforeEach(done => {
-    cleanup();
-    bucketPut(authInfo, testPutBucketRequest, log, done);
-  });
-
-  const createMpuObject = callback => {
-    const initiateRequest = {
-      bucketName,
-      namespace,
-      objectKey: mpuObjectName,
-      headers: { host: `${bucketName}.s3.amazonaws.com` },
-      url: `/${mpuObjectName}?uploads`,
-      actionImplicitDenies: false,
-    };
-
-    async.waterfall(
-      [
-        next => initiateMultipartUpload(authInfo, initiateRequest, log, next),
-        (result, _corsHeaders, next) => parseString(result, next),
-        (json, next) => {
-          const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
-          const partHash = crypto.createHash('md5').update(partBody).digest('hex');
-
-          const part1Request = new DummyRequest(
-            {
-              bucketName,
-              namespace,
-              objectKey: mpuObjectName,
-              headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
-                'content-length': '5242880',
-              },
-              parsedContentLength: 5242880,
-              url: `/${mpuObjectName}?partNumber=1&uploadId=${testUploadId}`,
-              query: {
-                partNumber: '1',
-                uploadId: testUploadId,
-              },
-              partHash,
-            },
-            partBody,
-          );
-
-          objectPutPart(authInfo, part1Request, undefined, log, () => {
-            next(null, testUploadId, partHash);
-          });
-        },
-        (testUploadId, partHash, next) => {
-          const part2Request = new DummyRequest(
-            {
-              bucketName,
-              namespace,
-              objectKey: mpuObjectName,
-              headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
-                'content-length': `${partBody.length}`,
-              },
-              parsedContentLength: partBody.length,
-              url: `/${mpuObjectName}?partNumber=2&uploadId=${testUploadId}`,
-              query: {
-                partNumber: '2',
-                uploadId: testUploadId,
-              },
-              partHash,
-            },
-            partBody,
-          );
-
-          objectPutPart(authInfo, part2Request, undefined, log, () => {
-            next(null, testUploadId, partHash);
-          });
-        },
-        (testUploadId, partHash, next) => {
-          const completeBody =
-            '<CompleteMultipartUpload>' +
-            '<Part>' +
-            '<PartNumber>1</PartNumber>' +
-            `<ETag>"${partHash}"</ETag>` +
-            '</Part>' +
-            '<Part>' +
-            '<PartNumber>2</PartNumber>' +
-            `<ETag>"${partHash}"</ETag>` +
-            '</Part>' +
-            '</CompleteMultipartUpload>';
-
-          const completeRequest = {
+    const createMpuObject = async () => {
+        const initiateRequest = {
             bucketName,
             namespace,
-            objectKey: mpuObjectName,
+            objectKey: objectName,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            url: `/${objectName}?uploads`,
+            actionImplicitDenies: false,
+        };
+
+        const [result] = await initiateMultipartUploadAsync(authInfo, initiateRequest, log);
+        const json = await parseStringPromise(result);
+        const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
+        const partHash = crypto.createHash('md5').update(partBody).digest('hex');
+
+        const completeParts = [];
+        for (let i = 1; i <= partCount; i++) {
+            const partRequest = new DummyRequest(
+                {
+                    bucketName,
+                    namespace,
+                    objectKey: objectName,
+                    headers: {
+                        host: `${bucketName}.s3.amazonaws.com`,
+                        'content-length': '5242880',
+                    },
+                    parsedContentLength: 5242880,
+                    url: `/${objectName}?partNumber=${i}&uploadId=${testUploadId}`,
+                    query: {
+                        partNumber: String(i),
+                        uploadId: testUploadId,
+                    },
+                    partHash,
+                },
+                partBody,
+            );
+            await objectPutPartAsync(authInfo, partRequest, undefined, log);
+            completeParts.push(`<Part><PartNumber>${i}</PartNumber><ETag>"${partHash}"</ETag></Part>`);
+        }
+
+        const completeBody =
+            `<CompleteMultipartUpload>${completeParts.join('')}</CompleteMultipartUpload>`;
+
+        const completeRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             parsedHost: 's3.amazonaws.com',
-            url: `/${mpuObjectName}?uploadId=${testUploadId}`,
+            url: `/${objectName}?uploadId=${testUploadId}`,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             query: { uploadId: testUploadId },
             post: completeBody,
             actionImplicitDenies: false,
-          };
+        };
 
-          completeMultipartUpload(authInfo, completeRequest, log, err => {
-            next(err);
-          });
-        },
-      ],
-      callback,
-    );
-  };
+        await completeMultipartUploadAsync(authInfo, completeRequest, log);
+    };
 
-  const createGetAttributesRequest = attributes => ({
-    bucketName,
-    namespace,
-    objectKey: mpuObjectName,
-    headers: {
-      'x-amz-object-attributes': attributes.join(','),
-    },
-    url: `/${bucketName}/${mpuObjectName}`,
-    query: {},
-    actionImplicitDenies: false,
-  });
-
-  it('should return TotalPartsCount for MPU object', done => {
-    createMpuObject(err => {
-      assert.ifError(err);
-      const testGetRequest = createGetAttributesRequest(['ObjectParts']);
-
-      objectGetAttributes(authInfo, testGetRequest, log, (err, xml) => {
-        assert.ifError(err);
-        parseString(xml, (err, result) => {
-          const response = result.GetObjectAttributesResponse;
-
-          assert.ifError(err);
-          assert(response.ObjectParts, 'ObjectParts should be present');
-          assert.strictEqual(response.ObjectParts[0].PartsCount[0], String(partCount));
-          done();
-        });
-      });
+    beforeEach(async () => {
+        cleanup();
+        await bucketPutAsync(authInfo, testPutBucketRequest, log);
+        await createMpuObject();
     });
-  });
 
-  it('should return TotalPartsCount along with other attributes for MPU object', done => {
-    createMpuObject(err => {
-      assert.ifError(err);
-      const testGetRequest = createGetAttributesRequest(['ETag', 'ObjectParts', 'ObjectSize', 'StorageClass']);
+    it('should return TotalPartsCount for MPU object', async () => {
+        const testGetRequest = createGetAttributesRequest(['ObjectParts']);
 
-      objectGetAttributes(authInfo, testGetRequest, log, (err, xml) => {
-        assert.ifError(err);
-        parseString(xml, (err, result) => {
-          const response = result.GetObjectAttributesResponse;
+        const [xml] = await objectGetAttributesAsync(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        const response = result.GetObjectAttributesResponse;
 
-          assert.ifError(err);
-          assert(response.ETag, 'ETag should be present');
-          assert(response.ETag[0].includes(`-${partCount}`), `ETag should indicate MPU with ${partCount} parts`);
-          assert(response.ObjectParts, 'ObjectParts should be present');
-          assert.strictEqual(response.ObjectParts[0].PartsCount[0], String(partCount));
-          assert(response.ObjectSize, 'ObjectSize should be present');
-          assert.strictEqual(response.StorageClass[0], 'STANDARD');
-          done();
-        });
-      });
+        assert(response.ObjectParts, 'ObjectParts should be present');
+        assert.strictEqual(response.ObjectParts[0].PartsCount[0], String(partCount));
     });
-  });
+
+    it('should return TotalPartsCount along with other attributes for MPU object', async () => {
+        const testGetRequest = createGetAttributesRequest(['ETag', 'ObjectParts', 'ObjectSize', 'StorageClass']);
+
+        const [xml] = await objectGetAttributesAsync(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        const response = result.GetObjectAttributesResponse;
+
+        assert(response.ETag, 'ETag should be present');
+        assert(response.ETag[0].includes(`-${partCount}`), `ETag should indicate MPU with ${partCount} parts`);
+        assert(response.ObjectParts, 'ObjectParts should be present');
+        assert.strictEqual(response.ObjectParts[0].PartsCount[0], String(partCount));
+        assert(response.ObjectSize, 'ObjectSize should be present');
+        assert.strictEqual(response.StorageClass[0], 'STANDARD');
+    });
 });
 
 describe('objectGetAttributes API with versioning', () => {
-  const enableVersioningRequest = versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
+    const enableVersioningRequest = versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
 
-  const testPutBucketRequest = {
-    bucketName,
-    namespace,
-    headers: { host: `${bucketName}.s3.amazonaws.com` },
-    url: `/${bucketName}`,
-    actionImplicitDenies: false,
-  };
-
-  beforeEach(done => {
-    cleanup();
-    async.series(
-      [
-          next => bucketPut(authInfo, testPutBucketRequest, log, next),
-          next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
-      ],
-      done,
-    );
-  });
-
-  const createGetAttributesRequest = (attributes, options = {}) => ({
-    bucketName,
-    namespace,
-    objectKey: options.objectKey || objectName,
-    headers: {
-      'x-amz-object-attributes': attributes.join(','),
-      ...options.headers,
-    },
-    url: `/${bucketName}/${options.objectKey || objectName}`,
-    query: options.query || {},
-    actionImplicitDenies: false,
-  });
-
-  it('should return NoSuchVersion for non-existent versionId', done => {
-    const testPutObjectRequest = new DummyRequest(
-      {
-        bucketName,
-        namespace,
-        objectKey: objectName,
-        headers: {
-          'content-length': `${postBody.length}`,
-        },
-        parsedContentLength: postBody.length,
-        url: `/${bucketName}/${objectName}`,
-      },
-      postBody,
-    );
-
-    const fakeVersionId = '111111111111111111111111111111111111111175636f7270';
-
-    objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-      assert.ifError(err);
-      const testGetRequest = createGetAttributesRequest(['ETag'], {
-        query: { versionId: fakeVersionId },
-      });
-
-      objectGetAttributes(authInfo, testGetRequest, log, err => {
-        assert.strictEqual(err.is.NoSuchVersion, true);
-        assert.strictEqual(
-            err.description,
-            'Indicates that the version ID specified in the request does not match an existing version.',
-        );
-        done();
-      });
+    beforeEach(async () => {
+        cleanup();
+        await bucketPutAsync(authInfo, testPutBucketRequest, log);
+        await bucketPutVersioningAsync(authInfo, enableVersioningRequest, log);
     });
-  });
 
-  it('should return MethodNotAllowed for delete marker', done => {
-    const testPutObjectRequest = new DummyRequest(
-      {
-        bucketName,
-        namespace,
-        objectKey: objectName,
-        headers: {
-          'content-length': `${postBody.length}`,
-        },
-        parsedContentLength: postBody.length,
-        url: `/${bucketName}/${objectName}`,
-      },
-      postBody,
-    );
+    it('should return NoSuchVersion for non-existent versionId', async () => {
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'content-length': `${postBody.length}`,
+                },
+                parsedContentLength: postBody.length,
+                url: `/${bucketName}/${objectName}`,
+            },
+            postBody,
+        );
 
-    const testDeleteRequest = {
-      bucketName,
-      namespace,
-      objectKey: objectName,
-      headers: {},
-      url: `/${bucketName}/${objectName}`,
-      actionImplicitDenies: false,
-    };
+        const fakeVersionId = '111111111111111111111111111111111111111175636f7270';
 
-    async.series(
-      [
-          next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-          next => objectDelete(authInfo, testDeleteRequest, log, next),
-      ],
-      err => {
-        assert.ifError(err);
+        await objectPutAsync(authInfo, testPutObjectRequest, undefined, log);
+        const testGetRequest = createGetAttributesRequest(['ETag'], {
+            query: { versionId: fakeVersionId },
+        });
+
+        try {
+            await objectGetAttributesAsync(authInfo, testGetRequest, log);
+            assert.fail('Expected error was not thrown');
+        } catch (err) {
+            assert.strictEqual(err.is.NoSuchVersion, true);
+            assert.strictEqual(
+                err.description,
+                'Indicates that the version ID specified in the request does not match an existing version.',
+            );
+        }
+    });
+
+    it('should return MethodNotAllowed for delete marker', async () => {
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'content-length': `${postBody.length}`,
+                },
+                parsedContentLength: postBody.length,
+                url: `/${bucketName}/${objectName}`,
+            },
+            postBody,
+        );
+
+        const testDeleteRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+            actionImplicitDenies: false,
+        };
+
+        await objectPutAsync(authInfo, testPutObjectRequest, undefined, log);
+        await objectDeleteAsync(authInfo, testDeleteRequest, log);
+
         const testGetRequest = createGetAttributesRequest(['ETag']);
 
-        objectGetAttributes(authInfo, testGetRequest, log, (err, _xml, headers) => {
-          assert.strictEqual(err.is.MethodNotAllowed, true);
-          assert.strictEqual(err.description, 'The specified method is not allowed against this resource.');
-          assert.strictEqual(headers['x-amz-delete-marker'], true);
-          done();
+        try {
+            await objectGetAttributesAsync(authInfo, testGetRequest, log);
+            assert.fail('Expected error was not thrown');
+        } catch (err) {
+            assert.strictEqual(err.is.MethodNotAllowed, true);
+            assert.strictEqual(err.description, 'The specified method is not allowed against this resource.');
+            assert.strictEqual(err.responseHeaders['x-amz-delete-marker'], true);
+        }
+    });
+
+    it('should return attributes for specific version', async () => {
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'content-length': `${postBody.length}`,
+                },
+                parsedContentLength: postBody.length,
+                url: `/${bucketName}/${objectName}`,
+            },
+            postBody,
+        );
+
+        const [resHeaders] = await objectPutAsync(authInfo, testPutObjectRequest, undefined, log);
+        const versionId = resHeaders['x-amz-version-id'];
+        assert(versionId, 'Version ID should be present');
+
+        const testGetRequest = createGetAttributesRequest(['ETag', 'ObjectSize'], {
+            query: { versionId },
         });
-      },
-    );
-  });
 
-  it('should return attributes for specific version', done => {
-    const testPutObjectRequest = new DummyRequest(
-      {
-        bucketName,
-        namespace,
-        objectKey: objectName,
-        headers: {
-          'content-length': `${postBody.length}`,
-        },
-        parsedContentLength: postBody.length,
-        url: `/${bucketName}/${objectName}`,
-      },
-      postBody,
-    );
-
-    objectPut(authInfo, testPutObjectRequest, undefined, log, (err, resHeaders) => {
-      assert.ifError(err);
-      const versionId = resHeaders['x-amz-version-id'];
-      assert(versionId, 'Version ID should be present');
-
-      const testGetRequest = createGetAttributesRequest(['ETag', 'ObjectSize'], {
-        query: { versionId },
-      });
-
-      objectGetAttributes(authInfo, testGetRequest, log, (err, xml, headers) => {
-        assert.ifError(err);
+        const [xml, headers] = await objectGetAttributesAsync(authInfo, testGetRequest, log);
         assert(headers['Last-Modified'], 'Last-Modified should be present');
 
-        parseString(xml, (err, result) => {
-          const response = result.GetObjectAttributesResponse;
+        const result = await parseStringPromise(xml);
+        const response = result.GetObjectAttributesResponse;
 
-          assert.ifError(err);
-          assert.strictEqual(response.ETag[0], expectedMD5);
-          assert.strictEqual(response.ObjectSize[0], String(body.length));
-          done();
-        });
-      });
+        assert.strictEqual(response.ETag[0], expectedMD5);
+        assert.strictEqual(response.ObjectSize[0], String(body.length));
     });
-  });
 
-  it('should return VersionId in response headers for versioned object', done => {
-    const testPutObjectRequest = new DummyRequest(
-      {
-        bucketName,
-        namespace,
-        objectKey: objectName,
-        headers: {
-          'content-length': `${postBody.length}`,
-        },
-        parsedContentLength: postBody.length,
-        url: `/${bucketName}/${objectName}`,
-      },
-      postBody,
-    );
+    it('should return VersionId in response headers for versioned object', async () => {
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'content-length': `${postBody.length}`,
+                },
+                parsedContentLength: postBody.length,
+                url: `/${bucketName}/${objectName}`,
+            },
+            postBody,
+        );
 
-    objectPut(authInfo, testPutObjectRequest, undefined, log, (err, resHeaders) => {
-      assert.ifError(err);
-      const versionId = resHeaders['x-amz-version-id'];
-      assert(versionId, 'Version ID should be present from PUT');
+        const [resHeaders] = await objectPutAsync(authInfo, testPutObjectRequest, undefined, log);
+        const versionId = resHeaders['x-amz-version-id'];
+        assert(versionId, 'Version ID should be present from PUT');
 
-      const testGetRequest = createGetAttributesRequest(['ETag']);
+        const testGetRequest = createGetAttributesRequest(['ETag']);
 
-      objectGetAttributes(authInfo, testGetRequest, log, (err, _xml, headers) => {
-        assert.ifError(err);
+        const [, headers] = await objectGetAttributesAsync(authInfo, testGetRequest, log);
         assert.strictEqual(headers['x-amz-version-id'], versionId);
-        done();
-      });
     });
-  });
 });
