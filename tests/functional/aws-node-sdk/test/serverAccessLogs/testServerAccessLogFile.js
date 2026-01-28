@@ -1542,7 +1542,6 @@ describe('Server Access Logs - File Output', async () => {
                             ...commonProperties,
                             operation: 'REST.PUT.PART',
                             action: 'UploadPart',
-                            bucketOwner: null,
                             objectKey,
                             httpMethod: 'PUT',
                         },
@@ -1654,7 +1653,6 @@ describe('Server Access Logs - File Output', async () => {
                             ...commonProperties,
                             operation: 'REST.PUT.PART',
                             action: 'UploadPart',
-                            bucketOwner: null,
                             objectKey,
                             httpMethod: 'PUT',
                         },
@@ -2306,7 +2304,6 @@ describe('Server Access Logs - File Output', async () => {
                             ...commonProperties,
                             operation: 'REST.PUT.PART',
                             action: 'UploadPart',
-                            bucketOwner: null,
                             objectKey,
                             httpMethod: 'PUT',
                         }
