@@ -43,7 +43,6 @@ describe('Test get object attributes with versioning', () => {
       })
       .promise();
 
-    // Use a properly formatted but non-existent version ID
     const fakeVersionId = '111111111111111111111111111111111111111175636f7270';
 
     try {
@@ -74,7 +73,6 @@ describe('Test get object attributes with versioning', () => {
       })
       .promise();
 
-    // Delete creates a delete marker
     await s3
       .deleteObject({
         Bucket: bucket,
@@ -82,7 +80,6 @@ describe('Test get object attributes with versioning', () => {
       })
       .promise();
 
-    // Request without versionId targets the delete marker
     try {
       await s3
         .getObjectAttributes({

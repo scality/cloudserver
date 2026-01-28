@@ -345,7 +345,6 @@ describe('objectGetAttributes API with multipart upload', () => {
           const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
           const partHash = crypto.createHash('md5').update(partBody).digest('hex');
 
-          // Upload first part (minimum 5MB for non-last part)
           const part1Request = new DummyRequest(
             {
               bucketName,
@@ -371,7 +370,6 @@ describe('objectGetAttributes API with multipart upload', () => {
           });
         },
         (testUploadId, partHash, next) => {
-          // Upload second part
           const part2Request = new DummyRequest(
             {
               bucketName,
@@ -397,7 +395,6 @@ describe('objectGetAttributes API with multipart upload', () => {
           });
         },
         (testUploadId, partHash, next) => {
-          // Complete the multipart upload
           const completeBody =
             '<CompleteMultipartUpload>' +
             '<Part>' +
@@ -536,7 +533,6 @@ describe('objectGetAttributes API with versioning', () => {
       postBody,
     );
 
-    // Use a properly formatted but non-existent version ID
     const fakeVersionId = '111111111111111111111111111111111111111175636f7270';
 
     objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
@@ -587,7 +583,6 @@ describe('objectGetAttributes API with versioning', () => {
       ],
       err => {
         assert.ifError(err);
-        // Request without versionId targets the delete marker
         const testGetRequest = createGetAttributesRequest(['ETag']);
 
         objectGetAttributes(authInfo, testGetRequest, log, (err, _xml, headers) => {

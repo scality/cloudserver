@@ -7,7 +7,7 @@ const key = 'testobject';
 const body = 'hello world!';
 const expectedMD5 = 'fc3ff98e8c6a0d3087d515c0473f8677';
 
-describe('Test get object attributes', () => {
+describe('objectGetAttributes', () => {
   let s3;
 
   before(() => {
@@ -25,7 +25,7 @@ describe('Test get object attributes', () => {
     await s3.deleteBucket({ Bucket: bucket }).promise();
   });
 
-  it('should fail because a bad bucket owner', async () => {
+  it('should fail with a wrong bucket owner header', async () => {
     try {
       await s3
         .getObjectAttributes({
@@ -105,8 +105,8 @@ describe('Test get object attributes', () => {
     assert.strictEqual(data.ETag, expectedMD5);
     assert.strictEqual(data.StorageClass, 'STANDARD');
     assert.strictEqual(data.ObjectSize, body.length);
-    assert(data.Checksum, 'Checksum should be present');
-    assert(!data.ObjectParts, "ObjectParts shouldn't be present for non-MPU object");
+    assert.deepStrictEqual(data.Checksum, {}, 'Checksum should be present');
+    assert.strictEqual(data.ObjectParts, undefined, "ObjectParts shouldn't be present for non-MPU object");
     assert(data.LastModified, 'LastModified should be present');
   });
 
@@ -131,10 +131,10 @@ describe('Test get object attributes', () => {
       })
       .promise();
 
-    assert(data.Checksum, 'Checksum should be present');
+    assert.deepStrictEqual(data.Checksum, {}, 'Checksum should be present');
   });
 
-  it("shouldn't return ObjectParts", async () => {
+  it("shouldn't return ObjectParts for non-MPU objects", async () => {
     const data = await s3
       .getObjectAttributes({
         Bucket: bucket,
@@ -143,8 +143,7 @@ describe('Test get object attributes', () => {
       })
       .promise();
 
-    // ObjectParts may be empty for non-MPU objects
-    assert(!data.ObjectParts, "ObjectParts shouldn't be present");
+    assert.strictEqual(data.ObjectParts, undefined, "ObjectParts shouldn't be present");
   });
 
   it('should return StorageClass', async () => {
@@ -196,10 +195,8 @@ describe('Test get object attributes with multipart upload', () => {
     const config = getConfig('default', { signatureVersion: 'v4' });
     s3 = new S3(config);
 
-    // Create bucket
     await s3.createBucket({ Bucket: bucket }).promise();
 
-    // Create multipart upload
     const createResult = await s3
       .createMultipartUpload({
         Bucket: bucket,
@@ -208,7 +205,6 @@ describe('Test get object attributes with multipart upload', () => {
       .promise();
     const uploadId = createResult.UploadId;
 
-    // Upload parts
     const partData = Buffer.alloc(partSize, 'a');
     const parts = [];
     for (let i = 1; i <= partCount; i++) {
@@ -224,7 +220,6 @@ describe('Test get object attributes with multipart upload', () => {
       parts.push({ PartNumber: i, ETag: uploadResult.ETag });
     }
 
-    // Complete multipart upload
     await s3
       .completeMultipartUpload({
         Bucket: bucket,
