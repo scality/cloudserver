@@ -57,8 +57,8 @@
             "minimum": 0
         },
         "elapsed_ms": {
-            "description": "Total duration of the request in milliseconds. The timer starts when the server first routes the request and stops when the request completes or is closed prematurely.",
-            "type": "number",
+            "description": "Total duration of the request in milliseconds. The timer starts when the server first routes the request and stops when the request completes or is closed prematurely. Null for BATCH.DELETE.OBJECT operations logged during request processing.",
+            "type": ["number", "null"],
             "minimum": 0
         },
         "startTime": {
@@ -74,8 +74,8 @@
             "type": "string"
         },
         "requestURI": {
-            "description": "AWS server access log 'Request URI' field. From AWS 'The Request-URI part of the HTTP request message.'.",
-            "type": "string"
+            "description": "AWS server access log 'Request URI' field. From AWS 'The Request-URI part of the HTTP request message.'. Null for BATCH.DELETE.OBJECT operations logged during request processing.",
+            "type": ["string", "null"]
         },
         "errorCode": {
             "description": "AWS server access log 'Error Code' field. From AWS 'The Amazon S3 Error responses , or - if no error occurred.'. We use null to signal no error.",
@@ -86,8 +86,8 @@
             "type": ["integer", "null"]
         },
         "totalTime": {
-            "description": "AWS server access log 'Total Time' field. From AWS 'The number of milliseconds that the request was in flight from the server's perspective. This value is measured from the time that your request is received to the time that the last byte of the response is sent. Measurements made from the client's perspective might be longer because of network latency.'.",
-            "type": "string"
+            "description": "AWS server access log 'Total Time' field. From AWS 'The number of milliseconds that the request was in flight from the server's perspective. This value is measured from the time that your request is received to the time that the last byte of the response is sent. Measurements made from the client's perspective might be longer because of network latency.'. Null for BATCH.DELETE.OBJECT operations logged during request processing.",
+            "type": ["string", "null"]
         },
         "turnAroundTime": {
             "description": "AWS server access log 'Turn Around Time' field. From AWS 'The number of milliseconds that Amazon S3 spent processing your request. This value is measured from the time that the last byte of your request was received until the time that the first byte of the response was sent.'.",
@@ -201,9 +201,6 @@
         "logFormatVersion",
         "httpMethod",
         "startTime",
-        "elapsed_ms",
-        "totalTime",
-        "requestURI",
         "hostHeader",
         "req_id",
         "httpCode",

@@ -156,7 +156,7 @@ describe('Server Access Logs - File Output', async () => {
             'loggingTargetBucket': null, // DYNAMIC
             'loggingTargetPrefix': null, // DYNAMIC
             'awsAccessKeyID': 'accessKey1', // STATIC
-            'raftSessionID': null, // UNKNOWN
+            'raftSessionID': null, // UNKNOWN but available with scality backend, null otherwise
         };
 
         const operations = [
@@ -1669,7 +1669,7 @@ describe('Server Access Logs - File Output', async () => {
                 };
             })(),
             (() => {
-                // This operation tests deleting multiple objects.
+                // This operation tests deleting multiple objects including a non-existent one.
                 const method = async () => {
                     await s3.createBucket({ Bucket: bucketName }).promise();
                     await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' }).promise();
@@ -1679,7 +1679,8 @@ describe('Server Access Logs - File Output', async () => {
                         Delete: {
                             Objects: [
                                 { Key: objectKey },
-                                { Key: `${objectKey}2` }
+                                { Key: `${objectKey}2` },
+                                { Key: `${objectKey}-non-existent` }
                             ]
                         }
                     }).promise();
@@ -1709,11 +1710,48 @@ describe('Server Access Logs - File Output', async () => {
                             objectKey: `${objectKey}2`,
                             httpMethod: 'PUT',
                         },
+                        // Objects are deleted concurrently, they might get logged in any order
+                        // for example errors or non-existent objects might get logged first
+                        {
+                            unordered: [
+                                {
+                                    ...commonProperties,
+                                    operation: 'BATCH.DELETE.OBJECT',
+                                    action: 'DeleteObjects',
+                                    objectKey,
+                                    httpCode: 204,
+                                    httpMethod: 'POST',
+                                    referer: null,
+                                    userAgent: null,
+                                },
+                                {
+                                    ...commonProperties,
+                                    operation: 'BATCH.DELETE.OBJECT',
+                                    action: 'DeleteObjects',
+                                    objectKey: `${objectKey}2`,
+                                    httpCode: 204,
+                                    httpMethod: 'POST',
+                                    referer: null,
+                                    userAgent: null,
+                                },
+                                {
+                                    ...commonProperties,
+                                    operation: 'BATCH.DELETE.OBJECT',
+                                    action: 'DeleteObjects',
+                                    objectKey: `${objectKey}-non-existent`,
+                                    httpCode: 204,
+                                    httpMethod: 'POST',
+                                    referer: null,
+                                    userAgent: null,
+                                },
+                            ],
+                        },
                         {
                             ...commonProperties,
-                            operation: 'REST.POST.OBJECT',
+                            operation: 'REST.POST.MULTI_OBJECT_DELETE',
                             action: 'DeleteObjects',
                             httpMethod: 'POST',
+                            objectKey: null,
                         }
                     ],
                 };
@@ -2624,31 +2662,74 @@ describe('Server Access Logs - File Output', async () => {
             truncateLogFileIfExists(logFilePath);
         });
 
+        // Helper function to validate a log entry against expected properties
+        const validateLogEntry = (logEntry, properties) => {
+            const result = tv4.validateResult(logEntry, schema);
+            assert.strictEqual(result.valid, true,
+                `Log entry should match schema: ${JSON.stringify(result.error)}`);
+
+            for (const [key, val] of Object.entries(properties)) {
+                if (val === null) {
+                    assert.strictEqual(key in logEntry, false,
+                        `Field ${key} should be omitted when null, action ${properties.action}`);
+                } else {
+                    assert.strictEqual(logEntry[key], val,
+                        `Invalid value for ${key}, action ${properties.action}`);
+                }
+            }
+
+            if (config.backends.metadata === 'scality') {
+                assert.strictEqual('raftSessionID' in logEntry, true,
+                    `raftSessionID should be present for action ${properties.action}`);
+                assert.strictEqual(typeof logEntry.raftSessionID, 'string',
+                    `raftSessionID should be a string for action ${properties.action}`);
+                assert.strictEqual(logEntry.raftSessionID.length > 0, true,
+                    `raftSessionID should not be empty for action ${properties.action}`);
+            }
+        };
+
         for (const operation of operations) {
             it(`should log correct ${operation.methodName} operation with all required fields`, async () => {
                 await operation.method();
-                const logEntries = await waitForLogs(logFilePath, operation.expected.length,
+                // Count total expected logs, including unordered entries
+                let totalExpected = 0;
+                for (const exp of operation.expected) {
+                    totalExpected += exp.unordered ? exp.unordered.length : 1;
+                }
+                const logEntries = await waitForLogs(logFilePath, totalExpected,
                     TEST_CONFIG.MAX_LOG_WAIT_RETRIES, TEST_CONFIG.LOG_POLL_DELAY_MS);
-                assert.strictEqual(logEntries.length, operation.expected.length,
-                    `Expected ${operation.expected.length} log entries, got ${logEntries.length}`);
+                assert.strictEqual(logEntries.length, totalExpected,
+                    `Expected ${totalExpected} log entries, got ${logEntries.length}`);
 
-                for (let logEntryIdx = 0, operationIdx = 0;
-                    operationIdx < operation.expected.length;
-                    logEntryIdx++, operationIdx++) {
-                    const result = tv4.validateResult(logEntries[logEntryIdx], schema);
-                    assert.strictEqual(result.valid, true,
-                        `Log entry should match schema: ${JSON.stringify(result.error)}`);
+                let logIdx = 0;
 
-                    const properties = operation.expected[operationIdx];
-                    for (const [key, val] of Object.entries(properties)) {
-                        if (val === null) {
-                            // Verify that null fields are omitted (not present in log)
-                            assert.strictEqual(key in logEntries[logEntryIdx], false,
-                                `Field ${key} should be omitted when null, action ${properties.action}`);
-                            continue;
+                // Validate entries (ordered or unordered)
+                for (let i = 0; i < operation.expected.length; i++) {
+                    const expected = operation.expected[i];
+
+                    if (expected.unordered) {
+                        // Handle unordered entries
+                        const unorderedLogs = logEntries.slice(logIdx, logIdx + expected.unordered.length);
+                        const remaining = [...expected.unordered];
+
+                        for (const logEntry of unorderedLogs) {
+                            const matchIdx = remaining.findIndex(exp => exp.objectKey === logEntry.objectKey);
+
+                            assert.notStrictEqual(matchIdx, -1,
+                                `Unexpected log entry with objectKey: ${logEntry.objectKey}`);
+
+                            validateLogEntry(logEntry, remaining[matchIdx]);
+                            remaining.splice(matchIdx, 1);
                         }
-                        assert.strictEqual(logEntries[logEntryIdx][key], val,
-                            `Invalid value for ${key}, action ${properties.action}`);
+
+                        assert.strictEqual(remaining.length, 0,
+                            `Missing expected entries: ${JSON.stringify(remaining)}`);
+
+                        logIdx += expected.unordered.length;
+                    } else {
+                        // Handle ordered entry
+                        validateLogEntry(logEntries[logIdx], expected);
+                        logIdx++;
                     }
                 }
             });
