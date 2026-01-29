@@ -2,10 +2,15 @@ const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
+const { genUniqID, gcpRetry } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutObjectCommand,
+    GetObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
 const bucketName = `somebucket-${genUniqID()}`;
@@ -17,45 +22,39 @@ describe('GCP: DELETE Object', function testSuite() {
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 
-    before(done => {
-        gcpRequestRetry({
-            method: 'PUT',
-            bucket: bucketName,
-            authCredentials: config.credentials,
-        }, 0, err => {
-            if (err) {
-                process.stdout.write(`err in creating bucket ${err}\n`);
-            }
-            return done(err);
-        });
+    before(async () => {
+        await gcpRetry(
+            gcpClient,
+            () => new CreateBucketCommand({ Bucket: bucketName }),
+        );
     });
 
     after(done => {
-        gcpRequestRetry({
-            method: 'DELETE',
-            bucket: bucketName,
-            authCredentials: config.credentials,
-        }, 0, err => {
-            if (err) {
-                process.stdout.write(`err in deleting bucket ${err}\n`);
-            }
-            return done(err);
-        });
+        gcpRetry(
+            gcpClient,
+            () => new DeleteBucketCommand({ Bucket: bucketName }),
+            null,
+            err => {
+                if (err) {
+                    process.stdout.write(`err in deleting bucket ${err}\n`);
+                }
+                return done(err);
+            },
+        );
     });
 
     describe('with existing object in bucket', () => {
         beforeEach(done => {
-            makeGcpRequest({
-                method: 'PUT',
-                bucket: bucketName,
-                objectKey,
-                authCredentials: config.credentials,
-            }, err => {
-                if (err) {
-                    process.stdout.write(`err in creating object ${err}\n`);
-                }
-                return done(err);
+            const cmd = new PutObjectCommand({
+                Bucket: bucketName,
+                Key: objectKey,
             });
+            gcpClient.send(cmd)
+                .then(() => done())
+                .catch(err => {
+                    process.stdout.write(`err in creating object ${err}\n`);
+                    return done(err);
+                });
         });
 
         it('should successfully delete object', done => {
@@ -68,17 +67,25 @@ describe('GCP: DELETE Object', function testSuite() {
                         `Expected success, got error ${err}`);
                     return next();
                 }),
-                next => makeGcpRequest({
-                    method: 'GET',
-                    bucket: bucketName,
-                    objectKey,
-                    authCredentials: config.credentials,
-                }, err => {
-                    assert(err);
-                    assert.strictEqual(err.statusCode, 404);
-                    assert.strictEqual(err.code, 'NoSuchKey');
-                    return next();
-                }),
+                next => {
+                    const cmd = new GetObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                    });
+                    gcpClient.send(cmd)
+                        .then(() => {
+                            // Should not succeed
+                            assert.fail('Expected NoSuchKey error');
+                        })
+                        .catch(err => {
+                            assert(err);
+                            assert.strictEqual(
+                                err.$metadata && err.$metadata.httpStatusCode,
+                                404);
+                            assert.strictEqual(err.name, 'NoSuchKey');
+                            return next();
+                        });
+                },
             ], err => done(err));
         });
     });

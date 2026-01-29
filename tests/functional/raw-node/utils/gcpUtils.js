@@ -1,37 +1,49 @@
 const async = require('async');
 const assert = require('assert');
+const { callbackify } = require('util');
+const { ListObjectsCommand } = require('@aws-sdk/client-s3');
 const { v4: uuidv4 } = require('uuid');
-
-const { makeGcpRequest } = require('./makeRequest');
 
 const genUniqID = () => uuidv4().replace(/-/g, '');
 
-function gcpRequestRetry(params, retry, callback) {
-    const maxRetries = 4;
-    const timeout = Math.pow(2, retry) * 1000;
-    return setTimeout(makeGcpRequest, timeout, params, (err, res) => {
-        if (err) {
-            if (retry <= maxRetries && err.statusCode === 429) {
-                return gcpRequestRetry(params, retry + 1, callback);
-            }
-            return callback(err);
-        }
-        return callback(null, res);
-    });
-}
+const defaultShouldRetry = err =>
+    err && (err.name === 'SlowDown'|| err.$metadata?.httpStatusCode === 429);
 
-function gcpClientRetry(fn, params, callback, retry = 0) {
-    const maxRetries = 4;
-    const timeout = Math.pow(2, retry) * 1000;
-    return setTimeout(fn, timeout, params, (err, res) => {
-        if (err) {
-            if (retry <= maxRetries && err.statusCode === 429) {
-                return gcpClientRetry(fn, params, callback, retry + 1);
+async function gcpRetry(gcpClient, makeCommand, retryOptions, cb) {
+    if (cb) {
+        return callbackify(() => gcpRetry(gcpClient, makeCommand,
+            retryOptions))(cb);
+    }
+
+    const {
+        maxAttempts = 3,
+        shouldRetry = defaultShouldRetry,
+        getDelayMs = attempt => Math.pow(2, attempt) * 1000,
+    } = retryOptions || {};
+
+    let lastError;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+            const cmd = typeof makeCommand === 'function' ?
+                makeCommand() : makeCommand;
+             
+            return await gcpClient.send(cmd);
+        } catch (err) {
+            lastError = err;
+            if (!shouldRetry(err, attempt) || attempt === maxAttempts - 1) {
+                throw err;
             }
-            return callback(err);
+            const delay = getDelayMs(attempt);
+            process.stdout.write(
+                'Retryable error from GCP, retrying in ' +
+                `${delay}ms (attempt ${attempt + 1}): ${err}\n`);
+             
+            await new Promise(resolve => setTimeout(resolve, delay));
         }
-        return callback(null, res);
-    });
+    }
+
+    throw lastError;
 }
 
 // mpu test helpers
@@ -141,13 +153,20 @@ function setBucketClass(storageClass) {
         '</CreateBucketConfiguration>';
 }
 
+function listBucketObjects(gcpClient, params, cb) {
+    const command = new ListObjectsCommand(params);
+    gcpClient.send(command)
+        .then(data => cb(null, data))
+        .catch(err => cb(err));
+}
+
 module.exports = {
-    gcpRequestRetry,
-    gcpClientRetry,
     setBucketClass,
     gcpMpuSetup,
     genPutTagObj,
     genGetTagObj,
     genDelTagObj,
     genUniqID,
+    gcpRetry,
+    listBucketObjects,
 };

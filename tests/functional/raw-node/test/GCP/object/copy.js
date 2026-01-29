@@ -2,10 +2,14 @@ const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
+const { genUniqID, gcpRetry } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
 const bucketName = `somebucket-${genUniqID()}`;
@@ -15,30 +19,25 @@ describe('GCP: COPY Object', function testSuite() {
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 
-    before(done => {
-        gcpRequestRetry({
-            method: 'PUT',
-            bucket: bucketName,
-            authCredentials: config.credentials,
-        }, 0, err => {
-            if (err) {
-                process.stdout.write(`err in creating bucket ${err}\n`);
-            }
-            return done(err);
-        });
+    before(async () => {
+        await gcpRetry(
+            gcpClient,
+            () => new CreateBucketCommand({ Bucket: bucketName }),
+        );
     });
 
     after(done => {
-        gcpRequestRetry({
-            method: 'DELETE',
-            bucket: bucketName,
-            authCredentials: config.credentials,
-        }, 0, err => {
-            if (err) {
-                process.stdout.write(`err in creating bucket ${err}\n`);
-            }
-            return done(err);
-        });
+        gcpRetry(
+            gcpClient,
+            () => new DeleteBucketCommand({ Bucket: bucketName }),
+            null,
+            err => {
+                if (err) {
+                    process.stdout.write(`err in deleting bucket ${err}\n`);
+                }
+                return done(err);
+            },
+        );
     });
 
     describe('without existing object in bucket', () => {
@@ -63,41 +62,38 @@ describe('GCP: COPY Object', function testSuite() {
             this.currentTest.key = `somekey-${genUniqID()}`;
             this.currentTest.copyKey = `copykey-${genUniqID()}`;
             this.currentTest.initValue = `${genUniqID()}`;
-            makeGcpRequest({
-                method: 'PUT',
-                bucket: bucketName,
-                objectKey: this.currentTest.copyKey,
-                headers: {
-                    'x-goog-meta-value': this.currentTest.initValue,
+            const cmd = new PutObjectCommand({
+                Bucket: bucketName,
+                Key: this.currentTest.copyKey,
+                Metadata: {
+                    value: this.currentTest.initValue,
                 },
-                authCredentials: config.credentials,
-            }, (err, res) => {
-                if (err) {
-                    process.stdout.write(`err in creating object ${err}\n`);
-                }
-                this.currentTest.contentHash = res.headers['x-goog-hash'];
-                return done(err);
             });
+            gcpClient.send(cmd)
+                .then(res => {
+                    this.currentTest.ETag = res.ETag;
+                    return done();
+                })
+                .catch(err => {
+                    process.stdout.write(`err in creating object ${err}\n`);
+                    return done(err);
+                });
         });
 
         afterEach(function afterFn(done) {
             async.parallel([
-                next => makeGcpRequest({
-                    method: 'DELETE',
-                    bucket: bucketName,
-                    objectKey: this.currentTest.key,
-                    authCredentials: config.credentials,
+                next => gcpClient.deleteObject({
+                    Bucket: bucketName,
+                    Key: this.currentTest.key,
                 }, err => {
                     if (err) {
                         process.stdout.write(`err in deleting object ${err}\n`);
                     }
                     return next(err);
                 }),
-                next => makeGcpRequest({
-                    method: 'DELETE',
-                    bucket: bucketName,
-                    objectKey: this.currentTest.copyKey,
-                    authCredentials: config.credentials,
+                next => gcpClient.deleteObject({
+                    Bucket: bucketName,
+                    Key: this.currentTest.copyKey,
                 }, err => {
                     if (err) {
                         process.stdout
@@ -125,20 +121,17 @@ describe('GCP: COPY Object', function testSuite() {
                         `Expected success, but got error ${err}`);
                     return next();
                 }),
-                next => makeGcpRequest({
-                    method: 'HEAD',
-                    bucket: bucketName,
-                    objectKey: this.test.key,
-                    authCredentials: config.credentials,
+                next => gcpClient.headObject({
+                    Bucket: bucketName,
+                    Key: this.test.key,
                 }, (err, res) => {
                     if (err) {
                         process.stdout
                             .write(`err in retrieving object ${err}\n`);
                         return next(err);
                     }
-                    assert.strictEqual(this.test.contentHash,
-                        res.headers['x-goog-hash']);
-                    assert.notStrictEqual(res.headers['x-goog-meta-value'],
+                    assert.strictEqual(res.ETag, this.test.ETag);
+                    assert.notStrictEqual(res.Metadata.value,
                         this.test.initValue);
                     return next();
                 }),
@@ -158,20 +151,17 @@ describe('GCP: COPY Object', function testSuite() {
                         `Expected success, but got error ${err}`);
                     return next();
                 }),
-                next => makeGcpRequest({
-                    method: 'HEAD',
-                    bucket: bucketName,
-                    objectKey: this.test.key,
-                    authCredentials: config.credentials,
+                next => gcpClient.headObject({
+                    Bucket: bucketName,
+                    Key: this.test.key,
                 }, (err, res) => {
                     if (err) {
                         process.stdout
                             .write(`err in retrieving object ${err}\n`);
                         return next(err);
                     }
-                    assert.strictEqual(this.test.contentHash,
-                        res.headers['x-goog-hash']);
-                    assert.strictEqual(res.headers['x-goog-meta-value'],
+                    assert.strictEqual(res.ETag, this.test.ETag);
+                    assert.strictEqual(res.Metadata.value,
                         this.test.initValue);
                     return next();
                 }),

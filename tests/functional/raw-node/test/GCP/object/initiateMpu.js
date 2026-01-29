@@ -2,21 +2,22 @@ const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry, setBucketClass, genUniqID } =
+const { genUniqID, gcpRetry } =
     require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+} = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
 const bucketNames = {
     main: {
         Name: `somebucket-${genUniqID()}`,
-        Type: 'MULTI_REGIONAL',
     },
     mpu: {
         Name: `mpubucket-${genUniqID()}`,
-        Type: 'MULTI_REGIONAL',
     },
 };
 
@@ -28,34 +29,37 @@ describe('GCP: Initiate MPU', function testSuite() {
     before(done => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
-        async.eachSeries(bucketNames,
-            (bucket, next) => gcpRequestRetry({
-                method: 'PUT',
-                bucket: bucket.Name,
-                authCredentials: config.credentials,
-                requestBody: setBucketClass(bucket.Type),
-            }, 0, err => {
-                if (err) {
-                    process.stdout.write(`err in creating bucket ${err}\n`);
-                }
-                return next(err);
-            }),
-        done);
+        const buckets = Object.values(bucketNames);
+        async.eachSeries(
+            buckets,
+            (bucket, next) => gcpRetry(
+                gcpClient,
+                () => new CreateBucketCommand({ Bucket: bucket.Name }),
+                null,
+                next,
+            ),
+            done,
+        );
     });
 
     after(done => {
-        async.eachSeries(bucketNames,
-            (bucket, next) => gcpRequestRetry({
-                method: 'DELETE',
-                bucket: bucket.Name,
-                authCredentials: config.credentials,
-            }, 0, err => {
-                if (err) {
-                    process.stdout.write(`err in deleting bucket ${err}\n`);
-                }
-                return next(err);
-            }),
-        done);
+        const buckets = Object.values(bucketNames);
+        async.eachSeries(
+            buckets,
+            (bucket, next) => gcpRetry(
+                gcpClient,
+                () => new DeleteBucketCommand({ Bucket: bucket.Name }),
+                null,
+                err => {
+                    if (err) {
+                        process.stdout
+                            .write(`err in deleting bucket ${err}\n`);
+                    }
+                    return next(err);
+                },
+            ),
+            done,
+        );
     });
 
     it('Should create a multipart upload object', done => {
@@ -75,19 +79,16 @@ describe('GCP: Initiate MPU', function testSuite() {
             }),
             (uploadId, next) => {
                 const mpuInitKey = `${keyName}-${uploadId}/init`;
-                makeGcpRequest({
-                    method: 'GET',
-                    bucket: bucketNames.mpu.Name,
-                    objectKey: mpuInitKey,
-                    authCredentials: config.credentials,
+                gcpClient.headObject({
+                    Bucket: bucketNames.mpu.Name,
+                    Key: mpuInitKey,
                 }, (err, res) => {
                     if (err) {
                         process.stdout
                             .write(`err in retrieving object ${err}`);
                         return next(err);
                     }
-                    assert.strictEqual(res.headers['x-goog-meta-special'],
-                        specialKey);
+                    assert.strictEqual(res.Metadata.special, specialKey);
                     return next(null, uploadId);
                 });
             },

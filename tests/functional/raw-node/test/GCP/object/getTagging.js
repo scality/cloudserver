@@ -1,65 +1,77 @@
 const assert = require('assert');
 const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry, genGetTagObj, genUniqID } =
+const { genGetTagObj, genUniqID, gcpRetry } =
     require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 const { gcpTaggingPrefix } = require('../../../../../../constants');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
 const bucketName = `somebucket-${genUniqID()}`;
-const gcpTagPrefix = `x-goog-meta-${gcpTaggingPrefix}`;
 const tagSize = 10;
 
 describe('GCP: GET Object Tagging', () => {
     let config;
     let gcpClient;
+    let bucketCreated = false;
 
-    before(done => {
+    before(async () => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
-        gcpRequestRetry({
-            method: 'PUT',
-            bucket: bucketName,
-            authCredentials: config.credentials,
-        }, 0, err => {
-            if (err) {
-                process.stdout.write(`err in creating bucket ${err}`);
-            }
-            return done(err);
-        });
+        await gcpRetry(
+            gcpClient,
+            () => new CreateBucketCommand({ Bucket: bucketName }),
+        );
+        bucketCreated = true;
     });
 
     beforeEach(function beforeFn(done) {
         this.currentTest.key = `somekey-${genUniqID()}`;
         this.currentTest.specialKey = `veryspecial-${genUniqID()}`;
-        const { tagHeader, expectedTagObj } =
-            genGetTagObj(tagSize, gcpTagPrefix);
+        const { expectedTagObj } =
+            genGetTagObj(tagSize, `x-goog-meta-${gcpTaggingPrefix}`);
         this.currentTest.tagObj = expectedTagObj;
-        makeGcpRequest({
-            method: 'PUT',
-            bucket: bucketName,
-            objectKey: this.currentTest.key,
-            authCredentials: config.credentials,
-            headers: tagHeader,
-        }, (err, res) => {
-            if (err) {
+
+        const putCmd = new PutObjectCommand({
+            Bucket: bucketName,
+            Key: this.currentTest.key,
+        });
+
+        gcpClient.send(putCmd)
+            .then(res => {
+                this.currentTest.versionId = res.VersionId;
+                gcpClient.putObjectTagging({
+                    Bucket: bucketName,
+                    Key: this.currentTest.key,
+                    VersionId: this.currentTest.versionId,
+                    Tagging: {
+                        TagSet: this.currentTest.tagObj,
+                    },
+                }, err => {
+                    if (err) {
+                        process.stdout
+                            .write(`err in setting object tags ${err}`);
+                        return done(err);
+                    }
+                    return done();
+                });
+            })
+            .catch(err => {
                 process.stdout.write(`err in creating object ${err}`);
                 return done(err);
-            }
-            this.currentTest.versionId = res.headers['x-goog-generation'];
-            return done();
-        });
+            });
     });
 
     afterEach(function afterFn(done) {
-        makeGcpRequest({
-            method: 'DELETE',
-            bucket: bucketName,
-            objectKey: this.currentTest.key,
-            authCredentials: config.credentials,
+        gcpClient.deleteObject({
+            Bucket: bucketName,
+            Key: this.currentTest.key,
         }, err => {
             if (err) {
                 process.stdout.write(`err in deleting object ${err}`);
@@ -69,16 +81,21 @@ describe('GCP: GET Object Tagging', () => {
     });
 
     after(done => {
-        gcpRequestRetry({
-            method: 'DELETE',
-            bucket: bucketName,
-            authCredentials: config.credentials,
-        }, 0, err => {
-            if (err) {
-                process.stdout.write(`err in deleting bucket ${err}`);
-            }
-            return done(err);
-        });
+        if (!bucketCreated) {
+            done();
+            return;
+        }
+        gcpRetry(
+            gcpClient,
+            () => new DeleteBucketCommand({ Bucket: bucketName }),
+            null,
+            err => {
+                if (err) {
+                    process.stdout.write(`err in deleting bucket ${err}`);
+                }
+                return done(err);
+            },
+        );
     });
 
     it('should successfully get object tags', function testFn(done) {
