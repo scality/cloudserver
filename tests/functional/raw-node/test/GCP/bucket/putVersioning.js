@@ -21,73 +21,41 @@ describe('GCP: PUT Bucket Versioning', () => {
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 
-    before(done => {
+    before(async () => {
         const cmd = new CreateBucketCommand({ Bucket: bucketName });
-        gcpClient.send(cmd)
-            .then(() => done())
-            .catch(err => {
-                process.stdout.write(`err in creating bucket ${err}\n`);
-                return done(err);
-            });
+        await gcpClient.send(cmd);
     });
 
-    after(done => {
+    after(async () => {
         const cmd = new DeleteBucketCommand({ Bucket: bucketName });
-        gcpClient.send(cmd)
-            .then(() => done())
-            .catch(err => {
-                process.stdout.write(`err in deleting bucket ${err}\n`);
-                return done(err);
-            });
+        await gcpClient.send(cmd);
     });
 
-    it('should enable bucket versioning', done => async.waterfall([
-            next => {
-                const cmd = new PutBucketVersioningCommand({
-                    Bucket: bucketName,
-                    VersioningConfiguration: {
-                        Status: 'Enabled',
-                    },
-                });
-                return gcpClient.send(cmd)
-                    .then(() => next())
-                    .catch(err => next(err));
+    it('should enable bucket versioning', async () => {
+        await gcpClient.send(new PutBucketVersioningCommand({
+            Bucket: bucketName,
+            VersioningConfiguration: {
+                Status: 'Enabled',
             },
-            next => {
-                const cmd = new GetBucketVersioningCommand({
-                    Bucket: bucketName,
-                });
-                return gcpClient.send(cmd)
-                    .then(res => {
-                        assert.strictEqual(res.Status, verEnabledStatus);
-                        return next();
-                    })
-                    .catch(err => next(err));
-            },
-        ], err => done(err)));
+        }));
 
-    it('should disable bucket versioning', done => async.waterfall([
-            next => {
-                const cmd = new PutBucketVersioningCommand({
-                    Bucket: bucketName,
-                    VersioningConfiguration: {
-                        Status: 'Suspended',
-                    },
-                });
-                return gcpClient.send(cmd)
-                    .then(() => next())
-                    .catch(err => next(err));
+        const res = await gcpClient.send(new GetBucketVersioningCommand({
+            Bucket: bucketName,
+        }));
+        assert.strictEqual(res.Status, verEnabledStatus);
+    });
+
+    it('should disable bucket versioning', async () => {
+        await gcpClient.send(new PutBucketVersioningCommand({
+            Bucket: bucketName,
+            VersioningConfiguration: {
+                Status: 'Suspended',
             },
-            next => {
-                const cmd = new GetBucketVersioningCommand({
-                    Bucket: bucketName,
-                });
-                return gcpClient.send(cmd)
-                    .then(res => {
-                        assert.strictEqual(res.Status, verDisabledStatus);
-                        return next();
-                    })
-                    .catch(err => next(err));
-            },
-        ], err => done(err)));
+        }));
+
+        const res = await gcpClient.send(new GetBucketVersioningCommand({
+            Bucket: bucketName,
+        }));
+        assert.strictEqual(res.Status, verDisabledStatus);
+    });
 });

@@ -16,62 +16,56 @@ describe('GCP: HEAD Bucket', () => {
     const gcpClient = new GCP(config);
 
     describe('without existing bucket', () => {
-        beforeEach(function beforeFn(done) {
+        beforeEach(function beforeFn() {
             this.currentTest.bucketName = `somebucket-${genUniqID()}`;
-            return done();
         });
 
-        it('should return 404', function testFn(done) {
-            gcpClient.headBucket({
-                Bucket: this.test.bucketName,
-            }, err => {
+        it('should return 404', async function testFn() {
+            const badBucketName = this.test.bucketName;
+            try {
+                await gcpClient.headBucket({ Bucket: badBucketName });
+                assert.fail('Expected 404 error, but got success');
+            } catch (err) {
                 assert(err);
                 assert.strictEqual(err.$metadata?.httpStatusCode, 404);
-                return done();
-            });
+            }
         });
     });
 
     describe('with existing bucket', () => {
-        beforeEach(function beforeFn(done) {
+        beforeEach(async function beforeFn() {
             this.currentTest.bucketName = `somebucket-${genUniqID()}`;
             process.stdout
                 .write(`Creating test bucket ${this.currentTest.bucketName}\n`);
             const cmd = new CreateBucketCommand({
                 Bucket: this.currentTest.bucketName,
             });
-            gcpClient.send(cmd)
-                .then(() => done())
-                .catch(err => done(err));
+            await gcpClient.send(cmd);
         });
 
-        afterEach(function afterFn(done) {
+        afterEach(async function afterFn() {
             const cmd = new DeleteBucketCommand({
                 Bucket: this.currentTest.bucketName,
             });
-            gcpClient.send(cmd)
-                .then(() => done())
-                .catch(err => {
-                    process.stdout
-                        .write(`err deleting bucket: ${err.code}\n`);
-                    return done(err);
-                });
+            try {
+                await gcpClient.send(cmd);
+            } catch (err) {
+                process.stdout
+                    .write(`err deleting bucket: ${err.code}\n`);
+            }
         });
 
-        it('should get bucket information', function testFn(done) {
-            gcpClient.headBucket({
+        it('should get bucket information', async function testFn() {
+            const res = await gcpClient.headBucket({
                 Bucket: this.test.bucketName,
-            }, (err, res) => {
-                assert.equal(err, null, `Expected success, but got ${err}`);
-                const { $metadata, ...data } = res;
-                assert.strictEqual($metadata.httpStatusCode, 200);
-                // Ensure MetaVersionId is present and non-empty
-                assert.ok(
-                    typeof data.MetaVersionId === 'string'
-                    && data.MetaVersionId.length > 0
-                );
-                return done();
             });
+            const { $metadata, ...data } = res;
+            assert.strictEqual($metadata.httpStatusCode, 200);
+            // Ensure MetaVersionId is present and non-empty
+            assert.ok(
+                typeof data.MetaVersionId === 'string'
+                && data.MetaVersionId.length > 0
+            );
         });
     });
 });

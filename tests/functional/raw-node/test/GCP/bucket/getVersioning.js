@@ -20,86 +20,42 @@ describe('GCP: GET Bucket Versioning', () => {
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 
-    beforeEach(function beforeFn(done) {
+    beforeEach(async function beforeFn() {
         this.currentTest.bucketName = `somebucket-${genUniqID()}`;
         const cmd = new CreateBucketCommand({
             Bucket: this.currentTest.bucketName,
         });
-        gcpClient.send(cmd)
-            .then(() => done())
-            .catch(err => {
-                process.stdout
-                    .write(`err in creating bucket ${err.code}\n`);
-                return done(err);
-            });
+        await gcpClient.send(cmd);
     });
 
-    afterEach(function afterFn(done) {
+    afterEach(async function afterFn() {
         const cmd = new DeleteBucketCommand({
             Bucket: this.currentTest.bucketName,
         });
-        gcpClient.send(cmd)
-            .then(() => done())
-            .catch(err => {
-                if (err) {
-                    process.stdout
-                        .write(`err in deleting bucket ${err.code}\n`);
-                }
-                return done(err);
-            });
+        await gcpClient.send(cmd);
     });
 
-    it('should verify bucket versioning is enabled', function testFn(done) {
-        return async.waterfall([
-            // Enable versioning using the official SDK client
-            next => {
-                const command = new PutBucketVersioningCommand({
-                    Bucket: this.test.bucketName,
-                    VersioningConfiguration: { Status: 'Enabled' },
-                });
-                return gcpClient.send(command)
-                    .then(() => next())
-                    .catch(err => next(err));
-            },
-            // Verify using GetBucketVersioningCommand
-            next => {
-                const command = new GetBucketVersioningCommand({
-                    Bucket: this.test.bucketName,
-                });
-                return gcpClient.send(command)
-                    .then(res => {
-                        assert.deepStrictEqual(res.Status, verEnabledObj);
-                        return next();
-                    })
-                    .catch(err => next(err));
-            },
-        ], err => done(err));
+    it('should verify bucket versioning is enabled', async function testFn() {
+        await gcpClient.send(new PutBucketVersioningCommand({
+            Bucket: this.test.bucketName,
+            VersioningConfiguration: { Status: 'Enabled' },
+        }));
+
+        const res = await gcpClient.send(new GetBucketVersioningCommand({
+            Bucket: this.test.bucketName,
+        }));
+        assert.deepStrictEqual(res.Status, verEnabledObj);
     });
 
-    it('should verify bucket versioning is disabled', function testFn(done) {
-        return async.waterfall([
-            // Disable versioning using the official SDK client
-            next => {
-                const command = new PutBucketVersioningCommand({
-                    Bucket: this.test.bucketName,
-                    VersioningConfiguration: { Status: 'Suspended' },
-                });
-                return gcpClient.send(command)
-                    .then(() => next())
-                    .catch(err => next(err));
-            },
-            // Verify using GetBucketVersioningCommand
-            next => {
-                const command = new GetBucketVersioningCommand({
-                    Bucket: this.test.bucketName,
-                });
-                return gcpClient.send(command)
-                    .then(res => {
-                        assert.deepStrictEqual(res.Status, verDisabledObj);
-                        return next();
-                    })
-                    .catch(err => next(err));
-            },
-        ], err => done(err));
+    it('should verify bucket versioning is disabled', async function testFn() {
+        await gcpClient.send(new PutBucketVersioningCommand({
+            Bucket: this.test.bucketName,
+            VersioningConfiguration: { Status: 'Suspended' },
+        }));
+
+        const res = await gcpClient.send(new GetBucketVersioningCommand({
+            Bucket: this.test.bucketName,
+        }));
+        assert.deepStrictEqual(res.Status, verDisabledObj);
     });
 });

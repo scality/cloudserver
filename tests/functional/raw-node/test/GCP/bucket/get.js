@@ -75,28 +75,18 @@ function removeObjects(createdObjects, callback) {
 describe('GCP: GET Bucket', function testSuite() {
     this.timeout(180000);
 
-    before(done => {
+    before(async () => {
         const command = new CreateBucketCommand({
             Bucket: bucketName,
         });
-        gcpClient.send(command)
-            .then(() => done())
-            .catch(err => {
-                process.stdout.write(`err in creating bucket ${err}\n`);
-                return done(err);
-            });
+        await gcpClient.send(command);
     });
 
-    after(done => {
+    after(async () => {
         const command = new DeleteBucketCommand({
             Bucket: bucketName,
         });
-        gcpClient.send(command)
-            .then(() => done())
-            .catch(err => {
-                process.stdout.write(`err in deleting bucket ${err}\n`);
-                return done(err);
-            });
+        await gcpClient.send(command);
     });
 
     describe('without existing bucket', () => {
