@@ -2,13 +2,14 @@ const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { gcpMpuSetup, genUniqID, gcpRetry, listBucketObjects } =
+const { gcpMpuSetup, genUniqID, gcpRetry } =
     require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 const {
     CreateBucketCommand,
     DeleteBucketCommand,
+    ListObjectsCommand,
 } = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
@@ -39,57 +40,42 @@ describe('GCP: Abort MPU', function testSuite() {
     let config;
     let gcpClient;
 
-    before(done => {
+    before(async () => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
 
         const buckets = Object.values(bucketNames);
-        async.eachSeries(
+        await async.eachSeries(
             buckets,
-            (bucket, next) => gcpRetry(
-                gcpClient,
-                () => new CreateBucketCommand({ Bucket: bucket.Name }),
-                null,
-                next,
-            ),
-            done,
+            async bucket => {
+                await gcpRetry(
+                    gcpClient,
+                    new CreateBucketCommand({ Bucket: bucket.Name }),
+                );
+            },
         );
     });
 
-    after(done => {
-        async.eachSeries(
-            Object.values(bucketNames),
-            (bucket, next) => listBucketObjects(
-                gcpClient,
-                { Bucket: bucket.Name },
-                (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got error ${err}`);
-                async.map(res.Contents, (object, moveOn) => {
-                    const deleteParams = {
+    after(async () => {
+        const buckets = Object.values(bucketNames);
+        await async.eachSeries(
+            buckets,
+            async bucket => {
+                const listCmd = new ListObjectsCommand({
+                    Bucket: bucket.Name,
+                });
+                const listRes = await gcpClient.send(listCmd);
+                await async.map(listRes.Contents || [], async object => {
+                    await gcpClient.deleteObject({
                         Bucket: bucket.Name,
                         Key: object.Key,
-                    };
-                    gcpClient.deleteObject(
-                        deleteParams, err => moveOn(err));
-                }, err => {
-                    assert.equal(err, null,
-                        `Expected success, but got error ${err}`);
-                    gcpRetry(
-                        gcpClient,
-                        () => new DeleteBucketCommand({ Bucket: bucket.Name }),
-                        null,
-                        error => {
-                            if (error) {
-                                process.stdout.write(
-                                    `err in deleting bucket ${error}\n`);
-                            }
-                            return next(error);
-                        },
-                    );
+                    });
                 });
-            }),
-            done,
+                await gcpRetry(
+                    gcpClient,
+                    new DeleteBucketCommand({ Bucket: bucket.Name }),
+                );
+            },
         );
     });
 

@@ -26,12 +26,12 @@ describe('GCP: GET Object Tagging', () => {
         gcpClient = new GCP(config);
         await gcpRetry(
             gcpClient,
-            () => new CreateBucketCommand({ Bucket: bucketName }),
+            new CreateBucketCommand({ Bucket: bucketName }),
         );
         bucketCreated = true;
     });
 
-    beforeEach(function beforeFn(done) {
+    beforeEach(async function beforeFn() {
         this.currentTest.key = `somekey-${genUniqID()}`;
         this.currentTest.specialKey = `veryspecial-${genUniqID()}`;
         const { expectedTagObj } =
@@ -43,29 +43,27 @@ describe('GCP: GET Object Tagging', () => {
             Key: this.currentTest.key,
         });
 
-        gcpClient.send(putCmd)
-            .then(res => {
-                this.currentTest.versionId = res.VersionId;
-                gcpClient.putObjectTagging({
-                    Bucket: bucketName,
-                    Key: this.currentTest.key,
-                    VersionId: this.currentTest.versionId,
-                    Tagging: {
-                        TagSet: this.currentTest.tagObj,
-                    },
-                }, err => {
-                    if (err) {
-                        process.stdout
-                            .write(`err in setting object tags ${err}`);
-                        return done(err);
-                    }
-                    return done();
-                });
-            })
-            .catch(err => {
-                process.stdout.write(`err in creating object ${err}`);
-                return done(err);
+        const res = await gcpClient.send(putCmd);
+        this.currentTest.versionId = res.VersionId;
+
+        await new Promise((resolve, reject) => {
+            gcpClient.putObjectTagging({
+                Bucket: bucketName,
+                Key: this.currentTest.key,
+                VersionId: this.currentTest.versionId,
+                Tagging: {
+                    TagSet: this.currentTest.tagObj,
+                },
+            }, err => {
+                if (err) {
+                    process.stdout
+                        .write(`err in setting object tags ${err}`);
+                    reject(err);
+                    return;
+                }
+                resolve();
             });
+        });
     });
 
     afterEach(function afterFn(done) {
@@ -80,21 +78,13 @@ describe('GCP: GET Object Tagging', () => {
         });
     });
 
-    after(done => {
+    after(async () => {
         if (!bucketCreated) {
-            done();
             return;
         }
-        gcpRetry(
+        await gcpRetry(
             gcpClient,
-            () => new DeleteBucketCommand({ Bucket: bucketName }),
-            null,
-            err => {
-                if (err) {
-                    process.stdout.write(`err in deleting bucket ${err}`);
-                }
-                return done(err);
-            },
+            new DeleteBucketCommand({ Bucket: bucketName }),
         );
     });
 

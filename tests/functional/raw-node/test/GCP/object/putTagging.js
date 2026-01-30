@@ -25,26 +25,19 @@ describe('GCP: PUT Object Tagging', () => {
         gcpClient = new GCP(config);
         await gcpRetry(
             gcpClient,
-            () => new CreateBucketCommand({ Bucket: bucketName }),
+            new CreateBucketCommand({ Bucket: bucketName }),
         );
     });
 
-    beforeEach(function beforeFn(done) {
+    beforeEach(async function beforeFn() {
         this.currentTest.key = `somekey-${genUniqID()}`;
         this.currentTest.specialKey = `veryspecial-${genUniqID()}`;
         const cmd = new PutObjectCommand({
             Bucket: bucketName,
             Key: this.currentTest.key,
         });
-        gcpClient.send(cmd)
-            .then(res => {
-                this.currentTest.versionId = res.VersionId;
-                return done();
-            })
-            .catch(err => {
-                process.stdout.write(`err in creating object ${err}`);
-                return done(err);
-            });
+        const res = await gcpClient.send(cmd);
+        this.currentTest.versionId = res.VersionId;
     });
 
     afterEach(function afterFn(done) {
@@ -59,17 +52,10 @@ describe('GCP: PUT Object Tagging', () => {
         });
     });
 
-    after(done => {
-        gcpRetry(
+    after(async () => {
+        await gcpRetry(
             gcpClient,
-            () => new DeleteBucketCommand({ Bucket: bucketName }),
-            null,
-            err => {
-                if (err) {
-                    process.stdout.write(`err in deleting bucket ${err}`);
-                }
-                return done(err);
-            },
+            new DeleteBucketCommand({ Bucket: bucketName }),
         );
     });
 

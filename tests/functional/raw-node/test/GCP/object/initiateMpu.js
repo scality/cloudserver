@@ -26,39 +26,31 @@ describe('GCP: Initiate MPU', function testSuite() {
     let config;
     let gcpClient;
 
-    before(done => {
+    before(async () => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
         const buckets = Object.values(bucketNames);
-        async.eachSeries(
+        await async.eachSeries(
             buckets,
-            (bucket, next) => gcpRetry(
-                gcpClient,
-                () => new CreateBucketCommand({ Bucket: bucket.Name }),
-                null,
-                next,
-            ),
-            done,
+            async bucket => {
+                await gcpRetry(
+                    gcpClient,
+                    new CreateBucketCommand({ Bucket: bucket.Name }),
+                );
+            },
         );
     });
 
-    after(done => {
+    after(async () => {
         const buckets = Object.values(bucketNames);
-        async.eachSeries(
+        await async.eachSeries(
             buckets,
-            (bucket, next) => gcpRetry(
-                gcpClient,
-                () => new DeleteBucketCommand({ Bucket: bucket.Name }),
-                null,
-                err => {
-                    if (err) {
-                        process.stdout
-                            .write(`err in deleting bucket ${err}\n`);
-                    }
-                    return next(err);
-                },
-            ),
-            done,
+            async bucket => {
+                await gcpRetry(
+                    gcpClient,
+                    new DeleteBucketCommand({ Bucket: bucket.Name }),
+                );
+            },
         );
     });
 

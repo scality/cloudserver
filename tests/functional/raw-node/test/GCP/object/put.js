@@ -21,18 +21,13 @@ describe('GCP: PUT Object', function testSuite() {
     before(async () => {
         await gcpRetry(
             gcpClient,
-            () => new CreateBucketCommand({ Bucket: bucketName }),
+            new CreateBucketCommand({ Bucket: bucketName }),
         );
     });
 
-    after(done => {
+    after(async () => {
         const cmd = new DeleteBucketCommand({ Bucket: bucketName });
-        gcpClient.send(cmd)
-            .then(() => done())
-            .catch(err => {
-                process.stdout.write(`err in deleting bucket ${err}\n`);
-                return done(err);
-            });
+        await gcpClient.send(cmd);
     });
 
     afterEach(function afterFn(done) {
@@ -52,21 +47,14 @@ describe('GCP: PUT Object', function testSuite() {
     });
 
     describe('with existing object in bucket', () => {
-        beforeEach(function beforeFn(done) {
+        beforeEach(async function beforeFn() {
             this.currentTest.key = `somekey-${genUniqID()}`;
             const cmd = new PutObjectCommand({
                 Bucket: bucketName,
                 Key: this.currentTest.key,
             });
-            gcpClient.send(cmd)
-                .then(res => {
-                    this.currentTest.uploadId = res.VersionId;
-                    return done();
-                })
-                .catch(err => {
-                    process.stdout.write(`err in putting object ${err}\n`);
-                    return done(err);
-                });
+            const res = await gcpClient.send(cmd);
+            this.currentTest.uploadId = res.VersionId;
         });
 
         it('should overwrite object', function testFn(done) {

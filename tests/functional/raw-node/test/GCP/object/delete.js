@@ -25,36 +25,24 @@ describe('GCP: DELETE Object', function testSuite() {
     before(async () => {
         await gcpRetry(
             gcpClient,
-            () => new CreateBucketCommand({ Bucket: bucketName }),
+            new CreateBucketCommand({ Bucket: bucketName }),
         );
     });
 
-    after(done => {
-        gcpRetry(
+    after(async () => {
+        await gcpRetry(
             gcpClient,
-            () => new DeleteBucketCommand({ Bucket: bucketName }),
-            null,
-            err => {
-                if (err) {
-                    process.stdout.write(`err in deleting bucket ${err}\n`);
-                }
-                return done(err);
-            },
+            new DeleteBucketCommand({ Bucket: bucketName }),
         );
     });
 
     describe('with existing object in bucket', () => {
-        beforeEach(done => {
+        beforeEach(async () => {
             const cmd = new PutObjectCommand({
                 Bucket: bucketName,
                 Key: objectKey,
             });
-            gcpClient.send(cmd)
-                .then(() => done())
-                .catch(err => {
-                    process.stdout.write(`err in creating object ${err}\n`);
-                    return done(err);
-                });
+            await gcpClient.send(cmd);
         });
 
         it('should successfully delete object', done => {
