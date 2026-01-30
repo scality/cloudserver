@@ -97,49 +97,40 @@ describe('GCP: Complete MPU', function testSuite() {
     let config;
     let gcpClient;
 
-    before(done => {
+    before(async () => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
         const buckets = Object.values(bucketNames);
-        async.eachSeries(
+        await async.eachSeries(
             buckets,
-            (bucket, next) => gcpRetry(
-                gcpClient,
-                () => new CreateBucketCommand({ Bucket: bucket.Name }),
-                null,
-                err => {
-                    if (err) {
-                        process.stdout.write(
-                            `err in creating bucket ${err}\n`);
-                    }
-                    return next(err);
-                },
-            ),
-            done,
+            async bucket => {
+                await gcpRetry(
+                    gcpClient,
+                    new CreateBucketCommand({ Bucket: bucket.Name }),
+                );
+            },
         );
     });
 
-    after(done => {
+    after(async () => {
         const buckets = Object.values(bucketNames);
-        async.eachSeries(
+        await async.eachSeries(
             buckets,
-            (bucket, next) => emptyBucket(gcpClient, bucket.Name, err => {
-                assert.equal(err, null,
-                    `Expected success, but got error ${err}`);
-                gcpRetry(
-                    gcpClient,
-                    () => new DeleteBucketCommand({ Bucket: bucket.Name }),
-                    null,
-                    error => {
-                        if (error) {
-                            process.stdout.write(
-                                `err in deleting bucket ${error}\n`);
+            async bucket => {
+                await new Promise((resolve, reject) => {
+                    emptyBucket(gcpClient, bucket.Name, err => {
+                        if (err) {
+                            reject(err);
+                            return;
                         }
-                        return next(error);
-                    },
+                        resolve();
+                    });
+                });
+                await gcpRetry(
+                    gcpClient,
+                    new DeleteBucketCommand({ Bucket: bucket.Name }),
                 );
-            }),
-            done,
+            },
         );
     });
 
