@@ -47,9 +47,18 @@ describe('GCP: HEAD Object', function testSuite() {
             if (!this.currentTest.key) {
                 return;
             }
-            await gcpClient.deleteObject({
-                Bucket: bucketName,
-                Key: this.currentTest.key,
+            await new Promise((resolve, reject) => {
+                gcpClient.deleteObject({
+                    Bucket: bucketName,
+                    Key: this.currentTest.key,
+                }, err => {
+                    if (err) {
+                        process.stdout.write(`err in deleting object ${err}\n`);
+                        reject(err);
+                        return;
+                    }
+                    resolve();
+                });
             });
         });
 
@@ -65,15 +74,17 @@ describe('GCP: HEAD Object', function testSuite() {
     });
 
     describe('without existing object in bucket', () => {
-        it('should return 404', done => {
+        it('should return 404', async () => {
             const badObjectkey = `nonexistingkey-${genUniqID()}`;
-            gcpClient.headObject({
-                Bucket: bucketName,
-                Key: badObjectkey,
-            }, err => {
-                assert(err);
-                assert.strictEqual(err.$metadata.httpStatusCode, 404);
-                return done();
+            await new Promise(resolve => {
+                gcpClient.headObject({
+                    Bucket: bucketName,
+                    Key: badObjectkey,
+                }, err => {
+                    assert(err);
+                    assert.strictEqual(err.$metadata.httpStatusCode, 404);
+                    resolve();
+                });
             });
         });
     });
