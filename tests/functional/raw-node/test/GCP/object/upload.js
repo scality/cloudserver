@@ -10,6 +10,7 @@ const {
     CreateBucketCommand,
     DeleteBucketCommand,
     ListObjectsCommand,
+    HeadBucketCommand,
 } = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
@@ -32,6 +33,21 @@ describe('GCP: Upload Object', function testSuite() {
     let config;
     let gcpClient;
 
+    function waitForBucketReady(bucketName) {
+        const cmd = new HeadBucketCommand({ Bucket: bucketName });
+        return gcpRetry(gcpClient, cmd, {
+            maxAttempts: 6,
+            shouldRetry: err => err && (
+                err.name === 'NoSuchBucket'
+                || err.name === 'NotFound'
+                || err.$metadata?.httpStatusCode === 404
+                || err.name === 'SlowDown'
+                || err.$metadata?.httpStatusCode === 429
+            ),
+            getDelayMs: attempt => (attempt + 1) * 1000,
+        });
+    }
+
     before(async () => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
@@ -43,6 +59,7 @@ describe('GCP: Upload Object', function testSuite() {
                     gcpClient,
                     new CreateBucketCommand({ Bucket: bucket.Name }),
                 );
+                await waitForBucketReady(bucket.Name);
             },
         );
     });
