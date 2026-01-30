@@ -46,15 +46,39 @@ async function gcpRetry(gcpClient, command, retryOptions, cb) {
 // mpu test helpers
 function gcpMpuSetup(params, callback) {
     const { gcpClient, bucketNames, key, partCount, partSize } = params;
-    return async.waterfall([
-        next => gcpClient.createMultipartUpload({
+    const maxCreateAttempts = 6;
+    const retryDelayMs = attempt => (attempt + 1) * 1000;
+    const isRetryableCreateError = err => err && (
+        err.name === 'NoSuchBucket'
+        || err.name === 'NotFound'
+        || err.$metadata?.httpStatusCode === 404
+        || err.name === 'SlowDown'
+        || err.$metadata?.httpStatusCode === 429
+    );
+
+    function createMultipartUploadWithRetry(attempt, cb) {
+        gcpClient.createMultipartUpload({
             Bucket: bucketNames.mpu.Name,
             Key: key,
         }, (err, res) => {
+            if (!err) {
+                return cb(null, res);
+            }
+            if (isRetryableCreateError(err) && attempt < maxCreateAttempts - 1) {
+                const delay = retryDelayMs(attempt);
+                setTimeout(() => createMultipartUploadWithRetry(attempt + 1, cb), delay);
+                return null;
+            }
+            return cb(err);
+        });
+    }
+
+    return async.waterfall([
+        next => createMultipartUploadWithRetry(0, (err, res) => {
             assert.equal(err, null,
                 `Expected success, but got error ${err}`);
             return next(null, res.UploadId);
-        }),
+            }),
         (uploadId, next) => {
             if (partCount <= 0) {
                 return next('SkipPutPart', { uploadId });
