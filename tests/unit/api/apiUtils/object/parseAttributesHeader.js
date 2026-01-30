@@ -171,6 +171,58 @@ describe('parseAttributesHeaders', () => {
     });
   });
 
+  describe('user metadata attributes (x-amz-meta-*)', () => {
+    it('should return array with single user metadata attribute', () => {
+      const headers = { 'x-amz-object-attributes': 'x-amz-meta-custom' };
+      const result = parseAttributesHeaders(headers);
+
+      assert(result instanceof Set);
+      assert.deepStrictEqual(result, new Set(['x-amz-meta-custom']));
+    });
+
+    it('should return array with multiple user metadata attributes', () => {
+      const headers = { 'x-amz-object-attributes': 'x-amz-meta-foo,x-amz-meta-bar' };
+      const result = parseAttributesHeaders(headers);
+
+      assert(result instanceof Set);
+      assert.deepStrictEqual(result, new Set(['x-amz-meta-foo', 'x-amz-meta-bar']));
+    });
+
+    it('should return array with mixed valid attributes and user metadata', () => {
+      const headers = { 'x-amz-object-attributes': 'ETag,x-amz-meta-custom,ObjectSize' };
+      const result = parseAttributesHeaders(headers);
+
+      assert(result instanceof Set);
+      assert.deepStrictEqual(result, new Set(['ETag', 'x-amz-meta-custom', 'ObjectSize']));
+    });
+
+    it('should allow user metadata with special characters in name', () => {
+      const headers = { 'x-amz-object-attributes': 'x-amz-meta-*' };
+      const result = parseAttributesHeaders(headers);
+
+      assert(result instanceof Set);
+      assert.deepStrictEqual(result, new Set(['x-amz-meta-*']));
+    });
+
+    it('should reject attributes without the required x-amz-meta- prefix', () => {
+      const invalidAttributes = ['x-amz-met', 'x-amz-other'];
+
+      invalidAttributes.forEach(attr => {
+        const headers = { 'x-amz-object-attributes': attr };
+
+        assert.throws(
+          () => parseAttributesHeaders(headers),
+          err => {
+            assert(err.is);
+            assert.strictEqual(err.is.InvalidArgument, true);
+            assert.strictEqual(err.description, 'Invalid attribute name specified.');
+            return true;
+          },
+        );
+      });
+    });
+  });
+
   describe('whitespace handling', () => {
     it('should trim whitespace around attribute names', () => {
       const headers = { 'x-amz-object-attributes': ' ETag , ObjectSize ' };

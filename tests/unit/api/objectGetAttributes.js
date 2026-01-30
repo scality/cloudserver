@@ -347,6 +347,166 @@ describe('objectGetAttributes API with multipart upload', () => {
     });
 });
 
+describe('objectGetAttributes API with user metadata', () => {
+    beforeEach(async () => {
+        cleanup();
+        await bucketPutAsync(authInfo, testPutBucketRequest, log);
+    });
+
+    const createObjectWithMetadata = async (metadata = {}) => {
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'content-length': `${postBody.length}`,
+                    ...metadata,
+                },
+                parsedContentLength: postBody.length,
+                url: `/${bucketName}/${objectName}`,
+            },
+            postBody,
+        );
+        await objectPutAsync(authInfo, testPutObjectRequest, undefined, log);
+    };
+
+    it('should return specific user metadata when requested', async () => {
+        await createObjectWithMetadata({
+            'x-amz-meta-custom-key': 'custom-value',
+            'x-amz-meta-another-key': 'another-value',
+        });
+
+        const testGetRequest = createGetAttributesRequest(['x-amz-meta-custom-key']);
+        const { xml } = await objectGetAttributes(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        const response = result.GetObjectAttributesResponse;
+
+        assert.strictEqual(response['x-amz-meta-custom-key'][0], 'custom-value');
+    });
+
+    it('should return multiple user metadata when requested', async () => {
+        await createObjectWithMetadata({
+            'x-amz-meta-foo': 'foo-value',
+            'x-amz-meta-bar': 'bar-value',
+            'x-amz-meta-baz': 'baz-value',
+        });
+
+        const testGetRequest = createGetAttributesRequest(['x-amz-meta-foo', 'x-amz-meta-bar']);
+        const { xml } = await objectGetAttributes(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        const response = result.GetObjectAttributesResponse;
+
+        assert.strictEqual(response['x-amz-meta-foo'][0], 'foo-value');
+        assert.strictEqual(response['x-amz-meta-bar'][0], 'bar-value');
+    });
+
+    it('should return all user metadata when x-amz-meta-* is requested', async () => {
+        await createObjectWithMetadata({
+            'x-amz-meta-key1': 'value1',
+            'x-amz-meta-key2': 'value2',
+            'x-amz-meta-key3': 'value3',
+        });
+
+        const testGetRequest = createGetAttributesRequest(['x-amz-meta-*']);
+        const { xml } = await objectGetAttributes(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        const response = result.GetObjectAttributesResponse;
+
+        assert.strictEqual(response['x-amz-meta-key1'][0], 'value1');
+        assert.strictEqual(response['x-amz-meta-key2'][0], 'value2');
+        assert.strictEqual(response['x-amz-meta-key3'][0], 'value3');
+        assert.strictEqual(response['x-amz-meta-*'], undefined, 'wildcard marker should not be in response');
+    });
+
+    it('should return empty response when object has no user metadata and x-amz-meta-* is requested', async () => {
+        await createObjectWithMetadata({});
+
+        const testGetRequest = createGetAttributesRequest(['x-amz-meta-*']);
+        const { xml } = await objectGetAttributes(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        const response = result.GetObjectAttributesResponse;
+
+        const metadataKeys = Object.keys(response).filter(k => k.startsWith('x-amz-meta-'));
+        assert.strictEqual(metadataKeys.length, 0);
+    });
+
+    it('should return empty response when requested metadata key does not exist', async () => {
+        await createObjectWithMetadata({
+            'x-amz-meta-existing': 'value',
+        });
+
+        const testGetRequest = createGetAttributesRequest(['x-amz-meta-nonexistent']);
+        const { xml } = await objectGetAttributes(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        const response = result.GetObjectAttributesResponse;
+
+        assert.strictEqual(response['x-amz-meta-nonexistent'], undefined);
+    });
+
+    it('should return user metadata along with standard attributes', async () => {
+        await createObjectWithMetadata({
+            'x-amz-meta-custom': 'custom-value',
+        });
+
+        const testGetRequest = createGetAttributesRequest(['ETag', 'x-amz-meta-custom', 'ObjectSize']);
+        const { xml } = await objectGetAttributes(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        const response = result.GetObjectAttributesResponse;
+
+        assert.strictEqual(response.ETag[0], expectedMD5);
+        assert.strictEqual(response.ObjectSize[0], String(body.length));
+        assert.strictEqual(response['x-amz-meta-custom'][0], 'custom-value');
+    });
+
+    it('should return all metadata when wildcard is combined with specific metadata key', async () => {
+        await createObjectWithMetadata({
+            'x-amz-meta-key1': 'value1',
+            'x-amz-meta-key2': 'value2',
+            'x-amz-meta-key3': 'value3',
+        });
+
+        const testGetRequest = createGetAttributesRequest(['x-amz-meta-*', 'x-amz-meta-key1']);
+        const { xml } = await objectGetAttributes(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        const response = result.GetObjectAttributesResponse;
+
+        assert.strictEqual(response['x-amz-meta-key1'][0], 'value1');
+        assert.strictEqual(response['x-amz-meta-key2'][0], 'value2');
+        assert.strictEqual(response['x-amz-meta-key3'][0], 'value3');
+    });
+
+    it('should handle duplicate wildcard requests without duplicating results', async () => {
+        await createObjectWithMetadata({
+            'x-amz-meta-key1': 'value1',
+            'x-amz-meta-key2': 'value2',
+        });
+
+        const testGetRequest = createGetAttributesRequest(['x-amz-meta-*', 'x-amz-meta-*']);
+        const { xml } = await objectGetAttributes(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        const response = result.GetObjectAttributesResponse;
+
+        assert.strictEqual(response['x-amz-meta-key1'][0], 'value1');
+        assert.strictEqual(response['x-amz-meta-key2'][0], 'value2');
+    });
+
+    it('should handle duplicate specific metadata requests without duplicating results', async () => {
+        await createObjectWithMetadata({
+            'x-amz-meta-key1': 'value1',
+            'x-amz-meta-key2': 'value2',
+        });
+
+        const testGetRequest = createGetAttributesRequest(['x-amz-meta-key1', 'x-amz-meta-key1']);
+        const { xml } = await objectGetAttributes(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        const response = result.GetObjectAttributesResponse;
+
+        assert.strictEqual(response['x-amz-meta-key1'][0], 'value1');
+        assert.strictEqual(response['x-amz-meta-key2'], undefined);
+    });
+});
+
 describe('objectGetAttributes API with versioning', () => {
     const enableVersioningRequest = versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
 
