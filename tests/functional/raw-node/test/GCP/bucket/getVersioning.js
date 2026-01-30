@@ -23,7 +23,7 @@ describe('GCP: GET Bucket Versioning', () => {
         this.currentTest.bucketName = `somebucket-${genUniqID()}`;
         await gcpRetry(
             gcpClient,
-            () => new CreateBucketCommand({
+            new CreateBucketCommand({
                 Bucket: this.currentTest.bucketName,
             }),
         );
@@ -32,7 +32,7 @@ describe('GCP: GET Bucket Versioning', () => {
     afterEach(async function afterFn() {
         await gcpRetry(
             gcpClient,
-            () => new DeleteBucketCommand({
+            new DeleteBucketCommand({
                 Bucket: this.currentTest.bucketName,
             }),
         );

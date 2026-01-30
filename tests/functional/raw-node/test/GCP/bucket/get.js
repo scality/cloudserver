@@ -28,14 +28,12 @@ function populateBucket(createdObjects, callback) {
     async.mapLimit(
         createdObjects,
         10,
-        (object, moveOn) => {
+        async object => {
             const command = new PutObjectCommand({
                 Bucket: bucketName,
                 Key: object,
             });
-            gcpClient.send(command)
-                .then(() => moveOn())
-                .catch(err => moveOn(err));
+            await gcpClient.send(command);
         },
         err => {
             if (err) {
@@ -53,14 +51,12 @@ function removeObjects(createdObjects, callback) {
     async.mapLimit(
         createdObjects,
         10,
-        (object, moveOn) => {
+        async object => {
             const command = new DeleteObjectCommand({
                 Bucket: bucketName,
                 Key: object,
             });
-            gcpClient.send(command)
-                .then(() => moveOn())
-                .catch(err => moveOn(err));
+            await gcpClient.send(command);
         },
         err => {
             if (err) {
@@ -78,18 +74,14 @@ describe('GCP: GET Bucket', function testSuite() {
     before(async () => {
         await gcpRetry(
             gcpClient,
-            () => new CreateBucketCommand({
-                Bucket: bucketName,
-            }),
+            new CreateBucketCommand({ Bucket: bucketName }),
         );
     });
 
     after(async () => {
         await gcpRetry(
             gcpClient,
-            () => new DeleteBucketCommand({
-                Bucket: bucketName,
-            }),
+            new DeleteBucketCommand({ Bucket: bucketName }),
         );
     });
 

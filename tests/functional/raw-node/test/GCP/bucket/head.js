@@ -42,7 +42,7 @@ describe('GCP: HEAD Bucket', () => {
                 .write(`Creating test bucket ${this.currentTest.bucketName}\n`);
             await gcpRetry(
                 gcpClient,
-                () => new CreateBucketCommand({
+                new CreateBucketCommand({
                     Bucket: this.currentTest.bucketName,
                 }),
             );
@@ -52,12 +52,7 @@ describe('GCP: HEAD Bucket', () => {
             const cmd = new DeleteBucketCommand({
                 Bucket: this.currentTest.bucketName,
             });
-            try {
-                await gcpClient.send(cmd);
-            } catch (err) {
-                process.stdout
-                    .write(`err deleting bucket: ${err.code}\n`);
-            }
+            await gcpClient.send(cmd);
         });
 
         it('should get bucket information', async function testFn() {

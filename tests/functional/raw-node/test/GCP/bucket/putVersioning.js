@@ -23,14 +23,14 @@ describe('GCP: PUT Bucket Versioning', () => {
     before(async () => {
         await gcpRetry(
             gcpClient,
-            () => new CreateBucketCommand({ Bucket: bucketName }),
+            new CreateBucketCommand({ Bucket: bucketName }),
         );
     });
 
     after(async () => {
         await gcpRetry(
             gcpClient,
-            () => new DeleteBucketCommand({ Bucket: bucketName }),
+            new DeleteBucketCommand({ Bucket: bucketName }),
         );
     });
 
