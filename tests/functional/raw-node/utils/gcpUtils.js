@@ -75,10 +75,11 @@ function gcpMpuSetup(params, callback) {
 
     return async.waterfall([
         next => createMultipartUploadWithRetry(0, (err, res) => {
-            assert.equal(err, null,
-                `Expected success, but got error ${err}`);
+            if (err) {
+                return next(err);
+            }
             return next(null, res.UploadId);
-            }),
+        }),
         (uploadId, next) => {
             if (partCount <= 0) {
                 return next('SkipPutPart', { uploadId });
