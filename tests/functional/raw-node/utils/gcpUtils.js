@@ -1,5 +1,4 @@
 const async = require('async');
-const assert = require('assert');
 const { callbackify } = require('util');
 const { v4: uuidv4 } = require('uuid');
 
