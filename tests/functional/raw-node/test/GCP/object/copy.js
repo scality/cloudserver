@@ -22,21 +22,14 @@ describe('GCP: COPY Object', function testSuite() {
     before(async () => {
         await gcpRetry(
             gcpClient,
-            () => new CreateBucketCommand({ Bucket: bucketName }),
+            new CreateBucketCommand({ Bucket: bucketName }),
         );
     });
 
-    after(done => {
-        gcpRetry(
+    after(async () => {
+        await gcpRetry(
             gcpClient,
-            () => new DeleteBucketCommand({ Bucket: bucketName }),
-            null,
-            err => {
-                if (err) {
-                    process.stdout.write(`err in deleting bucket ${err}\n`);
-                }
-                return done(err);
-            },
+            new DeleteBucketCommand({ Bucket: bucketName }),
         );
     });
 
