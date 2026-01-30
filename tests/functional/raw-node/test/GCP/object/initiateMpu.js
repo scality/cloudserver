@@ -71,46 +71,53 @@ describe('GCP: Initiate MPU', function testSuite() {
         );
     });
 
-    it('Should create a multipart upload object', done => {
+    it('Should create a multipart upload object', async () => {
         const keyName = `somekey-${genUniqID()}`;
         const specialKey = `special-${genUniqID()}`;
-        async.waterfall([
-            next => gcpClient.createMultipartUpload({
+
+        const createRes = await new Promise((resolve, reject) => {
+            gcpClient.createMultipartUpload({
                 Bucket: bucketNames.mpu.Name,
                 Key: keyName,
                 Metadata: {
                     special: specialKey,
                 },
             }, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
-                return next(null, res.UploadId);
-            }),
-            (uploadId, next) => {
-                const mpuInitKey = `${keyName}-${uploadId}/init`;
-                gcpClient.headObject({
-                    Bucket: bucketNames.mpu.Name,
-                    Key: mpuInitKey,
-                }, (err, res) => {
-                    if (err) {
-                        process.stdout
-                            .write(`err in retrieving object ${err}`);
-                        return next(err);
-                    }
-                    assert.strictEqual(res.Metadata.special, specialKey);
-                    return next(null, uploadId);
-                });
-            },
-            (uploadId, next) => gcpClient.abortMultipartUpload({
+                if (err) {
+                    return reject(err);
+                }
+                return resolve(res);
+            });
+        });
+
+        const mpuInitKey = `${keyName}-${createRes.UploadId}/init`;
+        const headRes = await new Promise((resolve, reject) => {
+            gcpClient.headObject({
+                Bucket: bucketNames.mpu.Name,
+                Key: mpuInitKey,
+            }, (err, res) => {
+                if (err) {
+                    process.stdout
+                        .write(`err in retrieving object ${err}`);
+                    return reject(err);
+                }
+                return resolve(res);
+            });
+        });
+        assert.strictEqual(headRes.Metadata.special, specialKey);
+
+        await new Promise((resolve, reject) => {
+            gcpClient.abortMultipartUpload({
                 Bucket: bucketNames.main.Name,
                 MPU: bucketNames.mpu.Name,
-                UploadId: uploadId,
+                UploadId: createRes.UploadId,
                 Key: keyName,
             }, err => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
-                return next();
-            }),
-        ], done);
+                if (err) {
+                    return reject(err);
+                }
+                return resolve();
+            });
+        });
     });
 });
