@@ -24,7 +24,7 @@ async function gcpRetry(gcpClient, command, retryOptions, cb) {
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
         try {
-            // eslint-disable-next-line no-await-in-loop
+             
             return await gcpClient.send(command);
         } catch (err) {
             lastError = err;
@@ -35,7 +35,7 @@ async function gcpRetry(gcpClient, command, retryOptions, cb) {
             process.stdout.write(
                 'Retryable error from GCP, retrying in ' +
                 `${delay}ms (attempt ${attempt + 1}): ${err}\n`);
-            // eslint-disable-next-line no-await-in-loop
+             
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
