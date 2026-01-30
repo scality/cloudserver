@@ -1,17 +1,16 @@
 const async = require('async');
 const assert = require('assert');
 const { callbackify } = require('util');
-const { ListObjectsCommand } = require('@aws-sdk/client-s3');
 const { v4: uuidv4 } = require('uuid');
 
 const genUniqID = () => uuidv4().replace(/-/g, '');
 
 const defaultShouldRetry = err =>
-    err && (err.name === 'SlowDown'|| err.$metadata?.httpStatusCode === 429);
+    err && (err.name === 'SlowDown' || err.$metadata?.httpStatusCode === 429);
 
-async function gcpRetry(gcpClient, makeCommand, retryOptions, cb) {
+async function gcpRetry(gcpClient, command, retryOptions, cb) {
     if (cb) {
-        return callbackify(() => gcpRetry(gcpClient, makeCommand,
+        return callbackify(() => gcpRetry(gcpClient, command,
             retryOptions))(cb);
     }
 
@@ -25,10 +24,8 @@ async function gcpRetry(gcpClient, makeCommand, retryOptions, cb) {
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
         try {
-            const cmd = typeof makeCommand === 'function' ?
-                makeCommand() : makeCommand;
-             
-            return await gcpClient.send(cmd);
+            // eslint-disable-next-line no-await-in-loop
+            return await gcpClient.send(command);
         } catch (err) {
             lastError = err;
             if (!shouldRetry(err, attempt) || attempt === maxAttempts - 1) {
@@ -38,7 +35,7 @@ async function gcpRetry(gcpClient, makeCommand, retryOptions, cb) {
             process.stdout.write(
                 'Retryable error from GCP, retrying in ' +
                 `${delay}ms (attempt ${attempt + 1}): ${err}\n`);
-             
+            // eslint-disable-next-line no-await-in-loop
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
@@ -153,13 +150,6 @@ function setBucketClass(storageClass) {
         '</CreateBucketConfiguration>';
 }
 
-function listBucketObjects(gcpClient, params, cb) {
-    const command = new ListObjectsCommand(params);
-    gcpClient.send(command)
-        .then(data => cb(null, data))
-        .catch(err => cb(err));
-}
-
 module.exports = {
     setBucketClass,
     gcpMpuSetup,
@@ -168,5 +158,4 @@ module.exports = {
     genDelTagObj,
     genUniqID,
     gcpRetry,
-    listBucketObjects,
 };
