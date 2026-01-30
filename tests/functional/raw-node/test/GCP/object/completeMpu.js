@@ -13,6 +13,7 @@ const { getRealAwsConfig } =
 const {
     CreateBucketCommand,
     DeleteBucketCommand,
+    HeadBucketCommand,
 } = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
@@ -92,6 +93,21 @@ function emptyBucket(gcpClient, bucketName, cb) {
     });
 }
 
+function waitForBucketReady(gcpClient, bucketName) {
+    const cmd = new HeadBucketCommand({ Bucket: bucketName });
+    return gcpRetry(gcpClient, cmd, {
+        maxAttempts: 6,
+        shouldRetry: err => err && (
+            err.name === 'NoSuchBucket'
+            || err.name === 'NotFound'
+            || err.$metadata?.httpStatusCode === 404
+            || err.name === 'SlowDown'
+            || err.$metadata?.httpStatusCode === 429
+        ),
+        getDelayMs: attempt => (attempt + 1) * 1000,
+    });
+}
+
 describe('GCP: Complete MPU', function testSuite() {
     this.timeout(600000);
     let config;
@@ -107,6 +123,7 @@ describe('GCP: Complete MPU', function testSuite() {
                 const cmd = new CreateBucketCommand({ Bucket: bucket.Name });
                 try {
                     await gcpRetry(gcpClient, cmd);
+                    await waitForBucketReady(gcpClient, bucket.Name);
                 } catch (err) {
                     process.stdout.write(`err in creating bucket ${err}\n`);
                     throw err;
