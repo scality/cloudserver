@@ -884,7 +884,7 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.turnAroundTime, '1');
             assert.strictEqual(loggedData.referer, 'https://example.com');
             assert.strictEqual(loggedData.userAgent, 'aws-cli/2.0.0');
-            assert.strictEqual(loggedData.versionID, 'version123');
+            assert.strictEqual(loggedData.versionId, 'version123');
             assert.strictEqual(loggedData.signatureVersion, 'AWS4-HMAC-SHA256');
             assert.strictEqual(loggedData.cipherSuite, 'TLS_AES_128_GCM_SHA256');
             assert.strictEqual(loggedData.authenticationType, 'REST-HEADER');
@@ -996,7 +996,7 @@ describe('serverAccessLogger utility functions', () => {
 
             assert.strictEqual(mockLogger.write.callCount, 1);
             const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
-            assert.strictEqual('versionID' in loggedData, false);
+            assert.strictEqual('versionId' in loggedData, false);
         });
 
         it('should handle loggingEnabled without TargetBucket/TargetPrefix', () => {
@@ -1099,7 +1099,7 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual('bytesDeleted' in loggedData, false);
             assert.strictEqual('turnAroundTime' in loggedData, false);
             assert.strictEqual('referer' in loggedData, false);
-            assert.strictEqual('versionID' in loggedData, false);
+            assert.strictEqual('versionId' in loggedData, false);
             assert.strictEqual('cipherSuite' in loggedData, false);
             assert.strictEqual('tlsVersion' in loggedData, false);
             assert.strictEqual('aclRequired' in loggedData, false);
