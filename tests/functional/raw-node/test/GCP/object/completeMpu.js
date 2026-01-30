@@ -104,10 +104,13 @@ describe('GCP: Complete MPU', function testSuite() {
         await async.eachSeries(
             buckets,
             async bucket => {
-                await gcpRetry(
-                    gcpClient,
-                    new CreateBucketCommand({ Bucket: bucket.Name }),
-                );
+                const cmd = new CreateBucketCommand({ Bucket: bucket.Name });
+                try {
+                    await gcpRetry(gcpClient, cmd);
+                } catch (err) {
+                    process.stdout.write(`err in creating bucket ${err}\n`);
+                    throw err;
+                }
             },
         );
     });
@@ -126,10 +129,13 @@ describe('GCP: Complete MPU', function testSuite() {
                         resolve();
                     });
                 });
-                await gcpRetry(
-                    gcpClient,
-                    new DeleteBucketCommand({ Bucket: bucket.Name }),
-                );
+                const cmd = new DeleteBucketCommand({ Bucket: bucket.Name });
+                try {
+                    await gcpRetry(gcpClient, cmd);
+                } catch (err) {
+                    process.stdout.write(`err in deleting bucket ${err}\n`);
+                    throw err;
+                }
             },
         );
     });
