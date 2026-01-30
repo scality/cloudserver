@@ -127,12 +127,8 @@ describe('objectGetAttributes API', () => {
             await objectGetAttributesAsync(authInfo, testGetRequest, log);
             assert.fail('Expected error was not thrown');
         } catch (err) {
-            assert.strictEqual(err.is.InvalidRequest, true);
-            assert.strictEqual(
-                err.description,
-                'The x-amz-object-attributes header specifying the attributes ' +
-                'to be retrieved is either missing or empty',
-            );
+            assert.strictEqual(err.is.InvalidArgument, true);
+            assert.strictEqual(err.description, 'Invalid attribute name specified.');
         }
     });
 

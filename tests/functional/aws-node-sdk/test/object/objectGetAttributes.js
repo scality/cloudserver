@@ -51,13 +51,10 @@ describe('objectGetAttributes', () => {
           ObjectAttributes: [],
         })
         .promise();
-      assert.fail('Expected InvalidRequest error');
+      assert.fail('Expected InvalidArgument error');
     } catch (err) {
-      assert.strictEqual(err.code, 'InvalidRequest');
-      assert.strictEqual(
-          err.message,
-          'The x-amz-object-attributes header specifying the attributes to be retrieved is either missing or empty',
-      );
+      assert.strictEqual(err.code, 'InvalidArgument');
+      assert.strictEqual(err.message, 'Invalid attribute name specified.');
     }
   });
 

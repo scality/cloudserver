@@ -12,47 +12,52 @@ describe('parseAttributesHeaders', () => {
         err => {
           assert(err.is);
           assert.strictEqual(err.is.InvalidRequest, true);
-          assert(err.description.includes('missing or empty'));
+          assert.strictEqual(
+              err.description,
+              'The x-amz-object-attributes header specifying the attributes to be retrieved is either missing or empty',
+          );
           return true;
         },
       );
     });
 
-    it('should throw InvalidRequest error when header is empty string', () => {
+    it('should throw InvalidArgument error when header is empty string', () => {
       const headers = { 'x-amz-object-attributes': '' };
 
       assert.throws(
         () => parseAttributesHeaders(headers),
         err => {
           assert(err.is);
-          assert.strictEqual(err.is.InvalidRequest, true);
-          assert(err.description.includes('missing or empty'));
+          assert.strictEqual(err.is.InvalidArgument, true);
+          assert.strictEqual(err.description, 'Invalid attribute name specified.');
           return true;
         },
       );
     });
 
-    it('should throw InvalidRequest error when header contains only whitespace', () => {
+    it('should throw InvalidArgument error when header contains only whitespace', () => {
       const headers = { 'x-amz-object-attributes': '   ' };
 
       assert.throws(
         () => parseAttributesHeaders(headers),
         err => {
           assert(err.is);
-          assert.strictEqual(err.is.InvalidRequest, true);
+          assert.strictEqual(err.is.InvalidArgument, true);
+          assert.strictEqual(err.description, 'Invalid attribute name specified.');
           return true;
         },
       );
     });
 
-    it('should throw InvalidRequest error when header contains only commas', () => {
+    it('should throw InvalidArgument error when header contains only commas', () => {
       const headers = { 'x-amz-object-attributes': ',,,' };
 
       assert.throws(
         () => parseAttributesHeaders(headers),
         err => {
           assert(err.is);
-          assert.strictEqual(err.is.InvalidRequest, true);
+          assert.strictEqual(err.is.InvalidArgument, true);
+          assert.strictEqual(err.description, 'Invalid attribute name specified.');
           return true;
         },
       );
@@ -68,7 +73,7 @@ describe('parseAttributesHeaders', () => {
         err => {
           assert(err.is);
           assert.strictEqual(err.is.InvalidArgument, true);
-          assert(err.description.includes('Invalid attribute name'));
+          assert.strictEqual(err.description, 'Invalid attribute name specified.');
           return true;
         },
       );
@@ -82,6 +87,7 @@ describe('parseAttributesHeaders', () => {
         err => {
           assert(err.is);
           assert.strictEqual(err.is.InvalidArgument, true);
+          assert.strictEqual(err.description, 'Invalid attribute name specified.');
           return true;
         },
       );
@@ -95,6 +101,7 @@ describe('parseAttributesHeaders', () => {
         err => {
           assert(err.is);
           assert.strictEqual(err.is.InvalidArgument, true);
+          assert.strictEqual(err.description, 'Invalid attribute name specified.');
           return true;
         },
       );
@@ -173,20 +180,32 @@ describe('parseAttributesHeaders', () => {
       assert.deepStrictEqual(result, ['ETag', 'ObjectSize']);
     });
 
-    it('should handle extra commas between attributes', () => {
+    it('should throw InvalidArgument for extra commas between attributes', () => {
       const headers = { 'x-amz-object-attributes': 'ETag,,ObjectSize' };
-      const result = parseAttributesHeaders(headers);
 
-      assert(Array.isArray(result));
-      assert.deepStrictEqual(result, ['ETag', 'ObjectSize']);
+      assert.throws(
+        () => parseAttributesHeaders(headers),
+        err => {
+          assert(err.is);
+          assert.strictEqual(err.is.InvalidArgument, true);
+          assert.strictEqual(err.description, 'Invalid attribute name specified.');
+          return true;
+        },
+      );
     });
 
-    it('should handle leading and trailing commas', () => {
+    it('should throw InvalidArgument for leading and trailing commas', () => {
       const headers = { 'x-amz-object-attributes': ',ETag,ObjectSize,' };
-      const result = parseAttributesHeaders(headers);
 
-      assert(Array.isArray(result));
-      assert.deepStrictEqual(result, ['ETag', 'ObjectSize']);
+      assert.throws(
+        () => parseAttributesHeaders(headers),
+        err => {
+          assert(err.is);
+          assert.strictEqual(err.is.InvalidArgument, true);
+          assert.strictEqual(err.description, 'Invalid attribute name specified.');
+          return true;
+        },
+      );
     });
   });
 });
