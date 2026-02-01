@@ -87,33 +87,29 @@ describe('GCP: Upload Object', function testSuite() {
         );
     });
 
-    it('should put an object to GCP', done => {
+    it('should put an object to GCP', async () => {
         const key = `somekey-${genUniqID()}`;
-        gcpClient.upload({
-            Bucket: bucketNames.main.Name,
-            MPU: bucketNames.mpu.Name,
-            Key: key,
-            Body: body,
-        }, (err, res) => {
-            assert.equal(err, null,
-                `Expected success, got error ${err}`);
-            assert.strictEqual(res.ETag, `"${smallMD5}"`);
-            return done();
+        const res = await new Promise((resolve, reject) => {
+            gcpClient.upload({
+                Bucket: bucketNames.main.Name,
+                MPU: bucketNames.mpu.Name,
+                Key: key,
+                Body: body,
+            }, (err, data) => (err ? reject(err) : resolve(data)));
         });
+        assert.strictEqual(res.ETag, `"${smallMD5}"`);
     });
 
-    it('should put a large object to GCP', done => {
+    it('should put a large object to GCP', async () => {
         const key = `somekey-${genUniqID()}`;
-        gcpClient.upload({
-            Bucket: bucketNames.main.Name,
-            MPU: bucketNames.mpu.Name,
-            Key: key,
-            Body: bigBody,
-        }, (err, res) => {
-            assert.equal(err, null,
-                `Expected success, got error ${err}`);
-            assert.strictEqual(res.ETag, `"${bigMD5}"`);
-            return done();
+        const res = await new Promise((resolve, reject) => {
+            gcpClient.upload({
+                Bucket: bucketNames.main.Name,
+                MPU: bucketNames.mpu.Name,
+                Key: key,
+                Body: bigBody,
+            }, (err, data) => (err ? reject(err) : resolve(data)));
         });
+        assert.strictEqual(res.ETag, `"${bigMD5}"`);
     });
 });
