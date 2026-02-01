@@ -32,6 +32,18 @@ describe('GCP: Upload Object', function testSuite() {
     this.timeout(600000);
     let config;
     let gcpClient;
+    const maxUploadAttempts = 6;
+    const uploadRetryDelayMs = attempt => (attempt + 1) * 1000;
+    const isRetryableUploadError = err => err && (
+        err.name === 'NoSuchBucket'
+        || err.name === 'NotFound'
+        || err.$metadata?.httpStatusCode === 404
+        || err.name === 'SlowDown'
+        || err.$metadata?.httpStatusCode === 429
+        || (typeof err.message === 'string'
+            && (err.message.includes('NoSuchBucket')
+                || err.message.includes('unable to complete upload')))
+    );
 
     function waitForBucketReady(bucketName) {
         const cmd = new HeadBucketCommand({ Bucket: bucketName });
@@ -46,6 +58,32 @@ describe('GCP: Upload Object', function testSuite() {
             ),
             getDelayMs: attempt => (attempt + 1) * 1000,
         });
+    }
+
+    async function uploadWithRetry(params) {
+        let lastError;
+        for (let attempt = 0; attempt < maxUploadAttempts; attempt++) {
+            try {
+                 
+                return await new Promise((resolve, reject) => {
+                    gcpClient.upload(params, (err, data) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(data);
+                    });
+                });
+            } catch (err) {
+                lastError = err;
+                if (!isRetryableUploadError(err) || attempt === maxUploadAttempts - 1) {
+                    throw err;
+                }
+                const delay = uploadRetryDelayMs(attempt);
+                 
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+        throw lastError;
     }
 
     before(async () => {
@@ -89,26 +127,22 @@ describe('GCP: Upload Object', function testSuite() {
 
     it('should put an object to GCP', async () => {
         const key = `somekey-${genUniqID()}`;
-        const res = await new Promise((resolve, reject) => {
-            gcpClient.upload({
-                Bucket: bucketNames.main.Name,
-                MPU: bucketNames.mpu.Name,
-                Key: key,
-                Body: body,
-            }, (err, data) => (err ? reject(err) : resolve(data)));
+        const res = await uploadWithRetry({
+            Bucket: bucketNames.main.Name,
+            MPU: bucketNames.mpu.Name,
+            Key: key,
+            Body: body,
         });
         assert.strictEqual(res.ETag, `"${smallMD5}"`);
     });
 
     it('should put a large object to GCP', async () => {
         const key = `somekey-${genUniqID()}`;
-        const res = await new Promise((resolve, reject) => {
-            gcpClient.upload({
-                Bucket: bucketNames.main.Name,
-                MPU: bucketNames.mpu.Name,
-                Key: key,
-                Body: bigBody,
-            }, (err, data) => (err ? reject(err) : resolve(data)));
+        const res = await uploadWithRetry({
+            Bucket: bucketNames.main.Name,
+            MPU: bucketNames.mpu.Name,
+            Key: key,
+            Body: bigBody,
         });
         assert.strictEqual(res.ETag, `"${bigMD5}"`);
     });
