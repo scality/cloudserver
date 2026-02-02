@@ -5350,8 +5350,8 @@ arraybuffer.prototype.slice@^1.0.4:
     ioctl "^2.0.2"
 
 "arsenal@git+https://github.com/scality/Arsenal#feature/ARSN-549/get-object-attributes":
-  version "8.2.43"
-  resolved "git+https://github.com/scality/Arsenal#ec21fa885c611498584ef3c56bfd62047c640e9e"
+  version "8.2.44"
+  resolved "git+https://github.com/scality/Arsenal#46757d474c28d616548446331722bd858b5672bb"
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"
