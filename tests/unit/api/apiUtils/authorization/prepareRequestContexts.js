@@ -396,4 +396,52 @@ describe('prepareRequestContexts', () => {
             });
         });
     });
+
+    describe('objectGetAttributes', () => {
+        describe('x-amz-object-attributes header', () => {
+            it('should request for specific permission if the header is set', () => {
+                const apiMethod = 'objectGetAttributes';
+                const request = makeRequest({
+                    'x-amz-object-attributes': 'x-amz-meta-department',
+                });
+                const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
+
+                assert.strictEqual(results.length, 2);
+                assert.strictEqual(results[0].getAction(), 's3:GetObjectAttributes');
+                assert.strictEqual(results[1].getAction(), 'scality:GetObjectAttributes');
+            });
+
+            it('should request for specific permission if the header is set with multiple value', () => {
+                const apiMethod = 'objectGetAttributes';
+                const request = makeRequest({
+                    'x-amz-object-attributes': 'x-amz-meta-department,ETag',
+                });
+                const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
+
+                assert.strictEqual(results.length, 2);
+                assert.strictEqual(results[0].getAction(), 's3:GetObjectAttributes');
+                assert.strictEqual(results[1].getAction(), 'scality:GetObjectAttributes');
+            });
+
+            it('should not request permission if the header contains only RestoreStatus', () => {
+                const apiMethod = 'objectGetAttributes';
+                const request = makeRequest({
+                    'x-amz-object-attributes': 'RestoreStatus',
+                });
+                const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
+
+                assert.strictEqual(results.length, 1);
+                assert.strictEqual(results[0].getAction(), 's3:GetObjectAttributes');
+            });
+
+            it('should not request permission if the header does not exists', () => {
+                const apiMethod = 'objectGetAttributes';
+                const request = makeRequest({});
+                const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
+
+                assert.strictEqual(results.length, 1);
+                assert.strictEqual(results[0].getAction(), 's3:GetObjectAttributes');
+            });
+        });
+    });
 });
