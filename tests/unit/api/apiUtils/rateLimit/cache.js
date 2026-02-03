@@ -7,7 +7,7 @@ const {
     getCachedConfig,
     setCachedConfig,
     expireCachedConfigs,
-    invalidateCachedConfig,
+    deleteCachedConfig,
 } = require('../../../../../lib/api/apiUtils/rateLimit/cache');
 
 describe('test limit config cache storage', () => {
@@ -72,7 +72,7 @@ describe('test limit config cache storage', () => {
         setCachedConfig('bucket:my-bucket', { limit: 100 }, constants.rateLimitDefaultConfigCacheTTL);
         setCachedConfig('bucket:other-bucket', { limit: 200 }, constants.rateLimitDefaultConfigCacheTTL);
 
-        const result = invalidateCachedConfig('my-bucket');
+        const result = deleteCachedConfig('my-bucket');
 
         assert.strictEqual(result, true);
         assert.strictEqual(getCachedConfig('bucket:my-bucket'), undefined);
@@ -80,7 +80,7 @@ describe('test limit config cache storage', () => {
     });
 
     it('should return false when invalidating non-existent bucket', () => {
-        const result = invalidateCachedConfig('non-existent-bucket');
+        const result = deleteCachedConfig('non-existent-bucket');
 
         assert.strictEqual(result, false);
     });
