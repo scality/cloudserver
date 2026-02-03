@@ -2,48 +2,40 @@ const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry, genDelTagObj, genUniqID } =
+const { genDelTagObj, genUniqID, gcpRetry } =
     require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 const { gcpTaggingPrefix } = require('../../../../../../constants');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
 const bucketName = `somebucket-${genUniqID()}`;
-const gcpTagPrefix = `x-goog-meta-${gcpTaggingPrefix}`;
 let config;
 let gcpClient;
 
 function assertObjectMetaTag(params, callback) {
-    return makeGcpRequest({
-        method: 'HEAD',
-        bucket: params.bucket,
-        objectKey: params.key,
-        authCredentials: config.credentials,
-        headers: {
-            'x-goog-generation': params.versionId,
-        },
+    return gcpClient.headObject({
+        Bucket: params.bucket,
+        Key: params.key,
+        VersionId: params.versionId,
     }, (err, res) => {
         if (err) {
             process.stdout.write(`err in retrieving object ${err}`);
             return callback(err);
         }
-        const resObj = res.headers;
+        const resMeta = Object.assign({}, res.Metadata || {});
         const tagRes = {};
-        Object.keys(resObj).forEach(
-        header => {
-            if (header.startsWith(gcpTagPrefix)) {
-                tagRes[header] = resObj[header];
-                delete resObj[header];
-            }
-        });
         const metaRes = {};
-        Object.keys(resObj).forEach(
-        header => {
-            if (header.startsWith('x-goog-meta-')) {
-                metaRes[header] = resObj[header];
-                delete resObj[header];
+        Object.keys(resMeta).forEach(key => {
+            if (key.startsWith(gcpTaggingPrefix)) {
+                tagRes[key] = resMeta[key];
+            } else {
+                metaRes[key] = resMeta[key];
             }
         });
         assert.deepStrictEqual(params.tag, tagRes);
@@ -55,50 +47,56 @@ function assertObjectMetaTag(params, callback) {
 describe('GCP: DELETE Object Tagging', function testSuite() {
     this.timeout(30000);
 
-    before(done => {
+    before(async () => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
-        gcpRequestRetry({
-            method: 'PUT',
-            bucket: bucketName,
-            authCredentials: config.credentials,
-        }, 0, err => {
-            if (err) {
-                process.stdout.write(`err in creating bucket ${err}`);
-            }
-            return done(err);
-        });
+        await gcpRetry(
+            gcpClient,
+            new CreateBucketCommand({ Bucket: bucketName }),
+        );
     });
 
-    beforeEach(function beforeFn(done) {
+    beforeEach(async function beforeFn() {
         this.currentTest.key = `somekey-${genUniqID()}`;
         this.currentTest.specialKey = `veryspecial-${genUniqID()}`;
-        const { headers, expectedTagObj, expectedMetaObj } =
-            genDelTagObj(10, gcpTagPrefix);
-        this.currentTest.expectedTagObj = expectedTagObj;
-        this.currentTest.expectedMetaObj = expectedMetaObj;
-        makeGcpRequest({
-            method: 'PUT',
-            bucket: bucketName,
-            objectKey: this.currentTest.key,
-            authCredentials: config.credentials,
-            headers,
-        }, (err, res) => {
-            if (err) {
-                process.stdout.write(`err in creating object ${err}`);
-                return done(err);
-            }
-            this.currentTest.versionId = res.headers['x-goog-generation'];
-            return done();
+        const { expectedTagObj, expectedMetaObj } =
+            genDelTagObj(10, `x-goog-meta-${gcpTaggingPrefix}`);
+
+        const expectedTagMeta = {};
+        Object.keys(expectedTagObj).forEach(header => {
+            const key = header.replace('x-goog-meta-', '');
+            expectedTagMeta[key] = expectedTagObj[header];
         });
+
+        const expectedMetaMeta = {};
+        Object.keys(expectedMetaObj).forEach(header => {
+            const key = header.replace('x-goog-meta-', '');
+            expectedMetaMeta[key] = expectedMetaObj[header];
+        });
+
+        this.currentTest.expectedTagObj = expectedTagMeta;
+        this.currentTest.expectedMetaObj = expectedMetaMeta;
+
+        const metadata = Object.assign(
+            {},
+            expectedTagMeta,
+            expectedMetaMeta
+        );
+
+        const cmd = new PutObjectCommand({
+            Bucket: bucketName,
+            Key: this.currentTest.key,
+            Metadata: metadata,
+        });
+
+        const res = await gcpClient.send(cmd);
+        this.currentTest.versionId = res.VersionId;
     });
 
     afterEach(function afterFn(done) {
-        makeGcpRequest({
-            method: 'DELETE',
-            bucket: bucketName,
-            objectKey: this.currentTest.key,
-            authCredentials: config.credentials,
+        gcpClient.deleteObject({
+            Bucket: bucketName,
+            Key: this.currentTest.key,
         }, err => {
             if (err) {
                 process.stdout.write(`err in deleting object ${err}`);
@@ -107,17 +105,11 @@ describe('GCP: DELETE Object Tagging', function testSuite() {
         });
     });
 
-    after(done => {
-        gcpRequestRetry({
-            method: 'DELETE',
-            bucket: bucketName,
-            authCredentials: config.credentials,
-        }, 0, err => {
-            if (err) {
-                process.stdout.write(`err in deleting bucket ${err}`);
-            }
-            return done(err);
-        });
+    after(async () => {
+        await gcpRetry(
+            gcpClient,
+            new DeleteBucketCommand({ Bucket: bucketName }),
+        );
     });
 
     it('should successfully delete object tags', function testFn(done) {

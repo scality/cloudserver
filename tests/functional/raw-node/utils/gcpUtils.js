@@ -1,51 +1,112 @@
 const async = require('async');
-const assert = require('assert');
+const { callbackify } = require('util');
 const { v4: uuidv4 } = require('uuid');
-
-const { makeGcpRequest } = require('./makeRequest');
+const { HeadBucketCommand } = require('@aws-sdk/client-s3');
 
 const genUniqID = () => uuidv4().replace(/-/g, '');
 
-function gcpRequestRetry(params, retry, callback) {
-    const maxRetries = 4;
-    const timeout = Math.pow(2, retry) * 1000;
-    return setTimeout(makeGcpRequest, timeout, params, (err, res) => {
-        if (err) {
-            if (retry <= maxRetries && err.statusCode === 429) {
-                return gcpRequestRetry(params, retry + 1, callback);
+const defaultShouldRetry = err =>
+    err && (err.name === 'SlowDown' || err.$metadata?.httpStatusCode === 429);
+
+async function gcpRetryCall(callFn, retryOptions) {
+    const {
+        maxAttempts = 3,
+        shouldRetry = defaultShouldRetry,
+        getDelayMs = attempt => Math.pow(2, attempt) * 1000,
+    } = retryOptions || {};
+
+    let lastError;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+             
+            return await callFn();
+        } catch (err) {
+            lastError = err;
+            if (!shouldRetry(err, attempt) || attempt === maxAttempts - 1) {
+                throw err;
             }
-            return callback(err);
+            const delay = getDelayMs(attempt);
+            process.stdout.write(
+                'Retryable error from GCP, retrying in ' +
+                `${delay}ms (attempt ${attempt + 1}): ${err}\n`);
+             
+            await new Promise(resolve => setTimeout(resolve, delay));
         }
-        return callback(null, res);
+    }
+
+    throw lastError;
+}
+
+async function gcpRetry(gcpClient, command, retryOptions, cb) {
+    if (cb) {
+        return callbackify(() => gcpRetry(gcpClient, command,
+            retryOptions))(cb);
+    }
+
+    return gcpRetryCall(() => gcpClient.send(command), retryOptions);
+}
+
+const defaultShouldRetryUpload = err => err && (
+    err.name === 'NoSuchBucket'
+    || err.name === 'NotFound'
+    || err.$metadata?.httpStatusCode === 404
+    || err.name === 'SlowDown'
+    || err.$metadata?.httpStatusCode === 429
+    || (typeof err.message === 'string'
+        && (err.message.includes('NoSuchBucket')
+            || err.message.includes('unable to complete upload')))
+);
+
+const defaultShouldRetryMpuCreate = err => err && (
+    err.name === 'NoSuchBucket'
+    || err.name === 'NotFound'
+    || err.$metadata?.httpStatusCode === 404
+    || err.name === 'SlowDown'
+    || err.$metadata?.httpStatusCode === 429
+);
+
+async function gcpUploadWithRetry(gcpClient, params, retryOptions) {
+    const callFn = () => new Promise((resolve, reject) => {
+        gcpClient.upload(params, (err, data) => {
+            if (err) {
+                return reject(err);
+            }
+            return resolve(data);
+        });
+    });
+
+    return gcpRetryCall(callFn, {
+        maxAttempts: 6,
+        shouldRetry: defaultShouldRetryUpload,
+        getDelayMs: attempt => (attempt + 1) * 1000,
+        ...retryOptions,
     });
 }
 
-function gcpClientRetry(fn, params, callback, retry = 0) {
-    const maxRetries = 4;
-    const timeout = Math.pow(2, retry) * 1000;
-    return setTimeout(fn, timeout, params, (err, res) => {
-        if (err) {
-            if (retry <= maxRetries && err.statusCode === 429) {
-                return gcpClientRetry(fn, params, callback, retry + 1);
-            }
-            return callback(err);
-        }
-        return callback(null, res);
+async function gcpCreateMultipartUploadWithRetry(gcpClient, params, retryOptions) {
+    const callFn = () => new Promise((resolve, reject) => {
+        gcpClient.createMultipartUpload(params,
+            (err, res) => (err ? reject(err) : resolve(res)));
+    });
+    return gcpRetryCall(callFn, {
+        maxAttempts: 6,
+        shouldRetry: defaultShouldRetryMpuCreate,
+        getDelayMs: attempt => (attempt + 1) * 1000,
+        ...retryOptions,
     });
 }
 
 // mpu test helpers
 function gcpMpuSetup(params, callback) {
     const { gcpClient, bucketNames, key, partCount, partSize } = params;
+
     return async.waterfall([
-        next => gcpClient.createMultipartUpload({
-            Bucket: bucketNames.mpu.Name,
-            Key: key,
-        }, (err, res) => {
-            assert.equal(err, null,
-                `Expected success, but got error ${err}`);
-            return next(null, res.UploadId);
-        }),
+        next => gcpCreateMultipartUploadWithRetry(gcpClient, {
+                Bucket: bucketNames.mpu.Name,
+                Key: key,
+            })
+                .then(res => next(null, res.UploadId))
+                .catch(err => next(err)),
         (uploadId, next) => {
             if (partCount <= 0) {
                 return next('SkipPutPart', { uploadId });
@@ -141,13 +202,26 @@ function setBucketClass(storageClass) {
         '</CreateBucketConfiguration>';
 }
 
+async function waitForBucketReady(gcpClient, bucketName, retryOptions) {
+    const cmd = new HeadBucketCommand({ Bucket: bucketName });
+    return await gcpRetry(gcpClient, cmd, {
+        maxAttempts: 6,
+        shouldRetry: defaultShouldRetryMpuCreate,
+        getDelayMs: attempt => (attempt + 1) * 1000,
+        ...retryOptions,
+    });
+}
+
 module.exports = {
-    gcpRequestRetry,
-    gcpClientRetry,
     setBucketClass,
     gcpMpuSetup,
     genPutTagObj,
     genGetTagObj,
     genDelTagObj,
     genUniqID,
+    gcpRetryCall,
+    gcpRetry,
+    gcpCreateMultipartUploadWithRetry,
+    gcpUploadWithRetry,
+    waitForBucketReady,
 };

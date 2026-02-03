@@ -1,110 +1,64 @@
 const assert = require('assert');
-const async = require('async');
 const arsenal = require('arsenal');
-const xml2js = require('xml2js');
+const {
+    PutBucketVersioningCommand,
+    GetBucketVersioningCommand,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+} = require('@aws-sdk/client-s3');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
+const { genUniqID, gcpRetry } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 
 const credentialOne = 'gcpbackend';
-const verEnabledObj = { VersioningConfiguration: { Status: ['Enabled'] } };
-const verDisabledObj = { VersioningConfiguration: { Status: ['Suspended'] } };
-
-function resParseAndAssert(xml, compareObj, callback) {
-    return xml2js.parseString(xml, (err, res) => {
-        if (err) {
-            process.stdout.write(`err in parsing response ${err}\n`);
-            return callback(err);
-        }
-        assert.deepStrictEqual(res, compareObj);
-        return callback();
-    });
-}
+const verEnabledStatus = 'Enabled';
+const verDisabledStatus = 'Suspended';
+const bucketName = `somebucket-${genUniqID()}`;
 
 describe('GCP: PUT Bucket Versioning', () => {
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 
-    beforeEach(function beforeFn(done) {
-        this.currentTest.bucketName = `somebucket-${genUniqID()}`;
-        gcpRequestRetry({
-            method: 'PUT',
-            bucket: this.currentTest.bucketName,
-            authCredentials: config.credentials,
-        }, 0, err => {
-            if (err) {
-                process.stdout.write(`err in creating bucket ${err}\n`);
-            }
-            return done(err);
-        });
+    before(async () => {
+        await gcpRetry(
+            gcpClient,
+            new CreateBucketCommand({ Bucket: bucketName }),
+        );
     });
 
-    afterEach(function afterFn(done) {
-        gcpRequestRetry({
-            method: 'DELETE',
-            bucket: this.currentTest.bucketName,
-            authCredentials: config.credentials,
-        }, 0, err => {
-            if (err) {
-                process.stdout.write(`err in deleting bucket ${err}\n`);
-            }
-            return done(err);
-        });
+    after(async () => {
+        await gcpRetry(
+            gcpClient,
+            new DeleteBucketCommand({ Bucket: bucketName }),
+        );
     });
 
-    it('should enable bucket versioning', function testFn(done) {
-        return async.waterfall([
-            next => gcpClient.putBucketVersioning({
-                Bucket: this.test.bucketName,
-                VersioningConfiguration: {
-                    Status: 'Enabled',
-                },
-            }, err => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
-                return next();
-            }),
-            next => makeGcpRequest({
-                method: 'GET',
-                bucket: this.test.bucketName,
-                authCredentials: config.credentials,
-                queryObj: { versioning: '' },
-            }, (err, res) => {
-                if (err) {
-                    process.stdout.write(`err in retrieving bucket ${err}`);
-                    return next(err);
-                }
-                return resParseAndAssert(res.body, verEnabledObj, next);
-            }),
-        ], err => done(err));
+    it('should enable bucket versioning', async () => {
+        await gcpClient.send(new PutBucketVersioningCommand({
+            Bucket: bucketName,
+            VersioningConfiguration: {
+                Status: 'Enabled',
+            },
+        }));
+
+        const res = await gcpClient.send(new GetBucketVersioningCommand({
+            Bucket: bucketName,
+        }));
+        assert.strictEqual(res.Status, verEnabledStatus);
     });
 
-    it('should disable bucket versioning', function testFn(done) {
-        return async.waterfall([
-            next => gcpClient.putBucketVersioning({
-                Bucket: this.test.bucketName,
-                VersioningConfiguration: {
-                    Status: 'Suspended',
-                },
-            }, err => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
-                return next();
-            }),
-            next => makeGcpRequest({
-                method: 'GET',
-                bucket: this.test.bucketName,
-                authCredentials: config.credentials,
-                queryObj: { versioning: '' },
-            }, (err, res) => {
-                if (err) {
-                    process.stdout.write(`err in retrieving bucket ${err}`);
-                    return next(err);
-                }
-                return resParseAndAssert(res.body, verDisabledObj, next);
-            }),
-        ], err => done(err));
+    it('should disable bucket versioning', async () => {
+        await gcpClient.send(new PutBucketVersioningCommand({
+            Bucket: bucketName,
+            VersioningConfiguration: {
+                Status: 'Suspended',
+            },
+        }));
+
+        const res = await gcpClient.send(new GetBucketVersioningCommand({
+            Bucket: bucketName,
+        }));
+        assert.strictEqual(res.Status, verDisabledStatus);
     });
 });

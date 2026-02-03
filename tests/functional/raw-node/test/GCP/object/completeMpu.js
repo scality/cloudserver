@@ -1,16 +1,21 @@
 const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
+const { promisify } = require('util');
+const { ListObjectsCommand } = require('@aws-sdk/client-s3');
 const { GCP, GcpUtils } = arsenal.storage.data.external.GCP;
 const {
-    gcpRequestRetry,
-    gcpClientRetry,
-    setBucketClass,
     gcpMpuSetup,
     genUniqID,
+    gcpRetry,
+    waitForBucketReady,
 } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+} = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
 const bucketNames = {
@@ -49,29 +54,28 @@ function listObjectsPaginated(gcpClient, bucketName, cb) {
             params.Marker = marker;
         }
 
-        return gcpClientRetry(gcpClient.listObjects.bind(gcpClient), params, (err, res) => {
-            if (err) {
-                return cb(err);
-            }
+        const command = new ListObjectsCommand(params);
+        return gcpClient.send(command)
+            .then(res => {
+                const contents = (res && res.Contents) || [];
+                objects.push(...contents);
 
-            const contents = (res && res.Contents) || [];
-            objects.push(...contents);
+                const isTruncated = Boolean(res && res.IsTruncated);
+                if (!isTruncated) {
+                    return cb(null, objects);
+                }
 
-            const isTruncated = Boolean(res && res.IsTruncated);
-            if (!isTruncated) {
-                return cb(null, objects);
-            }
+                // AWS listObjects(V1) pagination: prefer NextMarker, fallback to last key.
+                marker = (res && res.NextMarker) ||
+                    (contents.length ? contents[contents.length - 1].Key : undefined);
 
-            // AWS listObjects(V1) pagination: prefer NextMarker, fallback to last key.
-            marker = (res && res.NextMarker) ||
-                (contents.length ? contents[contents.length - 1].Key : undefined);
+                if (!marker) {
+                    return cb(null, objects);
+                }
 
-            if (!marker) {
-                return cb(null, objects);
-            }
-
-            return _list();
-        });
+                return _list();
+            })
+            .catch(err => cb(err));
     }
 
     return _list();
@@ -87,7 +91,7 @@ function emptyBucket(gcpClient, bucketName, cb) {
                 Bucket: bucketName,
                 Key: object.Key,
             };
-            return gcpClientRetry(gcpClient.deleteObject.bind(gcpClient), deleteParams, next);
+            return gcpClient.deleteObject(deleteParams, next);
         }, cb);
     });
 }
@@ -97,42 +101,30 @@ describe('GCP: Complete MPU', function testSuite() {
     let config;
     let gcpClient;
 
-    before(done => {
+    before(async () => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
-        async.eachSeries(bucketNames,
-            (bucket, next) => gcpRequestRetry({
-                method: 'PUT',
-                bucket: bucket.Name,
-                authCredentials: config.credentials,
-                requestBody: setBucketClass(bucket.Type),
-            }, 0, err => {
-                if (err) {
-                    process.stdout.write(`err in creating bucket ${err}\n`);
-                }
-                return next(err);
-            }),
-        done);
+        const buckets = Object.values(bucketNames);
+        await async.eachSeries(
+            buckets,
+            async bucket => {
+                const cmd = new CreateBucketCommand({ Bucket: bucket.Name });
+                await gcpRetry(gcpClient, cmd);
+                await waitForBucketReady(gcpClient, bucket.Name);
+            },
+        );
     });
 
-    after(done => {
-        async.eachSeries(bucketNames,
-            (bucket, next) => emptyBucket(gcpClient, bucket.Name, err => {
-                assert.equal(err, null,
-                    `Expected success, but got error ${err}`);
-                gcpRequestRetry({
-                    method: 'DELETE',
-                    bucket: bucket.Name,
-                    authCredentials: config.credentials,
-                }, 0, err => {
-                    if (err) {
-                        process.stdout.write(
-                            `err in deleting bucket ${err}\n`);
-                    }
-                    return next(err);
-                });
-            }),
-        done);
+    after(async () => {
+        const buckets = Object.values(bucketNames);
+        await async.eachSeries(
+            buckets,
+            async bucket => {
+                await promisify(emptyBucket)(gcpClient, bucket.Name);
+                const cmd = new DeleteBucketCommand({ Bucket: bucket.Name });
+                await gcpRetry(gcpClient, cmd);
+            },
+        );
     });
 
     describe('when MPU has 0 parts', () => {
