@@ -34,6 +34,21 @@ function putObjectVersion(s3, params, vid, next) {
     return request.send(next);
 }
 
+function clearRestoreStatus(versions) {
+    if (!versions || versions.length === 0) {
+        return versions;
+    }
+
+    for (const version of versions) {
+        if (version.value) {
+            version.value.restoreStatus = undefined;
+        }
+    }
+
+    return versions;
+}
+
+
 function checkVersionsAndUpdate(versionsBefore, versionsAfter, indexes) {
     indexes.forEach(i => {
         assert.notStrictEqual(versionsAfter[i].value.Size, versionsBefore[i].value.Size);
@@ -203,7 +218,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = res.Versions;
+                        versionsBefore = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                     next => putObjectVersion(s3, params, '', next),
@@ -212,7 +227,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = res.Versions;
+                        versionsAfter = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -250,7 +265,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     }),
                     next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = res.Versions;
+                        versionsBefore = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                     next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
@@ -263,7 +278,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = res.Versions;
+                        versionsAfter = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -301,7 +316,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     }),
                     next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = res.Versions;
+                        versionsBefore = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                     next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
@@ -314,7 +329,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = res.Versions;
+                        versionsAfter = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -353,7 +368,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = res.Versions;
+                        versionsBefore = clearRestoreStatus(res.Versions);
                         next(err);
                     }),
                     next => putObjectVersion(s3, params, 'null', next),
@@ -362,7 +377,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = res.Versions;
+                        versionsAfter = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -405,7 +420,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = res.Versions;
+                        versionsBefore = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                     next => putObjectVersion(s3, params, vId, next),
@@ -414,7 +429,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = res.Versions;
+                        versionsAfter = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -460,7 +475,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = res.Versions;
+                        versionsBefore = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                     next => putObjectVersion(s3, params, '', next),
@@ -469,7 +484,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = res.Versions;
+                        versionsAfter = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -509,7 +524,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                     next => s3.putObject(params, next),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = res.Versions;
+                        versionsBefore = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                     next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
@@ -522,7 +537,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = res.Versions;
+                        versionsAfter = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -561,7 +576,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     }),
                     next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = res.Versions;
+                        versionsBefore = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                     next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
@@ -574,7 +589,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = res.Versions;
+                        versionsAfter = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -619,7 +634,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     }),
                     next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = res.Versions;
+                        versionsBefore = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                     next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
@@ -633,7 +648,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = res.Versions;
+                        versionsAfter = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -666,7 +681,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     next => s3.putObject(params, next),
                     next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = res.Versions;
+                        versionsBefore = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                     next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
@@ -680,7 +695,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = res.Versions;
+                        versionsAfter = clearRestoreStatus(res.Versions);
                         return next(err);
                     }),
                 ], err => {

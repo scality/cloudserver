@@ -348,4 +348,52 @@ describe('prepareRequestContexts', () => {
             assert.strictEqual(results[0].getAction(), expectedAction);
         });
     });
+
+    describe('bucketGet', () => {
+        describe('x-amz-optional-object-attributes header', () => {
+            it('should request for specific permission if the header is set', () => {
+                const apiMethod = 'bucketGet';
+                const request = makeRequest({
+                    'x-amz-optional-object-attributes': 'x-amz-meta-department',
+                });
+                const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
+
+                assert.strictEqual(results.length, 2);
+                assert.strictEqual(results[0].getAction(), 's3:ListBucket');
+                assert.strictEqual(results[1].getAction(), 'scality:ListBucketOptionalObjectAttributes');
+            });
+
+            it('should request for specific permission if the header is set with multiple value', () => {
+                const apiMethod = 'bucketGet';
+                const request = makeRequest({
+                    'x-amz-optional-object-attributes': 'x-amz-meta-department,RestoreStatus',
+                });
+                const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
+
+                assert.strictEqual(results.length, 2);
+                assert.strictEqual(results[0].getAction(), 's3:ListBucket');
+                assert.strictEqual(results[1].getAction(), 'scality:ListBucketOptionalObjectAttributes');
+            });
+
+            it('should not request permission if the header contains only RestoreStatus', () => {
+                const apiMethod = 'bucketGet';
+                const request = makeRequest({
+                    'x-amz-optional-object-attributes': 'RestoreStatus',
+                });
+                const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
+
+                assert.strictEqual(results.length, 1);
+                assert.strictEqual(results[0].getAction(), 's3:ListBucket');
+            });
+
+            it('should not request permission if the header does not exists', () => {
+                const apiMethod = 'bucketGet';
+                const request = makeRequest({});
+                const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
+
+                assert.strictEqual(results.length, 1);
+                assert.strictEqual(results[0].getAction(), 's3:ListBucket');
+            });
+        });
+    });
 });

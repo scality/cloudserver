@@ -101,7 +101,7 @@ function checkObjMdAndUpdate(objMDBefore, objMDAfter, props) {
     });
 }
 
-function clearUploadIdFromVersions(versions) {
+function clearUploadIdAndRestoreStatusFromVersions(versions) {
     if (!versions || versions.length === 0) {
         return versions;
     }
@@ -109,6 +109,7 @@ function clearUploadIdFromVersions(versions) {
     for (const version of versions) {
         if (version.value) {
             version.value.uploadId = undefined;
+            version.value.restoreStatus = undefined;
         }
     }
 
@@ -263,7 +264,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = clearUploadIdFromVersions(res.Versions);
+                        versionsBefore = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                     next => putMPUVersion(s3, bucketName, objectName, '', next),
@@ -272,7 +273,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = clearUploadIdFromVersions(res.Versions);
+                        versionsAfter = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -304,7 +305,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = clearUploadIdFromVersions(res.Versions);
+                        versionsBefore = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                     next => putMPUVersion(s3, bucketName, objectName, '', next),
@@ -313,7 +314,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = clearUploadIdFromVersions(res.Versions);
+                        versionsAfter = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -353,7 +354,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     }),
                     next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = clearUploadIdFromVersions(res.Versions);
+                        versionsBefore = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                     next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
@@ -366,7 +367,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = clearUploadIdFromVersions(res.Versions);
+                        versionsAfter = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -405,7 +406,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     }),
                     next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = clearUploadIdFromVersions(res.Versions);
+                        versionsBefore = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                     next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
@@ -418,7 +419,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = clearUploadIdFromVersions(res.Versions);
+                        versionsAfter = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -458,7 +459,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = clearUploadIdFromVersions(res.Versions);
+                        versionsBefore = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                     next => putMPUVersion(s3, bucketName, objectName, 'null', next),
@@ -467,7 +468,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = clearUploadIdFromVersions(res.Versions);
+                        versionsAfter = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -511,7 +512,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = clearUploadIdFromVersions(res.Versions);
+                        versionsBefore = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         next(err);
                     }),
                     next => putMPUVersion(s3, bucketName, objectName, vId, next),
@@ -520,7 +521,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = clearUploadIdFromVersions(res.Versions);
+                        versionsAfter = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -567,7 +568,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = clearUploadIdFromVersions(res.Versions);
+                        versionsBefore = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         next(err);
                     }),
                     next => putMPUVersion(s3, bucketName, objectName, '', next),
@@ -576,7 +577,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = clearUploadIdFromVersions(res.Versions);
+                        versionsAfter = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -621,7 +622,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = clearUploadIdFromVersions(res.Versions);
+                        versionsBefore = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                     next => putMPUVersion(s3, bucketName, objectName, vId, next),
@@ -630,7 +631,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = clearUploadIdFromVersions(res.Versions);
+                        versionsAfter = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -670,7 +671,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     }),
                     next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = clearUploadIdFromVersions(res.Versions);
+                        versionsBefore = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                     next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
@@ -683,7 +684,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = clearUploadIdFromVersions(res.Versions);
+                        versionsAfter = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -729,7 +730,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     }),
                     next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = clearUploadIdFromVersions(res.Versions);
+                        versionsBefore = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                     next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
@@ -743,7 +744,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = clearUploadIdFromVersions(res.Versions);
+                        versionsAfter = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                 ], err => {
@@ -777,7 +778,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     next => s3.putObject(params, next),
                     next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsBefore = clearUploadIdFromVersions(res.Versions);
+                        versionsBefore = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                     next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
@@ -791,7 +792,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         return next(err);
                     }),
                     next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                        versionsAfter = clearUploadIdFromVersions(res.Versions);
+                        versionsAfter = clearUploadIdAndRestoreStatusFromVersions(res.Versions);
                         return next(err);
                     }),
                 ], err => {
