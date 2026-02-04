@@ -26,42 +26,33 @@ docker pull ghcr.io/scality/cloudserver:<tag>
 
 To release a production image:
 
-* Create a PR to bump the package version
-  Update Cloudserver's `package.json` by bumping it to the relevant next
-  version in a new PR. Per example if the last released version was
-  `8.4.7`, the next version would be `8.4.8`.
+* Create a PR to bump the package version :
+  update Cloudserver's `package.json` by bumping it to the relevant next
+  version in a new PR. Per example if the last released version was `8.4.7`,
+  the next version would be `8.4.8`.
 
-```js
-{
-  "name": "cloudserver",
-  "version": "8.4.8", <--- Here
-  [...]
-}
-```
+  ```js
+  {
+    "name": "cloudserver",
+    "version": "8.4.8", <--- Here
+    [...]
+  }
+  ```
 
 * Review & merge the PR
 
-* Create the release on GitHub
-  
-  * Go the Release tab (https://github.com/scality/cloudserver/releases);
-  * Click on the `Draft new release button`;
-  * In the `tag` field, type the name of the release (`8.4.8`), and confirm
-    to create the tag on publish;
-  * Click on `Generate release notes` button to fill the fields;
-  * Rename the release to `Release x.y.z` (e.g. `Release 8.4.8` in this case);
-  * Click to `Publish the release` to create the GitHub release and git tag
+* Trigger the release workflow on GitHub
 
-  Notes:
-  * the Git tag will be created automatically.
-  * this should be done as soon as the PR is merged, so that the tag
-    is put on the "version bump" commit.
+  * Go to the [**Actions** tab on GitHub](https://github.com/scality/cloudserver/actions)
+  * Select the `release` workflow from the list
+  * Click on **Run workflow** (manual dispatch)
+  * Enter the new tag (e.g., `8.4.8`) in the input field
+  * Start the workflow
 
-* With the following parameters, [force a build here](https://eve.devsca.com/github/scality/cloudserver/#/builders/3/force/force)
+  This workflow will create the tag and push the Docker images.
 
-  * Branch Name: The one used for the tag earlier. In this example `development/8.4`
-  * Override Stage: 'release'
-  * Extra properties:
-    * name: `'tag'`, value: `[release version]`, in this example`'8.4.8'`
+  This should be done as soon as the PR is merged,
+  so that the tag is put on the "version bump" commit.
 
 * Release the release version on Jira
 

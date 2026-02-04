@@ -143,7 +143,7 @@ function checkObjMdAndUpdate(objMDBefore, objMDAfter, props) {
     }
 }
 
-function clearUploadIdFromVersions(versions) {
+function clearUploadIdAndRestoreStatusFromVersions(versions) {
     if (!versions || versions.length === 0) {
         return versions;
     }
@@ -151,6 +151,7 @@ function clearUploadIdFromVersions(versions) {
     for (const version of versions) {
         if (version.value) {
             version.value.uploadId = undefined;
+            version.value.restoreStatus = undefined;
         }
     }
 
@@ -323,8 +324,8 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
                     const versionsAfter = versionRes2.Versions;
                     
-                    clearUploadIdFromVersions(versionsBefore);
-                    clearUploadIdFromVersions(versionsAfter);
+                    clearUploadIdAndRestoreStatusFromVersions(versionsBefore);
+                    clearUploadIdAndRestoreStatusFromVersions(versionsAfter);
                     
                     assert.deepStrictEqual(versionsAfter, versionsBefore);
                     checkObjMdAndUpdate(objMDBefore, objMDAfter,
@@ -347,14 +348,14 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     const objMDBefore = await getMetadataPromise(bucketName, objectName, undefined);
                     
                     const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                    const versionsBefore = clearUploadIdFromVersions(versionRes1.Versions);
+                    const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
 
                     await putMPUVersion(s3, bucketName, objectName, '');
 
                     const objMDAfter = await getMetadataPromise(bucketName, objectName, undefined);
 
                     const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                    const versionsAfter = clearUploadIdFromVersions(versionRes2.Versions);
+                    const versionsAfter = clearUploadIdAndRestoreStatusFromVersions(versionRes2.Versions);
 
                     checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
 
@@ -384,7 +385,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 await fakeMetadataArchivePromise(bucketName, objectName, vId, archive);
                 
                 const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsBefore = clearUploadIdFromVersions(versionRes1.Versions);
+                const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
 
                 const objMDBefore = await getMetadataPromise(bucketName, objectName, vId);
 
@@ -393,7 +394,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 const objMDAfter = await getMetadataPromise(bucketName, objectName, vId);
                 
                 const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsAfter = clearUploadIdFromVersions(versionRes2.Versions);
+                const versionsAfter = clearUploadIdAndRestoreStatusFromVersions(versionRes2.Versions);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -421,7 +422,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 await fakeMetadataArchivePromise(bucketName, objectName, vId, archive);
                 
                 const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsBefore = clearUploadIdFromVersions(versionRes1.Versions);
+                const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
 
                 const objMDBefore = await getMetadataPromise(bucketName, objectName, vId);
 
@@ -430,7 +431,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 const objMDAfter = await getMetadataPromise(bucketName, objectName, vId);
                 
                 const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsAfter = clearUploadIdFromVersions(versionRes2.Versions);
+                const versionsAfter = clearUploadIdAndRestoreStatusFromVersions(versionRes2.Versions);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -458,14 +459,14 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 const objMDBefore = await getMetadataPromise(bucketName, objectName, 'null');
 
                 const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsBefore = clearUploadIdFromVersions(versionRes1.Versions);
+                const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
 
                 await putMPUVersion(s3, bucketName, objectName, 'null');
 
                 const objMDAfter = await getMetadataPromise(bucketName, objectName, 'null');
 
                 const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsAfter = clearUploadIdFromVersions(versionRes2.Versions);
+                const versionsAfter = clearUploadIdAndRestoreStatusFromVersions(versionRes2.Versions);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [1]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -496,14 +497,14 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 const objMDBefore = await getMetadataPromise(bucketName, objectName, vId);
 
                 const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsBefore = clearUploadIdFromVersions(versionRes1.Versions);
+                const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
 
                 await putMPUVersion(s3, bucketName, objectName, vId);
 
                 const objMDAfter = await getMetadataPromise(bucketName, objectName, vId);
 
                 const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsAfter = clearUploadIdFromVersions(versionRes2.Versions);
+                const versionsAfter = clearUploadIdAndRestoreStatusFromVersions(versionRes2.Versions);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -539,14 +540,14 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 const objMDBefore = await getMetadataPromise(bucketName, objectName, undefined);
 
                 const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsBefore = clearUploadIdFromVersions(versionRes1.Versions);
+                const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
 
                 await putMPUVersion(s3, bucketName, objectName, '');
 
                 const objMDAfter = await getMetadataPromise(bucketName, objectName, undefined);
 
                 const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsAfter = clearUploadIdFromVersions(versionRes2.Versions);
+                const versionsAfter = clearUploadIdAndRestoreStatusFromVersions(versionRes2.Versions);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -579,14 +580,14 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 const objMDBefore = await getMetadataPromise(bucketName, objectName, vId);
                 
                 const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsBefore = clearUploadIdFromVersions(versionRes1.Versions);
+                const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
 
                 await putMPUVersion(s3, bucketName, objectName, vId);
 
                 const objMDAfter = await getMetadataPromise(bucketName, objectName, vId);
 
                 const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsAfter = clearUploadIdFromVersions(versionRes2.Versions);
+                const versionsAfter = clearUploadIdAndRestoreStatusFromVersions(versionRes2.Versions);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [1]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -615,7 +616,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 await fakeMetadataArchivePromise(bucketName, objectName, vId, archive);
                 
                 const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsBefore = clearUploadIdFromVersions(versionRes1.Versions);
+                const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
 
                 const objMDBefore = await getMetadataPromise(bucketName, objectName, vId);
 
@@ -624,7 +625,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 const objMDAfter = await getMetadataPromise(bucketName, objectName, vId);
                 
                 const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsAfter = clearUploadIdFromVersions(versionRes2.Versions);
+                const versionsAfter = clearUploadIdAndRestoreStatusFromVersions(versionRes2.Versions);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -659,7 +660,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 await fakeMetadataArchivePromise(bucketName, objectName, vId, archive);
                 
                 const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsBefore = clearUploadIdFromVersions(versionRes1.Versions);
+                const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
 
                 const objMDBefore = await getMetadataPromise(bucketName, objectName, vId);
                 
@@ -670,7 +671,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 const objMDAfter = await getMetadataPromise(bucketName, objectName, vId);
 
                 const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsAfter = clearUploadIdFromVersions(versionRes2.Versions);
+                const versionsAfter = clearUploadIdAndRestoreStatusFromVersions(versionRes2.Versions);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -695,7 +696,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 await fakeMetadataArchivePromise(bucketName, objectName, undefined, archive);
                 
                 const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsBefore = clearUploadIdFromVersions(versionRes1.Versions);
+                const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
                 
                 const objMDBefore = await getMetadataPromise(bucketName, objectName, undefined);
                 
@@ -706,7 +707,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 const objMDAfter = await getMetadataPromise(bucketName, objectName, undefined);
 
                 const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                const versionsAfter = clearUploadIdFromVersions(versionRes2.Versions);
+                const versionsAfter = clearUploadIdAndRestoreStatusFromVersions(versionRes2.Versions);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
