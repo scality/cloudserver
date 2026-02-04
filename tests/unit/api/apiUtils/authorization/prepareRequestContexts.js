@@ -399,48 +399,80 @@ describe('prepareRequestContexts', () => {
 
     describe('objectGetAttributes', () => {
         describe('x-amz-object-attributes header', () => {
-            it('should request for specific permission if the header is set', () => {
+            it('should include scality:GetObjectAttributes with x-amz-meta attribute', () => {
                 const apiMethod = 'objectGetAttributes';
                 const request = makeRequest({
                     'x-amz-object-attributes': 'x-amz-meta-department',
                 });
                 const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
 
-                assert.strictEqual(results.length, 2);
-                assert.strictEqual(results[0].getAction(), 's3:GetObjectAttributes');
-                assert.strictEqual(results[1].getAction(), 'scality:GetObjectAttributes');
+                assert.strictEqual(results.length, 3);
+                assert.strictEqual(results[0].getAction(), 's3:GetObject');
+                assert.strictEqual(results[1].getAction(), 's3:GetObjectAttributes');
+                assert.strictEqual(results[2].getAction(), 'scality:GetObjectAttributesCustom');
             });
 
-            it('should request for specific permission if the header is set with multiple value', () => {
+            it('should include scality:GetObjectAttributes with multiple attributes', () => {
                 const apiMethod = 'objectGetAttributes';
                 const request = makeRequest({
                     'x-amz-object-attributes': 'x-amz-meta-department,ETag',
                 });
                 const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
 
-                assert.strictEqual(results.length, 2);
-                assert.strictEqual(results[0].getAction(), 's3:GetObjectAttributes');
-                assert.strictEqual(results[1].getAction(), 'scality:GetObjectAttributes');
+                assert.strictEqual(results.length, 3);
+                assert.strictEqual(results[0].getAction(), 's3:GetObject');
+                assert.strictEqual(results[1].getAction(), 's3:GetObjectAttributes');
+                assert.strictEqual(results[2].getAction(), 'scality:GetObjectAttributesCustom');
             });
 
-            it('should not request permission if the header contains only RestoreStatus', () => {
+            it('should not include scality:GetObjectAttributes with only RestoreStatus', () => {
                 const apiMethod = 'objectGetAttributes';
                 const request = makeRequest({
                     'x-amz-object-attributes': 'RestoreStatus',
                 });
                 const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
 
-                assert.strictEqual(results.length, 1);
-                assert.strictEqual(results[0].getAction(), 's3:GetObjectAttributes');
+                assert.strictEqual(results.length, 2);
+                assert.strictEqual(results[0].getAction(), 's3:GetObject');
+                assert.strictEqual(results[1].getAction(), 's3:GetObjectAttributes');
             });
 
-            it('should not request permission if the header does not exists', () => {
+            it('should not include scality:GetObjectAttributes without header', () => {
                 const apiMethod = 'objectGetAttributes';
                 const request = makeRequest({});
                 const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
 
-                assert.strictEqual(results.length, 1);
-                assert.strictEqual(results[0].getAction(), 's3:GetObjectAttributes');
+                assert.strictEqual(results.length, 2);
+                assert.strictEqual(results[0].getAction(), 's3:GetObject');
+                assert.strictEqual(results[1].getAction(), 's3:GetObjectAttributes');
+            });
+        });
+
+        describe('x-amz-version-id header', () => {
+            it('should return version-specific actions with x-amz-version-id', () => {
+                const apiMethod = 'objectGetAttributes';
+                const request = makeRequest({
+                    'x-amz-version-id': '0987654323456789',
+                });
+                const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
+
+                assert.strictEqual(results.length, 2);
+                assert.strictEqual(results[0].getAction(), 's3:GetObjectVersion');
+                assert.strictEqual(results[1].getAction(), 's3:GetObjectVersionAttributes');
+            });
+
+            it('should include scality:GetObjectAttributes with x-amz-version-id and x-amz-meta', () => {
+                const apiMethod = 'objectGetAttributes';
+                const request = makeRequest({
+                    'x-amz-version-id': '0987654323456789',
+                    'x-amz-object-attributes': 'x-amz-meta-department',
+                });
+                const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
+
+                assert.strictEqual(results.length, 3);
+                assert.strictEqual(results[0].getAction(), 's3:GetObjectVersion');
+                assert.strictEqual(results[1].getAction(), 's3:GetObjectVersionAttributes');
+                assert.strictEqual(results[2].getAction(), 'scality:GetObjectAttributesCustom');
             });
         });
     });
