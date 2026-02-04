@@ -645,7 +645,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 }
             });
 
-            it('should return an XML if the header is only RestoreStatus even without permission', async () => {
+            it('should always (ignore permission) return an XML when the header is RestoreStatus', async () => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
 
