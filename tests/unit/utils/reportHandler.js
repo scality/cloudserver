@@ -225,13 +225,13 @@ describe('reportHandler.getCapabilities', () => {
                     locationTypeCephRadosGW: true,
                     locationTypeHyperdriveV2: true,
                     locationTypeLocal: true,
-                    locationTypes: [
+                    locationTypes: new Set([
                         'location-gcp-v1',
                         'location-scality-sproxyd-v1',
                         'location-ceph-radosgw-s3-v1',
                         'location-file-v1',
                         'location-scality-artesca-s3-v1',
-                    ],
+                    ]),
                 },
                 supportedLifecycleRules: ['Expiration'],
             };
@@ -258,7 +258,7 @@ describe('reportHandler.getCapabilities', () => {
                     managedLifecycleTransition: true,
                     locationTypeAzure: true,
                     locationTypeGCP: true,
-                    locationTypes: ['location-azure-v1'],
+                    locationTypes: new Set(['location-azure-v1']),
                 },
                 supportedLifecycleRules: ['Expiration'], // Missing Transition
             };
