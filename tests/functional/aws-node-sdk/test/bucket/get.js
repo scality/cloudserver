@@ -4,16 +4,26 @@ const {
     PutObjectCommand,
     ListObjectsCommand,
     ListObjectsV2Command,
+    S3Client,
 } = require('@aws-sdk/client-s3');
-const { parseString } = require('xml2js');
+const { streamCollector } = require('@smithy/node-http-handler');
+const {
+    IAMClient,
+    CreatePolicyCommand,
+    CreateUserCommand,
+    AttachUserPolicyCommand,
+    CreateAccessKeyCommand,
+    DetachUserPolicyCommand,
+    DeletePolicyCommand,
+    DeleteUserCommand,
+} = require('@aws-sdk/client-iam');
+const { parseStringPromise } = require('xml2js');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const bucketSchema = require('../../schema/bucket');
 const bucketSchemaV2 = require('../../schema/bucketV2');
 const { generateToken, decryptToken } = require('../../../../../lib/api/apiUtils/object/continueToken');
-const AWS = require('aws-sdk');
-const { IAM } = AWS;
 const getConfig = require('../support/config');
 const { config } = require('../../../../../lib/Config');
 
@@ -552,106 +562,134 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
 
             const iamConfig = getConfig('default', { region: 'us-east-1' });
             iamConfig.endpoint = `http://${vaultHost}:8600`;
-            const iamClient = new IAM(iamConfig);
+            const iamClient = new IAMClient(iamConfig);
 
             before(async () => {
-                const policyRes = await iamClient
-                    .createPolicy({
-                        PolicyName: 'bp-bypass-policy',
-                        PolicyDocument: JSON.stringify({
-                            Version: '2012-10-17',
-                            Statement: [{
-                                Sid: 'AllowS3ListBucket',
-                                Effect: 'Allow',
-                                Action: [
-                                    's3:ListBucket',
-                                ],
-                                Resource: ['*'],
-                            }],
-                        }),
-                    })
-                    .promise();
+                const policyRes = await iamClient.send(new CreatePolicyCommand({
+                    PolicyName: 'bp-bypass-policy',
+                    PolicyDocument: JSON.stringify({
+                        Version: '2012-10-17',
+                        Statement: [{
+                            Sid: 'AllowS3ListBucket',
+                            Effect: 'Allow',
+                            Action: [
+                                's3:ListBucket',
+                            ],
+                            Resource: ['*'],
+                        }],
+                    }),
+                }));
                 policyWithoutPermission = policyRes.Policy;
-                const userRes = await iamClient.createUser({ UserName: 'user-without-permission' }).promise();
+                const userRes = await iamClient.send(new CreateUserCommand({ UserName: 'user-without-permission' }));
                 userWithoutPermission = userRes.User;
-                await iamClient
-                    .attachUserPolicy({
-                        UserName: userWithoutPermission.UserName,
-                        PolicyArn: policyWithoutPermission.Arn,
-                    })
-                    .promise();
-
-                const accessKeyRes = await iamClient.createAccessKey({
+                await iamClient.send(new AttachUserPolicyCommand({
                     UserName: userWithoutPermission.UserName,
-                }).promise();
+                    PolicyArn: policyWithoutPermission.Arn,
+                }));
+
+                const accessKeyRes = await iamClient.send(new CreateAccessKeyCommand({
+                    UserName: userWithoutPermission.UserName,
+                }));
                 const accessKey = accessKeyRes.AccessKey;
                 const s3Config = getConfig('default', {
-                    credentials: new AWS.Credentials(accessKey.AccessKeyId, accessKey.SecretAccessKey),
+                    credentials: {
+                        accessKeyId: accessKey.AccessKeyId,
+                        secretAccessKey: accessKey.SecretAccessKey,
+                    },
                 });
-                s3ClientWithoutPermission = new AWS.S3(s3Config);
+                s3ClientWithoutPermission = new S3Client(s3Config);
             });
 
             after(async () => {
-                await iamClient
-                    .detachUserPolicy({
-                        UserName: userWithoutPermission.UserName,
-                        PolicyArn: policyWithoutPermission.Arn,
-                    })
-                    .promise();
-                await iamClient.deletePolicy({ PolicyArn: policyWithoutPermission.Arn }).promise();
-                await iamClient.deleteUser({ UserName: userWithoutPermission.UserName }).promise();
+                await iamClient.send(new DetachUserPolicyCommand({
+                    UserName: userWithoutPermission.UserName,
+                    PolicyArn: policyWithoutPermission.Arn,
+                }));
+                await iamClient.send(new DeletePolicyCommand({ PolicyArn: policyWithoutPermission.Arn }));
+                await iamClient.send(new DeleteUserCommand({ UserName: userWithoutPermission.UserName }));
             });
 
-            // eslint-disable-next-line max-len
-            const listObjectsV2WithOptionalAttributes = async (s3, bucket, headerValue) => await new Promise((resolve, reject) => {
+            const listObjectsV2WithOptionalAttributes = async (s3, bucket, headerValue) => {
+                const localS3 = s3;
                 let rawXml = '';
-                const req = s3.listObjectsV2({ Bucket: bucket });
 
-                req.on('build', () => {
-                    req.httpRequest.headers['x-amz-optional-object-attributes'] = headerValue;
+                const addHeaderMiddleware = next => async args => {
+                    const localArgs = args;
+                    localArgs.request.headers['x-amz-optional-object-attributes'] = headerValue;
+                    return next(localArgs);
+                };
+
+                const originalHandler = s3.config.requestHandler;
+                const wrappedHandler = {
+                    async handle(request, options) {
+                        const { response } = await originalHandler.handle(request, options);
+
+                        if (response && response.body) {
+                            const collected = await streamCollector(response.body);
+                            const buffer = Buffer.from(collected);
+                            rawXml = buffer.toString('utf-8');
+
+                            const { Readable } = require('stream');
+                            response.body = Readable.from([buffer]);
+                        }
+
+                        return { response };
+                    },
+                    destroy() {
+                        if (originalHandler.destroy) {
+                            originalHandler.destroy();
+                        }
+                    }
+                };
+
+                localS3.config.requestHandler = wrappedHandler;
+                localS3.middlewareStack.add(addHeaderMiddleware, {
+                    step: 'build',
+                    name: 'addOptionalAttributesHeader',
                 });
-                req.on('httpData', chunk => { rawXml += chunk; });
-                req.on('error', err => reject(err));
-                req.on('success', response => {
-                    parseString(rawXml, (err, parsedXml) => {
-                        if (err) {
-                            return reject(err);
-                        }
 
-                        const contents = response.data.Contents;
-                        const parsedContents = parsedXml.ListBucketResult.Contents;
+                try {
+                    const result = await s3.send(new ListObjectsV2Command({ Bucket: bucket }));
 
-                        if (!contents || !parsedContents) {
-                            return resolve(response.data);
-                        }
+                    if (!rawXml) {
+                        return result;
+                    }
 
-                        if (parsedContents[0]?.['x-amz-meta-department']) {
-                            contents[0]['x-amz-meta-department'] = parsedContents[0]['x-amz-meta-department'][0];
-                        }
+                    const parsedXml = await parseStringPromise(rawXml);
+                    const contents = result.Contents;
+                    const parsedContents = parsedXml?.ListBucketResult?.Contents;
 
-                        if (parsedContents[0]?.['x-amz-meta-hr']) {
-                            contents[0]['x-amz-meta-hr'] = parsedContents[0]['x-amz-meta-hr'][0];
-                        }
+                    if (!contents || !parsedContents) {
+                        return result;
+                    }
 
-                        return resolve(response.data);
-                    });
-                });
+                    if (parsedContents[0]?.['x-amz-meta-department']) {
+                        contents[0]['x-amz-meta-department'] = parsedContents[0]['x-amz-meta-department'][0];
+                    }
 
-                req.send();
-            });
+                    if (parsedContents[0]?.['x-amz-meta-hr']) {
+                        contents[0]['x-amz-meta-hr'] = parsedContents[0]['x-amz-meta-hr'][0];
+                    }
+
+                    return result;
+                } finally {
+                    localS3.config.requestHandler = originalHandler;
+                    localS3.middlewareStack.remove('addOptionalAttributesHeader');
+                }
+            };
             
             it('should return an XML if the header is set', async () => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
 
-                await s3.putObject({
+                await s3.send(new PutObjectCommand({
                     Bucket,
                     Key: 'super-power-object',
                     Metadata: {
-                        Department: 'sales',
-                        HR: 'true',
+                        department: 'sales',
+                        hr: 'true',
                     },
-                }).promise();
+                }));
                 const result = await listObjectsV2WithOptionalAttributes(
                     s3,
                     Bucket,
@@ -668,14 +706,14 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
 
-                await s3.putObject({
+                await s3.send(new PutObjectCommand({
                     Bucket,
                     Key: 'super-power-object',
                     Metadata: {
-                        Department: 'sales',
-                        HR: 'true',
+                        department: 'sales',
+                        hr: 'true',
                     },
-                }).promise();
+                }));
 
                 try {
                     await listObjectsV2WithOptionalAttributes(
@@ -685,8 +723,11 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                     );
                     throw new Error('Request should have been rejected');
                 } catch (err) {
-                    assert.strictEqual(err.statusCode, 403);
-                    assert.strictEqual(err.code, 'AccessDenied');
+                    if (err.message === 'Request should have been rejected') {
+                        throw err;
+                    }
+                    assert.strictEqual(err.$metadata.httpStatusCode, 403);
+                    assert.strictEqual(err.name, 'AccessDenied');
                 }
             });
 
@@ -694,14 +735,14 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
 
-                await s3.putObject({
+                await s3.send(new PutObjectCommand({
                     Bucket,
                     Key: 'super-power-object',
                     Metadata: {
-                        Department: 'sales',
-                        HR: 'true',
+                        department: 'sales',
+                        hr: 'true',
                     },
-                }).promise();
+                }));
                 const result = await listObjectsV2WithOptionalAttributes(
                     s3ClientWithoutPermission,
                     Bucket,
