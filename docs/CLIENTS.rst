@@ -124,14 +124,16 @@ JavaScript
 
 .. code:: javascript
 
-    const AWS = require('aws-sdk');
+    const { S3Client } = require('@aws-sdk/client-s3');
 
-    const s3 = new AWS.S3({
-        accessKeyId: 'accessKey1',
-        secretAccessKey: 'verySecretKey1',
-        endpoint: 'localhost:8000',
-        sslEnabled: false,
-        s3ForcePathStyle: true,
+    const s3 = new S3Client({
+        region: 'us-east-1',
+        endpoint: 'http://localhost:8000',
+        forcePathStyle: true,
+        credentials: {
+            accessKeyId: 'accessKey1',
+            secretAccessKey: 'verySecretKey1',
+        },
     });
 
 JAVA
