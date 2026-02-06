@@ -1,42 +1,65 @@
 const nodeFetch = require('node-fetch');
-const AWS = require('aws-sdk');
+const { SignatureV4 } = require('@aws-sdk/signature-v4');
+const { HttpRequest } = require('@aws-sdk/protocol-http');
+const { Sha256 } = require('@aws-crypto/sha256-js');
 const xml2js = require('xml2js');
+const { URL } = require('url');
 const { getCredentials } = require('../support/credentials');
 
 const { config } = require('../../../../../lib/Config');
 
 const skipIfRateLimitDisabled = config.rateLimiting.enabled ? describe : describe.skip;
 
+function buildHttpRequest(method, host, rawPath, body = '') {
+    const endpoint = new URL(`http://${host}`);
+    const target = new URL(rawPath, `http://${host}`);
+
+    const query = {};
+    target.searchParams.forEach((value, key) => {
+        if (Object.prototype.hasOwnProperty.call(query, key)) {
+            const current = query[key];
+            query[key] = Array.isArray(current) ? current.concat(value) : [current, value];
+        } else {
+            query[key] = value ?? '';
+        }
+    });
+
+    const request = new HttpRequest({
+        method: method.toUpperCase(),
+        protocol: endpoint.protocol,
+        hostname: endpoint.hostname,
+        port: endpoint.port ? Number(endpoint.port) : undefined,
+        path: target.pathname,
+        query: Object.keys(query).length ? query : undefined,
+        headers: {
+            host,
+        },
+        body: body || undefined,
+    });
+
+    return { request, target };
+}
+
 async function sendRateLimitRequest(method, host, path, body = '') {
-    const service = 's3';
-    const endpoint = new AWS.Endpoint(host);
+    const { request, target } = buildHttpRequest(method, host, path, body);
 
-    const request = new AWS.HttpRequest(endpoint);
-    request.method = method.toUpperCase();
-    request.path = path;
-    request.body = body;
-    request.headers.Host = host;
-    request.headers['X-Amz-Date'] = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');
-    const sha256hash = AWS.util.crypto.sha256(request.body || '', 'hex');
-    request.headers['X-Amz-Content-SHA256'] = sha256hash;
-    request.region = 'us-east-1';
-
-    const signer = new AWS.Signers.V4(request, service);
     const credentials = getCredentials('lisa');
-    const awsCredentials = new AWS.Credentials(
-        credentials.accessKeyId,
-        credentials.secretAccessKey
-    );
-    signer.addAuthorization(awsCredentials, new Date());
+    const signer = new SignatureV4({
+        credentials,
+        region: 'us-east-1',
+        service: 's3',
+        sha256: Sha256,
+    });
+    const signedRequest = await signer.sign(request);
 
-    const url = `http://${host}${path}`;
+    const url = target.href;
     const options = {
-        method: request.method,
-        headers: request.headers,
+        method: signedRequest.method,
+        headers: signedRequest.headers,
     };
 
-    if (method !== 'GET' && method !== 'DELETE') {
-        options.body = request.body;
+    if (signedRequest.body && method !== 'GET' && method !== 'DELETE') {
+        options.body = signedRequest.body;
     }
 
     const response = await nodeFetch(url, options);
