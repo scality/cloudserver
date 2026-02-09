@@ -279,8 +279,8 @@ const constants = {
     rateLimitDefaultConfigCacheTTL: 30000, // 30 seconds
     rateLimitDefaultBurstCapacity: 1,
     rateLimitCleanupInterval: 10000, // 10 seconds
-    // Metadata allowed to be returned by getObjectAttributes API
-    allowedObjectAttributes: new Set([
+    // Supported attributes for the GetObjectAttributes 'x-amz-optional-attributes' header.
+    supportedGetObjectAttributes: new Set([
         'StorageClass',
         'ObjectSize',
         'ObjectParts',
