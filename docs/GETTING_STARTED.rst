@@ -247,10 +247,13 @@ if you are using the AWS SDK for JavaScript, instantiate your client like this:
 
 .. code:: js
 
-    const s3 = new aws.S3({
-       endpoint: 'http://127.0.0.1:8000',
-       s3ForcePathStyle: true,
-    });
+   const { S3Client } = require('@aws-sdk/client-s3');
+
+   const s3 = new S3Client({
+      endpoint: 'http://127.0.0.1:8000',
+      forcePathStyle: true,
+      region: 'us-east-1',
+   });
 
 Setting Your Own Access and Secret Key Pairs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -379,47 +382,44 @@ SSL certificates.
 Test the Config
 ^^^^^^^^^^^^^^^
 
-If aws-sdk is not installed, run ``$> yarn install aws-sdk``. 
+If the AWS SDK for JavaScript v3 packages are not installed locally, run ``$> yarn add @aws-sdk/client-s3 @aws-sdk/node-http-handler``. 
 
 Paste the following script into a file named "test.js":
 
 .. code:: js
 
-    const AWS = require('aws-sdk');
-    const fs = require('fs');
-    const https = require('https');
+   const { S3Client, CreateBucketCommand, DeleteBucketCommand } = require('@aws-sdk/client-s3');
+   const { NodeHttpHandler } = require('@aws-sdk/node-http-handler');
+   const fs = require('fs');
+   const https = require('https');
 
-    const httpOptions = {
-        agent: new https.Agent({
-            // path on your host of the self-signed certificate
-            ca: fs.readFileSync('./ca.crt', 'ascii'),
-        }),
-    };
+   const httpsAgent = new https.Agent({
+      // path on your host of the self-signed certificate
+      ca: fs.readFileSync('./ca.crt', 'ascii'),
+   });
 
-    const s3 = new AWS.S3({
-        httpOptions,
-        accessKeyId: 'accessKey1',
-        secretAccessKey: 'verySecretKey1',
-        // The endpoint must be s3.scality.test, else SSL will not work
-        endpoint: 'https://s3.scality.test:8000',
-        sslEnabled: true,
-        // With this setup, you must use path-style bucket access
-        s3ForcePathStyle: true,
-    });
+   const s3 = new S3Client({
+      requestHandler: new NodeHttpHandler({ httpsAgent }),
+      credentials: {
+         accessKeyId: 'accessKey1',
+         secretAccessKey: 'verySecretKey1',
+      },
+      endpoint: 'https://s3.scality.test:8000',
+      forcePathStyle: true,
+      region: 'us-east-1',
+   });
 
-    const bucket = 'cocoriko';
+   const bucket = 'cocoriko';
 
-    s3.createBucket({ Bucket: bucket }, err => {
-        if (err) {
-            return console.log('err createBucket', err);
-        }
-        return s3.deleteBucket({ Bucket: bucket }, err => {
-            if (err) {
-                return console.log('err deleteBucket', err);
-            }
-            return console.log('SSL is cool!');
-        });
-    });
+   (async () => {
+      try {
+         await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+         await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+         console.log('SSL is cool!');
+      } catch (err) {
+         console.error('error running sample', err);
+      }
+   })();
 
 Now run this script with:
 

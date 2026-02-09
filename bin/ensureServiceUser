@@ -8,7 +8,15 @@ const { errors } = require('arsenal');
 const { program } = require('commander');
 const werelogs = require('werelogs');
 const async = require('async');
-const { IAM } = require('aws-sdk');
+const {
+    IAMClient,
+    GetUserCommand,
+    CreateUserCommand,
+    GetUserPolicyCommand,
+    PutUserPolicyCommand,
+    ListAccessKeysCommand,
+    CreateAccessKeyCommand,
+} = require('@aws-sdk/client-iam');
 const { version } = require('../package.json');
 
 const systemPrefix = '/scality-internal/';
@@ -33,7 +41,7 @@ function generateUserPolicyDocument() {
 }
 
 function createIAMClient(opts) {
-    return new IAM({
+    return new IAMClient({
         endpoint: opts.iamEndpoint,
         region: 'us-east-1',
     });
@@ -98,22 +106,18 @@ class UserHandler extends BaseHandler {
     resourceType = 'user';
 
     async collect() {
-        return this.iamClient
-            .getUser({
-                UserName: this.serviceName,
-            })
-            .promise()
-            .then(res => res.User);
+        const res = await this.iamClient.send(new GetUserCommand({
+            UserName: this.serviceName,
+        }));
+        return res.User;
     }
 
     async create() {
-        return this.iamClient
-            .createUser({
-                UserName: this.serviceName,
-                Path: systemPrefix,
-            })
-            .promise()
-            .then(res => res.User);
+        const res = await this.iamClient.send(new CreateUserCommand({
+            UserName: this.serviceName,
+            Path: systemPrefix,
+        }));
+        return res.User;
     }
 
     conflicts(u) {
@@ -125,26 +129,22 @@ class UserPolicyHandler extends BaseHandler {
     resourceType = 'userPolicy';
 
     async collect() {
-        return this.iamClient
-            .getUserPolicy({
-                UserName: this.serviceName,
-                PolicyName: this.serviceName,
-            })
-            .promise()
-            .then(() => true);
+        await this.iamClient.send(new GetUserPolicyCommand({
+            UserName: this.serviceName,
+            PolicyName: this.serviceName,
+        }));
+        return true;
     }
 
     async create() {
         const doc = generateUserPolicyDocument();
 
-        return this.iamClient
-            .putUserPolicy({
-                UserName: this.serviceName,
-                PolicyName: this.serviceName,
-                PolicyDocument: JSON.stringify(doc),
-            })
-            .promise()
-            .then(() => true);
+        await this.iamClient.send(new PutUserPolicyCommand({
+            UserName: this.serviceName,
+            PolicyName: this.serviceName,
+            PolicyDocument: JSON.stringify(doc),
+        }));
+        return true;
     }
 
     conflicts() {
@@ -158,22 +158,18 @@ class AccessKeyHandler extends BaseHandler {
     async collect() {
         // if at least one key already exists, the script won't create a new key
         // and will display the list of existing keys
-        return this.iamClient
-            .listAccessKeys({
-                UserName: this.serviceName,
-                MaxItems: 100,
-            })
-            .promise()
-            .then(res => res.AccessKeyMetadata);
+        const res = await this.iamClient.send(new ListAccessKeysCommand({
+            UserName: this.serviceName,
+            MaxItems: 100,
+        }));
+        return res.AccessKeyMetadata;
     }
 
     async create() {
-        return this.iamClient
-            .createAccessKey({
-                UserName: this.serviceName,
-            })
-            .promise()
-            .then(res => res.AccessKey);
+        const res = await this.iamClient.send(new CreateAccessKeyCommand({
+            UserName: this.serviceName,
+        }));
+        return res.AccessKey;
     }
 
     conflicts() {
@@ -185,7 +181,7 @@ function collectResource(v, done) {
     v.collect()
         .then(res => done(null, res))
         .catch((err) => {
-            if (err.code === 'NoSuchEntity') {
+            if (err.name === 'NoSuchEntity') {
                 return done();
             }
 

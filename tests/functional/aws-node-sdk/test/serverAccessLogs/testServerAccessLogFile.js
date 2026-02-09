@@ -2,7 +2,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const tv4 = require('tv4');
-const { S3 } = require('aws-sdk');
+const { S3 } = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const { getCredentials } = require('../support/credentials');
@@ -69,7 +69,7 @@ function sleep(ms) {
 }
 
 async function emptyBucket(s3, bucketName, BypassGovernanceRetention = false) {
-    const data = await s3.listObjectVersions({ Bucket: bucketName }).promise();
+    const data = await s3.listObjectVersions({ Bucket: bucketName });
     const versions = data.Versions || [];
     const deleteMarkers = data.DeleteMarkers || [];
 
@@ -79,7 +79,7 @@ async function emptyBucket(s3, bucketName, BypassGovernanceRetention = false) {
             Key: obj.Key,
             VersionId: obj.VersionId,
             ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
-        }).promise();
+        });
     }
     for (const obj of versions.filter(o => o.Key.endsWith('/'))) {
         await s3.deleteObject({
@@ -87,7 +87,7 @@ async function emptyBucket(s3, bucketName, BypassGovernanceRetention = false) {
             Key: obj.Key,
             VersionId: obj.VersionId,
             ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
-        }).promise();
+        });
     }
     for (const obj of deleteMarkers) {
         await s3.deleteObject({
@@ -95,27 +95,27 @@ async function emptyBucket(s3, bucketName, BypassGovernanceRetention = false) {
             Key: obj.Key,
             VersionId: obj.VersionId,
             ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
-        }).promise();
+        });
     }
 }
 
 async function cleanupBuckets(s3) {
     let lastAction = 'ListBuckets';
-    const bucketsResponse = await s3.listBuckets().promise();
+    const bucketsResponse = await s3.listBuckets();
     for (const bucket of bucketsResponse.Buckets) {
-        const listMPUResponse = await s3.listMultipartUploads({ Bucket: bucket.Name }).promise();
+        const listMPUResponse = await s3.listMultipartUploads({ Bucket: bucket.Name });
         if (listMPUResponse.Uploads && listMPUResponse.Uploads.length > 0) {
             await Promise.all(listMPUResponse.Uploads.map(upload =>
                 s3.abortMultipartUpload({
                     Bucket: bucket.Name,
                     Key: upload.Key,
                     UploadId: upload.UploadId,
-                }).promise(),
+                }),
             ));
         }
 
         await emptyBucket(s3, bucket.Name, true);
-        await s3.deleteBucket({ Bucket: bucket.Name }).promise();
+        await s3.deleteBucket({ Bucket: bucket.Name });
         lastAction = 'DeleteBucket';
     }
     return lastAction;
@@ -131,10 +131,10 @@ describe('Server Access Logs - File Output', async () => {
     withV4(async sigCfg => {
         const s3 = new S3({
             endpoint: 'http://127.0.0.1:8000',
-            s3ForcePathStyle: true,
+            forcePathStyle: true,
             credentials: getCredentials('default', sigCfg),
             region: 'us-east-1',
-            maxRetries: 0,
+            maxAttempts: 1,
         });
         const logFilePath = config.serverAccessLogs.outputFile;
         const bucketName = 'test-server-access-log-bucket';
@@ -197,8 +197,8 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests deleting a bucket and expects a server access log entry for the bucket deletion.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.deleteBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.deleteBucket({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -225,7 +225,7 @@ describe('Server Access Logs - File Output', async () => {
                 // This operation tests deleting a bucket's CORS configuration
                 // and expects a log entry for that operation.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     // CORS must be set before it can be deleted
                     await s3.putBucketCors({
                         Bucket: bucketName,
@@ -236,8 +236,8 @@ describe('Server Access Logs - File Output', async () => {
                                 AllowedOrigins: ['*'],
                             }]
                         }
-                    }).promise();
-                    await s3.deleteBucketCors({ Bucket: bucketName }).promise();
+                    });
+                    await s3.deleteBucketCors({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -270,7 +270,7 @@ describe('Server Access Logs - File Output', async () => {
                 // This operation tests deleting a bucket's encryption configuration
                 // and expects a log entry for that operation.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     // Bucket encryption must be configured before it can be deleted
                     await s3.putBucketEncryption({
                         Bucket: bucketName,
@@ -283,8 +283,8 @@ describe('Server Access Logs - File Output', async () => {
                                 }
                             ]
                         }
-                    }).promise();
-                    await s3.deleteBucketEncryption({ Bucket: bucketName }).promise();
+                    });
+                    await s3.deleteBucketEncryption({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -317,7 +317,7 @@ describe('Server Access Logs - File Output', async () => {
                 // This operation tests deleting a bucket's website configuration
                 // and expects a log entry for that operation.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     // Website configuration must be set before it can be deleted
                     await s3.putBucketWebsite({
                         Bucket: bucketName,
@@ -326,8 +326,8 @@ describe('Server Access Logs - File Output', async () => {
                                 Suffix: 'index.html',
                             },
                         },
-                    }).promise();
-                    await s3.deleteBucketWebsite({ Bucket: bucketName }).promise();
+                    });
+                    await s3.deleteBucketWebsite({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -359,11 +359,11 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests the ListBucketV2 API and expects a log entry for that operation.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     // Upload an object to ensure the bucket is not empty
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'Data' }).promise();
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'Data' });
                     // Issue the ListBucketV2 request
-                    await s3.listObjectsV2({ Bucket: bucketName }).promise();
+                    await s3.listObjectsV2({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -395,11 +395,11 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests the ListObjects (v1) API and expects a log entry for that operation.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     // Upload an object to ensure the bucket is not empty
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'Data' }).promise();
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'Data' });
                     // Issue the ListObjects request
-                    await s3.listObjects({ Bucket: bucketName }).promise();
+                    await s3.listObjects({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -432,8 +432,8 @@ describe('Server Access Logs - File Output', async () => {
                 // This operation tests getting a bucket's ACL
                 // and expects log entries for bucket creation and getting the ACL.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.getBucketAcl({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.getBucketAcl({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -468,9 +468,9 @@ describe('Server Access Logs - File Output', async () => {
                     ]
                 };
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.putBucketCors({ Bucket: bucketName, CORSConfiguration: corsConfig }).promise();
-                    await s3.getBucketCors({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.putBucketCors({ Bucket: bucketName, CORSConfiguration: corsConfig });
+                    await s3.getBucketCors({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -504,8 +504,8 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.createBucket({
                         Bucket: bucketName,
                         ObjectLockEnabledForBucket: true,
-                    }).promise();
-                    await s3.getObjectLockConfiguration({ Bucket: bucketName }).promise();
+                    });
+                    await s3.getObjectLockConfiguration({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -530,8 +530,8 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests getting a bucket's versioning configuration.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.getBucketVersioning({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.getBucketVersioning({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -556,14 +556,14 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests getting a bucket's website configuration.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketWebsite({
                         Bucket: bucketName,
                         WebsiteConfiguration: {
                             IndexDocument: { Suffix: 'index.html' },
                         },
-                    }).promise();
-                    await s3.getBucketWebsite({ Bucket: bucketName }).promise();
+                    });
+                    await s3.getBucketWebsite({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -594,8 +594,8 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests getting a bucket's location.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.getBucketLocation({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.getBucketLocation({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -620,7 +620,7 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests getting a bucket's encryption configuration.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketEncryption({
                         Bucket: bucketName,
                         ServerSideEncryptionConfiguration: {
@@ -632,8 +632,8 @@ describe('Server Access Logs - File Output', async () => {
                                 }
                             ]
                         }
-                    }).promise();
-                    await s3.getBucketEncryption({ Bucket: bucketName }).promise();
+                    });
+                    await s3.getBucketEncryption({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -664,8 +664,8 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests heading a bucket.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.headBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.headBucket({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -690,7 +690,7 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests creating a bucket.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -709,8 +709,8 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests putting a bucket ACL.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.putBucketAcl({ Bucket: bucketName, ACL: 'private' }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.putBucketAcl({ Bucket: bucketName, ACL: 'private' });
                 };
                 return {
                     method,
@@ -735,7 +735,7 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests putting a bucket CORS configuration.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketCors({
                         Bucket: bucketName,
                         CORSConfiguration: {
@@ -745,7 +745,7 @@ describe('Server Access Logs - File Output', async () => {
                                 AllowedOrigins: ['*'],
                             }]
                         }
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -770,10 +770,10 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests putting bucket versioning configuration.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketVersioning({
                         Bucket: bucketName, VersioningConfiguration: { Status: 'Enabled' },
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -798,13 +798,13 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests putting bucket tagging.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketTagging({
                         Bucket: bucketName,
                         Tagging: {
                             TagSet: [{ Key: 'testKey', Value: 'testValue' }]
                         }
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -829,14 +829,14 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests deleting bucket tagging.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketTagging({
                         Bucket: bucketName,
                         Tagging: {
                             TagSet: [{ Key: 'testKey', Value: 'testValue' }]
                         }
-                    }).promise();
-                    await s3.deleteBucketTagging({ Bucket: bucketName }).promise();
+                    });
+                    await s3.deleteBucketTagging({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -868,14 +868,14 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests getting bucket tagging.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketTagging({
                         Bucket: bucketName,
                         Tagging: {
                             TagSet: [{ Key: 'testKey', Value: 'testValue' }]
                         }
-                    }).promise();
-                    await s3.getBucketTagging({ Bucket: bucketName }).promise();
+                    });
+                    await s3.getBucketTagging({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -906,10 +906,10 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests putting bucket replication.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketVersioning({
                         Bucket: bucketName, VersioningConfiguration: { Status: 'Enabled' },
-                    }).promise();
+                    });
                     await s3.putBucketReplication({
                         Bucket: bucketName,
                         ReplicationConfiguration: {
@@ -924,7 +924,7 @@ describe('Server Access Logs - File Output', async () => {
                                 }
                             }]
                         }
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -955,10 +955,10 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests getting bucket replication.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketVersioning({
                         Bucket: bucketName, VersioningConfiguration: { Status: 'Enabled' },
-                    }).promise();
+                    });
                     await s3.putBucketReplication({
                         Bucket: bucketName,
                         ReplicationConfiguration: {
@@ -973,8 +973,8 @@ describe('Server Access Logs - File Output', async () => {
                                 }
                             }]
                         }
-                    }).promise();
-                    await s3.getBucketReplication({ Bucket: bucketName }).promise();
+                    });
+                    await s3.getBucketReplication({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -1011,10 +1011,10 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests deleting bucket replication.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketVersioning({
                         Bucket: bucketName, VersioningConfiguration: { Status: 'Enabled' },
-                    }).promise();
+                    });
                     await s3.putBucketReplication({
                         Bucket: bucketName,
                         ReplicationConfiguration: {
@@ -1029,8 +1029,8 @@ describe('Server Access Logs - File Output', async () => {
                                 }
                             }]
                         }
-                    }).promise();
-                    await s3.deleteBucketReplication({ Bucket: bucketName }).promise();
+                    });
+                    await s3.deleteBucketReplication({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -1068,7 +1068,7 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests putting bucket lifecycle.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketLifecycleConfiguration({
                         Bucket: bucketName,
                         LifecycleConfiguration: {
@@ -1079,7 +1079,7 @@ describe('Server Access Logs - File Output', async () => {
                                 Expiration: { Days: 365 }
                             }]
                         }
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -1104,7 +1104,7 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests getting bucket lifecycle.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketLifecycleConfiguration({
                         Bucket: bucketName,
                         LifecycleConfiguration: {
@@ -1115,8 +1115,8 @@ describe('Server Access Logs - File Output', async () => {
                                 Expiration: { Days: 365 }
                             }]
                         }
-                    }).promise();
-                    await s3.getBucketLifecycleConfiguration({ Bucket: bucketName }).promise();
+                    });
+                    await s3.getBucketLifecycleConfiguration({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -1147,7 +1147,7 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests deleting bucket lifecycle.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketLifecycleConfiguration({
                         Bucket: bucketName,
                         LifecycleConfiguration: {
@@ -1158,8 +1158,8 @@ describe('Server Access Logs - File Output', async () => {
                                 Expiration: { Days: 365 }
                             }]
                         }
-                    }).promise();
-                    await s3.deleteBucketLifecycle({ Bucket: bucketName }).promise();
+                    });
+                    await s3.deleteBucketLifecycle({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -1191,7 +1191,7 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests putting bucket policy.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketPolicy({
                         Bucket: bucketName,
                         Policy: JSON.stringify({
@@ -1203,7 +1203,7 @@ describe('Server Access Logs - File Output', async () => {
                                 Resource: `arn:aws:s3:::${bucketName}/*`
                             }]
                         })
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -1228,7 +1228,7 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests getting bucket policy.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketPolicy({
                         Bucket: bucketName,
                         Policy: JSON.stringify({
@@ -1240,8 +1240,8 @@ describe('Server Access Logs - File Output', async () => {
                                 Resource: `arn:aws:s3:::${bucketName}/*`
                             }]
                         })
-                    }).promise();
-                    await s3.getBucketPolicy({ Bucket: bucketName }).promise();
+                    });
+                    await s3.getBucketPolicy({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -1272,7 +1272,7 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests deleting bucket policy.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketPolicy({
                         Bucket: bucketName,
                         Policy: JSON.stringify({
@@ -1284,8 +1284,8 @@ describe('Server Access Logs - File Output', async () => {
                                 Resource: `arn:aws:s3:::${bucketName}/*`
                             }]
                         })
-                    }).promise();
-                    await s3.deleteBucketPolicy({ Bucket: bucketName }).promise();
+                    });
+                    await s3.deleteBucketPolicy({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -1320,7 +1320,7 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.createBucket({
                         Bucket: bucketName,
                         ObjectLockEnabledForBucket: true,
-                    }).promise();
+                    });
                     await s3.putObjectLockConfiguration({
                         Bucket: bucketName,
                         ObjectLockConfiguration: {
@@ -1332,7 +1332,7 @@ describe('Server Access Logs - File Output', async () => {
                                 }
                             }
                         }
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -1357,11 +1357,11 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests putting bucket notification configuration.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketNotificationConfiguration({
                         Bucket: bucketName,
                         NotificationConfiguration: {}
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -1386,8 +1386,8 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests getting bucket notification configuration.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.getBucketNotificationConfiguration({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.getBucketNotificationConfiguration({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -1412,7 +1412,7 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests putting bucket encryption.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketEncryption({
                         Bucket: bucketName,
                         ServerSideEncryptionConfiguration: {
@@ -1424,7 +1424,7 @@ describe('Server Access Logs - File Output', async () => {
                                 }
                             ]
                         }
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -1449,11 +1449,11 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests putting bucket logging.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketLogging({
                         Bucket: bucketName,
                         BucketLoggingStatus: {}
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -1478,18 +1478,18 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests getting bucket logging.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketLogging({
                         Bucket: bucketName,
                         BucketLoggingStatus: {
                             LoggingEnabled: { TargetBucket: bucketName, TargetPrefix: 'prefix' },
                         },
-                    }).promise();
-                    await s3.getBucketLogging({ Bucket: bucketName }).promise();
+                    });
+                    await s3.getBucketLogging({ Bucket: bucketName });
                     await s3.putBucketLogging({
                         Bucket: bucketName,
                         BucketLoggingStatus: {}
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -1532,16 +1532,16 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests completing a multipart upload.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     const uploadId =
-                        (await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey }).promise()).UploadId;
+                        (await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey })).UploadId;
                     const uploadPartResponse = await s3.uploadPart({
                         Bucket: bucketName,
                         Key: objectKey,
                         PartNumber: 1,
                         UploadId: uploadId,
                         Body: 'test data'
-                    }).promise();
+                    });
                     await s3.completeMultipartUpload({
                         Bucket: bucketName,
                         Key: objectKey,
@@ -1552,7 +1552,7 @@ describe('Server Access Logs - File Output', async () => {
                                 PartNumber: 1
                             }]
                         }
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -1592,8 +1592,8 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests initiating a multipart upload.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey });
                 };
                 return {
                     method,
@@ -1619,9 +1619,9 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests listing multipart uploads.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey }).promise();
-                    await s3.listMultipartUploads({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey });
+                    await s3.listMultipartUploads({ Bucket: bucketName });
                 };
                 return {
                     method,
@@ -1653,17 +1653,17 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests listing parts of a multipart upload.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     const uploadId =
-                        (await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey }).promise()).UploadId;
+                        (await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey })).UploadId;
                     await s3.uploadPart({
                         Bucket: bucketName,
                         Key: objectKey,
                         PartNumber: 1,
                         UploadId: uploadId,
                         Body: 'test data'
-                    }).promise();
-                    await s3.listParts({ Bucket: bucketName, Key: objectKey, UploadId: uploadId }).promise();
+                    });
+                    await s3.listParts({ Bucket: bucketName, Key: objectKey, UploadId: uploadId });
                 };
                 return {
                     method,
@@ -1703,9 +1703,9 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests deleting multiple objects including a non-existent one.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: `${objectKey}2`, Body: 'test data 2' }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' });
+                    await s3.putObject({ Bucket: bucketName, Key: `${objectKey}2`, Body: 'test data 2' });
                     await s3.deleteObjects({
                         Bucket: bucketName,
                         Delete: {
@@ -1715,7 +1715,7 @@ describe('Server Access Logs - File Output', async () => {
                                 { Key: `${objectKey}-non-existent` }
                             ]
                         }
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -1791,10 +1791,10 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests aborting a multipart upload.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     const uploadId =
-                        (await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey }).promise()).UploadId;
-                    await s3.abortMultipartUpload({ Bucket: bucketName, Key: objectKey, UploadId: uploadId }).promise();
+                        (await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey })).UploadId;
+                    await s3.abortMultipartUpload({ Bucket: bucketName, Key: objectKey, UploadId: uploadId });
                 };
                 return {
                     method,
@@ -1828,9 +1828,9 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests deleting an object.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' }).promise();
-                    await s3.deleteObject({ Bucket: bucketName, Key: objectKey }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' });
+                    await s3.deleteObject({ Bucket: bucketName, Key: objectKey });
                 };
                 return {
                     method,
@@ -1864,16 +1864,16 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests deleting object tagging.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' });
                     await s3.putObjectTagging({
                         Bucket: bucketName,
                         Key: objectKey,
                         Tagging: {
                             TagSet: [{ Key: 'testKey', Value: 'testValue' }]
                         }
-                    }).promise();
-                    await s3.deleteObjectTagging({ Bucket: bucketName, Key: objectKey }).promise();
+                    });
+                    await s3.deleteObjectTagging({ Bucket: bucketName, Key: objectKey });
                 };
                 return {
                     method,
@@ -1914,9 +1914,9 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests getting an object.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' }).promise();
-                    await s3.getObject({ Bucket: bucketName, Key: objectKey }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' });
+                    await s3.getObject({ Bucket: bucketName, Key: objectKey });
                 };
                 return {
                     method,
@@ -1949,9 +1949,9 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests getting object ACL.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' }).promise();
-                    await s3.getObjectAcl({ Bucket: bucketName, Key: objectKey }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' });
+                    await s3.getObjectAcl({ Bucket: bucketName, Key: objectKey });
                 };
                 return {
                     method,
@@ -1987,19 +1987,19 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.createBucket({
                         Bucket: bucketName,
                         ObjectLockEnabledForBucket: true,
-                    }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' }).promise();
+                    });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' });
                     await s3.putObjectLegalHold({
                         Bucket: bucketName,
                         Key: objectKey,
                         LegalHold: { Status: 'ON' }
-                    }).promise();
-                    await s3.getObjectLegalHold({ Bucket: bucketName, Key: objectKey }).promise();
+                    });
+                    await s3.getObjectLegalHold({ Bucket: bucketName, Key: objectKey });
                     await s3.putObjectLegalHold({
                         Bucket: bucketName,
                         Key: objectKey,
                         LegalHold: { Status: 'OFF' }
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -2049,8 +2049,8 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.createBucket({
                         Bucket: bucketName,
                         ObjectLockEnabledForBucket: true,
-                    }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' }).promise();
+                    });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' });
                     const retainUntilDate = new Date();
                     retainUntilDate.setDate(retainUntilDate.getDate() + 1);
                     await s3.putObjectRetention({
@@ -2060,8 +2060,8 @@ describe('Server Access Logs - File Output', async () => {
                             Mode: 'GOVERNANCE',
                             RetainUntilDate: retainUntilDate
                         }
-                    }).promise();
-                    await s3.getObjectRetention({ Bucket: bucketName, Key: objectKey }).promise();
+                    });
+                    await s3.getObjectRetention({ Bucket: bucketName, Key: objectKey });
                 };
                 return {
                     method,
@@ -2101,9 +2101,9 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests getting object tagging.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' }).promise();
-                    await s3.getObjectTagging({ Bucket: bucketName, Key: objectKey }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' });
+                    await s3.getObjectTagging({ Bucket: bucketName, Key: objectKey });
                 };
                 return {
                     method,
@@ -2136,13 +2136,13 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests copying an object.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' });
                     await s3.copyObject({
                         Bucket: bucketName,
                         CopySource: `${bucketName}/${objectKey}`,
                         Key: `${objectKey}-copy`
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -2187,9 +2187,9 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests putting an object ACL.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' }).promise();
-                    await s3.putObjectAcl({ Bucket: bucketName, Key: objectKey, ACL: 'private' }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' });
+                    await s3.putObjectAcl({ Bucket: bucketName, Key: objectKey, ACL: 'private' });
                 };
                 return {
                     method,
@@ -2225,18 +2225,18 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.createBucket({
                         Bucket: bucketName,
                         ObjectLockEnabledForBucket: true,
-                    }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' }).promise();
+                    });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' });
                     await s3.putObjectLegalHold({
                         Bucket: bucketName,
                         Key: objectKey,
                         LegalHold: { Status: 'ON' }
-                    }).promise();
+                    });
                     await s3.putObjectLegalHold({
                         Bucket: bucketName,
                         Key: objectKey,
                         LegalHold: { Status: 'OFF' }
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -2276,15 +2276,15 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests putting object tagging.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' });
                     await s3.putObjectTagging({
                         Bucket: bucketName,
                         Key: objectKey,
                         Tagging: {
                             TagSet: [{ Key: 'testKey', Value: 'testValue' }]
                         }
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -2317,16 +2317,16 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests uploading a part in a multipart upload.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
                     const uploadId =
-                        (await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey }).promise()).UploadId;
+                        (await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey })).UploadId;
                     await s3.uploadPart({
                         Bucket: bucketName,
                         Key: objectKey,
                         PartNumber: 1,
                         UploadId: uploadId,
                         Body: 'test data'
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -2359,10 +2359,10 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests uploading a part copy in a multipart upload.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data for copy' }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data for copy' });
                     const uploadId =
-                        (await s3.createMultipartUpload({ Bucket: bucketName, Key: `${objectKey}-mpu` }).promise())
+                        (await s3.createMultipartUpload({ Bucket: bucketName, Key: `${objectKey}-mpu` }))
                             .UploadId;
                     await s3.uploadPartCopy({
                         Bucket: bucketName,
@@ -2370,7 +2370,7 @@ describe('Server Access Logs - File Output', async () => {
                         PartNumber: 1,
                         UploadId: uploadId,
                         CopySource: `${bucketName}/${objectKey}`
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -2425,8 +2425,8 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.createBucket({
                         Bucket: bucketName,
                         ObjectLockEnabledForBucket: true,
-                    }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' }).promise();
+                    });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' });
                     const retainUntilDate = new Date();
                     retainUntilDate.setDate(retainUntilDate.getDate() + 1);
                     await s3.putObjectRetention({
@@ -2436,7 +2436,7 @@ describe('Server Access Logs - File Output', async () => {
                             Mode: 'GOVERNANCE',
                             RetainUntilDate: retainUntilDate
                         }
-                    }).promise();
+                    });
                 };
                 return {
                     method,
@@ -2473,20 +2473,20 @@ describe('Server Access Logs - File Output', async () => {
             // (() => {
             //     // This operation tests the restore object API call.
             //     const method = async () => {
-            //         await s3.createBucket({ Bucket: bucketName }).promise();
+            //         await s3.createBucket({ Bucket: bucketName });
             //         await s3.putObject({ 
             //             Bucket: bucketName, 
             //             Key: objectKey, 
             //             Body: 'test data',
             //             StorageClass: 'GLACIER'  // Not supported in CloudServer
-            //         }).promise();
+            //         });
             //         await s3.restoreObject({
             //             Bucket: bucketName,
             //             Key: objectKey,
             //             RestoreRequest: {
             //                 Days: 1
             //             }
-            //         }).promise();
+            //         });
             //     };
             //     const expectedOperations = ['REST.PUT.BUCKET','REST.PUT.OBJECT', 'REST.POST.OBJECT'];
             //     return { method, methodName: 'objectRestore', expectedOperations };
@@ -2494,8 +2494,8 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 const testBody = 'Hello, Server Access Logs!';
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: testBody }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: testBody });
                 };
                 return {
                     method,
@@ -2521,9 +2521,9 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 const testBody = 'Hello, Server Access Logs!';
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: testBody }).promise();
-                    await s3.headObject({ Bucket: bucketName, Key: objectKey }).promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: testBody });
+                    await s3.headObject({ Bucket: bucketName, Key: objectKey });
                 };
                 return {
                     method,
@@ -2556,8 +2556,8 @@ describe('Server Access Logs - File Output', async () => {
             (() => {
                 // This operation tests listing all buckets.
                 const method = async () => {
-                    await s3.createBucket({ Bucket: bucketName }).promise();
-                    await s3.listBuckets().promise();
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.listBuckets();
                 };
                 return {
                     method,
@@ -2585,7 +2585,7 @@ describe('Server Access Logs - File Output', async () => {
                 // Test errorCode is set.
                 const method = async () => {
                     try {
-                        await s3.deleteBucket({ Bucket: 'xxx'}).promise();
+                        await s3.deleteBucket({ Bucket: 'xxx'});
                     } catch {
                         return;
                     }
@@ -2611,7 +2611,7 @@ describe('Server Access Logs - File Output', async () => {
                 // Test errorCode is set for PutObject.
                 const method = async () => {
                     try {
-                        await s3.putObject({ Bucket: 'xxx', Key: 'key', Body: 'test' }).promise();
+                        await s3.putObject({ Bucket: 'xxx', Key: 'key', Body: 'test' });
                     } catch {
                         return;
                     }
@@ -2638,7 +2638,7 @@ describe('Server Access Logs - File Output', async () => {
                 // Test errorCode is set for GetObject.
                 const method = async () => {
                     try {
-                        await s3.getObject({ Bucket: 'xxx', Key: 'key' }).promise();
+                        await s3.getObject({ Bucket: 'xxx', Key: 'key' });
                     } catch {
                         return;
                     }
@@ -2666,7 +2666,7 @@ describe('Server Access Logs - File Output', async () => {
             //     // Test errorCode is set.
             //     const method = async () => {
             //         try {
-            //             await s3.deleteBucket({ Bucket: 'UPPERCASE'}).promise();
+            //             await s3.deleteBucket({ Bucket: 'UPPERCASE'});
             //         } catch {
             //             return;
             //         }
