@@ -89,7 +89,7 @@ class HttpRequestAuthV4 extends stream.Writable {
             .update(stringToSign).digest('hex');
     }
 
-    getCanonicalRequest(urlObj, signedHeaders) {
+    getCanonicalRequest(urlObj, signedHeaders, contentSha256) {
         const method = this._httpParams.method || 'GET';
         const signedHeadersList = Object.keys(signedHeaders).sort();
         const qsParams = [];
@@ -115,7 +115,7 @@ class HttpRequestAuthV4 extends stream.Writable {
             canonicalQueryString,
             canonicalSignedHeaders,
             signedHeadersList.join(';'),
-            signedHeaders['x-amz-content-sha256'],
+            contentSha256,
         ].join('\n');
 
         // console.log(`CANONICAL REQUEST: "${canonicalRequest}"`);
@@ -131,17 +131,17 @@ class HttpRequestAuthV4 extends stream.Writable {
         return stringToSign;
     }
 
-    getAuthorizationSignature(urlObj, signedHeaders) {
+    getAuthorizationSignature(urlObj, signedHeaders, contentSha256) {
         const canonicalRequest =
-              this.getCanonicalRequest(urlObj, signedHeaders);
+              this.getCanonicalRequest(urlObj, signedHeaders, contentSha256);
         this._lastSignature = this.createSignature(
             this.constructRequestStringToSign(canonicalRequest));
         return this._lastSignature;
     }
 
-    getAuthorizationHeader(urlObj, signedHeaders) {
+    getAuthorizationHeader(urlObj, signedHeaders, contentSha256) {
         const authorizationSignature =
-              this.getAuthorizationSignature(urlObj, signedHeaders);
+              this.getAuthorizationSignature(urlObj, signedHeaders, contentSha256);
         const signedHeadersList = Object.keys(signedHeaders).sort();
 
         return ['AWS4-HMAC-SHA256',
@@ -206,8 +206,7 @@ class HttpRequestAuthV4 extends stream.Writable {
             if (lowerHeader === 'content-length') {
                 contentLengthHeader = header;
             }
-            if (!['connection',
-                  'transfer-encoding'].includes(lowerHeader)) {
+            if (!['connection', 'transfer-encoding'].includes(lowerHeader)) {
                 signedHeaders[lowerHeader] = httpHeaders[header];
             }
         });
@@ -229,8 +228,7 @@ class HttpRequestAuthV4 extends stream.Writable {
             }
         }
         httpHeaders.Authorization =
-            this.getAuthorizationHeader(urlObj, signedHeaders);
-
+            this.getAuthorizationHeader(urlObj, signedHeaders, signedHeaders['x-amz-content-sha256']);
         return Object.assign(httpHeaders, signedHeaders);
     }
 
