@@ -214,6 +214,13 @@ describe('reportHandler.getCapabilities', () => {
         });
 
         it('should update locationTypes capabilities based on locationTypes map', () => {
+            const locationTypes = [
+                'location-gcp-v1',
+                'location-scality-sproxyd-v1',
+                'location-ceph-radosgw-s3-v1',
+                'location-file-v1',
+                'location-scality-artesca-s3-v1',
+            ];
             const cfg = {
                 capabilities: {
                     locationTypeAzure: true,
@@ -225,15 +232,10 @@ describe('reportHandler.getCapabilities', () => {
                     locationTypeCephRadosGW: true,
                     locationTypeHyperdriveV2: true,
                     locationTypeLocal: true,
-                    locationTypes: new Set([
-                        'location-gcp-v1',
-                        'location-scality-sproxyd-v1',
-                        'location-ceph-radosgw-s3-v1',
-                        'location-file-v1',
-                        'location-scality-artesca-s3-v1',
-                    ]),
+                    locationTypes,
                 },
                 supportedLifecycleRules: ['Expiration'],
+                supportedLocationTypes: new Set(locationTypes),
             };
             const caps = getCapabilities(cfg);
 
@@ -250,6 +252,7 @@ describe('reportHandler.getCapabilities', () => {
 
         it('should handle multiple consistency checks together', () => {
             process.env.LOCAL_VOLUME_CAPABILITY = '0';
+            const locationTypes = ['location-azure-v1'];
             const cfg = {
                 capabilities: {
                     locationTypeLocal: true,
@@ -258,9 +261,10 @@ describe('reportHandler.getCapabilities', () => {
                     managedLifecycleTransition: true,
                     locationTypeAzure: true,
                     locationTypeGCP: true,
-                    locationTypes: new Set(['location-azure-v1']),
+                    locationTypes,
                 },
                 supportedLifecycleRules: ['Expiration'], // Missing Transition
+                supportedLocationTypes: new Set(locationTypes),
             };
             const caps = getCapabilities(cfg);
 
