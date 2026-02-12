@@ -95,14 +95,13 @@ describe('objectGetAttributes', () => {
       .getObjectAttributes({
         Bucket: bucket,
         Key: key,
-        ObjectAttributes: ['ETag', 'Checksum', 'ObjectParts', 'StorageClass', 'ObjectSize'],
+        ObjectAttributes: ['ETag', 'ObjectParts', 'StorageClass', 'ObjectSize'],
       })
       .promise();
 
     assert.strictEqual(data.ETag, expectedMD5);
     assert.strictEqual(data.StorageClass, 'STANDARD');
     assert.strictEqual(data.ObjectSize, body.length);
-    assert.deepStrictEqual(data.Checksum, {}, 'Checksum should be present');
     assert.strictEqual(data.ObjectParts, undefined, "ObjectParts shouldn't be present for non-MPU object");
     assert(data.LastModified, 'LastModified should be present');
   });
@@ -119,16 +118,20 @@ describe('objectGetAttributes', () => {
     assert.strictEqual(data.ETag, expectedMD5);
   });
 
-  it('should return Checksum', async () => {
-    const data = await s3
-      .getObjectAttributes({
-        Bucket: bucket,
-        Key: key,
-        ObjectAttributes: ['Checksum'],
-      })
-      .promise();
-
-    assert.deepStrictEqual(data.Checksum, {}, 'Checksum should be present');
+  it('should fail with NotImplemented when Checksum is requested', async () => {
+    try {
+      await s3
+        .getObjectAttributes({
+          Bucket: bucket,
+          Key: key,
+          ObjectAttributes: ['Checksum'],
+        })
+        .promise();
+      assert.fail('Expected NotImplemented error');
+    } catch (err) {
+      assert.strictEqual(err.code, 'NotImplemented');
+      assert.strictEqual(err.message, 'Checksum attribute is not implemented');
+    }
   });
 
   it("shouldn't return ObjectParts for non-MPU objects", async () => {

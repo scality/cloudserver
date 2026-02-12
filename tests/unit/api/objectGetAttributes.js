@@ -177,7 +177,6 @@ describe('objectGetAttributes API', () => {
     it('should return all attributes', async () => {
         const testGetRequest = createGetAttributesRequest([
             'ETag',
-            'Checksum',
             'ObjectParts',
             'StorageClass',
             'ObjectSize',
@@ -193,7 +192,6 @@ describe('objectGetAttributes API', () => {
         assert.strictEqual(response.ETag[0], expectedMD5);
         assert.strictEqual(response.StorageClass[0], 'STANDARD');
         assert.strictEqual(response.ObjectSize[0], String(body.length));
-        assert.deepStrictEqual(response.Checksum[0], '', 'Checksum should be empty');
         assert.strictEqual(response.ObjectParts, undefined, "ObjectParts shouldn't be present for non-MPU object");
         assert(headers['Last-Modified'], 'LastModified should be present');
     });
@@ -206,12 +204,16 @@ describe('objectGetAttributes API', () => {
         assert.strictEqual(result.GetObjectAttributesResponse.ETag[0], expectedMD5);
     });
 
-    it('should return Checksum', async () => {
+    it('should fail with NotImplemented when Checksum is requested', async () => {
         const testGetRequest = createGetAttributesRequest(['Checksum']);
 
-        const [xml] = await objectGetAttributesAsync(authInfo, testGetRequest, log);
-        const result = await parseStringPromise(xml);
-        assert.deepStrictEqual(result.GetObjectAttributesResponse.Checksum[0], '', 'Checksum should be empty');
+        try {
+            await objectGetAttributesAsync(authInfo, testGetRequest, log);
+            assert.fail('Expected error was not thrown');
+        } catch (err) {
+            assert.strictEqual(err.is.NotImplemented, true);
+            assert.strictEqual(err.description, 'Checksum attribute is not implemented');
+        }
     });
 
     it("shouldn't return ObjectParts for non-MPU object", async () => {

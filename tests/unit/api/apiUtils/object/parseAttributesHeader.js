@@ -109,65 +109,65 @@ describe('parseAttributesHeaders', () => {
   });
 
   describe('valid attribute names', () => {
-    it('should return array with single valid attribute ETag', () => {
+    it('should return set with single valid attribute ETag', () => {
       const headers = { 'x-amz-object-attributes': 'ETag' };
       const result = parseAttributesHeaders(headers);
 
-      assert(Array.isArray(result));
-      assert.deepStrictEqual(result, ['ETag']);
+      assert(result instanceof Set);
+      assert.deepStrictEqual(result, new Set(['ETag']));
     });
 
-    it('should return array with single valid attribute StorageClass', () => {
+    it('should return set with single valid attribute StorageClass', () => {
       const headers = { 'x-amz-object-attributes': 'StorageClass' };
       const result = parseAttributesHeaders(headers);
 
-      assert(Array.isArray(result));
-      assert.deepStrictEqual(result, ['StorageClass']);
+      assert(result instanceof Set);
+      assert.deepStrictEqual(result, new Set(['StorageClass']));
     });
 
-    it('should return array with single valid attribute ObjectSize', () => {
+    it('should return set with single valid attribute ObjectSize', () => {
       const headers = { 'x-amz-object-attributes': 'ObjectSize' };
       const result = parseAttributesHeaders(headers);
 
-      assert(Array.isArray(result));
-      assert.deepStrictEqual(result, ['ObjectSize']);
+      assert(result instanceof Set);
+      assert.deepStrictEqual(result, new Set(['ObjectSize']));
     });
 
-    it('should return array with single valid attribute ObjectParts', () => {
+    it('should return set with single valid attribute ObjectParts', () => {
       const headers = { 'x-amz-object-attributes': 'ObjectParts' };
       const result = parseAttributesHeaders(headers);
 
-      assert(Array.isArray(result));
-      assert.deepStrictEqual(result, ['ObjectParts']);
+      assert(result instanceof Set);
+      assert.deepStrictEqual(result, new Set(['ObjectParts']));
     });
 
-    it('should return array with single valid attribute Checksum', () => {
+    it('should return set with single valid attribute Checksum', () => {
       const headers = { 'x-amz-object-attributes': 'Checksum' };
       const result = parseAttributesHeaders(headers);
 
-      assert(Array.isArray(result));
-      assert.deepStrictEqual(result, ['Checksum']);
+      assert(result instanceof Set);
+      assert.deepStrictEqual(result, new Set(['Checksum']));
     });
 
-    it('should return array with multiple valid attributes', () => {
+    it('should return set with multiple valid attributes', () => {
       const headers = { 'x-amz-object-attributes': 'ETag,ObjectSize,StorageClass' };
       const result = parseAttributesHeaders(headers);
 
-      assert(Array.isArray(result));
-      assert.deepStrictEqual(result, ['ETag', 'ObjectSize', 'StorageClass']);
+      assert(result instanceof Set);
+      assert.deepStrictEqual(result, new Set(['ETag', 'ObjectSize', 'StorageClass']));
     });
 
-    it('should return array with all valid attributes', () => {
+    it('should return set with all valid attributes', () => {
       const headers = { 'x-amz-object-attributes': 'StorageClass,ObjectSize,ObjectParts,Checksum,ETag' };
       const result = parseAttributesHeaders(headers);
 
-      assert(Array.isArray(result));
-      assert.strictEqual(result.length, 5);
-      assert(result.includes('StorageClass'));
-      assert(result.includes('ObjectSize'));
-      assert(result.includes('ObjectParts'));
-      assert(result.includes('Checksum'));
-      assert(result.includes('ETag'));
+      assert(result instanceof Set);
+      assert.strictEqual(result.size, 5);
+      assert(result.has('StorageClass'));
+      assert(result.has('ObjectSize'));
+      assert(result.has('ObjectParts'));
+      assert(result.has('Checksum'));
+      assert(result.has('ETag'));
     });
   });
 
@@ -176,8 +176,8 @@ describe('parseAttributesHeaders', () => {
       const headers = { 'x-amz-object-attributes': ' ETag , ObjectSize ' };
       const result = parseAttributesHeaders(headers);
 
-      assert(Array.isArray(result));
-      assert.deepStrictEqual(result, ['ETag', 'ObjectSize']);
+      assert(result instanceof Set);
+      assert.deepStrictEqual(result, new Set(['ETag', 'ObjectSize']));
     });
 
     it('should throw InvalidArgument for extra commas between attributes', () => {

@@ -2836,9 +2836,9 @@
   integrity sha512-EKQmr16tM8s16vTT3cA5L0kZZcTMU5DUOZTuvpnY738m+jyP3JIUj+Mm1xc1rsLkGBQ/gVnfKYPwOmPg1tUR4Q==
 
 "@hapi/tlds@^1.1.1":
-  version "1.1.4"
-  resolved "https://registry.yarnpkg.com/@hapi/tlds/-/tlds-1.1.4.tgz#df4a7b59082b54ba4f3b7b38f781e2ac3cbc359a"
-  integrity sha512-Fq+20dxsxLaUn5jSSWrdtSRcIUba2JquuorF9UW1wIJS5cSUwxIsO2GIhaWynPRflvxSzFN+gxKte2HEW1OuoA==
+  version "1.1.5"
+  resolved "https://registry.yarnpkg.com/@hapi/tlds/-/tlds-1.1.5.tgz#3eff5d8a3bd20833a2d779e0f839d25177fee722"
+  integrity sha512-Vq/1gnIIsvFUpKlDdfrPd/ssHDpAyBP/baVukh3u2KSG2xoNjsnRNjQiPmuyPPGqsn1cqVWWhtZHfOBaLizFRQ==
 
 "@hapi/topo@^5.0.0", "@hapi/topo@^5.1.0":
   version "5.1.0"
@@ -5356,7 +5356,7 @@ arraybuffer.prototype.slice@^1.0.4:
 
 "arsenal@git+https://github.com/scality/Arsenal#feature/ARSN-549/get-object-attributes":
   version "8.2.44"
-  resolved "git+https://github.com/scality/Arsenal#f02179acbfb6aff963c2fc72146f091544ddf86c"
+  resolved "git+https://github.com/scality/Arsenal#475f746b6d201baaa46cc9ac2cdc0a2ed121fa43"
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"
