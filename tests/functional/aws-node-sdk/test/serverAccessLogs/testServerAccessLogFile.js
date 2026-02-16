@@ -1947,6 +1947,41 @@ describe('Server Access Logs - File Output', async () => {
                 };
             })(),
             (() => {
+                // This operation tests getting object attributes.
+                const method = async () => {
+                    await s3.createBucket({ Bucket: bucketName });
+                    await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data' });
+                    await s3.getObjectAttributes({ Bucket: bucketName, Key: objectKey, ObjectAttributes: ['ETag'] });
+                };
+                return {
+                    method,
+                    methodName: 'objectGetAttributes',
+                    expected: [
+                        {
+                            ...commonProperties,
+                            operation: 'REST.PUT.BUCKET',
+                            action: 'CreateBucket',
+                            bucketOwner: null,
+                            httpMethod: 'PUT',
+                        },
+                        {
+                            ...commonProperties,
+                            operation: 'REST.PUT.OBJECT',
+                            action: 'PutObject',
+                            objectKey,
+                            httpMethod: 'PUT',
+                        },
+                        {
+                            ...commonProperties,
+                            operation: 'REST.GET.OBJECT',
+                            action: 'GetObjectAttributes',
+                            objectKey,
+                            httpMethod: 'GET',
+                        }
+                    ],
+                };
+            })(),
+            (() => {
                 // This operation tests getting object ACL.
                 const method = async () => {
                     await s3.createBucket({ Bucket: bucketName });
