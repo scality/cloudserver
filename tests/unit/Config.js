@@ -933,11 +933,15 @@ describe('Config', () => {
                     'bucketPutReplication': false,
                     'bucketPutVersioning': false,
                     'bucketPutWebsite': false,
+                    'bucketPutLogging': false,
+                    'bucketPutTagging': false,
                     'multiObjectDelete': false,
                     'objectPutACL': false,
                     'objectPutLegalHold': false,
                     'objectPutTagging': false,
                     'objectPutRetention': false,
+                    'objectRestore': false,
+                    'completeMultipartUpload': false,
                 },
             };
 
