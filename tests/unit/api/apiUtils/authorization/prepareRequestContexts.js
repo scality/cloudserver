@@ -448,12 +448,10 @@ describe('prepareRequestContexts', () => {
             });
         });
 
-        describe('x-amz-version-id header', () => {
-            it('should return version-specific actions with x-amz-version-id', () => {
+        describe('versionId query param', () => {
+            it('should return version-specific actions with versionId query param', () => {
                 const apiMethod = 'objectGetAttributes';
-                const request = makeRequest({
-                    'x-amz-version-id': '0987654323456789',
-                });
+                const request = makeRequest({}, { versionId: '0987654323456789' });
                 const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
 
                 assert.strictEqual(results.length, 2);
@@ -461,12 +459,12 @@ describe('prepareRequestContexts', () => {
                 assert.strictEqual(results[1].getAction(), 's3:GetObjectVersionAttributes');
             });
 
-            it('should include scality:GetObjectAttributes with x-amz-version-id and x-amz-meta', () => {
+            it('should include scality:GetObjectAttributes with versionId query param and x-amz-meta', () => {
                 const apiMethod = 'objectGetAttributes';
-                const request = makeRequest({
-                    'x-amz-version-id': '0987654323456789',
-                    'x-amz-object-attributes': 'x-amz-meta-department',
-                });
+                const request = makeRequest(
+                    { 'x-amz-object-attributes': 'x-amz-meta-department' },
+                    { versionId: '0987654323456789' }
+                );
                 const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
 
                 assert.strictEqual(results.length, 3);
