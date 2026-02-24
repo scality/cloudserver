@@ -20,7 +20,7 @@ describe('GCP: GET Bucket Versioning', () => {
     const gcpClient = new GCP(config);
 
     beforeEach(async function beforeFn() {
-        this.currentTest.bucketName = `somebucket-${genUniqID()}`;
+        this.currentTest.bucketName = `cldsrvci-getversioning-${genUniqID()}`;
         await gcpRetry(
             gcpClient,
             new CreateBucketCommand({

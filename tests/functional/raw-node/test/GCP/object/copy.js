@@ -12,7 +12,7 @@ const {
 } = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `somebucket-${genUniqID()}`;
+const bucketName = `cldsrvci-copy-${genUniqID()}`;
 
 describe('GCP: COPY Object', function testSuite() {
     this.timeout(180000);
