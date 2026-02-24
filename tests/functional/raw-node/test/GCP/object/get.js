@@ -13,7 +13,7 @@ const {
 } = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `cldsrvci-somebucket-get-${genUniqID()}`;
+const bucketName = `cldsrvci-get-${genUniqID()}`;
 
 describe('GCP: GET Object', function testSuite() {
     this.timeout(30000);

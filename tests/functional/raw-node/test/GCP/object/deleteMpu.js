@@ -15,10 +15,10 @@ const {
 const credentialOne = 'gcpbackend';
 const bucketNames = {
     main: {
-        Name: `cldsrvci-somebucket-deleteMpu-${genUniqID()}`,
+        Name: `cldsrvci-deletempu-${genUniqID()}`,
     },
     mpu: {
-        Name: `cldsrvci-mpubucket-deleteMpu-${genUniqID()}`,
+        Name: `cldsrvci-mpu-deletempu-${genUniqID()}`,
     },
 };
 const numParts = 10;

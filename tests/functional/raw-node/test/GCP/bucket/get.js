@@ -16,7 +16,7 @@ const { getRealAwsConfig } =
 const { listingHardLimit } = require('../../../../../../constants');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `cldsrvci-somebucket-get-${genUniqID()}`;
+const bucketName = `cldsrvci-get-${genUniqID()}`;
 const smallSize = 20;
 const bigSize = listingHardLimit + 1;
 const config = getRealAwsConfig(credentialOne);

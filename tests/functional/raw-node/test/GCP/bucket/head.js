@@ -17,7 +17,7 @@ describe('GCP: HEAD Bucket', () => {
 
     describe('without existing bucket', () => {
         beforeEach(async function beforeFn() {
-            this.currentTest.bucketName = `cldsrvci-somebucket-head-${genUniqID()}`;
+            this.currentTest.bucketName = `cldsrvci-head-${genUniqID()}`;
         });
 
         it('should return 404', async function testFn() {
@@ -37,7 +37,7 @@ describe('GCP: HEAD Bucket', () => {
 
     describe('with existing bucket', () => {
         beforeEach(async function beforeFn() {
-            this.currentTest.bucketName = `cldsrvci-somebucket-head-${genUniqID()}`;
+            this.currentTest.bucketName = `cldsrvci-head-${genUniqID()}`;
             process.stdout
                 .write(`Creating test bucket ${this.currentTest.bucketName}\n`);
             await gcpRetry(

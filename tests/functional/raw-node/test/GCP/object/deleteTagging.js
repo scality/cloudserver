@@ -14,7 +14,7 @@ const {
 } = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `cldsrvci-somebucket-deleteTagging-${genUniqID()}`;
+const bucketName = `cldsrvci-deletetagging-${genUniqID()}`;
 let config;
 let gcpClient;
 

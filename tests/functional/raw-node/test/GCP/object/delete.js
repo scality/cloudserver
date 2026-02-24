@@ -13,7 +13,7 @@ const {
 } = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `somebucket-${genUniqID()}`;
+const bucketName = `cldsrvci-deleteobj-${genUniqID()}`;
 const objectKey = `somekey-${genUniqID()}`;
 const badObjectKey = `nonexistingkey-${genUniqID()}`;
 

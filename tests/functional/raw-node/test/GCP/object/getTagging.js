@@ -13,7 +13,7 @@ const {
 } = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `cldsrvci-somebucket-getTagging-${genUniqID()}`;
+const bucketName = `cldsrvci-gettagging-${genUniqID()}`;
 const tagSize = 10;
 
 describe('GCP: GET Object Tagging', () => {
