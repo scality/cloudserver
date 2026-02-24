@@ -20,11 +20,11 @@ const {
 const credentialOne = 'gcpbackend';
 const bucketNames = {
     main: {
-        Name: `somebucket-${genUniqID()}`,
+        Name: `cldsrvci-somebucket-completeMpu-${genUniqID()}`,
         Type: 'MULTI_REGIONAL',
     },
     mpu: {
-        Name: `mpubucket-${genUniqID()}`,
+        Name: `cldsrvci-mpubucket-completeMpu-${genUniqID()}`,
         Type: 'MULTI_REGIONAL',
     },
 };

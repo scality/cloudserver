@@ -14,7 +14,7 @@ const { getRealAwsConfig } =
 const credentialOne = 'gcpbackend';
 const verEnabledStatus = 'Enabled';
 const verDisabledStatus = 'Suspended';
-const bucketName = `somebucket-${genUniqID()}`;
+const bucketName = `cldsrvci-somebucket-putVersioning-${genUniqID()}`;
 
 describe('GCP: PUT Bucket Versioning', () => {
     const config = getRealAwsConfig(credentialOne);
