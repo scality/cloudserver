@@ -24,7 +24,7 @@ describe('validateChecksumsNoChunking MD5', () => {
     describe('with MD5 mismatch', () => {
         it('should return MD5Mismatch error when checksums do not match', async () => {
             const body = 'Hello, World!';
-            const wrongMd5 = 'wrongchecksum123=';
+            const wrongMd5 = '1B2M2Y8AsgTpgAmY7PhCfg==';
             const expectedMd5 = crypto.createHash('md5').update(body, 'utf8').digest('base64');
             const headers = {
                 'content-md5': wrongMd5
@@ -56,45 +56,39 @@ describe('validateChecksumsNoChunking MD5', () => {
             assert.strictEqual(result.details, null);
         });
 
-        it('should return MD5Mismatch error when content-md5 header is undefined', async () => {
+        it('should return MD5Invalid error when content-md5 header is undefined', async () => {
             const body = 'Hello, World!';
             const headers = {
                 'content-type': 'application/json',
                 'content-md5': undefined
             };
-            const calculatedMD5 = crypto.createHash('md5').update(body, 'utf8').digest('base64');
 
             const result = await validateChecksumsNoChunking(headers, body);
-            assert.strictEqual(result.error, ChecksumError.MD5Mismatch);
-            assert.strictEqual(result.details.calculated, calculatedMD5);
+            assert.strictEqual(result.error, ChecksumError.MD5Invalid);
             assert.strictEqual(result.details.expected, undefined);
         });
 
-        it('should return MD5Mismatch error when content-md5 header is null', async () => {
+        it('should return MD5Invalid error when content-md5 header is null', async () => {
             const body = 'Hello, World!';
             const headers = {
                 'content-type': 'application/json',
                 'content-md5': null
             };
-            const calculatedMD5 = crypto.createHash('md5').update(body, 'utf8').digest('base64');
 
             const result = await validateChecksumsNoChunking(headers, body);
-            assert.strictEqual(result.error, ChecksumError.MD5Mismatch);
-            assert.strictEqual(result.details.calculated, calculatedMD5);
+            assert.strictEqual(result.error, ChecksumError.MD5Invalid);
             assert.strictEqual(result.details.expected, null);
         });
 
-        it('should return MD5Mismatch error when content-md5 header is empty string', async () => {
+        it('should return MD5Invalid error when content-md5 header is empty string', async () => {
             const body = 'Hello, World!';
             const headers = {
                 'content-type': 'application/json',
                 'content-md5': ''
             };
-            const calculatedMD5 = crypto.createHash('md5').update(body, 'utf8').digest('base64');
 
             const result = await validateChecksumsNoChunking(headers, body);
-            assert.strictEqual(result.error, ChecksumError.MD5Mismatch);
-            assert.strictEqual(result.details.calculated, calculatedMD5);
+            assert.strictEqual(result.error, ChecksumError.MD5Invalid);
             assert.strictEqual(result.details.expected, '');
         });
     });
@@ -318,7 +312,7 @@ describe('validateMethodChecksumNoChunking', () => {
                 config.integrityChecks[method] = true;
 
                 const body = 'Hello, World!';
-                const wrongMd5 = 'wrongchecksum123=';
+                const wrongMd5 = '1B2M2Y8AsgTpgAmY7PhCfg==';
                 const request = {
                     apiMethod: method,
                     headers: {
@@ -330,6 +324,29 @@ describe('validateMethodChecksumNoChunking', () => {
                 const result = await validateMethodChecksumNoChunking(request, body, log);
 
                 assert.deepStrictEqual(result, ArsenalErrors.BadDigest, 'Expected BadDigest error');
+                assert(log.debug.calledOnce);
+            });
+        });
+    });
+
+    describe('when checksum mismatches', () => {
+        supportedMethods.forEach(method => {
+            it(`should return InvalidDigest error for ${method} when checksum mismatch`, async () => {
+                config.integrityChecks[method] = true;
+
+                const body = 'Hello, World!';
+                const wrongMd5 = 'wrongchecksum123=';
+                const request = {
+                    apiMethod: method,
+                    headers: {
+                        'content-md5': wrongMd5
+                    }
+                };
+                const log = { debug: sandbox.stub() };
+
+                const result = await validateMethodChecksumNoChunking(request, body, log);
+
+                assert.deepStrictEqual(result, ArsenalErrors.InvalidDigest, 'Expected BadDigest error');
                 assert(log.debug.calledOnce);
             });
         });
