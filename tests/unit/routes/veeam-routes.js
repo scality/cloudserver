@@ -493,6 +493,44 @@ describe('Veeam routes - LIST request handling', () => {
         });
     });
 
+    it('should emit LastModified in ISO 8601 format in XML body', done => {
+        const request = createRequest();
+        const response = createResponse();
+
+        const xmlChunks = [];
+        response.write.callsFake(chunk => {
+            xmlChunks.push(Buffer.isBuffer(chunk) ? chunk.toString() : String(chunk));
+            return true;
+        });
+
+        listVeeamFiles(request, response, bucketMd, log);
+
+        giveAsyncCallbackTimeToExecute(() => {
+            assert(response.writeHead.calledWith(200), 'should return 200');
+
+            const body = xmlChunks.join('');
+            assert(body.length > 0, 'response body should not be empty');
+
+            const lastModifiedRegex = /<LastModified>([^<]+)<\/LastModified>/g;
+            const matches = [];
+            let match;
+            while ((match = lastModifiedRegex.exec(body)) !== null) {
+                matches.push(match[1]);
+            }
+
+            assert.strictEqual(matches.length, 3,
+                'should have 3 LastModified entries (system.xml, capacity.xml, folder)');
+
+            const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+            matches.forEach(value => {
+                assert(iso8601Regex.test(value),
+                    `LastModified "${value}" should be in ISO 8601 format`);
+            });
+
+            done();
+        });
+    });
+
     it('should handle versions query parameter', done => {
         const request = createRequest({ versions: '' });
         const response = createResponse();
