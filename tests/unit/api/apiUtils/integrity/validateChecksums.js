@@ -2,7 +2,7 @@ const assert = require('assert');
 const crypto = require('crypto');
 const sinon = require('sinon');
 
-const { validateChecksumsNoChunking, ChecksumError, validateMethodChecksumNoChunking } =
+const { validateChecksumsNoChunking, ChecksumError, validateMethodChecksumNoChunking, checksumedMethods } =
     require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
 const { errors: ArsenalErrors } = require('arsenal');
 const { config } = require('../../../../../lib/Config');
@@ -278,24 +278,6 @@ describe('validateMethodChecksumNoChunking', () => {
     let sandbox;
     let originalIntegrityChecks;
 
-    const supportedMethods = [
-        'bucketPutACL',
-        'bucketPutCors',
-        'bucketPutEncryption',
-        'bucketPutLifecycle',
-        'bucketPutNotification',
-        'bucketPutObjectLock',
-        'bucketPutPolicy',
-        'bucketPutReplication',
-        'bucketPutVersioning',
-        'bucketPutWebsite',
-        'multiObjectDelete',
-        'objectPutACL',
-        'objectPutLegalHold',
-        'objectPutTagging',
-        'objectPutRetention'
-    ];
-
     beforeEach(() => {
         sandbox = sinon.createSandbox();
         originalIntegrityChecks = { ...config.integrityChecks };
@@ -307,7 +289,7 @@ describe('validateMethodChecksumNoChunking', () => {
     });
 
     describe('when checksum mismatches', () => {
-        supportedMethods.forEach(method => {
+        Object.keys(checksumedMethods).forEach(method => {
             it(`should return BadDigest error for ${method} when checksum mismatch`, async () => {
                 config.integrityChecks[method] = true;
 
@@ -330,7 +312,7 @@ describe('validateMethodChecksumNoChunking', () => {
     });
 
     describe('when checksum mismatches', () => {
-        supportedMethods.forEach(method => {
+        Object.keys(checksumedMethods).forEach(method => {
             it(`should return InvalidDigest error for ${method} when checksum mismatch`, async () => {
                 config.integrityChecks[method] = true;
 
@@ -353,7 +335,7 @@ describe('validateMethodChecksumNoChunking', () => {
     });
 
     describe('when no checksum is provided', () => {
-        supportedMethods.forEach(method => {
+        Object.keys(checksumedMethods).forEach(method => {
             it(`should return null for ${method} when no checksum is provided`, async () => {
                 config.integrityChecks[method] = true;
 
@@ -373,7 +355,7 @@ describe('validateMethodChecksumNoChunking', () => {
     });
 
     describe('when checksum matches', () => {
-        supportedMethods.forEach(method => {
+        Object.keys(checksumedMethods).forEach(method => {
             it(`should return null for ${method} when checksum matches`, async () => {
                 config.integrityChecks[method] = true;
 
@@ -396,7 +378,7 @@ describe('validateMethodChecksumNoChunking', () => {
     });
 
     describe('when method is disabled in config', () => {
-        supportedMethods.forEach(method => {
+        Object.keys(checksumedMethods).forEach(method => {
             it(`should return null for ${method} when disabled, even with checksum mismatch`, async () => {
                 config.integrityChecks[method] = false;
 

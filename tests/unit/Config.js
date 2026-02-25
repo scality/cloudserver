@@ -920,7 +920,7 @@ describe('Config', () => {
     });
 
     describe('parse integrity checks', () => {
-        it('should replace default values with new values', () => {
+        it('should insert values into integrityCheck object', () => {
             const newConfig = {
                 integrityChecks: {
                     'bucketPutACL': false,
