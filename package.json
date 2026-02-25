@@ -67,6 +67,8 @@
     "eslint": "^9.14.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-mocha": "^10.5.0",
+    "eslint-plugin-n": "^17.24.0",
+    "eslint-plugin-promise": "^7.2.1",
     "express": "^4.21.1",
     "ioredis": "^5.4.1",
     "istanbul": "^0.4.5",
@@ -80,6 +82,7 @@
     "nyc": "^15.1.0",
     "pino-pretty": "^13.1.3",
     "sinon": "^13.0.1",
+    "ts-morph": "^27.0.2",
     "tv4": "^1.3.0"
   },
   "resolutions": {
@@ -143,6 +146,8 @@
     "test_sur": "mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --recursive tests/sur --exit",
     "multiple_backend_test": "CI=true S3BACKEND=mem S3METADATA=mem S3DATA=multiple mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 20000 --recursive tests/multipleBackend --exit",
     "cover": "nyc --clean --silent yarn run",
-    "postcover": "nyc report --report-dir ./coverage/test --reporter=lcov"
+    "postcover": "nyc report --report-dir ./coverage/test --reporter=lcov",
+    "count-async": "node scripts/count-async-functions.mjs",
+    "check-diff-async": "node scripts/check-diff-async.mjs"
   }
 }

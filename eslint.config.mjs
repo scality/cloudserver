@@ -1,4 +1,6 @@
 import mocha from "eslint-plugin-mocha";
+import promise from "eslint-plugin-promise";
+import n from "eslint-plugin-n";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import js from "@eslint/js";
@@ -15,6 +17,8 @@ const compat = new FlatCompat({
 export default [...compat.extends('@scality/scality'), {
     plugins: {
         mocha,
+        promise,
+        n,
     },
 
     languageOptions: {
@@ -67,5 +71,7 @@ export default [...compat.extends('@scality/scality'), {
         "quote-props": "off",
         "mocha/no-exclusive-tests": "error",
         "no-redeclare": ["error", { "builtinGlobals": false }],
+        "promise/prefer-await-to-then": "warn",
+        "n/callback-return": "warn",
     },
 }];
