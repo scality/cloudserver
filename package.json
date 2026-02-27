@@ -86,7 +86,8 @@
   },
   "resolutions": {
     "jsonwebtoken": "^9.0.0",
-    "nan": "v2.22.0"
+    "nan": "v2.22.0",
+    "fast-xml-parser": "^5.3.8"
   },
   "mocha": {
     "recursive": true,
