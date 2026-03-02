@@ -88,3 +88,25 @@ jobs:
           tag_name: ${{ github.event.inputs.tag }}
           generate_release_notes: true
           target_commitish: ${{ github.sha }}
+
+  trigger-kms-release:
+    runs-on: ubuntu-latest
+    needs: release
+    if: github.repository_owner == 'scality'
+    steps:
+      - name: Generate GitHub App Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.ACTIONS_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Trigger scality-kms release workflow
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh workflow run release.yaml \
+            --repo scality/scality-kms \
+            --ref main \
+            --field tag=${{ github.event.inputs.tag }}
