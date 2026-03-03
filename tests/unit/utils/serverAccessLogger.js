@@ -979,6 +979,57 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual('tlsVersion' in loggedData, false);
         });
 
+        it('should read TLS info from proxy headers when socket is not encrypted', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {},
+                headers: {
+                    'x-ssl-cipher': 'ECDHE-RSA-AES256-GCM-SHA384',
+                    'x-ssl-protocol': 'TLSv1.3',
+                },
+                socket: {
+                    encrypted: false,
+                },
+            };
+            const res = {
+                serverAccessLog: {},
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+            assert.strictEqual(loggedData.cipherSuite, 'ECDHE-RSA-AES256-GCM-SHA384');
+            assert.strictEqual(loggedData.tlsVersion, 'TLSv1.3');
+        });
+
+        it('should prefer socket TLS info over proxy headers when encrypted', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {},
+                headers: {
+                    'x-ssl-cipher': 'PROXY-CIPHER',
+                    'x-ssl-protocol': 'TLSv1.2',
+                },
+                socket: {
+                    encrypted: true,
+                    getCipher: () => ({ standardName: 'TLS_AES_128_GCM_SHA256', version: 'TLSv1.3' }),
+                },
+            };
+            const res = {
+                serverAccessLog: {},
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+            assert.strictEqual(loggedData.cipherSuite, 'TLS_AES_128_GCM_SHA256');
+            assert.strictEqual(loggedData.tlsVersion, 'TLSv1.3');
+        });
+
         it('should handle missing query parameters', () => {
             setServerAccessLogger(mockLogger);
             const req = {
