@@ -1,4 +1,14 @@
-# CLAUDE.md
+# cloudserver
+
+This is a **Node.js implementation of the S3 protocol**. It contains:
+
+- S3 API route handlers (`lib/api/`) — 80+ operations
+- Authentication and authorization layers (`lib/auth/`)
+- Stream-based data path for object storage (`lib/data/`)
+- Multi-backend support: file, memory, AWS S3, Azure, GCP, Sproxyd
+- Metadata abstraction: LevelDB, MongoDB, bucketd (`lib/metadata/`)
+- Git-based internal deps: arsenal, vaultclient, bucketclient, werelogs, utapi, scubaclient
+- CommonJS modules, callback-based async (migrating to async/await), Mocha tests
 
 This file provides guidance to Claude Code (claude.ai/code) when working with
 code in this repository.
