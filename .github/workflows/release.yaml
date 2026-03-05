@@ -109,4 +109,4 @@ jobs:
           gh workflow run release.yaml \
             --repo scality/scality-kms \
             --ref main \
-            --field tag=${{ github.event.inputs.tag }}
+            --field cloudserver-version=${{ github.event.inputs.tag }}
