@@ -4,6 +4,7 @@ const async = require('async');
 const { Readable } = require('stream');
 
 const TrailingChecksumTransform = require('../../../lib/auth/streamingV4/trailingChecksumTransform');
+const { stripTrailingChecksumStream } = require('../../../lib/api/apiUtils/object/prepareStream');
 const { DummyRequestLogger } = require('../helpers');
 
 const log = new DummyRequestLogger();
@@ -168,6 +169,28 @@ describe('TrailingChecksumTransform class', () => {
             done();
         });
         chunkedReader.pipe(trailingChecksumTransform);
+    });
+
+    it('should propagate _flush error via errCb when stream closes without chunked encoding', done => {
+        const incompleteData = '10\r\n01234\r6789abcd\r\n\r\n';
+        const source = new ChunkedReader([Buffer.from(incompleteData)]);
+        source.headers = { 'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER' };
+        const stream = stripTrailingChecksumStream(source, log, err => {
+            assert.deepStrictEqual(err, errors.InvalidArgument);
+            done();
+        });
+        stream.resume();
+    });
+
+    it('should propagate _transform error via errCb for invalid chunk size', done => {
+        const badData = '500000000000\r\n';
+        const source = new ChunkedReader([Buffer.from(badData)]);
+        source.headers = { 'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER' };
+        const stream = stripTrailingChecksumStream(source, log, err => {
+            assert.deepStrictEqual(err, errors.InvalidArgument);
+            done();
+        });
+        stream.resume();
     });
 
     it('should return early if supplied with an out of specification chunk size', done => {
