@@ -1026,3 +1026,26 @@ jobs:
         password: ${{ secrets.ARTIFACTS_PASSWORD }}
         source: /tmp/artifacts
       if: always()
+
+  cleanup-gcp-buckets:
+    runs-on: ubuntu-24.04
+    needs:
+      - multiple-backend
+      - mongo-v0-ft-tests
+      - mongo-v1-ft-tests
+      - file-ft-tests
+    if: always()
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: yarn
+    - name: Install dependencies
+      run: yarn install --frozen-lockfile --network-concurrency 1
+    - name: Delete stale GCP CI buckets
+      run: yarn run cleanup_gcp_buckets
+      env:
+        AWS_GCP_BACKEND_ACCESS_KEY: ${{ secrets.AWS_GCP_BACKEND_ACCESS_KEY }}
+        AWS_GCP_BACKEND_SECRET_KEY: ${{ secrets.AWS_GCP_BACKEND_SECRET_KEY }}
