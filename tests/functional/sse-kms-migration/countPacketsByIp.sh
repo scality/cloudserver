@@ -14,8 +14,10 @@ PACKETS_COUNT=${2:-1000}
 # -n: don't resolve hostnames
 # -t: don't print a timestamp
 # -q: quiet mode, less verbose output
-# -c $PACKETS_COUNT: capture $PACKETS_COUNT packets
-# 'tcp dst port $PORT': filter for TCP packets destined for port $PORT
+# -c $PACKETS_COUNT: capture exactly $PACKETS_COUNT packets then exit naturally,
+#   allowing the pipeline (awk | sort | uniq-c) to drain and output results.
+# 'tcp dst port $PORT and (tcp[tcpflags] & tcp-push != 0)': PSH-only filter
+#   so pure ACKs are excluded, keeping counts 1:1 with KMIP requests.
 
 # Output of tcpdump will look like this:
 # IP 127.0.0.1.33428 > 127.0.0.3.5696: tcp 341
@@ -29,7 +31,7 @@ PACKETS_COUNT=${2:-1000}
 # 323 127.0.0.2
 # 345 127.0.0.3
 
-tcpdump -i lo -n -t -q -c $PACKETS_COUNT "tcp dst port ${PORT}" | \
+tcpdump -i lo -n -t -q -c $PACKETS_COUNT "tcp dst port ${PORT} and (tcp[tcpflags] & tcp-push != 0)" | \
   awk '{print $4}' | \
   sed 's/\.[^.]*$//' | \
   sort | \
