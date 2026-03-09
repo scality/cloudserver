@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { genDelTagObj, genUniqID, gcpRetry } =
+const { genDelTagObj, genUniqID, genBucketName, gcpRetry } =
     require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
@@ -14,7 +14,7 @@ const {
 } = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `cldsrvci-deletetagging-${genUniqID()}`;
+const bucketName = genBucketName('deletetagging');
 let config;
 let gcpClient;
 

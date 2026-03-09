@@ -3,7 +3,13 @@ const { callbackify } = require('util');
 const { v4: uuidv4 } = require('uuid');
 const { HeadBucketCommand } = require('@aws-sdk/client-s3');
 
-const genUniqID = () => uuidv4().replace(/-/g, '');
+const genUniqID = () => {
+    const runId = process.env.GITHUB_RUN_ID;
+    const suffix = uuidv4().replace(/-/g, '').slice(0, 8);
+    return runId ? `${runId}-${suffix}` : uuidv4().replace(/-/g, '');
+};
+
+const genBucketName = testName => `cldsrvci-${testName}-${genUniqID()}`;
 
 const defaultShouldRetry = err =>
     err && (err.name === 'SlowDown' || err.$metadata?.httpStatusCode === 429);
@@ -18,7 +24,6 @@ async function gcpRetryCall(callFn, retryOptions) {
     let lastError;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
         try {
-             
             return await callFn();
         } catch (err) {
             lastError = err;
@@ -219,6 +224,7 @@ module.exports = {
     genGetTagObj,
     genDelTagObj,
     genUniqID,
+    genBucketName,
     gcpRetryCall,
     gcpRetry,
     gcpCreateMultipartUploadWithRetry,

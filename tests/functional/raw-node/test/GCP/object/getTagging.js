@@ -1,7 +1,7 @@
 const assert = require('assert');
 const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { genGetTagObj, genUniqID, gcpRetry } =
+const { genGetTagObj, genUniqID, genBucketName, gcpRetry } =
     require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
@@ -13,7 +13,7 @@ const {
 } = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `cldsrvci-gettagging-${genUniqID()}`;
+const bucketName = genBucketName('gettagging');
 const tagSize = 10;
 
 describe('GCP: GET Object Tagging', () => {

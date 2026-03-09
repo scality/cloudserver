@@ -7,7 +7,7 @@ const {
     DeleteBucketCommand,
 } = require('@aws-sdk/client-s3');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { genUniqID, gcpRetry } = require('../../../utils/gcpUtils');
+const { genBucketName, gcpRetry } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 
@@ -20,7 +20,7 @@ describe('GCP: GET Bucket Versioning', () => {
     const gcpClient = new GCP(config);
 
     beforeEach(async function beforeFn() {
-        this.currentTest.bucketName = `cldsrvci-getversioning-${genUniqID()}`;
+        this.currentTest.bucketName = genBucketName('getversioning');
         await gcpRetry(
             gcpClient,
             new CreateBucketCommand({

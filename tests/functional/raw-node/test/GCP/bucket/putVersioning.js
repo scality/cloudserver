@@ -7,14 +7,14 @@ const {
     DeleteBucketCommand,
 } = require('@aws-sdk/client-s3');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { genUniqID, gcpRetry } = require('../../../utils/gcpUtils');
+const { genBucketName, gcpRetry } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 
 const credentialOne = 'gcpbackend';
 const verEnabledStatus = 'Enabled';
 const verDisabledStatus = 'Suspended';
-const bucketName = `cldsrvci-putversioning-${genUniqID()}`;
+const bucketName = genBucketName('putversioning');
 
 describe('GCP: PUT Bucket Versioning', () => {
     const config = getRealAwsConfig(credentialOne);
