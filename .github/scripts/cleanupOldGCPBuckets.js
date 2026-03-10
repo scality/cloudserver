@@ -27,7 +27,7 @@ function buildClient() {
         process.exit(1);
     }
 
-    return new S3Client({
+    const client = new S3Client({
         endpoint: GCP_ENDPOINT,
         region: 'us-east-1',
         credentials: { accessKeyId, secretAccessKey },
@@ -36,6 +36,19 @@ function buildClient() {
         requestChecksumCalculation: 'WHEN_REQUIRED',
         responseChecksumValidation: 'WHEN_REQUIRED',
     });
+
+    // GCP's S3-compatible API rejects the x-id query parameter that newer
+    // versions of @aws-sdk/client-s3 append to every request URL.
+    client.middlewareStack.add(
+        next => async args => {
+            // eslint-disable-next-line no-param-reassign
+            delete args.request.query['x-id'];
+            return next(args);
+        },
+        { step: 'build', name: 'removeXIdParam', priority: 'low' },
+    );
+
+    return client;
 }
 
 async function abortMultipartUploads(client, bucketName) {
