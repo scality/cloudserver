@@ -123,9 +123,9 @@ describe(`KMS load (kmip cluster ${KMS_NODES} nodes): ${OBJECT_NUMBER
     });
 
     beforeEach(async () => {
-        // tcpdump can catch more than TOTAL_OBJECTS packets because there are PSH and ACK packets
-        // but we need to ensure it actually stops before there is no more packets
-        // to count packets by IP
+        // tcpdump captures exactly TOTAL_OBJECTS PSH packets then exits naturally,
+        // allowing the pipeline to drain and output results.
+        // Consider sending a little more request in case a packet is missed.
         tcpdumpProcess = await spawnTcpdump(5696, TOTAL_OBJECTS);
         stdout = '';
         stderr = '';
@@ -184,7 +184,8 @@ describe(`KMS load (kmip cluster ${KMS_NODES} nodes): ${OBJECT_NUMBER
     it(`should encrypt ${TOTAL_OBJECTS} times in parallel, ~${TOTAL_OBJECTS_PER_NODE} per node`, async () => {
         await (Promise.all(
             buckets.map(async ({ Bucket }) => Promise.all(
-                new Array(OBJECT_NUMBER).fill(0).map(async (_, i) =>
+                // Send little more request in case a packet is missed.
+                new Array(OBJECT_NUMBER + 1).fill(0).map(async (_, i) =>
                     helpers.s3.putObject({ Bucket, Key: `obj-${i}`, Body: `body-${i}` }))
             ))
         ));
@@ -194,7 +195,8 @@ describe(`KMS load (kmip cluster ${KMS_NODES} nodes): ${OBJECT_NUMBER
     it(`should decrypt ${TOTAL_OBJECTS} times in parallel, ~${TOTAL_OBJECTS_PER_NODE} per node`, async () => {
         await Promise.all(
             buckets.map(async ({ Bucket }) => Promise.all(
-                new Array(OBJECT_NUMBER).fill(0).map(async (_, i) =>
+                // Send little more request in case a packet is missed.
+                new Array(OBJECT_NUMBER + 1).fill(0).map(async (_, i) =>
                     helpers.s3.getObject({ Bucket, Key: `obj-${i}` }))
             ))
         );
