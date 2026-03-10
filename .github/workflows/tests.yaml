@@ -69,6 +69,10 @@ env:
   # https://github.com/git-lfs/git-lfs/issues/5749
   GIT_CLONE_PROTECTION_ACTIVE: 'false'
   AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE: '1'
+  # Sometimes CI fails to pull image: context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+  # Nothing is configurable in docker, so we use a custom shell retry pull step.
+  DOCKER_PULL_RETRIES: 3
+  DOCKER_PULL_RETRY_DELAY: 15
 
 permissions:
   contents: read
@@ -264,6 +268,15 @@ jobs:
         password: ${{ github.token }}
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
+    - name: Pull CI services
+      run: |
+        for i in $(seq 1 $DOCKER_PULL_RETRIES); do
+          docker compose --profile sproxyd --profile mongo pull && exit 0
+          echo "Attempt $i failed, retrying in ${DOCKER_PULL_RETRY_DELAY}s..."
+          sleep $DOCKER_PULL_RETRY_DELAY
+        done
+        exit 1
+      working-directory: .github/docker
     - name: Setup CI services
       run: docker compose --profile sproxyd --profile mongo up -d
       working-directory: .github/docker
@@ -326,6 +339,15 @@ jobs:
         sudo mkdir -p /logs
         sudo chmod 0777 /logs
         sudo touch /logs/server-access.log && sudo chmod 0666 /logs/server-access.log
+    - name: Pull CI services
+      run: |
+        for i in $(seq 1 $DOCKER_PULL_RETRIES); do
+          docker compose --profile mongo pull && exit 0
+          echo "Attempt $i failed, retrying in ${DOCKER_PULL_RETRY_DELAY}s..."
+          sleep $DOCKER_PULL_RETRY_DELAY
+        done
+        exit 1
+      working-directory: .github/docker
     - name: Setup CI services
       run: docker compose --profile mongo up -d
       working-directory: .github/docker
@@ -387,6 +409,15 @@ jobs:
         sudo mkdir -p /logs
         sudo chmod 0777 /logs
         sudo touch /logs/server-access.log && sudo chmod 0666 /logs/server-access.log
+    - name: Pull CI services
+      run: |
+        for i in $(seq 1 $DOCKER_PULL_RETRIES); do
+          docker compose --profile mongo pull && exit 0
+          echo "Attempt $i failed, retrying in ${DOCKER_PULL_RETRY_DELAY}s..."
+          sleep $DOCKER_PULL_RETRY_DELAY
+        done
+        exit 1
+      working-directory: .github/docker
     - name: Setup CI services
       run: docker compose --profile mongo up -d
       working-directory: .github/docker
@@ -460,6 +491,15 @@ jobs:
         sudo mkdir -p /logs
         sudo chmod 0777 /logs
         sudo touch /logs/server-access.log && sudo chmod 0666 /logs/server-access.log
+    - name: Pull CI services
+      run: |
+        for i in $(seq 1 $DOCKER_PULL_RETRIES); do
+          docker compose pull && exit 0
+          echo "Attempt $i failed, retrying in ${DOCKER_PULL_RETRY_DELAY}s..."
+          sleep $DOCKER_PULL_RETRY_DELAY
+        done
+        exit 1
+      working-directory: .github/docker
     - name: Setup CI services
       run: docker compose up -d
       working-directory: .github/docker
@@ -552,6 +592,15 @@ jobs:
         sed -i 's/\("METADATA_NEW_BUCKETS_VFORMAT":\s*\)"[^"]*"/\1"${{ matrix.vformat }}"/' .github/docker/md-config.json
     - name: Copy S3C config
       run: cp .github/docker/config.s3c.json tests/functional/sse-kms-migration/config.json
+    - name: Pull CI services
+      run: |
+        for i in $(seq 1 $DOCKER_PULL_RETRIES); do
+          docker compose pull redis sproxyd metadata-standalone vault-sse-before-migration cloudserver-sse-before-migration && exit 0
+          echo "Attempt $i failed, retrying in ${DOCKER_PULL_RETRY_DELAY}s..."
+          sleep $DOCKER_PULL_RETRY_DELAY
+        done
+        exit 1
+      working-directory: .github/docker
     - name: Setup CI services
       run: docker compose up -d --quiet-pull redis sproxyd metadata-standalone vault-sse-before-migration cloudserver-sse-before-migration
       working-directory: .github/docker
@@ -638,6 +687,15 @@ jobs:
       uses: actions/checkout@v4
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
+    - name: Pull CI services
+      run: |
+        for i in $(seq 1 $DOCKER_PULL_RETRIES); do
+          docker compose pull && exit 0
+          echo "Attempt $i failed, retrying in ${DOCKER_PULL_RETRY_DELAY}s..."
+          sleep $DOCKER_PULL_RETRY_DELAY
+        done
+        exit 1
+      working-directory: .github/docker
     - name: Setup CI services
       run: docker compose up -d
       working-directory: .github/docker
@@ -694,6 +752,15 @@ jobs:
       uses: actions/checkout@v4
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
+    - name: Pull CI services
+      run: |
+        for i in $(seq 1 $DOCKER_PULL_RETRIES); do
+          docker compose --profile mongo pull && exit 0
+          echo "Attempt $i failed, retrying in ${DOCKER_PULL_RETRY_DELAY}s..."
+          sleep $DOCKER_PULL_RETRY_DELAY
+        done
+        exit 1
+      working-directory: .github/docker
     - name: Setup CI services
       run: docker compose --profile mongo up -d
       working-directory: .github/docker
@@ -754,6 +821,15 @@ jobs:
     - name: Copy KMIP certs
       run: cp -r ./certs /tmp/ssl-kmip
       working-directory: .github/pykmip
+    - name: Pull CI services
+      run: |
+        for i in $(seq 1 $DOCKER_PULL_RETRIES); do
+          docker compose --profile pykmip pull && exit 0
+          echo "Attempt $i failed, retrying in ${DOCKER_PULL_RETRY_DELAY}s..."
+          sleep $DOCKER_PULL_RETRY_DELAY
+        done
+        exit 1
+      working-directory: .github/docker
     - name: Setup CI services
       run: docker compose --profile pykmip up -d
       working-directory: .github/docker
@@ -820,6 +896,15 @@ jobs:
           configs/kmip-cluster.json \
           > config.json
       working-directory: tests/functional/sse-kms-migration
+    - name: Pull CI services
+      run: |
+        for i in $(seq 1 $DOCKER_PULL_RETRIES); do
+          docker compose pull redis pykmip cloudserver-sse-before-migration && exit 0
+          echo "Attempt $i failed, retrying in ${DOCKER_PULL_RETRY_DELAY}s..."
+          sleep $DOCKER_PULL_RETRY_DELAY
+        done
+        exit 1
+      working-directory: .github/docker
     - name: Setup CI services
       run: docker compose up -d --quiet-pull redis pykmip cloudserver-sse-before-migration
       working-directory: .github/docker
@@ -926,6 +1011,18 @@ jobs:
     - name: Copy base config
       run: cp configs/base.json config.json
       working-directory: tests/functional/sse-kms-migration
+    - name: Pull CI services (with old cloudserver image before sse migration)
+      run: |
+        for i in $(seq 1 $DOCKER_PULL_RETRIES); do
+          docker compose pull redis vault-sse-before-migration cloudserver-sse-before-migration && exit 0
+          echo "Attempt $i failed, retrying in ${DOCKER_PULL_RETRY_DELAY}s..."
+          sleep $DOCKER_PULL_RETRY_DELAY
+        done
+        exit 1
+      working-directory: .github/docker
+      env:
+        CLOUDSERVER_IMAGE: ${{ env.CLOUDSERVER_IMAGE_BEFORE_SSE_MIGRATION }}
+        VAULT_IMAGE: ${{ env.VAULT_IMAGE_BEFORE_SSE_MIGRATION }}
     - name: Setup CI services (with old cloudserver image before sse migration)
       run: docker compose up -d --quiet-pull redis vault-sse-before-migration cloudserver-sse-before-migration
       working-directory: .github/docker
@@ -967,6 +1064,18 @@ jobs:
           configs/sseMigration.json \
           > config.json
       working-directory: tests/functional/sse-kms-migration
+    - name: Pull CI services (migration cloudserver image)
+      run: |
+        for i in $(seq 1 $DOCKER_PULL_RETRIES); do
+          docker compose pull ${{ matrix.kms.container }} vault-sse-migration cloudserver-sse-migration && exit 0
+          echo "Attempt $i failed, retrying in ${DOCKER_PULL_RETRY_DELAY}s..."
+          sleep $DOCKER_PULL_RETRY_DELAY
+        done
+        exit 1
+      working-directory: .github/docker
+      env:
+        S3KMS: ${{ matrix.kms.provider }} # S3
+        KMS_BACKEND: ${{ matrix.kms.provider == 'aws' && 'aws' || '' }} # vault only supports aws
     - name: Replace old cloudserver image with current one
       run: |-
         docker compose down cloudserver-sse-before-migration vault-sse-before-migration
