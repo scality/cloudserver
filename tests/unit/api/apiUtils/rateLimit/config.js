@@ -510,6 +510,24 @@ describe('parseRateLimitConfig', () => {
                 /requestsPerSecond.burstCapacity must be a positive integer/
             );
         });
+
+        it('should accept float burstCapacity', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                bucket: {
+                    defaultConfig: {
+                        requestsPerSecond: {
+                            limit: 100,
+                            burstCapacity: 1.5,
+                        },
+                    },
+                },
+            };
+
+            const result = parseRateLimitConfig(config, 1);
+            const bucketSize = result.bucket.defaultConfig.requestsPerSecond.bucketSize;
+            assert.strictEqual(bucketSize, 1.5 * 1000);
+        });
     });
 
     describe('bucket.configCacheTTL validation', () => {
