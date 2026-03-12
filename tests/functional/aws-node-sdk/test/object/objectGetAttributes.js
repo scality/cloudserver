@@ -9,9 +9,7 @@ const {
     UploadPartCommand,
     CompleteMultipartUploadCommand,
 } = require('@aws-sdk/client-s3');
-const { streamCollector } = require('@smithy/node-http-handler');
-const { parseStringPromise } = require('xml2js');
-
+const { GetObjectAttributesExtendedCommand } = require('@scality/cloudserverclient');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
@@ -260,72 +258,6 @@ describe('objectGetAttributes with user metadata', () => {
         let bucketUtil;
         let s3;
 
-        const getObjectAttributesWithUserMetadata = async (client, params, attributes) => {
-            let rawXml = '';
-
-            const addHeaderMiddleware = next => async args => {
-                // eslint-disable-next-line no-param-reassign
-                args.request.headers['x-amz-object-attributes'] = attributes;
-                return next(args);
-            };
-
-            const originalHandler = client.config.requestHandler;
-            const wrappedHandler = {
-                async handle(request, options) {
-                    const { response } = await originalHandler.handle(request, options);
-
-                    if (response && response.body) {
-                        const collected = await streamCollector(response.body);
-                        const buffer = Buffer.from(collected);
-                        rawXml = buffer.toString('utf-8');
-
-                        const { Readable } = require('stream');
-                        response.body = Readable.from([buffer]);
-                    }
-
-                    return { response };
-                },
-            };
-
-            // eslint-disable-next-line no-param-reassign
-            client.config.requestHandler = wrappedHandler;
-            client.middlewareStack.add(addHeaderMiddleware, {
-                step: 'build',
-                name: 'addObjectAttributesHeader',
-            });
-
-            try {
-                const result = await client.send(new GetObjectAttributesCommand({
-                    Bucket: params.Bucket,
-                    Key: params.Key,
-                    ObjectAttributes: ['ETag'],
-                }));
-
-                if (!rawXml) {
-                    return result;
-                }
-
-                const parsedXml = await parseStringPromise(rawXml);
-                const parsedData = parsedXml?.GetObjectAttributesResponse;
-
-                if (!parsedData) {
-                    return result;
-                }
-
-                Object.keys(parsedData).forEach(k => {
-                    if (k.startsWith('x-amz-meta-')) {
-                        result[k] = parsedData[k][0];
-                    }
-                });
-
-                return result;
-            } finally {
-                // eslint-disable-next-line no-param-reassign
-                client.config.requestHandler = originalHandler;
-                client.middlewareStack.remove('addObjectAttributesHeader');
-            }
-        };
-
         before(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
@@ -351,10 +283,11 @@ describe('objectGetAttributes with user metadata', () => {
                 },
             }));
 
-            const response = await getObjectAttributesWithUserMetadata(s3, {
+            const response = await s3.send(new GetObjectAttributesExtendedCommand({
                 Bucket: bucket,
                 Key: key,
-            }, 'x-amz-meta-custom-key');
+                ObjectAttributes: ['x-amz-meta-custom-key'],
+            }));
 
             assert.strictEqual(response['x-amz-meta-custom-key'], 'custom-value');
         });
@@ -371,10 +304,11 @@ describe('objectGetAttributes with user metadata', () => {
                 },
             }));
 
-            const response = await getObjectAttributesWithUserMetadata(s3, {
+            const response = await s3.send(new GetObjectAttributesExtendedCommand({
                 Bucket: bucket,
                 Key: key,
-            }, 'x-amz-meta-foo,x-amz-meta-bar');
+                ObjectAttributes: ['x-amz-meta-foo', 'x-amz-meta-bar'],
+            }));
 
             assert.strictEqual(response['x-amz-meta-foo'], 'foo-value');
             assert.strictEqual(response['x-amz-meta-bar'], 'bar-value');
@@ -392,10 +326,11 @@ describe('objectGetAttributes with user metadata', () => {
                 },
             }));
 
-            const response = await getObjectAttributesWithUserMetadata(s3, {
+            const response = await s3.send(new GetObjectAttributesExtendedCommand({
                 Bucket: bucket,
                 Key: key,
-            }, 'x-amz-meta-*');
+                ObjectAttributes: ['x-amz-meta-*'],
+            }));
 
             assert.strictEqual(response['x-amz-meta-key1'], 'value1');
             assert.strictEqual(response['x-amz-meta-key2'], 'value2');
@@ -410,10 +345,11 @@ describe('objectGetAttributes with user metadata', () => {
                 Body: body,
             }));
 
-            const response = await getObjectAttributesWithUserMetadata(s3, {
+            const response = await s3.send(new GetObjectAttributesExtendedCommand({
                 Bucket: bucket,
                 Key: key,
-            }, 'ETag,x-amz-meta-*');
+                ObjectAttributes: ['ETag', 'x-amz-meta-*'],
+            }));
 
             const metadataKeys = Object.keys(response).filter(k => k.startsWith('x-amz-meta-'));
             assert.strictEqual(metadataKeys.length, 0);
@@ -429,10 +365,11 @@ describe('objectGetAttributes with user metadata', () => {
                 },
             }));
 
-            const response = await getObjectAttributesWithUserMetadata(s3, {
+            const response = await s3.send(new GetObjectAttributesExtendedCommand({
                 Bucket: bucket,
                 Key: key,
-            }, 'ETag,x-amz-meta-nonexistent');
+                ObjectAttributes: ['ETag', 'x-amz-meta-nonexistent'],
+            }));
 
             assert.strictEqual(response['x-amz-meta-nonexistent'], undefined);
         });
@@ -447,10 +384,11 @@ describe('objectGetAttributes with user metadata', () => {
                 },
             }));
 
-            const response = await getObjectAttributesWithUserMetadata(s3, {
+            const response = await s3.send(new GetObjectAttributesExtendedCommand({
                 Bucket: bucket,
                 Key: key,
-            }, 'ETag,x-amz-meta-custom,ObjectSize');
+                ObjectAttributes: ['ETag', 'x-amz-meta-custom', 'ObjectSize'],
+            }));
 
             assert.strictEqual(response.ETag, expectedMD5);
             assert.strictEqual(response.ObjectSize, body.length);
@@ -469,10 +407,11 @@ describe('objectGetAttributes with user metadata', () => {
                 },
             }));
 
-            const response = await getObjectAttributesWithUserMetadata(s3, {
+            const response = await s3.send(new GetObjectAttributesExtendedCommand({
                 Bucket: bucket,
                 Key: key,
-            }, 'x-amz-meta-*,x-amz-meta-key1');
+                ObjectAttributes: ['x-amz-meta-*', 'x-amz-meta-key1'],
+            }));
 
             assert.strictEqual(response['x-amz-meta-key1'], 'value1');
             assert.strictEqual(response['x-amz-meta-key2'], 'value2');
@@ -490,10 +429,11 @@ describe('objectGetAttributes with user metadata', () => {
                 },
             }));
 
-            const response = await getObjectAttributesWithUserMetadata(s3, {
+            const response = await s3.send(new GetObjectAttributesExtendedCommand({
                 Bucket: bucket,
                 Key: key,
-            }, 'x-amz-meta-*,x-amz-meta-*');
+                ObjectAttributes: ['x-amz-meta-*', 'x-amz-meta-*'],
+            }));
 
             assert.strictEqual(response['x-amz-meta-key1'], 'value1');
             assert.strictEqual(response['x-amz-meta-key2'], 'value2');
@@ -510,10 +450,11 @@ describe('objectGetAttributes with user metadata', () => {
                 },
             }));
 
-            const response = await getObjectAttributesWithUserMetadata(s3, {
+            const response = await s3.send(new GetObjectAttributesExtendedCommand({
                 Bucket: bucket,
                 Key: key,
-            }, 'x-amz-meta-key1,x-amz-meta-key1');
+                ObjectAttributes: ['x-amz-meta-key1', 'x-amz-meta-key1'],
+            }));
 
             assert.strictEqual(response['x-amz-meta-key1'], 'value1');
             assert.strictEqual(response['x-amz-meta-key2'], undefined);
