@@ -556,7 +556,7 @@ describeSkipIfCeph('HEAD object with object lock', () => {
             const params = {
                 Bucket: bucket,
                 Key: key,
-                ObjectLockRetainUntilDate: mockDate,
+                ObjectLockRetainUntilDate: mockDate.toDate(),
                 ObjectLockMode: mockMode,
                 ObjectLockLegalHoldStatus: 'ON',
             };
