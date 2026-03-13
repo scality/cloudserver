@@ -19,7 +19,7 @@ skipIfRateLimitDisabled('RateLimitClient', () => {
     after(async () => client.redis.quit().catch(() => {}));
 
     beforeEach(async () => {
-        const keys = await client.redis.keys('ratelimit:bucket:*');
+        const keys = await client.redis.keys('ratelimit:*');
         if (keys.length > 0) {
             await client.redis.del(...keys);
         }
@@ -42,7 +42,7 @@ skipIfRateLimitDisabled('RateLimitClient', () => {
             const interval = 100; // 100ms per request = 10 req/s
             const burstCapacity = 1000; // 1000ms burst capacity
 
-            client.grantTokens(testBucket, requested, interval, burstCapacity, (err, granted) => {
+            client.grantTokens('bucket', testBucket, 'rps', requested, interval, burstCapacity, (err, granted) => {
                 assert.ifError(err);
                 assert.strictEqual(granted, requested);
                 done();
@@ -55,12 +55,12 @@ skipIfRateLimitDisabled('RateLimitClient', () => {
             const burstCapacity = 1000; // 1000ms burst capacity
 
             // First request
-            client.grantTokens(testBucket, requested, interval, burstCapacity, (err, granted1) => {
+            client.grantTokens('bucket', testBucket, 'rps', requested, interval, burstCapacity, (err, granted1) => {
                 assert.ifError(err);
                 assert.strictEqual(granted1, requested);
 
                 // Second request immediately after
-                client.grantTokens(testBucket, requested, interval, burstCapacity, (err, granted2) => {
+                client.grantTokens('bucket', testBucket, 'rps', requested, interval, burstCapacity, (err, granted2) => {
                     assert.ifError(err);
                     assert.strictEqual(granted2, requested);
                     done();
@@ -73,7 +73,7 @@ skipIfRateLimitDisabled('RateLimitClient', () => {
             const burstCapacity = 500; // 500ms burst capacity = max 5 tokens
 
             // Request more tokens than available in burst
-            client.grantTokens(testBucket, 10, interval, burstCapacity, (err, granted) => {
+            client.grantTokens('bucket', testBucket, 'rps', 10, interval, burstCapacity, (err, granted) => {
                 assert.ifError(err);
                 // Should grant partial tokens (5 tokens max with 500ms burst)
                 assert(granted > 0, 'Should grant at least some tokens');
@@ -87,12 +87,12 @@ skipIfRateLimitDisabled('RateLimitClient', () => {
             const burstCapacity = 100; // 100ms burst capacity = max 1 token
 
             // First request consumes the burst capacity
-            client.grantTokens(testBucket, 1, interval, burstCapacity, (err, granted1) => {
+            client.grantTokens('bucket', testBucket, 'rps', 1, interval, burstCapacity, (err, granted1) => {
                 assert.ifError(err);
                 assert.strictEqual(granted1, 1);
 
                 // Second request immediately after should be denied
-                client.grantTokens(testBucket, 1, interval, burstCapacity, (err, granted2) => {
+                client.grantTokens('bucket', testBucket, 'rps', 1, interval, burstCapacity, (err, granted2) => {
                     assert.ifError(err);
                     assert.strictEqual(granted2, 0, 'Should deny tokens when quota exhausted');
                     done();
