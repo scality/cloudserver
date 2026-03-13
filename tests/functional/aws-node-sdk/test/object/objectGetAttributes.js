@@ -374,6 +374,25 @@ describe('objectGetAttributes with user metadata', () => {
             assert.strictEqual(response['x-amz-meta-nonexistent'], undefined);
         });
 
+        it('should return empty response when only a non-existing metadata key is requested', async () => {
+            await s3.send(new PutObjectCommand({
+                Bucket: bucket,
+                Key: key,
+                Body: body,
+                Metadata: {
+                    existing: 'value',
+                },
+            }));
+
+            const response = await s3.send(new GetObjectAttributesExtendedCommand({
+                Bucket: bucket,
+                Key: key,
+                ObjectAttributes: ['x-amz-meta-nonexistent'],
+            }));
+
+            assert.strictEqual(response['x-amz-meta-nonexistent'], undefined);
+        });
+
         it('should return user metadata along with standard attributes', async () => {
             await s3.send(new PutObjectCommand({
                 Bucket: bucket,
