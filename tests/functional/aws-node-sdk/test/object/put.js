@@ -19,10 +19,10 @@ const genMaxSizeMetaHeaders
     = require('../../lib/utility/genMaxSizeMetaHeaders');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
 
-const bucket = 'bucket2putstuffin4324242';
 const object = 'object2putstuffin';
 
 describe('PUT object', () => {
+    const bucket = 'bucket2putstuffin4324242';
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
@@ -317,6 +317,7 @@ const isCEPH = process.env.CI_CEPH !== undefined;
 const describeSkipIfCeph = isCEPH ? describe.skip : describe;
 
 describeSkipIfCeph('PUT object with object lock', () => {
+    const bucket = 'bucket2putstuffin4324242-lock';
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
