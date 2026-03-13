@@ -3,11 +3,12 @@ const sinon = require('sinon');
 
 const constants = require('../../../../../constants');
 const {
+    namespace,
     configCache,
     getCachedConfig,
     setCachedConfig,
     expireCachedConfigs,
-    invalidateCachedConfig,
+    deleteCachedConfig,
 } = require('../../../../../lib/api/apiUtils/rateLimit/cache');
 
 describe('test limit config cache storage', () => {
@@ -22,66 +23,70 @@ describe('test limit config cache storage', () => {
         clock.restore();
     });
 
+    beforeEach(() => {
+        configCache.clear();
+    });
+
     it('should add config to cache', () => {
-        setCachedConfig('foo', 10, constants.rateLimitDefaultConfigCacheTTL);
+        setCachedConfig(namespace.bucket, 'foo', 10, constants.rateLimitDefaultConfigCacheTTL);
         assert.deepStrictEqual(
-            configCache.get('foo'),
+            configCache.get(`${namespace.bucket}:foo`),
             {
                 expiry: now + constants.rateLimitDefaultConfigCacheTTL,
-                config: 10,
+                value: 10,
             }
         );
     });
 
     it('should get a non expired config', () => {
-        setCachedConfig('foo', 10, constants.rateLimitDefaultConfigCacheTTL);
-        assert.strictEqual(getCachedConfig('foo'), 10);
+        setCachedConfig(namespace.bucket, 'foo', 10, constants.rateLimitDefaultConfigCacheTTL);
+        assert.strictEqual(getCachedConfig(namespace.bucket, 'foo'), 10);
     });
 
     it('should return undefined and delete the key for an expired config', () => {
-        configCache.set('foo', {
+        configCache.set(`${namespace.bucket}:foo`, {
             expiry: now - 10000,
-            config: 10,
+            value: 10,
         });
-        assert.strictEqual(getCachedConfig('foo'), undefined);
+        assert.strictEqual(getCachedConfig(namespace.bucket, 'foo'), undefined);
     });
 
-    it('should expire configs less than or equal to the given timestamp', () => {
+    it('should expire configs less than or equal to current time', () => {
         configCache.set('past', {
             expiry: now - 10000,
-            config: 10,
+            value: 10,
         });
         configCache.set('present', {
             expiry: now,
-            config: 10,
+            value: 10,
         });
         configCache.set('future', {
             expiry: now + 10000,
-            config: 10,
+            value: 10,
         });
-        expireCachedConfigs(now);
+        // expireCachedConfigs uses Date.now() internally; fake clock is set to `now`
+        expireCachedConfigs();
         assert.strictEqual(configCache.get('past'), undefined);
         assert.strictEqual(configCache.get('present'), undefined);
         assert.deepStrictEqual(configCache.get('future'), {
             expiry: now + 10000,
-            config: 10,
+            value: 10,
         });
     });
 
-    it('should invalidate cached config for a specific bucket', () => {
-        setCachedConfig('bucket:my-bucket', { limit: 100 }, constants.rateLimitDefaultConfigCacheTTL);
-        setCachedConfig('bucket:other-bucket', { limit: 200 }, constants.rateLimitDefaultConfigCacheTTL);
+    it('should delete cached config for a specific resource', () => {
+        setCachedConfig(namespace.bucket, 'my-bucket', { limit: 100 }, constants.rateLimitDefaultConfigCacheTTL);
+        setCachedConfig(namespace.bucket, 'other-bucket', { limit: 200 }, constants.rateLimitDefaultConfigCacheTTL);
 
-        const result = invalidateCachedConfig('my-bucket');
+        deleteCachedConfig(namespace.bucket, 'my-bucket');
 
-        assert.strictEqual(result, true);
-        assert.strictEqual(getCachedConfig('bucket:my-bucket'), undefined);
-        assert.deepStrictEqual(getCachedConfig('bucket:other-bucket'), { limit: 200 });
+        assert.strictEqual(getCachedConfig(namespace.bucket, 'my-bucket'), undefined);
+        assert.deepStrictEqual(getCachedConfig(namespace.bucket, 'other-bucket'), { limit: 200 });
     });
 
-    it('should return false when invalidating non-existent bucket', () => {
-        const result = invalidateCachedConfig('non-existent-bucket');
-
-        assert.strictEqual(result, false);
+    it('should be a no-op when deleting a non-existent key', () => {
+        assert.doesNotThrow(() => {
+            deleteCachedConfig(namespace.bucket, 'non-existent-bucket');
+        });
     });
 });
