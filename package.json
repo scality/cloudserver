@@ -1,6 +1,6 @@
 {
   "name": "@zenko/cloudserver",
-  "version": "9.2.30",
+  "version": "9.2.31",
   "description": "Zenko CloudServer, an open-source Node.js implementation of a server handling the Amazon S3 protocol",
   "main": "index.js",
   "engines": {
