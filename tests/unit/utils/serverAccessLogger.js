@@ -185,6 +185,24 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(result, 'REST.POST.UPLOAD');
         });
 
+        it('should return REST.PUT.RATELIMIT for bucketPutRateLimit', () => {
+            const req = { method: 'PUT', apiMethod: 'bucketPutRateLimit' };
+            const result = getOperation(req);
+            assert.strictEqual(result, 'REST.PUT.RATELIMIT');
+        });
+
+        it('should return REST.GET.RATELIMIT for bucketGetRateLimit', () => {
+            const req = { method: 'GET', apiMethod: 'bucketGetRateLimit' };
+            const result = getOperation(req);
+            assert.strictEqual(result, 'REST.GET.RATELIMIT');
+        });
+
+        it('should return REST.DELETE.RATELIMIT for bucketDeleteRateLimit', () => {
+            const req = { method: 'DELETE', apiMethod: 'bucketDeleteRateLimit' };
+            const result = getOperation(req);
+            assert.strictEqual(result, 'REST.DELETE.RATELIMIT');
+        });
+
         it('should return REST.method.UNKNOWN for unknown apiMethod', () => {
             const req = { method: 'GET', apiMethod: 'unknownMethod' };
             const result = getOperation(req);
