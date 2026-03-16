@@ -470,42 +470,42 @@ describe('getChecksumDataFromHeaders', () => {
         crc64nvme: 'AAAAAAAAAAA=', // 12 chars
     };
 
-    it('no headers: returns crc64nvme with isTrailer=false and expected=undefined', () => {
+    it('should return crc64nvme with isTrailer=false and expected=undefined when no headers', () => {
         const result = getChecksumDataFromHeaders({});
         assert.deepStrictEqual(result, { algorithm: 'crc64nvme', isTrailer: false, expected: undefined });
     });
 
-    it('no checksum headers, no trailer, no sdk algo: returns crc64nvme default', () => {
+    it('should return crc64nvme default when no checksum headers, no trailer, no sdk algo', () => {
         const result = getChecksumDataFromHeaders({ 'content-type': 'application/octet-stream' });
         assert.deepStrictEqual(result, { algorithm: 'crc64nvme', isTrailer: false, expected: undefined });
     });
 
     for (const [algo, digest] of Object.entries(validDigests)) {
-        it(`x-amz-checksum-${algo} with valid digest: returns algorithm, isTrailer=false, expected`, () => {
+        it(`should return algorithm, isTrailer=false and expected for x-amz-checksum-${algo} with valid digest`, () => {
             const result = getChecksumDataFromHeaders({ [`x-amz-checksum-${algo}`]: digest });
             assert.deepStrictEqual(result, { algorithm: algo, isTrailer: false, expected: digest });
         });
     }
 
-    it('x-amz-checksum-unknown-algo: returns AlgoNotSupported error', () => {
+    it('should return AlgoNotSupported error for x-amz-checksum-unknown-algo', () => {
         const result = getChecksumDataFromHeaders({ 'x-amz-checksum-md4': 'AAAAAA==' });
         assert.strictEqual(result.error, ChecksumError.AlgoNotSupported);
         assert.strictEqual(result.details.algorithm, 'md4');
     });
 
-    it('x-amz-checksum-crc32 with malformed digest (wrong length): returns MalformedChecksum error', () => {
+    it('should return MalformedChecksum error for x-amz-checksum-crc32 with malformed digest (wrong length)', () => {
         const result = getChecksumDataFromHeaders({ 'x-amz-checksum-crc32': 'AAAAA==' }); // 7 chars, crc32 needs 8
         assert.strictEqual(result.error, ChecksumError.MalformedChecksum);
         assert.strictEqual(result.details.algorithm, 'crc32');
     });
 
-    it('x-amz-checksum-crc32 with malformed digest (invalid base64): returns MalformedChecksum error', () => {
+    it('should return MalformedChecksum error for x-amz-checksum-crc32 with malformed digest (invalid base64)', () => {
         const result = getChecksumDataFromHeaders({ 'x-amz-checksum-crc32': '!!!!!!!!' });
         assert.strictEqual(result.error, ChecksumError.MalformedChecksum);
         assert.strictEqual(result.details.algorithm, 'crc32');
     });
 
-    it('two x-amz-checksum- headers: returns MultipleChecksumTypes error', () => {
+    it('should return MultipleChecksumTypes error for two x-amz-checksum- headers', () => {
         const result = getChecksumDataFromHeaders({
             'x-amz-checksum-crc32': validDigests.crc32,
             'x-amz-checksum-sha256': validDigests.sha256,
@@ -513,14 +513,14 @@ describe('getChecksumDataFromHeaders', () => {
         assert.strictEqual(result.error, ChecksumError.MultipleChecksumTypes);
     });
 
-    it('x-amz-sdk-checksum-algorithm with no x-amz-checksum- and no x-amz-trailer: returns MissingCorresponding',
+    it('should return MissingCorresponding when x-amz-sdk-checksum-algorithm has no x-amz-checksum- or x-amz-trailer',
         () => {
             const result = getChecksumDataFromHeaders({ 'x-amz-sdk-checksum-algorithm': 'crc32' });
             assert.strictEqual(result.error, ChecksumError.MissingCorresponding);
             assert.strictEqual(result.details.expected, 'crc32');
         });
 
-    it('x-amz-checksum-crc32 with matching x-amz-sdk-checksum-algorithm CRC32: returns success', () => {
+    it('should return success for x-amz-checksum-crc32 with matching x-amz-sdk-checksum-algorithm CRC32', () => {
         const result = getChecksumDataFromHeaders({
             'x-amz-checksum-crc32': validDigests.crc32,
             'x-amz-sdk-checksum-algorithm': 'crc32',
@@ -528,25 +528,27 @@ describe('getChecksumDataFromHeaders', () => {
         assert.deepStrictEqual(result, { algorithm: 'crc32', isTrailer: false, expected: validDigests.crc32 });
     });
 
-    it('x-amz-checksum-crc32 with mismatched x-amz-sdk-checksum-algorithm SHA256: returns AlgoNotSupportedSDK', () => {
-        const result = getChecksumDataFromHeaders({
-            'x-amz-checksum-crc32': validDigests.crc32,
-            'x-amz-sdk-checksum-algorithm': 'sha256',
+    it('should return AlgoNotSupportedSDK for x-amz-checksum-crc32 with mismatched x-amz-sdk-checksum-algorithm SHA256',
+        () => {
+            const result = getChecksumDataFromHeaders({
+                'x-amz-checksum-crc32': validDigests.crc32,
+                'x-amz-sdk-checksum-algorithm': 'sha256',
+            });
+            assert.strictEqual(result.error, ChecksumError.AlgoNotSupportedSDK);
+            assert.strictEqual(result.details.algorithm, 'sha256');
         });
-        assert.strictEqual(result.error, ChecksumError.AlgoNotSupportedSDK);
-        assert.strictEqual(result.details.algorithm, 'sha256');
-    });
 
-    it('x-amz-checksum-crc32 with non-string x-amz-sdk-checksum-algorithm: returns AlgoNotSupportedSDK', () => {
-        const result = getChecksumDataFromHeaders({
-            'x-amz-checksum-crc32': validDigests.crc32,
-            'x-amz-sdk-checksum-algorithm': 1234,
+    it('should return AlgoNotSupportedSDK for x-amz-checksum-crc32 with non-string x-amz-sdk-checksum-algorithm',
+        () => {
+            const result = getChecksumDataFromHeaders({
+                'x-amz-checksum-crc32': validDigests.crc32,
+                'x-amz-sdk-checksum-algorithm': 1234,
+            });
+            assert.strictEqual(result.error, ChecksumError.AlgoNotSupportedSDK);
+            assert.strictEqual(result.details.algorithm, 1234);
         });
-        assert.strictEqual(result.error, ChecksumError.AlgoNotSupportedSDK);
-        assert.strictEqual(result.details.algorithm, 1234);
-    });
 
-    it('x-amz-checksum-crc32 with unknown x-amz-sdk-checksum-algorithm: returns AlgoNotSupportedSDK', () => {
+    it('should return AlgoNotSupportedSDK for x-amz-checksum-crc32 with unknown x-amz-sdk-checksum-algorithm', () => {
         const result = getChecksumDataFromHeaders({
             'x-amz-checksum-crc32': validDigests.crc32,
             'x-amz-sdk-checksum-algorithm': 'md4',
@@ -555,29 +557,30 @@ describe('getChecksumDataFromHeaders', () => {
         assert.strictEqual(result.details.algorithm, 'md4');
     });
 
-    it('x-amz-trailer: x-amz-checksum-crc32: returns isTrailer=true', () => {
+    it('should return isTrailer=true for x-amz-trailer: x-amz-checksum-crc32', () => {
         const result = getChecksumDataFromHeaders({ 'x-amz-trailer': 'x-amz-checksum-crc32' });
         assert.deepStrictEqual(result, { algorithm: 'crc32', isTrailer: true, expected: undefined });
     });
 
-    it('x-amz-trailer: x-amz-checksum-crc64nvme: returns isTrailer=true', () => {
+    it('should return isTrailer=true for x-amz-trailer: x-amz-checksum-crc64nvme', () => {
         const result = getChecksumDataFromHeaders({ 'x-amz-trailer': 'x-amz-checksum-crc64nvme' });
         assert.deepStrictEqual(result, { algorithm: 'crc64nvme', isTrailer: true, expected: undefined });
     });
 
-    it('x-amz-trailer with unsupported value (not x-amz-checksum- prefix): returns TrailerNotSupported', () => {
-        const result = getChecksumDataFromHeaders({ 'x-amz-trailer': 'x-custom-header' });
-        assert.strictEqual(result.error, ChecksumError.TrailerNotSupported);
-        assert.strictEqual(result.details.value, 'x-custom-header');
-    });
+    it('should return TrailerNotSupported for x-amz-trailer with unsupported value (not x-amz-checksum- prefix)',
+        () => {
+            const result = getChecksumDataFromHeaders({ 'x-amz-trailer': 'x-custom-header' });
+            assert.strictEqual(result.error, ChecksumError.TrailerNotSupported);
+            assert.strictEqual(result.details.value, 'x-custom-header');
+        });
 
-    it('x-amz-trailer: x-amz-checksum-unknown-algo: returns TrailerNotSupported', () => {
+    it('should return TrailerNotSupported for x-amz-trailer: x-amz-checksum-unknown-algo', () => {
         const result = getChecksumDataFromHeaders({ 'x-amz-trailer': 'x-amz-checksum-md4' });
         assert.strictEqual(result.error, ChecksumError.TrailerNotSupported);
         assert.strictEqual(result.details.value, 'x-amz-checksum-md4');
     });
 
-    it('x-amz-trailer with also an x-amz-checksum- header: returns TrailerAndChecksum', () => {
+    it('should return TrailerAndChecksum error for x-amz-trailer with also an x-amz-checksum- header', () => {
         const result = getChecksumDataFromHeaders({
             'x-amz-trailer': 'x-amz-checksum-crc32',
             'x-amz-checksum-crc32': validDigests.crc32,
@@ -585,7 +588,7 @@ describe('getChecksumDataFromHeaders', () => {
         assert.strictEqual(result.error, ChecksumError.TrailerAndChecksum);
     });
 
-    it('x-amz-trailer with matching x-amz-sdk-checksum-algorithm: returns success', () => {
+    it('should return success for x-amz-trailer with matching x-amz-sdk-checksum-algorithm', () => {
         const result = getChecksumDataFromHeaders({
             'x-amz-trailer': 'x-amz-checksum-crc32',
             'x-amz-sdk-checksum-algorithm': 'crc32',
@@ -593,7 +596,7 @@ describe('getChecksumDataFromHeaders', () => {
         assert.deepStrictEqual(result, { algorithm: 'crc32', isTrailer: true, expected: undefined });
     });
 
-    it('x-amz-trailer with mismatched x-amz-sdk-checksum-algorithm: returns AlgoNotSupportedSDK', () => {
+    it('should return AlgoNotSupportedSDK for x-amz-trailer with mismatched x-amz-sdk-checksum-algorithm', () => {
         const result = getChecksumDataFromHeaders({
             'x-amz-trailer': 'x-amz-checksum-crc32',
             'x-amz-sdk-checksum-algorithm': 'sha256',
@@ -604,71 +607,71 @@ describe('getChecksumDataFromHeaders', () => {
 });
 
 describe('arsenalErrorFromChecksumError', () => {
-    it('MissingChecksum: returns null', () => {
+    it('should return null for MissingChecksum', () => {
         const result = arsenalErrorFromChecksumError({ error: ChecksumError.MissingChecksum, details: null });
         assert.strictEqual(result, null);
     });
 
-    it('XAmzMismatch (crc32): returns BadDigest mentioning CRC32', () => {
+    it('should return BadDigest mentioning CRC32 for XAmzMismatch with crc32', () => {
         const result = arsenalErrorFromChecksumError({
             error: ChecksumError.XAmzMismatch,
             details: { algorithm: 'crc32', calculated: 'a', expected: 'b' },
         });
-        assert(result.is.BadDigest);
+        assert.strictEqual(result.message, 'BadDigest');
         assert.strictEqual(result.description, 'The CRC32 you specified did not match the calculated checksum.');
     });
 
-    it('XAmzMismatch (sha256): returns BadDigest mentioning SHA256', () => {
+    it('should return BadDigest mentioning SHA256 for XAmzMismatch with sha256', () => {
         const result = arsenalErrorFromChecksumError({
             error: ChecksumError.XAmzMismatch,
             details: { algorithm: 'sha256', calculated: 'a', expected: 'b' },
         });
-        assert(result.is.BadDigest);
+        assert.strictEqual(result.message, 'BadDigest');
         assert.strictEqual(result.description, 'The SHA256 you specified did not match the calculated checksum.');
     });
 
-    it('AlgoNotSupported: returns InvalidRequest', () => {
+    it('should return InvalidRequest for AlgoNotSupported', () => {
         const result = arsenalErrorFromChecksumError({
             error: ChecksumError.AlgoNotSupported,
             details: { algorithm: 'md4' },
         });
-        assert(result.is.InvalidRequest);
+        assert.strictEqual(result.message, 'InvalidRequest');
     });
 
-    it('AlgoNotSupportedSDK: returns InvalidRequest', () => {
+    it('should return InvalidRequest for AlgoNotSupportedSDK', () => {
         const result = arsenalErrorFromChecksumError({
             error: ChecksumError.AlgoNotSupportedSDK,
             details: { algorithm: 'md4' },
         });
-        assert(result.is.InvalidRequest);
+        assert.strictEqual(result.message, 'InvalidRequest');
     });
 
-    it('MissingCorresponding: returns InvalidRequest', () => {
+    it('should return InvalidRequest for MissingCorresponding', () => {
         const result = arsenalErrorFromChecksumError({
             error: ChecksumError.MissingCorresponding,
             details: { expected: 'crc32' },
         });
-        assert(result.is.InvalidRequest);
+        assert.strictEqual(result.message, 'InvalidRequest');
     });
 
-    it('MultipleChecksumTypes: returns InvalidRequest', () => {
+    it('should return InvalidRequest for MultipleChecksumTypes', () => {
         const result = arsenalErrorFromChecksumError({
             error: ChecksumError.MultipleChecksumTypes,
             details: { algorithms: ['x-amz-checksum-crc32', 'x-amz-checksum-sha256'] },
         });
-        assert(result.is.InvalidRequest);
+        assert.strictEqual(result.message, 'InvalidRequest');
     });
 
-    it('MalformedChecksum (crc32): returns InvalidRequest mentioning crc32', () => {
+    it('should return InvalidRequest mentioning crc32 for MalformedChecksum', () => {
         const result = arsenalErrorFromChecksumError({
             error: ChecksumError.MalformedChecksum,
             details: { algorithm: 'crc32', expected: 'bad' },
         });
-        assert(result.is.InvalidRequest);
+        assert.strictEqual(result.message, 'InvalidRequest');
         assert.strictEqual(result.description, 'Value for x-amz-checksum-crc32 header is invalid.');
     });
 
-    it('MD5Invalid: returns InvalidDigest', () => {
+    it('should return InvalidDigest for MD5Invalid', () => {
         const result = arsenalErrorFromChecksumError({
             error: ChecksumError.MD5Invalid,
             details: { expected: 'bad' },
@@ -676,7 +679,7 @@ describe('arsenalErrorFromChecksumError', () => {
         assert.deepStrictEqual(result, ArsenalErrors.InvalidDigest);
     });
 
-    it('TrailerAlgoMismatch: returns MalformedTrailerError', () => {
+    it('should return MalformedTrailerError for TrailerAlgoMismatch', () => {
         const result = arsenalErrorFromChecksumError({
             error: ChecksumError.TrailerAlgoMismatch,
             details: { algorithm: 'crc32' },
@@ -684,7 +687,7 @@ describe('arsenalErrorFromChecksumError', () => {
         assert.deepStrictEqual(result, ArsenalErrors.MalformedTrailerError);
     });
 
-    it('TrailerMissing: returns MalformedTrailerError', () => {
+    it('should return MalformedTrailerError for TrailerMissing', () => {
         const result = arsenalErrorFromChecksumError({
             error: ChecksumError.TrailerMissing,
             details: { expectedTrailer: 'x-amz-checksum-crc32' },
@@ -692,7 +695,7 @@ describe('arsenalErrorFromChecksumError', () => {
         assert.deepStrictEqual(result, ArsenalErrors.MalformedTrailerError);
     });
 
-    it('TrailerUnexpected: returns MalformedTrailerError', () => {
+    it('should return MalformedTrailerError for TrailerUnexpected', () => {
         const result = arsenalErrorFromChecksumError({
             error: ChecksumError.TrailerUnexpected,
             details: { name: 'x-amz-checksum-crc32', val: 'AAAAAA==' },
@@ -700,32 +703,32 @@ describe('arsenalErrorFromChecksumError', () => {
         assert.deepStrictEqual(result, ArsenalErrors.MalformedTrailerError);
     });
 
-    it('TrailerChecksumMalformed: returns InvalidRequest mentioning the algorithm', () => {
+    it('should return InvalidRequest mentioning the algorithm for TrailerChecksumMalformed', () => {
         const result = arsenalErrorFromChecksumError({
             error: ChecksumError.TrailerChecksumMalformed,
             details: { algorithm: 'sha256', expected: 'bad' },
         });
-        assert(result.is.InvalidRequest);
+        assert.strictEqual(result.message, 'InvalidRequest');
         assert.strictEqual(result.description, 'Value for x-amz-checksum-sha256 trailing header is invalid.');
     });
 
-    it('TrailerAndChecksum: returns InvalidRequest', () => {
+    it('should return InvalidRequest for TrailerAndChecksum', () => {
         const result = arsenalErrorFromChecksumError({
             error: ChecksumError.TrailerAndChecksum,
             details: { trailer: 'x-amz-checksum-crc32', checksum: ['x-amz-checksum-crc32'] },
         });
-        assert(result.is.InvalidRequest);
+        assert.strictEqual(result.message, 'InvalidRequest');
     });
 
-    it('TrailerNotSupported: returns InvalidRequest', () => {
+    it('should return InvalidRequest for TrailerNotSupported', () => {
         const result = arsenalErrorFromChecksumError({
             error: ChecksumError.TrailerNotSupported,
             details: { value: 'x-custom-header' },
         });
-        assert(result.is.InvalidRequest);
+        assert.strictEqual(result.message, 'InvalidRequest');
     });
 
-    it('unknown error type (default): returns BadDigest', () => {
+    it('should return BadDigest for unknown error type (default)', () => {
         const result = arsenalErrorFromChecksumError({ error: 'SomeUnknownError', details: null });
         assert.deepStrictEqual(result, ArsenalErrors.BadDigest);
     });
