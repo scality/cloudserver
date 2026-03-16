@@ -16,7 +16,8 @@ const credentialOne = 'gcpbackend';
 const bucketName = genBucketName('gettagging');
 const tagSize = 10;
 
-describe('GCP: GET Object Tagging', () => {
+describe('GCP: GET Object Tagging', function testSuite() {
+    this.timeout(120000);
     let config;
     let gcpClient;
     let bucketCreated = false;

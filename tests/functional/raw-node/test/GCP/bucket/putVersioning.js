@@ -16,7 +16,8 @@ const verEnabledStatus = 'Enabled';
 const verDisabledStatus = 'Suspended';
 const bucketName = genBucketName('putversioning');
 
-describe('GCP: PUT Bucket Versioning', () => {
+describe('GCP: PUT Bucket Versioning', function testSuite() {
+    this.timeout(120000);
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 

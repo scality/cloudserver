@@ -15,7 +15,8 @@ const credentialOne = 'gcpbackend';
 const verEnabledObj = 'Enabled';
 const verDisabledObj = 'Suspended';
 
-describe('GCP: GET Bucket Versioning', () => {
+describe('GCP: GET Bucket Versioning', function testSuite() {
+    this.timeout(120000);
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 

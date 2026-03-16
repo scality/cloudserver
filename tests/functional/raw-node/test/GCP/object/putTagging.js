@@ -16,7 +16,8 @@ const {
 const credentialOne = 'gcpbackend';
 const bucketName = genBucketName('puttagging');
 
-describe('GCP: PUT Object Tagging', () => {
+describe('GCP: PUT Object Tagging', function testSuite() {
+    this.timeout(120000);
     let config;
     let gcpClient;
 

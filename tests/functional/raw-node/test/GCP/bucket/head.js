@@ -11,7 +11,8 @@ const {
 
 const credentialOne = 'gcpbackend';
 
-describe('GCP: HEAD Bucket', () => {
+describe('GCP: HEAD Bucket', function testSuite() {
+    this.timeout(120000);
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 

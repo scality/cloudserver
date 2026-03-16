@@ -18,7 +18,7 @@ const objectKey = `somekey-${genUniqID()}`;
 const badObjectKey = `nonexistingkey-${genUniqID()}`;
 
 describe('GCP: DELETE Object', function testSuite() {
-    this.timeout(30000);
+    this.timeout(120000);
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 

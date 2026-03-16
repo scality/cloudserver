@@ -45,7 +45,7 @@ function assertObjectMetaTag(params, callback) {
 }
 
 describe('GCP: DELETE Object Tagging', function testSuite() {
-    this.timeout(30000);
+    this.timeout(120000);
 
     before(async () => {
         config = getRealAwsConfig(credentialOne);

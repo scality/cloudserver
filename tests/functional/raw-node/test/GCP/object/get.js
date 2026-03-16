@@ -16,7 +16,7 @@ const credentialOne = 'gcpbackend';
 const bucketName = genBucketName('get');
 
 describe('GCP: GET Object', function testSuite() {
-    this.timeout(30000);
+    this.timeout(120000);
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 
