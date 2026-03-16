@@ -26,8 +26,7 @@ describe('GCP: PUT Object', function testSuite() {
     });
 
     after(async () => {
-        const cmd = new DeleteBucketCommand({ Bucket: bucketName });
-        await gcpClient.send(cmd);
+        await gcpRetry(gcpClient, new DeleteBucketCommand({ Bucket: bucketName }));
     });
 
     afterEach(function afterFn(done) {
