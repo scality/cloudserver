@@ -33,35 +33,36 @@ describe('GCP: Object', function testSuite() {
         await gcpRetry(gcpClient, new DeleteBucketCommand({ Bucket: bucketName }));
     });
 
+    async function setupExistingObject(test) {
+        /* eslint-disable no-param-reassign */
+        test.key = `somekey-${genUniqID()}`;
+        const res = await gcpClient.send(new PutObjectCommand({
+            Bucket: bucketName,
+            Key: test.key,
+        }));
+        test.uploadId = res.VersionId;
+        test.ETag = res.ETag;
+        /* eslint-enable no-param-reassign */
+    }
+
+    async function cleanupObject(test) {
+        if (!test.key) {
+            return;
+        }
+        await gcpClient.send(new DeleteObjectCommand({
+            Bucket: bucketName,
+            Key: test.key,
+        }));
+    }
+
     describe('HEAD Object', () => {
         describe('with existing object in bucket', () => {
             beforeEach(async function beforeFn() {
-                this.currentTest.key = `somekey-${genUniqID()}`;
-                const res = await gcpClient.send(new PutObjectCommand({
-                    Bucket: bucketName,
-                    Key: this.currentTest.key,
-                }));
-                this.currentTest.uploadId = res.VersionId;
-                this.currentTest.ETag = res.ETag;
+                await setupExistingObject(this.currentTest);
             });
 
             afterEach(async function afterFn() {
-                if (!this.currentTest.key) {
-                    return;
-                }
-                await new Promise((resolve, reject) => {
-                    gcpClient.deleteObject({
-                        Bucket: bucketName,
-                        Key: this.currentTest.key,
-                    }, err => {
-                        if (err) {
-                            process.stdout.write(`err in deleting object ${err}\n`);
-                            reject(err);
-                            return;
-                        }
-                        resolve();
-                    });
-                });
+                await cleanupObject(this.currentTest);
             });
 
             it('should successfully retrieve object', async function testFn() {
@@ -94,20 +95,11 @@ describe('GCP: Object', function testSuite() {
     describe('GET Object', () => {
         describe('with existing object in bucket', () => {
             beforeEach(async function beforeFn() {
-                this.currentTest.key = `somekey-${genUniqID()}`;
-                const res = await gcpClient.send(new PutObjectCommand({
-                    Bucket: bucketName,
-                    Key: this.currentTest.key,
-                }));
-                this.currentTest.uploadId = res.VersionId;
-                this.currentTest.ETag = res.ETag;
+                await setupExistingObject(this.currentTest);
             });
 
             afterEach(async function afterFn() {
-                await gcpClient.send(new DeleteObjectCommand({
-                    Bucket: bucketName,
-                    Key: this.currentTest.key,
-                }));
+                await cleanupObject(this.currentTest);
             });
 
             it('should successfully retrieve object', async function testFn() {
@@ -137,30 +129,13 @@ describe('GCP: Object', function testSuite() {
     });
 
     describe('PUT Object', () => {
-        afterEach(function afterFn(done) {
-            if (!this.currentTest.key) {
-                done();
-                return;
-            }
-            gcpClient.deleteObject({
-                Bucket: bucketName,
-                Key: this.currentTest.key,
-            }, err => {
-                if (err) {
-                    process.stdout.write(`err in deleting object ${err}\n`);
-                }
-                return done(err);
-            });
+        afterEach(async function afterFn() {
+            await cleanupObject(this.currentTest);
         });
 
         describe('with existing object in bucket', () => {
             beforeEach(async function beforeFn() {
-                this.currentTest.key = `somekey-${genUniqID()}`;
-                const res = await gcpClient.send(new PutObjectCommand({
-                    Bucket: bucketName,
-                    Key: this.currentTest.key,
-                }));
-                this.currentTest.uploadId = res.VersionId;
+                await setupExistingObject(this.currentTest);
             });
 
             it('should overwrite object', function testFn(done) {
