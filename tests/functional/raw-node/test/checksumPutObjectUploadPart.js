@@ -1,6 +1,7 @@
 const assert = require('assert');
 const crypto = require('crypto');
 const async = require('async');
+const { algorithms } = require('../../../../lib/api/apiUtils/integrity/validateChecksums');
 
 const { makeS3Request } = require('../utils/makeRequest');
 const HttpRequestAuthV4 = require('../utils/HttpRequestAuthV4');
@@ -44,7 +45,11 @@ function doPutRequest(url, headers, body, callback) {
         res => {
             let data = '';
             res.on('data', chunk => { data += chunk; });
-            res.on('end', () => callback(null, { statusCode: res.statusCode, body: data }));
+            res.on('end', () => callback(null, {
+                statusCode: res.statusCode,
+                body: data,
+                headers: res.headers,
+            }));
         }
     );
     req.on('error', callback);
@@ -143,16 +148,35 @@ const msgMalformedTrailer = 'The request contained trailing data that was not we
 const msgSdkMissingTrailer = 'x-amz-sdk-checksum-algorithm specified, but no corresponding' +
     ' x-amz-checksum-* or x-amz-trailer headers were found.';
 
-// Create the 24 common protocol-scenario tests for a given URL factory.
+// Module-level variables for computed crc64nvme checksums (filled in before hook)
+let crc64nvmeOfTestContent2;
+let crc64nvmeOfTrailerContent;
+
+// Create the common protocol-scenario tests for a given URL factory.
 // urlFn() is called lazily at test runtime so that uploadId is available.
 function makeScenarioTests(urlFn) {
+    before(async () => {
+        if (!crc64nvmeOfTestContent2) {
+            crc64nvmeOfTestContent2 = await algorithms.crc64nvme.digest(testContent2);
+        }
+        if (!crc64nvmeOfTrailerContent) {
+            crc64nvmeOfTrailerContent = await algorithms.crc64nvme.digest(trailerContent);
+        }
+    });
+
     itSkipIfAWS(
         'should return 200 for signed sha256 in x-amz-content-sha256, no x-amz-checksum header',
         done => {
             doPutRequest(urlFn(), {
                 'x-amz-content-sha256': testContent2Sha256Hex,
                 'content-length': testContent2.length,
-            }, testContent2, (err, res) => assertStatus(200)(err, res, done));
+            }, testContent2, (err, res) => {
+                assertStatus(200)(err, res, () => {
+                    assert.strictEqual(res.headers['x-amz-checksum-crc64nvme'], crc64nvmeOfTestContent2,
+                        `expected x-amz-checksum-crc64nvme: ${crc64nvmeOfTestContent2}`);
+                    done();
+                });
+            });
         });
 
     itSkipIfAWS(
@@ -163,7 +187,13 @@ function makeScenarioTests(urlFn) {
                 'x-amz-sdk-checksum-algorithm': 'SHA256',
                 'x-amz-checksum-sha256': testContent2Sha256B64,
                 'content-length': testContent2.length,
-            }, testContent2, (err, res) => assertStatus(200)(err, res, done));
+            }, testContent2, (err, res) => {
+                assertStatus(200)(err, res, () => {
+                    assert.strictEqual(res.headers['x-amz-checksum-sha256'], testContent2Sha256B64,
+                        `expected x-amz-checksum-sha256: ${testContent2Sha256B64}`);
+                    done();
+                });
+            });
         });
 
     itSkipIfAWS(
@@ -186,7 +216,13 @@ function makeScenarioTests(urlFn) {
                 'x-amz-sdk-checksum-algorithm': 'SHA256',
                 'x-amz-checksum-sha256': testContent2Sha256B64,
                 'content-length': testContent2.length,
-            }, testContent2, (err, res) => assertStatus(200)(err, res, done));
+            }, testContent2, (err, res) => {
+                assertStatus(200)(err, res, () => {
+                    assert.strictEqual(res.headers['x-amz-checksum-sha256'], testContent2Sha256B64,
+                        `expected x-amz-checksum-sha256: ${testContent2Sha256B64}`);
+                    done();
+                });
+            });
         });
 
     itSkipIfAWS(
@@ -210,7 +246,13 @@ function makeScenarioTests(urlFn) {
                 'x-amz-trailer': 'x-amz-checksum-sha256',
                 'x-amz-decoded-content-length': trailerContent.length,
                 'content-length': Buffer.byteLength(body),
-            }, body, (err, res) => assertStatus(200)(err, res, done));
+            }, body, (err, res) => {
+                assertStatus(200)(err, res, () => {
+                    assert.strictEqual(res.headers['x-amz-checksum-sha256'], trailerContentSha256,
+                        `expected x-amz-checksum-sha256: ${trailerContentSha256}`);
+                    done();
+                });
+            });
         });
 
     itSkipIfAWS(
@@ -296,7 +338,13 @@ function makeScenarioTests(urlFn) {
                 'x-amz-trailer': 'x-amz-checksum-sha256',
                 'x-amz-decoded-content-length': trailerContent.length,
                 'content-length': Buffer.byteLength(body),
-            }, body, (err, res) => assertStatus(200)(err, res, done));
+            }, body, (err, res) => {
+                assertStatus(200)(err, res, () => {
+                    assert.strictEqual(res.headers['x-amz-checksum-sha256'], trailerContentSha256,
+                        `expected x-amz-checksum-sha256: ${trailerContentSha256}`);
+                    done();
+                });
+            });
         });
 
     itSkipIfAWS(
@@ -309,7 +357,13 @@ function makeScenarioTests(urlFn) {
                 'x-amz-sdk-checksum-algorithm': 'SHA256',
                 'x-amz-decoded-content-length': trailerContent.length,
                 'content-length': Buffer.byteLength(body),
-            }, body, (err, res) => assertStatus(200)(err, res, done));
+            }, body, (err, res) => {
+                assertStatus(200)(err, res, () => {
+                    assert.strictEqual(res.headers['x-amz-checksum-sha256'], trailerContentSha256,
+                        `expected x-amz-checksum-sha256: ${trailerContentSha256}`);
+                    done();
+                });
+            });
         });
 
     itSkipIfAWS(
@@ -403,7 +457,13 @@ function makeScenarioTests(urlFn) {
                 // no x-amz-trailer
                 'x-amz-decoded-content-length': trailerContent.length,
                 'content-length': Buffer.byteLength(body),
-            }, body, (err, res) => assertStatus(200)(err, res, done));
+            }, body, (err, res) => {
+                assertStatus(200)(err, res, () => {
+                    assert.strictEqual(res.headers['x-amz-checksum-crc64nvme'], crc64nvmeOfTrailerContent,
+                        `expected x-amz-checksum-crc64nvme: ${crc64nvmeOfTrailerContent}`);
+                    done();
+                });
+            });
         });
 
     itSkipIfAWS(
@@ -417,7 +477,13 @@ function makeScenarioTests(urlFn) {
                 // no x-amz-trailer
                 'x-amz-decoded-content-length': trailerContent.length,
                 'content-length': Buffer.byteLength(body),
-            }, body, (err, res) => assertStatus(200)(err, res, done));
+            }, body, (err, res) => {
+                assertStatus(200)(err, res, () => {
+                    assert.strictEqual(res.headers['x-amz-checksum-crc64nvme'], crc64nvmeOfTrailerContent,
+                        `expected x-amz-checksum-crc64nvme: ${crc64nvmeOfTrailerContent}`);
+                    done();
+                });
+            });
         });
 
     itSkipIfAWS(
@@ -431,7 +497,13 @@ function makeScenarioTests(urlFn) {
                 'content-md5': trailerContentMd5B64,
                 'x-amz-decoded-content-length': trailerContent.length,
                 'content-length': Buffer.byteLength(body),
-            }, body, (err, res) => assertStatus(200)(err, res, done));
+            }, body, (err, res) => {
+                assertStatus(200)(err, res, () => {
+                    assert.strictEqual(res.headers['x-amz-checksum-sha256'], trailerContentSha256,
+                        `expected x-amz-checksum-sha256: ${trailerContentSha256}`);
+                    done();
+                });
+            });
         });
 
     itSkipIfAWS(
@@ -445,7 +517,13 @@ function makeScenarioTests(urlFn) {
                 'x-amz-trailer': 'x-amz-checksum-sha256',
                 'x-amz-decoded-content-length': trailerContent.length,
                 'content-length': Buffer.byteLength(body),
-            }, body, (err, res) => assertStatus(200)(err, res, done));
+            }, body, (err, res) => {
+                assertStatus(200)(err, res, () => {
+                    assert.strictEqual(res.headers['x-amz-checksum-sha256'], trailerContentSha256,
+                        `expected x-amz-checksum-sha256: ${trailerContentSha256}`);
+                    done();
+                });
+            });
         });
 }
 
@@ -655,6 +733,201 @@ describe('UploadPart: trailer and checksum protocol scenarios', () => {
     makeScenarioTests(
         () => `http://localhost:8000/${bucket}/${objectKey}?partNumber=1&uploadId=${uploadId2}`
     );
+});
+
+describe('PutObject: checksum response header per algorithm', () => {
+    const url = `http://localhost:8000/${bucket}/${objectKey}`;
+    const body = testContent2;
+    const sha256Hex = testContent2Sha256Hex;
+
+    let expectedCrc64nvme;
+
+    before(async () => {
+        await new Promise((resolve, reject) =>
+            makeS3Request({ method: 'PUT', authCredentials, bucket },
+                err => (err ? reject(err) : resolve())));
+        expectedCrc64nvme = await algorithms.crc64nvme.digest(body);
+    });
+
+    after(done => {
+        makeS3Request({ method: 'DELETE', authCredentials, bucket, objectKey }, () => {
+            makeS3Request({ method: 'DELETE', authCredentials, bucket }, err => {
+                assert.ifError(err);
+                done();
+            });
+        });
+    });
+
+    const checksumAlgos = [
+        { name: 'crc32',     computeExpected: () => algorithms.crc32.digest(body) },
+        { name: 'crc32c',    computeExpected: () => algorithms.crc32c.digest(body) },
+        { name: 'crc64nvme', computeExpected: () => expectedCrc64nvme },
+        { name: 'sha1',      computeExpected: () => algorithms.sha1.digest(body) },
+        { name: 'sha256',    computeExpected: () => algorithms.sha256.digest(body) },
+    ];
+
+    for (const algo of checksumAlgos) {
+        itSkipIfAWS(
+            `should return x-amz-checksum-${algo.name} response header with correct value`,
+            done => {
+                const expectedValue = algo.computeExpected();
+                const headerName = `x-amz-checksum-${algo.name}`;
+                doPutRequest(url, {
+                    'x-amz-content-sha256': sha256Hex,
+                    [headerName]: expectedValue,
+                    'content-length': body.length,
+                }, body, (err, res) => {
+                    assert.ifError(err);
+                    assert.strictEqual(res.statusCode, 200,
+                        `expected 200, got ${res.statusCode}: ${res.body}`);
+                    assert.strictEqual(res.headers[headerName], expectedValue,
+                        `expected ${headerName}: ${expectedValue}`);
+                    done();
+                });
+            }
+        );
+    }
+
+    itSkipIfAWS(
+        'should return x-amz-checksum-crc64nvme response header when no checksum header is sent',
+        done => {
+            doPutRequest(url, {
+                'x-amz-content-sha256': sha256Hex,
+                'content-length': body.length,
+            }, body, (err, res) => {
+                assert.ifError(err);
+                assert.strictEqual(res.statusCode, 200,
+                    `expected 200, got ${res.statusCode}: ${res.body}`);
+                assert.strictEqual(res.headers['x-amz-checksum-crc64nvme'], expectedCrc64nvme,
+                    `expected x-amz-checksum-crc64nvme: ${expectedCrc64nvme}`);
+                done();
+            });
+        }
+    );
+});
+
+describe('PutObject: zero-byte object checksum handling', () => {
+    const zeroBucket = 'checksumzerobytebucket';
+    const zeroUrl = `http://localhost:8000/${zeroBucket}/${objectKey}`;
+    const emptyBody = Buffer.alloc(0);
+
+    // Known empty-body checksums (well-known constants except crc64nvme which is async)
+    // crc32("") = crc32c("") = 0x00000000 => AAAAAA==
+    // sha1("") = 2jmj7l5rSw0yVb/vlWAYkK/YBwk=
+    // sha256("") = 47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=
+    const expectedEmptyChecksums = {
+        crc32: 'AAAAAA==',
+        crc32c: 'AAAAAA==',
+        sha1: '2jmj7l5rSw0yVb/vlWAYkK/YBwk=',
+        sha256: '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=',
+        crc64nvme: 'AAAAAAAAAAA=',
+    };
+
+    // Wrong digests for empty body: valid format but not the correct empty-body hash.
+    // crc32/crc32c of "" = AAAAAA==, so we use a different value for those.
+    const wrongEmptyDigests = {
+        crc32: 'EyV5Tg==',
+        crc32c: 'EyV5Tg==',
+        crc64nvme: 'skQv82y5rgE=',
+        sha1: 'AAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+        sha256: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+    };
+
+    before(done => {
+        makeS3Request({ method: 'PUT', authCredentials, bucket: zeroBucket },
+            err => {
+                assert.ifError(err);
+                done();
+            });
+    });
+
+    after(done => {
+        makeS3Request({ method: 'DELETE', authCredentials, bucket: zeroBucket, objectKey }, () => {
+            makeS3Request({ method: 'DELETE', authCredentials, bucket: zeroBucket }, err => {
+                assert.ifError(err);
+                done();
+            });
+        });
+    });
+
+    itSkipIfAWS(
+        'should return 200 with x-amz-checksum-crc64nvme of empty body when no checksum header is sent',
+        done => {
+            doPutRequest(zeroUrl, {
+                'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
+                'content-length': 0,
+            }, emptyBody, (err, res) => {
+                assert.ifError(err);
+                assert.strictEqual(res.statusCode, 200,
+                    `expected 200, got ${res.statusCode}: ${res.body}`);
+                assert.strictEqual(res.headers['x-amz-checksum-crc64nvme'],
+                    expectedEmptyChecksums.crc64nvme,
+                    `expected x-amz-checksum-crc64nvme: ${expectedEmptyChecksums.crc64nvme}`);
+                done();
+            });
+        });
+
+    for (const algoName of ['crc32', 'crc32c', 'crc64nvme', 'sha1', 'sha256']) {
+        itSkipIfAWS(
+            `should return 200 with echoed ${algoName} response header for correct empty-body checksum`,
+            done => {
+                const expected = expectedEmptyChecksums[algoName];
+                const headerName = `x-amz-checksum-${algoName}`;
+                doPutRequest(zeroUrl, {
+                    'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
+                    [headerName]: expected,
+                    'content-length': 0,
+                }, emptyBody, (err, res) => {
+                    assert.ifError(err);
+                    assert.strictEqual(res.statusCode, 200,
+                        `expected 200, got ${res.statusCode}: ${res.body}`);
+                    assert.strictEqual(res.headers[headerName], expected,
+                        `expected ${headerName}: ${expected}`);
+                    done();
+                });
+            });
+
+        itSkipIfAWS(
+            `should return 400 BadDigest for wrong empty-body ${algoName} checksum`,
+            done => {
+                const wrong = wrongEmptyDigests[algoName];
+                const headerName = `x-amz-checksum-${algoName}`;
+                doPutRequest(zeroUrl, {
+                    'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
+                    [headerName]: wrong,
+                    'content-length': 0,
+                }, emptyBody, (err, res) => {
+                    assert.ifError(err);
+                    assert.strictEqual(res.statusCode, 400,
+                        `expected 400, got ${res.statusCode}: ${res.body}`);
+                    assert(res.body.includes('BadDigest'),
+                        `expected BadDigest in: ${res.body}`);
+                    done();
+                });
+            });
+    }
+
+    itSkipIfAWS(
+        'should return 200 with checksum for the trailer algorithm when decoded content length is zero',
+        done => {
+            // x-amz-decoded-content-length: 0 → parsedContentLength === 0, hits the zero-byte path.
+            // The trailer body is never consumed; server computes and stores the empty-body hash itself.
+            const emptySha256 = expectedEmptyChecksums.sha256;
+            const trailerBody = `0\r\nx-amz-checksum-sha256:${emptySha256}\n\r\n\r\n\r\n`;
+            doPutRequest(zeroUrl, {
+                'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
+                'x-amz-trailer': 'x-amz-checksum-sha256',
+                'x-amz-decoded-content-length': 0,
+                'content-length': Buffer.byteLength(trailerBody),
+            }, trailerBody, (err, res) => {
+                assert.ifError(err);
+                assert.strictEqual(res.statusCode, 200,
+                    `expected 200, got ${res.statusCode}: ${res.body}`);
+                assert.strictEqual(res.headers['x-amz-checksum-sha256'], emptySha256,
+                    `expected x-amz-checksum-sha256: ${emptySha256}`);
+                done();
+            });
+        });
 });
 
 describe('PutObject: large body streaming checksums', () => {

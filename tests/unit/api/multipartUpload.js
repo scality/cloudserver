@@ -3241,3 +3241,57 @@ describe('initiateMultipartUpload with objectKeyByteLimit', () => {
         });
     });
 });
+
+describe('objectPutPart checksum response headers', () => {
+    let testUploadId;
+
+    beforeEach(done => {
+        cleanup();
+        bucketPut(authInfo, bucketPutRequest, log, err => {
+            assert.ifError(err);
+            initiateMultipartUpload(authInfo, initiateRequest, log, (err, result) => {
+                assert.ifError(err);
+                parseString(result, (err, json) => {
+                    assert.ifError(err);
+                    testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                    done();
+                });
+            });
+        });
+    });
+
+    afterEach(() => cleanup());
+
+    it('should return x-amz-checksum-sha256 response header when x-amz-checksum-sha256 is provided', done => {
+        const sha256Value = crypto.createHash('sha256').update(postBody).digest('base64');
+        const partRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-checksum-sha256': sha256Value,
+            },
+            url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+            query: { partNumber: '1', uploadId: testUploadId },
+            actionImplicitDenies: false,
+        }, postBody);
+
+        objectPutPart(authInfo, partRequest, undefined, log, (err, _hexDigest, resHeaders) => {
+            assert.ifError(err);
+            assert.strictEqual(resHeaders['x-amz-checksum-sha256'], sha256Value);
+            done();
+        });
+    });
+
+    it('should return x-amz-checksum-crc64nvme response header when no checksum header is provided', done => {
+        const expectedCrc64nvme = '5evlCr2wyO4=';
+        const partRequest = _createPutPartRequest(testUploadId, '1', postBody);
+
+        objectPutPart(authInfo, partRequest, undefined, log, (err, _hexDigest, resHeaders) => {
+            assert.ifError(err);
+            assert.strictEqual(resHeaders['x-amz-checksum-crc64nvme'], expectedCrc64nvme);
+            done();
+        });
+    });
+});

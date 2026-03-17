@@ -882,8 +882,9 @@ describe('objectPut API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, log, err => {
             assert.ifError(err);
-            objectPut(authInfo, request, undefined, log, err => {
+            objectPut(authInfo, request, undefined, log, (err, resHeaders) => {
                 assert.ifError(err);
+                assert.strictEqual(resHeaders['x-amz-checksum-sha256'], sha256Value);
                 metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
                     assert.ifError(err);
                     assert(md.checksum, 'checksum should be set in metadata');
