@@ -1,7 +1,9 @@
 const assert = require('assert');
+const crypto = require('crypto');
 const http = require('http');
-const { CreateBucketCommand, 
-    PutObjectCommand, 
+const { CreateBucketCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
     DeleteBucketCommand } = require('@aws-sdk/client-s3');
 
 const { makeRequest } = require('../../utils/makeRequest');
@@ -143,4 +145,80 @@ describe('metadata routes with metadata', () => {
             return done();
         });
     });
+});
+
+describe('checksum stored in object metadata after PutObject', () => {
+    const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+    const s3 = bucketUtil.s3;
+
+    const bucket = 'bucket-checksum-test';
+    const objectBody = 'hello checksum';
+    const sha256Key = 'object-with-sha256-checksum';
+    const defaultKey = 'object-with-default-checksum';
+
+    // CRC32 of 'hello checksum' in base64 — the AWS SDK v3 injects x-amz-checksum-crc32 by default
+    const expectedCrc32 = 'EyV5Tg==';
+
+    before(async function () {
+        if (!process.env.S3_END_TO_END) {
+            this.skip();
+        }
+        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+
+        const sha256Value = crypto.createHash('sha256').update(objectBody).digest('base64');
+        await s3.send(new PutObjectCommand({
+            Bucket: bucket,
+            Key: sha256Key,
+            Body: objectBody,
+            ChecksumSHA256: sha256Value,
+        }));
+        await s3.send(new PutObjectCommand({
+            Bucket: bucket,
+            Key: defaultKey,
+            Body: objectBody,
+        }));
+    });
+
+    after(async () => {
+        if (!process.env.S3_END_TO_END) {
+            return;
+        }
+        await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: sha256Key }));
+        await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: defaultKey }));
+        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+    });
+
+    it('should store sha256 checksum in metadata when x-amz-checksum-sha256 is provided', done => {
+        const expectedValue = crypto.createHash('sha256').update(objectBody).digest('base64');
+        makeMetadataRequest({
+            method: 'GET',
+            authCredentials: metadataAuthCredentials,
+            path: `/_/metadata/default/bucket/${bucket}/${sha256Key}`,
+        }, (err, res) => {
+            assert.ifError(err);
+            assert.strictEqual(res.statusCode, 200);
+            const md = JSON.parse(res.body);
+            assert.strictEqual(md.checksum.checksumAlgorithm, 'sha256');
+            assert.strictEqual(md.checksum.checksumValue, expectedValue);
+            assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
+            return done();
+        });
+    });
+
+    it('should store crc32 checksum in metadata when no explicit checksum header is provided (AWS SDK default)',
+        done => {
+            makeMetadataRequest({
+                method: 'GET',
+                authCredentials: metadataAuthCredentials,
+                path: `/_/metadata/default/bucket/${bucket}/${defaultKey}`,
+            }, (err, res) => {
+                assert.ifError(err);
+                assert.strictEqual(res.statusCode, 200);
+                const md = JSON.parse(res.body);
+                assert.strictEqual(md.checksum.checksumAlgorithm, 'crc32');
+                assert.strictEqual(md.checksum.checksumValue, expectedCrc32);
+                assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
+                return done();
+            });
+        });
 });

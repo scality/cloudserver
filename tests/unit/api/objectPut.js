@@ -1,5 +1,6 @@
 const assert = require('assert');
 const async = require('async');
+const crypto = require('crypto');
 const moment = require('moment');
 const { s3middleware, storage, versioning } = require('arsenal');
 const sinon = require('sinon');
@@ -863,6 +864,82 @@ describe('objectPut API', () => {
                     assert(err.is.InvalidArgument);
                     done();
                 });
+        });
+    });
+
+    it('should store sha256 checksum in metadata when x-amz-checksum-sha256 header is provided', done => {
+        const sha256Value = crypto.createHash('sha256').update(postBody).digest('base64');
+        const request = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-checksum-sha256': sha256Value,
+            },
+            url: '/',
+        }, postBody);
+
+        bucketPut(authInfo, testPutBucketRequest, log, err => {
+            assert.ifError(err);
+            objectPut(authInfo, request, undefined, log, err => {
+                assert.ifError(err);
+                metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                    assert.ifError(err);
+                    assert(md.checksum, 'checksum should be set in metadata');
+                    assert.strictEqual(md.checksum.checksumAlgorithm, 'sha256');
+                    assert.strictEqual(md.checksum.checksumValue, sha256Value);
+                    assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should store crc64nvme checksum in metadata when no checksum header is provided', done => {
+        const expectedCrc64nvme = '5evlCr2wyO4=';
+        bucketPut(authInfo, testPutBucketRequest, log, err => {
+            assert.ifError(err);
+            objectPut(authInfo, testPutObjectRequest, undefined, log, (err, resHeaders) => {
+                assert.ifError(err);
+                assert.strictEqual(resHeaders['x-amz-checksum-crc64nvme'], expectedCrc64nvme);
+                metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                    assert.ifError(err);
+                    assert(md.checksum, 'checksum should be set in metadata');
+                    assert.strictEqual(md.checksum.checksumAlgorithm, 'crc64nvme');
+                    assert.strictEqual(md.checksum.checksumValue, expectedCrc64nvme);
+                    assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should return crc64nvme response header for zero-byte object when no checksum header is provided', done => {
+        const expectedCrc64nvme = 'AAAAAAAAAAA=';
+        const zeroBytePutRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            url: `/${bucketName}/${objectName}`,
+            parsedContentLength: 0,
+        }, Buffer.alloc(0));
+
+        bucketPut(authInfo, testPutBucketRequest, log, err => {
+            assert.ifError(err);
+            objectPut(authInfo, zeroBytePutRequest, undefined, log, (err, resHeaders) => {
+                assert.ifError(err);
+                assert.strictEqual(resHeaders['x-amz-checksum-crc64nvme'], expectedCrc64nvme);
+                metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                    assert.ifError(err);
+                    assert(md.checksum, 'checksum should be set in metadata');
+                    assert.strictEqual(md.checksum.checksumAlgorithm, 'crc64nvme');
+                    assert.strictEqual(md.checksum.checksumValue, expectedCrc64nvme);
+                    assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
+                    done();
+                });
+            });
         });
     });
 });
