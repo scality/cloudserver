@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { genPutTagObj, genUniqID, gcpRetry } =
+const { genPutTagObj, genUniqID, genBucketName, gcpRetry } =
     require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
@@ -14,7 +14,7 @@ const {
 } = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `cldsrvci-puttagging-${genUniqID()}`;
+const bucketName = genBucketName('puttagging');
 
 describe('GCP: PUT Object Tagging', () => {
     let config;

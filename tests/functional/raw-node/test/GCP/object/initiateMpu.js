@@ -4,6 +4,7 @@ const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external.GCP;
 const {
     genUniqID,
+    genBucketName,
     gcpRetry,
     gcpCreateMultipartUploadWithRetry,
     waitForBucketReady,
@@ -18,10 +19,10 @@ const {
 const credentialOne = 'gcpbackend';
 const bucketNames = {
     main: {
-        Name: `cldsrvci-initiatempu-${genUniqID()}`,
+        Name: genBucketName('initiatempu'),
     },
     mpu: {
-        Name: `cldsrvci-mpu-initiatempu-${genUniqID()}`,
+        Name: genBucketName('mpu-initiatempu'),
     },
 };
 

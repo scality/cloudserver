@@ -7,6 +7,7 @@ const { GCP, GcpUtils } = arsenal.storage.data.external.GCP;
 const {
     gcpMpuSetup,
     genUniqID,
+    genBucketName,
     gcpRetry,
     waitForBucketReady,
 } = require('../../../utils/gcpUtils');
@@ -20,11 +21,11 @@ const {
 const credentialOne = 'gcpbackend';
 const bucketNames = {
     main: {
-        Name: `cldsrvci-completempu-${genUniqID()}`,
+        Name: genBucketName('completempu'),
         Type: 'MULTI_REGIONAL',
     },
     mpu: {
-        Name: `cldsrvci-mpu-completempu-${genUniqID()}`,
+        Name: genBucketName('mpu-completempu'),
         Type: 'MULTI_REGIONAL',
     },
 };

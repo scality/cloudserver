@@ -10,13 +10,13 @@ const {
     DeleteObjectCommand,
 } = require('@aws-sdk/client-s3');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { genUniqID, gcpRetry } = require('../../../utils/gcpUtils');
+const { genUniqID, genBucketName, gcpRetry } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 const { listingHardLimit } = require('../../../../../../constants');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `cldsrvci-get-${genUniqID()}`;
+const bucketName = genBucketName('get');
 const smallSize = 20;
 const bigSize = listingHardLimit + 1;
 const config = getRealAwsConfig(credentialOne);

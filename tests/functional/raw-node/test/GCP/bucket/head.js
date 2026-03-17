@@ -1,7 +1,7 @@
 const assert = require('assert');
 const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { genUniqID, gcpRetry } = require('../../../utils/gcpUtils');
+const { genBucketName, gcpRetry } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 const {
@@ -17,7 +17,7 @@ describe('GCP: HEAD Bucket', () => {
 
     describe('without existing bucket', () => {
         beforeEach(async function beforeFn() {
-            this.currentTest.bucketName = `cldsrvci-head-${genUniqID()}`;
+            this.currentTest.bucketName = genBucketName('head');
         });
 
         it('should return 404', async function testFn() {
@@ -37,7 +37,7 @@ describe('GCP: HEAD Bucket', () => {
 
     describe('with existing bucket', () => {
         beforeEach(async function beforeFn() {
-            this.currentTest.bucketName = `cldsrvci-head-${genUniqID()}`;
+            this.currentTest.bucketName = genBucketName('head');
             process.stdout
                 .write(`Creating test bucket ${this.currentTest.bucketName}\n`);
             await gcpRetry(

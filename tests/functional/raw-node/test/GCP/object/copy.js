@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { genUniqID, gcpRetry } = require('../../../utils/gcpUtils');
+const { genUniqID, genBucketName, gcpRetry } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 const {
@@ -12,7 +12,7 @@ const {
 } = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `cldsrvci-copy-${genUniqID()}`;
+const bucketName = genBucketName('copy');
 
 describe('GCP: COPY Object', function testSuite() {
     this.timeout(180000);

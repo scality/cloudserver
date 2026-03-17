@@ -109,6 +109,7 @@
     "ft_node_routes": "cd tests/functional/raw-node && yarn run test-routes",
     "ft_route_backbeat": "cd tests/multipleBackend/routes && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 routeBackbeat.js routeBackbeatForReplication.js --exit",
     "ft_gcp": "cd tests/functional/raw-node && yarn run test-gcp",
+    "cleanup_gcp_buckets": "node .github/scripts/cleanupOldGCPBuckets.js",
     "ft_healthchecks": "cd tests/functional/healthchecks && yarn test",
     "ft_s3cmd": "cd tests/functional/s3cmd && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js --exit",
     "ft_s3curl": "cd tests/functional/s3curl && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js --exit",

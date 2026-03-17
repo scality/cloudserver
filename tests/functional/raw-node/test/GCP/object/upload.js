@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { genUniqID, gcpRetry, gcpUploadWithRetry, waitForBucketReady } =
+const { genUniqID, genBucketName, gcpRetry, gcpUploadWithRetry, waitForBucketReady } =
     require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
@@ -15,10 +15,10 @@ const {
 const credentialOne = 'gcpbackend';
 const bucketNames = {
     main: {
-        Name: `cldsrvci-upload-${genUniqID()}`,
+        Name: genBucketName('upload'),
     },
     mpu: {
-        Name: `cldsrvci-mpu-upload-${genUniqID()}`,
+        Name: genBucketName('mpu-upload'),
     },
 };
 
