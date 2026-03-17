@@ -1,7 +1,10 @@
 const assert = require('assert');
+const crypto = require('crypto');
+const { CrtCrc64Nvme } = require('@aws-sdk/crc64-nvme-crt');
 const http = require('http');
-const { CreateBucketCommand, 
-    PutObjectCommand, 
+const { CreateBucketCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
     DeleteBucketCommand } = require('@aws-sdk/client-s3');
 
 const { makeRequest } = require('../../utils/makeRequest');
@@ -140,6 +143,81 @@ describe('metadata routes with metadata', () => {
             path: '/_/metadata/admin/raft_sessions',
         }, err => {
             assert.strictEqual(err.code, 'NotImplemented');
+            return done();
+        });
+    });
+});
+
+describe('checksum stored in object metadata after PutObject', () => {
+    const bucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
+    const s3 = bucketUtil.s3;
+
+    const bucket = 'bucket1';
+    const objectBody = 'hello checksum';
+    const sha256Key = 'object-with-sha256-checksum';
+    const defaultKey = 'object-with-default-checksum';
+
+    let expectedCrc64nvme;
+
+    before(async function () {
+        if (!process.env.S3_END_TO_END) {
+            this.skip();
+        }
+        const crc = new CrtCrc64Nvme();
+        crc.update(Buffer.from(objectBody));
+        expectedCrc64nvme = Buffer.from(await crc.digest()).toString('base64');
+
+        const sha256Value = crypto.createHash('sha256').update(objectBody).digest('base64');
+        await s3.send(new PutObjectCommand({
+            Bucket: bucket,
+            Key: sha256Key,
+            Body: objectBody,
+            ChecksumSHA256: sha256Value,
+        }));
+        await s3.send(new PutObjectCommand({
+            Bucket: bucket,
+            Key: defaultKey,
+            Body: objectBody,
+        }));
+    });
+
+    after(async () => {
+        if (!process.env.S3_END_TO_END) {
+            return;
+        }
+        await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: sha256Key }));
+        await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: defaultKey }));
+    });
+
+    it('stores sha256 checksum in metadata when x-amz-checksum-sha256 is provided', done => {
+        const expectedValue = crypto.createHash('sha256').update(objectBody).digest('base64');
+        makeMetadataRequest({
+            method: 'GET',
+            authCredentials: metadataAuthCredentials,
+            path: `/_/metadata/default/bucket/${bucket}/${sha256Key}`,
+        }, (err, res) => {
+            assert.ifError(err);
+            assert.strictEqual(res.statusCode, 200);
+            const md = JSON.parse(res.body);
+            assert.strictEqual(md.checksum.checksumAlgorithm, 'sha256');
+            assert.strictEqual(md.checksum.checksumValue, expectedValue);
+            assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
+            return done();
+        });
+    });
+
+    it('stores crc64nvme checksum in metadata when no checksum header is provided', done => {
+        makeMetadataRequest({
+            method: 'GET',
+            authCredentials: metadataAuthCredentials,
+            path: `/_/metadata/default/bucket/${bucket}/${defaultKey}`,
+        }, (err, res) => {
+            assert.ifError(err);
+            assert.strictEqual(res.statusCode, 200);
+            const md = JSON.parse(res.body);
+            assert.strictEqual(md.checksum.checksumAlgorithm, 'crc64nvme');
+            assert.strictEqual(md.checksum.checksumValue, expectedCrc64nvme);
+            assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
             return done();
         });
     });
