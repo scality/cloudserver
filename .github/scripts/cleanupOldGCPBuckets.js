@@ -5,7 +5,7 @@ const {
     S3Client,
     ListBucketsCommand,
     ListObjectsV2Command,
-    DeleteObjectsCommand,
+    DeleteObjectCommand,
     DeleteBucketCommand,
     ListMultipartUploadsCommand,
     AbortMultipartUploadCommand,
@@ -90,13 +90,12 @@ async function deleteAllObjects(client, bucketName) {
         const objects = res.Contents || [];
         if (objects.length > 0) {
             console.log(`  Deleting ${objects.length} object(s)...`);
-            await client.send(new DeleteObjectsCommand({
-                Bucket: bucketName,
-                Delete: {
-                    Objects: objects.map(o => ({ Key: o.Key })),
-                    Quiet: true,
-                },
-            }));
+            for (const obj of objects) {
+                await client.send(new DeleteObjectCommand({
+                    Bucket: bucketName,
+                    Key: obj.Key,
+                }));
+            }
         }
 
         continuationToken = res.NextContinuationToken;
