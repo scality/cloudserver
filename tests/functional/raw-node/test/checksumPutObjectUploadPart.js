@@ -759,11 +759,11 @@ describe('PutObject: checksum response header per algorithm', () => {
     });
 
     const checksumAlgos = [
-        { name: 'crc32',     computeExpected: () => algorithms.crc32.digest(body) },
-        { name: 'crc32c',    computeExpected: () => algorithms.crc32c.digest(body) },
+        { name: 'crc32', computeExpected: () => algorithms.crc32.digest(body) },
+        { name: 'crc32c', computeExpected: () => algorithms.crc32c.digest(body) },
         { name: 'crc64nvme', computeExpected: () => expectedCrc64nvme },
-        { name: 'sha1',      computeExpected: () => algorithms.sha1.digest(body) },
-        { name: 'sha256',    computeExpected: () => algorithms.sha256.digest(body) },
+        { name: 'sha1', computeExpected: () => algorithms.sha1.digest(body) },
+        { name: 'sha256', computeExpected: () => algorithms.sha256.digest(body) },
     ];
 
     for (const algo of checksumAlgos) {
