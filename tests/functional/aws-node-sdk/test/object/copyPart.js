@@ -307,8 +307,7 @@ describe('Object Part Copy', () => {
                 })).then(initiateRes => {
                     sourceMpuId = initiateRes.UploadId;
                 }).catch(err => {
-                    process.stdout.write(`Error initiating MPU ' +
-                    'in MPU beforeEach: ${err}\n`);
+                    process.stdout.write(`Error initiating MPU in MPU beforeEach: ${err}\n`);
                     throw err;
                 }).then(() => {
                     const partUploads = [];
@@ -339,14 +338,13 @@ describe('Object Part Copy', () => {
                             PartNumber: i,
                         });
                     }
-                    process.stdout.write('about to put parts');
+                    process.stdout.write('about to put parts\n');
                     return Promise.all(partUploads);
                 }).catch(err => {
-                    process.stdout.write(`Error putting parts in ' +
-                    'MPU beforeEach: ${err}\n`);
+                    process.stdout.write(`Error putting parts in MPU beforeEach: ${err}\n`);
                     throw err;
                 }).then(() => {
-                    process.stdout.write('completing mpu');
+                    process.stdout.write('completing mpu\n');
                     return s3.send(new CompleteMultipartUploadCommand({
                         Bucket: sourceBucketName,
                         Key: sourceMpuKey,
@@ -356,7 +354,7 @@ describe('Object Part Copy', () => {
                         },
                     }));
                 }).then(() => {
-                    process.stdout.write('finished completing mpu');
+                    process.stdout.write('finished completing mpu\n');
                 }).catch(err => {
                     process.stdout.write(`Error in MPU beforeEach: ${err}\n`);
                     throw err;
@@ -377,7 +375,7 @@ describe('Object Part Copy', () => {
 
             it('should copy a part from a source bucket to a different ' +
                 'destination bucket', () => {
-                process.stdout.write('Entered first mpu test');
+                process.stdout.write('Entered first mpu test\n');
                 return s3.send(new UploadPartCopyCommand({
                     Bucket: destBucketName,
                     Key: destObjName,
@@ -393,7 +391,7 @@ describe('Object Part Copy', () => {
 
             it('should copy two parts from a source bucket to a different ' +
                 'destination bucket and complete the MPU', () => {
-                process.stdout.write('Putting first part in MPU test');
+                process.stdout.write('Putting first part in MPU test\n');
                 return s3.send(new UploadPartCopyCommand({
                     Bucket: destBucketName,
                     Key: destObjName,
@@ -404,7 +402,7 @@ describe('Object Part Copy', () => {
                     assert.strictEqual(res.CopyPartResult.ETag, totalMpuObjectHash);
                     assert(res.CopyPartResult.LastModified);
                 }).then(() => {
-                    process.stdout.write('Putting second part in MPU test');
+                    process.stdout.write('Putting second part in MPU test\n');
                     return s3.send(new UploadPartCopyCommand({
                         Bucket: destBucketName,
                         Key: destObjName,
@@ -415,7 +413,7 @@ describe('Object Part Copy', () => {
                         assert.strictEqual(res.CopyPartResult.ETag, totalMpuObjectHash);
                         assert(res.CopyPartResult.LastModified);
                     }).then(() => {
-                        process.stdout.write('Completing MPU');
+                        process.stdout.write('Completing MPU\n');
                         return s3.send(new CompleteMultipartUploadCommand({
                             Bucket: destBucketName,
                             Key: destObjName,
@@ -443,7 +441,7 @@ describe('Object Part Copy', () => {
             it('should copy two parts with range headers from a source ' +
                 'bucket to a different destination bucket and ' +
                 'complete the MPU', () => {
-                process.stdout.write('Putting first part in MPU range test');
+                process.stdout.write('Putting first part in MPU range test\n');
                 const part1ETag = '"b1e0d096c8f0670c5367d131e392b84a"';
                 const part2ETag = '"a2468d5c0ec2d4d5fc13b73beb63080a"';
                 // combined ETag returned by AWS (combination of part ETags
@@ -461,7 +459,7 @@ describe('Object Part Copy', () => {
                     assert.strictEqual(res.CopyPartResult.ETag, part1ETag);
                     assert(res.CopyPartResult.LastModified);
                 }).then(() => {
-                    process.stdout.write('Putting second part in MPU test');
+                    process.stdout.write('Putting second part in MPU test\n');
                     return s3.send(new UploadPartCopyCommand({
                         Bucket: destBucketName,
                         Key: destObjName,
@@ -473,7 +471,7 @@ describe('Object Part Copy', () => {
                         assert.strictEqual(res.CopyPartResult.ETag, part2ETag);
                         assert(res.CopyPartResult.LastModified);
                     }).then(() => {
-                        process.stdout.write('Completing MPU');
+                        process.stdout.write('Completing MPU\n');
                         return s3.send(new CompleteMultipartUploadCommand({
                             Bucket: destBucketName,
                             Key: destObjName,
@@ -489,7 +487,7 @@ describe('Object Part Copy', () => {
                             assert.strictEqual(res.Key, destObjName);
                             assert.strictEqual(res.ETag, finalCombinedETag);
                         }).then(() => {
-                            process.stdout.write('Getting new object');
+                            process.stdout.write('Getting new object\n');
                             return s3.send(new GetObjectCommand({
                                 Bucket: destBucketName,
                                 Key: destObjName,
@@ -508,7 +506,7 @@ describe('Object Part Copy', () => {
             it('should overwrite an existing part by copying a part', () => {
                 // AWS response etag for this completed MPU
                 const finalObjETag = '"db77ebbae9e9f5a244a26b86193ad818-1"';
-                process.stdout.write('Putting first part in MPU test');
+                process.stdout.write('Putting first part in MPU test\n');
                 return s3.send(new UploadPartCopyCommand({
                     Bucket: destBucketName,
                     Key: destObjName,
@@ -519,7 +517,7 @@ describe('Object Part Copy', () => {
                     assert.strictEqual(res.CopyPartResult.ETag, totalMpuObjectHash);
                     assert(res.CopyPartResult.LastModified);
                 }).then(() => {
-                    process.stdout.write('Overwriting first part in MPU test');
+                    process.stdout.write('Overwriting first part in MPU test\n');
                     return s3.send(new UploadPartCopyCommand({
                         Bucket: destBucketName,
                         Key: destObjName,
@@ -530,7 +528,7 @@ describe('Object Part Copy', () => {
                 ).then(res => {
                     assert.strictEqual(res.CopyPartResult.ETag, etag);
                     assert(res.CopyPartResult.LastModified);
-                    process.stdout.write('Completing MPU');
+                    process.stdout.write('Completing MPU\n');
                     return s3.send(new CompleteMultipartUploadCommand({
                         Bucket: destBucketName,
                         Key: destObjName,
@@ -547,7 +545,7 @@ describe('Object Part Copy', () => {
                         assert.strictEqual(res.ETag, finalObjETag);
                     }).then(() => {
                         process.stdout.write('Getting object put by MPU with ' +
-                        'overwrite part');
+                        'overwrite part\n');
                         return s3.send(new GetObjectCommand({
                             Bucket: destBucketName,
                             Key: destObjName,
@@ -564,7 +562,7 @@ describe('Object Part Copy', () => {
             it('should not corrupt object if overwriting an existing part by copying a part ' +
             'while the MPU is being completed', async () => {
                 const finalObjETag = '"db77ebbae9e9f5a244a26b86193ad818-1"';
-                process.stdout.write('Putting first part in MPU test"');
+                process.stdout.write('Putting first part in MPU test\n');
                 const randomDestObjName = `copycatobject${Math.floor(Math.random() * 100000)}`;
 
                     const initiateRes = await s3.send(new CreateMultipartUploadCommand({
@@ -584,7 +582,7 @@ describe('Object Part Copy', () => {
                     assert(res.CopyPartResult.LastModified);
 
                     process.stdout.write(
-                      'Overwriting first part in MPU test and completing MPU at the same time',
+                      'Overwriting first part in MPU test and completing MPU at the same time\n',
                     );
                     const [completeRes, uploadRes] = await Promise.all([
                       s3.send(new CompleteMultipartUploadCommand({
@@ -623,7 +621,7 @@ describe('Object Part Copy', () => {
                     assert.strictEqual(completeRes.Key, randomDestObjName);
                     assert.strictEqual(completeRes.ETag, finalObjETag);
                     process.stdout.write(
-                      'Getting object put by MPU with ' + 'overwrite part',
+                      'Getting object put by MPU with overwrite part\n',
                     );
                     const resGet = await s3
                       .send(new GetObjectCommand({
@@ -761,7 +759,7 @@ describe('Object Part Copy', () => {
             let otherAccountUploadId;
 
             beforeEach(() => {
-                process.stdout.write('In other account before each');
+                process.stdout.write('In other account before each\n');
                 return otherAccountS3.send(new CreateBucketCommand({ Bucket:
                 otherAccountBucket }))
                 .catch(err => {
@@ -769,7 +767,7 @@ describe('Object Part Copy', () => {
                     `bucket: ${err}\n`);
                     throw err;
                 }).then(() => {
-                    process.stdout.write('Initiating other account MPU');
+                    process.stdout.write('Initiating other account MPU\n');
                     return otherAccountS3.send(new CreateMultipartUploadCommand({
                         Bucket: otherAccountBucket,
                         Key: otherAccountKey,
