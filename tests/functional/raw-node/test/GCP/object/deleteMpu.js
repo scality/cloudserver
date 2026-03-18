@@ -36,7 +36,7 @@ function gcpMpuSetupWrapper(params, callback) {
 }
 
 describe('GCP: Abort MPU', function testSuite() {
-    this.timeout(30000);
+    this.timeout(120000);
     let config;
     let gcpClient;
 

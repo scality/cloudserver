@@ -16,7 +16,8 @@ const defaultShouldRetry = err =>
 
 async function gcpRetryCall(callFn, retryOptions) {
     const {
-        maxAttempts = 3,
+        // 6 attempts with exponential backoff gives up to ~63s of total wait.
+        maxAttempts = 6,
         shouldRetry = defaultShouldRetry,
         getDelayMs = attempt => Math.pow(2, attempt) * 1000,
     } = retryOptions || {};
