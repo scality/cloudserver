@@ -1,4 +1,5 @@
 const cp = require('child_process');
+const util = require('util');
 
 const conf = require('../../../../../lib/Config').config;
 
@@ -43,5 +44,10 @@ function provideRawOutput(args, cb) {
         procData.stderr += data.toString();
     });
 }
+
+provideRawOutput[util.promisify.custom] = args =>
+    new Promise(resolve =>
+        provideRawOutput(args, (httpCode, rawOutput) => resolve({ httpCode, rawOutput }))
+    );
 
 module.exports = provideRawOutput;
