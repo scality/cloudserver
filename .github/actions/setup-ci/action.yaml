@@ -56,7 +56,7 @@ runs:
       # uses: catchpoint/workflow-telemetry-action@v2
       # Use a fork that fixes chart issue
       # https://github.com/catchpoint/workflow-telemetry-action/pull/98
-      uses: whywaita/workflow-telemetry-action@use_quickchart
+      uses: whywaita/workflow-telemetry-action@9861d94d4f5862a5b8c5e863cf9a156a1b950738
       with:
         theme: dark
         comment_on_pr: false
