@@ -4,6 +4,7 @@ const {
     CreateBucketCommand,
     DeleteBucketCommand,
     ListObjectVersionsCommand,
+    DeleteObjectsCommand,
     DeleteObjectCommand,
     ListBucketsCommand,
 } = require('@aws-sdk/client-s3');
@@ -90,48 +91,65 @@ class BucketUtility {
      * @param bucketName
      * @returns {Promise.<T>}
      */
-    empty(bucketName, BypassGovernanceRetention = false) {
-        const param = {
-            Bucket: bucketName,
-        };
+    async empty(bucketName, BypassGovernanceRetention = false) {
+        let keyMarker = undefined;
+        let versionIdMarker = undefined;
+        let isTruncated = true;
 
-        return this.s3.send(new ListObjectVersionsCommand(param))
-            .then(data => Promise.all(
-                (data.Versions || [])
-                .filter(object => !object.Key.endsWith('/'))
-                .map(object =>
-                    this.s3.send(new DeleteObjectCommand({
+        while (isTruncated) {
+            const response = await this.s3.send(new ListObjectVersionsCommand({
+                Bucket: bucketName,
+                KeyMarker: keyMarker,
+                VersionIdMarker: versionIdMarker,
+            }));
+
+            const objects = [
+                ...(response.Versions || []),
+                ...(response.DeleteMarkers || []),
+            ].map(({ Key, VersionId }) => ({ Key, VersionId }));
+
+            if (objects.length > 0) {
+                try {
+                    const result = await this.s3.send(new DeleteObjectsCommand({
                         Bucket: bucketName,
-                        Key: object.Key,
-                        VersionId: object.VersionId,
+                        Delete: {
+                            Objects: objects,
+                            Quiet: true
+                        },
                         ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
-                    })).then(() => object)
-                )
-                .concat((data.Versions || [])
-                    .filter(object => object.Key.endsWith('/'))
-                    .map(object =>
+                    }));
+                    if (result.Errors && result.Errors.length > 0) {
+                        for (const e of result.Errors) {
+                            // eslint-disable-next-line no-console
+                            console.warn(
+                                `Warning BucketUtility.empty(): failed to delete s3://${bucketName}/${e.Key}` +
+                                ` (versionId=${e.VersionId}): ${e.Code} - ${e.Message}`
+                            );
+                        }
+                    }
+                } catch (err) {
+                    // Older cloudserver versions reject DeleteObjects with BadDigest
+                    // due to a Content-MD5 integrity check issue. Fall back to individual deletes.
+                    if (err.name !== 'BadDigest') {
+                        throw err;
+                    }
+                    await Promise.all(objects.map(({ Key, VersionId }) =>
                         this.s3.send(new DeleteObjectCommand({
                             Bucket: bucketName,
-                            Key: object.Key,
-                            VersionId: object.VersionId,
+                            Key,
+                            VersionId,
                             ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
                         }))
-                        .then(() => object)
-                    )
-                )
-                .concat((data.DeleteMarkers || [])
-                    .map(object =>
-                    this.s3.send(new DeleteObjectCommand({
-                        Bucket: bucketName,
-                        Key: object.Key,
-                        VersionId: object.VersionId,
-                        ...(BypassGovernanceRetention && { BypassGovernanceRetention }),
-                        }))
-                        .then(() => object)
-                    )
-                )
-            )
-        );
+                    ));
+                }
+            }
+
+            isTruncated = response.IsTruncated;
+            if (isTruncated) {
+                keyMarker = response.NextKeyMarker;
+                versionIdMarker = response.NextVersionIdMarker;
+            }
+        }
     }
 
     emptyMany(bucketNames) {

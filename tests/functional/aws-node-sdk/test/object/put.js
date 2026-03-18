@@ -1,6 +1,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
+const util = require('util');
 const { CreateBucketCommand, 
     PutObjectCommand,
     GetObjectAclCommand,
@@ -11,16 +12,17 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const checkError = require('../../lib/utility/checkError');
 const provideRawOutput = require('../../lib/utility/provideRawOutput');
+const provideRawOutputAsync = util.promisify(provideRawOutput);
 const { taggingTests, generateMultipleTagQuery }
     = require('../../lib/utility/tagging');
 const genMaxSizeMetaHeaders
     = require('../../lib/utility/genMaxSizeMetaHeaders');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
 
-const bucket = 'bucket2putstuffin4324242';
 const object = 'object2putstuffin';
 
 describe('PUT object', () => {
+    const bucket = 'bucket2putstuffin4324242';
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
@@ -54,18 +56,15 @@ describe('PUT object', () => {
                 
                 const command = new PutObjectCommand(params);
                 const url = await getSignedUrl(s3, command);
-                provideRawOutput(['-verbose', '-X', 'PUT', url,
-                    '--upload-file', tempFile], httpCode => {
-                    fs.unlinkSync(tempFile);
-                    assert.strictEqual(httpCode, '200 OK');
-                    s3.send(new GetObjectAclCommand({ Bucket: bucket, Key: 'key' }))
-                    .then(result => {
-                        assert.deepStrictEqual(result.Grants[1], { Grantee:
-                        { Type: 'Group', URI:
-                            'http://acs.amazonaws.com/groups/global/AllUsers',
-                        }, Permission: 'READ' });
-                    });
-                });
+                const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url,
+                    '--upload-file', tempFile]);
+                fs.unlinkSync(tempFile);
+                assert.strictEqual(httpCode, '200 OK');
+                const result = await s3.send(new GetObjectAclCommand({ Bucket: bucket, Key: 'key' }));
+                assert.deepStrictEqual(result.Grants[1], { Grantee:
+                    { Type: 'Group', URI:
+                        'http://acs.amazonaws.com/groups/global/AllUsers',
+                    }, Permission: 'READ' });
             });
 
         it('should put an object with key slash',
@@ -318,6 +317,7 @@ const isCEPH = process.env.CI_CEPH !== undefined;
 const describeSkipIfCeph = isCEPH ? describe.skip : describe;
 
 describeSkipIfCeph('PUT object with object lock', () => {
+    const bucket = 'bucket2putstuffin4324242-lock';
     withV4(sigCfg => {
         let bucketUtil;
         let s3;

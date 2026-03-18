@@ -1,6 +1,8 @@
 const assert = require('assert');
 const process = require('node:process');
 const cp = require('child_process');
+const util = require('util');
+const timers = require('timers/promises');
 const {
     S3Client,
     CreateBucketCommand,
@@ -12,6 +14,7 @@ const {
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const getConfig = require('../support/config');
 const provideRawOutput = require('../../lib/utility/provideRawOutput');
+const provideRawOutputAsync = util.promisify(provideRawOutput);
 
 const random = Math.round(Math.random() * 100).toString();
 const bucket = `mybucket-${random}`;
@@ -60,49 +63,32 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
         const futureExpiry = Math.floor(Date.now() / 1000) + 604810; // 10 seconds more than limit
         urlObj.searchParams.set('Expires', futureExpiry.toString());
         const invalidUrl = urlObj.toString();
-        await new Promise(resolve => {
-            provideRawOutput(['-verbose', '-X', 'PUT', invalidUrl], httpCode => {
-                assert.strictEqual(httpCode, '403 FORBIDDEN');
-                resolve();
-            });
-        });
+        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', invalidUrl]);
+        assert.strictEqual(httpCode, '403 FORBIDDEN');
     });
 
     it('should return an error code if request occurs after expiry', async () => {
         const command = new CreateBucketCommand({ Bucket: bucket });
         const url = await getSignedUrl(s3, command, { expiresIn: 1 });
-        await new Promise(resolve => {
-            setTimeout(() => {
-                provideRawOutput(['-verbose', '-X', 'PUT', url], httpCode => {
-                    assert.strictEqual(httpCode, '403 FORBIDDEN');
-                    resolve();
-                });
-            }, 1500);
-        });
+        await timers.setTimeout(1500);
+        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url]);
+        assert.strictEqual(httpCode, '403 FORBIDDEN');
     });
 
     it('should create a bucket', async () => {
         const command = new CreateBucketCommand({ Bucket: bucket });
         const url = await getSignedUrl(s3, command, { expiresIn: almostOutsideTime });
-        await new Promise(resolve => {
-            provideRawOutput(['-verbose', '-X', 'PUT', url], httpCode => {
-                assert.strictEqual(httpCode, '200 OK');
-                resolve();
-            });
-        });
+        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url]);
+        assert.strictEqual(httpCode, '200 OK');
     });
 
 
     it('should put an object', async () => {
         const command = new PutObjectCommand({ Bucket: bucket, Key: 'key' });
         const url = await getSignedUrl(s3, command, { expiresIn: almostOutsideTime });
-        await new Promise(resolve => {
-            provideRawOutput(['-verbose', '-X', 'PUT', url,
-                '--upload-file', 'uploadFile'], httpCode => {
-                assert.strictEqual(httpCode, '200 OK');
-                resolve();
-            });
-        });
+        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url,
+            '--upload-file', 'uploadFile']);
+        assert.strictEqual(httpCode, '200 OK');
     });
 
     it('should put an object with an acl setting and a storage class setting', async () => {
@@ -118,25 +104,17 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
             StorageClass: 'STANDARD' 
         });
         const url = await getSignedUrl(s3, command);
-        await new Promise(resolve => {
-            provideRawOutput(['-verbose', '-X', 'PUT', url,
-                '--upload-file', 'uploadFile'], httpCode => {
-                assert.strictEqual(httpCode, '200 OK');
-                resolve();
-            });
-        });
+        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url,
+            '--upload-file', 'uploadFile']);
+        assert.strictEqual(httpCode, '200 OK');
     });
 
 
     it('should get an object', async () => {
         const command = new GetObjectCommand({ Bucket: bucket, Key: 'key' });
         const url = await getSignedUrl(s3, command, { expiresIn: almostOutsideTime });
-        await new Promise(resolve => {
-            provideRawOutput(['-verbose', '-o', 'download', url], httpCode => {
-                assert.strictEqual(httpCode, '200 OK');
-                resolve();
-            });
-        });
+        const { httpCode } = await provideRawOutputAsync(['-verbose', '-o', 'download', url]);
+        assert.strictEqual(httpCode, '200 OK');
     });
 
     it('downloaded file should equal file that was put', done => {
@@ -148,23 +126,15 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
     it('should delete an object', async () => {
         const command = new DeleteObjectCommand({ Bucket: bucket, Key: 'key' });
         const url = await getSignedUrl(s3, command, { expiresIn: almostOutsideTime });
-        await new Promise(resolve => {
-            provideRawOutput(['-verbose', '-X', 'DELETE', url], httpCode => {
-                assert.strictEqual(httpCode, '204 NO CONTENT');
-                resolve();
-            });
-        });
+        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'DELETE', url]);
+        assert.strictEqual(httpCode, '204 NO CONTENT');
     });
 
 
     it('should delete a bucket', async () => {
         const command = new DeleteBucketCommand({ Bucket: bucket });
         const url = await getSignedUrl(s3, command, { expiresIn: almostOutsideTime });
-        await new Promise(resolve => {
-            provideRawOutput(['-verbose', '-X', 'DELETE', url], httpCode => {
-                assert.strictEqual(httpCode, '204 NO CONTENT');
-                resolve();
-            });
-        });
+        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'DELETE', url]);
+        assert.strictEqual(httpCode, '204 NO CONTENT');
     });
 });
