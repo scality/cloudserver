@@ -43,17 +43,27 @@ describe('DELETE object', () => {
                     
                     process.stdout.write('uploading parts\n');
                     uploadId = createRes.UploadId;
+                    // Concurrent uploads help trigger flakiness with "TimeoutError:
+                    // socket hang up" due to a keep-alive race: the server closes
+                    // an idle connection just as the client picks it from the pool.
+                    const uploadWithRetry = (params, attempt = 0) =>
+                        s3.send(new UploadPartCommand(params)).catch(err => {
+                            if (attempt < 3) {
+                                process.stdout.write(`Retrying UploadPart ${params.PartNumber} `
+                                    + `(attempt ${attempt + 1}/3): ${err}\n`);
+                                return uploadWithRetry(params, attempt + 1);
+                            }
+                            throw err;
+                        });
                     const uploads = [];
                     for (let i = 1; i <= 3; i++) {
-                        uploads.push(
-                            s3.send(new UploadPartCommand({
-                                Bucket: bucketName,
-                                Key: objectName,
-                                PartNumber: i,
-                                Body: testfile,
-                                UploadId: uploadId,
-                            }))
-                        );
+                        uploads.push(uploadWithRetry({
+                            Bucket: bucketName,
+                            Key: objectName,
+                            PartNumber: i,
+                            Body: testfile,
+                            UploadId: uploadId,
+                        }));
                     }
                     const uploadResults = await Promise.all(uploads);
                     
