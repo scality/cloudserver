@@ -312,16 +312,28 @@ describe('Object Part Copy', () => {
                     throw err;
                 }).then(() => {
                     const partUploads = [];
+                    // Concurrent uploads help trigger flakiness with "TimeoutError:
+                    // socket hang up" due to a keep-alive race: the server closes
+                    // an idle connection just as the client picks it from the pool.
+                    const uploadWithRetry = (params, attempt = 0) =>
+                        s3.send(new UploadPartCommand(params)).catch(err => {
+                            if (attempt < 3) {
+                                process.stdout.write(`Retrying UploadPart ${params.PartNumber} `
+                                    + `(attempt ${attempt + 1}/3): ${err}\n`);
+                                return uploadWithRetry(params, attempt + 1);
+                            }
+                            throw err;
+                        });
                     for (let i = 1; i < 10; i++) {
                         const partBuffHere = i % 2 ? partBuff : otherPartBuff;
                         const partHashHere = i % 2 ? partHash : otherPartHash;
-                        partUploads.push(s3.send(new UploadPartCommand({
+                        partUploads.push(uploadWithRetry({
                             Bucket: sourceBucketName,
                             Key: sourceMpuKey,
                             PartNumber: i,
                             UploadId: sourceMpuId,
                             Body: partBuffHere,
-                        })));
+                        }));
                         parts.push({
                             ETag: partHashHere,
                             PartNumber: i,
