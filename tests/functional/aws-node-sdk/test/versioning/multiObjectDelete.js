@@ -56,16 +56,31 @@ describe('Multi-Object Versioning Delete Success', function success() {
                 objects.push(`${key}${i}`);
             }
 
-            // Create objects in batches of 20 concurrently
+            // Create objects in batches of 20 concurrently. Fast connections in a
+            // batch can sit idle while Promise.all waits for slower ones; if the
+            // server closes them (keepAliveTimeout 5s), the next batch gets ECONNRESET.
+            // Retrying recovers from that transient race.
+            const putWithRetry = async (params, attempt = 0) => {
+                try {
+                    return await s3.send(new PutObjectCommand(params));
+                } catch (err) {
+                    if (attempt < 3) {
+                        process.stdout.write(`Retrying PutObject ${params.Key} `
+                            + `(attempt ${attempt + 1}/3): ${err}\n`);
+                        return putWithRetry(params, attempt + 1);
+                    }
+                    throw err;
+                }
+            };
             const results = [];
             for (let i = 0; i < objects.length; i += 20) {
                 const batch = objects.slice(i, i + 20);
                 const batchPromises = batch.map(async keyName => {
-                    const res = await s3.send(new PutObjectCommand({
+                    const res = await putWithRetry({
                         Bucket: bucketName,
                         Key: keyName,
                         Body: 'somebody',
-                    }));
+                    });
                     res.Key = keyName;
                     return res;
                 });
