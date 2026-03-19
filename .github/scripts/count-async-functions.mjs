@@ -74,7 +74,7 @@ console.log('');
 console.log(`Migration: ${asyncFunctions}/${totalFunctions} functions (${migrationPercent}%)`);
 
 if (process.env.GITHUB_STEP_SUMMARY) {
-    const { writeFileSync, appendFileSync } = await import('node:fs');
+    const { appendFileSync } = await import('node:fs');
     appendFileSync(process.env.GITHUB_STEP_SUMMARY, [
         '## Async/Await Migration Progress',
         '',

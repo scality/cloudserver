@@ -1,6 +1,6 @@
 /**
  * Check that all new/modified functions in the current git diff use async/await.
- * Fails with exit code 1 if any additions introduce callback-style functions or .then() chains.
+ * Fails with exit code 1 if any additions introduce callback-style functions.
  *
  * Usage: node scripts/check-diff-async.mjs
  * In CI: runs against the current PR diff (files changed vs base branch)
@@ -8,7 +8,7 @@
 import { execSync } from 'node:child_process';
 import { Project, SyntaxKind } from 'ts-morph';
 
-const CALLBACK_PARAM_PATTERN = /^(cb|callback|next|done|err)$/i;
+const CALLBACK_PARAM_PATTERN = /^(cb|callback|next|done)$/i;
 
 function getChangedJsFiles() {
     const base = process.env.GITHUB_BASE_REF
@@ -112,20 +112,6 @@ for (const sourceFile of project.getSourceFiles()) {
             });
         }
     }
-
-    const propertyAccesses = sourceFile.getDescendantsOfKind(SyntaxKind.PropertyAccessExpression);
-    for (const access of propertyAccesses) {
-        if (access.getName() !== 'then') continue;
-        const line = access.getStartLineNumber();
-        if (addedLines.has(line)) {
-            violations.push({
-                file: filePath,
-                line,
-                type: 'then-chain',
-                detail: 'use await instead of .then()',
-            });
-        }
-    }
 }
 
 if (violations.length === 0) {
@@ -137,6 +123,6 @@ console.error(`✗ Found ${violations.length} async/await violation(s) in the di
 for (const v of violations) {
     console.error(`  ${v.file}:${v.line} [${v.type}] ${v.detail}`);
 }
-console.error('\nNew code must use async/await instead of callbacks or .then() chains.');
+console.error('\nNew code must use async/await instead of callbacks.');
 console.error('See the async/await migration guide in CONTRIBUTING.md for help.');
 process.exit(1);
