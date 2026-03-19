@@ -34,7 +34,7 @@ let totalFunctions = 0;
 let callbackFunctions = 0;
 let thenChains = 0;
 
-const CALLBACK_PARAM_PATTERN = /^(cb|callback|next|done|err)$/i;
+const CALLBACK_PARAM_PATTERN = /^(cb|callback|next|done)$/i;
 
 for (const sourceFile of project.getSourceFiles()) {
     const functions = [

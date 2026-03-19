@@ -5,7 +5,7 @@
  * Usage: node scripts/check-diff-async.mjs
  * In CI: runs against the current PR diff (files changed vs base branch)
  */
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { Project, SyntaxKind } from 'ts-morph';
 
 const CALLBACK_PARAM_PATTERN = /^(cb|callback|next|done)$/i;
@@ -14,9 +14,14 @@ function getChangedJsFiles() {
     const base = process.env.GITHUB_BASE_REF
         ? `origin/${process.env.GITHUB_BASE_REF}`
         : 'HEAD';
-    const output = execSync(`git diff --name-only --diff-filter=ACMR ${base} -- '*.js'`, {
-        encoding: 'utf8',
-    }).trim();
+    const output = execFileSync('git', [
+        'diff',
+        '--name-only',
+        '--diff-filter=ACMR',
+        base,
+        '--',
+        '*.js',
+    ], { encoding: 'utf8' }).trim();
 
     return output ? output.split('\n').filter(f => f.endsWith('.js')) : [];
 }
@@ -28,7 +33,7 @@ function getAddedLineNumbers(filePath) {
     const base = process.env.GITHUB_BASE_REF
         ? `origin/${process.env.GITHUB_BASE_REF}`
         : 'HEAD';
-    const diff = execSync(`git diff ${base} -- ${filePath}`, { encoding: 'utf8' });
+    const diff = execFileSync('git', ['diff', base, '--', filePath], { encoding: 'utf8' });
     const addedLines = new Set();
     let currentLine = 0;
 
