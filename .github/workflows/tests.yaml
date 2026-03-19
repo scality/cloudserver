@@ -99,7 +99,7 @@ jobs:
       run: pip install flake8
     - name: Lint Javascript (strict, excluding async migration rules)
       run: |
-        yarn run --silent lint --max-warnings 0 --rule "promise/prefer-await-to-then: off" --rule "n/callback-return: off"
+        yarn run --silent lint -- --max-warnings 0 --rule "promise/prefer-await-to-then: off" --rule "n/callback-return: off"
     - name: Lint Markdown
       run: yarn run --silent lint_md
     - name: Lint python
