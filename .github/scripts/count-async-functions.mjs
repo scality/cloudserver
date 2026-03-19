@@ -4,7 +4,20 @@
  *
  * Usage: node scripts/count-async-functions.mjs
  */
+import { readFileSync } from 'node:fs';
 import { Project, SyntaxKind } from 'ts-morph';
+
+function getSourcePathsFromPackageJson() {
+    const packageJsonPath = new URL('../../package.json', import.meta.url);
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+    const paths = packageJson.countAsyncSourcePaths;
+
+    if (Array.isArray(paths) && paths.length > 0 && paths.every(p => typeof p === 'string')) {
+        return paths;
+    }
+
+    throw new Error('package.json must define a non-empty string array "countAsyncSourcePaths"');
+}
 
 const project = new Project({
     compilerOptions: {
@@ -14,14 +27,7 @@ const project = new Project({
     skipAddingFilesFromTsConfig: true,
 });
 
-project.addSourceFilesAtPaths([
-    'lib/**/*.js',
-    'index.js',
-    'dataserver.js',
-    'mdserver.js',
-    'managementAgent.js',
-    'bin/**/*.js'
-]);
+project.addSourceFilesAtPaths(getSourcePathsFromPackageJson());
 
 let asyncFunctions = 0;
 let totalFunctions = 0;

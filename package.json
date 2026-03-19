@@ -90,6 +90,14 @@
     "nan": "v2.22.0",
     "fast-xml-parser": "^5.5.6"
   },
+  "countAsyncSourcePaths": [
+    "lib/**/*.js",
+    "index.js",
+    "dataserver.js",
+    "mdserver.js",
+    "managementAgent.js",
+    "bin/**/*.js"
+  ],
   "mocha": {
     "recursive": true,
     "timeout": 40000
