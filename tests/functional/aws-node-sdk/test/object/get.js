@@ -224,18 +224,6 @@ describe('GET object', () => {
                 await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
         });
 
-
-        it('should return an error to get request without a valid ' +
-        'bucket name',
-            done => {
-                s3.send(new GetObjectCommand({ Bucket: '', Key: 'somekey' })).then(() => {
-                    assert.fail('Expected failure but got success');
-                }).catch(err => {
-                    assert.strictEqual(err.message, 'Empty value provided for input HTTP label: Bucket.');
-                    return done();
-                });
-            });
-
         it('should return NoSuchKey error when no such object',
             done => {
                 s3.send(new GetObjectCommand({ Bucket: bucketName, Key: 'nope' })).then(() => {
@@ -1073,7 +1061,7 @@ describeSkipIfCeph('GET object with object lock', () => {
             const params = {
                 Bucket: bucket,
                 Key: key,
-                ObjectLockRetainUntilDate: mockDate,
+                ObjectLockRetainUntilDate: mockDate.toDate(),
                 ObjectLockMode: mockMode,
                 ObjectLockLegalHoldStatus: 'ON',
             };

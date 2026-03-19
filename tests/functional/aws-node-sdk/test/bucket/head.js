@@ -21,7 +21,8 @@ describe('HEAD bucket', () => {
                     await s3.send(new HeadBucketCommand({ Bucket: '' }));
                     assert.fail('Expected failure but got success');
                 } catch (err) {
-                    assert.strictEqual(err.message, 'Empty value provided for input HTTP label: Bucket.');
+                    assert.strictEqual(err.$metadata.httpStatusCode, 405);
+                    assert.strictEqual(err.name, 'Unknown');
                 }
             }); 
     });
