@@ -21,10 +21,7 @@ let s3;
 describe('Requests to ip endpoint not in config', () => {
     withV4(sigCfg => {
         before(() => {
-            bucketUtil = new BucketUtility('default', sigCfg);
-            // change endpoint to endpoint with ip address
-            // not in config
-            bucketUtil.s3.config.endpoint = specifiedEndpoint;
+            bucketUtil = new BucketUtility('default', { ...sigCfg, endpoint: specifiedEndpoint });
             s3 = bucketUtil.s3;
         });
 

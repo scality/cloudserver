@@ -113,7 +113,7 @@ describe('DELETE object', () => {
             const bucketName = 'testdeleteobjectlockbucket';
             let versionIdOne;
             let versionIdTwo;
-            const retainDate = moment().add(10, 'days');
+            const retainDate = moment().add(10, 'days').toDate();
             
             before(async () => {
                 try {

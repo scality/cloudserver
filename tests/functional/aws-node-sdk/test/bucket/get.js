@@ -6,7 +6,7 @@ const {
     ListObjectsV2Command,
     S3Client,
 } = require('@aws-sdk/client-s3');
-const { streamCollector } = require('@smithy/node-http-handler');
+const { ListObjectsV2ExtendedCommand } = require('@scality/cloudserverclient');
 const {
     IAMClient,
     CreatePolicyCommand,
@@ -17,8 +17,6 @@ const {
     DeletePolicyCommand,
     DeleteUserCommand,
 } = require('@aws-sdk/client-iam');
-const { parseStringPromise } = require('xml2js');
-
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const bucketSchema = require('../../schema/bucket');
@@ -609,75 +607,6 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 await iamClient.send(new DeleteUserCommand({ UserName: userWithoutPermission.UserName }));
             });
 
-            const listObjectsV2WithOptionalAttributes = async (s3, bucket, headerValue) => {
-                const localS3 = s3;
-                let rawXml = '';
-
-                const addHeaderMiddleware = next => async args => {
-                    const localArgs = args;
-                    localArgs.request.headers['x-amz-optional-object-attributes'] = headerValue;
-                    return next(localArgs);
-                };
-
-                const originalHandler = s3.config.requestHandler;
-                const wrappedHandler = {
-                    async handle(request, options) {
-                        const { response } = await originalHandler.handle(request, options);
-
-                        if (response && response.body) {
-                            const collected = await streamCollector(response.body);
-                            const buffer = Buffer.from(collected);
-                            rawXml = buffer.toString('utf-8');
-
-                            const { Readable } = require('stream');
-                            response.body = Readable.from([buffer]);
-                        }
-
-                        return { response };
-                    },
-                    destroy() {
-                        if (originalHandler.destroy) {
-                            originalHandler.destroy();
-                        }
-                    }
-                };
-
-                localS3.config.requestHandler = wrappedHandler;
-                localS3.middlewareStack.add(addHeaderMiddleware, {
-                    step: 'build',
-                    name: 'addOptionalAttributesHeader',
-                });
-
-                try {
-                    const result = await s3.send(new ListObjectsV2Command({ Bucket: bucket }));
-
-                    if (!rawXml) {
-                        return result;
-                    }
-
-                    const parsedXml = await parseStringPromise(rawXml);
-                    const contents = result.Contents;
-                    const parsedContents = parsedXml?.ListBucketResult?.Contents;
-
-                    if (!contents || !parsedContents) {
-                        return result;
-                    }
-
-                    if (parsedContents[0]?.['x-amz-meta-department']) {
-                        contents[0]['x-amz-meta-department'] = parsedContents[0]['x-amz-meta-department'][0];
-                    }
-
-                    if (parsedContents[0]?.['x-amz-meta-hr']) {
-                        contents[0]['x-amz-meta-hr'] = parsedContents[0]['x-amz-meta-hr'][0];
-                    }
-
-                    return result;
-                } finally {
-                    localS3.config.requestHandler = originalHandler;
-                    localS3.middlewareStack.remove('addOptionalAttributesHeader');
-                }
-            };
-            
             it('should return an XML if the header is set', async () => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
@@ -690,11 +619,10 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         hr: 'true',
                     },
                 }));
-                const result = await listObjectsV2WithOptionalAttributes(
-                    s3,
+                const result = await s3.send(new ListObjectsV2ExtendedCommand({
                     Bucket,
-                    'x-amz-meta-*,RestoreStatus,x-amz-meta-department',
-                );
+                    ObjectAttributes: ['x-amz-meta-*', 'RestoreStatus', 'x-amz-meta-department'],
+                }));
 
                 assert.strictEqual(result.Contents.length, 1);
                 assert.strictEqual(result.Contents[0].Key, 'super-power-object');
@@ -716,11 +644,10 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 }));
 
                 try {
-                    await listObjectsV2WithOptionalAttributes(
-                        s3ClientWithoutPermission,
+                    await s3ClientWithoutPermission.send(new ListObjectsV2ExtendedCommand({
                         Bucket,
-                        'x-amz-meta-*,RestoreStatus,x-amz-meta-department',
-                    );
+                        ObjectAttributes: ['x-amz-meta-*', 'RestoreStatus', 'x-amz-meta-department'],
+                    }));
                     throw new Error('Request should have been rejected');
                 } catch (err) {
                     if (err.message === 'Request should have been rejected') {
@@ -743,11 +670,10 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         hr: 'true',
                     },
                 }));
-                const result = await listObjectsV2WithOptionalAttributes(
-                    s3ClientWithoutPermission,
+                const result = await s3ClientWithoutPermission.send(new ListObjectsV2ExtendedCommand({
                     Bucket,
-                    'RestoreStatus',
-                );
+                    ObjectAttributes: ['RestoreStatus'],
+                }));
 
                 assert.strictEqual(result.Contents.length, 1);
                 assert.strictEqual(result.Contents[0].Key, 'super-power-object');

@@ -20,7 +20,7 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "@aws-sdk/client-iam": "^3.930.0",
-    "@aws-sdk/client-s3": "^3.908.0",
+    "@aws-sdk/client-s3": "^3.1013.0",
     "@aws-sdk/client-sts": "^3.930.0",
     "@aws-sdk/credential-providers": "^3.864.0",
     "@aws-sdk/middleware-retry": "^3.374.0",
@@ -62,6 +62,7 @@
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.2",
+    "@scality/cloudserverclient": "1.0.7",
     "@scality/eslint-config-scality": "scality/Guidelines#8.3.0",
     "eslint": "^9.14.0",
     "eslint-plugin-import": "^2.31.0",
@@ -83,7 +84,8 @@
   },
   "resolutions": {
     "jsonwebtoken": "^9.0.0",
-    "nan": "v2.22.0"
+    "nan": "v2.22.0",
+    "fast-xml-parser": "^5.5.6"
   },
   "mocha": {
     "recursive": true,
