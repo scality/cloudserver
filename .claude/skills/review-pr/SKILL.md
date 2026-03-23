@@ -79,6 +79,8 @@ Parse `$ARGUMENTS` to extract the repo and PR number:
     - **Test quality** — no `.only()` tests (eslint enforces this),
       assertions match the behavior being tested, `require()`/`import`
       at top of file (never inside `describe` or functions).
+    - **Test prefix** — Name of tests using the `it()` Mocha test function
+      should start with `should`. Only raise this criteria once per file.
 
 4. **Deliver your review:**
 
