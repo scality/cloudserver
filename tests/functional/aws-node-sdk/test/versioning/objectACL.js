@@ -295,6 +295,10 @@ describe('versioned put and get object acl ::', () => {
                         }), done);
                 });
 
+                it('noop - null version cleanup only', done => {
+                    done();
+                });
+
                 _testBehaviorVersioningEnabledOrSuspended(utils, versionIds);
             });
         });
