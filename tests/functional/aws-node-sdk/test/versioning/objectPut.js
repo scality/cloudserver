@@ -6,6 +6,7 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 
 const {
     createDualNullVersion,
+    destroyVersionedBucket,
     removeAllVersions,
     versioningEnabled,
     versioningSuspended,
@@ -37,12 +38,7 @@ describe('put and get object with versioning', function testSuite() {
         });
 
         afterEach(done => {
-            removeAllVersions({ Bucket: bucket }, err => {
-                if (err) {
-                    return done(err);
-                }
-                return s3.deleteBucket({ Bucket: bucket }, done);
-            });
+            destroyVersionedBucket(bucket, done);
         });
 
         it('should return InvalidArgument for a request with versionId query',

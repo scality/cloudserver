@@ -5,6 +5,7 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
 const {
+    destroyVersionedBucket,
     removeAllVersions,
     versioningEnabled,
     versioningSuspended,
@@ -34,12 +35,7 @@ describe('put and head object with versioning', function testSuite() {
         });
 
         afterEach(done => {
-            removeAllVersions({ Bucket: bucket }, err => {
-                if (err) {
-                    return done(err);
-                }
-                return s3.deleteBucket({ Bucket: bucket }, done);
-            });
+            destroyVersionedBucket(bucket, done);
         });
 
         it('should put and head a non-versioned object without including ' +

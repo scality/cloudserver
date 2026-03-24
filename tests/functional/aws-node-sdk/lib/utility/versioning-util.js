@@ -132,12 +132,29 @@ function createDualNullVersion(s3, bucketName, keyName, cb) {
     ], err => cb(err));
 }
 
+function destroyVersionedBucket(bucket, callback, attempt = 0) {
+    removeAllVersions({ Bucket: bucket }, err => {
+        if (err) {
+            return callback(err);
+        }
+        return s3.deleteBucket({ Bucket: bucket }, err => {
+            if (err && err.code === 'BucketNotEmpty' && attempt < 3) {
+                return setTimeout(
+                    () => destroyVersionedBucket(bucket, callback, attempt + 1),
+                    5000);
+            }
+            return callback(err);
+        });
+    });
+}
+
 module.exports = {
     checkOneVersion,
     versioningEnabled,
     versioningSuspended,
     suspendVersioning,
     removeAllVersions,
+    destroyVersionedBucket,
     enableVersioningThenPutObject,
     createDualNullVersion,
 };

@@ -6,6 +6,7 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 
 const {
     removeAllVersions,
+    destroyVersionedBucket,
     versioningEnabled,
     versioningSuspended,
     checkOneVersion,
@@ -220,12 +221,7 @@ describe('versioned put and get object acl ::', () => {
         });
 
         afterEach(done => {
-            removeAllVersions({ Bucket: bucket }, err => {
-                if (err) {
-                    return done(err);
-                }
-                return s3.deleteBucket({ Bucket: bucket }, done);
-            });
+            destroyVersionedBucket(bucket, done);
         });
 
         describe('in bucket w/o versioning cfg :: ', () => {

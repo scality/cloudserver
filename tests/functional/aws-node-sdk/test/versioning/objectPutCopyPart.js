@@ -5,6 +5,7 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
 const {
+    destroyVersionedBucket,
     removeAllVersions,
     versioningEnabled,
     versioningSuspended,
@@ -45,23 +46,7 @@ describe('Object Part Copy with Versioning', () => {
                     return done(err);
                 }
                 return async.each([sourceBucket, destBucket], (bucket, cb) => {
-                    function cleanupBucket(attempts) {
-                        removeAllVersions({ Bucket: bucket }, err => {
-                            if (err) {
-                                return cb(err);
-                            }
-                            return s3.deleteBucket({ Bucket: bucket }, err => {
-                                if (err && err.code === 'BucketNotEmpty'
-                                    && attempts < 3) {
-                                    return setTimeout(
-                                        () => cleanupBucket(attempts + 1),
-                                        5000);
-                                }
-                                return cb(err);
-                            });
-                        });
-                    }
-                    cleanupBucket(0);
+                    destroyVersionedBucket(bucket, cb);
                 }, done);
             });
         });
