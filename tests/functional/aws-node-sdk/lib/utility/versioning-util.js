@@ -132,16 +132,19 @@ function createDualNullVersion(s3, bucketName, keyName, cb) {
     ], err => cb(err));
 }
 
-function destroyVersionedBucket(bucket, callback, attempt = 0) {
+function destroyVersionedBucket(bucket, callback) {
     removeAllVersions({ Bucket: bucket }, err => {
         if (err) {
             return callback(err);
         }
         return s3.deleteBucket({ Bucket: bucket }, err => {
-            if (err && err.code === 'BucketNotEmpty' && attempt < 3) {
+            if (err && err.code === 'BucketNotEmpty') {
+                // v0 format uses a PHD (placeholder) master key that
+                // is asynchronously repaired after ~15s. Retry
+                // deleteBucket alone to tolerate this transient state.
                 return setTimeout(
-                    () => destroyVersionedBucket(bucket, callback, attempt + 1),
-                    5000);
+                    () => s3.deleteBucket({ Bucket: bucket }, callback),
+                    20000);
             }
             return callback(err);
         });
