@@ -159,14 +159,7 @@ function destroyVersionedBucket(bucket, callback) {
         }
         return s3.deleteBucket({ Bucket: bucket }, err => {
             if (err && err.code === 'BucketNotEmpty') {
-                return _listRemainingVersions(bucket, listErr => {
-                    if (listErr) {
-                        return callback(listErr);
-                    }
-                    return setTimeout(
-                        () => s3.deleteBucket({ Bucket: bucket }, callback),
-                        20000);
-                });
+                return _listRemainingVersions(bucket, () => callback(err));
             }
             return callback(err);
         });
