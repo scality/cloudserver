@@ -43,7 +43,7 @@ services:
     profiles: [sse-migration]
     command: sh -c "yarn start > /artifacts/s3.migration.log 2> /artifacts/s3-stderr.migration.log"
   metadata-standalone:
-    image: ghcr.io/scality/metadata:9.2.0-standalone
+    image: ghcr.io/scality/metadata:2d109c651334a413ae73609e281ff912de914f82-standalone
     profiles: ['metadata-standalone']
     network_mode: 'host'
     volumes:
