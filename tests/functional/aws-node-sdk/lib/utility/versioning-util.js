@@ -19,7 +19,19 @@ function _deleteVersionList(versionList, bucket, callback) {
             Key: version.Key, VersionId: version.VersionId });
     });
 
-    return s3.deleteObjects(params, callback);
+    return s3.deleteObjects(params, (err, data) => {
+        if (err) {
+            return callback(err);
+        }
+        if (data.Errors && data.Errors.length > 0) {
+            // eslint-disable-next-line no-console
+            console.log('[DEBUG _deleteVersionList] deleteObjects errors:', JSON.stringify({
+                bucket,
+                errors: data.Errors,
+            }));
+        }
+        return callback(null, data);
+    });
 }
 
 function checkOneVersion(s3, bucket, versionId, callback) {
@@ -44,17 +56,21 @@ function removeAllVersions(params, callback) {
             if (err) {
                 return cb(err);
             }
-            // eslint-disable-next-line no-console
-            console.log('[DEBUG removeAllVersions] listObjectVersions result:', JSON.stringify({
-                bucket,
-                versions: (data.Versions || []).map(v => ({
-                    Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
-                })),
-                deleteMarkers: (data.DeleteMarkers || []).map(v => ({
-                    Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
-                })),
-                isTruncated: data.IsTruncated,
-            }));
+            const versions = data.Versions || [];
+            const markers = data.DeleteMarkers || [];
+            if (versions.length > 0 || markers.length > 0) {
+                // eslint-disable-next-line no-console
+                console.log('[DEBUG removeAllVersions] listObjectVersions result:', JSON.stringify({
+                    bucket,
+                    versions: versions.map(v => ({
+                        Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                    })),
+                    deleteMarkers: markers.map(v => ({
+                        Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                    })),
+                    isTruncated: data.IsTruncated,
+                }));
+            }
             return cb(null, data);
         }),
         (data, cb) => _deleteVersionList(data.DeleteMarkers, bucket,

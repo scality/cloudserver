@@ -41,7 +41,33 @@ describe('put and get object with versioning', function testSuite() {
                 if (err) {
                     return done(err);
                 }
-                return s3.deleteBucket({ Bucket: bucket }, done);
+                return s3.deleteBucket({ Bucket: bucket }, deleteErr => {
+                    if (!deleteErr) {
+                        return done();
+                    }
+                    // eslint-disable-next-line no-console
+                    console.log('[DEBUG objectPut afterEach] deleteBucket failed:', deleteErr.code);
+                    return setTimeout(() => {
+                        s3.listObjectVersions({ Bucket: bucket }, (listErr, data) => {
+                            if (listErr) {
+                                // eslint-disable-next-line no-console
+                                console.log('[DEBUG objectPut afterEach] listObjectVersions error:', listErr);
+                            } else {
+                                // eslint-disable-next-line no-console
+                                console.log('[DEBUG objectPut afterEach] after 20s:', JSON.stringify({
+                                    bucket,
+                                    versions: (data.Versions || []).map(v => ({
+                                        Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                                    })),
+                                    deleteMarkers: (data.DeleteMarkers || []).map(v => ({
+                                        Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                                    })),
+                                }));
+                            }
+                            return done(deleteErr);
+                        });
+                    }, 20000);
+                });
             });
         });
 
