@@ -40,7 +40,23 @@ function checkOneVersion(s3, bucket, versionId, callback) {
 function removeAllVersions(params, callback) {
     const bucket = params.Bucket;
     async.waterfall([
-        cb => s3.listObjectVersions(params, cb),
+        cb => s3.listObjectVersions(params, (err, data) => {
+            if (err) {
+                return cb(err);
+            }
+            // eslint-disable-next-line no-console
+            console.log('[DEBUG removeAllVersions] listObjectVersions result:', JSON.stringify({
+                bucket,
+                versions: (data.Versions || []).map(v => ({
+                    Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                })),
+                deleteMarkers: (data.DeleteMarkers || []).map(v => ({
+                    Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                })),
+                isTruncated: data.IsTruncated,
+            }));
+            return cb(null, data);
+        }),
         (data, cb) => _deleteVersionList(data.DeleteMarkers, bucket,
             err => cb(err, data)),
         (data, cb) => _deleteVersionList(data.Versions, bucket,
@@ -54,7 +70,27 @@ function removeAllVersions(params, callback) {
                 };
                 return removeAllVersions(params, cb);
             }
-            return cb();
+            // final check: list again to see if anything remains
+            return s3.listObjectVersions({ Bucket: bucket }, (err, remaining) => {
+                if (err) {
+                    return cb(err);
+                }
+                const remainingVersions = (remaining.Versions || []);
+                const remainingMarkers = (remaining.DeleteMarkers || []);
+                if (remainingVersions.length > 0 || remainingMarkers.length > 0) {
+                    // eslint-disable-next-line no-console
+                    console.log('[DEBUG removeAllVersions] REMAINING after cleanup:', JSON.stringify({
+                        bucket,
+                        versions: remainingVersions.map(v => ({
+                            Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                        })),
+                        deleteMarkers: remainingMarkers.map(v => ({
+                            Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                        })),
+                    }));
+                }
+                return cb();
+            });
         },
     ], callback);
 }

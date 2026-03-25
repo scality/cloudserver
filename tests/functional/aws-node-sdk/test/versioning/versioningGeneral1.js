@@ -37,7 +37,30 @@ describe('aws-node-sdk test bucket versioning listing', function testSuite() {
     });
 
     // delete bucket after testing
-    after(done => s3.deleteBucket({ Bucket: bucket }, done));
+    after(done => {
+        s3.listObjectVersions({ Bucket: bucket }, (err, data) => {
+            if (err) {
+                // eslint-disable-next-line no-console
+                console.log('[DEBUG versioningGeneral1 after] listObjectVersions error:', err);
+                return s3.deleteBucket({ Bucket: bucket }, done);
+            }
+            const versions = (data.Versions || []);
+            const markers = (data.DeleteMarkers || []);
+            if (versions.length > 0 || markers.length > 0) {
+                // eslint-disable-next-line no-console
+                console.log('[DEBUG versioningGeneral1 after] REMAINING in bucket:', JSON.stringify({
+                    bucket,
+                    versions: versions.map(v => ({
+                        Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                    })),
+                    deleteMarkers: markers.map(v => ({
+                        Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                    })),
+                }));
+            }
+            return s3.deleteBucket({ Bucket: bucket }, done);
+        });
+    });
 
     it('should accept valid versioning configuration', done => {
         const params = {
