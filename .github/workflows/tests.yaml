@@ -425,6 +425,7 @@ jobs:
 
   file-ft-tests:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - enable-null-compat: ''
@@ -494,6 +495,7 @@ jobs:
   # Configure and run as Integration run S3C tests
   s3c-ft-tests:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - vformat: v0
@@ -672,6 +674,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: build
     strategy:
+      fail-fast: false
       matrix:
         inflights:
           - name: "With Inflights"
