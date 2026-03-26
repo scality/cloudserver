@@ -34,7 +34,7 @@ const archive = {
     restoreRequestedDays: 5,
 };
 
-async function putObjectVersion(s3, params, vid, next) {
+function putObjectVersion(s3, params, vid, cb) {
     const paramsWithBody = { ...params, Body: '123' };
     const command = new PutObjectCommand(paramsWithBody);
     command.middlewareStack.add(
@@ -48,13 +48,9 @@ async function putObjectVersion(s3, params, vid, next) {
             name: 'addVersionIdHeader', // Add a name to identify the middleware
         }
     );
-    
-    try {
-        const res = await s3.send(command);
-        next(null, res);
-    } catch (err) {
-        next(err);
-    }
+
+    const promise = s3.send(command);
+    return cb ? promise.then(res => cb(null, res), cb) : promise;
 }
 
 function clearRestoreStatus(versions) {
@@ -955,6 +951,68 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                         return s3.send(new PutObjectLegalHoldCommand(legalHoldParams)).then(() => next());
                     },
                 ], done);
+            });
+
+            it('should set restore originOp and drop restore-attempt metadata', done => {
+                const params = { Bucket: bucketName, Key: objectName };
+
+                async.series([
+                    next => s3.send(new PutObjectCommand({
+                        ...params,
+                        Metadata: {
+                            'custom-md': 'preserved-value',
+                        },
+                    })).then(() => next()).catch(next),
+                    next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
+                    next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+                        if (err) {
+                            return next(err);
+                        }
+                        /* eslint-disable no-param-reassign */
+                        objMD['x-amz-meta-scal-s3-restore-attempt'] = '3';
+                        /* eslint-enable no-param-reassign */
+                        return metadata.putObjectMD(bucketName, objectName, objMD, undefined, log, next);
+                    }),
+                    next => putObjectVersion(s3, params, '', next),
+                    next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+                        if (err) {
+                            return next(err);
+                        }
+                        assert.strictEqual(objMD.originOp, 's3:ObjectRestore:Completed');
+                        assert.strictEqual(objMD['x-amz-meta-custom-md'], 'preserved-value');
+                        assert.strictEqual(objMD['x-amz-meta-scal-s3-restore-attempt'], undefined);
+                        return next();
+                    }),
+                ], done);
+            });
+
+            it('should keep x-amz-meta-scal-version-id when restoring on ingestion bucket', async () => {
+                const ingestionBucketName = `ingestion-restore-${Date.now()}`;
+                const params = { Bucket: ingestionBucketName, Key: objectName };
+                let putVersionId;
+                try {
+                    await s3.send(new CreateBucketCommand({
+                        Bucket: ingestionBucketName,
+                        CreateBucketConfiguration: {
+                            LocationConstraint: 'us-east-2:ingest',
+                        },
+                    }));
+
+                    const putRes = await s3.send(new PutObjectCommand(params));
+                    putVersionId = putRes.VersionId;
+
+                    await fakeMetadataArchive(ingestionBucketName, objectName, putVersionId, archive);
+
+                    await putObjectVersion(s3, params, putVersionId);
+
+                    const restoredObjMD = await getMetadata(
+                        ingestionBucketName, objectName, putVersionId);
+
+                    assert.strictEqual(restoredObjMD['x-amz-meta-scal-version-id'], putVersionId);
+                } finally {
+                    await bucketUtil.emptyMany([ingestionBucketName]).catch(() => {});
+                    await bucketUtil.deleteMany([ingestionBucketName]).catch(() => {});
+                }
             });
         });
     });

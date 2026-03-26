@@ -38,22 +38,33 @@ function decodeVersionId(versionId) {
 
 let metadataInit = false;
 
-function initMetadata(done) {
-    if (metadataInit === true) {
-        return done();
-    }
-    return metadata.setup(err => {
-        if (err) {
-            return done(err);
+function initMetadata(cb) {
+    const promise = (async () => {
+        if (metadataInit) {
+            return;
         }
-        metadataInit = true;
-        return done();
-    });
+        await new Promise((resolve, reject) => {
+            metadata.setup(err => {
+                if (err) {
+                    return reject(err);
+                }
+                metadataInit = true;
+                return resolve();
+            });
+        });
+    })();
+    return cb ? promise.then(() => cb(), cb) : promise;
 }
 
 function getMetadata(bucketName, objectName, versionId, cb) {
-    return metadata.getObjectMD(bucketName, objectName, { versionId: decodeVersionId(versionId) },
-        log, cb);
+    const promise = new Promise((resolve, reject) => metadata.getObjectMD(
+        bucketName,
+        objectName,
+        { versionId: decodeVersionId(versionId) },
+        log,
+        (err, data) => (err ? reject(err) : resolve(data)),
+    ));
+    return cb ? promise.then(res => cb(null, res), cb) : promise;
 }
 
 /**
@@ -66,16 +77,19 @@ function getMetadata(bucketName, objectName, versionId, cb) {
  * @returns {undefined}
  */
 function fakeMetadataTransition(bucketName, objectName, versionId, cb) {
-    return getMetadata(bucketName, objectName, versionId, (err, objMD) => {
-        if (err) {
-            return cb(err);
-        }
-        /* eslint-disable no-param-reassign */
+    const promise = (async () => {
+        const objMD = await getMetadata(bucketName, objectName, versionId);
         objMD['x-amz-scal-transition-in-progress'] = true;
-        /* eslint-enable no-param-reassign */
-        return metadata.putObjectMD(bucketName, objectName, objMD, { versionId: decodeVersionId(versionId) },
-            log, err => cb(err));
-    });
+        await new Promise((resolve, reject) => metadata.putObjectMD(
+            bucketName,
+            objectName,
+            objMD,
+            { versionId: decodeVersionId(versionId) },
+            log,
+            err => (err ? reject(err) : resolve()),
+        ));
+    })();
+    return cb ? promise.then(() => cb(), cb) : promise;
 }
 
 /**
@@ -89,18 +103,21 @@ function fakeMetadataTransition(bucketName, objectName, versionId, cb) {
  * @returns {undefined}
  */
 function fakeMetadataArchive(bucketName, objectName, versionId, archive, cb) {
-    return getMetadata(bucketName, objectName, versionId, (err, objMD) => {
-        if (err) {
-            return cb(err);
-        }
-        /* eslint-disable no-param-reassign */
+    const promise = (async () => {
+        const objMD = await getMetadata(bucketName, objectName, versionId);
         objMD['x-amz-storage-class'] = LOCATION_NAME_DMF;
         objMD.dataStoreName = LOCATION_NAME_DMF;
         objMD.archive = archive;
-        /* eslint-enable no-param-reassign */
-        return metadata.putObjectMD(bucketName, objectName, objMD, { versionId: decodeVersionId(versionId) },
-            log, err => cb(err));
-    });
+        await new Promise((resolve, reject) => metadata.putObjectMD(
+            bucketName,
+            objectName,
+            objMD,
+            { versionId: decodeVersionId(versionId) },
+            log,
+            err => (err ? reject(err) : resolve()),
+        ));
+    })();
+    return cb ? promise.then(() => cb(), cb) : promise;
 }
 
 module.exports = {
