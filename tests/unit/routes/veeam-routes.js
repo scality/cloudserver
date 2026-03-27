@@ -164,8 +164,10 @@ describe('Veeam routes - comprehensive unit tests', () => {
     });
 
     it('should successfully use metrics when UtilizationService returns data', done => {
+        const metricsDate = '2026-03-26T19:00:08.996Z';
         const bucketMetrics = {
             bytesTotal: 123456789,
+            date: metricsDate,
         };
         utilizationStub.callsArgWith(4, null, bucketMetrics);
 
@@ -179,6 +181,16 @@ describe('Veeam routes - comprehensive unit tests', () => {
             assert(response.writeHead.calledWith(200), 'should return 200 with metrics');
             assert(utilizationStub.calledOnce, 'should call UtilizationService once');
             assert(response.end.called, 'response should be ended');
+
+            const lastModifiedCall = response.setHeader.getCalls()
+                .find(call => call.args[0] === 'Last-Modified');
+
+            assert(lastModifiedCall, 'Last-Modified header should be set');
+            assert.strictEqual(
+                lastModifiedCall.args[1],
+                new Date(metricsDate).toUTCString(),
+                'Last-Modified should use the date from bucketMetrics',
+            );
             done();
         });
     });
