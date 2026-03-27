@@ -84,7 +84,7 @@ console.log('');
 console.log(`Migration (trend):    ${asyncFunctions}/${asyncFunctions + callbackFunctions} (${migrationPercent}%)`);
 
 if (process.env.GITHUB_STEP_SUMMARY) {
-    const { appendFileSync } = await import('node:fs');
+    const { appendFileSync, writeFileSync } = await import('node:fs');
     appendFileSync(process.env.GITHUB_STEP_SUMMARY, [
         '## Async/Await Migration Progress',
         '',
@@ -97,4 +97,24 @@ if (process.env.GITHUB_STEP_SUMMARY) {
         `| Migration trend (async / (async + callback)) | ${asyncFunctions}/${asyncFunctions + callbackFunctions} (${migrationPercent}%) |`,
         '',
     ].join('\n'));
+
+    // Output benchmark JSON for visualization
+    const benchmarkData = [
+        {
+            name: 'Async Migration Progress',
+            unit: '%',
+            value: parseFloat(migrationPercent),
+        },
+        {
+            name: 'Async Functions Percentage',
+            unit: '%',
+            value: parseFloat(asyncFunctionPercent),
+        },
+        {
+            name: 'Total callback functions',
+            unit: 'count',
+            value: callbackFunctions,
+        }
+    ];
+    writeFileSync('async-migration-benchmark.json', JSON.stringify(benchmarkData, null, 2));
 }
