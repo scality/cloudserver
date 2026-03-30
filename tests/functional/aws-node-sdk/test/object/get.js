@@ -22,6 +22,13 @@ const {
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
+const { algorithms } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
+
+const { crc64NvmeCrtContainer } = require('@aws-sdk/middleware-flexible-checksums');
+if (crc64NvmeCrtContainer) {
+    const { CrtCrc64Nvme } = require('@aws-sdk/crc64-nvme-crt');
+    crc64NvmeCrtContainer.CrtCrc64Nvme = CrtCrc64Nvme;
+}
 
 const changeLockPromise = promisify(changeObjectLock);
 
@@ -1118,6 +1125,105 @@ describeSkipIfCeph('GET object with object lock', () => {
                 ];
                 changeObjectLock(objectWithLock, '', done);
             }).catch(done);
+        });
+    });
+});
+
+describe('GET object checksum mode', () => {
+    withV4(sigCfg => {
+        let bucketUtil;
+        let s3;
+        const checksumBucket = 'checksum-getobject-test';
+        const checksumKey = 'checksum-test-object';
+        const body = Buffer.from('checksum test body');
+
+        const expectedDigests = {};
+
+        const checksumAlgorithms = [
+            { algorithm: 'SHA256',    responseField: 'ChecksumSHA256',    internalName: 'sha256'    },
+            { algorithm: 'SHA1',      responseField: 'ChecksumSHA1',      internalName: 'sha1'      },
+            { algorithm: 'CRC32',     responseField: 'ChecksumCRC32',     internalName: 'crc32'     },
+            { algorithm: 'CRC32C',    responseField: 'ChecksumCRC32C',    internalName: 'crc32c'    },
+            { algorithm: 'CRC64NVME', responseField: 'ChecksumCRC64NVME', internalName: 'crc64nvme' },
+        ];
+
+        before(async () => {
+            // Disable automatic response checksum validation so the SDK does
+            // not silently add x-amz-checksum-mode: ENABLED to every GetObject
+            // request, which would interfere with the "mode not set" test.
+            bucketUtil = new BucketUtility('default',
+                { ...sigCfg, responseChecksumValidation: 'WHEN_REQUIRED' });
+            s3 = bucketUtil.s3;
+            await s3.send(new CreateBucketCommand({ Bucket: checksumBucket }));
+
+            for (const { internalName } of checksumAlgorithms) {
+                expectedDigests[internalName] =
+                    await algorithms[internalName].digest(body);
+            }
+        });
+
+        after(async () => {
+            await bucketUtil.empty(checksumBucket);
+            await s3.send(new DeleteBucketCommand({ Bucket: checksumBucket }));
+        });
+
+        checksumAlgorithms.forEach(({ algorithm, responseField, internalName }) => {
+            it(`should return ${responseField} and ChecksumType when ChecksumMode is ENABLED`, async () => {
+                const putRes = await s3.send(new PutObjectCommand({
+                    Bucket: checksumBucket,
+                    Key: checksumKey,
+                    Body: body,
+                    ChecksumAlgorithm: algorithm,
+                }));
+                const storedChecksum = putRes[responseField];
+                assert(storedChecksum, `Expected ${responseField} in PutObject response`);
+
+                const getRes = await s3.send(new GetObjectCommand({
+                    Bucket: checksumBucket,
+                    Key: checksumKey,
+                    ChecksumMode: 'ENABLED',
+                }));
+                assert.strictEqual(getRes[responseField], expectedDigests[internalName],
+                    `${responseField} value mismatch`);
+                assert.strictEqual(getRes[responseField], storedChecksum);
+                assert.strictEqual(getRes.ChecksumType, 'FULL_OBJECT');
+            });
+        });
+
+        it('should not return checksum headers when ChecksumMode is not set', async () => {
+            await s3.send(new PutObjectCommand({
+                Bucket: checksumBucket,
+                Key: checksumKey,
+                Body: body,
+                ChecksumAlgorithm: 'SHA256',
+            }));
+
+            const getRes = await s3.send(new GetObjectCommand({
+                Bucket: checksumBucket,
+                Key: checksumKey,
+            }));
+            assert.strictEqual(getRes.ChecksumSHA256, undefined);
+            assert.strictEqual(getRes.ChecksumType, undefined);
+        });
+
+        it('should return an error when ChecksumMode is not ENABLED', async () => {
+            await s3.send(new PutObjectCommand({
+                Bucket: checksumBucket,
+                Key: checksumKey,
+                Body: body,
+            }));
+
+            await assert.rejects(
+                s3.send(new GetObjectCommand({
+                    Bucket: checksumBucket,
+                    Key: checksumKey,
+                    ChecksumMode: 'DISABLED',
+                })),
+                err => {
+                    assert.strictEqual(err.name, 'InvalidArgument');
+                    return true;
+                },
+            );
         });
     });
 });

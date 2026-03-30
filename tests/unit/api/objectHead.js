@@ -664,6 +664,29 @@ describe('objectHead API', () => {
                 done();
             });
         });
+
+        it('should not return checksum headers when partNumber is set', done => {
+            const md = new ObjectMD(mdColdHelper.baseMd)
+                .setChecksum(new ObjectMDChecksum('sha256', expectedDigests.sha256, 'FULL_OBJECT'));
+            mdColdHelper.putBucketMock(bucketName, null, () =>
+                mdColdHelper.putObjectMock(bucketName, objectName, md, () => {
+                    const req = {
+                        bucketName,
+                        namespace,
+                        objectKey: objectName,
+                        headers: { 'x-amz-checksum-mode': 'ENABLED' },
+                        url: `/${bucketName}/${objectName}`,
+                        query: { partNumber: '1' },
+                    };
+                    objectHead(authInfo, req, log, (err, res) => {
+                        assert.ifError(err);
+                        checksumAlgorithms.forEach(({ header }) =>
+                            assert.strictEqual(res[header], undefined));
+                        assert.strictEqual(res['x-amz-checksum-type'], undefined);
+                        done();
+                    });
+                }));
+        });
     });
 
     [

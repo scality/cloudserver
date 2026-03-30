@@ -556,6 +556,14 @@ describe('HEAD object checksum mode', () => {
         const checksumKey = 'checksum-test-object';
         const body = Buffer.from('checksum test body');
 
+        const checksumAlgorithms = [
+            { algorithm: 'SHA256', responseField: 'ChecksumSHA256', internalName: 'sha256' },
+            { algorithm: 'SHA1',   responseField: 'ChecksumSHA1',   internalName: 'sha1'   },
+            { algorithm: 'CRC32',  responseField: 'ChecksumCRC32',  internalName: 'crc32'  },
+            { algorithm: 'CRC32C', responseField: 'ChecksumCRC32C', internalName: 'crc32c' },
+            { algorithm: 'CRC64NVME', responseField: 'ChecksumCRC64NVME', internalName: 'crc64nvme' },
+        ];
+
         // Expected base64-encoded digests of `body` for each algorithm,
         // computed once in the before hook (crc64nvme digest is async).
         const expectedDigests = {};
@@ -576,14 +584,6 @@ describe('HEAD object checksum mode', () => {
             await bucketUtil.empty(checksumBucket);
             await s3.send(new DeleteBucketCommand({ Bucket: checksumBucket }));
         });
-
-        const checksumAlgorithms = [
-            { algorithm: 'SHA256', responseField: 'ChecksumSHA256', internalName: 'sha256' },
-            { algorithm: 'SHA1',   responseField: 'ChecksumSHA1',   internalName: 'sha1'   },
-            { algorithm: 'CRC32',  responseField: 'ChecksumCRC32',  internalName: 'crc32'  },
-            { algorithm: 'CRC32C', responseField: 'ChecksumCRC32C', internalName: 'crc32c' },
-            { algorithm: 'CRC64NVME', responseField: 'ChecksumCRC64NVME', internalName: 'crc64nvme' },
-        ];
 
         checksumAlgorithms.forEach(({ algorithm, responseField, internalName }) => {
             it(`should return ${responseField} and ChecksumType when ChecksumMode is ENABLED`, async () => {
