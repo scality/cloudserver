@@ -174,8 +174,16 @@ describe('per object encryption headers', () => {
             const hasKey = target.masterKeyId ? 'a' : 'no';
             describe(`Test algorithm ${target.algo || 'none'} with ${hasKey} configuredMasterKeyId`, () => {
                 it('should put an encrypted object in a unencrypted bucket', done =>
-                    putEncryptedObject(s3, bucket, object, target, kmsKeyId, error => {
+                    putEncryptedObject(s3, bucket, object, target, kmsKeyId, (error, putResp) => {
                         assert.ifError(error);
+                        if (target.algo) {
+                            assert.strictEqual(putResp.ServerSideEncryption, target.algo,
+                                'PutObject response should include ServerSideEncryption header');
+                            if (target.algo === 'aws:kms') {
+                                assert(putResp.SSEKMSKeyId,
+                                    'PutObject response should include SSEKMSKeyId for aws:kms');
+                            }
+                        }
                         return getSSEConfig(
                             s3,
                             bucket,
@@ -239,8 +247,19 @@ describe('per object encryption headers', () => {
                             (params, cb) => putBucketEncryption(s3, params, cb) : s3NoOp;
                         s3Op(params, error => {
                             assert.ifError(error);
-                            return putEncryptedObject(s3, bucket, object, target, kmsKeyId, error => {
+                            return putEncryptedObject(s3, bucket, object, target, kmsKeyId, (error, putResp) => {
                                 assert.ifError(error);
+                                if (target.algo) {
+                                    assert.strictEqual(putResp.ServerSideEncryption, target.algo,
+                                        'PutObject response should include ServerSideEncryption header');
+                                    if (target.algo === 'aws:kms') {
+                                        assert(putResp.SSEKMSKeyId,
+                                            'PutObject response should include SSEKMSKeyId for aws:kms');
+                                    }
+                                } else if (existing.algo) {
+                                    assert.strictEqual(putResp.ServerSideEncryption, existing.algo,
+                                        'PutObject response should include ServerSideEncryption from bucket default');
+                                }
                                 return getSSEConfig(
                                     s3,
                                     bucket,
