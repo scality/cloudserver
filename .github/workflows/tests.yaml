@@ -111,6 +111,7 @@ jobs:
 
   async-migration-report:
     runs-on: ubuntu-24.04
+    if: startsWith(github.ref, 'refs/heads/development/')
     steps:
     - name: Checkout
       uses: actions/checkout@v4

@@ -20,7 +20,7 @@ function getChangedJsFiles() {
         '--diff-filter=ACMR',
         base,
         '--',
-        '*.js',
+        '**/*.js',
     ], { encoding: 'utf8' }).trim();
 
     return output ? output.split('\n').filter(f => f.endsWith('.js')) : [];

@@ -4,7 +4,7 @@
  *
  * Usage: node scripts/count-async-functions.mjs
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, appendFileSync, writeFileSync } from 'node:fs';
 import { Project, SyntaxKind } from 'ts-morph';
 
 function getSourcePathsFromPackageJson() {
@@ -84,7 +84,6 @@ console.log('');
 console.log(`Migration (trend):    ${asyncFunctions}/${asyncFunctions + callbackFunctions} (${migrationPercent}%)`);
 
 if (process.env.GITHUB_STEP_SUMMARY) {
-    const { appendFileSync, writeFileSync } = await import('node:fs');
     appendFileSync(process.env.GITHUB_STEP_SUMMARY, [
         '## Async/Await Migration Progress',
         '',

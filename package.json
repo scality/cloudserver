@@ -95,6 +95,7 @@
     "index.js",
     "dataserver.js",
     "mdserver.js",
+    "pfsserver.js",
     "managementAgent.js",
     "bin/**/*.js"
   ],
