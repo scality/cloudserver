@@ -12,6 +12,8 @@ const objectPut = require('../../../lib/api/objectPut');
 const { objectDelete } = require('../../../lib/api/objectDelete');
 const objectGetAttributes = require('../../../lib/api/objectGetAttributes');
 const objectPutPart = require('../../../lib/api/objectPutPart');
+const { algorithms } = require('../../../lib/api/apiUtils/integrity/validateChecksums');
+const mdColdHelper = require('./utils/metadataMockColdStorage');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
@@ -203,16 +205,16 @@ describe('objectGetAttributes API', () => {
         assert.strictEqual(result.GetObjectAttributesResponse.ETag[0], expectedMD5);
     });
 
-    it('should fail with NotImplemented when Checksum is requested', async () => {
+    it('should return default crc64nvme Checksum for object put without explicit checksum', async () => {
         const testGetRequest = createGetAttributesRequest(['Checksum']);
 
-        try {
-            await objectGetAttributes(authInfo, testGetRequest, log);
-            assert.fail('Expected error was not thrown');
-        } catch (err) {
-            assert.strictEqual(err.is.NotImplemented, true);
-            assert.strictEqual(err.description, 'Checksum attribute is not implemented');
-        }
+        const { xml } = await objectGetAttributes(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        const response = result.GetObjectAttributesResponse;
+
+        assert(response.Checksum, 'Checksum should be present');
+        assert(response.Checksum[0].ChecksumCRC64NVME, 'ChecksumCRC64NVME should be present');
+        assert.strictEqual(response.Checksum[0].ChecksumType[0], 'FULL_OBJECT');
     });
 
     it("shouldn't return ObjectParts for non-MPU object", async () => {
@@ -645,5 +647,120 @@ describe('objectGetAttributes API with versioning', () => {
 
         const { responseHeaders } = await objectGetAttributes(authInfo, testGetRequest, log);
         assert.strictEqual(responseHeaders['x-amz-version-id'], versionId);
+    });
+});
+
+describe('objectGetAttributes API with checksum', () => {
+    const expectedDigests = {};
+
+    before(async () => {
+        await Promise.all(Object.keys(algorithms).map(async name => {
+            expectedDigests[name] = await algorithms[name].digest(postBody);
+        }));
+    });
+
+    beforeEach(async () => {
+        cleanup();
+        await bucketPutAsync(authInfo, testPutBucketRequest, log);
+    });
+
+    Object.entries(algorithms).forEach(([name, { getObjectAttributesXMLTag }]) => {
+        it(`should return ${getObjectAttributesXMLTag} when object has ${name} checksum`, async () => {
+            const testPutObjectRequest = new DummyRequest(
+                {
+                    bucketName,
+                    namespace,
+                    objectKey: objectName,
+                    headers: {
+                        'content-length': `${postBody.length}`,
+                        [`x-amz-checksum-${name}`]: expectedDigests[name],
+                    },
+                    parsedContentLength: postBody.length,
+                    url: `/${bucketName}/${objectName}`,
+                },
+                postBody,
+            );
+            await objectPutAsync(authInfo, testPutObjectRequest, undefined, log);
+
+            const testGetRequest = createGetAttributesRequest(['Checksum']);
+            const { xml } = await objectGetAttributes(authInfo, testGetRequest, log);
+            const result = await parseStringPromise(xml);
+            const response = result.GetObjectAttributesResponse;
+
+            assert(response.Checksum, 'Checksum should be present');
+            assert.strictEqual(response.Checksum[0][getObjectAttributesXMLTag][0], expectedDigests[name]);
+            assert.strictEqual(response.Checksum[0].ChecksumType[0], 'FULL_OBJECT');
+        });
+
+        it(`should return ${getObjectAttributesXMLTag} along with other attributes`, async () => {
+            const testPutObjectRequest = new DummyRequest(
+                {
+                    bucketName,
+                    namespace,
+                    objectKey: objectName,
+                    headers: {
+                        'content-length': `${postBody.length}`,
+                        [`x-amz-checksum-${name}`]: expectedDigests[name],
+                    },
+                    parsedContentLength: postBody.length,
+                    url: `/${bucketName}/${objectName}`,
+                },
+                postBody,
+            );
+            await objectPutAsync(authInfo, testPutObjectRequest, undefined, log);
+
+            const testGetRequest = createGetAttributesRequest(['ETag', 'Checksum', 'ObjectSize']);
+            const { xml } = await objectGetAttributes(authInfo, testGetRequest, log);
+            const result = await parseStringPromise(xml);
+            const response = result.GetObjectAttributesResponse;
+
+            assert(response.ETag, 'ETag should be present');
+            assert(response.ObjectSize, 'ObjectSize should be present');
+            assert(response.Checksum, 'Checksum should be present');
+            assert.strictEqual(response.Checksum[0][getObjectAttributesXMLTag][0], expectedDigests[name]);
+            assert.strictEqual(response.Checksum[0].ChecksumType[0], 'FULL_OBJECT');
+        });
+    });
+
+    it('should not return Checksum when requested but not present in object metadata', async () => {
+        await new Promise(resolve => mdColdHelper.putBucketMock(bucketName, null, resolve));
+        await new Promise(resolve => mdColdHelper.putObjectMock(bucketName, objectName, undefined, resolve));
+
+        const testGetRequest = createGetAttributesRequest(['Checksum']);
+        const { xml } = await objectGetAttributes(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+
+        assert.strictEqual(
+            result.GetObjectAttributesResponse.Checksum,
+            undefined,
+            'Checksum should not be present',
+        );
+    });
+
+    it('should not return Checksum when not requested', async () => {
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'content-length': `${postBody.length}`,
+                    'x-amz-checksum-sha256': expectedDigests.sha256,
+                },
+                parsedContentLength: postBody.length,
+                url: `/${bucketName}/${objectName}`,
+            },
+            postBody,
+        );
+        await objectPutAsync(authInfo, testPutObjectRequest, undefined, log);
+
+        const testGetRequest = createGetAttributesRequest(['ETag', 'ObjectSize']);
+        const { xml } = await objectGetAttributes(authInfo, testGetRequest, log);
+        const result = await parseStringPromise(xml);
+        const response = result.GetObjectAttributesResponse;
+
+        assert(response.ETag, 'ETag should be present');
+        assert(response.ObjectSize, 'ObjectSize should be present');
+        assert.strictEqual(response.Checksum, undefined, 'Checksum should not be present');
     });
 });

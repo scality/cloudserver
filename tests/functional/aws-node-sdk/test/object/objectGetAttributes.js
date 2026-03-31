@@ -12,6 +12,7 @@ const {
 const { GetObjectAttributesExtendedCommand } = require('@scality/cloudserverclient');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
+const { algorithms } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
 
 const bucket = 'testbucket';
 const key = 'testobject';
@@ -30,7 +31,9 @@ describe('objectGetAttributes', () => {
 
         beforeEach(async () => {
             await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-            await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body }));
+            await s3.send(new PutObjectCommand({
+                Bucket: bucket, Key: key, Body: body, ChecksumAlgorithm: 'CRC64NVME',
+            }));
         });
 
         afterEach(async () => {
@@ -119,18 +122,28 @@ describe('objectGetAttributes', () => {
             assert.strictEqual(data.ETag, expectedMD5);
         });
 
-        it('should fail with NotImplemented when Checksum is requested', async () => {
-            try {
-                await s3.send(new GetObjectAttributesCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    ObjectAttributes: ['Checksum'],
-                }));
-                assert.fail('Expected NotImplemented error');
-            } catch (err) {
-                assert.strictEqual(err.name, 'NotImplemented');
-                assert.strictEqual(err.message, 'Checksum attribute is not implemented');
-            }
+        it('should return ChecksumCRC64NVME for object', async () => {
+            const data = await s3.send(new GetObjectAttributesCommand({
+                Bucket: bucket,
+                Key: key,
+                ObjectAttributes: ['Checksum'],
+            }));
+
+            assert(data.Checksum, 'Checksum should be present');
+            assert(data.Checksum.ChecksumCRC64NVME, 'ChecksumCRC64NVME should be present');
+            assert.strictEqual(data.Checksum.ChecksumType, 'FULL_OBJECT');
+        });
+
+        it('should not return Checksum when not requested', async () => {
+            const data = await s3.send(new GetObjectAttributesCommand({
+                Bucket: bucket,
+                Key: key,
+                ObjectAttributes: ['ETag', 'ObjectSize'],
+            }));
+
+            assert(data.ETag, 'ETag should be present');
+            assert(data.ObjectSize, 'ObjectSize should be present');
+            assert.strictEqual(data.Checksum, undefined, 'Checksum should not be present');
         });
 
         it("shouldn't return ObjectParts for non-MPU objects", async () => {
@@ -477,6 +490,96 @@ describe('objectGetAttributes with user metadata', () => {
 
             assert.strictEqual(response['x-amz-meta-key1'], 'value1');
             assert.strictEqual(response['x-amz-meta-key2'], undefined);
+        });
+    });
+});
+
+describe('objectGetAttributes with checksum', () => {
+    withV4(sigCfg => {
+        let bucketUtil;
+        let s3;
+        const checksumBucket = 'checksum-getattr-test';
+        const checksumKey = 'checksum-test-object';
+        const checksumBody = Buffer.from('checksum test body');
+
+        const expectedDigests = {};
+
+        before(async () => {
+            bucketUtil = new BucketUtility('default', sigCfg);
+            s3 = bucketUtil.s3;
+            await s3.send(new CreateBucketCommand({ Bucket: checksumBucket }));
+
+            for (const [name, algo] of Object.entries(algorithms)) {
+                expectedDigests[name] = await algo.digest(checksumBody);
+            }
+        });
+
+        after(async () => {
+            await bucketUtil.empty(checksumBucket);
+            await s3.send(new DeleteBucketCommand({ Bucket: checksumBucket }));
+        });
+
+        Object.entries(algorithms).forEach(([name, { getObjectAttributesXMLTag }]) => {
+            const sdkAlgorithm = name.toUpperCase();
+
+            it(`should return ${getObjectAttributesXMLTag} when object has ${name} checksum`, async () => {
+                await s3.send(new PutObjectCommand({
+                    Bucket: checksumBucket,
+                    Key: checksumKey,
+                    Body: checksumBody,
+                    ChecksumAlgorithm: sdkAlgorithm,
+                }));
+
+                const data = await s3.send(new GetObjectAttributesCommand({
+                    Bucket: checksumBucket,
+                    Key: checksumKey,
+                    ObjectAttributes: ['Checksum'],
+                }));
+
+                assert(data.Checksum, 'Checksum should be present');
+                assert.strictEqual(data.Checksum[getObjectAttributesXMLTag], expectedDigests[name]);
+                assert.strictEqual(data.Checksum.ChecksumType, 'FULL_OBJECT');
+            });
+
+            it(`should return ${getObjectAttributesXMLTag} along with other attributes`, async () => {
+                await s3.send(new PutObjectCommand({
+                    Bucket: checksumBucket,
+                    Key: checksumKey,
+                    Body: checksumBody,
+                    ChecksumAlgorithm: sdkAlgorithm,
+                }));
+
+                const data = await s3.send(new GetObjectAttributesCommand({
+                    Bucket: checksumBucket,
+                    Key: checksumKey,
+                    ObjectAttributes: ['ETag', 'Checksum', 'ObjectSize'],
+                }));
+
+                assert(data.ETag, 'ETag should be present');
+                assert(data.ObjectSize, 'ObjectSize should be present');
+                assert(data.Checksum, 'Checksum should be present');
+                assert.strictEqual(data.Checksum[getObjectAttributesXMLTag], expectedDigests[name]);
+                assert.strictEqual(data.Checksum.ChecksumType, 'FULL_OBJECT');
+            });
+        });
+
+        it('should not return Checksum when not requested', async () => {
+            await s3.send(new PutObjectCommand({
+                Bucket: checksumBucket,
+                Key: checksumKey,
+                Body: checksumBody,
+                ChecksumAlgorithm: 'CRC64NVME',
+            }));
+
+            const data = await s3.send(new GetObjectAttributesCommand({
+                Bucket: checksumBucket,
+                Key: checksumKey,
+                ObjectAttributes: ['ETag', 'ObjectSize'],
+            }));
+
+            assert(data.ETag, 'ETag should be present');
+            assert(data.ObjectSize, 'ObjectSize should be present');
+            assert.strictEqual(data.Checksum, undefined, 'Checksum should not be present');
         });
     });
 });
