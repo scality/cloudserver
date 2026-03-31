@@ -86,75 +86,58 @@ Parse `$ARGUMENTS` to extract the repo and PR number:
 
 #### Part A: Inline file comments
 
-For each specific issue, post a comment on the exact file and line:
+For each issue, post a comment on the exact file and
+line. Keep comments short (1-3 sentences), end with
+`— Claude Code`. Use line numbers from the **new
+version** of the file.
+
+**Without suggestion block** — single-line command,
+`<br>` for line breaks:
 
 ```bash
 gh api -X POST \
   -H "Accept: application/vnd.github+json" \
   "repos/<owner/repo>/pulls/<number>/comments" \
-  -f body="Your comment<br><br>— Claude Code" \
-  -f path="path/to/file" \
-  -F line=<line_number> \
-  -f side="RIGHT" \
-  -f commit_id="<headRefOid>"
+  -f body="Issue description.<br><br>— Claude Code" \
+  -f path="file" -F line=42 \
+  -f side="RIGHT" -f commit_id="<headRefOid>"
 ```
 
-**The command must stay on a single bash line.** Never use newlines in
-bash commands — use `<br>` for line breaks in comment bodies. Never put
-`<br>` inside code blocks or suggestion blocks.
+**With suggestion block** — use a heredoc
+(`-F body=@-`) so code renders correctly:
 
-Each inline comment must:
+````bash
+gh api -X POST \
+  -H "Accept: application/vnd.github+json" \
+  "repos/<owner/repo>/pulls/<number>/comments" \
+  -F body=@- -f path="file" -F line=42 \
+  -f side="RIGHT" \
+  -f commit_id="<headRefOid>" <<'COMMENT_BODY'
+Issue description.
 
-- Be short and direct — say what's wrong, why it's wrong, and how to
-  fix it in 1-3 sentences
-- No filler, no complex words, no long explanations
-- When the fix is a concrete line change (not architectural), include
-  a GitHub suggestion block so the author can apply it in one click:
+```suggestion
+first line of suggested code
+second line of suggested code
+```
 
-  ````text
-  ```suggestion
-  corrected-line-here
-  ```
-  ````
+— Claude Code
+COMMENT_BODY
+````
 
-  Only suggest when you can show the exact replacement. For
-  architectural or design issues, just describe the problem.
-  Example with a suggestion block:
-
-  ```bash
-  gh api ... -f body=$'Missing the update.\
-  <br><br>\n```suggestion\n\
-  /plugin update shared-guidelines@hub\n\
-  /plugin update scality-skills@hub\n\
-  ```\n<br><br>— Claude Code' ...
-  ```
-
-- When the comment contains a suggestion block, use `$'...'` quoting
-  with `\n` for code fence boundaries. Escape single quotes as `\'`
-  (e.g., `don\'t`)
-- End with: `— Claude Code`
-
-Use the line number from the **new version** of the file (the line
-number you'd see after the PR is merged), which corresponds to the
-`line` parameter in the GitHub API.
+Only suggest when you can show the exact replacement.
+For architectural or design issues, just describe the
+problem.
 
 #### Part B: Summary comment
 
+Single-line command, `<br>` for line breaks. No markdown
+headings — they render as giant bold text. Flat bullet
+list only:
+
 ```bash
 gh pr comment <number> --repo <owner/repo> \
-  --body "LGTM<br><br>Review by Claude Code"
-```
-
-**The command must stay on a single bash line.** Never use newlines in
-bash commands — use `<br>` for line breaks in comment bodies.
-
-Do not describe or summarize the PR. For each issue, state the problem
-on one line, then list one or more suggestions below it:
-
-```text
-- <issue>
-  - <suggestion>
-  - <suggestion>
+  --body "- file:line — issue<br>\
+- file:line — issue<br><br>Review by Claude Code"
 ```
 
 If no issues: just say "LGTM". End with: `Review by Claude Code`
