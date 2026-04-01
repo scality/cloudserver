@@ -37,7 +37,7 @@ describe('fetchCapacityMetrics', () => {
     it('should call UtilizationService with the correct bucket key', async () => {
         utilizationStub.callsArgWith(4, null, {});
 
-        await fetchCapacityMetrics(bucketMd, request, log, 'testMethod');
+        await fetchCapacityMetrics(bucketMd, request, log);
 
         const expectedKey = `test-bucket_${new Date('2024-01-01T00:00:00.000Z').getTime()}`;
         assert.strictEqual(utilizationStub.getCall(0).args[0], 'bucket');
@@ -48,7 +48,7 @@ describe('fetchCapacityMetrics', () => {
         const bucketMetrics = { bytesTotal: 42, date: '2026-03-26T19:00:08.996Z' };
         utilizationStub.callsArgWith(4, null, bucketMetrics);
 
-        const metrics = await fetchCapacityMetrics(bucketMd, request, log, 'testMethod');
+        const metrics = await fetchCapacityMetrics(bucketMd, request, log);
 
         assert.strictEqual(metrics, bucketMetrics);
         assert(!logWarnSpy.called);
@@ -60,12 +60,11 @@ describe('fetchCapacityMetrics', () => {
         error404.response = { status: 404 };
         utilizationStub.callsArgWith(4, error404);
 
-        const metrics = await fetchCapacityMetrics(bucketMd, request, log, 'testMethod');
+        const metrics = await fetchCapacityMetrics(bucketMd, request, log);
 
         assert(metrics && metrics.date instanceof Date, 'metrics should have a Date for date');
         assert(logWarnSpy.calledOnce);
         assert(logWarnSpy.getCall(0).args[0].includes('404'));
-        assert.strictEqual(logWarnSpy.getCall(0).args[1].method, 'testMethod');
         assert.strictEqual(logWarnSpy.getCall(0).args[1].bucket, 'test-bucket');
         assert(!logErrorSpy.called);
     });
@@ -75,7 +74,7 @@ describe('fetchCapacityMetrics', () => {
         error404.statusCode = 404;
         utilizationStub.callsArgWith(4, error404);
 
-        const metrics = await fetchCapacityMetrics(bucketMd, request, log, 'testMethod');
+        const metrics = await fetchCapacityMetrics(bucketMd, request, log);
 
         assert(metrics && metrics.date instanceof Date, 'metrics should have a Date for date');
         assert(logWarnSpy.calledOnce);
@@ -87,12 +86,11 @@ describe('fetchCapacityMetrics', () => {
         utilizationStub.callsArgWith(4, error500);
 
         await assert.rejects(
-            fetchCapacityMetrics(bucketMd, request, log, 'testMethod'),
+            fetchCapacityMetrics(bucketMd, request, log),
             err => err === error500,
         );
 
         assert(logErrorSpy.calledOnce);
-        assert.strictEqual(logErrorSpy.getCall(0).args[1].method, 'testMethod');
         assert.strictEqual(logErrorSpy.getCall(0).args[1].bucket, 'test-bucket');
         assert.strictEqual(logErrorSpy.getCall(0).args[1].statusCode, 500);
         assert(!logWarnSpy.called);
@@ -104,7 +102,7 @@ describe('fetchCapacityMetrics', () => {
         utilizationStub.callsArgWith(4, connError);
 
         await assert.rejects(
-            fetchCapacityMetrics(bucketMd, request, log, 'testMethod'),
+            fetchCapacityMetrics(bucketMd, request, log),
             err => err === connError,
         );
 
@@ -174,7 +172,7 @@ describe('buildVeeamFileData', () => {
         metadataStub.callsArgWith(2, new Error('DB error'));
 
         await assert.rejects(
-            buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log, 'test'),
+            buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log),
             err => err.code === 500,
         );
     });
@@ -183,7 +181,7 @@ describe('buildVeeamFileData', () => {
         metadataStub.callsArgWith(2, null, { _capabilities: {} });
 
         await assert.rejects(
-            buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log, 'test'),
+            buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log),
             err => err.code === 404,
         );
     });
@@ -195,7 +193,7 @@ describe('buildVeeamFileData', () => {
         utilizationStub.callsArgWith(4, error500);
 
         await assert.rejects(
-            buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log, 'test'),
+            buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log),
             err => err.code === 500,
         );
     });
@@ -205,7 +203,7 @@ describe('buildVeeamFileData', () => {
         metadataStub.callsArgWith(2, null, bucketMd);
         utilizationStub.callsArgWith(4, null, { date: metricsDate, bytesTotal: 100 });
 
-        const result = await buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log, 'test');
+        const result = await buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log);
 
         assert.strictEqual(result.modified, metricsDate);
         assert(result.xmlContent.includes('CapacityInfo'));
@@ -223,7 +221,7 @@ describe('buildVeeamFileData', () => {
         error404.response = { status: 404 };
         utilizationStub.callsArgWith(4, error404);
 
-        const result = await buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log, 'test');
+        const result = await buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log);
 
         assert(result.modified instanceof Date);
         assert(result.modified.getTime() >= before);
@@ -234,7 +232,7 @@ describe('buildVeeamFileData', () => {
         metadataStub.callsArgWith(2, null, bucketMdWithSystem);
         const before = Date.now();
 
-        const result = await buildVeeamFileData(createRequest(systemObjectKey), bucketMdWithSystem, log, 'test');
+        const result = await buildVeeamFileData(createRequest(systemObjectKey), bucketMdWithSystem, log);
 
         assert(!utilizationStub.called, 'should not call UtilizationService for system.xml');
         assert(result.modified instanceof Date);
@@ -261,7 +259,7 @@ describe('buildVeeamFileData', () => {
         metadataStub.callsArgWith(2, null, bucketMdWithUsed);
         utilizationStub.callsArgWith(4, null, { date: new Date(), bytesTotal: 999 });
 
-        const result = await buildVeeamFileData(createRequest(capacityObjectKey), bucketMdWithUsed, log, 'test');
+        const result = await buildVeeamFileData(createRequest(capacityObjectKey), bucketMdWithUsed, log);
 
         assert(result.xmlContent.includes('<Used>400</Used>'), 'should keep existing Used value');
     });

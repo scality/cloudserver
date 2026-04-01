@@ -115,7 +115,6 @@ describe('Veeam routes - comprehensive unit tests', () => {
         const warnCall = logWarnSpy.getCall(0);
         assert(warnCall.args[0].includes('UtilizationService returned 404'),
             'warning message should mention 404');
-        assert.strictEqual(warnCall.args[1].method, 'getVeeamFile');
         assert.strictEqual(warnCall.args[1].bucket, 'test-bucket');
 
         assert(response.writeHead.calledWith(200),
@@ -386,7 +385,6 @@ describe('Veeam routes - HEAD request UtilizationService error handling', () => 
         const warnCall = logWarnSpy.getCall(0);
         assert(warnCall.args[0].includes('UtilizationService returned 404'),
             'warning message should mention 404');
-        assert.strictEqual(warnCall.args[1].method, 'headVeeamFile');
         assert(response.setHeader.called, 'should set headers');
         assert(response.end.called, 'response should be ended');
     });
@@ -534,7 +532,6 @@ describe('Veeam routes - LIST request handling', () => {
         const warnCall = logWarnSpy.getCall(0);
         assert(warnCall.args[0].includes('UtilizationService returned 404'),
             'warning message should mention 404');
-        assert.strictEqual(warnCall.args[1].method, 'listVeeamFiles');
         assert(response.writeHead.calledWith(200), 'should return 200 despite 404');
         assert(response.end.called, 'response should be ended');
     });
