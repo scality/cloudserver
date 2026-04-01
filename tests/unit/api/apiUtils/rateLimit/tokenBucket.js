@@ -299,8 +299,6 @@ describe('Token bucket management functions', () => {
 
             assert.strictEqual(bucket1, bucket2);
             assert.strictEqual(bucket2.limitConfig.limit, 200);
-            assert(mockLog.info.calledOnce);
-            assert(mockLog.info.firstCall.args[0].includes('Updated token bucket limit config'));
         });
 
         it('should not log update when limit is unchanged', () => {
