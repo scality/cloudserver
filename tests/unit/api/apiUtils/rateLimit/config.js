@@ -36,7 +36,7 @@ describe('parseRateLimitConfig', () => {
             assert.strictEqual(result.error.message, 'ServiceUnavailable');
             assert.strictEqual(result.error.description, 'Service Unavailable');
             assert(result.bucket.defaultConfig);
-            assert(result.bucket.defaultConfig.requestsPerSecond);
+            assert(result.bucket.defaultConfig.RequestsPerSecond);
         });
 
         it('should use default values when optional fields are omitted', () => {
@@ -53,7 +53,9 @@ describe('parseRateLimitConfig', () => {
             assert.strictEqual(result.tokenBucketRefillThreshold, 20); // Default
             // Bucket config is always initialized for per-bucket rate limiting via API
             assert(result.bucket);
-            assert.strictEqual(result.bucket.defaultConfig, undefined); // No global default
+            assert.deepStrictEqual(result.bucket.defaultConfig, {
+                RequestsPerSecond: { BurstCapacity: constants.rateLimitDefaultBurstCapacity },
+            });
             assert.strictEqual(result.bucket.configCacheTTL, constants.rateLimitDefaultConfigCacheTTL); // Default
             assert.strictEqual(result.bucket.defaultBurstCapacity, constants.rateLimitDefaultBurstCapacity); // Default
             assert.strictEqual(result.error.code, errors.SlowDown.code); // Default
@@ -71,7 +73,9 @@ describe('parseRateLimitConfig', () => {
             const result = parseRateLimitConfig(config);
 
             assert.strictEqual(result.bucket.configCacheTTL, 600);
-            assert.strictEqual(result.bucket.defaultConfig, undefined);
+            assert.deepStrictEqual(result.bucket.defaultConfig, {
+                RequestsPerSecond: { BurstCapacity: constants.rateLimitDefaultBurstCapacity },
+            });
         });
 
         it('should use default configCacheTTL when not specified', () => {
@@ -374,7 +378,7 @@ describe('parseRateLimitConfig', () => {
             const result = parseRateLimitConfig(config);
 
             assert(result.bucket.defaultConfig);
-            assert(result.bucket.defaultConfig.requestsPerSecond);
+            assert(result.bucket.defaultConfig.RequestsPerSecond);
         });
 
         it('should throw if defaultConfig is not an object', () => {
@@ -421,7 +425,7 @@ describe('parseRateLimitConfig', () => {
 
             const result = parseRateLimitConfig(config);
             // limit = 0 means unlimited, should be accepted
-            assert(result.bucket.defaultConfig.requestsPerSecond);
+            assert(result.bucket.defaultConfig.RequestsPerSecond);
         });
 
         it('should propagate validation errors for negative limit', () => {
@@ -476,9 +480,10 @@ describe('parseRateLimitConfig', () => {
             };
 
             const result = parseRateLimitConfig(config);
-            const bucketSize = result.bucket.defaultConfig.requestsPerSecond.bucketSize;
-            // bucketSize = burstCapacity * 1000
-            assert.strictEqual(bucketSize, constants.rateLimitDefaultBurstCapacity * 1000);
+            assert.strictEqual(
+                result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity,
+                constants.rateLimitDefaultBurstCapacity
+            );
         });
 
         it('should use custom burstCapacity when provided', () => {
@@ -495,8 +500,9 @@ describe('parseRateLimitConfig', () => {
             };
 
             const result = parseRateLimitConfig(config);
-            const bucketSize = result.bucket.defaultConfig.requestsPerSecond.bucketSize;
-            assert.strictEqual(bucketSize, 20 * 1000);
+            assert.strictEqual(
+                result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity, 20
+            );
         });
 
         it('should throw if burstCapacity is negative', () => {
@@ -573,8 +579,9 @@ describe('parseRateLimitConfig', () => {
             };
 
             const result = parseRateLimitConfig(config);
-            const bucketSize = result.bucket.defaultConfig.requestsPerSecond.bucketSize;
-            assert.strictEqual(bucketSize, 1.5 * 1000);
+            assert.strictEqual(
+                result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity, 1.5
+            );
         });
     });
 
@@ -877,7 +884,7 @@ describe('parseRateLimitConfig', () => {
 
             assert(result.account);
             assert(result.account.defaultConfig);
-            assert.strictEqual(result.account.defaultConfig.limit, 500);
+            assert.strictEqual(result.account.defaultConfig.RequestsPerSecond.Limit, 500);
             assert.strictEqual(result.account.configCacheTTL, 60000);
             assert.strictEqual(result.account.defaultBurstCapacity, 2);
         });
@@ -904,9 +911,9 @@ describe('parseRateLimitConfig', () => {
             const result = parseRateLimitConfig(config);
 
             assert(result.bucket.defaultConfig);
-            assert.strictEqual(result.bucket.defaultConfig.limit, 1000);
+            assert.strictEqual(result.bucket.defaultConfig.RequestsPerSecond.Limit, 1000);
             assert(result.account.defaultConfig);
-            assert.strictEqual(result.account.defaultConfig.limit, 500);
+            assert.strictEqual(result.account.defaultConfig.RequestsPerSecond.Limit, 500);
         });
 
         it('should validate account limit against nodes', () => {
@@ -973,8 +980,10 @@ describe('parseRateLimitConfig', () => {
             };
 
             const result = parseRateLimitConfig(config);
-            const bucketSize = result.account.defaultConfig.requestsPerSecond.bucketSize;
-            assert.strictEqual(bucketSize, constants.rateLimitDefaultBurstCapacity * 1000);
+            assert.strictEqual(
+                result.account.defaultConfig.RequestsPerSecond.BurstCapacity,
+                constants.rateLimitDefaultBurstCapacity
+            );
         });
 
         it('should use custom burstCapacity when provided', () => {
@@ -991,8 +1000,9 @@ describe('parseRateLimitConfig', () => {
             };
 
             const result = parseRateLimitConfig(config);
-            const bucketSize = result.account.defaultConfig.requestsPerSecond.bucketSize;
-            assert.strictEqual(bucketSize, 20 * 1000);
+            assert.strictEqual(
+                result.account.defaultConfig.RequestsPerSecond.BurstCapacity, 20
+            );
         });
 
         it('should accept float burstCapacity', () => {
@@ -1009,8 +1019,9 @@ describe('parseRateLimitConfig', () => {
             };
 
             const result = parseRateLimitConfig(config);
-            const bucketSize = result.account.defaultConfig.requestsPerSecond.bucketSize;
-            assert.strictEqual(bucketSize, 1.5 * 1000);
+            assert.strictEqual(
+                result.account.defaultConfig.RequestsPerSecond.BurstCapacity, 1.5
+            );
         });
 
         it('should throw if burstCapacity is negative', () => {
@@ -1142,14 +1153,14 @@ describe('parseRateLimitConfig', () => {
     });
 
     describe('calculation verification', () => {
-        it('should calculate correct interval for distributed setup', () => {
+        it('should store Limit in defaultConfig for distributed setup', () => {
             const config = {
                 serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
                 nodes: 2,
                 bucket: {
                     defaultConfig: {
                         requestsPerSecond: {
-                            limit: 100, // 100 req/s global
+                            limit: 100,
                         },
                     },
                 },
@@ -1157,13 +1168,14 @@ describe('parseRateLimitConfig', () => {
 
             const result = parseRateLimitConfig(config);
 
-            // Per-NODE rate = 100 / 2 nodes = 50 req/s
-            // Interval = 1000ms / 50 = 20ms
-            const interval = result.bucket.defaultConfig.requestsPerSecond.interval;
-            assert.strictEqual(interval, 20);
+            assert.strictEqual(result.bucket.defaultConfig.RequestsPerSecond.Limit, 100);
+            assert.strictEqual(
+                result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity,
+                constants.rateLimitDefaultBurstCapacity
+            );
         });
 
-        it('should calculate correct bucketSize from burstCapacity', () => {
+        it('should store BurstCapacity from burstCapacity', () => {
             const config = {
                 serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
                 bucket: {
@@ -1178,19 +1190,17 @@ describe('parseRateLimitConfig', () => {
 
             const result = parseRateLimitConfig(config);
 
-            // bucketSize = burstCapacity * 1000
-            const bucketSize = result.bucket.defaultConfig.requestsPerSecond.bucketSize;
-            assert.strictEqual(bucketSize, 15 * 1000);
+            assert.strictEqual(result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity, 15);
         });
 
-        it('should handle single node and single worker', () => {
+        it('should handle single node setup', () => {
             const config = {
                 serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
                 nodes: 1,
                 bucket: {
                     defaultConfig: {
                         requestsPerSecond: {
-                            limit: 50, // 50 req/s
+                            limit: 50,
                         },
                     },
                 },
@@ -1198,10 +1208,7 @@ describe('parseRateLimitConfig', () => {
 
             const result = parseRateLimitConfig(config);
 
-            // Per-node rate = 50 / 1 = 50 req/s
-            // Interval = 1000ms / 50 = 20ms
-            const interval = result.bucket.defaultConfig.requestsPerSecond.interval;
-            assert.strictEqual(interval, 20);
+            assert.strictEqual(result.bucket.defaultConfig.RequestsPerSecond.Limit, 50);
         });
 
         it('should handle high-scale distributed setup', () => {
@@ -1211,7 +1218,8 @@ describe('parseRateLimitConfig', () => {
                 bucket: {
                     defaultConfig: {
                         requestsPerSecond: {
-                            limit: 10000, // 10,000 req/s global
+                            limit: 10000,
+                            burstCapacity: 5,
                         },
                     },
                 },
@@ -1219,10 +1227,8 @@ describe('parseRateLimitConfig', () => {
 
             const result = parseRateLimitConfig(config);
 
-            // Per-NODE rate = 10000 / 10 nodes = 1000 req/s
-            // Interval = 1000ms / 1000 = 1ms
-            const interval = result.bucket.defaultConfig.requestsPerSecond.interval;
-            assert.strictEqual(interval, 1);
+            assert.strictEqual(result.bucket.defaultConfig.RequestsPerSecond.Limit, 10000);
+            assert.strictEqual(result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity, 5);
         });
     });
 });
