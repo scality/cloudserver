@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: docker-compose
+    directory: /.github/docker
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "scality/vault"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "scality/metadata"
+        update-types: ["version-update:semver-major"]

@@ -520,7 +520,6 @@ jobs:
       COMPOSE_FILE: docker-compose.yaml:docker-compose.sse.yaml
       S3_VERSION_ID_ENCODING_TYPE: hex
       JOB_NAME: ${{ matrix.job-name }}
-      VAULT_IMAGE: ghcr.io/scality/vault:7.76.0
       S3_END_TO_END: true
       S3_TESTVAL_OWNERCANONICALID: 79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be
       S3_SERVER_ACCESS_LOGS_MODE: ENABLED
@@ -553,7 +552,7 @@ jobs:
     - name: Copy S3C config
       run: cp .github/docker/config.s3c.json tests/functional/sse-kms-migration/config.json
     - name: Setup CI services
-      run: docker compose up -d --quiet-pull redis sproxyd metadata-standalone vault-sse-before-migration cloudserver-sse-before-migration
+      run: docker compose up -d --quiet-pull redis sproxyd metadata-standalone vault cloudserver-sse-before-migration
       working-directory: .github/docker
     - name: Wait for services to be ready
       run: |-
@@ -597,7 +596,7 @@ jobs:
         set -o pipefail;
         yarn run ft_healthchecks | tee /tmp/artifacts/${{ matrix.job-name }}/ft_healthchecks.log
     - name: Teardown CI services
-      run: docker compose down redis sproxyd metadata-standalone vault-sse-before-migration cloudserver-sse-before-migration
+      run: docker compose down redis sproxyd metadata-standalone vault cloudserver-sse-before-migration
       working-directory: .github/docker
     - name: Cleanup and upload coverage
       uses: ./.github/actions/cleanup-and-coverage
