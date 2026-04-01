@@ -34,89 +34,82 @@ describe('fetchCapacityMetrics', () => {
         sinon.restore();
     });
 
-    it('should call UtilizationService with the correct bucket key', done => {
+    it('should call UtilizationService with the correct bucket key', async () => {
         utilizationStub.callsArgWith(4, null, {});
 
-        fetchCapacityMetrics(bucketMd, request, log, 'testMethod', () => {
-            const expectedKey = `test-bucket_${new Date('2024-01-01T00:00:00.000Z').getTime()}`;
-            assert.strictEqual(utilizationStub.getCall(0).args[0], 'bucket');
-            assert.strictEqual(utilizationStub.getCall(0).args[1], expectedKey);
-            done();
-        });
+        await fetchCapacityMetrics(bucketMd, request, log, 'testMethod');
+
+        const expectedKey = `test-bucket_${new Date('2024-01-01T00:00:00.000Z').getTime()}`;
+        assert.strictEqual(utilizationStub.getCall(0).args[0], 'bucket');
+        assert.strictEqual(utilizationStub.getCall(0).args[1], expectedKey);
     });
 
-    it('should call back with metrics on success', done => {
+    it('should resolve with metrics on success', async () => {
         const bucketMetrics = { bytesTotal: 42, date: '2026-03-26T19:00:08.996Z' };
         utilizationStub.callsArgWith(4, null, bucketMetrics);
 
-        fetchCapacityMetrics(bucketMd, request, log, 'testMethod', (err, metrics) => {
-            assert.ifError(err);
-            assert.strictEqual(metrics, bucketMetrics);
-            assert(!logWarnSpy.called);
-            assert(!logErrorSpy.called);
-            done();
-        });
+        const metrics = await fetchCapacityMetrics(bucketMd, request, log, 'testMethod');
+
+        assert.strictEqual(metrics, bucketMetrics);
+        assert(!logWarnSpy.called);
+        assert(!logErrorSpy.called);
     });
 
-    it('should call back with no error and a default date on 404', done => {
+    it('should resolve with no error and a default date on 404', async () => {
         const error404 = new Error('Not Found');
         error404.response = { status: 404 };
         utilizationStub.callsArgWith(4, error404);
 
-        fetchCapacityMetrics(bucketMd, request, log, 'testMethod', (err, metrics) => {
-            assert.ifError(err);
-            assert(metrics && metrics.date instanceof Date, 'metrics should have a Date for date');
-            assert(logWarnSpy.calledOnce);
-            assert(logWarnSpy.getCall(0).args[0].includes('404'));
-            assert.strictEqual(logWarnSpy.getCall(0).args[1].method, 'testMethod');
-            assert.strictEqual(logWarnSpy.getCall(0).args[1].bucket, 'test-bucket');
-            assert(!logErrorSpy.called);
-            done();
-        });
+        const metrics = await fetchCapacityMetrics(bucketMd, request, log, 'testMethod');
+
+        assert(metrics && metrics.date instanceof Date, 'metrics should have a Date for date');
+        assert(logWarnSpy.calledOnce);
+        assert(logWarnSpy.getCall(0).args[0].includes('404'));
+        assert.strictEqual(logWarnSpy.getCall(0).args[1].method, 'testMethod');
+        assert.strictEqual(logWarnSpy.getCall(0).args[1].bucket, 'test-bucket');
+        assert(!logErrorSpy.called);
     });
 
-    it('should also handle 404 via statusCode property', done => {
+    it('should also handle 404 via statusCode property', async () => {
         const error404 = new Error('Not Found');
         error404.statusCode = 404;
         utilizationStub.callsArgWith(4, error404);
 
-        fetchCapacityMetrics(bucketMd, request, log, 'testMethod', (err, metrics) => {
-            assert.ifError(err);
-            assert(metrics && metrics.date instanceof Date, 'metrics should have a Date for date');
-            assert(logWarnSpy.calledOnce);
-            done();
-        });
+        const metrics = await fetchCapacityMetrics(bucketMd, request, log, 'testMethod');
+
+        assert(metrics && metrics.date instanceof Date, 'metrics should have a Date for date');
+        assert(logWarnSpy.calledOnce);
     });
 
-    it('should call back with error on non-404 failures', done => {
+    it('should reject with error on non-404 failures', async () => {
         const error500 = new Error('Internal Server Error');
         error500.response = { status: 500 };
         utilizationStub.callsArgWith(4, error500);
 
-        fetchCapacityMetrics(bucketMd, request, log, 'testMethod', (err, metrics) => {
-            assert.strictEqual(err, error500);
-            assert.strictEqual(metrics, undefined);
-            assert(logErrorSpy.calledOnce);
-            assert.strictEqual(logErrorSpy.getCall(0).args[1].method, 'testMethod');
-            assert.strictEqual(logErrorSpy.getCall(0).args[1].bucket, 'test-bucket');
-            assert.strictEqual(logErrorSpy.getCall(0).args[1].statusCode, 500);
-            assert(!logWarnSpy.called);
-            done();
-        });
+        await assert.rejects(
+            fetchCapacityMetrics(bucketMd, request, log, 'testMethod'),
+            err => err === error500,
+        );
+
+        assert(logErrorSpy.calledOnce);
+        assert.strictEqual(logErrorSpy.getCall(0).args[1].method, 'testMethod');
+        assert.strictEqual(logErrorSpy.getCall(0).args[1].bucket, 'test-bucket');
+        assert.strictEqual(logErrorSpy.getCall(0).args[1].statusCode, 500);
+        assert(!logWarnSpy.called);
     });
 
-    it('should call back with error on connection errors', done => {
+    it('should reject with error on connection errors', async () => {
         const connError = new Error('Connection refused');
         connError.code = 'ECONNREFUSED';
         utilizationStub.callsArgWith(4, connError);
 
-        fetchCapacityMetrics(bucketMd, request, log, 'testMethod', (err, metrics) => {
-            assert.strictEqual(err, connError);
-            assert.strictEqual(metrics, undefined);
-            assert(logErrorSpy.calledOnce);
-            assert.strictEqual(logErrorSpy.getCall(0).args[1].statusCode, 'ECONNREFUSED');
-            done();
-        });
+        await assert.rejects(
+            fetchCapacityMetrics(bucketMd, request, log, 'testMethod'),
+            err => err === connError,
+        );
+
+        assert(logErrorSpy.calledOnce);
+        assert.strictEqual(logErrorSpy.getCall(0).args[1].statusCode, 'ECONNREFUSED');
     });
 });
 
@@ -177,90 +170,81 @@ describe('buildVeeamFileData', () => {
         sinon.restore();
     });
 
-    it('should return InternalError when metadata.getBucket fails', done => {
+    it('should reject with InternalError when metadata.getBucket fails', async () => {
         metadataStub.callsArgWith(2, new Error('DB error'));
 
-        buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log, 'test', (err) => {
-            assert(err);
-            assert.strictEqual(err.code, 500);
-            done();
-        });
+        await assert.rejects(
+            buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log, 'test'),
+            err => err.code === 500,
+        );
     });
 
-    it('should return NoSuchKey when capabilities do not include the requested file', done => {
+    it('should reject with NoSuchKey when capabilities do not include the requested file', async () => {
         metadataStub.callsArgWith(2, null, { _capabilities: {} });
 
-        buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log, 'test', (err) => {
-            assert(err);
-            assert.strictEqual(err.code, 404);
-            done();
-        });
+        await assert.rejects(
+            buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log, 'test'),
+            err => err.code === 404,
+        );
     });
 
-    it('should return InternalError when fetchCapacityMetrics fails', done => {
+    it('should reject with InternalError when fetchCapacityMetrics fails', async () => {
         metadataStub.callsArgWith(2, null, bucketMd);
         const error500 = new Error('Internal Server Error');
         error500.response = { status: 500 };
         utilizationStub.callsArgWith(4, error500);
 
-        buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log, 'test', (err) => {
-            assert(err);
-            assert.strictEqual(err.code, 500);
-            done();
-        });
+        await assert.rejects(
+            buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log, 'test'),
+            err => err.code === 500,
+        );
     });
 
-    it('should build capacity.xml with SUR metrics date and applied Used/Available', done => {
+    it('should build capacity.xml with SUR metrics date and applied Used/Available', async () => {
         const metricsDate = new Date('2026-03-26T19:00:08.996Z');
         metadataStub.callsArgWith(2, null, bucketMd);
         utilizationStub.callsArgWith(4, null, { date: metricsDate, bytesTotal: 100 });
 
-        buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log, 'test', (err, result) => {
-            assert.ifError(err);
-            assert.strictEqual(result.modified, metricsDate);
-            assert(result.xmlContent.includes('CapacityInfo'));
-            assert(result.xmlContent.includes('<Used>100</Used>'));
-            assert(result.xmlContent.includes('<Available>'));
-            assert(Buffer.isBuffer(result.dataBuffer));
-            assert.deepStrictEqual(result.dataBuffer, Buffer.from(result.xmlContent));
-            assert.strictEqual(result.bucketData, bucketMd);
-            done();
-        });
+        const result = await buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log, 'test');
+
+        assert.strictEqual(result.modified, metricsDate);
+        assert(result.xmlContent.includes('CapacityInfo'));
+        assert(result.xmlContent.includes('<Used>100</Used>'));
+        assert(result.xmlContent.includes('<Available>'));
+        assert(Buffer.isBuffer(result.dataBuffer));
+        assert.deepStrictEqual(result.dataBuffer, Buffer.from(result.xmlContent));
+        assert.strictEqual(result.bucketData, bucketMd);
     });
 
-    it('should use current date for capacity.xml when UtilizationService returns 404', done => {
+    it('should use current date for capacity.xml when UtilizationService returns 404', async () => {
         const before = Date.now();
         metadataStub.callsArgWith(2, null, bucketMd);
         const error404 = new Error('Not Found');
         error404.response = { status: 404 };
         utilizationStub.callsArgWith(4, error404);
 
-        buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log, 'test', (err, result) => {
-            assert.ifError(err);
-            assert(result.modified instanceof Date);
-            assert(result.modified.getTime() >= before);
-            assert(result.xmlContent.includes('CapacityInfo'));
-            done();
-        });
+        const result = await buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log, 'test');
+
+        assert(result.modified instanceof Date);
+        assert(result.modified.getTime() >= before);
+        assert(result.xmlContent.includes('CapacityInfo'));
     });
 
-    it('should build system.xml without calling UtilizationService', done => {
+    it('should build system.xml without calling UtilizationService', async () => {
         metadataStub.callsArgWith(2, null, bucketMdWithSystem);
         const before = Date.now();
 
-        buildVeeamFileData(createRequest(systemObjectKey), bucketMdWithSystem, log, 'test', (err, result) => {
-            assert.ifError(err);
-            assert(!utilizationStub.called, 'should not call UtilizationService for system.xml');
-            assert(result.modified instanceof Date);
-            assert(result.modified.getTime() >= before);
-            assert(result.xmlContent.includes('SystemInfo'));
-            assert(result.xmlContent.includes('ARTESCA'));
-            assert(Buffer.isBuffer(result.dataBuffer));
-            done();
-        });
+        const result = await buildVeeamFileData(createRequest(systemObjectKey), bucketMdWithSystem, log, 'test');
+
+        assert(!utilizationStub.called, 'should not call UtilizationService for system.xml');
+        assert(result.modified instanceof Date);
+        assert(result.modified.getTime() >= before);
+        assert(result.xmlContent.includes('SystemInfo'));
+        assert(result.xmlContent.includes('ARTESCA'));
+        assert(Buffer.isBuffer(result.dataBuffer));
     });
 
-    it('should not overwrite Used when it is already set', done => {
+    it('should not overwrite Used when it is already set', async () => {
         const bucketMdWithUsed = {
             ...bucketMd,
             _capabilities: {
@@ -277,10 +261,8 @@ describe('buildVeeamFileData', () => {
         metadataStub.callsArgWith(2, null, bucketMdWithUsed);
         utilizationStub.callsArgWith(4, null, { date: new Date(), bytesTotal: 999 });
 
-        buildVeeamFileData(createRequest(capacityObjectKey), bucketMdWithUsed, log, 'test', (err, result) => {
-            assert.ifError(err);
-            assert(result.xmlContent.includes('<Used>400</Used>'), 'should keep existing Used value');
-            done();
-        });
+        const result = await buildVeeamFileData(createRequest(capacityObjectKey), bucketMdWithUsed, log, 'test');
+
+        assert(result.xmlContent.includes('<Used>400</Used>'), 'should keep existing Used value');
     });
 });

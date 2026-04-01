@@ -7,9 +7,6 @@ const UtilizationService = require('../../../lib/utilization/instance');
 const metadata = require('../../../lib/metadata/wrapper');
 const { DummyRequestLogger } = require('../helpers');
 
-// Helper function to give async callbacks time to execute
-const giveAsyncCallbackTimeToExecute = setImmediate;
-
 describe('Veeam routes - comprehensive unit tests', () => {
     let utilizationStub;
     let metadataStub;
@@ -104,7 +101,7 @@ describe('Veeam routes - comprehensive unit tests', () => {
         return response;
     };
 
-    it('should handle 404 error from UtilizationService and return 200', done => {
+    it('should handle 404 error from UtilizationService and return 200', async () => {
         const error404 = new Error('Not Found');
         error404.response = { status: 404 };
         utilizationStub.callsArgWith(4, error404);
@@ -112,24 +109,21 @@ describe('Veeam routes - comprehensive unit tests', () => {
         const request = createRequest();
         const response = createResponse();
 
-        getVeeamFile(request, response, bucketMd, log);
+        await getVeeamFile(request, response, bucketMd, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            assert(logWarnSpy.calledOnce, 'log.warn should have been called once');
-            const warnCall = logWarnSpy.getCall(0);
-            assert(warnCall.args[0].includes('UtilizationService returned 404'),
-                'warning message should mention 404');
-            assert.strictEqual(warnCall.args[1].method, 'getVeeamFile');
-            assert.strictEqual(warnCall.args[1].bucket, 'test-bucket');
+        assert(logWarnSpy.calledOnce, 'log.warn should have been called once');
+        const warnCall = logWarnSpy.getCall(0);
+        assert(warnCall.args[0].includes('UtilizationService returned 404'),
+            'warning message should mention 404');
+        assert.strictEqual(warnCall.args[1].method, 'getVeeamFile');
+        assert.strictEqual(warnCall.args[1].bucket, 'test-bucket');
 
-            assert(response.writeHead.calledWith(200),
-                'should return 200 despite 404 from UtilizationService');
-            assert(response.end.called, 'response should be ended');
-            done();
-        });
+        assert(response.writeHead.calledWith(200),
+            'should return 200 despite 404 from UtilizationService');
+        assert(response.end.called, 'response should be ended');
     });
 
-    it('should handle 500 error from UtilizationService and return 500', done => {
+    it('should handle 500 error from UtilizationService and return 500', async () => {
         const error500 = new Error('Internal Server Error');
         error500.response = { status: 500 };
         utilizationStub.callsArgWith(4, error500);
@@ -137,16 +131,13 @@ describe('Veeam routes - comprehensive unit tests', () => {
         const request = createRequest();
         const response = createResponse();
 
-        getVeeamFile(request, response, bucketMd, log);
+        await getVeeamFile(request, response, bucketMd, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            assert(response.headersSent || response.write.called || response.writeHead.called,
-                'should send error response for 500 errors');
-            done();
-        });
+        assert(response.headersSent || response.write.called || response.writeHead.called,
+            'should send error response for 500 errors');
     });
 
-    it('should handle connection error from UtilizationService and return 500', done => {
+    it('should handle connection error from UtilizationService and return 500', async () => {
         const errorConn = new Error('Connection refused');
         errorConn.code = 'ECONNREFUSED';
         utilizationStub.callsArgWith(4, errorConn);
@@ -154,16 +145,13 @@ describe('Veeam routes - comprehensive unit tests', () => {
         const request = createRequest();
         const response = createResponse();
 
-        getVeeamFile(request, response, bucketMd, log);
+        await getVeeamFile(request, response, bucketMd, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            assert(response.headersSent || response.write.called || response.writeHead.called,
-                'should send error response for connection errors');
-            done();
-        });
+        assert(response.headersSent || response.write.called || response.writeHead.called,
+            'should send error response for connection errors');
     });
 
-    it('should successfully use metrics when UtilizationService returns data', done => {
+    it('should successfully use metrics when UtilizationService returns data', async () => {
         const metricsDate = '2026-03-26T19:00:08.996Z';
         const bucketMetrics = {
             bytesTotal: 123456789,
@@ -174,28 +162,25 @@ describe('Veeam routes - comprehensive unit tests', () => {
         const request = createRequest();
         const response = createResponse();
 
-        getVeeamFile(request, response, bucketMd, log);
+        await getVeeamFile(request, response, bucketMd, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            assert(!logWarnSpy.called, 'log.warn should not have been called');
-            assert(response.writeHead.calledWith(200), 'should return 200 with metrics');
-            assert(utilizationStub.calledOnce, 'should call UtilizationService once');
-            assert(response.end.called, 'response should be ended');
+        assert(!logWarnSpy.called, 'log.warn should not have been called');
+        assert(response.writeHead.calledWith(200), 'should return 200 with metrics');
+        assert(utilizationStub.calledOnce, 'should call UtilizationService once');
+        assert(response.end.called, 'response should be ended');
 
-            const lastModifiedCall = response.setHeader.getCalls()
-                .find(call => call.args[0] === 'Last-Modified');
+        const lastModifiedCall = response.setHeader.getCalls()
+            .find(call => call.args[0] === 'Last-Modified');
 
-            assert(lastModifiedCall, 'Last-Modified header should be set');
-            assert.strictEqual(
-                lastModifiedCall.args[1],
-                new Date(metricsDate).toUTCString(),
-                'Last-Modified should use the date from bucketMetrics',
-            );
-            done();
-        });
+        assert(lastModifiedCall, 'Last-Modified header should be set');
+        assert.strictEqual(
+            lastModifiedCall.args[1],
+            new Date(metricsDate).toUTCString(),
+            'Last-Modified should use the date from bucketMetrics',
+        );
     });
 
-    it('should not call UtilizationService for system.xml requests', done => {
+    it('should not call UtilizationService for system.xml requests', async () => {
         const bucketMdWithSystem = {
             ...bucketMd,
             _capabilities: {
@@ -213,17 +198,14 @@ describe('Veeam routes - comprehensive unit tests', () => {
         const request = createRequest('.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml');
         const response = createResponse();
 
-        getVeeamFile(request, response, bucketMdWithSystem, log);
+        await getVeeamFile(request, response, bucketMdWithSystem, log);
 
-        setImmediate(() => {
-            assert(!utilizationStub.called, 'should not call UtilizationService for system.xml');
-            assert(response.writeHead.calledWith(200), 'should return 200 for system.xml');
-            assert(response.end.called, 'response should be ended');
-            done();
-        });
+        assert(!utilizationStub.called, 'should not call UtilizationService for system.xml');
+        assert(response.writeHead.calledWith(200), 'should return 200 for system.xml');
+        assert(response.end.called, 'response should be ended');
     });
 
-    it('should verify the post-install scenario: 404 returns 200 with Used=0', done => {
+    it('should verify the post-install scenario: 404 returns 200 with Used=0', async () => {
         // This test reproduces the post-install scenario where scubaclient returns 404
         // because no metrics are available yet
         const error404 = new Error('Not Found');
@@ -233,49 +215,39 @@ describe('Veeam routes - comprehensive unit tests', () => {
         const request = createRequest();
         const response = createResponse();
 
-        getVeeamFile(request, response, bucketMd, log);
+        await getVeeamFile(request, response, bucketMd, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            assert(logWarnSpy.calledOnce, 'should log warning for 404');
-            assert(response.writeHead.calledWith(200),
-                'should return 200 with static capacity data for 404');
-            assert(response.end.called, 'response should be ended');
-            const warnCall = logWarnSpy.getCall(0);
-            assert(warnCall.args[0].includes('404'), 'warning should mention 404');
-
-            done();
-        });
+        assert(logWarnSpy.calledOnce, 'should log warning for 404');
+        assert(response.writeHead.calledWith(200),
+            'should return 200 with static capacity data for 404');
+        assert(response.end.called, 'response should be ended');
+        const warnCall = logWarnSpy.getCall(0);
+        assert(warnCall.args[0].includes('404'), 'warning should mention 404');
     });
 
-    it('should handle metadata.getBucket errors gracefully', done => {
+    it('should handle metadata.getBucket errors gracefully', async () => {
         const metadataError = new Error('Metadata service error');
         metadataStub.callsArgWith(2, metadataError);
 
         const request = createRequest();
         const response = createResponse();
 
-        getVeeamFile(request, response, bucketMd, log);
+        await getVeeamFile(request, response, bucketMd, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            assert(response.headersSent || response.write.called || response.writeHead.called,
-                'should send response for metadata errors');
-            done();
-        });
+        assert(response.headersSent || response.write.called || response.writeHead.called,
+            'should send response for metadata errors');
     });
 
-    it('should handle tagging query parameter', done => {
+    it('should handle tagging query parameter', async () => {
         const request = createRequest();
         request.query = { tagging: '' };
         const response = createResponse();
 
-        getVeeamFile(request, response, bucketMd, log);
+        await getVeeamFile(request, response, bucketMd, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            assert(response.writeHead.calledWith(200),
-                'should return 200 for tagging query');
-            assert(response.end.called, 'response should be ended');
-            done();
-        });
+        assert(response.writeHead.calledWith(200),
+            'should return 200 for tagging query');
+        assert(response.end.called, 'response should be ended');
     });
 });
 
@@ -352,7 +324,7 @@ describe('Veeam routes - HEAD request UtilizationService error handling', () => 
         return response;
     };
 
-    it('should handle HEAD request for system.xml without calling UtilizationService', done => {
+    it('should handle HEAD request for system.xml without calling UtilizationService', async () => {
         const bucketMdWithSystem = {
             ...bucketMd,
             _capabilities: {
@@ -370,43 +342,37 @@ describe('Veeam routes - HEAD request UtilizationService error handling', () => 
         const request = createRequest('.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml');
         const response = createResponse();
 
-        headVeeamFile(request, response, bucketMdWithSystem, log);
+        await headVeeamFile(request, response, bucketMdWithSystem, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            assert(!utilizationStub.called, 'should not call UtilizationService for system.xml');
-            assert(response.setHeader.called, 'should set headers');
-            assert(response.end.called, 'response should be ended');
-            done();
-        });
+        assert(!utilizationStub.called, 'should not call UtilizationService for system.xml');
+        assert(response.setHeader.called, 'should set headers');
+        assert(response.end.called, 'response should be ended');
     });
 
-    it('should call UtilizationService for capacity.xml and use metrics date', done => {
+    it('should call UtilizationService for capacity.xml and use metrics date', async () => {
         const metricsDate = '2026-03-26T19:00:08.996Z';
         utilizationStub.callsArgWith(4, null, { bytesTotal: 123456789, date: metricsDate });
 
         const request = createRequest('.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml');
         const response = createResponse();
 
-        headVeeamFile(request, response, bucketMd, log);
+        await headVeeamFile(request, response, bucketMd, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            assert(utilizationStub.calledOnce, 'should call UtilizationService once');
-            assert(response.setHeader.called, 'should set headers');
-            assert(response.end.called, 'response should be ended');
+        assert(utilizationStub.calledOnce, 'should call UtilizationService once');
+        assert(response.setHeader.called, 'should set headers');
+        assert(response.end.called, 'response should be ended');
 
-            const lastModifiedCall = response.setHeader.getCalls()
-                .find(call => call.args[0] === 'Last-Modified');
-            assert(lastModifiedCall, 'Last-Modified header should be set');
-            assert.strictEqual(
-                lastModifiedCall.args[1],
-                new Date(metricsDate).toUTCString(),
-                'Last-Modified should use the date from bucketMetrics',
-            );
-            done();
-        });
+        const lastModifiedCall = response.setHeader.getCalls()
+            .find(call => call.args[0] === 'Last-Modified');
+        assert(lastModifiedCall, 'Last-Modified header should be set');
+        assert.strictEqual(
+            lastModifiedCall.args[1],
+            new Date(metricsDate).toUTCString(),
+            'Last-Modified should use the date from bucketMetrics',
+        );
     });
 
-    it('should handle 404 from UtilizationService on HEAD and return 200', done => {
+    it('should handle 404 from UtilizationService on HEAD and return 200', async () => {
         const error404 = new Error('Not Found');
         error404.response = { status: 404 };
         utilizationStub.callsArgWith(4, error404);
@@ -414,21 +380,18 @@ describe('Veeam routes - HEAD request UtilizationService error handling', () => 
         const request = createRequest('.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml');
         const response = createResponse();
 
-        headVeeamFile(request, response, bucketMd, log);
+        await headVeeamFile(request, response, bucketMd, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            assert(logWarnSpy.calledOnce, 'log.warn should have been called once');
-            const warnCall = logWarnSpy.getCall(0);
-            assert(warnCall.args[0].includes('UtilizationService returned 404'),
-                'warning message should mention 404');
-            assert.strictEqual(warnCall.args[1].method, 'headVeeamFile');
-            assert(response.setHeader.called, 'should set headers');
-            assert(response.end.called, 'response should be ended');
-            done();
-        });
+        assert(logWarnSpy.calledOnce, 'log.warn should have been called once');
+        const warnCall = logWarnSpy.getCall(0);
+        assert(warnCall.args[0].includes('UtilizationService returned 404'),
+            'warning message should mention 404');
+        assert.strictEqual(warnCall.args[1].method, 'headVeeamFile');
+        assert(response.setHeader.called, 'should set headers');
+        assert(response.end.called, 'response should be ended');
     });
 
-    it('should handle non-404 error from UtilizationService on HEAD and return 500', done => {
+    it('should handle non-404 error from UtilizationService on HEAD and return 500', async () => {
         const error500 = new Error('Internal Server Error');
         error500.response = { status: 500 };
         utilizationStub.callsArgWith(4, error500);
@@ -436,15 +399,12 @@ describe('Veeam routes - HEAD request UtilizationService error handling', () => 
         const request = createRequest('.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml');
         const response = createResponse();
 
-        headVeeamFile(request, response, bucketMd, log);
+        await headVeeamFile(request, response, bucketMd, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            assert(response.end.called, 'response should be ended');
-            done();
-        });
+        assert(response.end.called, 'response should be ended');
     });
 
-    it('should return 404 when no VeeamSOSApi capabilities', done => {
+    it('should return 404 when no VeeamSOSApi capabilities', async () => {
         const bucketMdWithoutVeeam = {
             ...bucketMd,
             _capabilities: {},
@@ -455,13 +415,10 @@ describe('Veeam routes - HEAD request UtilizationService error handling', () => 
         const request = createRequest();
         const response = createResponse();
 
-        headVeeamFile(request, response, bucketMdWithoutVeeam, log);
+        await headVeeamFile(request, response, bucketMdWithoutVeeam, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            // HEAD should return 404 via headers, not body
-            assert(response.end.called, 'response should be ended');
-            done();
-        });
+        // HEAD should return 404 via headers, not body
+        assert(response.end.called, 'response should be ended');
     });
 });
 
@@ -549,24 +506,21 @@ describe('Veeam routes - LIST request handling', () => {
         return response;
     };
 
-    it('should list both system.xml and capacity.xml when both are present', done => {
+    it('should list both system.xml and capacity.xml when both are present', async () => {
         const metricsDate = '2026-03-26T19:00:08.996Z';
         utilizationStub.callsArgWith(4, null, { bytesTotal: 123456789, date: metricsDate });
 
         const request = createRequest();
         const response = createResponse();
 
-        listVeeamFiles(request, response, bucketMd, log);
+        await listVeeamFiles(request, response, bucketMd, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            assert(utilizationStub.calledOnce, 'should call UtilizationService once');
-            assert(response.writeHead.calledWith(200), 'should return 200');
-            assert(response.end.called, 'response should be ended');
-            done();
-        });
+        assert(utilizationStub.calledOnce, 'should call UtilizationService once');
+        assert(response.writeHead.calledWith(200), 'should return 200');
+        assert(response.end.called, 'response should be ended');
     });
 
-    it('should handle 404 from UtilizationService on LIST and return 200', done => {
+    it('should handle 404 from UtilizationService on LIST and return 200', async () => {
         const error404 = new Error('Not Found');
         error404.response = { status: 404 };
         utilizationStub.callsArgWith(4, error404);
@@ -574,21 +528,18 @@ describe('Veeam routes - LIST request handling', () => {
         const request = createRequest();
         const response = createResponse();
 
-        listVeeamFiles(request, response, bucketMd, log);
+        await listVeeamFiles(request, response, bucketMd, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            assert(logWarnSpy.calledOnce, 'log.warn should have been called once');
-            const warnCall = logWarnSpy.getCall(0);
-            assert(warnCall.args[0].includes('UtilizationService returned 404'),
-                'warning message should mention 404');
-            assert.strictEqual(warnCall.args[1].method, 'listVeeamFiles');
-            assert(response.writeHead.calledWith(200), 'should return 200 despite 404');
-            assert(response.end.called, 'response should be ended');
-            done();
-        });
+        assert(logWarnSpy.calledOnce, 'log.warn should have been called once');
+        const warnCall = logWarnSpy.getCall(0);
+        assert(warnCall.args[0].includes('UtilizationService returned 404'),
+            'warning message should mention 404');
+        assert.strictEqual(warnCall.args[1].method, 'listVeeamFiles');
+        assert(response.writeHead.calledWith(200), 'should return 200 despite 404');
+        assert(response.end.called, 'response should be ended');
     });
 
-    it('should handle non-404 error from UtilizationService on LIST and return 500', done => {
+    it('should handle non-404 error from UtilizationService on LIST and return 500', async () => {
         const error500 = new Error('Internal Server Error');
         error500.response = { status: 500 };
         utilizationStub.callsArgWith(4, error500);
@@ -596,80 +547,68 @@ describe('Veeam routes - LIST request handling', () => {
         const request = createRequest();
         const response = createResponse();
 
-        listVeeamFiles(request, response, bucketMd, log);
+        await listVeeamFiles(request, response, bucketMd, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            assert(response.end.called, 'response should be ended');
-            done();
-        });
+        assert(response.end.called, 'response should be ended');
     });
 
-    it('should handle versions query parameter', done => {
+    it('should handle versions query parameter', async () => {
         utilizationStub.callsArgWith(4, null, { bytesTotal: 0, date: new Date().toISOString() });
 
         const request = createRequest({ versions: '' });
         const response = createResponse();
 
-        listVeeamFiles(request, response, bucketMd, log);
+        await listVeeamFiles(request, response, bucketMd, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            assert(response.writeHead.calledWith(200), 'should return 200 for versions query');
-            assert(response.end.called, 'response should be ended');
-            done();
-        });
+        assert(response.writeHead.calledWith(200), 'should return 200 for versions query');
+        assert(response.end.called, 'response should be ended');
     });
 
-    it('should return error for invalid query parameters', done => {
+    it('should return error for invalid query parameters', async () => {
         const request = createRequest({ 'invalid-param': 'value' });
         const response = createResponse();
 
-        listVeeamFiles(request, response, bucketMd, log);
+        await listVeeamFiles(request, response, bucketMd, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            // Should return error for invalid query parameter
-            assert(response.end.called, 'response should be ended');
-            done();
-        });
+        // Should return error for invalid query parameter
+        assert(response.end.called, 'response should be ended');
     });
 
-    it('should handle missing bucket metadata', done => {
+    it('should handle missing bucket metadata', async () => {
         const request = createRequest();
         const response = createResponse();
 
-        listVeeamFiles(request, response, null, log);
+        await listVeeamFiles(request, response, null, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
-            assert(response.writeHead.calledWith(404), 'should return 404');
-            assert(response.end.called, 'response should be ended');
-            done();
-        });
+        assert(response.writeHead.calledWith(404), 'should return 404');
+        assert(response.end.called, 'response should be ended');
     });
 
-    it('should list only available files when only SystemInfo is present, without calling UtilizationService', done => {
-        const bucketMdOnlySystem = {
-            ...bucketMd,
-            _capabilities: {
-                VeeamSOSApi: {
-                    SystemInfo: {
-                        ProtocolVersion: '1.0',
-                        ModelName: 'ARTESCA',
-                        LastModified: '2024-01-01T00:00:00.000Z',
+    it(
+        'should list only available files when only SystemInfo is present, without calling UtilizationService',
+        async () => {
+            const bucketMdOnlySystem = {
+                ...bucketMd,
+                _capabilities: {
+                    VeeamSOSApi: {
+                        SystemInfo: {
+                            ProtocolVersion: '1.0',
+                            ModelName: 'ARTESCA',
+                            LastModified: '2024-01-01T00:00:00.000Z',
+                        },
                     },
                 },
-            },
-        };
-        metadataStub.callsArgWith(2, null, bucketMdOnlySystem);
+            };
+            metadataStub.callsArgWith(2, null, bucketMdOnlySystem);
 
-        const request = createRequest();
-        const response = createResponse();
+            const request = createRequest();
+            const response = createResponse();
 
-        listVeeamFiles(request, response, bucketMdOnlySystem, log);
+            await listVeeamFiles(request, response, bucketMdOnlySystem, log);
 
-        giveAsyncCallbackTimeToExecute(() => {
             assert(!utilizationStub.called, 'should not call UtilizationService without CapacityInfo');
             assert(response.writeHead.calledWith(200), 'should return 200');
             assert(response.end.called, 'response should be ended');
-            done();
-        });
-    });
+        },
+    );
 });
