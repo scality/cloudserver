@@ -88,7 +88,7 @@ services:
   localkms:
     network_mode: "host"
     profiles: ['localkms']
-    image: ${KMS_IMAGE:-nsmithuk/local-kms:3.11.7}
+    image: ${KMS_IMAGE:-nsmithuk/local-kms:3.12.0}
   mongo:
     network_mode: "host"
     profiles: ['mongo', 'ceph']
