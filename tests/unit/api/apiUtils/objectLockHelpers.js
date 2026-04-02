@@ -172,7 +172,7 @@ describe('objectLockHelpers: calculateRetainUntilDate', () => {
         };
         const date = moment();
         const expectedRetainUntilDate
-            = date.add(mockConfigWithYears.years * 365, 'days');
+            = date.add(mockConfigWithYears.years * 365 * 86400000, 'ms');
         const retainUntilDate = calculateRetainUntilDate(mockConfigWithYears);
         assert.strictEqual(retainUntilDate.slice(0, 16),
             expectedRetainUntilDate.toISOString().slice(0, 16));
