@@ -1231,6 +1231,46 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual('loggingEnabled' in loggedData, true);
         });
 
+        it('should log aclRequired as Yes when set on request', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {
+                    aclRequired: 'Yes',
+                },
+                headers: {},
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {},
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+            assert.strictEqual(loggedData.aclRequired, 'Yes');
+        });
+
+        it('should omit aclRequired when not set on request', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {},
+                headers: {},
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {},
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+            assert.strictEqual('aclRequired' in loggedData, false);
+        });
+
         it('should include error code when present', () => {
             setServerAccessLogger(mockLogger);
             const req = {

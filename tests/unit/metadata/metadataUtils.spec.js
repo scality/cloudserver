@@ -18,6 +18,7 @@ const {
     validateBucket,
     metadataGetObjects,
     metadataGetObject,
+    storeServerAccessLogInfo,
 } = require('../../../lib/metadata/metadataUtils');
 const metadata = require('../../../lib/metadata/wrapper');
 
@@ -148,5 +149,37 @@ describe('metadataGetObject', () => {
             assert.deepStrictEqual(result, metadataObj);
             done();
         });
+    });
+});
+
+describe('storeServerAccessLogInfo - copySource aclRequired', () => {
+    it('should move source aclRequired to sourceServerAccessLog and restore destination value', () => {
+        // Destination auth set aclRequired='Yes', then source auth ran on the
+        // same request object and did not set aclRequired (owner on source).
+        const request = {
+            serverAccessLog: {},
+        };
+        const options = {
+            copySource: true,
+            savedAclRequired: 'Yes',
+        };
+        storeServerAccessLogInfo(request, null, null, options);
+        assert.strictEqual(request.sourceServerAccessLog.aclRequired, undefined);
+        assert.strictEqual(request.serverAccessLog.aclRequired, 'Yes');
+    });
+
+    it('should swap aclRequired when source auth also required ACL check', () => {
+        // Destination auth did not set aclRequired (owner on dest), then
+        // source auth set aclRequired='Yes' on the same request object.
+        const request = {
+            serverAccessLog: { aclRequired: 'Yes' },
+        };
+        const options = {
+            copySource: true,
+            savedAclRequired: undefined,
+        };
+        storeServerAccessLogInfo(request, null, null, options);
+        assert.strictEqual(request.sourceServerAccessLog.aclRequired, 'Yes');
+        assert.strictEqual(request.serverAccessLog.aclRequired, undefined);
     });
 });
