@@ -9,8 +9,8 @@ const constants = require('../../../../../constants');
 
 describe('Rate limit cleanup job', () => {
     let mockLog;
-    let setIntervalSpy;
-    let clearIntervalSpy;
+    let setTimeoutSpy;
+    let clearTimeoutSpy;
 
     beforeEach(() => {
         mockLog = {
@@ -18,14 +18,14 @@ describe('Rate limit cleanup job', () => {
             warn: sinon.stub(),
             debug: sinon.stub(),
         };
-        setIntervalSpy = sinon.spy(global, 'setInterval');
-        clearIntervalSpy = sinon.spy(global, 'clearInterval');
+        setTimeoutSpy = sinon.spy(global, 'setTimeout');
+        clearTimeoutSpy = sinon.spy(global, 'clearTimeout');
     });
 
     afterEach(() => {
         stopCleanupJob();
-        setIntervalSpy.restore();
-        clearIntervalSpy.restore();
+        setTimeoutSpy.restore();
+        clearTimeoutSpy.restore();
     });
 
     it('should start cleanup job successfully', () => {
@@ -35,22 +35,22 @@ describe('Rate limit cleanup job', () => {
         assert(mockLog.info.calledWith('Starting rate limit cleanup job', {
             interval: constants.rateLimitCleanupInterval,
         }));
-        assert(setIntervalSpy.calledOnce);
-        assert.strictEqual(setIntervalSpy.firstCall.args[1], constants.rateLimitCleanupInterval);
+        assert(setTimeoutSpy.calledOnce);
+        assert.strictEqual(setTimeoutSpy.firstCall.args[1], constants.rateLimitCleanupInterval);
     });
 
     it('should not start cleanup job if already running', () => {
         startCleanupJob(mockLog, { skipUnref: true });
         mockLog.info.resetHistory();
         mockLog.warn.resetHistory();
-        setIntervalSpy.resetHistory();
+        setTimeoutSpy.resetHistory();
 
         startCleanupJob(mockLog, { skipUnref: true });
 
         assert(mockLog.warn.calledOnce);
         assert(mockLog.warn.calledWith('Rate limit cleanup job already running'));
         assert(mockLog.info.notCalled);
-        assert(setIntervalSpy.notCalled);
+        assert(setTimeoutSpy.notCalled);
     });
 
     it('should stop cleanup job successfully', () => {
@@ -61,36 +61,36 @@ describe('Rate limit cleanup job', () => {
 
         assert(mockLog.info.calledOnce);
         assert(mockLog.info.calledWith('Stopped rate limit cleanup job'));
-        assert(clearIntervalSpy.calledOnce);
+        assert(clearTimeoutSpy.calledOnce);
     });
 
     it('should not error when stopping cleanup job that is not running', () => {
         assert.doesNotThrow(() => {
             stopCleanupJob(mockLog);
         });
-        assert(clearIntervalSpy.notCalled);
+        assert(clearTimeoutSpy.notCalled);
     });
 
     it('should allow restarting cleanup job after stopping', () => {
         startCleanupJob(mockLog, { skipUnref: true });
-        assert(setIntervalSpy.calledOnce);
+        assert(setTimeoutSpy.calledOnce);
 
         stopCleanupJob(mockLog);
-        assert(clearIntervalSpy.calledOnce);
+        assert(clearTimeoutSpy.calledOnce);
 
-        setIntervalSpy.resetHistory();
-        clearIntervalSpy.resetHistory();
+        setTimeoutSpy.resetHistory();
+        clearTimeoutSpy.resetHistory();
         mockLog.info.resetHistory();
 
         startCleanupJob(mockLog, { skipUnref: true });
-        assert(setIntervalSpy.calledOnce);
+        assert(setTimeoutSpy.calledOnce);
         assert(mockLog.info.calledOnce);
     });
 
     it('should call unref() on interval by default', () => {
         const mockUnref = sinon.stub();
-        setIntervalSpy.restore();
-        setIntervalSpy = sinon.stub(global, 'setInterval').returns({
+        setTimeoutSpy.restore();
+        setTimeoutSpy = sinon.stub(global, 'setTimeout').returns({
             unref: mockUnref,
         });
 
@@ -99,13 +99,13 @@ describe('Rate limit cleanup job', () => {
         assert(mockUnref.calledOnce);
 
         stopCleanupJob(mockLog);
-        setIntervalSpy.restore();
+        setTimeoutSpy.restore();
     });
 
     it('should not call unref() when skipUnref is true', () => {
         const mockUnref = sinon.stub();
-        setIntervalSpy.restore();
-        setIntervalSpy = sinon.stub(global, 'setInterval').returns({
+        setTimeoutSpy.restore();
+        setTimeoutSpy = sinon.stub(global, 'setTimeout').returns({
             unref: mockUnref,
         });
 
@@ -114,6 +114,6 @@ describe('Rate limit cleanup job', () => {
         assert(mockUnref.notCalled);
 
         stopCleanupJob(mockLog);
-        setIntervalSpy.restore();
+        setTimeoutSpy.restore();
     });
 });
