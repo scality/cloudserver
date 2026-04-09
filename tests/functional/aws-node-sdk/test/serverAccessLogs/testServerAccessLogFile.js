@@ -177,7 +177,7 @@ describe('Server Access Logs - File Output', async () => {
             'authenticationType': 'AuthHeader', // STATIC
             // 'hostHeader': '', // UNKNOWN
             'tlsVersion': null, // TODO: Add https tests.
-            'aclRequired': null, // TODO: Add https tests.
+            'aclRequired': null, // DYNAMIC (absent for owner, "Yes" when ACL is consulted)
             'bucketOwner': '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be', // DYNAMIC
             bucketName, // DYNAMIC
             // 'req_id': '', // UNKNOWN
