@@ -987,4 +987,31 @@ describe('Config', () => {
             assert.throws(() => new ConfigObject());
         });
     });
+
+    describe('serverHeader', () => {
+        let sandbox;
+        let readFileStub;
+
+        beforeEach(() => {
+            sandbox = sinon.createSandbox();
+            readFileStub = sandbox.stub(fs, 'readFileSync');
+            readFileStub.callThrough();
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+        });
+
+        it('should default to "S3 Server" when not configured', () => {
+            const config = new ConfigObject();
+            assert.strictEqual(config.serverHeader, 'S3 Server');
+        });
+
+        it('should use the configured value when set', () => {
+            const modifiedConfig = { ...defaultConfig, serverHeader: 'ScalityS3' };
+            readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(modifiedConfig));
+            const config = new ConfigObject();
+            assert.strictEqual(config.serverHeader, 'ScalityS3');
+        });
+    });
 });
