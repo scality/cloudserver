@@ -2,13 +2,28 @@ name: Code Review
 
 on:
   pull_request:
+    types: [opened, synchronize, labeled, unlabeled]
+  pull_request_target:
     types: [opened, synchronize]
 
 jobs:
   review:
+    if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
     uses: scality/workflows/.github/workflows/claude-code-review.yml@v2
     secrets:
       GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
       GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       ANTHROPIC_VERTEX_PROJECT_ID: ${{ secrets.ANTHROPIC_VERTEX_PROJECT_ID }}
       CLOUD_ML_REGION: ${{ secrets.CLOUD_ML_REGION }}
+
+  review-dependency-bump:
+    if: github.event_name == 'pull_request_target' && github.actor == 'dependabot[bot]'
+    uses: scality/workflows/.github/workflows/claude-code-dependency-review.yml@v2
+    with:
+      ACTIONS_APP_ID: ${{ vars.ACTIONS_APP_ID }}
+    secrets:
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      ANTHROPIC_VERTEX_PROJECT_ID: ${{ secrets.ANTHROPIC_VERTEX_PROJECT_ID }}
+      CLOUD_ML_REGION: ${{ secrets.CLOUD_ML_REGION }}
+      ACTIONS_APP_PRIVATE_KEY: ${{ secrets.ACTIONS_APP_PRIVATE_KEY }}
