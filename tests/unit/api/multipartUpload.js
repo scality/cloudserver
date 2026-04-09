@@ -3295,3 +3295,195 @@ describe('objectPutPart checksum response headers', () => {
         });
     });
 });
+
+describe('initiateMultipartUpload checksum headers', () => {
+    const simpleBucketPutRequest = {
+        bucketName,
+        namespace,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        url: '/',
+        actionImplicitDenies: false,
+    };
+
+    beforeEach(done => {
+        cleanup();
+        bucketPut(authInfo, simpleBucketPutRequest, log, done);
+    });
+
+    afterEach(() => cleanup());
+
+    function initiateMPU(headers, cb) {
+        const request = {
+            ...initiateRequest,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                ...headers,
+            },
+        };
+        initiateMultipartUpload(authInfo, request, log, cb);
+    }
+
+    function getMPUOverviewMD() {
+        const mpuKeys = metadata.keyMaps.get(mpuBucket);
+        const key = mpuKeys.keys().next().value;
+        return mpuKeys.get(key);
+    }
+
+    describe('no checksum headers', () => {
+        it('should not return checksum response headers', done => {
+            initiateMPU({}, (err, _xml, headers) => {
+                assert.ifError(err);
+                assert.strictEqual(headers['x-amz-checksum-algorithm'], undefined);
+                assert.strictEqual(headers['x-amz-checksum-type'], undefined);
+                done();
+            });
+        });
+
+        it('should store default crc64nvme in MPU metadata', done => {
+            initiateMPU({}, err => {
+                assert.ifError(err);
+                const md = getMPUOverviewMD();
+                assert.strictEqual(md.checksumAlgorithm, 'crc64nvme');
+                assert.strictEqual(md.checksumType, 'FULL_OBJECT');
+                assert.strictEqual(md.checksumIsDefault, true);
+                done();
+            });
+        });
+    });
+
+    describe('valid algorithm only', () => {
+        const cases = [
+            { algo: 'CRC32', expectedType: 'COMPOSITE' },
+            { algo: 'CRC32C', expectedType: 'COMPOSITE' },
+            { algo: 'CRC64NVME', expectedType: 'FULL_OBJECT' },
+            { algo: 'SHA1', expectedType: 'COMPOSITE' },
+            { algo: 'SHA256', expectedType: 'COMPOSITE' },
+        ];
+
+        cases.forEach(({ algo, expectedType }) => {
+            it(`should return checksum headers for ${algo}`, done => {
+                initiateMPU({ 'x-amz-checksum-algorithm': algo }, (err, _xml, headers) => {
+                    assert.ifError(err);
+                    assert.strictEqual(headers['x-amz-checksum-algorithm'], algo);
+                    assert.strictEqual(headers['x-amz-checksum-type'], expectedType);
+                    done();
+                });
+            });
+
+            it(`should store ${algo} in MPU metadata with default type ${expectedType}`, done => {
+                initiateMPU({ 'x-amz-checksum-algorithm': algo }, err => {
+                    assert.ifError(err);
+                    const md = getMPUOverviewMD();
+                    assert.strictEqual(md.checksumAlgorithm, algo.toLowerCase());
+                    assert.strictEqual(md.checksumType, expectedType);
+                    assert.strictEqual(md.checksumIsDefault, false);
+                    done();
+                });
+            });
+        });
+
+        it('should accept lowercase algorithm header', done => {
+            initiateMPU({ 'x-amz-checksum-algorithm': 'crc32' }, (err, _xml, headers) => {
+                assert.ifError(err);
+                assert.strictEqual(headers['x-amz-checksum-algorithm'], 'CRC32');
+                assert.strictEqual(headers['x-amz-checksum-type'], 'COMPOSITE');
+                done();
+            });
+        });
+    });
+
+    describe('valid algorithm + type', () => {
+        const validCombos = [
+            ['CRC32', 'FULL_OBJECT'],
+            ['CRC32', 'COMPOSITE'],
+            ['CRC32C', 'FULL_OBJECT'],
+            ['CRC32C', 'COMPOSITE'],
+            ['CRC64NVME', 'FULL_OBJECT'],
+            ['SHA1', 'COMPOSITE'],
+            ['SHA256', 'COMPOSITE'],
+        ];
+
+        validCombos.forEach(([algo, type]) => {
+            it(`should accept ${algo} + ${type}`, done => {
+                initiateMPU({
+                    'x-amz-checksum-algorithm': algo,
+                    'x-amz-checksum-type': type,
+                }, (err, _xml, headers) => {
+                    assert.ifError(err);
+                    assert.strictEqual(headers['x-amz-checksum-algorithm'], algo);
+                    assert.strictEqual(headers['x-amz-checksum-type'], type);
+                    done();
+                });
+            });
+        });
+
+        it('should store checksumIsDefault as false in MPU metadata', done => {
+            initiateMPU({
+                'x-amz-checksum-algorithm': 'CRC32',
+                'x-amz-checksum-type': 'COMPOSITE',
+            }, err => {
+                assert.ifError(err);
+                const md = getMPUOverviewMD();
+                assert.strictEqual(md.checksumIsDefault, false);
+                done();
+            });
+        });
+    });
+
+    describe('error cases', () => {
+        it('should reject unknown algorithm', done => {
+            initiateMPU({ 'x-amz-checksum-algorithm': 'MD4' }, err => {
+                assert.strictEqual(err.message, 'InvalidRequest');
+                done();
+            });
+        });
+
+        it('should reject unknown type', done => {
+            initiateMPU({
+                'x-amz-checksum-algorithm': 'CRC32',
+                'x-amz-checksum-type': 'BADTYPE',
+            }, err => {
+                assert.strictEqual(err.message, 'InvalidRequest');
+                done();
+            });
+        });
+
+        it('should reject type without algorithm', done => {
+            initiateMPU({ 'x-amz-checksum-type': 'COMPOSITE' }, err => {
+                assert.strictEqual(err.message, 'InvalidRequest');
+                done();
+            });
+        });
+
+        it('should reject FULL_OBJECT with SHA256', done => {
+            initiateMPU({
+                'x-amz-checksum-algorithm': 'SHA256',
+                'x-amz-checksum-type': 'FULL_OBJECT',
+            }, err => {
+                assert.strictEqual(err.message, 'InvalidRequest');
+                done();
+            });
+        });
+
+        it('should reject COMPOSITE with CRC64NVME', done => {
+            initiateMPU({
+                'x-amz-checksum-algorithm': 'CRC64NVME',
+                'x-amz-checksum-type': 'COMPOSITE',
+            }, err => {
+                assert.strictEqual(err.message, 'InvalidRequest');
+                done();
+            });
+        });
+
+        it('should return algorithm error before type error when both are invalid', done => {
+            initiateMPU({
+                'x-amz-checksum-algorithm': 'INVALID',
+                'x-amz-checksum-type': 'BADTYPE',
+            }, err => {
+                assert.strictEqual(err.message, 'InvalidRequest');
+                assert(err.description.includes('algorithm'));
+                done();
+            });
+        });
+    });
+});
