@@ -131,6 +131,22 @@ if (config.healthChecks.enableInternalRoute) {
     });
 }
 
+describe('Server response header', () => {
+    it('should return the configured serverHeader value on S3 API responses', done => {
+        const getOptions = deepCopy(options);
+        getOptions.method = 'GET';
+        getOptions.path = '/';
+        getOptions.port = config.port || 8000;
+        getOptions.agent = makeAgent();
+        const req = transport.request(getOptions, res => {
+            assert.strictEqual(res.headers['server'], config.serverHeader);
+            done();
+        });
+        req.on('error', done);
+        req.end();
+    });
+});
+
 describe('Healthcheck stats', () => {
     const totalReqs = 5;
     beforeEach(done => {
