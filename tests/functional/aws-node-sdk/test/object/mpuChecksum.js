@@ -3,6 +3,7 @@ const {
     CreateBucketCommand,
     CreateMultipartUploadCommand,
     AbortMultipartUploadCommand,
+    ListMultipartUploadsCommand,
     DeleteBucketCommand,
 } = require('@aws-sdk/client-s3');
 
@@ -32,23 +33,26 @@ describe('CreateMultipartUpload checksum headers', () =>
             let res;
 
             before(async () => {
-                res = await s3.send(new CreateMultipartUploadCommand({
-                    Bucket: bucket,
-                    Key: key,
-                }));
+                res = await s3.send(new CreateMultipartUploadCommand({ Bucket: bucket, Key: key }));
             });
 
             after(async () => {
                 await s3.send(new AbortMultipartUploadCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    UploadId: res.UploadId,
+                    Bucket: bucket, Key: key, UploadId: res.UploadId,
                 }));
             });
 
             it('should not return ChecksumAlgorithm and ChecksumType', () => {
                 assert.strictEqual(res.ChecksumAlgorithm, undefined);
                 assert.strictEqual(res.ChecksumType, undefined);
+            });
+
+            it('should not include ChecksumAlgorithm or ChecksumType in ListMultipartUploads', async () => {
+                const { Uploads } = await s3.send(new ListMultipartUploadsCommand({ Bucket: bucket }));
+                const upload = Uploads.find(u => u.UploadId === res.UploadId);
+                assert(upload, 'upload not found in listing');
+                assert.strictEqual(upload.ChecksumAlgorithm, undefined);
+                assert.strictEqual(upload.ChecksumType, undefined);
             });
         });
 
@@ -67,24 +71,27 @@ describe('CreateMultipartUpload checksum headers', () =>
 
                     before(async () => {
                         res = await s3.send(new CreateMultipartUploadCommand({
-                            Bucket: bucket,
-                            Key: key,
-                            ChecksumAlgorithm: algo,
+                            Bucket: bucket, Key: key, ChecksumAlgorithm: algo,
                         }));
                     });
 
                     after(async () => {
                         await s3.send(new AbortMultipartUploadCommand({
-                            Bucket: bucket,
-                            Key: key,
-                            UploadId: res.UploadId,
+                            Bucket: bucket, Key: key, UploadId: res.UploadId,
                         }));
                     });
 
-                    it(`should return ChecksumAlgorithm ${algo} and ` +
-                       `default ChecksumType to ${expectedType}`, () => {
+                    it(`should return ChecksumAlgorithm ${algo} and default ChecksumType to ${expectedType}`, () => {
                         assert.strictEqual(res.ChecksumAlgorithm, algo);
                         assert.strictEqual(res.ChecksumType, expectedType);
+                    });
+
+                    it(`should include ${algo}/${expectedType} in ListMultipartUploads`, async () => {
+                        const { Uploads } = await s3.send(new ListMultipartUploadsCommand({ Bucket: bucket }));
+                        const upload = Uploads.find(u => u.UploadId === res.UploadId);
+                        assert(upload, 'upload not found in listing');
+                        assert.strictEqual(upload.ChecksumAlgorithm, algo);
+                        assert.strictEqual(upload.ChecksumType, expectedType);
                     });
                 });
             });
@@ -107,25 +114,27 @@ describe('CreateMultipartUpload checksum headers', () =>
 
                     before(async () => {
                         res = await s3.send(new CreateMultipartUploadCommand({
-                            Bucket: bucket,
-                            Key: key,
-                            ChecksumAlgorithm: algo,
-                            ChecksumType: type,
+                            Bucket: bucket, Key: key, ChecksumAlgorithm: algo, ChecksumType: type,
                         }));
                     });
 
                     after(async () => {
                         await s3.send(new AbortMultipartUploadCommand({
-                            Bucket: bucket,
-                            Key: key,
-                            UploadId: res.UploadId,
+                            Bucket: bucket, Key: key, UploadId: res.UploadId,
                         }));
                     });
 
-                    it(`should return ChecksumAlgorithm ${algo} and ` +
-                       `ChecksumType ${type}`, () => {
+                    it(`should return ChecksumAlgorithm ${algo} and ChecksumType ${type}`, () => {
                         assert.strictEqual(res.ChecksumAlgorithm, algo);
                         assert.strictEqual(res.ChecksumType, type);
+                    });
+
+                    it(`should include ${algo}/${type} in ListMultipartUploads`, async () => {
+                        const { Uploads } = await s3.send(new ListMultipartUploadsCommand({ Bucket: bucket }));
+                        const upload = Uploads.find(u => u.UploadId === res.UploadId);
+                        assert(upload, 'upload not found in listing');
+                        assert.strictEqual(upload.ChecksumAlgorithm, algo);
+                        assert.strictEqual(upload.ChecksumType, type);
                     });
                 });
             });
@@ -135,10 +144,7 @@ describe('CreateMultipartUpload checksum headers', () =>
             it('should reject FULL_OBJECT with SHA256', async () => {
                 try {
                     await s3.send(new CreateMultipartUploadCommand({
-                        Bucket: bucket,
-                        Key: key,
-                        ChecksumAlgorithm: 'SHA256',
-                        ChecksumType: 'FULL_OBJECT',
+                        Bucket: bucket, Key: key, ChecksumAlgorithm: 'SHA256', ChecksumType: 'FULL_OBJECT',
                     }));
                     assert.fail('Expected error');
                 } catch (err) {
@@ -149,10 +155,7 @@ describe('CreateMultipartUpload checksum headers', () =>
             it('should reject FULL_OBJECT with SHA1', async () => {
                 try {
                     await s3.send(new CreateMultipartUploadCommand({
-                        Bucket: bucket,
-                        Key: key,
-                        ChecksumAlgorithm: 'SHA1',
-                        ChecksumType: 'FULL_OBJECT',
+                        Bucket: bucket, Key: key, ChecksumAlgorithm: 'SHA1', ChecksumType: 'FULL_OBJECT',
                     }));
                     assert.fail('Expected error');
                 } catch (err) {
@@ -163,10 +166,7 @@ describe('CreateMultipartUpload checksum headers', () =>
             it('should reject COMPOSITE with CRC64NVME', async () => {
                 try {
                     await s3.send(new CreateMultipartUploadCommand({
-                        Bucket: bucket,
-                        Key: key,
-                        ChecksumAlgorithm: 'CRC64NVME',
-                        ChecksumType: 'COMPOSITE',
+                        Bucket: bucket, Key: key, ChecksumAlgorithm: 'CRC64NVME', ChecksumType: 'COMPOSITE',
                     }));
                     assert.fail('Expected error');
                 } catch (err) {
