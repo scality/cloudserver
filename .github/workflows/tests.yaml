@@ -241,6 +241,20 @@ jobs:
           cache-from: type=gha,scope=mongodb
           cache-to: type=gha,mode=max,scope=mongodb
 
+      - name: Install Oras
+        run: |
+          curl -L https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz | \
+            tar -xz -C /usr/local/bin oras
+        env:
+          ORAS_VERSION: 1.2.2
+
+      - name: Push dashboards
+        run: |
+          oras push ghcr.io/${{ github.repository }}/${{ github.event.repository.name }}-dashboards:${{ github.sha }} \
+            dashboard.json:application/grafana-dashboard+json \
+            alerts.yaml:application/prometheus-alerts+yaml
+        working-directory: monitoring
+
   multiple-backend:
     runs-on: ubuntu-24.04
     needs: build
