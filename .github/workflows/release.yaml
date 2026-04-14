@@ -95,7 +95,7 @@ jobs:
     if: github.repository_owner == 'scality'
     steps:
       - name: Generate GitHub App Token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         id: app-token
         with:
           app-id: ${{ vars.ACTIONS_APP_ID }}
