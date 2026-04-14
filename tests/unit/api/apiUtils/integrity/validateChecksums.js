@@ -9,6 +9,7 @@ const {
     checksumedMethods,
     getChecksumDataFromHeaders,
     arsenalErrorFromChecksumError,
+    getChecksumDataFromMPUHeaders,
 } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
 const { errors: ArsenalErrors } = require('arsenal');
 const { config } = require('../../../../../lib/Config');
@@ -731,5 +732,184 @@ describe('arsenalErrorFromChecksumError', () => {
     it('should return BadDigest for unknown error type (default)', () => {
         const result = arsenalErrorFromChecksumError({ error: 'SomeUnknownError', details: null });
         assert.deepStrictEqual(result, ArsenalErrors.BadDigest);
+    });
+
+    it('should return InvalidRequest for MPUAlgoNotSupported', () => {
+        const result = arsenalErrorFromChecksumError({
+            error: ChecksumError.MPUAlgoNotSupported,
+            details: { algorithm: 'md4' },
+        });
+        assert.strictEqual(result.message, 'InvalidRequest');
+        assert.match(result.description, /\[CRC32, CRC32C, CRC64NVME, SHA1, SHA256\]/);
+    });
+
+    it('should return InvalidRequest for MPUTypeInvalid', () => {
+        const result = arsenalErrorFromChecksumError({
+            error: ChecksumError.MPUTypeInvalid,
+            details: { type: 'BADTYPE' },
+        });
+        assert.strictEqual(result.message, 'InvalidRequest');
+        assert.strictEqual(result.description,
+            'Value for x-amz-checksum-type header is invalid.');
+    });
+
+    it('should return InvalidRequest for MPUTypeWithoutAlgo', () => {
+        const result = arsenalErrorFromChecksumError({
+            error: ChecksumError.MPUTypeWithoutAlgo,
+            details: { type: 'COMPOSITE' },
+        });
+        assert.strictEqual(result.message, 'InvalidRequest');
+        assert.match(result.description,
+            /x-amz-checksum-type header can only be used with the x-amz-checksum-algorithm header/);
+    });
+
+    it('should return InvalidRequest for MPUInvalidCombination mentioning type and algorithm', () => {
+        const result = arsenalErrorFromChecksumError({
+            error: ChecksumError.MPUInvalidCombination,
+            details: { algorithm: 'sha256', type: 'FULL_OBJECT' },
+        });
+        assert.strictEqual(result.message, 'InvalidRequest');
+        assert.strictEqual(result.description,
+            'The FULL_OBJECT checksum type cannot be used with the SHA256 checksum algorithm.');
+    });
+});
+
+describe('getChecksumDataFromMPUHeaders', () => {
+    describe('no checksum headers (default)', () => {
+        it('should return crc64nvme/FULL_OBJECT with isDefault=true when no headers', () => {
+            const result = getChecksumDataFromMPUHeaders({});
+            assert.deepStrictEqual(result, {
+                algorithm: 'crc64nvme', type: 'FULL_OBJECT', isDefault: true,
+            });
+        });
+    });
+
+    describe('algorithm only (no type header)', () => {
+        const algoDefaults = {
+            crc32: 'COMPOSITE',
+            crc32c: 'COMPOSITE',
+            crc64nvme: 'FULL_OBJECT',
+            sha1: 'COMPOSITE',
+            sha256: 'COMPOSITE',
+        };
+
+        for (const [algo, expectedType] of Object.entries(algoDefaults)) {
+            it(`should default to ${expectedType} for ${algo}`, () => {
+                const result = getChecksumDataFromMPUHeaders({
+                    'x-amz-checksum-algorithm': algo,
+                });
+                assert.deepStrictEqual(result, {
+                    algorithm: algo, type: expectedType, isDefault: false,
+                });
+            });
+        }
+
+        it('should accept uppercase algorithm (CRC32) and normalize to lowercase', () => {
+            const result = getChecksumDataFromMPUHeaders({
+                'x-amz-checksum-algorithm': 'CRC32',
+            });
+            assert.deepStrictEqual(result, {
+                algorithm: 'crc32', type: 'COMPOSITE', isDefault: false,
+            });
+        });
+
+        it('should accept mixed case algorithm (Sha256) and normalize to lowercase', () => {
+            const result = getChecksumDataFromMPUHeaders({
+                'x-amz-checksum-algorithm': 'Sha256',
+            });
+            assert.deepStrictEqual(result, {
+                algorithm: 'sha256', type: 'COMPOSITE', isDefault: false,
+            });
+        });
+    });
+
+    describe('algorithm + type (valid combinations)', () => {
+        const validCombinations = [
+            ['crc32', 'FULL_OBJECT'],
+            ['crc32', 'COMPOSITE'],
+            ['crc32c', 'FULL_OBJECT'],
+            ['crc32c', 'COMPOSITE'],
+            ['crc64nvme', 'FULL_OBJECT'],
+            ['sha1', 'COMPOSITE'],
+            ['sha256', 'COMPOSITE'],
+        ];
+
+        for (const [algo, type] of validCombinations) {
+            it(`should accept ${algo} + ${type}`, () => {
+                const result = getChecksumDataFromMPUHeaders({
+                    'x-amz-checksum-algorithm': algo,
+                    'x-amz-checksum-type': type,
+                });
+                assert.deepStrictEqual(result, {
+                    algorithm: algo, type, isDefault: false,
+                });
+            });
+        }
+    });
+
+    describe('unknown algorithm', () => {
+        it('should return MPUAlgoNotSupported for unknown algorithm', () => {
+            const result = getChecksumDataFromMPUHeaders({
+                'x-amz-checksum-algorithm': 'md4',
+            });
+            assert.strictEqual(result.error, ChecksumError.MPUAlgoNotSupported);
+            assert.strictEqual(result.details.algorithm, 'md4');
+        });
+
+        it('should return MPUAlgoNotSupported even when type is also invalid', () => {
+            const result = getChecksumDataFromMPUHeaders({
+                'x-amz-checksum-algorithm': 'md4',
+                'x-amz-checksum-type': 'BADTYPE',
+            });
+            assert.strictEqual(result.error, ChecksumError.MPUAlgoNotSupported);
+        });
+    });
+
+    describe('unknown type', () => {
+        it('should return MPUTypeInvalid for unknown type value', () => {
+            const result = getChecksumDataFromMPUHeaders({
+                'x-amz-checksum-algorithm': 'crc32',
+                'x-amz-checksum-type': 'BADTYPE',
+            });
+            assert.strictEqual(result.error, ChecksumError.MPUTypeInvalid);
+            assert.strictEqual(result.details.type, 'BADTYPE');
+        });
+    });
+
+    describe('type without algorithm', () => {
+        it('should return MPUTypeWithoutAlgo when only type header is sent', () => {
+            const result = getChecksumDataFromMPUHeaders({
+                'x-amz-checksum-type': 'COMPOSITE',
+            });
+            assert.strictEqual(result.error, ChecksumError.MPUTypeWithoutAlgo);
+            assert.strictEqual(result.details.type, 'COMPOSITE');
+        });
+
+        it('should return MPUTypeWithoutAlgo even when type value is invalid', () => {
+            const result = getChecksumDataFromMPUHeaders({
+                'x-amz-checksum-type': 'BADTYPE',
+            });
+            assert.strictEqual(result.error, ChecksumError.MPUTypeWithoutAlgo);
+        });
+    });
+
+    describe('invalid algorithm + type combinations', () => {
+        const invalidCombinations = [
+            ['sha1', 'FULL_OBJECT'],
+            ['sha256', 'FULL_OBJECT'],
+            ['crc64nvme', 'COMPOSITE'],
+        ];
+
+        for (const [algo, type] of invalidCombinations) {
+            it(`should return MPUInvalidCombination for ${algo} + ${type}`, () => {
+                const result = getChecksumDataFromMPUHeaders({
+                    'x-amz-checksum-algorithm': algo,
+                    'x-amz-checksum-type': type,
+                });
+                assert.strictEqual(result.error, ChecksumError.MPUInvalidCombination);
+                assert.strictEqual(result.details.algorithm, algo);
+                assert.strictEqual(result.details.type, type);
+            });
+        }
     });
 });
