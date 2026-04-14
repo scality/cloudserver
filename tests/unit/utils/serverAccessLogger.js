@@ -276,6 +276,16 @@ describe('serverAccessLogger utility functions', () => {
             // Should return BACKBEAT instead of UNKNOWN
             assert.strictEqual(result, 'REST.GET.BACKBEAT');
         });
+
+        it('should return S3.EXPIRE.OBJECT for lifecycle expiration requests', () => {
+            const req = {
+                method: 'DELETE',
+                apiMethod: 'objectDelete',
+                serverAccessLog: { backbeat: true, expiration: true },
+            };
+            const result = getOperation(req);
+            assert.strictEqual(result, 'S3.EXPIRE.OBJECT');
+        });
     });
 
     describe('getRequester', () => {
@@ -1401,6 +1411,224 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.loggingTargetBucket, 'log-bucket');
             assert.strictEqual(loggedData.loggingTargetPrefix, 'logs/');
         });
+
+        it('should pass through loggingEnabled for lifecycle expiration', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {
+                    backbeat: true,
+                    expiration: true,
+                    enabled: true,
+                    loggingEnabled: {
+                        TargetBucket: 'log-bucket',
+                        TargetPrefix: 'logs/',
+                    },
+                },
+                method: 'DELETE',
+                apiMethod: 'objectDelete',
+                headers: {},
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {},
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+            assert.strictEqual(loggedData.loggingEnabled, true);
+            assert.strictEqual(loggedData.loggingTargetBucket, 'log-bucket');
+            assert.strictEqual(loggedData.loggingTargetPrefix, 'logs/');
+            assert.strictEqual(loggedData.operation, 'S3.EXPIRE.OBJECT');
+        });
+
+        it('should force loggingEnabled false for non-expiration backbeat', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {
+                    backbeat: true,
+                    enabled: true,
+                    loggingEnabled: {
+                        TargetBucket: 'log-bucket',
+                        TargetPrefix: 'logs/',
+                    },
+                },
+                method: 'PUT',
+                apiMethod: 'objectPut',
+                headers: {},
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {},
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+            assert.strictEqual(loggedData.loggingEnabled, false);
+        });
+
+        it('should not deliver lifecycle expiration log when bucket has no logging config', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {
+                    backbeat: true,
+                    expiration: true,
+                    enabled: false,
+                },
+                method: 'DELETE',
+                apiMethod: 'objectDelete',
+                headers: {},
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {},
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+            assert.strictEqual(loggedData.loggingEnabled, false);
+        });
+
+        it('should produce a complete log entry for lifecycle expiration', () => {
+            setServerAccessLogger(mockLogger);
+            const authInfo = {
+                getAccountDisplayName: () => 'lifecycleAccount',
+                getCanonicalID: () => 'lifecycle-canonical-id',
+                isRequesterPublicUser: () => false,
+                isRequesterAnIAMUser: () => false,
+                getAuthVersion: () => 'AWS4-HMAC-SHA256',
+                getAuthType: () => 'REST-HEADER',
+                getAccessKey: () => 'lifecycle-access-key',
+            };
+            const startTime = process.hrtime.bigint();
+            const startTurnAroundTime = startTime + 1_000_000n;
+            const endTurnAroundTime = startTurnAroundTime + 50_000_000n;
+            const onFinishEndTime = startTime + 100_000_000n;
+            const onCloseEndTime = startTime + 110_000_000n;
+
+            const req = {
+                serverAccessLog: {
+                    backbeat: true,
+                    expiration: true,
+                    enabled: true,
+                    loggingEnabled: {
+                        TargetBucket: 'log-bucket',
+                        TargetPrefix: 'access-logs/',
+                    },
+                    bucketOwner: 'bucket-owner-id',
+                    bucketName: 'source-bucket',
+                    objectKey: 'expired-object.txt',
+                    authInfo,
+                    analyticsAction: 'deleteObjectFromExpiration',
+                    analyticsAccountName: 'lifecycleAccount',
+                    analyticsUserName: '',
+                    startTime,
+                    startTimeUnixMS: Date.now(),
+                    startTurnAroundTime,
+                    onFinishEndTime,
+                    onCloseEndTime,
+                    objectSize: 1024,
+                    analyticsBytesDeleted: 1024,
+                },
+                method: 'DELETE',
+                apiMethod: 'objectDelete',
+                headers: { host: 'source-bucket.s3.amazonaws.com' },
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {
+                    endTurnAroundTime,
+                },
+                statusCode: 200,
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+
+            // Core expiration fields
+            assert.strictEqual(loggedData.operation, 'S3.EXPIRE.OBJECT');
+            assert.strictEqual(loggedData.loggingEnabled, true);
+            assert.strictEqual(loggedData.loggingTargetBucket, 'log-bucket');
+            assert.strictEqual(loggedData.loggingTargetPrefix, 'access-logs/');
+
+            // Bucket and object info
+            assert.strictEqual(loggedData.bucketOwner, 'bucket-owner-id');
+            assert.strictEqual(loggedData.bucketName, 'source-bucket');
+            assert.strictEqual(loggedData.objectKey, 'expired-object.txt');
+
+            // Requester is the lifecycle service, not the auth identity
+            assert.strictEqual(loggedData.requester, 'ScalityS3LifecycleService');
+
+            // Object size
+            assert.strictEqual(loggedData.objectSize, 1024);
+            assert.strictEqual(loggedData.bytesDeleted, 1024);
+
+            // HTTP-layer fields are null (internal operation, not an HTTP request)
+            assert.strictEqual(loggedData.clientIP, undefined);
+            assert.strictEqual(loggedData.requestURI, undefined);
+            assert.strictEqual(loggedData.httpCode, undefined);
+            assert.strictEqual(loggedData.bytesSent, undefined);
+            assert.strictEqual(loggedData.totalTime, undefined);
+            assert.strictEqual(loggedData.turnAroundTime, undefined);
+            assert.strictEqual(loggedData.signatureVersion, undefined);
+            assert.strictEqual(loggedData.authenticationType, undefined);
+            assert.strictEqual(loggedData.hostHeader, undefined);
+            assert.strictEqual(loggedData.awsAccessKeyID, undefined);
+        });
+
+        it('should log lifecycle expiration with error code on failure', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {
+                    backbeat: true,
+                    expiration: true,
+                    enabled: true,
+                    loggingEnabled: {
+                        TargetBucket: 'log-bucket',
+                        TargetPrefix: 'logs/',
+                    },
+                    bucketOwner: 'bucket-owner-id',
+                    bucketName: 'source-bucket',
+                    objectKey: 'expired-object.txt',
+                    startTime: process.hrtime.bigint(),
+                    startTimeUnixMS: Date.now(),
+                },
+                method: 'DELETE',
+                apiMethod: 'objectDelete',
+                headers: {},
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {
+                    errorCode: 'NoSuchKey',
+                    endTurnAroundTime: process.hrtime.bigint(),
+                },
+                statusCode: 404,
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+            assert.strictEqual(loggedData.operation, 'S3.EXPIRE.OBJECT');
+            assert.strictEqual(loggedData.loggingEnabled, true);
+            assert.strictEqual(loggedData.requester, 'ScalityS3LifecycleService');
+            assert.strictEqual(loggedData.errorCode, 'NoSuchKey');
+            assert.strictEqual(loggedData.httpCode, undefined);
+        });
+
     });
 });
 
