@@ -25,7 +25,7 @@ runs:
       run: |-
         set -exu;
         mkdir -p /tmp/coverage/${JOB_NAME}/;
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v6
       with:
         node-version: '22'
         cache: 'yarn'
@@ -35,11 +35,11 @@ runs:
     - name: install dependencies
       shell: bash
       run: yarn install --ignore-engines --frozen-lockfile --network-concurrency 1
-    - uses: actions/cache@v3
+    - uses: actions/cache@v5
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip
-    - uses: actions/setup-python@v4
+    - uses: actions/setup-python@v6
       with:
         python-version: 3.9
     - name: Setup python2 test environment
