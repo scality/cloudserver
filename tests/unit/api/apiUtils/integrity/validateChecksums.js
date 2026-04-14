@@ -740,7 +740,7 @@ describe('arsenalErrorFromChecksumError', () => {
             details: { algorithm: 'md4' },
         });
         assert.strictEqual(result.message, 'InvalidRequest');
-        assert(result.description.includes('[CRC32, CRC32C, CRC64NVME, SHA1, SHA256]'));
+        assert.match(result.description, /\[CRC32, CRC32C, CRC64NVME, SHA1, SHA256\]/);
     });
 
     it('should return InvalidRequest for MPUTypeInvalid', () => {
@@ -759,8 +759,8 @@ describe('arsenalErrorFromChecksumError', () => {
             details: { type: 'COMPOSITE' },
         });
         assert.strictEqual(result.message, 'InvalidRequest');
-        assert(result.description.includes(
-            'x-amz-checksum-type header can only be used with the x-amz-checksum-algorithm header'));
+        assert.match(result.description,
+            /x-amz-checksum-type header can only be used with the x-amz-checksum-algorithm header/);
     });
 
     it('should return InvalidRequest for MPUInvalidCombination mentioning type and algorithm', () => {

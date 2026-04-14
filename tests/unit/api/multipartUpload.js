@@ -3481,7 +3481,7 @@ describe('initiateMultipartUpload checksum headers', () => {
                 'x-amz-checksum-type': 'BADTYPE',
             }, err => {
                 assert.strictEqual(err.message, 'InvalidRequest');
-                assert(err.description.includes('algorithm'));
+                assert.match(err.description, /algorithm/);
                 done();
             });
         });
