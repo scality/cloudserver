@@ -79,8 +79,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
+      uses: actions/checkout@v6
+    - uses: actions/setup-node@v6
       with:
         node-version: '22'
         cache: yarn
@@ -89,7 +89,7 @@ jobs:
       run: yarn global add typescript@4.9.5
     - name: install dependencies
       run: yarn install --frozen-lockfile --network-concurrency 1
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.9'
         cache: pip
@@ -108,8 +108,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
+      uses: actions/checkout@v6
+    - uses: actions/setup-node@v6
       with:
         node-version: '22'
         cache: yarn
@@ -133,7 +133,7 @@ jobs:
         files: '**/junit/*junit*.xml'
         flags: unit
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v6
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         directory: ./coverage/test
@@ -161,20 +161,20 @@ jobs:
       packages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to GitHub Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
 
       - name: Build and push cloudserver image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           push: true
           context: .
@@ -189,7 +189,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=cloudserver
 
       - name: Build and push cloudserver image test coverage
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           push: true
           context: .
@@ -204,7 +204,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=cloudserver
 
       - name: Build and push federation image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           push: true
           context: images/federation
@@ -220,7 +220,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=federation
 
       - name: Build and push pykmip image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           push: true
           context: .github/pykmip
@@ -233,7 +233,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=pykmip
 
       - name: Build and push MongoDB
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           push: true
           context: .github/docker/mongodb
@@ -255,9 +255,9 @@ jobs:
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Login to Registry
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
@@ -316,7 +316,7 @@ jobs:
       S3_SERVER_ACCESS_LOGS_MODE: ENABLED
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Setup server access logs file and directory
@@ -377,7 +377,7 @@ jobs:
       S3_SERVER_ACCESS_LOGS_MODE: ENABLED
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Setup server access logs file and directory
@@ -445,7 +445,7 @@ jobs:
       S3_SERVER_ACCESS_LOGS_MODE: ENABLED
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Setup matrix job artifacts directory
@@ -525,9 +525,9 @@ jobs:
       S3_SERVER_ACCESS_LOGS_MODE: ENABLED
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Login to Registry
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
@@ -634,7 +634,7 @@ jobs:
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Setup CI services
@@ -690,7 +690,7 @@ jobs:
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Setup CI services
@@ -747,7 +747,7 @@ jobs:
       S3KMIP_CA: /tmp/ssl-kmip/kmip-ca.pem
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Copy KMIP certs
@@ -799,8 +799,8 @@ jobs:
       S3KMS: kmip
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+      uses: actions/checkout@v6
+    - uses: actions/setup-python@v6
       with:
         python-version: 3.9
     - name: Setup CI environment
@@ -902,12 +902,12 @@ jobs:
       COMPOSE_FILE: docker-compose.yaml:docker-compose.sse.yaml
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+      uses: actions/checkout@v6
+    - uses: actions/setup-python@v6
       with:
         python-version: 3.9
     - name: Login to GitHub Registry
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
@@ -1036,8 +1036,8 @@ jobs:
     if: always()
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
+      uses: actions/checkout@v6
+    - uses: actions/setup-node@v6
       with:
         node-version: '22'
         cache: yarn
