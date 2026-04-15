@@ -80,6 +80,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - uses: actions/setup-node@v4
       with:
         node-version: '22'
@@ -95,14 +97,32 @@ jobs:
         cache: pip
     - name: Install python deps
       run: pip install flake8
-    - name: Lint Javascript
-      run: yarn run --silent lint -- --max-warnings 0
+    - name: Lint Javascript (strict, excluding async migration rules)
+      run: |
+        yarn run --silent lint -- --max-warnings 0 --rule "promise/prefer-await-to-then: off" --rule "n/callback-return: off"
     - name: Lint Markdown
       run: yarn run --silent lint_md
     - name: Lint python
       run: flake8 $(git ls-files "*.py")
     - name: Lint Yaml
       run: yamllint -c yamllint.yml $(git ls-files "*.yml")
+    - name: Check async/await compliance in diff
+      run: yarn run check-diff-async
+
+  async-migration-report:
+    runs-on: ubuntu-24.04
+    if: startsWith(github.ref, 'refs/heads/development/')
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: yarn
+    - name: install dependencies
+      run: yarn install --frozen-lockfile --network-concurrency 1
+    - name: Count async/await migration progress
+      run: yarn run count-async
 
   unit-tests:
     runs-on: ubuntu-24.04

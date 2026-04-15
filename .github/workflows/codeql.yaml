@@ -20,6 +20,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: javascript, python, ruby
+          queries: security-extended,./.github/codeql/async-suite.qls
 
       - name: Build and analyze
         uses: github/codeql-action/analyze@v3
