@@ -88,7 +88,9 @@
   "resolutions": {
     "jsonwebtoken": "^9.0.0",
     "nan": "v2.22.0",
-    "fast-xml-parser": "^5.5.6"
+    "fast-xml-parser": "^5.5.6",
+    "ts-morph/**/brace-expansion": "^5.0.5",
+    "ts-morph/**/picomatch": "^4.0.4"
   },
   "countAsyncSourcePaths": [
     "lib/**/*.js",
