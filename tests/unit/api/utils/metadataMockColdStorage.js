@@ -202,6 +202,7 @@ function getDeleteMarkerObjectMD(versionId) {
 }
 
 module.exports = {
+    baseMd,
     putObjectMock,
     getArchivedObjectMD,
     getRestoringObjectMD,

@@ -4,8 +4,7 @@ const querystring = require('querystring');
 const { parseString } = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
-const initiateMultipartUpload
-    = require('../../../lib/api/initiateMultipartUpload');
+const initiateMultipartUpload = require('../../../lib/api/initiateMultipartUpload');
 const listMultipartUploads = require('../../../lib/api/listMultipartUploads');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 
@@ -195,8 +194,7 @@ describe('listMultipartUploads API', () => {
         });
     });
 
-    it('should return key following specified ' +
-    'key-marker', done => {
+    it('should return key following specified key-marker', done => {
         const testListRequest = {
             bucketName,
             namespace,
@@ -208,22 +206,161 @@ describe('listMultipartUploads API', () => {
 
         async.waterfall([
             next => bucketPut(authInfo, testPutBucketRequest, log, next),
-            (corsHeaders, next) => initiateMultipartUpload(authInfo,
-                testInitiateMPURequest1, log, next),
-            (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
-                testInitiateMPURequest2, log, next),
-            (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
-                testInitiateMPURequest3, log, next),
-            (result, corsHeaders, next) => listMultipartUploads(authInfo,
-                testListRequest, log, next),
-            (result, corsHeaders, next) =>
-                parseString(result, corsHeaders, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo, testInitiateMPURequest1, log, next),
+            (result, corsHeaders, next) => initiateMultipartUpload(authInfo, testInitiateMPURequest2, log, next),
+            (result, corsHeaders, next) => initiateMultipartUpload(authInfo, testInitiateMPURequest3, log, next),
+            (result, corsHeaders, next) => listMultipartUploads(authInfo, testListRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, corsHeaders, next),
         ],
         (err, result) => {
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[0].Key[0], objectName2);
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[1], undefined);
+            assert.strictEqual(result.ListMultipartUploadsResult.Upload[0].Key[0], objectName2);
+            assert.strictEqual(result.ListMultipartUploadsResult.Upload[1], undefined);
+            done();
+        });
+    });
+
+    it('should include ChecksumAlgorithm and ChecksumType when set on MPU', done => {
+        const checksumKey = 'checksum-object';
+        const testInitChecksumRequest = {
+            bucketName,
+            namespace,
+            objectKey: checksumKey,
+            headers: { 'x-amz-checksum-algorithm': 'CRC32' },
+            url: `/${bucketName}/${checksumKey}?uploads`,
+            actionImplicitDenies: false,
+        };
+        const testListRequest = {
+            bucketName,
+            namespace,
+            headers: { host: '/' },
+            url: `/${bucketName}?uploads`,
+            query: {},
+            actionImplicitDenies: false,
+        };
+
+        async.waterfall([
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo, testInitChecksumRequest, log, next),
+            (result, corsHeaders, next) => listMultipartUploads(authInfo, testListRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, corsHeaders, next),
+        ],
+        (err, result) => {
+            const upload = result.ListMultipartUploadsResult.Upload[0];
+            assert.strictEqual(upload.Key[0], checksumKey);
+            assert.strictEqual(upload.ChecksumAlgorithm[0], 'CRC32');
+            assert.strictEqual(upload.ChecksumType[0], 'COMPOSITE');
+            done();
+        });
+    });
+
+    it('should not include ChecksumAlgorithm or ChecksumType when not set on MPU', done => {
+        const testListRequest = {
+            bucketName,
+            namespace,
+            headers: { host: '/' },
+            url: `/${bucketName}?uploads`,
+            query: {},
+            actionImplicitDenies: false,
+        };
+
+        async.waterfall([
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo, testInitiateMPURequest1, log, next),
+            (result, corsHeaders, next) => listMultipartUploads(authInfo, testListRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, corsHeaders, next),
+        ],
+        (err, result) => {
+            const upload = result.ListMultipartUploadsResult.Upload[0];
+            assert.strictEqual(upload.Key[0], objectName1);
+            assert.strictEqual(upload.ChecksumAlgorithm, undefined);
+            assert.strictEqual(upload.ChecksumType, undefined);
+            done();
+        });
+    });
+
+    it('should include ChecksumAlgorithm and ChecksumType with explicit type', done => {
+        const checksumKey = 'checksum-explicit';
+        const testInitChecksumRequest = {
+            bucketName,
+            namespace,
+            objectKey: checksumKey,
+            headers: {
+                'x-amz-checksum-algorithm': 'CRC32',
+                'x-amz-checksum-type': 'FULL_OBJECT',
+            },
+            url: `/${bucketName}/${checksumKey}?uploads`,
+            actionImplicitDenies: false,
+        };
+        const testListRequest = {
+            bucketName,
+            namespace,
+            headers: { host: '/' },
+            url: `/${bucketName}?uploads`,
+            query: {},
+            actionImplicitDenies: false,
+        };
+
+        async.waterfall([
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo, testInitChecksumRequest, log, next),
+            (result, corsHeaders, next) => listMultipartUploads(authInfo, testListRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, corsHeaders, next),
+        ],
+        (err, result) => {
+            const upload = result.ListMultipartUploadsResult.Upload[0];
+            assert.strictEqual(upload.Key[0], checksumKey);
+            assert.strictEqual(upload.ChecksumAlgorithm[0], 'CRC32');
+            assert.strictEqual(upload.ChecksumType[0], 'FULL_OBJECT');
+            done();
+        });
+    });
+
+    it('should list mixed uploads with and without checksum correctly', done => {
+        const checksumKey = 'aaa-checksum-object';
+        const noChecksumKey = 'zzz-no-checksum-object';
+        const testInitChecksumRequest = {
+            bucketName,
+            namespace,
+            objectKey: checksumKey,
+            headers: { 'x-amz-checksum-algorithm': 'SHA256' },
+            url: `/${bucketName}/${checksumKey}?uploads`,
+            actionImplicitDenies: false,
+        };
+        const testInitNoChecksumRequest = {
+            bucketName,
+            namespace,
+            objectKey: noChecksumKey,
+            headers: {},
+            url: `/${bucketName}/${noChecksumKey}?uploads`,
+            actionImplicitDenies: false,
+        };
+        const testListRequest = {
+            bucketName,
+            namespace,
+            headers: { host: '/' },
+            url: `/${bucketName}?uploads`,
+            query: {},
+            actionImplicitDenies: false,
+        };
+
+        async.waterfall([
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo, testInitChecksumRequest, log, next),
+            (result, corsHeaders, next) => initiateMultipartUpload(authInfo, testInitNoChecksumRequest, log, next),
+            (result, corsHeaders, next) => listMultipartUploads(authInfo, testListRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, corsHeaders, next),
+        ],
+        (err, result) => {
+            const uploads = result.ListMultipartUploadsResult.Upload;
+            assert.strictEqual(uploads.length, 2);
+
+            const withChecksum = uploads.find(u => u.Key[0] === checksumKey);
+            assert.strictEqual(withChecksum.ChecksumAlgorithm[0], 'SHA256');
+            assert.strictEqual(withChecksum.ChecksumType[0], 'COMPOSITE');
+
+            const withoutChecksum = uploads.find(u => u.Key[0] === noChecksumKey);
+            assert.strictEqual(withoutChecksum.ChecksumAlgorithm, undefined);
+            assert.strictEqual(withoutChecksum.ChecksumType, undefined);
             done();
         });
     });

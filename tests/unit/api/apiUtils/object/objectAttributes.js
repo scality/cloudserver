@@ -3,7 +3,10 @@ const {
     parseAttributesHeaders,
     buildAttributesXml
 } = require('../../../../../lib/api/apiUtils/object/objectAttributes');
+const { algorithms } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
+const { DummyRequestLogger } = require('../../../helpers');
 
+const log = new DummyRequestLogger();
 const headerName = 'x-amz-object-attributes';
 const allowedAttributes = new Set(['ETag', 'StorageClass', 'ObjectSize']);
 
@@ -68,14 +71,14 @@ describe('buildXmlAttributes', () => {
     describe('with object attributes', () => {
         it('should generate empty XML when attributes is empty', () => {
             const result = [];
-            buildAttributesXml(objectMD, userMetadata, [], result);
+            buildAttributesXml(objectMD, userMetadata, [], result, log);
 
             assert.strictEqual(result.length, 0);
         });
 
         it('should generate ETag XML', () => {
             const result = [];
-            buildAttributesXml(objectMD, userMetadata, ['ETag'], result);
+            buildAttributesXml(objectMD, userMetadata, ['ETag'], result, log);
 
             assert.strictEqual(result.length, 1);
             assert.strictEqual(result[0], '<ETag>16e37e19194511993498801d4692795f</ETag>');
@@ -83,7 +86,7 @@ describe('buildXmlAttributes', () => {
 
         it('should generate StorageClass XML', () => {
             const result = [];
-            buildAttributesXml(objectMD, userMetadata, ['StorageClass'], result);
+            buildAttributesXml(objectMD, userMetadata, ['StorageClass'], result, log);
 
             assert.strictEqual(result.length, 1);
             assert.strictEqual(result[0], '<StorageClass>STANDARD</StorageClass>');
@@ -91,7 +94,7 @@ describe('buildXmlAttributes', () => {
 
         it('should generate ObjectSize XML', () => {
             const result = [];
-            buildAttributesXml(objectMD, userMetadata, ['ObjectSize'], result);
+            buildAttributesXml(objectMD, userMetadata, ['ObjectSize'], result, log);
 
             assert.strictEqual(result.length, 1);
             assert.strictEqual(result[0], '<ObjectSize>5000</ObjectSize>');
@@ -100,7 +103,7 @@ describe('buildXmlAttributes', () => {
         it('should generate ObjectParts XML when parts exist', () => {
             const result = [];
             const objectMDWithParts = { ...objectMD, 'content-md5': `${objectMD['content-md5']}-10` };
-            buildAttributesXml(objectMDWithParts, {}, ['ObjectParts'], result);
+            buildAttributesXml(objectMDWithParts, {}, ['ObjectParts'], result, log);
 
             assert.strictEqual(result.length, 3);
             assert.strictEqual(result[0], '<ObjectParts>');
@@ -110,7 +113,7 @@ describe('buildXmlAttributes', () => {
 
         it('should generate RestoreStatus XML with expiry date', () => {
             const result = [];
-            buildAttributesXml(objectMD, userMetadata, ['RestoreStatus'], result);
+            buildAttributesXml(objectMD, userMetadata, ['RestoreStatus'], result, log);
 
             assert.strictEqual(result.length, 4);
             assert.strictEqual(result[0], '<RestoreStatus>');
@@ -121,7 +124,7 @@ describe('buildXmlAttributes', () => {
 
         it('should ignore unknown attributes', () => {
             const result = [];
-            buildAttributesXml(objectMD, userMetadata, ['UnknownAttribute', 'ETag'], result);
+            buildAttributesXml(objectMD, userMetadata, ['UnknownAttribute', 'ETag'], result, log);
 
             assert.strictEqual(result.length, 1);
             assert.strictEqual(result[0], '<ETag>16e37e19194511993498801d4692795f</ETag>');
@@ -131,7 +134,7 @@ describe('buildXmlAttributes', () => {
     describe('with user metadata', () => {
         it('should include all user metadata when x-amz-meta-* is used', () => {
             const result = [];
-            buildAttributesXml({}, userMetadata, ['x-amz-meta-*'], result);
+            buildAttributesXml({}, userMetadata, ['x-amz-meta-*'], result, log);
 
             assert.strictEqual(result.length, 2);
             assert.strictEqual(result[0], '<x-amz-meta-foo>foo</x-amz-meta-foo>');
@@ -140,7 +143,7 @@ describe('buildXmlAttributes', () => {
 
         it('should include specific user metadata keys', () => {
             const result = [];
-            buildAttributesXml({}, userMetadata, ['x-amz-meta-foo'], result);
+            buildAttributesXml({}, userMetadata, ['x-amz-meta-foo'], result, log);
 
             assert.strictEqual(result.length, 1);
             assert.strictEqual(result[0], '<x-amz-meta-foo>foo</x-amz-meta-foo>');
@@ -148,11 +151,64 @@ describe('buildXmlAttributes', () => {
 
         it('should de-duplicate keys when both specific key and wildcard are requested', () => {
             const result = [];
-            buildAttributesXml({}, userMetadata, ['x-amz-meta-foo', 'x-amz-meta-*'], result);
+            buildAttributesXml({}, userMetadata, ['x-amz-meta-foo', 'x-amz-meta-*'], result, log);
 
             assert.strictEqual(result.length, 2);
             assert.strictEqual(result[0], '<x-amz-meta-foo>foo</x-amz-meta-foo>');
             assert.strictEqual(result[1], '<x-amz-meta-bar>bar</x-amz-meta-bar>');
+        });
+    });
+
+    describe('with Checksum attribute', () => {
+        const testData = Buffer.from('test data');
+        const expectedDigests = {};
+
+        before(async () => {
+            await Promise.all(Object.keys(algorithms).map(async name => {
+                expectedDigests[name] = await algorithms[name].digest(testData);
+            }));
+        });
+
+        it('should not generate Checksum XML when checksumAlgorithm is unknown', () => {
+            const result = [];
+            const md = {
+                checksum: {
+                    checksumAlgorithm: 'unknown',
+                    checksumValue: 'dGVzdA==',
+                    checksumType: 'FULL_OBJECT',
+                },
+            };
+            buildAttributesXml(md, {}, ['Checksum'], result, log);
+
+            assert.strictEqual(result.length, 0);
+        });
+
+        it('should not generate Checksum XML when checksum is absent', () => {
+            const result = [];
+            buildAttributesXml(objectMD, {}, ['Checksum'], result, log);
+
+            assert.strictEqual(result.length, 0);
+        });
+
+        Object.entries(algorithms).forEach(([algo, { getObjectAttributesXMLTag }]) => {
+            it(`should generate correct Checksum XML for ${algo}`, () => {
+                const digest = expectedDigests[algo];
+                const result = [];
+                const md = {
+                    checksum: {
+                        checksumAlgorithm: algo,
+                        checksumValue: digest,
+                        checksumType: 'FULL_OBJECT',
+                    },
+                };
+                buildAttributesXml(md, {}, ['Checksum'], result, log);
+
+                assert.strictEqual(result.length, 4);
+                assert.strictEqual(result[0], '<Checksum>');
+                assert.strictEqual(result[1], `<${getObjectAttributesXMLTag}>${digest}</${getObjectAttributesXMLTag}>`);
+                assert.strictEqual(result[2], '<ChecksumType>FULL_OBJECT</ChecksumType>');
+                assert.strictEqual(result[3], '</Checksum>');
+            });
         });
     });
 
@@ -161,7 +217,7 @@ describe('buildXmlAttributes', () => {
             const result = [];
             const objectMDWithParts = { ...objectMD, 'content-md5': `${objectMD['content-md5']}-10` };
             const requested = ['ETag', 'ObjectSize', 'ObjectParts', 'RestoreStatus', 'x-amz-meta-*', 'x-amz-meta-foo'];
-            buildAttributesXml(objectMDWithParts, userMetadata, requested, result);
+            buildAttributesXml(objectMDWithParts, userMetadata, requested, result, log);
 
             const expected = [
                 '<ETag>16e37e19194511993498801d4692795f-10</ETag>',

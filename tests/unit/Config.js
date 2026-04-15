@@ -920,7 +920,7 @@ describe('Config', () => {
     });
 
     describe('parse integrity checks', () => {
-        it('should replace default values with new values', () => {
+        it('should insert values into integrityCheck object', () => {
             const newConfig = {
                 integrityChecks: {
                     'bucketPutACL': false,
@@ -933,11 +933,15 @@ describe('Config', () => {
                     'bucketPutReplication': false,
                     'bucketPutVersioning': false,
                     'bucketPutWebsite': false,
+                    'bucketPutLogging': false,
+                    'bucketPutTagging': false,
                     'multiObjectDelete': false,
                     'objectPutACL': false,
                     'objectPutLegalHold': false,
                     'objectPutTagging': false,
                     'objectPutRetention': false,
+                    'objectRestore': false,
+                    'completeMultipartUpload': false,
                 },
             };
 

@@ -3642,4 +3642,107 @@ describe('backbeat routes', () => {
             ], done);
         });
     });
+
+    describe('checksum validation', () => {
+        const testDataSha256B64 = crypto.createHash('sha256')
+            .update(testData, 'utf-8').digest('base64');
+        // A valid-length but wrong sha256 digest (44 base64 chars).
+        const wrongSha256B64 = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+
+        describe('putData', () => {
+            it('should return 400 BadDigest when x-amz-checksum-sha256 does not match body', done => {
+                makeBackbeatRequest({
+                    method: 'PUT',
+                    resourceType: 'data',
+                    bucket: TEST_BUCKET,
+                    objectKey: TEST_KEY,
+                    headers: {
+                        'x-scal-canonical-id': testMd['owner-id'],
+                        'content-md5': testDataMd5,
+                        'content-length': testData.length,
+                        'x-amz-checksum-sha256': wrongSha256B64,
+                    },
+                    requestBody: testData,
+                    authCredentials: backbeatAuthCredentials,
+                }, err => {
+                    assert(err, 'expected an error response');
+                    assert.strictEqual(err.statusCode, 400);
+                    assert.strictEqual(err.code, 'BadDigest');
+                    done();
+                });
+            });
+
+            it('should return 200 when x-amz-checksum-sha256 matches body', done => {
+                makeBackbeatRequest({
+                    method: 'PUT',
+                    resourceType: 'data',
+                    bucket: TEST_BUCKET,
+                    objectKey: TEST_KEY,
+                    headers: {
+                        'x-scal-canonical-id': testMd['owner-id'],
+                        'content-md5': testDataMd5,
+                        'content-length': testData.length,
+                        'x-amz-checksum-sha256': testDataSha256B64,
+                    },
+                    requestBody: testData,
+                    authCredentials: backbeatAuthCredentials,
+                }, (err, data) => {
+                    assert.ifError(err);
+                    assert.strictEqual(data.statusCode, 200);
+                    done();
+                });
+            });
+        });
+
+        describe('putObject (multiplebackenddata)', () => {
+            itIfLocationAws('should return 400 BadDigest when x-amz-checksum-sha256 does not match body', done => {
+                makeBackbeatRequest({
+                    method: 'PUT',
+                    resourceType: 'multiplebackenddata',
+                    bucket: TEST_BUCKET,
+                    objectKey: TEST_KEY,
+                    queryObj: { operation: 'putobject' },
+                    headers: {
+                        'x-scal-canonical-id': testMd['owner-id'],
+                        'x-scal-storage-type': 'aws_s3',
+                        'x-scal-storage-class': awsLocation,
+                        'content-md5': testDataMd5,
+                        'content-length': testData.length,
+                        'x-amz-checksum-sha256': wrongSha256B64,
+                    },
+                    requestBody: testData,
+                    authCredentials: backbeatAuthCredentials,
+                }, err => {
+                    assert(err, 'expected an error response');
+                    assert.strictEqual(err.statusCode, 400);
+                    assert.strictEqual(err.code, 'BadDigest');
+                    done();
+                });
+            });
+
+            itIfLocationAws('should return 200 when x-amz-checksum-sha256 matches body', done => {
+                makeBackbeatRequest({
+                    method: 'PUT',
+                    resourceType: 'multiplebackenddata',
+                    bucket: TEST_BUCKET,
+                    objectKey: TEST_KEY,
+                    queryObj: { operation: 'putobject' },
+                    headers: {
+                        'x-scal-canonical-id': testMd['owner-id'],
+                        'x-scal-storage-type': 'aws_s3',
+                        'x-scal-storage-class': awsLocation,
+                        'content-md5': testDataMd5,
+                        'content-length': testData.length,
+                        'x-amz-checksum-sha256': testDataSha256B64,
+                    },
+                    requestBody: testData,
+                    authCredentials: backbeatAuthCredentials,
+                }, (err, data) => {
+                    assert.ifError(err);
+                    assert.strictEqual(data.statusCode, 200);
+                    done();
+                });
+            });
+        });
+    });
 });

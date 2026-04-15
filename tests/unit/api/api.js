@@ -138,7 +138,7 @@ describe('api.callApiMethod', () => {
             it(`should return BadDigest for ${method} when bad MD5 checksum is provided`, done => {
                 const body = '<xml></xml>';
                 const headers = {
-                    'content-md5': 'badchecksum123=', // Invalid MD5
+                    'content-md5': '1B2M2Y8AsgTpgAmY7PhCfg==', // Wrong MD5
                     'content-length': body.length.toString()
                 };
                 
@@ -155,6 +155,32 @@ describe('api.callApiMethod', () => {
                 api.callApiMethod(method, requestWithBody, response, log, err => {
                     assert(err, `Expected error for ${method} with bad checksum`);
                     assert(err.is.BadDigest, `Expected BadDigest error for ${method}, got: ${err.code}`);
+                    done();
+                });
+            });
+        });
+
+        methodsWithChecksumValidation.forEach(method => {
+            it(`should return InvalidDigest for ${method} when invalid MD5 checksum is provided`, done => {
+                const body = '<xml></xml>';
+                const headers = {
+                    'content-md5': 'x', // Invalid MD5
+                    'content-length': body.length.toString()
+                };
+                
+                const requestWithBody = new DummyRequest({
+                    headers,
+                    query: {},
+                    socket: { remoteAddress: '127.0.0.1', destroy: sandbox.stub() }
+                }, body);
+                
+                sandbox.stub(api, method).callsFake(() => {
+                    done(new Error(`${method} was called despite bad checksum`));
+                });
+
+                api.callApiMethod(method, requestWithBody, response, log, err => {
+                    assert(err, `Expected error for ${method} with bad checksum`);
+                    assert(err.is.InvalidDigest, `Expected InvalidDigest error for ${method}, got: ${err.code}`);
                     done();
                 });
             });

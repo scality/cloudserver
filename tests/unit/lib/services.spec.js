@@ -3,6 +3,8 @@ const sinon = require('sinon');
 const { versioning } = require('arsenal');
 
 const services = require('../../../lib/services');
+const metadata = require('../../../lib/metadata/wrapper');
+const acl = require('../../../lib/metadata/acl');
 const { DummyRequestLogger } = require('../helpers');
 
 const { VersionId } = versioning.VersioningConstants;
@@ -150,6 +152,84 @@ describe('services', () => {
                 assert.strictEqual(secondCallParams.versionIdMarker, 'version-marker');
 
                 assert.deepStrictEqual(foundVersion, correctVersionValue);
+                done();
+            });
+        });
+    });
+
+    describe('metadataStoreMPObject checksum fields', () => {
+        const baseParams = {
+            objectKey,
+            splitter: '|',
+            uploadId: 'test-upload-id',
+            eventualStorageBucket: bucketName,
+            ownerDisplayName: 'owner',
+            ownerID: 'ownerCanonicalId',
+            initiatorDisplayName: 'initiator',
+            initiatorID: 'initiatorId',
+            headers: {},
+            storageClass: 'STANDARD',
+            metaHeaders: {},
+        };
+
+        let putObjectMDStub;
+
+        beforeEach(() => {
+            putObjectMDStub = sinon.stub(metadata, 'putObjectMD')
+                .callsFake((bucket, key, md, opts, reqLog, cb) => cb(null));
+            sinon.stub(acl, 'parseAclFromHeaders')
+                .callsFake((params, cb) => cb(null, { Canned: 'private' }));
+        });
+
+        it('should store checksumAlgorithm, checksumType and checksumIsDefault when provided', done => {
+            const params = {
+                ...baseParams,
+                checksumAlgorithm: 'crc32',
+                checksumType: 'COMPOSITE',
+                checksumIsDefault: false,
+            };
+
+            services.metadataStoreMPObject(bucketName, null, params, log, (err, mpuMD) => {
+                assert.ifError(err);
+                assert.strictEqual(mpuMD.checksumAlgorithm, 'crc32');
+                assert.strictEqual(mpuMD.checksumType, 'COMPOSITE');
+                assert.strictEqual(mpuMD.checksumIsDefault, false);
+                done();
+            });
+        });
+
+        it('should store default crc64nvme with checksumIsDefault true', done => {
+            const params = {
+                ...baseParams,
+                checksumAlgorithm: 'crc64nvme',
+                checksumType: 'FULL_OBJECT',
+                checksumIsDefault: true,
+            };
+
+            services.metadataStoreMPObject(bucketName, null, params, log, (err, mpuMD) => {
+                assert.ifError(err);
+                assert.strictEqual(mpuMD.checksumAlgorithm, 'crc64nvme');
+                assert.strictEqual(mpuMD.checksumType, 'FULL_OBJECT');
+                assert.strictEqual(mpuMD.checksumIsDefault, true);
+                done();
+            });
+        });
+
+        it('should persist checksum fields to metadata backend', done => {
+            const params = {
+                ...baseParams,
+                checksumAlgorithm: 'sha256',
+                checksumType: 'COMPOSITE',
+                checksumIsDefault: false,
+            };
+
+            services.metadataStoreMPObject(bucketName, null, params, log, err => {
+                assert.ifError(err);
+                sinon.assert.calledOnce(putObjectMDStub);
+                const storedMD = putObjectMDStub.getCall(0).args[2];
+                assert.strictEqual(storedMD.checksumAlgorithm, 'sha256');
+                assert.strictEqual(storedMD.checksumType, 'COMPOSITE');
+                assert.strictEqual(storedMD.checksumIsDefault, false);
                 done();
             });
         });
