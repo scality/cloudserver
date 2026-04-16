@@ -471,14 +471,14 @@ describe('getChecksumDataFromHeaders', () => {
         crc64nvme: 'AAAAAAAAAAA=', // 12 chars
     };
 
-    it('should return crc64nvme with isTrailer=false and expected=undefined when no headers', () => {
+    it('should return null when no headers', () => {
         const result = getChecksumDataFromHeaders({});
-        assert.deepStrictEqual(result, { algorithm: 'crc64nvme', isTrailer: false, expected: undefined });
+        assert.strictEqual(result, null);
     });
 
-    it('should return crc64nvme default when no checksum headers, no trailer, no sdk algo', () => {
+    it('should return null when no checksum headers, no trailer, no sdk algo', () => {
         const result = getChecksumDataFromHeaders({ 'content-type': 'application/octet-stream' });
-        assert.deepStrictEqual(result, { algorithm: 'crc64nvme', isTrailer: false, expected: undefined });
+        assert.strictEqual(result, null);
     });
 
     for (const [algo, digest] of Object.entries(validDigests)) {

@@ -6,8 +6,10 @@ const { dataStore } = require('../../../../../lib/api/apiUtils/object/storeObjec
 const dataWrapper = require('../../../../../lib/data/wrapper');
 const { DummyRequestLogger } = require('../../../helpers');
 const DummyRequest = require('../../../DummyRequest');
+const { defaultChecksumData } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
 
 const log = new DummyRequestLogger();
+const defaultChecksums = { primary: defaultChecksumData, secondary: null };
 
 const fakeDataRetrievalInfo = { key: 'test-key', dataStoreName: 'mem' };
 
@@ -44,7 +46,7 @@ describe('dataStore', () => {
         it('should call data.put with the stream returned by prepareStream', done => {
             putSucceeds();
             const request = makeStream({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
-            dataStore({}, null, request, 0, null, {}, log, err => {
+            dataStore({}, null, request, 0, null, {}, defaultChecksums, log, err => {
                 assert.strictEqual(err, null);
                 assert(putStub.calledOnce);
                 done();
@@ -54,7 +56,7 @@ describe('dataStore', () => {
         it('should call cb with (null, dataRetrievalInfo, completedHash) on success', done => {
             putSucceeds('abc123');
             const request = makeStream({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
-            dataStore({}, null, request, 0, null, {}, log, (err, dataInfo, completedHash) => {
+            dataStore({}, null, request, 0, null, {}, defaultChecksums, log, (err, dataInfo, completedHash) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(dataInfo, fakeDataRetrievalInfo);
                 assert.strictEqual(completedHash, 'abc123');
@@ -68,7 +70,7 @@ describe('dataStore', () => {
                 cb(errors.InternalError);
             });
             const request = makeStream({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
-            dataStore({}, null, request, 0, null, {}, log, err => {
+            dataStore({}, null, request, 0, null, {}, defaultChecksums, log, err => {
                 assert.deepStrictEqual(err, errors.InternalError);
                 done();
             });
@@ -80,7 +82,7 @@ describe('dataStore', () => {
                 cb(errors.InternalError);
             });
             const request = makeStream({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
-            dataStore({}, null, request, 0, null, {}, log, () => {
+            dataStore({}, null, request, 0, null, {}, defaultChecksums, log, () => {
                 assert(batchDeleteStub.notCalled);
                 done();
             });
@@ -92,7 +94,7 @@ describe('dataStore', () => {
                 cb(null, null, null);
             });
             const request = makeStream({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
-            dataStore({}, null, request, 0, null, {}, log, err => {
+            dataStore({}, null, request, 0, null, {}, defaultChecksums, log, err => {
                 assert.deepStrictEqual(err, errors.InternalError);
                 done();
             });
@@ -103,7 +105,7 @@ describe('dataStore', () => {
             putSucceeds('correct-md5');
             const request = makeStream({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
             request.contentMD5 = 'wrong-md5';
-            dataStore({}, null, request, 0, null, {}, log, err => {
+            dataStore({}, null, request, 0, null, {}, defaultChecksums, log, err => {
                 assert.deepStrictEqual(err, errors.BadDigest);
                 assert(batchDeleteStub.calledOnce);
                 done();
@@ -114,7 +116,7 @@ describe('dataStore', () => {
             putSucceeds('abc123');
             const request = makeStream({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
             request.contentMD5 = 'abc123';
-            dataStore({}, null, request, 0, null, {}, log, err => {
+            dataStore({}, null, request, 0, null, {}, defaultChecksums, log, err => {
                 assert.strictEqual(err, null);
                 assert(batchDeleteStub.notCalled);
                 done();
@@ -125,7 +127,7 @@ describe('dataStore', () => {
             putSucceeds();
             let cbCount = 0;
             const request = makeStream({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
-            dataStore({}, null, request, 0, null, {}, log, () => {
+            dataStore({}, null, request, 0, null, {}, defaultChecksums, log, () => {
                 cbCount++;
                 setImmediate(() => {
                     assert.strictEqual(cbCount, 1);
@@ -136,23 +138,21 @@ describe('dataStore', () => {
     });
 
     describe('checksum behaviour', () => {
-        it('should call cb with error from prepareStream when stream headers are invalid', done => {
+        it('should call cb with error from prepareStream when signature checksum is unsupported', done => {
             const request = makeStream({
-                'x-amz-checksum-crc32': 'AAAAAA==',
-                'x-amz-checksum-sha256': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+                'x-amz-content-sha256': 'STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER',
             });
-            dataStore({}, null, request, 0, null, {}, log, err => {
-                assert.strictEqual(err.message, 'InvalidRequest');
+            dataStore({}, null, request, 0, null, {}, defaultChecksums, log, err => {
+                assert.strictEqual(err.message, 'BadRequest');
                 done();
             });
         });
 
         it('should not call data.put when prepareStream returns an error', done => {
             const request = makeStream({
-                'x-amz-checksum-crc32': 'AAAAAA==',
-                'x-amz-checksum-sha256': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+                'x-amz-content-sha256': 'STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER',
             });
-            dataStore({}, null, request, 0, null, {}, log, () => {
+            dataStore({}, null, request, 0, null, {}, defaultChecksums, log, () => {
                 assert(putStub.notCalled);
                 done();
             });
@@ -164,9 +164,12 @@ describe('dataStore', () => {
             // CRC32 of 'hello world' is not 0x00000000 (AAAAAA==)
             const request = makeStream({
                 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
-                'x-amz-checksum-crc32': 'AAAAAA==',
             }, 'hello world');
-            dataStore({}, null, request, 0, null, {}, log, err => {
+            const badChecksums = {
+                primary: { algorithm: 'crc32', isTrailer: false, expected: 'AAAAAA==' },
+                secondary: null,
+            };
+            dataStore({}, null, request, 0, null, {}, badChecksums, log, err => {
                 assert.strictEqual(err.message, 'BadDigest');
                 assert(batchDeleteStub.calledOnce);
                 done();
@@ -177,9 +180,12 @@ describe('dataStore', () => {
             putSucceeds();
             const request = makeStream({
                 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
-                'x-amz-checksum-crc32': 'DUoRhQ==',
             }, 'hello world');
-            dataStore({}, null, request, 0, null, {}, log, err => {
+            const goodChecksums = {
+                primary: { algorithm: 'crc32', isTrailer: false, expected: 'DUoRhQ==' },
+                secondary: null,
+            };
+            dataStore({}, null, request, 0, null, {}, goodChecksums, log, err => {
                 assert.strictEqual(err, null);
                 assert(batchDeleteStub.notCalled);
                 done();
@@ -198,9 +204,12 @@ describe('dataStore', () => {
                 });
                 const request = makeStream({
                     'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
-                    'x-amz-checksum-crc32': 'DUoRhQ==',
                 }, 'hello world');
-                dataStore({}, null, request, 0, null, {}, log, err => {
+                const goodChecksums = {
+                    primary: { algorithm: 'crc32', isTrailer: false, expected: 'DUoRhQ==' },
+                    secondary: null,
+                };
+                dataStore({}, null, request, 0, null, {}, goodChecksums, log, err => {
                     assert.strictEqual(err, null);
                     assert(capturedStream.writableFinished);
                     done();
@@ -217,7 +226,7 @@ describe('dataStore', () => {
                     cb(null, fakeDataRetrievalInfo, { completedHash: null });
                 });
                 const request = makeStream({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
-                dataStore({}, null, request, 0, null, {}, log, err => {
+                dataStore({}, null, request, 0, null, {}, defaultChecksums, log, err => {
                     assert.deepStrictEqual(err, errors.InternalError);
                     assert(batchDeleteStub.calledOnce);
                     done();
@@ -235,7 +244,7 @@ describe('dataStore', () => {
                 cb(null, fakeDataRetrievalInfo, { completedHash: null });
             });
             const request = makeStream({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
-            dataStore({}, null, request, 0, null, {}, log, () => {
+            dataStore({}, null, request, 0, null, {}, defaultChecksums, log, () => {
                 cbCount++;
                 setImmediate(() => {
                     assert.strictEqual(cbCount, 1);
@@ -253,7 +262,7 @@ describe('dataStore', () => {
                 cb(null, fakeDataRetrievalInfo, { completedHash: null });
             });
             const request = makeStream({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
-            dataStore({}, null, request, 0, null, {}, log, () => {
+            dataStore({}, null, request, 0, null, {}, defaultChecksums, log, () => {
                 cbCount++;
                 setImmediate(() => {
                     assert.strictEqual(cbCount, 1);
@@ -264,15 +273,76 @@ describe('dataStore', () => {
         });
     });
 
+    describe('dual-checksum behaviour', () => {
+        it('should return client-facing checksum from secondary and storageChecksum from primary', done => {
+            putSucceeds();
+            const request = makeStream({
+                'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
+            }, 'hello world');
+            // Primary: crc64nvme (storage), Secondary: crc32 (client-facing)
+            const dualChecksums = {
+                primary: { algorithm: 'crc64nvme', isTrailer: false, expected: undefined },
+                secondary: { algorithm: 'crc32', isTrailer: false, expected: 'DUoRhQ==' },
+            };
+            dataStore({}, null, request, 0, null, {}, dualChecksums, log, (err, dataInfo, hash, checksum) => {
+                assert.strictEqual(err, null);
+                assert.strictEqual(checksum.algorithm, 'crc32');
+                assert.strictEqual(checksum.value, 'DUoRhQ==');
+                assert(checksum.storageChecksum);
+                assert.strictEqual(checksum.storageChecksum.algorithm, 'crc64nvme');
+                assert(checksum.storageChecksum.value);
+                done();
+            });
+        });
+
+        it('should fail with BadDigest when secondary checksum does not match', done => {
+            batchDeleteSucceeds();
+            putSucceeds();
+            const request = makeStream({
+                'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
+            }, 'hello world');
+            const dualChecksums = {
+                primary: { algorithm: 'crc64nvme', isTrailer: false, expected: undefined },
+                secondary: { algorithm: 'crc32', isTrailer: false, expected: 'AAAAAA==' },
+            };
+            dataStore({}, null, request, 0, null, {}, dualChecksums, log, err => {
+                assert.strictEqual(err.message, 'BadDigest');
+                assert(batchDeleteStub.calledOnce);
+                done();
+            });
+        });
+
+        it('should return no storageChecksum when secondary is null', done => {
+            putSucceeds();
+            const request = makeStream({
+                'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
+            }, 'hello world');
+            const singleChecksums = {
+                primary: { algorithm: 'crc32', isTrailer: false, expected: 'DUoRhQ==' },
+                secondary: null,
+            };
+            dataStore({}, null, request, 0, null, {}, singleChecksums, log, (err, dataInfo, hash, checksum) => {
+                assert.strictEqual(err, null);
+                assert.strictEqual(checksum.algorithm, 'crc32');
+                assert.strictEqual(checksum.value, 'DUoRhQ==');
+                assert.strictEqual(checksum.storageChecksum, undefined);
+                done();
+            });
+        });
+    });
+
     describe('batchDelete failure paths', () => {
         it('should call cb with checksum error when validateChecksum fails and batchDelete also fails', done => {
             batchDeleteStub.callsFake((keys, a, b, log2, cb) => cb(errors.InternalError));
             putSucceeds();
             const request = makeStream({
                 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
-                'x-amz-checksum-crc32': 'AAAAAA==',
             }, 'hello world');
-            dataStore({}, null, request, 0, null, {}, log, err => {
+            const badChecksums = {
+                primary: { algorithm: 'crc32', isTrailer: false, expected: 'AAAAAA==' },
+                secondary: null,
+            };
+            dataStore({}, null, request, 0, null, {}, badChecksums, log, err => {
                 assert.strictEqual(err.message, 'BadDigest');
                 done();
             });
@@ -283,7 +353,7 @@ describe('dataStore', () => {
             putSucceeds('correct-md5');
             const request = makeStream({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
             request.contentMD5 = 'wrong-md5';
-            dataStore({}, null, request, 0, null, {}, log, err => {
+            dataStore({}, null, request, 0, null, {}, defaultChecksums, log, err => {
                 assert.deepStrictEqual(err, errors.BadDigest);
                 done();
             });
@@ -298,7 +368,7 @@ describe('dataStore', () => {
                     cb(null, fakeDataRetrievalInfo, { completedHash: null });
                 });
                 const request = makeStream({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
-                dataStore({}, null, request, 0, null, {}, log, err => {
+                dataStore({}, null, request, 0, null, {}, defaultChecksums, log, err => {
                     assert.deepStrictEqual(err, errors.InternalError);
                     done();
                 });

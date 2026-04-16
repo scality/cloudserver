@@ -162,7 +162,7 @@ describe('routeBackbeat', () => {
             callback(null, bucketInfo, objMd);
         });
         storeObject.dataStore.callsFake((objectContext, cipherBundle, stream, size,
-            streamingV4Params, backendInfo, log, callback) => {
+            streamingV4Params, backendInfo, checksums, log, callback) => {
             callback(null, {}, md5);
         });
 
