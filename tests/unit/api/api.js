@@ -115,6 +115,40 @@ describe('api.callApiMethod', () => {
         api.callApiMethod('multipartDelete', request, response, log);
     });
 
+    ['objectPut', 'objectPutPart'].forEach(method => {
+        it(`should set startTurnAroundTime on request end for ${method}`, done => {
+            sandbox.stub(api, method).callsFake(
+                (userInfo, _request, streamingV4Params, _log, cb) => {
+                    request.on('end', () => {
+                        assert.strictEqual(typeof request.serverAccessLog.startTurnAroundTime, 'bigint');
+                        cb();
+                    });
+                    request.resume();
+                });
+            request.objectKey = 'testobject';
+            request.serverAccessLog = {};
+            api.callApiMethod(method, request, response, log, err => {
+                assert.ifError(err);
+                done();
+            });
+        });
+
+        it(`should set startTurnAroundTime synchronously for 0-byte ${method}`, done => {
+            sandbox.stub(api, method).callsFake(
+                (userInfo, _request, streamingV4Params, _log, cb) => {
+                    assert.strictEqual(typeof request.serverAccessLog.startTurnAroundTime, 'bigint');
+                    cb();
+                });
+            request.objectKey = 'testobject';
+            request.serverAccessLog = {};
+            request.headers = Object.assign({}, request.headers, { 'content-length': '0' });
+            api.callApiMethod(method, request, response, log, err => {
+                assert.ifError(err);
+                done();
+            });
+        });
+    });
+
     describe('MD5 checksum validation', () => {
         const methodsWithChecksumValidation = [
             'bucketPutACL',
