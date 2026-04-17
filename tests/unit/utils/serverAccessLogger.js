@@ -311,6 +311,31 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(result, 'canonicalID123');
         });
 
+        it('should return ARN for assumed-role session user', () => {
+            const arn = 'arn:aws:sts::123456789012:assumed-role/lifecycle-role/backbeat-lifecycle';
+            const authInfo = {
+                isRequesterPublicUser: () => false,
+                isRequesterAnIAMUser: () => false,
+                getArn: () => arn,
+                getCanonicalID: () => 'canonicalID789',
+            };
+            const result = getRequester(authInfo);
+            assert.strictEqual(result, arn);
+        });
+
+        it('should fall through to IAM user path for non-assumed-role ARN', () => {
+            const authInfo = {
+                isRequesterPublicUser: () => false,
+                isRequesterAnIAMUser: () => true,
+                getArn: () => 'arn:aws:iam::123456789012:user/myuser',
+                getIAMdisplayName: () => 'myuser',
+                getAccountDisplayName: () => 'myaccount',
+                getCanonicalID: () => 'canonicalID789',
+            };
+            const result = getRequester(authInfo);
+            assert.strictEqual(result, 'myuser:myaccount');
+        });
+
         it('should return canonical ID for regular user', () => {
             const authInfo = {
                 isRequesterPublicUser: () => false,
