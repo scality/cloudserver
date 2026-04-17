@@ -269,24 +269,23 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(result, null);
         });
 
-        it('should return IAM user name with account for IAM user', () => {
+        it('should return IAM ARN for IAM user', () => {
+            const arn = 'arn:aws:iam::123456789012:user/myuser';
             const authInfo = {
                 isRequesterPublicUser: () => false,
                 isRequesterAnIAMUser: () => true,
-                getIAMdisplayName: () => 'iamUser',
-                getAccountDisplayName: () => 'accountName',
+                getArn: () => arn,
                 getCanonicalID: () => 'canonicalID123',
             };
             const result = getRequester(authInfo);
-            assert.strictEqual(result, 'iamUser:accountName');
+            assert.strictEqual(result, arn);
         });
 
-        it('should return canonical ID for IAM user if display names are missing', () => {
+        it('should fall back to canonical ID for IAM user when ARN is missing', () => {
             const authInfo = {
                 isRequesterPublicUser: () => false,
                 isRequesterAnIAMUser: () => true,
-                getIAMdisplayName: () => '',
-                getAccountDisplayName: () => 'accountName',
+                getArn: () => undefined,
                 getCanonicalID: () => 'canonicalID123',
             };
             const result = getRequester(authInfo);
@@ -303,19 +302,6 @@ describe('serverAccessLogger utility functions', () => {
             };
             const result = getRequester(authInfo);
             assert.strictEqual(result, arn);
-        });
-
-        it('should fall through to IAM user path for non-assumed-role ARN', () => {
-            const authInfo = {
-                isRequesterPublicUser: () => false,
-                isRequesterAnIAMUser: () => true,
-                getArn: () => 'arn:aws:iam::123456789012:user/myuser',
-                getIAMdisplayName: () => 'myuser',
-                getAccountDisplayName: () => 'myaccount',
-                getCanonicalID: () => 'canonicalID789',
-            };
-            const result = getRequester(authInfo);
-            assert.strictEqual(result, 'myuser:myaccount');
         });
 
         it('should return canonical ID for regular user', () => {
