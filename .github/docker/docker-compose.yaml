@@ -111,7 +111,7 @@ services:
     volumes:
       - /tmp/artifacts/${JOB_NAME}/sproxyd:/logs
   vault:
-    image: ghcr.io/scality/vault:7.76.0
+    image: ghcr.io/scality/vault:7.86.0
     profiles: ['vault']
     user: root
     command: sh -c "chmod 400 tests/utils/keyfile && yarn start > /artifacts/vault.log 2> /artifacts/vault-stderr.log"
