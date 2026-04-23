@@ -5,7 +5,8 @@ const { versioning } = require('arsenal');
 const services = require('../../../lib/services');
 const metadata = require('../../../lib/metadata/wrapper');
 const acl = require('../../../lib/metadata/acl');
-const { DummyRequestLogger } = require('../helpers');
+const constants = require('../../../constants');
+const { DummyRequestLogger, makeAuthInfo } = require('../helpers');
 
 const { VersionId } = versioning.VersioningConstants;
 
@@ -230,6 +231,89 @@ describe('services', () => {
                 assert.strictEqual(storedMD.checksumAlgorithm, 'sha256');
                 assert.strictEqual(storedMD.checksumType, 'COMPOSITE');
                 assert.strictEqual(storedMD.checksumIsDefault, false);
+                done();
+            });
+        });
+    });
+
+    describe('metadataValidateMultipart checksum fields', () => {
+        const uploadId = 'test-upload-id';
+        const authInfo = makeAuthInfo('accessKey1');
+        const ownerID = authInfo.getCanonicalID();
+        const mpuBucketName = `${constants.mpuBucketPrefix}${bucketName}`;
+        const mpuOverviewKey = `overview${constants.splitter}${objectKey}` +
+            `${constants.splitter}${uploadId}`;
+        const mpuBucket = {
+            getName: () => mpuBucketName,
+            getMdBucketModelVersion: () => 2,
+            getOwner: () => ownerID,
+        };
+        const storedMetadata = {
+            key: objectKey,
+            id: uploadId,
+            eventualStorageBucket: bucketName,
+            initiator: {
+                ID: ownerID,
+                DisplayName: 'initiator',
+            },
+            'owner-id': ownerID,
+            'owner-display-name': 'owner',
+            'x-amz-storage-class': 'STANDARD',
+            initiated: '2026-04-23T00:00:00.000Z',
+            controllingLocationConstraint: 'us-east-1',
+        };
+
+        function validateMultipart(storedMetadataOverride, cb) {
+            sinon.stub(metadata, 'getBucket').callsFake((name, reqLog, done) => {
+                assert.strictEqual(name, mpuBucketName);
+                done(null, mpuBucket);
+            });
+            sinon.stub(metadata, 'getObjectMD')
+                .callsFake((bucket, key, params, reqLog, done) => {
+                    assert.strictEqual(bucket, mpuBucketName);
+                    assert.strictEqual(key, mpuOverviewKey);
+                    done(null, {
+                        ...storedMetadata,
+                        ...storedMetadataOverride,
+                    });
+                });
+
+            services.metadataValidateMultipart({
+                bucketName,
+                objectKey,
+                uploadId,
+                authInfo,
+                requestType: 'listParts',
+                log,
+            }, cb);
+        }
+
+        it('should expose checksum fields from stored MPU overview metadata',
+        done => {
+            validateMultipart({
+                checksumAlgorithm: 'sha256',
+                checksumType: 'COMPOSITE',
+                checksumIsDefault: false,
+            }, (err, bucket, mpuOverview, returnedStoredMetadata) => {
+                assert.ifError(err);
+                assert.strictEqual(bucket, mpuBucket);
+                assert.strictEqual(returnedStoredMetadata.checksumAlgorithm,
+                    'sha256');
+                assert.strictEqual(mpuOverview.checksumAlgorithm, 'sha256');
+                assert.strictEqual(mpuOverview.checksumType, 'COMPOSITE');
+                assert.strictEqual(mpuOverview.checksumIsDefault, false);
+                done();
+            });
+        });
+
+        it('should leave checksum fields undefined for legacy MPU overview metadata',
+        done => {
+            validateMultipart({}, (err, bucket, mpuOverview) => {
+                assert.ifError(err);
+                assert.strictEqual(bucket, mpuBucket);
+                assert.strictEqual(mpuOverview.checksumAlgorithm, undefined);
+                assert.strictEqual(mpuOverview.checksumType, undefined);
+                assert.strictEqual(mpuOverview.checksumIsDefault, undefined);
                 done();
             });
         });

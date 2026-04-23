@@ -7,6 +7,7 @@ const constants = require('../../../constants');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const { metadata: inMemMetadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const listParts = require('../../../lib/api/listParts');
+const { data } = require('../../../lib/data/wrapper');
 const metadata = require('../metadataswitch');
 
 const log = new DummyRequestLogger();
@@ -31,6 +32,41 @@ const partTwoKey = '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0' +
 const partThreeKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00003`;
 const partFourKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00004`;
 const partFiveKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00005`;
+const partKeys = [partOneKey, partTwoKey, partThreeKey, partFourKey,
+    partFiveKey];
+const partChecksumValues = {
+    crc32: 'AAAAAA==',
+    crc32c: 'AQAAAA==',
+    crc64nvme: 'AAAAAAAAAAA=',
+    sha1: 'AAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+    sha256: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+};
+
+function makeListRequest() {
+    return {
+        bucketName,
+        namespace,
+        objectKey: uploadKey,
+        url: `/${uploadKey}?uploadId=${uploadId}`,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        query: { uploadId },
+        actionImplicitDenies: false,
+    };
+}
+
+function setOverviewChecksum(checksumAlgorithm, checksumType,
+    checksumIsDefault) {
+    const overview = inMemMetadata.keyMaps.get(mpuBucket).get(overviewKey);
+    overview.checksumAlgorithm = checksumAlgorithm;
+    overview.checksumType = checksumType;
+    overview.checksumIsDefault = checksumIsDefault;
+}
+
+function setPartChecksum(partKey, checksumAlgorithm, checksumValue) {
+    const part = inMemMetadata.keyMaps.get(mpuBucket).get(partKey);
+    part.checksumAlgorithm = checksumAlgorithm;
+    part.checksumValue = checksumValue;
+}
 
 describe('List Parts API', () => {
     beforeEach(done => {
@@ -107,15 +143,7 @@ describe('List Parts API', () => {
     });
 
     it('should list all parts of a multipart upload', done => {
-        const listRequest = {
-            bucketName,
-            namespace,
-            objectKey: uploadKey,
-            url: `/${uploadKey}?uploadId=${uploadId}`,
-            headers: { host: `${bucketName}.s3.amazonaws.com` },
-            query: { uploadId },
-            actionImplicitDenies: false,
-        };
+        const listRequest = makeListRequest();
 
         listParts(authInfo, listRequest, log, (err, xml) => {
             assert.strictEqual(err, null);
@@ -145,6 +173,165 @@ describe('List Parts API', () => {
                                    lastPieceETag);
                 assert.strictEqual(json.ListPartsResult.Part[4].Size[0], '18');
                 assert.strictEqual(json.ListPartsResult.Part.length, 5);
+                assert.strictEqual(json.ListPartsResult.ChecksumAlgorithm,
+                    undefined);
+                assert.strictEqual(json.ListPartsResult.ChecksumType,
+                    undefined);
+                assert.strictEqual(json.ListPartsResult.Part[0].ChecksumSHA256,
+                    undefined);
+                done();
+            });
+        });
+    });
+
+    it('should include root and part checksum fields', done => {
+        setOverviewChecksum('sha256', 'COMPOSITE', false);
+        setPartChecksum(partOneKey, 'sha256', partChecksumValues.sha256);
+
+        const listRequest = makeListRequest();
+
+        listParts(authInfo, listRequest, log, (err, xml) => {
+            assert.strictEqual(err, null);
+            parseString(xml, (err, json) => {
+                assert.strictEqual(err, null);
+                assert.strictEqual(json.ListPartsResult.ChecksumAlgorithm[0],
+                    'SHA256');
+                assert.strictEqual(json.ListPartsResult.ChecksumType[0],
+                    'COMPOSITE');
+                assert.strictEqual(
+                    json.ListPartsResult.Part[0].ChecksumSHA256[0],
+                    partChecksumValues.sha256);
+                assert.strictEqual(json.ListPartsResult.Part[1].ChecksumSHA256,
+                    undefined);
+                done();
+            });
+        });
+    });
+
+    it('should omit default CRC64NVME checksum fields', done => {
+        setOverviewChecksum('crc64nvme', 'FULL_OBJECT', true);
+        setPartChecksum(partOneKey, 'crc64nvme',
+            partChecksumValues.crc64nvme);
+
+        const listRequest = makeListRequest();
+
+        listParts(authInfo, listRequest, log, (err, xml) => {
+            assert.strictEqual(err, null);
+            parseString(xml, (err, json) => {
+                assert.strictEqual(err, null);
+                assert.strictEqual(json.ListPartsResult.ChecksumAlgorithm,
+                    undefined);
+                assert.strictEqual(json.ListPartsResult.ChecksumType,
+                    undefined);
+                assert.strictEqual(
+                    json.ListPartsResult.Part[0].ChecksumCRC64NVME,
+                    undefined);
+                done();
+            });
+        });
+    });
+
+    it('should omit root checksum fields if only checksumAlgorithm is set',
+    done => {
+        setOverviewChecksum('sha256', undefined, false);
+
+        const listRequest = makeListRequest();
+
+        listParts(authInfo, listRequest, log, (err, xml) => {
+            assert.strictEqual(err, null);
+            parseString(xml, (err, json) => {
+                assert.strictEqual(err, null);
+                assert.strictEqual(json.ListPartsResult.ChecksumAlgorithm,
+                    undefined);
+                assert.strictEqual(json.ListPartsResult.ChecksumType,
+                    undefined);
+                done();
+            });
+        });
+    });
+
+    it('should omit root checksum fields if only checksumType is set', done => {
+        setOverviewChecksum(undefined, 'COMPOSITE', false);
+
+        const listRequest = makeListRequest();
+
+        listParts(authInfo, listRequest, log, (err, xml) => {
+            assert.strictEqual(err, null);
+            parseString(xml, (err, json) => {
+                assert.strictEqual(err, null);
+                assert.strictEqual(json.ListPartsResult.ChecksumAlgorithm,
+                    undefined);
+                assert.strictEqual(json.ListPartsResult.ChecksumType,
+                    undefined);
+                done();
+            });
+        });
+    });
+
+    it('should render checksum tags for every supported part algorithm',
+    done => {
+        setOverviewChecksum('sha256', 'COMPOSITE', false);
+
+        const checksumCases = [
+            ['crc32', 'ChecksumCRC32'],
+            ['crc32c', 'ChecksumCRC32C'],
+            ['crc64nvme', 'ChecksumCRC64NVME'],
+            ['sha1', 'ChecksumSHA1'],
+            ['sha256', 'ChecksumSHA256'],
+        ];
+        checksumCases.forEach(([algorithm], index) => {
+            setPartChecksum(partKeys[index], algorithm,
+                partChecksumValues[algorithm]);
+        });
+
+        const listRequest = makeListRequest();
+
+        listParts(authInfo, listRequest, log, (err, xml) => {
+            assert.strictEqual(err, null);
+            parseString(xml, (err, json) => {
+                assert.strictEqual(err, null);
+                checksumCases.forEach(([algorithm, xmlTag], index) => {
+                    assert.strictEqual(
+                        json.ListPartsResult.Part[index][xmlTag][0],
+                        partChecksumValues[algorithm]);
+                });
+                done();
+            });
+        });
+    });
+
+    it('should render external backend checksum fields', done => {
+        setOverviewChecksum('sha256', 'COMPOSITE', false);
+
+        const originalListParts = data.listParts;
+        data.listParts = (mpuInfo, request, lcCheckFn, log, callback) =>
+            callback(null, {
+                IsTruncated: false,
+                Contents: [{
+                    partNumber: 1,
+                    value: {
+                        LastModified: '2015-11-30T22:41:18.658Z',
+                        ETag: 'f3a9fb2071d3503b703938a74eb99846',
+                        Size: 6000000,
+                        ChecksumAlgorithm: 'sha256',
+                        ChecksumValue: partChecksumValues.sha256,
+                    },
+                }],
+            });
+
+        const listRequest = makeListRequest();
+
+        listParts(authInfo, listRequest, log, (err, xml) => {
+            data.listParts = originalListParts;
+            assert.strictEqual(err, null);
+            parseString(xml, (err, json) => {
+                assert.strictEqual(err, null);
+                assert.strictEqual(json.ListPartsResult.Part.length, 1);
+                assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0],
+                    '1');
+                assert.strictEqual(
+                    json.ListPartsResult.Part[0].ChecksumSHA256[0],
+                    partChecksumValues.sha256);
                 done();
             });
         });
