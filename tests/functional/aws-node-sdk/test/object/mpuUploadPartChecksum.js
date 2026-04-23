@@ -5,6 +5,7 @@ const {
     AbortMultipartUploadCommand,
     UploadPartCommand,
     DeleteBucketCommand,
+    ListPartsCommand,
 } = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
@@ -41,6 +42,18 @@ before(async () => {
         wrongDigest[algo] = flipped;
     }
 });
+
+async function assertPartChecksumStored(s3, uploadId, partNumber,
+    checksumHeader, expectedChecksum) {
+    const listRes = await s3.send(new ListPartsCommand({
+        Bucket: bucket,
+        Key: key,
+        UploadId: uploadId,
+    }));
+    const found = listRes.Parts.find(part => part.PartNumber === partNumber);
+    assert(found, `Expected part ${partNumber} in ListParts response`);
+    assert.strictEqual(found[checksumHeader], expectedChecksum);
+}
 
 describe('UploadPart checksum validation', () =>
     withV4(sigCfg => {
@@ -82,12 +95,15 @@ describe('UploadPart checksum validation', () =>
                 });
 
                 it(`should accept ${mpuAlgo} with correct digest`, async () => {
+                    const partNumber = 1;
                     const res = await s3.send(new UploadPartCommand({
                         Bucket: bucket, Key: key, UploadId: uploadId,
-                        PartNumber: 1, Body: partBody,
+                        PartNumber: partNumber, Body: partBody,
                         [checksumField[mpuAlgo]]: correctDigest[mpuAlgo],
                     }));
                     assert.strictEqual(res[checksumField[mpuAlgo]], correctDigest[mpuAlgo]);
+                    await assertPartChecksumStored(s3, uploadId, partNumber,
+                        checksumField[mpuAlgo], correctDigest[mpuAlgo]);
                 });
 
                 it(`should reject ${mpuAlgo} with wrong digest (BadDigest)`, async () => {
