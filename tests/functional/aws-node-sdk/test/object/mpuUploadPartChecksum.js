@@ -66,7 +66,6 @@ describe('UploadPart checksum validation', () =>
         allAlgos.forEach(mpuAlgo => {
             describe(`MPU created with ${mpuAlgo}`, () => {
                 let uploadId;
-                let partNum = 0;
 
                 before(async () => {
                     const res = await s3.send(new CreateMultipartUploadCommand({
@@ -83,21 +82,19 @@ describe('UploadPart checksum validation', () =>
                 });
 
                 it(`should accept ${mpuAlgo} with correct digest`, async () => {
-                    partNum++;
                     const res = await s3.send(new UploadPartCommand({
                         Bucket: bucket, Key: key, UploadId: uploadId,
-                        PartNumber: partNum, Body: partBody,
+                        PartNumber: 1, Body: partBody,
                         [checksumField[mpuAlgo]]: correctDigest[mpuAlgo],
                     }));
                     assert.strictEqual(res[checksumField[mpuAlgo]], correctDigest[mpuAlgo]);
                 });
 
                 it(`should reject ${mpuAlgo} with wrong digest (BadDigest)`, async () => {
-                    partNum++;
                     await assert.rejects(
                         s3.send(new UploadPartCommand({
                             Bucket: bucket, Key: key, UploadId: uploadId,
-                            PartNumber: partNum, Body: partBody,
+                            PartNumber: 2, Body: partBody,
                             [checksumField[mpuAlgo]]: wrongDigest[mpuAlgo],
                         })),
                         { name: 'BadDigest' },
@@ -108,13 +105,12 @@ describe('UploadPart checksum validation', () =>
                 // so "no checksum header" cannot be tested via the SDK for
                 // non-default MPUs (it would be rejected as a mismatch).
 
-                allAlgos.filter(a => a !== mpuAlgo).forEach(otherAlgo => {
+                allAlgos.filter(a => a !== mpuAlgo).forEach((otherAlgo, idx) => {
                     it(`should reject ${otherAlgo} when MPU is ${mpuAlgo} (InvalidRequest)`, async () => {
-                        partNum++;
                         await assert.rejects(
                             s3.send(new UploadPartCommand({
                                 Bucket: bucket, Key: key, UploadId: uploadId,
-                                PartNumber: partNum, Body: partBody,
+                                PartNumber: 3 + idx, Body: partBody,
                                 [checksumField[otherAlgo]]: correctDigest[otherAlgo],
                             })),
                             { name: 'InvalidRequest' },
@@ -127,7 +123,6 @@ describe('UploadPart checksum validation', () =>
         // Default MPU (no ChecksumAlgorithm) should accept any algo
         describe('MPU created with no checksum (default)', () => {
             let uploadId;
-            let partNum = 0;
 
             before(async () => {
                 const res = await s3.send(new CreateMultipartUploadCommand({
@@ -142,23 +137,21 @@ describe('UploadPart checksum validation', () =>
                 }));
             });
 
-            allAlgos.forEach(algo => {
+            allAlgos.forEach((algo, idx) => {
                 it(`should accept ${algo} with correct digest`, async () => {
-                    partNum++;
                     const res = await s3.send(new UploadPartCommand({
                         Bucket: bucket, Key: key, UploadId: uploadId,
-                        PartNumber: partNum, Body: partBody,
+                        PartNumber: 2 * idx + 1, Body: partBody,
                         [checksumField[algo]]: correctDigest[algo],
                     }));
                     assert.strictEqual(res[checksumField[algo]], correctDigest[algo]);
                 });
 
                 it(`should reject ${algo} with wrong digest (BadDigest)`, async () => {
-                    partNum++;
                     await assert.rejects(
                         s3.send(new UploadPartCommand({
                             Bucket: bucket, Key: key, UploadId: uploadId,
-                            PartNumber: partNum, Body: partBody,
+                            PartNumber: 2 * idx + 2, Body: partBody,
                             [checksumField[algo]]: wrongDigest[algo],
                         })),
                         { name: 'BadDigest' },
@@ -167,10 +160,9 @@ describe('UploadPart checksum validation', () =>
             });
 
             it('should accept part with no checksum header', async () => {
-                partNum++;
                 const res = await s3.send(new UploadPartCommand({
                     Bucket: bucket, Key: key, UploadId: uploadId,
-                    PartNumber: partNum, Body: partBody,
+                    PartNumber: 2 * allAlgos.length + 1, Body: partBody,
                 }));
                 assert(res.ETag);
             });
