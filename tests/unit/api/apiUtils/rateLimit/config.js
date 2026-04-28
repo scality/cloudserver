@@ -26,9 +26,9 @@ describe('parseRateLimitConfig', () => {
 
     describe('valid configurations', () => {
         it('should parse complete valid configuration', () => {
-            const result = parseRateLimitConfig(validConfig, 10);
+            const result = parseRateLimitConfig(validConfig);
 
-            assert.strictEqual(result.enabled, true);
+            assert.strictEqual(result.enabled, false); // Default when not specified
             assert.strictEqual(result.serviceUserArn, validConfig.serviceUserArn);
             assert.strictEqual(result.nodes, 2);
             assert.strictEqual(result.bucket.configCacheTTL, 300);
@@ -36,7 +36,7 @@ describe('parseRateLimitConfig', () => {
             assert.strictEqual(result.error.message, 'ServiceUnavailable');
             assert.strictEqual(result.error.description, 'Service Unavailable');
             assert(result.bucket.defaultConfig);
-            assert(result.bucket.defaultConfig.requestsPerSecond);
+            assert(result.bucket.defaultConfig.RequestsPerSecond);
         });
 
         it('should use default values when optional fields are omitted', () => {
@@ -44,14 +44,18 @@ describe('parseRateLimitConfig', () => {
                 serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
             };
 
-            const result = parseRateLimitConfig(minimalConfig, 5);
+            const result = parseRateLimitConfig(minimalConfig);
 
-            assert.strictEqual(result.enabled, true);
+            assert.strictEqual(result.enabled, false); // Default
             assert.strictEqual(result.serviceUserArn, minimalConfig.serviceUserArn);
             assert.strictEqual(result.nodes, 1); // Default
+            assert.strictEqual(result.tokenBucketBufferSize, 50); // Default
+            assert.strictEqual(result.tokenBucketRefillThreshold, 20); // Default
             // Bucket config is always initialized for per-bucket rate limiting via API
             assert(result.bucket);
-            assert.strictEqual(result.bucket.defaultConfig, undefined); // No global default
+            assert.deepStrictEqual(result.bucket.defaultConfig, {
+                RequestsPerSecond: { BurstCapacity: constants.rateLimitDefaultBurstCapacity },
+            });
             assert.strictEqual(result.bucket.configCacheTTL, constants.rateLimitDefaultConfigCacheTTL); // Default
             assert.strictEqual(result.bucket.defaultBurstCapacity, constants.rateLimitDefaultBurstCapacity); // Default
             assert.strictEqual(result.error.code, errors.SlowDown.code); // Default
@@ -66,10 +70,12 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            const result = parseRateLimitConfig(config, 3);
+            const result = parseRateLimitConfig(config);
 
             assert.strictEqual(result.bucket.configCacheTTL, 600);
-            assert.strictEqual(result.bucket.defaultConfig, undefined);
+            assert.deepStrictEqual(result.bucket.defaultConfig, {
+                RequestsPerSecond: { BurstCapacity: constants.rateLimitDefaultBurstCapacity },
+            });
         });
 
         it('should use default configCacheTTL when not specified', () => {
@@ -78,7 +84,7 @@ describe('parseRateLimitConfig', () => {
                 bucket: {},
             };
 
-            const result = parseRateLimitConfig(config, 2);
+            const result = parseRateLimitConfig(config);
 
             assert.strictEqual(result.bucket.configCacheTTL, constants.rateLimitDefaultConfigCacheTTL);
         });
@@ -89,10 +95,53 @@ describe('parseRateLimitConfig', () => {
                 error: {},
             };
 
-            const result = parseRateLimitConfig(config, 1);
+            const result = parseRateLimitConfig(config);
 
             assert.strictEqual(result.error.code, errors.SlowDown.code);
             assert.strictEqual(result.error.description, errors.SlowDown.description);
+        });
+    });
+
+    describe('enabled field validation', () => {
+        it('should default enabled to false when not specified', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+            };
+
+            const result = parseRateLimitConfig(config);
+            assert.strictEqual(result.enabled, false);
+        });
+
+        it('should accept enabled: true', () => {
+            const config = {
+                enabled: true,
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+            };
+
+            const result = parseRateLimitConfig(config);
+            assert.strictEqual(result.enabled, true);
+        });
+
+        it('should accept enabled: false', () => {
+            const config = {
+                enabled: false,
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+            };
+
+            const result = parseRateLimitConfig(config);
+            assert.strictEqual(result.enabled, false);
+        });
+
+        it('should throw if enabled is not a boolean', () => {
+            const config = {
+                enabled: 'yes',
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid/
+            );
         });
     });
 
@@ -101,8 +150,8 @@ describe('parseRateLimitConfig', () => {
             const config = { nodes: 1 };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.serviceUserArn must be a string/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"serviceUserArn" is required/
             );
         });
 
@@ -112,8 +161,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.serviceUserArn must be a string/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"serviceUserArn" must be a string/
             );
         });
     });
@@ -125,7 +174,7 @@ describe('parseRateLimitConfig', () => {
                 nodes: 5,
             };
 
-            const result = parseRateLimitConfig(config, 10);
+            const result = parseRateLimitConfig(config);
             assert.strictEqual(result.nodes, 5);
         });
 
@@ -134,7 +183,7 @@ describe('parseRateLimitConfig', () => {
                 serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
             };
 
-            const result = parseRateLimitConfig(config, 2);
+            const result = parseRateLimitConfig(config);
             assert.strictEqual(result.nodes, 1);
         });
 
@@ -145,8 +194,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.nodes must be a positive integer/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"nodes" must be a positive number/
             );
         });
 
@@ -157,8 +206,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.nodes must be a positive integer/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"nodes" must be a positive number/
             );
         });
 
@@ -169,8 +218,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.nodes must be a positive integer/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"nodes" must be an integer/
             );
         });
 
@@ -181,8 +230,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.nodes must be a positive integer/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"nodes" must be a number/
             );
         });
     });
@@ -193,7 +242,7 @@ describe('parseRateLimitConfig', () => {
                 serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
             };
 
-            const result = parseRateLimitConfig(config, 1);
+            const result = parseRateLimitConfig(config);
             assert.strictEqual(result.tokenBucketBufferSize, 50);
         });
 
@@ -203,7 +252,7 @@ describe('parseRateLimitConfig', () => {
                 tokenBucketBufferSize: 100,
             };
 
-            const result = parseRateLimitConfig(config, 1);
+            const result = parseRateLimitConfig(config);
             assert.strictEqual(result.tokenBucketBufferSize, 100);
         });
 
@@ -214,8 +263,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.tokenBucketBufferSize must be a positive integer/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"tokenBucketBufferSize" must be a positive number/
             );
         });
 
@@ -226,8 +275,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.tokenBucketBufferSize must be a positive integer/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"tokenBucketBufferSize" must be a positive number/
             );
         });
 
@@ -238,8 +287,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.tokenBucketBufferSize must be a positive integer/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"tokenBucketBufferSize" must be an integer/
             );
         });
     });
@@ -250,7 +299,7 @@ describe('parseRateLimitConfig', () => {
                 serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
             };
 
-            const result = parseRateLimitConfig(config, 1);
+            const result = parseRateLimitConfig(config);
             assert.strictEqual(result.tokenBucketRefillThreshold, 20);
         });
 
@@ -260,7 +309,7 @@ describe('parseRateLimitConfig', () => {
                 tokenBucketRefillThreshold: 30,
             };
 
-            const result = parseRateLimitConfig(config, 1);
+            const result = parseRateLimitConfig(config);
             assert.strictEqual(result.tokenBucketRefillThreshold, 30);
         });
 
@@ -271,8 +320,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.tokenBucketRefillThreshold must be a positive integer/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"tokenBucketRefillThreshold" must be a positive number/
             );
         });
 
@@ -283,8 +332,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.tokenBucketRefillThreshold must be a positive integer/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"tokenBucketRefillThreshold" must be a positive number/
             );
         });
 
@@ -295,8 +344,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.tokenBucketRefillThreshold must be a positive integer/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"tokenBucketRefillThreshold" must be an integer/
             );
         });
     });
@@ -309,8 +358,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.bucket must be an object/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"bucket" must be of type object/
             );
         });
 
@@ -326,10 +375,10 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            const result = parseRateLimitConfig(config, 5);
+            const result = parseRateLimitConfig(config);
 
             assert(result.bucket.defaultConfig);
-            assert(result.bucket.defaultConfig.requestsPerSecond);
+            assert(result.bucket.defaultConfig.RequestsPerSecond);
         });
 
         it('should throw if defaultConfig is not an object', () => {
@@ -341,8 +390,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rate limit config must be an object/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig" must be of type object/
             );
         });
 
@@ -357,8 +406,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /requestsPerSecond must be an object/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond" must be of type object/
             );
         });
 
@@ -374,9 +423,9 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            const result = parseRateLimitConfig(config, 1);
+            const result = parseRateLimitConfig(config);
             // limit = 0 means unlimited, should be accepted
-            assert(result.bucket.defaultConfig.requestsPerSecond);
+            assert(result.bucket.defaultConfig.RequestsPerSecond);
         });
 
         it('should propagate validation errors for negative limit', () => {
@@ -392,8 +441,27 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /requestsPerSecond.limit must be a non-negative integer/
+                () => parseRateLimitConfig(config),
+                // eslint-disable-next-line max-len
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.limit" must be larger than or equal to 0/
+            );
+        });
+
+        it('should throw if limit is missing when requestsPerSecond is provided', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                bucket: {
+                    defaultConfig: {
+                        requestsPerSecond: {
+                            burstCapacity: 10,
+                        },
+                    },
+                },
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.limit" is required/
             );
         });
     });
@@ -411,10 +479,11 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            const result = parseRateLimitConfig(config, 1);
-            const bucketSize = result.bucket.defaultConfig.requestsPerSecond.bucketSize;
-            // bucketSize = burstCapacity * 1000
-            assert.strictEqual(bucketSize, constants.rateLimitDefaultBurstCapacity * 1000);
+            const result = parseRateLimitConfig(config);
+            assert.strictEqual(
+                result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity,
+                constants.rateLimitDefaultBurstCapacity
+            );
         });
 
         it('should use custom burstCapacity when provided', () => {
@@ -430,9 +499,10 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            const result = parseRateLimitConfig(config, 1);
-            const bucketSize = result.bucket.defaultConfig.requestsPerSecond.bucketSize;
-            assert.strictEqual(bucketSize, 20 * 1000);
+            const result = parseRateLimitConfig(config);
+            assert.strictEqual(
+                result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity, 20
+            );
         });
 
         it('should throw if burstCapacity is negative', () => {
@@ -449,8 +519,9 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /requestsPerSecond.burstCapacity must be a positive integer/
+                () => parseRateLimitConfig(config),
+                // eslint-disable-next-line max-len
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.burstCapacity" must be a positive number/
             );
         });
 
@@ -468,27 +539,9 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /requestsPerSecond.burstCapacity must be a positive integer/
-            );
-        });
-
-        it('should throw if burstCapacity is not an integer', () => {
-            const config = {
-                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
-                bucket: {
-                    defaultConfig: {
-                        requestsPerSecond: {
-                            limit: 100,
-                            burstCapacity: 5.5,
-                        },
-                    },
-                },
-            };
-
-            assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /requestsPerSecond.burstCapacity must be a positive integer/
+                () => parseRateLimitConfig(config),
+                // eslint-disable-next-line max-len
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.burstCapacity" must be a positive number/
             );
         });
 
@@ -506,8 +559,28 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /requestsPerSecond.burstCapacity must be a positive integer/
+                () => parseRateLimitConfig(config),
+                // eslint-disable-next-line max-len
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.burstCapacity" must be a number/
+            );
+        });
+
+        it('should accept float burstCapacity', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                bucket: {
+                    defaultConfig: {
+                        requestsPerSecond: {
+                            limit: 100,
+                            burstCapacity: 1.5,
+                        },
+                    },
+                },
+            };
+
+            const result = parseRateLimitConfig(config);
+            assert.strictEqual(
+                result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity, 1.5
             );
         });
     });
@@ -521,7 +594,7 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            const result = parseRateLimitConfig(config, 1);
+            const result = parseRateLimitConfig(config);
             assert.strictEqual(result.bucket.configCacheTTL, 450);
         });
 
@@ -534,8 +607,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.bucket.configCacheTTL must be a positive integer/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"bucket.configCacheTTL" must be a positive number/
             );
         });
 
@@ -548,8 +621,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.bucket.configCacheTTL must be a positive integer/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"bucket.configCacheTTL" must be a positive number/
             );
         });
 
@@ -562,8 +635,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.bucket.configCacheTTL must be a positive integer/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"bucket.configCacheTTL" must be an integer/
             );
         });
 
@@ -576,8 +649,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.bucket.configCacheTTL must be a positive integer/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"bucket.configCacheTTL" must be a number/
             );
         });
     });
@@ -590,8 +663,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.error must be an object/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"error" must be of type object/
             );
         });
 
@@ -605,7 +678,7 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            const result4xx = parseRateLimitConfig(config4xx, 1);
+            const result4xx = parseRateLimitConfig(config4xx);
             assert.strictEqual(result4xx.error.code, 429);
             assert.strictEqual(result4xx.error.description, 'Too Many Requests');
 
@@ -618,7 +691,7 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            const result5xx = parseRateLimitConfig(config5xx, 1);
+            const result5xx = parseRateLimitConfig(config5xx);
             assert.strictEqual(result5xx.error.code, 503);
             assert.strictEqual(result5xx.error.description, 'Service Unavailable');
         });
@@ -633,8 +706,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.error.statusCode must be a valid HTTP status code \(400-599\)/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"error.statusCode" must be larger than or equal to 400/
             );
         });
 
@@ -648,8 +721,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.error.statusCode must be a valid HTTP status code \(400-599\)/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"error.statusCode" must be less than or equal to 599/
             );
         });
 
@@ -663,8 +736,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.error.statusCode must be a valid HTTP status code \(400-599\)/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"error.statusCode" must be an integer/
             );
         });
 
@@ -678,8 +751,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.error.statusCode must be a valid HTTP status code \(400-599\)/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"error.statusCode" must be a number/
             );
         });
 
@@ -691,7 +764,7 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            const result = parseRateLimitConfig(config, 1);
+            const result = parseRateLimitConfig(config);
             assert.strictEqual(result.error.code, 503);
             assert.strictEqual(result.error.message, 'SlowDown');
             assert.strictEqual(result.error.description, errors.SlowDown.description);
@@ -707,8 +780,8 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.error.message must be a string/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"error.message" must be a string/
             );
         });
 
@@ -717,7 +790,7 @@ describe('parseRateLimitConfig', () => {
                 serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
             };
 
-            const result = parseRateLimitConfig(config, 1);
+            const result = parseRateLimitConfig(config);
             assert.strictEqual(result.error.code, errors.SlowDown.code);
             assert.strictEqual(result.error.description, errors.SlowDown.description);
         });
@@ -732,7 +805,7 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            const result = parseRateLimitConfig(config, 1);
+            const result = parseRateLimitConfig(config);
             assert.strictEqual(result.error.code, 429);
             assert.strictEqual(result.error.message, 'TooManyRequests');
             assert.strictEqual(result.error.description, 'Please slow down');
@@ -747,7 +820,7 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            const result = parseRateLimitConfig(config, 1);
+            const result = parseRateLimitConfig(config);
             assert.strictEqual(result.error.code, 429);
             assert.strictEqual(result.error.message, 'SlowDown');
             assert.strictEqual(result.error.description, 'Please slow down');
@@ -764,57 +837,345 @@ describe('parseRateLimitConfig', () => {
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 1),
-                /rateLimiting.error.code must be a string/
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"error.code" must be a string/
             );
         });
     });
 
     describe('distributed rate limiting validation', () => {
-        it('should validate limit against nodes and workers', () => {
+        it('should validate limit against nodes', () => {
             const config = {
                 serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
                 nodes: 5,
                 bucket: {
                     defaultConfig: {
                         requestsPerSecond: {
-                            limit: 10, // Less than 5 nodes × 10 workers = 50
+                            limit: 3, // Less than 5 nodes
                         },
                     },
                 },
             };
 
             assert.throws(
-                () => parseRateLimitConfig(config, 10),
-                /requestsPerSecond\.limit \(10\) must be >= \(nodes × workers = 5 × 10 = 50\)/
+                () => parseRateLimitConfig(config),
+                /requestsPerSecond\.limit \(3\) must be >= nodes \(5\)/
             );
         });
     });
 
+    describe('account-level rate limiting', () => {
+        it('should parse account configuration similar to bucket', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                account: {
+                    defaultConfig: {
+                        requestsPerSecond: {
+                            limit: 500,
+                            burstCapacity: 5,
+                        },
+                    },
+                    configCacheTTL: 60000,
+                    defaultBurstCapacity: 2,
+                },
+            };
+
+            const result = parseRateLimitConfig(config);
+
+            assert(result.account);
+            assert(result.account.defaultConfig);
+            assert.strictEqual(result.account.defaultConfig.RequestsPerSecond.Limit, 500);
+            assert.strictEqual(result.account.configCacheTTL, 60000);
+            assert.strictEqual(result.account.defaultBurstCapacity, 2);
+        });
+
+        it('should support both bucket and account rate limiting simultaneously', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                bucket: {
+                    defaultConfig: {
+                        requestsPerSecond: {
+                            limit: 1000,
+                        },
+                    },
+                },
+                account: {
+                    defaultConfig: {
+                        requestsPerSecond: {
+                            limit: 500,
+                        },
+                    },
+                },
+            };
+
+            const result = parseRateLimitConfig(config);
+
+            assert(result.bucket.defaultConfig);
+            assert.strictEqual(result.bucket.defaultConfig.RequestsPerSecond.Limit, 1000);
+            assert(result.account.defaultConfig);
+            assert.strictEqual(result.account.defaultConfig.RequestsPerSecond.Limit, 500);
+        });
+
+        it('should validate account limit against nodes', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                nodes: 10,
+                account: {
+                    defaultConfig: {
+                        requestsPerSecond: {
+                            limit: 7, // Less than 10 nodes
+                        },
+                    },
+                },
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config),
+                /requestsPerSecond\.limit \(7\) must be >= nodes \(10\)/
+            );
+        });
+
+        it('should throw if account is not an object', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                account: 'invalid',
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"account" must be of type object/
+            );
+        });
+
+        it('should apply defaults to account config when fields are omitted', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                account: {
+                    defaultConfig: {
+                        requestsPerSecond: {
+                            limit: 100,
+                        },
+                    },
+                },
+            };
+
+            const result = parseRateLimitConfig(config);
+
+            assert.strictEqual(result.account.configCacheTTL, constants.rateLimitDefaultConfigCacheTTL);
+            assert.strictEqual(result.account.defaultBurstCapacity, constants.rateLimitDefaultBurstCapacity);
+        });
+    });
+
+    describe('account burstCapacity validation', () => {
+        it('should use default burstCapacity when not provided', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                account: {
+                    defaultConfig: {
+                        requestsPerSecond: {
+                            limit: 100,
+                        },
+                    },
+                },
+            };
+
+            const result = parseRateLimitConfig(config);
+            assert.strictEqual(
+                result.account.defaultConfig.RequestsPerSecond.BurstCapacity,
+                constants.rateLimitDefaultBurstCapacity
+            );
+        });
+
+        it('should use custom burstCapacity when provided', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                account: {
+                    defaultConfig: {
+                        requestsPerSecond: {
+                            limit: 100,
+                            burstCapacity: 20,
+                        },
+                    },
+                },
+            };
+
+            const result = parseRateLimitConfig(config);
+            assert.strictEqual(
+                result.account.defaultConfig.RequestsPerSecond.BurstCapacity, 20
+            );
+        });
+
+        it('should accept float burstCapacity', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                account: {
+                    defaultConfig: {
+                        requestsPerSecond: {
+                            limit: 100,
+                            burstCapacity: 1.5,
+                        },
+                    },
+                },
+            };
+
+            const result = parseRateLimitConfig(config);
+            assert.strictEqual(
+                result.account.defaultConfig.RequestsPerSecond.BurstCapacity, 1.5
+            );
+        });
+
+        it('should throw if burstCapacity is negative', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                account: {
+                    defaultConfig: {
+                        requestsPerSecond: {
+                            limit: 100,
+                            burstCapacity: -5,
+                        },
+                    },
+                },
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config),
+                // eslint-disable-next-line max-len
+                /rateLimiting configuration is invalid.*"account.defaultConfig.requestsPerSecond.burstCapacity" must be a positive number/
+            );
+        });
+
+        it('should throw if burstCapacity is zero', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                account: {
+                    defaultConfig: {
+                        requestsPerSecond: {
+                            limit: 100,
+                            burstCapacity: 0,
+                        },
+                    },
+                },
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config),
+                // eslint-disable-next-line max-len
+                /rateLimiting configuration is invalid.*"account.defaultConfig.requestsPerSecond.burstCapacity" must be a positive number/
+            );
+        });
+
+        it('should throw if burstCapacity is not a number', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                account: {
+                    defaultConfig: {
+                        requestsPerSecond: {
+                            limit: 100,
+                            burstCapacity: 'ten',
+                        },
+                    },
+                },
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config),
+                // eslint-disable-next-line max-len
+                /rateLimiting configuration is invalid.*"account.defaultConfig.requestsPerSecond.burstCapacity" must be a number/
+            );
+        });
+    });
+
+    describe('schema validation - unknown fields', () => {
+        it('should reject unknown top-level fields', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                unknownField: 'invalid',
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"unknownField" is not allowed/
+            );
+        });
+
+        it('should reject unknown fields in bucket config', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                bucket: {
+                    unknownField: 'invalid',
+                },
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"bucket.unknownField" is not allowed/
+            );
+        });
+
+        it('should reject unknown fields in error config', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                error: {
+                    statusCode: 503,
+                    unknownField: 'invalid',
+                },
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"error.unknownField" is not allowed/
+            );
+        });
+    });
+
+    describe('schema validation - multiple errors', () => {
+        it('should report all validation errors at once', () => {
+            const config = {
+                // Missing serviceUserArn (required)
+                nodes: -5, // Invalid (must be positive)
+                tokenBucketBufferSize: 0, // Invalid (must be positive)
+                bucket: 'not an object', // Invalid type
+            };
+
+            assert.throws(() => {
+                try {
+                    parseRateLimitConfig(config);
+                } catch (error) {
+                    // Should contain multiple errors
+                    assert(error.message.includes('serviceUserArn'));
+                    assert(error.message.includes('nodes'));
+                    assert(error.message.includes('tokenBucketBufferSize'));
+                    assert(error.message.includes('bucket'));
+                    throw error;
+                }
+            }, /rateLimiting configuration is invalid/);
+        });
+    });
+
     describe('calculation verification', () => {
-        it('should calculate correct interval for distributed setup', () => {
+        it('should store Limit in defaultConfig for distributed setup', () => {
             const config = {
                 serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
                 nodes: 2,
                 bucket: {
                     defaultConfig: {
                         requestsPerSecond: {
-                            limit: 100, // 100 req/s global
+                            limit: 100,
                         },
                     },
                 },
             };
 
-            const result = parseRateLimitConfig(config, 5); // 5 workers (ignored)
+            const result = parseRateLimitConfig(config);
 
-            // NEW BEHAVIOR: Per-NODE rate = 100 / 2 nodes = 50 req/s (workers NOT divided)
-            // Interval = 1000ms / 50 = 20ms
-            // Workers can dynamically share node quota via Redis reconciliation
-            const interval = result.bucket.defaultConfig.requestsPerSecond.interval;
-            assert.strictEqual(interval, 20);
+            assert.strictEqual(result.bucket.defaultConfig.RequestsPerSecond.Limit, 100);
+            assert.strictEqual(
+                result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity,
+                constants.rateLimitDefaultBurstCapacity
+            );
         });
 
-        it('should calculate correct bucketSize from burstCapacity', () => {
+        it('should store BurstCapacity from burstCapacity', () => {
             const config = {
                 serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
                 bucket: {
@@ -827,32 +1188,27 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            const result = parseRateLimitConfig(config, 1);
+            const result = parseRateLimitConfig(config);
 
-            // bucketSize = burstCapacity * 1000
-            const bucketSize = result.bucket.defaultConfig.requestsPerSecond.bucketSize;
-            assert.strictEqual(bucketSize, 15 * 1000);
+            assert.strictEqual(result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity, 15);
         });
 
-        it('should handle single node and single worker', () => {
+        it('should handle single node setup', () => {
             const config = {
                 serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
                 nodes: 1,
                 bucket: {
                     defaultConfig: {
                         requestsPerSecond: {
-                            limit: 50, // 50 req/s
+                            limit: 50,
                         },
                     },
                 },
             };
 
-            const result = parseRateLimitConfig(config, 1); // 1 worker
+            const result = parseRateLimitConfig(config);
 
-            // Per-worker rate = 50 / 1 / 1 = 50 req/s
-            // Interval = 1000ms / 50 = 20ms
-            const interval = result.bucket.defaultConfig.requestsPerSecond.interval;
-            assert.strictEqual(interval, 20);
+            assert.strictEqual(result.bucket.defaultConfig.RequestsPerSecond.Limit, 50);
         });
 
         it('should handle high-scale distributed setup', () => {
@@ -862,19 +1218,17 @@ describe('parseRateLimitConfig', () => {
                 bucket: {
                     defaultConfig: {
                         requestsPerSecond: {
-                            limit: 10000, // 10,000 req/s global
+                            limit: 10000,
+                            burstCapacity: 5,
                         },
                     },
                 },
             };
 
-            const result = parseRateLimitConfig(config, 20); // 20 workers per node (ignored)
+            const result = parseRateLimitConfig(config);
 
-            // NEW BEHAVIOR: Per-NODE rate = 10000 / 10 nodes = 1000 req/s (workers NOT divided)
-            // Interval = 1000ms / 1000 = 1ms
-            // Workers dynamically share the 1000 req/s node quota via Redis
-            const interval = result.bucket.defaultConfig.requestsPerSecond.interval;
-            assert.strictEqual(interval, 1);
+            assert.strictEqual(result.bucket.defaultConfig.RequestsPerSecond.Limit, 10000);
+            assert.strictEqual(result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity, 5);
         });
     });
 });

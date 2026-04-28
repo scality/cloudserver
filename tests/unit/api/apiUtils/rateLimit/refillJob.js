@@ -1,15 +1,30 @@
 const assert = require('assert');
 const sinon = require('sinon');
 
+const { config } = require('../../../../../lib/Config');
 const refillJob = require('../../../../../lib/api/apiUtils/rateLimit/refillJob');
 const tokenBucket = require('../../../../../lib/api/apiUtils/rateLimit/tokenBucket');
 const logger = require('../../../../../lib/utilities/logger');
 
 describe('Token refill job', () => {
     let sandbox;
+    let mockLog;
 
     beforeEach(() => {
         sandbox = sinon.createSandbox();
+        sandbox.stub(config, 'rateLimiting').value({
+            enabled: true,
+            nodes: 1,
+            tokenBucketBufferSize: 50,
+            tokenBucketRefillThreshold: 20,
+        });
+        mockLog = {
+            trace: sinon.stub(),
+            debug: sinon.stub(),
+            info: sinon.stub(),
+            warn: sinon.stub(),
+            error: sinon.stub(),
+        };
 
         // Clear token buckets
         tokenBucket.getAllTokenBuckets().clear();
@@ -34,16 +49,10 @@ describe('Token refill job', () => {
         });
 
         it('should check all active token buckets', async () => {
-            const mockLog = {
-                trace: sinon.stub(),
-                debug: sinon.stub(),
-                error: sinon.stub(),
-            };
-
             // Create 3 buckets
-            const bucket1 = tokenBucket.getTokenBucket('bucket-1', { limit: 100 }, mockLog);
-            const bucket2 = tokenBucket.getTokenBucket('bucket-2', { limit: 200 }, mockLog);
-            const bucket3 = tokenBucket.getTokenBucket('bucket-3', { limit: 300 }, mockLog);
+            const bucket1 = tokenBucket.getTokenBucket('bkt', 'bucket-1', 'rps', { limit: 100 }, mockLog);
+            const bucket2 = tokenBucket.getTokenBucket('bkt', 'bucket-2', 'rps', { limit: 200 }, mockLog);
+            const bucket3 = tokenBucket.getTokenBucket('bkt', 'bucket-3', 'rps', { limit: 300 }, mockLog);
 
             // Stub refillIfNeeded to prevent actual refill
             sandbox.stub(bucket1, 'refillIfNeeded').resolves();
@@ -59,13 +68,7 @@ describe('Token refill job', () => {
         });
 
         it('should call refillIfNeeded on each bucket', async () => {
-            const mockLog = {
-                trace: sinon.stub(),
-                debug: sinon.stub(),
-                error: sinon.stub(),
-            };
-
-            const bucket = tokenBucket.getTokenBucket('test-bucket', { limit: 100 }, mockLog);
+            const bucket = tokenBucket.getTokenBucket('bkt', 'test-bucket', 'rps', { limit: 100 }, mockLog);
             const refillSpy = sandbox.stub(bucket, 'refillIfNeeded').resolves();
 
             await refillJob.refillTokenBuckets(logger);
@@ -74,13 +77,7 @@ describe('Token refill job', () => {
         });
 
         it('should handle refill errors gracefully', async () => {
-            const mockLog = {
-                trace: sinon.stub(),
-                debug: sinon.stub(),
-                error: sinon.stub(),
-            };
-
-            const bucket = tokenBucket.getTokenBucket('test-bucket', { limit: 100 }, mockLog);
+            const bucket = tokenBucket.getTokenBucket('bkt', 'test-bucket', 'rps', { limit: 100 }, mockLog);
             sandbox.stub(bucket, 'refillIfNeeded').rejects(new Error('Refill failed'));
 
             // Should not throw
@@ -90,14 +87,8 @@ describe('Token refill job', () => {
         });
 
         it('should process multiple buckets in parallel', async () => {
-            const mockLog = {
-                trace: sinon.stub(),
-                debug: sinon.stub(),
-                error: sinon.stub(),
-            };
-
-            const bucket1 = tokenBucket.getTokenBucket('bucket-1', { limit: 100 }, mockLog);
-            const bucket2 = tokenBucket.getTokenBucket('bucket-2', { limit: 200 }, mockLog);
+            const bucket1 = tokenBucket.getTokenBucket('bkt', 'bucket-1', 'rps', { limit: 100 }, mockLog);
+            const bucket2 = tokenBucket.getTokenBucket('bkt', 'bucket-2', 'rps', { limit: 200 }, mockLog);
 
             let refill1Called = false;
             let refill2Called = false;
@@ -117,14 +108,8 @@ describe('Token refill job', () => {
         });
 
         it('should wait for all refills to complete', async () => {
-            const mockLog = {
-                trace: sinon.stub(),
-                debug: sinon.stub(),
-                error: sinon.stub(),
-            };
-
-            const bucket1 = tokenBucket.getTokenBucket('bucket-1', { limit: 100 }, mockLog);
-            const bucket2 = tokenBucket.getTokenBucket('bucket-2', { limit: 200 }, mockLog);
+            const bucket1 = tokenBucket.getTokenBucket('bkt', 'bucket-1', 'rps', { limit: 100 }, mockLog);
+            const bucket2 = tokenBucket.getTokenBucket('bkt', 'bucket-2', 'rps', { limit: 200 }, mockLog);
 
             let call1 = false;
             let call2 = false;
@@ -197,13 +182,7 @@ describe('Token refill job', () => {
 
     describe('Integration scenarios', () => {
         it('should call refillIfNeeded on buckets below threshold', async () => {
-            const mockLog = {
-                trace: sinon.stub(),
-                debug: sinon.stub(),
-                error: sinon.stub(),
-            };
-
-            const bucket = tokenBucket.getTokenBucket('test-bucket', { limit: 100 }, mockLog);
+            const bucket = tokenBucket.getTokenBucket('bkt', 'test-bucket', 'rps', { limit: 100 }, mockLog);
             bucket.tokens = 10; // Below threshold (20)
 
             // Stub refillIfNeeded
@@ -215,33 +194,25 @@ describe('Token refill job', () => {
         });
 
         it('should skip refill for buckets above threshold', async () => {
-            const mockLog = {
-                trace: sinon.stub(),
-                debug: sinon.stub(),
-                error: sinon.stub(),
-            };
-
-            const bucket = tokenBucket.getTokenBucket('test-bucket', { limit: 100 }, mockLog);
+            const bucket = tokenBucket.getTokenBucket('bkt', 'test-bucket', 'rps', { limit: 100 }, mockLog);
             bucket.tokens = 40; // Above threshold (20)
 
-            const refillSpy = sandbox.spy(bucket, 'refill');
+            // refillIfNeeded is always called by the job, but it checks
+            // the threshold internally and returns early without refilling
+            const refillSpy = sandbox.spy(bucket, 'refillIfNeeded');
 
             await refillJob.refillTokenBuckets(logger);
 
-            // Refill should not have been called
-            assert.strictEqual(refillSpy.called, false);
+            // refillIfNeeded was called, but tokens should be unchanged
+            // (no actual refill happened since above threshold)
+            assert.strictEqual(refillSpy.calledOnce, true);
+            assert.strictEqual(bucket.tokens, 40);
         });
 
         it('should handle concurrent refills for multiple buckets', async () => {
-            const mockLog = {
-                trace: sinon.stub(),
-                debug: sinon.stub(),
-                error: sinon.stub(),
-            };
-
-            const bucket1 = tokenBucket.getTokenBucket('bucket-1', { limit: 100 }, mockLog);
-            const bucket2 = tokenBucket.getTokenBucket('bucket-2', { limit: 200 }, mockLog);
-            const bucket3 = tokenBucket.getTokenBucket('bucket-3', { limit: 300 }, mockLog);
+            const bucket1 = tokenBucket.getTokenBucket('bkt', 'bucket-1', 'rps', { limit: 100 }, mockLog);
+            const bucket2 = tokenBucket.getTokenBucket('bkt', 'bucket-2', 'rps', { limit: 200 }, mockLog);
+            const bucket3 = tokenBucket.getTokenBucket('bkt', 'bucket-3', 'rps', { limit: 300 }, mockLog);
 
             // All below threshold
             bucket1.tokens = 5;
