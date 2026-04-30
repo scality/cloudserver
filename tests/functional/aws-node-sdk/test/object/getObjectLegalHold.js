@@ -20,10 +20,8 @@ const unlockedBucket = 'mock-bucket-no-lock';
 const key = 'mock-object-legalhold';
 const keyNoHold = 'mock-object-no-legalhold';
 
-const isCEPH = process.env.CI_CEPH !== undefined;
-const describeSkipIfCeph = isCEPH ? describe.skip : describe;
 
-describeSkipIfCeph('GET object legal hold', () => {
+describe('GET object legal hold', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;

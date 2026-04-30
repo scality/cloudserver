@@ -48,10 +48,8 @@ function createLegalHoldParams(bucket, key, status, versionId) {
     return params;
 }
 
-const isCEPH = process.env.CI_CEPH !== undefined;
-const describeSkipIfCeph = isCEPH ? describe.skip : describe;
 
-describeSkipIfCeph('PUT object legal hold', () => {
+describe('PUT object legal hold', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
@@ -215,7 +213,7 @@ describeSkipIfCeph('PUT object legal hold', () => {
 // Use bucket policy to test iam action for putObjectLegalHold with version id
 // It used to need non standard s3:PutObjectVersionLegalHold action but was fixed
 // by ARSN-297 ARTESCA-7107
-describeSkipIfCeph('PUT object legal hold iam action and version id', () => {
+describe('PUT object legal hold iam action and version id', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;

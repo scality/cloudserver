@@ -313,10 +313,8 @@ describe('PUT object', () => {
     });
 });
 
-const isCEPH = process.env.CI_CEPH !== undefined;
-const describeSkipIfCeph = isCEPH ? describe.skip : describe;
 
-describeSkipIfCeph('PUT object with object lock', () => {
+describe('PUT object with object lock', () => {
     const bucket = 'bucket2putstuffin4324242-lock';
     withV4(sigCfg => {
         let bucketUtil;

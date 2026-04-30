@@ -9,7 +9,6 @@ const { CreateBucketCommand,
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const {
-    describeSkipIfNotMultipleOrCeph,
     uniqName,
     getAzureClient,
     getAzureContainerName,
@@ -18,6 +17,7 @@ const {
     fileLocation,
     azureLocation,
     azureLocationMismatch,
+    describeSkipIfNotMultiple,
 } = require('../utils');
 
 const keyObject = 'putazure';
@@ -50,7 +50,7 @@ function azureGetCheck(objectKey, azureMD5, azureMetadata, cb) {
         .catch(err => cb(err));
 }
 
-describeSkipIfNotMultipleOrCeph('MultipleBackend put object to AZURE', function
+describeSkipIfNotMultiple('MultipleBackend put object to AZURE', function
 describeF() {
     this.timeout(250000);
     withV4(sigCfg => {

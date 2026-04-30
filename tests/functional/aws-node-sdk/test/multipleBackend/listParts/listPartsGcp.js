@@ -6,7 +6,7 @@ const { CreateBucketCommand,
     ListPartsCommand } = require('@aws-sdk/client-s3');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultipleOrCeph, gcpLocation, genUniqID }
+const { gcpLocation, genUniqID, describeSkipIfNotMultiple }
     = require('../utils');
 
 const bucket = `listpartsgcp${genUniqID()}`;
@@ -18,7 +18,7 @@ const bodySecondPart = Buffer.alloc(secondPartSize);
 let bucketUtil;
 let s3;
 
-describeSkipIfNotMultipleOrCeph('List parts of MPU on GCP data backend', () => {
+describeSkipIfNotMultiple('List parts of MPU on GCP data backend', () => {
     withV4(sigCfg => {
         beforeEach(function beforeEachFn() {
             this.currentTest.key = `somekey-${genUniqID()}`;

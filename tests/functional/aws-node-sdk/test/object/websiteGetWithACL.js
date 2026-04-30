@@ -26,14 +26,12 @@ const aclEquivalent = {
 };
 
 const aclTests = [
-    // CEPH: test_website_private_bucket_list_private_index_blockederrordoc
     {
         it: 'should return 403 if private bucket index and error documents',
         bucketACL: 'private',
         objects: { index: 'private', error: 'private' },
         html: '403-access-denied',
     },
-    // CEPH: test_website_public_bucket_list_private_index_blockederrordoc
     {
         it: 'should return 403 if public bucket - private index - public ' +
         'error documents',
@@ -85,7 +83,6 @@ const aclTests = [
         html: 'error-user-404',
     },
 
-    // CEPH: test_website_private_bucket_list_empty_blockederrordoc
     {
         it: 'should return 403 if private bucket - without index - ' +
         'private error documents',
@@ -94,7 +91,6 @@ const aclTests = [
         html: '403-access-denied',
     },
 
-    // CEPH: test_website_public_bucket_list_empty_blockederrordoc
     {
         it: 'should return 404 if public bucket - without index - ' +
         'private error documents',
@@ -103,7 +99,6 @@ const aclTests = [
         html: '404-not-found',
     },
 
-    // CEPH: test_website_public_bucket_list_empty_missingerrordoc
     {
         it: 'should return 404 if public bucket - without index - ' +
         'without error documents',

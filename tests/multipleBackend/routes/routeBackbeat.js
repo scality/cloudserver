@@ -24,9 +24,8 @@ const { makeid } = require('../../unit/helpers');
 const { makeRequest, makeBackbeatRequest } = require('../../functional/raw-node/utils/makeRequest');
 const BucketUtility = require('../../functional/aws-node-sdk/lib/utility/bucket-util');
 const {
-    describeSkipIfNotMultipleOrCeph,
-    itSkipCeph,
-    hasLocation
+    hasLocation,
+    describeSkipIfNotMultiple,
 } = require('../../functional/aws-node-sdk/lib/utility/test-utils');
 const {
     awsLocation,
@@ -192,14 +191,12 @@ function generateUniqueBucketName(prefix, suffix = uuidv4()) {
     return `${prefix}-${suffix.substring(0, 8)}`.substring(0, 63);
 }
 const describeIfLocationAws = hasLocation(awsLocation) ? describe : describe.skip;
-const itIfLocationAwsSkipCeph = hasLocation(awsLocation) ? itSkipCeph : it.skip;
 const itIfLocationAws = hasLocation(awsLocation) ? it : it.skip;
 const itIfLocationAzure = hasLocation(azureLocation) ? it : it.skip;
 const itSkipS3C = process.env.S3_END_TO_END ? it.skip : it;
 
-// FIXME: does not pass for Ceph, see CLDSRV-443
-describeSkipIfNotMultipleOrCeph('backbeat DELETE routes', () => {
-    it('abort MPU', done => {
+describeSkipIfNotMultiple('backbeat DELETE routes', () => {
+    itIfLocationAws('abort MPU', done => {
         const awsKey = 'backbeat-mpu-test';
         async.waterfall([
             next => {
@@ -2337,7 +2334,7 @@ describe('backbeat routes', () => {
             });
         });
 
-        itIfLocationAwsSkipCeph('should PUT tags for a non-versioned bucket (awslocation)', function test(done) {
+        itIfLocationAws('should PUT tags for a non-versioned bucket (awslocation)', function test(done) {
             this.timeout(10000);
             const bucket = NONVERSIONED_BUCKET;
             const awsKey = uuidv4();
@@ -3055,8 +3052,7 @@ describe('backbeat routes', () => {
     describeIfLocationAws('backbeat multipart upload operations (external location)', function test() {
         this.timeout(10000);
 
-        // The ceph image does not support putting tags during initiate MPU.
-        itSkipCeph('should put tags if the source is AWS and tags are ' +
+        it('should put tags if the source is AWS and tags are ' +
             'provided when initiating the multipart upload', done => {
             const awsKey = uuidv4();
             const multipleBackendPath =
@@ -3277,7 +3273,7 @@ describe('backbeat routes', () => {
             ], done);
         });
 
-        itIfLocationAwsSkipCeph('should batch delete a versioned AWS location', done => {
+        itIfLocationAws('should batch delete a versioned AWS location', done => {
             let versionId;
             const awsKey = `${TEST_BUCKET}/batch-delete-test-key-${makeid(8)}`;
 
@@ -3432,7 +3428,7 @@ describe('backbeat routes', () => {
             ], done);
         });
 
-        itIfLocationAwsSkipCeph('should not put tags if the source is not Azure and ' +
+        itIfLocationAws('should not put tags if the source is not Azure and ' +
         'if-unmodified-since condition is not met', done => {
             const awsKey = uuidv4();
             async.series([
@@ -3479,7 +3475,7 @@ describe('backbeat routes', () => {
             ], done);
         });
 
-        itIfLocationAwsSkipCeph('should put tags if the source is not Azure and ' +
+        itIfLocationAws('should put tags if the source is not Azure and ' +
         'if-unmodified-since condition is met', done => {
             const awsKey = uuidv4();
             let lastModified;

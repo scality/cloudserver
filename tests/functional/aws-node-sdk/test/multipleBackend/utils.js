@@ -24,10 +24,6 @@ const authdata = require('../../../../../conf/authdata.json');
 
 const {
     describeSkipIfNotMultiple,
-    describeSkipIfNotMultipleOrCeph,
-    describeSkipIfCeph,
-    isCEPH,
-    itSkipCeph,
 } = require('../../lib/utility/test-utils');
 
 const memLocation = 'scality-internal-mem';
@@ -79,8 +75,6 @@ if (config.backends.data === 'multiple') {
 
 const utils = {
     describeSkipIfNotMultiple,
-    describeSkipIfNotMultipleOrCeph,
-    describeSkipIfCeph,
     awsS3,
     awsBucket,
     gcpClient,
@@ -99,8 +93,6 @@ const utils = {
     gcpLocation,
     gcpLocation2,
     gcpLocationMismatch,
-    isCEPH,
-    itSkipCeph,
 };
 
 utils.genUniqID = () => uuidv4().replace(/-/g, '');
@@ -324,7 +316,7 @@ utils.mapToAwsPuts = async (s3, bucket, key, dataArray, callback) => {
 utils.putVersionsToAws = async (s3, bucket, key, versions, callback) => {
     try {
         await utils.enableVersioning(s3, bucket);
-        // Wait for versioning to be enabled before PUT to ensure Ceph returns VersionId
+        // Wait for versioning to be enabled before PUT to ensure VersionId is available
         await utils.waitForVersioningBeforePut(s3, bucket);
         const results = await utils.mapToAwsPuts(s3, bucket, key, versions);
         if (callback) {
@@ -345,7 +337,7 @@ utils.putNullVersionsToAws = async (s3, bucket, key, versions, callback) => {
     try {
         await utils.suspendVersioning(s3, bucket);
         // Note: When versioning is suspended, we don't need to wait for "Enabled" status
-        // The wait is only needed when enabling versioning to ensure Ceph returns VersionId
+        // The wait is only needed when enabling versioning
         const results = await utils.mapToAwsPuts(s3, bucket, key, versions);
         if (callback) {
             callback(null, results);

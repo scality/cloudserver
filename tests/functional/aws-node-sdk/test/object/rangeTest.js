@@ -16,8 +16,6 @@ const {
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
-const { describeSkipIfCeph } = require('../../lib/utility/test-utils');
-
 const bucket = 'bucket-for-range-test';
 const key = 'key-for-range-test';
 let s3;
@@ -103,7 +101,7 @@ function createHashedFile(bytes) {
     return execFileAsync('./getRangeExec', ['--size', bytes, name]);
 }
 
-describeSkipIfCeph('aws-node-sdk range tests', () => {
+describe('aws-node-sdk range tests', () => {
     before(() => execFileAsync('gcc', ['-o', 'getRangeExec',
         'lib/utility/getRange.c']));
     after(() => execAsync('rm getRangeExec'));

@@ -7,8 +7,8 @@ const {
 } = require('@aws-sdk/client-s3');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultipleOrCeph, gcpClient, gcpBucket,
-    gcpLocation, fileLocation, genUniqID } = require('../utils');
+const { gcpClient, gcpBucket,
+    gcpLocation, fileLocation, genUniqID, describeSkipIfNotMultiple } = require('../utils');
 
 const bucket = `putgcp${genUniqID()}`;
 const body = Buffer.from('I am a body', 'utf8');
@@ -90,7 +90,7 @@ function gcpGetCheck(objectKey, s3MD5, gcpMD5, location, callback) {
     attempt();
 }
 
-describeSkipIfNotMultipleOrCeph('MultipleBackend put object to GCP', function
+describeSkipIfNotMultiple('MultipleBackend put object to GCP', function
 describeFn() {
     this.timeout(250000);
     withV4(sigCfg => {
@@ -235,8 +235,7 @@ describeFn() {
     });
 });
 
-describeSkipIfNotMultipleOrCeph('MultipleBackend put object' +
-                                'based on bucket location', () => {
+describeSkipIfNotMultiple('MultipleBackend put object based on bucket location', () => {
     withV4(sigCfg => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
