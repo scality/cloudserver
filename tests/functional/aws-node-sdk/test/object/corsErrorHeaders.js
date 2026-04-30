@@ -1,13 +1,18 @@
-const { S3 } = require('aws-sdk');
+const {
+    S3Client,
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    PutBucketCorsCommand,
+    ListObjectsCommand,
+} = require('@aws-sdk/client-s3');
 const assert = require('assert');
-const async = require('async');
 
 const getConfig = require('../support/config');
 const { methodRequest, generateCorsParams } =
     require('../../lib/utility/cors-util');
 
 const config = getConfig('default', { signatureVersion: 'v4' });
-const s3 = new S3(config);
+const s3 = new S3Client({ ...config, forcePathStyle: true });
 
 const bucket = 'corserrorheadertest';
 const objectKey = 'objectKey';
@@ -64,21 +69,15 @@ const unauthenticatedRequests = [
     // failure directly.
 ];
 
-function _waitForAWS(callback, err) {
-    if (err) {
-        return setTimeout(() => callback(err), 500);
-    }
-    return setTimeout(() => callback(), 500);
-}
-
 describe('CORS headers on 403 responses when bucket has CORS configured', () => {
-    before(done => async.series([
-        cb => s3.createBucket({ Bucket: bucket }, err => _waitForAWS(cb, err)),
-        cb => s3.putBucketCors(corsParams, err => _waitForAWS(cb, err)),
-    ], done));
+    before(async () => {
+        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+        await s3.send(new PutBucketCorsCommand(corsParams));
+    });
 
-    after(done => s3.deleteBucket({ Bucket: bucket },
-        err => _waitForAWS(done, err)));
+    after(async () => {
+        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+    });
 
     unauthenticatedRequests.forEach(spec => {
         it(`returns CORS headers on 403 for ${spec.description} `
@@ -127,26 +126,35 @@ describe('CORS headers on 403 responses when bucket has CORS configured', () => 
 });
 
 describe('CORS headers on 200 responses (regression guard)', () => {
-    before(done => async.series([
-        cb => s3.createBucket({ Bucket: bucket }, err => _waitForAWS(cb, err)),
-        cb => s3.putBucketCors(corsParams, err => _waitForAWS(cb, err)),
-    ], done));
-
-    after(done => s3.deleteBucket({ Bucket: bucket },
-        err => _waitForAWS(done, err)));
-
-    it('returns CORS headers on a successful list objects (200)', done => {
-        const request = s3.listObjects({ Bucket: bucket });
-        request.on('build', () => {
-            request.httpRequest.headers.origin = allowedOrigin;
-        });
-        request.on('success', response => {
-            const h = response.httpResponse.headers;
-            assert.strictEqual(h['access-control-allow-origin'],
-                allowedOrigin);
-            done();
-        });
-        request.on('error', err => done(err));
-        request.send();
+    before(async () => {
+        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+        await s3.send(new PutBucketCorsCommand(corsParams));
     });
+
+    after(async () => {
+        await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+    });
+
+    it('returns CORS headers on a successful list objects (200)',
+        async () => {
+            const command = new ListObjectsCommand({ Bucket: bucket });
+            // Inject Origin on the outgoing request and capture the raw
+            // response headers via the deserialize step.
+            command.middlewareStack.add(next => async args => {
+                const headers = args.request && args.request.headers;
+                if (headers) {
+                    headers.origin = allowedOrigin;
+                }
+                return next(args);
+            }, { step: 'build' });
+            let responseHeaders;
+            command.middlewareStack.add(next => async args => {
+                const result = await next(args);
+                responseHeaders = result.response && result.response.headers;
+                return result;
+            }, { step: 'deserialize' });
+            await s3.send(command);
+            assert.strictEqual(responseHeaders['access-control-allow-origin'],
+                allowedOrigin);
+        });
 });
