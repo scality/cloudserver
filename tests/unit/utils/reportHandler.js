@@ -29,7 +29,6 @@ describe('reportHandler.getCapabilities', () => {
                 locationTypeS3Custom: true,
                 locationTypeSproxyd: true,
                 locationTypeNFS: true,
-                locationTypeCephRadosGW: true,
                 locationTypeHyperdriveV2: true,
                 locationTypeLocal: true,
                 preferredReadLocation: true,
@@ -38,7 +37,6 @@ describe('reportHandler.getCapabilities', () => {
                 secureChannelOptimizedPath: true,
                 s3cIngestLocation: true,
                 nfsIngestLocation: false,
-                cephIngestLocation: false,
                 awsIngestLocation: false,
             });
         });
@@ -61,6 +59,22 @@ describe('reportHandler.getCapabilities', () => {
                 locationTypeGCP: false,
                 locationTypeDigitalOcean: true,
                 locationTypeS3Custom: false,
+                customCapability: 'test-value',
+            });
+        });
+
+        it('should not report Ceph capability fields from config', () => {
+            const cfg = {
+                capabilities: {
+                    locationTypeCephRadosGW: true,
+                    cephIngestLocation: true,
+                    customCapability: 'test-value',
+                },
+                supportedLifecycleRules: ['Expiration'],
+            };
+            const caps = getCapabilities(cfg);
+
+            assert.deepStrictEqual(caps, {
                 customCapability: 'test-value',
             });
         });
@@ -217,7 +231,6 @@ describe('reportHandler.getCapabilities', () => {
             const locationTypes = [
                 'location-gcp-v1',
                 'location-scality-sproxyd-v1',
-                'location-ceph-radosgw-s3-v1',
                 'location-file-v1',
                 'location-scality-artesca-s3-v1',
             ];
@@ -229,7 +242,6 @@ describe('reportHandler.getCapabilities', () => {
                     locationTypeS3Custom: true,
                     locationTypeSproxyd: true,
                     locationTypeNFS: true,
-                    locationTypeCephRadosGW: true,
                     locationTypeHyperdriveV2: true,
                     locationTypeLocal: true,
                     locationTypes,
@@ -245,7 +257,6 @@ describe('reportHandler.getCapabilities', () => {
             assert.strictEqual(caps.locationTypeDigitalOcean, false);
             assert.strictEqual(caps.locationTypeSproxyd, true);
             assert.strictEqual(caps.locationTypeNFS, false);
-            assert.strictEqual(caps.locationTypeCephRadosGW, true);
             assert.strictEqual(caps.locationTypeHyperdriveV2, false);
             assert.strictEqual(caps.locationTypeLocal, true);
         });
