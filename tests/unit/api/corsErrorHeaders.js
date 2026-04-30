@@ -51,6 +51,12 @@ const endpoints = [
         objectKey: 'obj' },
     { apiMethod: 'objectDelete', httpMethod: 'DELETE', url: '/obj', query: {},
         objectKey: 'obj' },
+    { apiMethod: 'objectGetLegalHold', httpMethod: 'GET',
+        url: '/obj?legal-hold', query: { 'legal-hold': '' },
+        objectKey: 'obj' },
+    { apiMethod: 'objectGetAttributes', httpMethod: 'GET',
+        url: '/obj?attributes', query: { attributes: '' },
+        objectKey: 'obj' },
     { apiMethod: 'listMultipartUploads', httpMethod: 'GET', url: '/?uploads',
         query: { uploads: '' } },
 ];
