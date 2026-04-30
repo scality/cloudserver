@@ -286,6 +286,16 @@ describe('serverAccessLogger utility functions', () => {
             const result = getOperation(req);
             assert.strictEqual(result, 'S3.EXPIRE.OBJECT');
         });
+
+        it('should return REST.PUT.OBJECT for replication requests', () => {
+            const req = {
+                method: 'PUT',
+                apiMethod: 'routeBackbeat',
+                serverAccessLog: { backbeat: true, replication: true },
+            };
+            const result = getOperation(req);
+            assert.strictEqual(result, 'REST.PUT.OBJECT');
+        });
     });
 
     describe('getRequester', () => {
@@ -1638,6 +1648,209 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.requester, 'ScalityS3LifecycleService');
             assert.strictEqual(loggedData.errorCode, 'NoSuchKey');
             assert.strictEqual(loggedData.httpCode, undefined);
+        });
+
+        it('should pass through loggingEnabled for replication', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {
+                    backbeat: true,
+                    replication: true,
+                    enabled: true,
+                    loggingEnabled: {
+                        TargetBucket: 'log-bucket',
+                        TargetPrefix: 'logs/',
+                    },
+                    bucketName: 'dest-bucket',
+                    objectKey: 'replicated.txt',
+                },
+                method: 'PUT',
+                apiMethod: 'routeBackbeat',
+                headers: {},
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {},
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+            assert.strictEqual(loggedData.loggingEnabled, true);
+            assert.strictEqual(loggedData.loggingTargetBucket, 'log-bucket');
+            assert.strictEqual(loggedData.loggingTargetPrefix, 'logs/');
+            assert.strictEqual(loggedData.operation, 'REST.PUT.OBJECT');
+        });
+
+        it('should not deliver replication log when bucket has no logging config', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {
+                    backbeat: true,
+                    replication: true,
+                    enabled: false,
+                    bucketName: 'dest-bucket',
+                    objectKey: 'replicated.txt',
+                },
+                method: 'PUT',
+                apiMethod: 'routeBackbeat',
+                headers: {},
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {},
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+            assert.strictEqual(loggedData.loggingEnabled, false);
+        });
+
+        it('should produce a complete log entry for replication', () => {
+            setServerAccessLogger(mockLogger);
+            const authInfo = {
+                getAccountDisplayName: () => 'replicationAccount',
+                getCanonicalID: () => 'replication-canonical-id',
+                isRequesterPublicUser: () => false,
+                isRequesterAnIAMUser: () => false,
+                getArn: () =>
+                    'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication',
+                getAuthVersion: () => 'AWS4-HMAC-SHA256',
+                getAuthType: () => 'REST-HEADER',
+                getAccessKey: () => 'replication-access-key',
+            };
+            const startTime = process.hrtime.bigint();
+            const startTurnAroundTime = startTime + 1_000_000n;
+            const endTurnAroundTime = startTurnAroundTime + 13_000_000n;
+            const onFinishEndTime = startTime + 19_000_000n;
+            const onCloseEndTime = startTime + 20_000_000n;
+
+            const req = {
+                serverAccessLog: {
+                    backbeat: true,
+                    replication: true,
+                    enabled: true,
+                    loggingEnabled: {
+                        TargetBucket: 'log-bucket',
+                        TargetPrefix: 'access-logs/',
+                    },
+                    bucketOwner: 'bucket-owner-id',
+                    bucketName: 'dest-bucket',
+                    objectKey: 'replicated.txt',
+                    authInfo,
+                    analyticsAction: 'putData',
+                    analyticsAccountName: 'replicationAccount',
+                    analyticsUserName: '',
+                    startTime,
+                    startTimeUnixMS: Date.now(),
+                    startTurnAroundTime,
+                    onFinishEndTime,
+                    onCloseEndTime,
+                    objectSize: 43,
+                },
+                method: 'PUT',
+                apiMethod: 'routeBackbeat',
+                url: '/_/backbeat/data/dest-bucket/replicated.txt?v2',
+                httpVersion: '1.1',
+                headers: {
+                    host: '127.0.0.1:8000',
+                    referer: 'http://example.com',
+                    'user-agent': 'aws-sdk-nodejs/2.1692.0',
+                },
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {
+                    endTurnAroundTime,
+                    bytesSent: 75,
+                },
+                statusCode: 200,
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+
+            // Core replication fields
+            assert.strictEqual(loggedData.operation, 'REST.PUT.OBJECT');
+            assert.strictEqual(loggedData.loggingEnabled, true);
+            assert.strictEqual(loggedData.loggingTargetBucket, 'log-bucket');
+            assert.strictEqual(loggedData.loggingTargetPrefix, 'access-logs/');
+
+            // Bucket and object info
+            assert.strictEqual(loggedData.bucketOwner, 'bucket-owner-id');
+            assert.strictEqual(loggedData.bucketName, 'dest-bucket');
+            assert.strictEqual(loggedData.objectKey, 'replicated.txt');
+
+            // Requester is the assumed-role ARN from auth
+            assert.strictEqual(loggedData.requester,
+                'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication');
+
+            // requestURI is synthesized to look like a normal S3 PUT,
+            // not the internal /_/backbeat/data path
+            assert.strictEqual(loggedData.requestURI,
+                'PUT /dest-bucket/replicated.txt HTTP/1.1');
+
+            // HTTP-layer fields that AWS blanks for replication
+            assert.strictEqual(loggedData.clientIP, undefined);
+            assert.strictEqual(loggedData.userAgent, undefined);
+            assert.strictEqual(loggedData.referer, undefined);
+
+            // Real HTTP timing/status preserved
+            assert.strictEqual(loggedData.httpCode, 200);
+            assert.strictEqual(loggedData.bytesSent, 75);
+            assert.strictEqual(loggedData.objectSize, 43);
+            assert.strictEqual(loggedData.hostHeader, '127.0.0.1:8000');
+            assert.strictEqual(loggedData.signatureVersion, 'AWS4-HMAC-SHA256');
+            assert.strictEqual(loggedData.authenticationType, 'REST-HEADER');
+        });
+
+        it('should log replication with error code on failure', () => {
+            setServerAccessLogger(mockLogger);
+            const req = {
+                serverAccessLog: {
+                    backbeat: true,
+                    replication: true,
+                    enabled: true,
+                    loggingEnabled: {
+                        TargetBucket: 'log-bucket',
+                        TargetPrefix: 'logs/',
+                    },
+                    bucketOwner: 'bucket-owner-id',
+                    bucketName: 'dest-bucket',
+                    objectKey: 'replicated.txt',
+                    startTime: process.hrtime.bigint(),
+                    startTimeUnixMS: Date.now(),
+                },
+                method: 'PUT',
+                apiMethod: 'routeBackbeat',
+                headers: {},
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {
+                    errorCode: 'InternalError',
+                    endTurnAroundTime: process.hrtime.bigint(),
+                },
+                statusCode: 500,
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+            assert.strictEqual(loggedData.operation, 'REST.PUT.OBJECT');
+            assert.strictEqual(loggedData.loggingEnabled, true);
+            assert.strictEqual(loggedData.errorCode, 'InternalError');
+            assert.strictEqual(loggedData.httpCode, 500);
         });
 
     });
