@@ -24,12 +24,10 @@ const retentionConfig = {
     RetainUntilDate: moment().add(1, 'd').add(123, 'ms').toDate(),
 };
 
-const isCEPH = process.env.CI_CEPH !== undefined;
-const describeSkipIfCeph = isCEPH ? describe.skip : describe;
 
 const changeObjectLockPromise = promisify(changeObjectLock);
 
-describeSkipIfCeph('PUT object retention', () => {
+describe('PUT object retention', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
@@ -146,7 +144,7 @@ describeSkipIfCeph('PUT object retention', () => {
 // Use bucket policy to test iam action for putObjectRetention with version id
 // It used to need non standard s3:PutObjectVersionRetention action but was fixed
 // by ARSN-297 ARTESCA-7107
-describeSkipIfCeph('PUT object retention iam action and version id', () => {
+describe('PUT object retention iam action and version id', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;

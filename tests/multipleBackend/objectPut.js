@@ -21,7 +21,6 @@ const fileLocation = 'scality-internal-file';
 const memLocation = 'scality-internal-mem';
 const sproxydLocation = 'scality-internal-sproxyd';
 
-const isCEPH = process.env.CI_CEPH !== undefined;
 const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
 function put(bucketLoc, objLoc, requestHost, objectName, cb, errorDescription) {
@@ -124,13 +123,11 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
         },
     ];
 
-    if (!isCEPH) {
-        putCases.push({
-            name: 'sproxyd',
-            bucketLoc: sproxydLocation,
-            objLoc: null,
-        });
-    }
+    putCases.push({
+        name: 'sproxyd',
+        bucketLoc: sproxydLocation,
+        objLoc: null,
+    });
 
     function isDataStoredInMem(testCase) {
         return testCase.objLoc === memLocation

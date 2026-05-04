@@ -5,10 +5,10 @@ const { PutObjectCommand,
     CreateBucketCommand } = require('@aws-sdk/client-s3');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const {
-    describeSkipIfNotMultipleOrCeph,
     gcpLocation,
     gcpLocationMismatch,
     genUniqID,
+    describeSkipIfNotMultiple,
 } = require('../utils');
 
 const bucket = `getgcp${genUniqID()}`;
@@ -53,7 +53,7 @@ describe('Multiple backend get object', function testSuite() {
             });
         });
 
-        describeSkipIfNotMultipleOrCeph('with objects in GCP', () => {
+        describeSkipIfNotMultiple('with objects in GCP', () => {
             before(() => {
                 process.stdout.write('Putting object to GCP\n');
                 return s3.send(new PutObjectCommand({ Bucket: bucket, Key: gcpObject,
@@ -128,7 +128,7 @@ describe('Multiple backend get object', function testSuite() {
             });
         });
 
-        describeSkipIfNotMultipleOrCeph('with bucketMatch set to false', () => {
+        describeSkipIfNotMultiple('with bucketMatch set to false', () => {
             beforeEach(done => {
                 s3.send(new PutObjectCommand({ Bucket: bucket, Key: mismatchObject, Body: body,
                 Metadata: { 'scal-location-constraint': gcpLocationMismatch } })).then(() => {

@@ -9,8 +9,8 @@ const {
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultipleOrCeph, azureLocation, getAzureContainerName,
-    genUniqID } = require('../utils');
+const { azureLocation, getAzureContainerName,
+    genUniqID, describeSkipIfNotMultiple } = require('../utils');
 
 const keyName = `somekey-${genUniqID()}`;
 
@@ -18,7 +18,7 @@ const azureContainerName = getAzureContainerName(azureLocation);
 let s3;
 let bucketUtil;
 
-describeSkipIfNotMultipleOrCeph('Initiate MPU to AZURE', () => {
+describeSkipIfNotMultiple('Initiate MPU to AZURE', () => {
     withV4(sigCfg => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);

@@ -17,11 +17,10 @@ const { config } = require('../../../../../../lib/Config');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { uniqName, getAzureClient, azureLocation, azureLocationMismatch,
-  memLocation, awsLocation, awsS3, getOwnerInfo, genUniqID }
+  memLocation, awsLocation, awsS3, getOwnerInfo, genUniqID,
+  describeSkipIfNotMultiple }
   = require('../utils');
 
-const describeSkipIfNotMultipleOrCeph = config.backends.data !== 'multiple'
-    ? describe.skip : describe.skip;
 
 let azureContainerName;
 
@@ -126,7 +125,7 @@ function assertCopyPart(infos, cb) {
     ], cb);
 }
 
-describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE', function describeF() {
+describeSkipIfNotMultiple('Put Copy Part to AZURE', function describeF() {
     this.timeout(800000);
     withV4(sigCfg => {
         beforeEach(() => {
@@ -649,7 +648,7 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE', function describeF() {
     });
 });
 
-describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE with large object',
+describeSkipIfNotMultiple('Put Copy Part to AZURE with large object',
 function describeF() {
     this.timeout(800000);
     withV4(sigCfg => {
@@ -759,7 +758,7 @@ function describeF() {
     });
 });
 
-describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE with complete MPU',
+describeSkipIfNotMultiple('Put Copy Part to AZURE with complete MPU',
 function describeF() {
     this.timeout(800000);
     withV4(sigCfg => {

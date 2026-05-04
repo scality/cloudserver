@@ -18,8 +18,6 @@ const changeObjectLock = require('../../../../utilities/objectLock-util');
 const objectName = 'key';
 const objectNameTwo = 'secondkey';
 
-const isCEPH = process.env.CI_CEPH !== undefined;
-const describeSkipIfCeph = isCEPH ? describe.skip : describe;
 
 describe('DELETE object', () => {
     withV4(sigCfg => {
@@ -109,7 +107,7 @@ describe('DELETE object', () => {
             });
         });
 
-        describeSkipIfCeph('with object lock', () => {
+        describe('with object lock', () => {
             const bucketName = 'testdeleteobjectlockbucket';
             let versionIdOne;
             let versionIdTwo;
@@ -229,7 +227,7 @@ describe('DELETE object', () => {
             });
         });
 
-        describeSkipIfCeph('with object lock and legal hold', () => {
+        describe('with object lock and legal hold', () => {
             const bucketName = 'testdeletelocklegalholdbucket';
             const objectName = 'key';
             let versionId;

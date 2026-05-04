@@ -7,8 +7,8 @@ const { CreateBucketCommand,
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultipleOrCeph, azureLocation, getAzureContainerName,
-    genUniqID } = require('../utils');
+const { azureLocation, getAzureContainerName,
+    genUniqID, describeSkipIfNotMultiple } = require('../utils');
 
 const azureContainerName = getAzureContainerName(azureLocation);
 const firstPartSize = 10;
@@ -19,7 +19,7 @@ const bodySecondPart = Buffer.alloc(secondPartSize);
 let bucketUtil;
 let s3;
 
-describeSkipIfNotMultipleOrCeph('List parts of MPU on Azure data backend',
+describeSkipIfNotMultiple('List parts of MPU on Azure data backend',
 () => {
     withV4(sigCfg => {
         beforeEach(function beforeEachFn() {

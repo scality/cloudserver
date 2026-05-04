@@ -3471,6 +3471,14 @@
     httpagent "github:scality/httpagent#1.1.0"
     werelogs "github:scality/werelogs#8.2.2"
 
+"@scality/hdclient@^1.3.2":
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/@scality/hdclient/-/hdclient-1.3.2.tgz#544d08a5b88869a9c30107c05d774e13595966fb"
+  integrity sha512-voy67AlH1irNmaXno0KP/KpiEBYzzdW8EoGjBXsVztLFjGe+RQnNtAyzCn05secZZy43jBYLOrZ7032gorxvrg==
+  dependencies:
+    httpagent "github:scality/httpagent#1.1.0"
+    werelogs "github:scality/werelogs#8.2.2"
+
 "@senx/warp10@^2.0.3":
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/@senx/warp10/-/warp10-2.0.3.tgz#dcce3890d491c6380f2967abcf126909ed208969"
@@ -6202,9 +6210,9 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#8.3.9":
-  version "8.3.9"
-  resolved "git+https://github.com/scality/Arsenal#51e5b761f7f0612a722c828fa3d43b438c50ab7c"
+"arsenal@git+https://github.com/scality/Arsenal#8.4.1":
+  version "8.4.1"
+  resolved "git+https://github.com/scality/Arsenal#6b3b58b152ac23d29176ab1f24f49f8eda3145b2"
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"
@@ -6213,7 +6221,7 @@ arraybuffer.prototype.slice@^1.0.4:
     "@azure/identity" "^4.13.0"
     "@azure/storage-blob" "^12.31.0"
     "@js-sdsl/ordered-set" "^4.4.2"
-    "@scality/hdclient" "^1.3.1"
+    "@scality/hdclient" "^1.3.2"
     "@smithy/node-http-handler" "^4.3.0"
     "@smithy/protocol-http" "^5.3.5"
     JSONStream "^1.3.5"

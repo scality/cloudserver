@@ -12,6 +12,7 @@ const {
     getAzureContainerName,
     getAzureKeys,
     azureLocation,
+    describeSkipIfNotMultiple,
 } = require('../utils');
 
 const azureClient = getAzureClient();
@@ -23,7 +24,7 @@ const normalBody = Buffer.from('I am a body', 'utf8');
 
 const azureTimeout = 10000;
 
-describe.skip('Multiple backend get object from Azure',
+describeSkipIfNotMultiple('Multiple backend get object from Azure',
 function testSuite() {
     this.timeout(30000);
     withV4(sigCfg => {

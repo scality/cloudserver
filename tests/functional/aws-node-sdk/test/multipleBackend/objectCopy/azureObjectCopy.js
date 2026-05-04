@@ -11,7 +11,6 @@ const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const constants = require('../../../../../../constants');
 const {
-    describeSkipIfNotMultipleOrCeph,
     getAzureClient,
     getAzureContainerName,
     convertMD5,
@@ -21,6 +20,7 @@ const {
     azureLocation2,
     azureLocationMismatch,
     genUniqID,
+    describeSkipIfNotMultiple,
 } = require('../utils');
 const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
@@ -148,7 +148,7 @@ destBucket, destLoc, azureKey, mdDirective, objSize, callback) {
     });
 }
 
-describeSkipIfNotMultipleOrCeph('MultipleBackend object copy: Azure',
+describeSkipIfNotMultiple('MultipleBackend object copy: Azure',
 function testSuite() {
     this.timeout(250000);
     withV4(sigCfg => {

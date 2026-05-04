@@ -22,7 +22,6 @@ const {
     awsGetLatestVerId,
     getAndAssertResult,
     genUniqID,
-    itSkipCeph,
 } = require('../utils');
 
 const sourceBucketName = `awsversioningsrc${genUniqID()}`;
@@ -277,7 +276,7 @@ function testSuite() {
                 destLocation: awsLocation,
             });
             const { isEmptyObj, directive } = testParams;
-            itSkipCeph(`should copy ${isEmptyObj ? 'an empty' : ''} ` +
+            it(`should copy ${isEmptyObj ? 'an empty' : ''} ` +
             'object from AWS backend non-versioned bucket' +
             'to AWS backend versioned bucket ' +
             `with ${directive} directive`, done => {
@@ -298,7 +297,7 @@ function testSuite() {
                 ], done);
             });
 
-            itSkipCeph(`should copy ${isEmptyObj ? 'an empty ' : ''}version ` +
+            it(`should copy ${isEmptyObj ? 'an empty ' : ''}version ` +
             'from one AWS backend versioned bucket' +
             `to another on ${directive} directive`,
             done => {
@@ -320,7 +319,7 @@ function testSuite() {
                 ], done);
             });
 
-            itSkipCeph(`should copy ${isEmptyObj ? 'an empty ' : ''}null ` +
+            it(`should copy ${isEmptyObj ? 'an empty ' : ''}null ` +
             'version from one AWS backend versioning suspended bucket to ' +
             ` another versioning suspended bucket with ${directive} directive`,
             done => {
@@ -344,7 +343,7 @@ function testSuite() {
                 ], done);
             });
 
-            itSkipCeph(`should copy ${isEmptyObj ? 'an empty ' : ''}version ` +
+            it(`should copy ${isEmptyObj ? 'an empty ' : ''}version ` +
             'from a AWS backend versioned bucket to a versioned-suspended' +
             `one with ${directive} directive`, done => {
                 Object.assign(testParams, {
@@ -367,7 +366,7 @@ function testSuite() {
             });
         });
 
-        itSkipCeph('versioning not configured: if copy object to a ' +
+        it('versioning not configured: if copy object to a ' +
         'pre-existing object on AWS backend, metadata should be overwritten ' +
         'but data of  previous version in AWS should not be deleted',
         function itF(done) {

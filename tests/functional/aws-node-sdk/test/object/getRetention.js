@@ -32,10 +32,8 @@ const expectedConfig = {
     RetainUntilDate: new Date(retainDate),
 };
 
-const isCEPH = process.env.CI_CEPH !== undefined;
-const describeSkipIfCeph = isCEPH ? describe.skip : describe;
 
-describeSkipIfCeph('GET object retention', () => {
+describe('GET object retention', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
