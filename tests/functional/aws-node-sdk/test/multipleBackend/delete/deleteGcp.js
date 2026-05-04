@@ -6,10 +6,10 @@ const { CreateBucketCommand,
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const {
-    describeSkipIfNotMultipleOrCeph,
     gcpLocation,
     gcpLocationMismatch,
     genUniqID,
+    describeSkipIfNotMultiple,
 } = require('../utils');
 
 const bucket = `deletegcp${genUniqID()}`;
@@ -20,7 +20,7 @@ const mismatchObject = `mismatchObject-${genUniqID()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
 
-describeSkipIfNotMultipleOrCeph('Multiple backend delete',
+describeSkipIfNotMultiple('Multiple backend delete',
 function testSuite() {
     this.timeout(120000);
     withV4(sigCfg => {

@@ -52,11 +52,6 @@ const awsMismatchBucket = config.locationConstraints[awsLocationMismatch]
 const smallBody = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
 const locMetaHeader = 'scal-location-constraint';
-const isCEPH = (config.locationConstraints[awsLocation]
-                    .details.awsEndpoint !== undefined &&
-                config.locationConstraints[awsLocation]
-                    .details.awsEndpoint.indexOf('amazon') === -1);
-const itSkipCeph = isCEPH ? it.skip : it;
 const bucketPutRequest = {
     bucketName,
     namespace,
@@ -481,13 +476,10 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             abortMPU(uploadId, getAwsParams(objectKey), () => {
                 const listParams = getListParams(objectKey, uploadId);
                 listParts(authInfo, listParams, log, err => {
-                    let wantedDesc = 'Error returned from AWS: ' +
+                    const wantedDesc = 'Error returned from AWS: ' +
                         'The specified upload does not exist. The upload ID ' +
                         'may be invalid, or the upload may have been aborted' +
                         ' or completed.';
-                    if (isCEPH) {
-                        wantedDesc = 'Error returned from AWS: null';
-                    }
                     assert.strictEqual(err.is.ServiceUnavailable, true);
                     assert.deepStrictEqual(err.description, wantedDesc);
                     done();
@@ -509,8 +501,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                 })).then(() => {
                     assert.fail('Expected an error listing parts of aborted MPU');
                 }).catch(err => {
-                    const wantedError = isCEPH ? 'NoSuchKey' : 'NoSuchUpload';
-                    assert.strictEqual(err.name, wantedError);
+                    assert.strictEqual(err.name, 'NoSuchUpload');
                     done();
                 });
             });
@@ -531,8 +522,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                 })).then(() => {
                     assert.fail('Expected an error listing parts of aborted MPU');
                 }).catch(err => {
-                    const wantedError = isCEPH ? 'NoSuchKey' : 'NoSuchUpload';
-                    assert.strictEqual(err.name, wantedError);
+                    assert.strictEqual(err.name, 'NoSuchUpload');
                     done();
                 });
             });
@@ -675,8 +665,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             });
         });
     });
-    // Ceph doesn't care about order
-    itSkipCeph('should return invalidPartOrder error', done => {
+    it('should return invalidPartOrder error', done => {
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocation, objectKey, uploadId => {
             const errorBody = '<CompleteMultipartUpload>' +

@@ -642,10 +642,7 @@ describe('HEAD object checksum mode', () => {
     });
 });
 
-const isCEPH = process.env.CI_CEPH !== undefined;
-const describeSkipIfCeph = isCEPH ? describe.skip : describe;
-
-describeSkipIfCeph('HEAD object with object lock', () => {
+describe('HEAD object with object lock', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;

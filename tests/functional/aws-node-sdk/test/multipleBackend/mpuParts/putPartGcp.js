@@ -13,8 +13,9 @@ const arsenal = require('arsenal');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultipleOrCeph, gcpClient, gcpBucket, gcpBucketMPU,
-    gcpLocation, gcpLocationMismatch, uniqName, genUniqID }
+const { gcpClient, gcpBucket, gcpBucketMPU,
+    gcpLocation, gcpLocationMismatch, uniqName, genUniqID,
+    describeSkipIfNotMultiple }
     = require('../utils');
 const { createMpuKey } = arsenal.storage.data.external.GcpUtils;
 
@@ -46,7 +47,7 @@ function checkMPUResult(bucket, key, uploadId, objCount, expected, cb) {
     });
 }
 
-describeSkipIfNotMultipleOrCeph('MultipleBacked put part to GCP', function
+describeSkipIfNotMultiple('MultipleBacked put part to GCP', function
 describeFn() {
     this.timeout(180000);
     withV4(sigCfg => {
@@ -290,7 +291,7 @@ describeFn() {
     });
 });
 
-describeSkipIfNotMultipleOrCeph('MultipleBackend put part to GCP location ' +
+describeSkipIfNotMultiple('MultipleBackend put part to GCP location ' +
 'with bucketMatch sets to false', function
 describeF() {
     this.timeout(80000);

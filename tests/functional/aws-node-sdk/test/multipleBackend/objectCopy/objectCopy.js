@@ -15,7 +15,7 @@ const { config } = require('../../../../../../lib/Config');
 const { getRealAwsConfig } = require('../../support/awsConfig');
 const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
-const { describeSkipIfNotMultiple, itSkipCeph, awsS3, memLocation, awsLocation,
+const { describeSkipIfNotMultiple, awsS3, memLocation, awsLocation,
     azureLocation, awsLocation2, awsLocationMismatch, awsLocationEncryption,
     genUniqID } = require('../utils');
 
@@ -249,7 +249,7 @@ function testSuite() {
                 awsLocation);
         });
 
-        itSkipCeph('should copy an object from mem to AWS with aws server ' +
+        it('should copy an object from mem to AWS with aws server ' +
         'side encryption', async () => {
             const key = await putSourceObj(memLocation, false, bucket);
             const copyKey = `copyKey-${genUniqID()}`;
@@ -287,7 +287,7 @@ function testSuite() {
                 awsS3, awsLocation);
         });
 
-        itSkipCeph('should copy an object on AWS with aws server side ' +
+        it('should copy an object on AWS with aws server side ' +
         'encryption',
         async () => {
             const key = await putSourceObj(awsLocation, false, bucket);
@@ -308,7 +308,7 @@ function testSuite() {
                 awsLocation);
         });
 
-        itSkipCeph('should copy an object on AWS with aws server side ' +
+        it('should copy an object on AWS with aws server side ' +
         'encrypted bucket', async () => {
             const key = await putSourceObj(awsLocation, false, awsServerSideEncryptionbucket);
             const copyKey = `copyKey-${genUniqID()}`;
@@ -439,7 +439,7 @@ function testSuite() {
               awsS3Two, awsLocation2);
         });
 
-        itSkipCeph('should return error AccessDenied copying an object on ' +
+        it('should return error AccessDenied copying an object on ' +
         'AWS to a different AWS account without source object READ access',
         async () => {
             const key = await putSourceObj(awsLocation, false, bucket);

@@ -10,8 +10,8 @@ const {
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultipleOrCeph, gcpClient, gcpBucketMPU, gcpLocation,
-    genUniqID } = require('../utils');
+const { gcpClient, gcpBucketMPU, gcpLocation,
+    genUniqID, describeSkipIfNotMultiple } = require('../utils');
 const { createMpuKey } = arsenal.storage.data.external.GcpUtils;
 
 const bucket = `initmpugcp${genUniqID()}`;
@@ -20,7 +20,7 @@ const keyName = `somekey-${genUniqID()}`;
 let s3;
 let bucketUtil;
 
-describeSkipIfNotMultipleOrCeph('Initiate MPU to GCP', () => {
+describeSkipIfNotMultiple('Initiate MPU to GCP', () => {
     withV4(sigCfg => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);

@@ -16,7 +16,7 @@ const { createEncryptedBucketPromise } =
 const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 
 const { describeSkipIfNotMultiple, getAwsRetry, awsLocation,
-    awsLocationEncryption, memLocation, fileLocation, genUniqID, isCEPH }
+    awsLocationEncryption, memLocation, fileLocation, genUniqID }
     = require('../utils');
 const bucket = `putaws${genUniqID()}`;
 const body = Buffer.from('I am a body', 'utf8');
@@ -279,10 +279,6 @@ describeSkipIfNotMultiple('MultipleBackend put object', function testSuite() {
 
 
             it('should put an object to AWS with encryption', async () => {
-                // Test refuses to skip using itSkipCeph so just mark it passed
-                if (isCEPH) {
-                    return;
-                }
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,

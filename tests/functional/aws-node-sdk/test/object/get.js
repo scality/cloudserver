@@ -1050,10 +1050,8 @@ describe('GET object', () => {
     });
 });
 
-const isCEPH = process.env.CI_CEPH !== undefined;
-const describeSkipIfCeph = isCEPH ? describe.skip : describe;
 
-describeSkipIfCeph('GET object with object lock', () => {
+describe('GET object with object lock', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;

@@ -11,8 +11,8 @@ const {
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultipleOrCeph, gcpClient, gcpBucket, gcpBucketMPU,
-    gcpLocation, uniqName, genUniqID } = require('../utils');
+const { gcpClient, gcpBucket, gcpBucketMPU,
+    gcpLocation, uniqName, genUniqID, describeSkipIfNotMultiple } = require('../utils');
 
 const keyObject = 'abortgcp';
 const bucket = `abortmpugcp${genUniqID()}`;
@@ -38,7 +38,7 @@ function checkMPUList(bucket, key, uploadId, cb) {
     });
 }
 
-describeSkipIfNotMultipleOrCeph('Abort MPU on GCP data backend', function
+describeSkipIfNotMultiple('Abort MPU on GCP data backend', function
 descrbeFn() {
     this.timeout(180000);
     withV4(sigCfg => {

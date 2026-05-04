@@ -9,13 +9,13 @@ const { CreateBucketCommand,
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const withV4 = require('../../support/withV4');
 const {
-    describeSkipIfNotMultipleOrCeph,
     uniqName,
     getAzureClient,
     getAzureContainerName,
     getAzureKeys,
     azureLocation,
     azureLocationMismatch,
+    describeSkipIfNotMultiple,
 } = require('../utils');
 
 const keyObject = 'deleteazure';
@@ -30,7 +30,7 @@ const nonExistingId = process.env.AWS_ON_AIR ?
     'MhhyTHhmZ4cxSi4Y9SMe5P7UJAz7HLJ9' :
     '3939393939393939393936493939393939393939756e6437';
 
-describeSkipIfNotMultipleOrCeph('Multiple backend delete object from Azure',
+describeSkipIfNotMultiple('Multiple backend delete object from Azure',
 function testSuite() {
     this.timeout(250000);
     withV4(sigCfg => {
