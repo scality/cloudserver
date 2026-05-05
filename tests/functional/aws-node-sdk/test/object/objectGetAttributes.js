@@ -598,10 +598,10 @@ describe('objectGetAttributes with checksum', () => {
             await s3.send(new DeleteBucketCommand({ Bucket: checksumBucket }));
         });
 
-        Object.entries(algorithms).forEach(([name, { getObjectAttributesXMLTag }]) => {
+        Object.entries(algorithms).forEach(([name, { xmlTag }]) => {
             const sdkAlgorithm = name.toUpperCase();
 
-            it(`should return ${getObjectAttributesXMLTag} when object has ${name} checksum`, async () => {
+            it(`should return ${xmlTag} when object has ${name} checksum`, async () => {
                 await s3.send(
                     new PutObjectCommand({
                         Bucket: checksumBucket,
@@ -620,11 +620,11 @@ describe('objectGetAttributes with checksum', () => {
                 );
 
                 assert(data.Checksum, 'Checksum should be present');
-                assert.strictEqual(data.Checksum[getObjectAttributesXMLTag], expectedDigests[name]);
+                assert.strictEqual(data.Checksum[xmlTag], expectedDigests[name]);
                 assert.strictEqual(data.Checksum.ChecksumType, 'FULL_OBJECT');
             });
 
-            it(`should return ${getObjectAttributesXMLTag} along with other attributes`, async () => {
+            it(`should return ${xmlTag} along with other attributes`, async () => {
                 await s3.send(
                     new PutObjectCommand({
                         Bucket: checksumBucket,
@@ -645,7 +645,7 @@ describe('objectGetAttributes with checksum', () => {
                 assert(data.ETag, 'ETag should be present');
                 assert(data.ObjectSize, 'ObjectSize should be present');
                 assert(data.Checksum, 'Checksum should be present');
-                assert.strictEqual(data.Checksum[getObjectAttributesXMLTag], expectedDigests[name]);
+                assert.strictEqual(data.Checksum[xmlTag], expectedDigests[name]);
                 assert.strictEqual(data.Checksum.ChecksumType, 'FULL_OBJECT');
             });
         });

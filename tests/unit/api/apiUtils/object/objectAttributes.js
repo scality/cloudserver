@@ -191,7 +191,7 @@ describe('buildXmlAttributes', () => {
             assert.strictEqual(result.length, 0);
         });
 
-        Object.entries(algorithms).forEach(([algo, { getObjectAttributesXMLTag }]) => {
+        Object.entries(algorithms).forEach(([algo, { xmlTag }]) => {
             it(`should generate correct Checksum XML for ${algo}`, () => {
                 const digest = expectedDigests[algo];
                 const result = [];
@@ -206,7 +206,7 @@ describe('buildXmlAttributes', () => {
 
                 assert.strictEqual(result.length, 4);
                 assert.strictEqual(result[0], '<Checksum>');
-                assert.strictEqual(result[1], `<${getObjectAttributesXMLTag}>${digest}</${getObjectAttributesXMLTag}>`);
+                assert.strictEqual(result[1], `<${xmlTag}>${digest}</${xmlTag}>`);
                 assert.strictEqual(result[2], '<ChecksumType>FULL_OBJECT</ChecksumType>');
                 assert.strictEqual(result[3], '</Checksum>');
             });

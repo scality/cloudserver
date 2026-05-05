@@ -663,8 +663,8 @@ describe('objectGetAttributes API with checksum', () => {
         await bucketPutAsync(authInfo, testPutBucketRequest, log);
     });
 
-    Object.entries(algorithms).forEach(([name, { getObjectAttributesXMLTag }]) => {
-        it(`should return ${getObjectAttributesXMLTag} when object has ${name} checksum`, async () => {
+    Object.entries(algorithms).forEach(([name, { xmlTag }]) => {
+        it(`should return ${xmlTag} when object has ${name} checksum`, async () => {
             const testPutObjectRequest = new DummyRequest(
                 {
                     bucketName,
@@ -687,11 +687,11 @@ describe('objectGetAttributes API with checksum', () => {
             const response = result.GetObjectAttributesResponse;
 
             assert(response.Checksum, 'Checksum should be present');
-            assert.strictEqual(response.Checksum[0][getObjectAttributesXMLTag][0], expectedDigests[name]);
+            assert.strictEqual(response.Checksum[0][xmlTag][0], expectedDigests[name]);
             assert.strictEqual(response.Checksum[0].ChecksumType[0], 'FULL_OBJECT');
         });
 
-        it(`should return ${getObjectAttributesXMLTag} along with other attributes`, async () => {
+        it(`should return ${xmlTag} along with other attributes`, async () => {
             const testPutObjectRequest = new DummyRequest(
                 {
                     bucketName,
@@ -716,7 +716,7 @@ describe('objectGetAttributes API with checksum', () => {
             assert(response.ETag, 'ETag should be present');
             assert(response.ObjectSize, 'ObjectSize should be present');
             assert(response.Checksum, 'Checksum should be present');
-            assert.strictEqual(response.Checksum[0][getObjectAttributesXMLTag][0], expectedDigests[name]);
+            assert.strictEqual(response.Checksum[0][xmlTag][0], expectedDigests[name]);
             assert.strictEqual(response.Checksum[0].ChecksumType[0], 'FULL_OBJECT');
         });
     });
