@@ -142,14 +142,6 @@ function checkObjMdAndUpdate(objMDBefore, objMDAfter, props) {
         // eslint-disable-next-line no-param-reassign
         delete objMDBefore['content-type'];
     }
-    if (objMDBefore.checksum && !objMDAfter.checksum) {
-        // The initial PutObject stores a checksum, but the MPU restore path does not
-        // (CompleteMultipartUpload checksum storage is not yet implemented).
-        // Once it is, the restored object should carry a checksum and this workaround
-        // should be removed.
-        // eslint-disable-next-line no-param-reassign
-        delete objMDBefore.checksum;
-    }
 }
 
 function clearUploadIdAndRestoreStatusFromVersions(versions) {
@@ -353,6 +345,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                         'archive',
                         'dataStoreName',
                         'originOp',
+                        'checksum',
                     ]);
 
                     assert.deepStrictEqual(objMDAfter, objMDBefore);
@@ -393,6 +386,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     'x-amz-restore',
                     'archive',
                     'dataStoreName',
+                    'checksum',
                 ]);
 
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
@@ -438,6 +432,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     'x-amz-restore',
                     'archive',
                     'dataStoreName',
+                    'checksum',
                 ]);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
@@ -482,6 +477,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     'x-amz-restore',
                     'archive',
                     'dataStoreName',
+                    'checksum',
                 ]);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
@@ -524,6 +520,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     'x-amz-restore',
                     'archive',
                     'dataStoreName',
+                    'checksum',
                 ]);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
@@ -569,6 +566,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     'x-amz-restore',
                     'archive',
                     'dataStoreName',
+                    'checksum',
                 ]);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
@@ -619,6 +617,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     'x-amz-restore',
                     'archive',
                     'dataStoreName',
+                    'checksum',
                 ]);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
@@ -666,6 +665,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     'x-amz-restore',
                     'archive',
                     'dataStoreName',
+                    'checksum',
                 ]);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
@@ -711,6 +711,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     'x-amz-restore',
                     'archive',
                     'dataStoreName',
+                    'checksum',
                 ]);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
@@ -764,6 +765,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     'x-amz-restore',
                     'archive',
                     'dataStoreName',
+                    'checksum',
                 ]);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
@@ -807,6 +809,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     'x-amz-restore',
                     'archive',
                     'dataStoreName',
+                    'checksum',
                 ]);
 
                 assert(isDeepStrictEqual(objMDAfter, objMDBefore), 'Objects should be deeply equal');
