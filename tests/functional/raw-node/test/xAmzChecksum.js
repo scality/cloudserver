@@ -24,13 +24,11 @@ describe('Test x-amz-checksums', () => {
             validWrong: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
         },
     ];
+    // CompleteMultipartUpload intentionally not listed here: its
+    // x-amz-checksum-<algo> header is the expected final-object checksum,
+    // not a body digest, so it's not part of the buffered-body validator
+    // path tested below.
     const methods = [
-        {
-            Name: 'CompleteMultipartupload',
-            Query: 'uploadId=77a4ce46b9bf4ea69d9e0cc3f0bb1aae',
-            Key: objectKey,
-            HTTPMethod: 'POST',
-        },
         {
             Name: 'DeleteObjects',
             Query: 'delete',

@@ -4097,7 +4097,7 @@ describe('CompleteMultipartUpload body-checksum bypass', () => {
     const log = new DummyRequestLogger();
 
     it(
-        'validateMethodChecksumNoChunking returns null for completeMultipartUpload ' +
+        'should skip body-checksum validation for completeMultipartUpload ' +
             'even when x-amz-checksum-sha256 does not match the body digest',
         async () => {
             const body = Buffer.from(
@@ -4119,8 +4119,7 @@ describe('CompleteMultipartUpload body-checksum bypass', () => {
     );
 
     it(
-        'validateMethodChecksumNoChunking still rejects body mismatch for methods ' +
-            'that remain in checksumedMethods (sanity check)',
+        'should still reject body mismatch for methods that remain in checksumedMethods ' + '(sanity check)',
         async () => {
             const body = Buffer.from('{"Objects":[]}');
             const finalObjectChecksum = '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=';
@@ -4133,4 +4132,209 @@ describe('CompleteMultipartUpload body-checksum bypass', () => {
             assert.strictEqual(err.is.BadDigest, true);
         },
     );
+});
+
+describe('computeFinalChecksum', () => {
+    const log = new DummyRequestLogger();
+    const uploadId = UPLOAD_ID;
+
+    function partListFromStored(stored) {
+        return stored.map(s => ({
+            key: s.key,
+            ETag: `"${s.value.ETag}"`,
+            size: s.value.Size,
+            locations: s.value.partLocations,
+        }));
+    }
+
+    it('should return null when MPU has no checksumAlgorithm', async () => {
+        const stored = [makeStoredPart(1, { algorithm: 'sha256', value: SAMPLE_DIGESTS.sha256[0] })];
+        const got = await computeFinalChecksum(stored, partListFromStored(stored), {}, splitter, uploadId, log);
+        assert.strictEqual(got, null);
+    });
+
+    it('should return null when MPU has no checksumType', async () => {
+        const stored = [makeStoredPart(1, { algorithm: 'sha256', value: SAMPLE_DIGESTS.sha256[0] })];
+        const got = await computeFinalChecksum(
+            stored,
+            partListFromStored(stored),
+            { checksumAlgorithm: 'sha256' },
+            splitter,
+            uploadId,
+            log,
+        );
+        assert.strictEqual(got, null);
+    });
+
+    it('should return COMPOSITE checksum with -N suffix for SHA256 MPU', async () => {
+        const [d1, d2, d3] = [SAMPLE_DIGESTS.sha256[0], SAMPLE_DIGESTS.sha256[1], SAMPLE_DIGESTS.sha256[0]];
+        const stored = [
+            makeStoredPart(1, { algorithm: 'sha256', value: d1 }),
+            makeStoredPart(2, { algorithm: 'sha256', value: d2 }),
+            makeStoredPart(3, { algorithm: 'sha256', value: d3 }),
+        ];
+        const got = await computeFinalChecksum(
+            stored,
+            partListFromStored(stored),
+            { checksumAlgorithm: 'sha256', checksumType: 'COMPOSITE' },
+            splitter,
+            uploadId,
+            log,
+        );
+        assert(got);
+        assert.strictEqual(got.algorithm, 'sha256');
+        assert.strictEqual(got.type, 'COMPOSITE');
+        assert(got.value.endsWith('-3'), `expected -N suffix, got ${got.value}`);
+        // computeCompositeMPUChecksum's deterministic output for these
+        // exact placeholder digests:
+        const expected = crypto
+            .createHash('sha256')
+            .update(Buffer.concat([d1, d2, d3].map(x => Buffer.from(x, 'base64'))))
+            .digest('base64');
+        assert.strictEqual(got.value, `${expected}-3`);
+    });
+
+    ['sha1', 'crc32', 'crc32c'].forEach(algo => {
+        it(`should compute COMPOSITE checksum for ${algo.toUpperCase()}`, async () => {
+            const [d1, d2] = SAMPLE_DIGESTS[algo];
+            const stored = [
+                makeStoredPart(1, { algorithm: algo, value: d1 }),
+                makeStoredPart(2, { algorithm: algo, value: d2 }),
+            ];
+            const got = await computeFinalChecksum(
+                stored,
+                partListFromStored(stored),
+                { checksumAlgorithm: algo, checksumType: 'COMPOSITE' },
+                splitter,
+                uploadId,
+                log,
+            );
+            assert(got);
+            assert.strictEqual(got.algorithm, algo);
+            assert.strictEqual(got.type, 'COMPOSITE');
+            assert(got.value.endsWith('-2'));
+        });
+    });
+
+    it('should return FULL_OBJECT checksum without -N suffix for CRC64NVME', async () => {
+        // Real CRCs over real bytes so we can verify against the equivalent
+        // direct CRC of the concatenation.
+        const a = crypto.randomBytes(1024);
+        const b = crypto.randomBytes(2048);
+        const dA = await algorithms.crc64nvme.digest(a);
+        const dB = await algorithms.crc64nvme.digest(b);
+        const stored = [
+            {
+                key: `${UPLOAD_ID}${splitter}1`,
+                value: {
+                    ETag: 'e',
+                    Size: a.length,
+                    ChecksumAlgorithm: 'crc64nvme',
+                    ChecksumValue: dA,
+                    partLocations: [],
+                },
+            },
+            {
+                key: `${UPLOAD_ID}${splitter}2`,
+                value: {
+                    ETag: 'e',
+                    Size: b.length,
+                    ChecksumAlgorithm: 'crc64nvme',
+                    ChecksumValue: dB,
+                    partLocations: [],
+                },
+            },
+        ];
+        const got = await computeFinalChecksum(
+            stored,
+            partListFromStored(stored),
+            { checksumAlgorithm: 'crc64nvme', checksumType: 'FULL_OBJECT' },
+            splitter,
+            uploadId,
+            log,
+        );
+        assert(got);
+        assert.strictEqual(got.algorithm, 'crc64nvme');
+        assert.strictEqual(got.type, 'FULL_OBJECT');
+        assert(!got.value.includes('-'), `FULL_OBJECT should have no -N suffix, got ${got.value}`);
+        const expected = await algorithms.crc64nvme.digest(Buffer.concat([a, b]));
+        assert.strictEqual(got.value, expected);
+    });
+
+    it('should return null and log when a part is missing ChecksumValue', async () => {
+        const stored = [
+            makeStoredPart(1, { algorithm: 'sha256', value: SAMPLE_DIGESTS.sha256[0] }),
+            makeStoredPart(2, null),
+            makeStoredPart(3, { algorithm: 'sha256', value: SAMPLE_DIGESTS.sha256[1] }),
+        ];
+        const got = await computeFinalChecksum(
+            stored,
+            partListFromStored(stored),
+            { checksumAlgorithm: 'sha256', checksumType: 'COMPOSITE' },
+            splitter,
+            uploadId,
+            log,
+        );
+        assert.strictEqual(got, null);
+    });
+
+    it('should return null when checksumType is unknown', async () => {
+        const stored = [makeStoredPart(1, { algorithm: 'sha256', value: SAMPLE_DIGESTS.sha256[0] })];
+        const got = await computeFinalChecksum(
+            stored,
+            partListFromStored(stored),
+            { checksumAlgorithm: 'sha256', checksumType: 'WEIRD' },
+            splitter,
+            uploadId,
+            log,
+        );
+        assert.strictEqual(got, null);
+    });
+
+    it(
+        'should return null when underlying compute reports an error ' + '(crc64nvme COMPOSITE is not allowed)',
+        async () => {
+            const stored = [makeStoredPart(1, { algorithm: 'crc64nvme', value: SAMPLE_DIGESTS.crc64nvme[0] })];
+            const got = await computeFinalChecksum(
+                stored,
+                partListFromStored(stored),
+                { checksumAlgorithm: 'crc64nvme', checksumType: 'COMPOSITE' },
+                splitter,
+                uploadId,
+                log,
+            );
+            assert.strictEqual(got, null);
+        },
+    );
+
+    it('should compute over filteredPartList (subset), not all storedParts', async () => {
+        const [d1, d2, d3] = [SAMPLE_DIGESTS.sha256[0], SAMPLE_DIGESTS.sha256[1], SAMPLE_DIGESTS.sha256[0]];
+        const stored = [
+            makeStoredPart(1, { algorithm: 'sha256', value: d1 }),
+            makeStoredPart(2, { algorithm: 'sha256', value: d2 }),
+            makeStoredPart(3, { algorithm: 'sha256', value: d3 }),
+        ];
+        // User completes only parts 1 and 3, dropping 2 (orphan).
+        const filtered = [stored[0], stored[2]].map(s => ({
+            key: s.key,
+            ETag: `"${s.value.ETag}"`,
+            size: s.value.Size,
+            locations: s.value.partLocations,
+        }));
+        const got = await computeFinalChecksum(
+            stored,
+            filtered,
+            { checksumAlgorithm: 'sha256', checksumType: 'COMPOSITE' },
+            splitter,
+            uploadId,
+            log,
+        );
+        assert(got);
+        assert(got.value.endsWith('-2'), `should reflect 2 completed parts, got ${got.value}`);
+        const expected = crypto
+            .createHash('sha256')
+            .update(Buffer.concat([d1, d3].map(x => Buffer.from(x, 'base64'))))
+            .digest('base64');
+        assert.strictEqual(got.value, `${expected}-2`);
+    });
 });
