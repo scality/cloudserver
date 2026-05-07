@@ -4519,3 +4519,174 @@ describe('CompleteMultipartUpload final-object checksum storage', () => {
         assert.strictEqual(md.checksumIsDefault, undefined);
     });
 });
+
+describe('CompleteMultipartUpload final-object checksum response', () => {
+    const log = new DummyRequestLogger();
+    const authInfo = makeAuthInfo('accessKey1');
+    const namespace = 'default';
+    const bucketName = 'bucketname-final-checksum-resp';
+    const objectKey = 'testObject';
+    const partBody = Buffer.from('I am a part\n', 'utf8');
+    const partHash = crypto.createHash('md5').update(partBody).digest('hex');
+
+    const bucketPutRequest = {
+        bucketName,
+        namespace,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        url: '/',
+        post:
+            '<CreateBucketConfiguration ' +
+            'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+            '<LocationConstraint>scality-internal-mem</LocationConstraint>' +
+            '</CreateBucketConfiguration >',
+        actionImplicitDenies: false,
+    };
+
+    const RESPONSE_MATRIX = [
+        { algorithm: 'crc32', type: 'FULL_OBJECT' },
+        { algorithm: 'crc32c', type: 'FULL_OBJECT' },
+        { algorithm: 'crc64nvme', type: 'FULL_OBJECT' },
+        { algorithm: 'crc32', type: 'COMPOSITE' },
+        { algorithm: 'crc32c', type: 'COMPOSITE' },
+        { algorithm: 'sha1', type: 'COMPOSITE' },
+        { algorithm: 'sha256', type: 'COMPOSITE' },
+    ];
+
+    function bucketPutP() {
+        return new Promise((resolve, reject) =>
+            bucketPut(authInfo, bucketPutRequest, log, err => (err ? reject(err) : resolve())),
+        );
+    }
+
+    function initiateMpuP(headers) {
+        return new Promise((resolve, reject) => {
+            initiateMultipartUpload(
+                authInfo,
+                {
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    headers: { host: `${bucketName}.s3.amazonaws.com`, ...headers },
+                    url: `/${objectKey}?uploads`,
+                    actionImplicitDenies: false,
+                },
+                log,
+                (err, xml) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return parseString(xml, (parseErr, json) =>
+                        parseErr ? reject(parseErr) : resolve(json.InitiateMultipartUploadResult.UploadId[0]),
+                    );
+                },
+            );
+        });
+    }
+
+    function uploadPartP(uploadId, headers = {}) {
+        return new Promise((resolve, reject) => {
+            const partRequest = new DummyRequest(
+                {
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    headers: { host: `${bucketName}.s3.amazonaws.com`, ...headers },
+                    url: `/${objectKey}?partNumber=1&uploadId=${uploadId}`,
+                    query: { partNumber: '1', uploadId },
+                    partHash,
+                    actionImplicitDenies: false,
+                },
+                partBody,
+            );
+            objectPutPart(authInfo, partRequest, undefined, log, err => (err ? reject(err) : resolve()));
+        });
+    }
+
+    // Resolves with { xml, headers } so callers can inspect both the
+    // response body and the response headers.
+    function completeMpuP(uploadId, partChecksumXml = '') {
+        const completeBody =
+            '<CompleteMultipartUpload>' +
+            '<Part>' +
+            '<PartNumber>1</PartNumber>' +
+            `<ETag>"${partHash}"</ETag>${partChecksumXml}` +
+            '</Part>' +
+            '</CompleteMultipartUpload>';
+        return new Promise((resolve, reject) => {
+            completeMultipartUpload(
+                authInfo,
+                {
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    parsedHost: 's3.amazonaws.com',
+                    url: `/${objectKey}?uploadId=${uploadId}`,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    query: { uploadId },
+                    post: completeBody,
+                    actionImplicitDenies: false,
+                },
+                log,
+                (err, xml, headers) => (err ? reject(err) : resolve({ xml, headers })),
+            );
+        });
+    }
+
+    function parseXmlP(xmlStr) {
+        return new Promise((resolve, reject) =>
+            parseString(xmlStr, (err, json) => (err ? reject(err) : resolve(json))),
+        );
+    }
+
+    beforeEach(() => cleanup());
+
+    RESPONSE_MATRIX.forEach(({ algorithm, type }) => {
+        const upper = algorithm.toUpperCase();
+        const tag = TAG_BY_ALGO[algorithm];
+
+        it(`should emit ${type} ${upper} in response XML`, async () => {
+            await bucketPutP();
+            const uploadId = await initiateMpuP({
+                'x-amz-checksum-algorithm': upper,
+                'x-amz-checksum-type': type,
+            });
+            const partChecksum = await algorithms[algorithm].digest(partBody);
+            const uploadHeaders = type === 'COMPOSITE' ? { [`x-amz-checksum-${algorithm}`]: partChecksum } : {};
+            await uploadPartP(uploadId, uploadHeaders);
+            const partChecksumXml = type === 'COMPOSITE' ? `<${tag}>${partChecksum}</${tag}>` : '';
+            const { xml, headers } = await completeMpuP(uploadId, partChecksumXml);
+            const json = await parseXmlP(xml);
+            const result = json.CompleteMultipartUploadResult;
+            assert(result[tag], `expected ${tag} in response XML`);
+            const xmlValue = result[tag][0];
+            assert(typeof xmlValue === 'string' && xmlValue.length > 0);
+            assert.strictEqual(result.ChecksumType[0], type);
+            // COMPOSITE values carry the "-N" suffix; FULL_OBJECT do not.
+            if (type === 'COMPOSITE') {
+                assert(xmlValue.endsWith('-1'), `expected -1 suffix for 1-part COMPOSITE, got ${xmlValue}`);
+            } else {
+                assert(!xmlValue.includes('-'), `FULL_OBJECT value should have no suffix, got ${xmlValue}`);
+            }
+            // AWS-verified: CompleteMPU does NOT emit
+            // x-amz-checksum-* / x-amz-checksum-type response headers.
+            assert.strictEqual(headers[`x-amz-checksum-${algorithm}`], undefined);
+            assert.strictEqual(headers['x-amz-checksum-type'], undefined);
+        });
+    });
+
+    it('should emit FULL_OBJECT CRC64NVME for default MPU (no checksum headers)', async () => {
+        // AWS-verified: a default MPU still surfaces the CRC64NVME
+        // checksum and ChecksumType=FULL_OBJECT in the CompleteMPU response
+        // BODY (not headers).
+        await bucketPutP();
+        const uploadId = await initiateMpuP({});
+        await uploadPartP(uploadId);
+        const { xml, headers } = await completeMpuP(uploadId);
+        const json = await parseXmlP(xml);
+        const result = json.CompleteMultipartUploadResult;
+        assert(result.ChecksumCRC64NVME, 'default MPU should emit ChecksumCRC64NVME');
+        assert.strictEqual(result.ChecksumType[0], 'FULL_OBJECT');
+        assert.strictEqual(headers['x-amz-checksum-crc64nvme'], undefined);
+        assert.strictEqual(headers['x-amz-checksum-type'], undefined);
+    });
+});
