@@ -34,26 +34,26 @@ env:
     ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}
   azurenonexistcontainer_AZURE_STORAGE_ENDPOINT: >-
     ${{ secrets.AZURE_STORAGE_ENDPOINT }}
-  azuretest_AZURE_BLOB_ENDPOINT: "${{ secrets.AZURE_STORAGE_ENDPOINT }}"
-  b2backend_B2_ACCOUNT_ID: "${{ secrets.B2BACKEND_B2_ACCOUNT_ID }}"
+  azuretest_AZURE_BLOB_ENDPOINT: '${{ secrets.AZURE_STORAGE_ENDPOINT }}'
+  b2backend_B2_ACCOUNT_ID: '${{ secrets.B2BACKEND_B2_ACCOUNT_ID }}'
   b2backend_B2_STORAGE_ACCESS_KEY: >-
     ${{ secrets.B2BACKEND_B2_STORAGE_ACCESS_KEY }}
-  GOOGLE_SERVICE_EMAIL: "${{ secrets.GCP_SERVICE_EMAIL }}"
-  GOOGLE_SERVICE_KEY: "${{ secrets.GCP_SERVICE_KEY }}"
-  AWS_S3_BACKEND_ACCESS_KEY: "${{ secrets.AWS_S3_BACKEND_ACCESS_KEY }}"
-  AWS_S3_BACKEND_SECRET_KEY: "${{ secrets.AWS_S3_BACKEND_SECRET_KEY }}"
-  AWS_S3_BACKEND_ACCESS_KEY_2: "${{ secrets.AWS_S3_BACKEND_ACCESS_KEY_2 }}"
-  AWS_S3_BACKEND_SECRET_KEY_2: "${{ secrets.AWS_S3_BACKEND_SECRET_KEY_2 }}"
-  AWS_GCP_BACKEND_ACCESS_KEY: "${{ secrets.AWS_GCP_BACKEND_ACCESS_KEY }}"
-  AWS_GCP_BACKEND_SECRET_KEY: "${{ secrets.AWS_GCP_BACKEND_SECRET_KEY }}"
-  AWS_GCP_BACKEND_ACCESS_KEY_2: "${{ secrets.AWS_GCP_BACKEND_ACCESS_KEY_2 }}"
-  AWS_GCP_BACKEND_SECRET_KEY_2: "${{ secrets.AWS_GCP_BACKEND_SECRET_KEY_2 }}"
-  b2backend_B2_STORAGE_ENDPOINT: "${{ secrets.B2BACKEND_B2_STORAGE_ENDPOINT }}"
-  gcpbackend2_GCP_SERVICE_EMAIL: "${{ secrets.GCP2_SERVICE_EMAIL }}"
-  gcpbackend2_GCP_SERVICE_KEY: "${{ secrets.GCP2_SERVICE_KEY }}"
+  GOOGLE_SERVICE_EMAIL: '${{ secrets.GCP_SERVICE_EMAIL }}'
+  GOOGLE_SERVICE_KEY: '${{ secrets.GCP_SERVICE_KEY }}'
+  AWS_S3_BACKEND_ACCESS_KEY: '${{ secrets.AWS_S3_BACKEND_ACCESS_KEY }}'
+  AWS_S3_BACKEND_SECRET_KEY: '${{ secrets.AWS_S3_BACKEND_SECRET_KEY }}'
+  AWS_S3_BACKEND_ACCESS_KEY_2: '${{ secrets.AWS_S3_BACKEND_ACCESS_KEY_2 }}'
+  AWS_S3_BACKEND_SECRET_KEY_2: '${{ secrets.AWS_S3_BACKEND_SECRET_KEY_2 }}'
+  AWS_GCP_BACKEND_ACCESS_KEY: '${{ secrets.AWS_GCP_BACKEND_ACCESS_KEY }}'
+  AWS_GCP_BACKEND_SECRET_KEY: '${{ secrets.AWS_GCP_BACKEND_SECRET_KEY }}'
+  AWS_GCP_BACKEND_ACCESS_KEY_2: '${{ secrets.AWS_GCP_BACKEND_ACCESS_KEY_2 }}'
+  AWS_GCP_BACKEND_SECRET_KEY_2: '${{ secrets.AWS_GCP_BACKEND_SECRET_KEY_2 }}'
+  b2backend_B2_STORAGE_ENDPOINT: '${{ secrets.B2BACKEND_B2_STORAGE_ENDPOINT }}'
+  gcpbackend2_GCP_SERVICE_EMAIL: '${{ secrets.GCP2_SERVICE_EMAIL }}'
+  gcpbackend2_GCP_SERVICE_KEY: '${{ secrets.GCP2_SERVICE_KEY }}'
   gcpbackend2_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
-  gcpbackend_GCP_SERVICE_EMAIL: "${{ secrets.GCP_SERVICE_EMAIL }}"
-  gcpbackend_GCP_SERVICE_KEY: "${{ secrets.GCP_SERVICE_KEY }}"
+  gcpbackend_GCP_SERVICE_EMAIL: '${{ secrets.GCP_SERVICE_EMAIL }}'
+  gcpbackend_GCP_SERVICE_KEY: '${{ secrets.GCP_SERVICE_KEY }}'
   gcpbackendmismatch_GCP_SERVICE_EMAIL: >-
     ${{ secrets.GCPBACKENDMISMATCH_GCP_SERVICE_EMAIL }}
   gcpbackendmismatch_GCP_SERVICE_KEY: >-
@@ -63,9 +63,9 @@ env:
   gcpbackendnoproxy_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
   gcpbackendproxy_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
   # Configs
-  ENABLE_LOCAL_CACHE: "true"
-  REPORT_TOKEN: "report-token-1"
-  REMOTE_MANAGEMENT_DISABLE: "1"
+  ENABLE_LOCAL_CACHE: 'true'
+  REPORT_TOKEN: 'report-token-1'
+  REMOTE_MANAGEMENT_DISABLE: '1'
   # https://github.com/git-lfs/git-lfs/issues/5749
   GIT_CLONE_PROTECTION_ACTIVE: 'false'
   AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE: '1'
@@ -78,101 +78,101 @@ jobs:
   lint:
     runs-on: ubuntu-24.04
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    - uses: actions/setup-node@v4
-      with:
-        node-version: '22'
-        cache: yarn
-    - name: install typescript
-      shell: bash
-      run: yarn global add typescript@4.9.5
-    - name: install dependencies
-      run: yarn install --frozen-lockfile --network-concurrency 1
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.9'
-        cache: pip
-    - name: Install python deps
-      run: pip install flake8
-    - name: Lint Javascript (strict, excluding async migration rules)
-      run: |
-        yarn run --silent lint -- --max-warnings 0 --rule "promise/prefer-await-to-then: off" --rule "n/callback-return: off"
-    - name: Lint Markdown
-      run: yarn run --silent lint_md
-    - name: Lint python
-      run: flake8 $(git ls-files "*.py")
-    - name: Lint Yaml
-      run: yamllint -c yamllint.yml $(git ls-files "*.yml")
-    - name: Check async/await compliance in diff
-      run: yarn run check-diff-async
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: yarn
+      - name: install typescript
+        shell: bash
+        run: yarn global add typescript@4.9.5
+      - name: install dependencies
+        run: yarn install --frozen-lockfile --network-concurrency 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: pip
+      - name: Install python deps
+        run: pip install flake8
+      - name: Lint Javascript (strict, excluding async migration rules)
+        run: |
+          yarn run --silent lint -- --max-warnings 0 --rule "promise/prefer-await-to-then: off" --rule "n/callback-return: off"
+      - name: Lint Markdown
+        run: yarn run --silent lint_md
+      - name: Lint python
+        run: flake8 $(git ls-files "*.py")
+      - name: Lint Yaml
+        run: yamllint -c yamllint.yml $(git ls-files "*.yml")
+      - name: Check async/await compliance in diff
+        run: yarn run check-diff-async
 
   async-migration-report:
     runs-on: ubuntu-24.04
     if: startsWith(github.ref, 'refs/heads/development/')
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: '22'
-        cache: yarn
-    - name: install dependencies
-      run: yarn install --frozen-lockfile --network-concurrency 1
-    - name: Count async/await migration progress
-      run: yarn run count-async
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: yarn
+      - name: install dependencies
+        run: yarn install --frozen-lockfile --network-concurrency 1
+      - name: Count async/await migration progress
+        run: yarn run count-async
 
   unit-tests:
     runs-on: ubuntu-24.04
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: '22'
-        cache: yarn
-    - name: install typescript
-      shell: bash
-      run: yarn global add typescript@4.9.5
-    - name: install dependencies
-      run: yarn install --frozen-lockfile --network-concurrency 1
-    - name: Unit Coverage
-      run: |
-        set -ex
-        yarn run cover test
-        yarn run cover test_legacy_location
-      env:
-        S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
-        NO_PROXY: "test.scality.com,scality.com"
-    - name: Upload test results to Codecov
-      uses: codecov/test-results-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: '**/junit/*junit*.xml'
-        flags: unit
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v5
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        directory: ./coverage/test
-        flags: unit
-      if: ${{ !cancelled() }}
-    - name: preparing junit files for upload
-      run: |
-        mkdir -p artifacts/junit
-        find . -name "*junit*.xml" -exec cp {} artifacts/junit/ ";"
-      if: always()
-    - name: Upload files to artifacts
-      uses: scality/action-artifacts@v4
-      with:
-        method: upload
-        url: https://artifacts.scality.net
-        user: ${{ secrets.ARTIFACTS_USER }}
-        password: ${{ secrets.ARTIFACTS_PASSWORD }}
-        source: artifacts
-      if: always()
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: yarn
+      - name: install typescript
+        shell: bash
+        run: yarn global add typescript@4.9.5
+      - name: install dependencies
+        run: yarn install --frozen-lockfile --network-concurrency 1
+      - name: Unit Coverage
+        run: |
+          set -ex
+          yarn run cover test
+          yarn run cover test_legacy_location
+        env:
+          S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+          NO_PROXY: 'test.scality.com,scality.com'
+      - name: Upload test results to Codecov
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: '**/junit/*junit*.xml'
+          flags: unit
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: ./coverage/test
+          flags: unit
+        if: ${{ !cancelled() }}
+      - name: preparing junit files for upload
+        run: |
+          mkdir -p artifacts/junit
+          find . -name "*junit*.xml" -exec cp {} artifacts/junit/ ";"
+        if: always()
+      - name: Upload files to artifacts
+        uses: scality/action-artifacts@v4
+        with:
+          method: upload
+          url: https://artifacts.scality.net
+          user: ${{ secrets.ARTIFACTS_USER }}
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          source: artifacts
+        if: always()
 
   build:
     runs-on: ubuntu-latest
@@ -229,7 +229,7 @@ jobs:
           push: true
           context: images/federation
           provenance: false
-          build-args:
+          build-args: |
             CLOUDSERVER_VERSION=${{ github.sha }}
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.sha }}-federation
@@ -288,58 +288,58 @@ jobs:
       ENABLE_NULL_VERSION_COMPAT_MODE: true # needed with mongodb backend
       JOB_NAME: ${{ github.job }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Login to Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.repository_owner }}
-        password: ${{ github.token }}
-    - name: Setup CI environment
-      uses: ./.github/actions/setup-ci
-    - name: Setup CI services
-      run: docker compose --profile sproxyd --profile mongo up -d
-      working-directory: .github/docker
-    - name: Run multiple backend test
-      run: |-
-        set -o pipefail;
-        bash wait_for_local_port.bash 8000 40
-        bash wait_for_local_port.bash 81 40
-        yarn run multiple_backend_test | tee /tmp/artifacts/${{ github.job }}/tests.log
-      env:
-        S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
-    - name: Cleanup and upload coverage
-      uses: ./.github/actions/cleanup-and-coverage
-      with:
-        profiles: >
-          sproxyd
-          mongo
-        codecov-token: ${{ secrets.CODECOV_TOKEN }}
-      if: always()
-    - name: Upload test results to Codecov
-      uses: codecov/test-results-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: '**/junit/*junit*.xml'
-        flags: multiple-backend
-      if: always() && !cancelled()
-    - name: Upload logs to artifacts
-      uses: scality/action-artifacts@v4
-      with:
-        method: upload
-        url: https://artifacts.scality.net
-        user: ${{ secrets.ARTIFACTS_USER }}
-        password: ${{ secrets.ARTIFACTS_PASSWORD }}
-        source: /tmp/artifacts
-      if: always()
- 
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Login to Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+      - name: Setup CI environment
+        uses: ./.github/actions/setup-ci
+      - name: Setup CI services
+        run: docker compose --profile sproxyd --profile mongo up -d
+        working-directory: .github/docker
+      - name: Run multiple backend test
+        run: |-
+          set -o pipefail;
+          bash wait_for_local_port.bash 8000 40
+          bash wait_for_local_port.bash 81 40
+          yarn run multiple_backend_test | tee /tmp/artifacts/${{ github.job }}/tests.log
+        env:
+          S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+      - name: Cleanup and upload coverage
+        uses: ./.github/actions/cleanup-and-coverage
+        with:
+          profiles: >
+            sproxyd
+            mongo
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+        if: always()
+      - name: Upload test results to Codecov
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: '**/junit/*junit*.xml'
+          flags: multiple-backend
+        if: always() && !cancelled()
+      - name: Upload logs to artifacts
+        uses: scality/action-artifacts@v4
+        with:
+          method: upload
+          url: https://artifacts.scality.net
+          user: ${{ secrets.ARTIFACTS_USER }}
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          source: /tmp/artifacts
+        if: always()
+
   mongo-v0-ft-tests:
     runs-on: ubuntu-24.04
     needs: build
     env:
       S3BACKEND: mem
-      MPU_TESTING: "yes" 
+      MPU_TESTING: 'yes'
       S3METADATA: mongodb
       S3KMS: file
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
@@ -349,56 +349,56 @@ jobs:
       JOB_NAME: ${{ github.job }}
       S3_SERVER_ACCESS_LOGS_MODE: ENABLED
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Setup CI environment
-      uses: ./.github/actions/setup-ci
-    - name: Setup server access logs file and directory
-      shell: bash
-      run: |
-        set -exu
-        sudo mkdir -p /logs
-        sudo chmod 0777 /logs
-        sudo touch /logs/server-access.log && sudo chmod 0666 /logs/server-access.log
-    - name: Setup CI services
-      run: docker compose --profile mongo up -d
-      working-directory: .github/docker
-    - name: Run functional tests
-      run: |-
-        set -o pipefail;
-        bash wait_for_local_port.bash 8000 40
-        yarn run ft_test | tee /tmp/artifacts/${{ github.job }}/tests.log
-      env:
-        S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
-    - name: Cleanup and upload coverage
-      uses: ./.github/actions/cleanup-and-coverage
-      with:
-        profiles: mongo
-        codecov-token: ${{ secrets.CODECOV_TOKEN }}
-      if: always()
-    - name: Upload test results to Codecov
-      uses: codecov/test-results-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: '**/junit/*junit*.xml'
-        flags: mongo-v0-ft-tests
-      if: always() && !cancelled()
-    - name: Upload logs to artifacts
-      uses: scality/action-artifacts@v4
-      with:
-        method: upload
-        url: https://artifacts.scality.net
-        user: ${{ secrets.ARTIFACTS_USER }}
-        password: ${{ secrets.ARTIFACTS_PASSWORD }}
-        source: /tmp/artifacts
-      if: always()
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup CI environment
+        uses: ./.github/actions/setup-ci
+      - name: Setup server access logs file and directory
+        shell: bash
+        run: |
+          set -exu
+          sudo mkdir -p /logs
+          sudo chmod 0777 /logs
+          sudo touch /logs/server-access.log && sudo chmod 0666 /logs/server-access.log
+      - name: Setup CI services
+        run: docker compose --profile mongo up -d
+        working-directory: .github/docker
+      - name: Run functional tests
+        run: |-
+          set -o pipefail;
+          bash wait_for_local_port.bash 8000 40
+          yarn run ft_test | tee /tmp/artifacts/${{ github.job }}/tests.log
+        env:
+          S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+      - name: Cleanup and upload coverage
+        uses: ./.github/actions/cleanup-and-coverage
+        with:
+          profiles: mongo
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+        if: always()
+      - name: Upload test results to Codecov
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: '**/junit/*junit*.xml'
+          flags: mongo-v0-ft-tests
+        if: always() && !cancelled()
+      - name: Upload logs to artifacts
+        uses: scality/action-artifacts@v4
+        with:
+          method: upload
+          url: https://artifacts.scality.net
+          user: ${{ secrets.ARTIFACTS_USER }}
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          source: /tmp/artifacts
+        if: always()
 
   mongo-v1-ft-tests:
     runs-on: ubuntu-24.04
     needs: build
     env:
       S3BACKEND: mem
-      MPU_TESTING: "yes" 
+      MPU_TESTING: 'yes'
       S3METADATA: mongodb
       S3KMS: file
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
@@ -410,50 +410,50 @@ jobs:
       JOB_NAME: ${{ github.job }}
       S3_SERVER_ACCESS_LOGS_MODE: ENABLED
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Setup CI environment
-      uses: ./.github/actions/setup-ci
-    - name: Setup server access logs file and directory
-      shell: bash
-      run: |
-        set -exu
-        sudo mkdir -p /logs
-        sudo chmod 0777 /logs
-        sudo touch /logs/server-access.log && sudo chmod 0666 /logs/server-access.log
-    - name: Setup CI services
-      run: docker compose --profile mongo up -d
-      working-directory: .github/docker
-    - name: Run functional tests
-      run: |-
-        set -o pipefail;        
-        bash wait_for_local_port.bash 8000 40
-        yarn run ft_test | tee /tmp/artifacts/${{ github.job }}/tests.log
-        yarn run ft_mixed_bucket_format_version | tee /tmp/artifacts/${{ github.job }}/mixed-tests.log
-      env:
-        S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
-    - name: Cleanup and upload coverage
-      uses: ./.github/actions/cleanup-and-coverage
-      with:
-        profiles: mongo
-        codecov-token: ${{ secrets.CODECOV_TOKEN }}
-      if: always()
-    - name: Upload test results to Codecov
-      uses: codecov/test-results-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: '**/junit/*junit*.xml'
-        flags: mongo-v1-ft-tests
-      if: always() && !cancelled()
-    - name: Upload logs to artifacts
-      uses: scality/action-artifacts@v4
-      with:
-        method: upload
-        url: https://artifacts.scality.net
-        user: ${{ secrets.ARTIFACTS_USER }}
-        password: ${{ secrets.ARTIFACTS_PASSWORD }}
-        source: /tmp/artifacts
-      if: always()
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup CI environment
+        uses: ./.github/actions/setup-ci
+      - name: Setup server access logs file and directory
+        shell: bash
+        run: |
+          set -exu
+          sudo mkdir -p /logs
+          sudo chmod 0777 /logs
+          sudo touch /logs/server-access.log && sudo chmod 0666 /logs/server-access.log
+      - name: Setup CI services
+        run: docker compose --profile mongo up -d
+        working-directory: .github/docker
+      - name: Run functional tests
+        run: |-
+          set -o pipefail;
+          bash wait_for_local_port.bash 8000 40
+          yarn run ft_test | tee /tmp/artifacts/${{ github.job }}/tests.log
+          yarn run ft_mixed_bucket_format_version | tee /tmp/artifacts/${{ github.job }}/mixed-tests.log
+        env:
+          S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+      - name: Cleanup and upload coverage
+        uses: ./.github/actions/cleanup-and-coverage
+        with:
+          profiles: mongo
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+        if: always()
+      - name: Upload test results to Codecov
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: '**/junit/*junit*.xml'
+          flags: mongo-v1-ft-tests
+        if: always() && !cancelled()
+      - name: Upload logs to artifacts
+        uses: scality/action-artifacts@v4
+        with:
+          method: upload
+          url: https://artifacts.scality.net
+          user: ${{ secrets.ARTIFACTS_USER }}
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          source: /tmp/artifacts
+        if: always()
 
   # All tests use non federation images
 
@@ -473,57 +473,57 @@ jobs:
       S3VAULT: mem
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
-      MPU_TESTING: "yes"
-      ENABLE_NULL_VERSION_COMPAT_MODE: "${{ matrix.enable-null-compat }}"
+      MPU_TESTING: 'yes'
+      ENABLE_NULL_VERSION_COMPAT_MODE: '${{ matrix.enable-null-compat }}'
       JOB_NAME: ${{ matrix.job-name }}
       S3_SERVER_ACCESS_LOGS_MODE: ENABLED
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Setup CI environment
-      uses: ./.github/actions/setup-ci
-    - name: Setup matrix job artifacts directory
-      shell: bash
-      run: |
-        set -exu
-        mkdir -p /tmp/artifacts/${{ matrix.job-name }}/
-    - name: Setup server access logs file and directory
-      shell: bash
-      run: |
-        set -exu
-        sudo mkdir -p /logs
-        sudo chmod 0777 /logs
-        sudo touch /logs/server-access.log && sudo chmod 0666 /logs/server-access.log
-    - name: Setup CI services
-      run: docker compose up -d
-      working-directory: .github/docker
-    - name: Run file ft tests
-      run: |-
-        set -o pipefail;
-        bash wait_for_local_port.bash 8000 40
-        yarn run ft_test | tee /tmp/artifacts/${{ matrix.job-name }}/tests.log
-    - name: Cleanup and upload coverage
-      uses: ./.github/actions/cleanup-and-coverage
-      with:
-        codecov-token: ${{ secrets.CODECOV_TOKEN }}
-        flags: ${{ matrix.job-name }}
-      if: always()
-    - name: Upload test results to Codecov
-      uses: codecov/test-results-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: '**/junit/*junit*.xml'
-        flags: ${{ matrix.job-name }}
-      if: always() && !cancelled()
-    - name: Upload logs to artifacts
-      uses: scality/action-artifacts@v4
-      with:
-        method: upload
-        url: https://artifacts.scality.net
-        user: ${{ secrets.ARTIFACTS_USER }}
-        password: ${{ secrets.ARTIFACTS_PASSWORD }}
-        source: /tmp/artifacts
-      if: always()
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup CI environment
+        uses: ./.github/actions/setup-ci
+      - name: Setup matrix job artifacts directory
+        shell: bash
+        run: |
+          set -exu
+          mkdir -p /tmp/artifacts/${{ matrix.job-name }}/
+      - name: Setup server access logs file and directory
+        shell: bash
+        run: |
+          set -exu
+          sudo mkdir -p /logs
+          sudo chmod 0777 /logs
+          sudo touch /logs/server-access.log && sudo chmod 0666 /logs/server-access.log
+      - name: Setup CI services
+        run: docker compose up -d
+        working-directory: .github/docker
+      - name: Run file ft tests
+        run: |-
+          set -o pipefail;
+          bash wait_for_local_port.bash 8000 40
+          yarn run ft_test | tee /tmp/artifacts/${{ matrix.job-name }}/tests.log
+      - name: Cleanup and upload coverage
+        uses: ./.github/actions/cleanup-and-coverage
+        with:
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+          flags: ${{ matrix.job-name }}
+        if: always()
+      - name: Upload test results to Codecov
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: '**/junit/*junit*.xml'
+          flags: ${{ matrix.job-name }}
+        if: always() && !cancelled()
+      - name: Upload logs to artifacts
+        uses: scality/action-artifacts@v4
+        with:
+          method: upload
+          url: https://artifacts.scality.net
+          user: ${{ secrets.ARTIFACTS_USER }}
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          source: /tmp/artifacts
+        if: always()
 
   # Configure and run as Integration run S3C tests
   s3c-ft-tests:
@@ -548,7 +548,7 @@ jobs:
       S3METADATA: scality
       S3VAULT: scality
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
-      MPU_TESTING: "yes"
+      MPU_TESTING: 'yes'
       DEFAULT_BUCKET_KEY_FORMAT: ${{ matrix.vformat }}
       ENABLE_NULL_VERSION_COMPAT_MODE: ${{ matrix.enable-null-compat }}
       COMPOSE_FILE: docker-compose.yaml:docker-compose.sse.yaml
@@ -558,102 +558,102 @@ jobs:
       S3_TESTVAL_OWNERCANONICALID: 79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be
       S3_SERVER_ACCESS_LOGS_MODE: ENABLED
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Login to Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.repository_owner }}
-        password: ${{ github.token }}
-    - name: Setup CI environment
-      uses: ./.github/actions/setup-ci
-    - name: Setup matrix job artifacts directory
-      shell: bash
-      run: |
-        set -exu
-        mkdir -p /tmp/artifacts/${{ matrix.job-name }}/
-    - name: Setup server access logs file and directory
-      shell: bash
-      run: |
-        set -exu
-        sudo mkdir -p /logs
-        sudo chmod 0777 /logs
-        sudo touch /logs/server-access.log && sudo chmod 0666 /logs/server-access.log
-    - name: Modify md-config.json for vformat
-      run: |
-        sed -i 's/\("METADATA_NEW_BUCKETS_VFORMAT":\s*\)"[^"]*"/\1"${{ matrix.vformat }}"/' .github/docker/md-config.json
-    - name: Copy S3C config
-      run: cp .github/docker/config.s3c.json tests/functional/sse-kms-migration/config.json
-    - name: Setup CI services
-      run: docker compose up -d --quiet-pull redis sproxyd metadata-standalone vault cloudserver-sse-before-migration
-      working-directory: .github/docker
-    - name: Wait for services to be ready
-      run: |-
-        set -o pipefail;
-        bash wait_for_local_port.bash 81 40
-        bash wait_for_local_port.bash 9000 40
-        bash wait_for_local_port.bash 8000 40
-    - name: Setup vault credentials like S3C Integration
-      run: ./setup-s3c.sh
-      working-directory: .github/docker
-    - name: Set config files env variables
-      run: |-
-        echo "S3_CONFIG_FILE=${{ github.workspace }}/.github/docker/config.s3c.json" >> $GITHUB_ENV
-        echo "S3_LOCATION_FILE=${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json" >> $GITHUB_ENV
-    - name: Run cloudserver-object tests
-      run: |-
-        set -o pipefail;
-        yarn run ft_awssdk_objects_misc | tee /tmp/artifacts/${{ matrix.job-name }}/ft_awssdk_objects_misc.log
-    - name: Run cloudserver-version tests
-      run: |-
-        set -o pipefail;
-        yarn run ft_awssdk_versioning | tee /tmp/artifacts/${{ matrix.job-name }}/ft_awssdk_versioning.log
-    - name: Run cloudserver-bucket tests
-      run: |-
-        set -o pipefail;
-        yarn run ft_awssdk_buckets | tee /tmp/artifacts/${{ matrix.job-name }}/ft_awssdk_buckets.log
-    - name: Run cloudserver-routes (metadata) tests
-      run: |-
-        set -o pipefail;
-        yarn run ft_node_routes | tee /tmp/artifacts/${{ matrix.job-name }}/ft_node_routes.log
-    - name: Run backbeat route tests
-      run: |-
-        set -o pipefail;
-        yarn run ft_route_backbeat | tee /tmp/artifacts/${{ matrix.job-name }}/ft_route_backbeat.log
-    - name: Run backbeat tests
-      run: |-
-        set -o pipefail;
-        yarn run ft_backbeat | tee /tmp/artifacts/${{ matrix.job-name }}/ft_backbeat.log
-    - name: Run healthchecks tests
-      run: |-
-        set -o pipefail;
-        yarn run ft_healthchecks | tee /tmp/artifacts/${{ matrix.job-name }}/ft_healthchecks.log
-    - name: Teardown CI services
-      run: docker compose down redis sproxyd metadata-standalone vault cloudserver-sse-before-migration
-      working-directory: .github/docker
-    - name: Cleanup and upload coverage
-      uses: ./.github/actions/cleanup-and-coverage
-      with:
-        codecov-token: ${{ secrets.CODECOV_TOKEN }}
-        flags: ${{ matrix.job-name }}
-      if: always()
-    - name: Upload test results to Codecov
-      uses: codecov/test-results-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: '**/junit/*junit*.xml'
-        flags: ${{ matrix.job-name }}
-      if: always() && !cancelled()
-    - name: Upload logs to artifacts
-      uses: scality/action-artifacts@v4
-      with:
-        method: upload
-        url: https://artifacts.scality.net
-        user: ${{ secrets.ARTIFACTS_USER }}
-        password: ${{ secrets.ARTIFACTS_PASSWORD }}
-        source: /tmp/artifacts
-      if: always()
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Login to Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+      - name: Setup CI environment
+        uses: ./.github/actions/setup-ci
+      - name: Setup matrix job artifacts directory
+        shell: bash
+        run: |
+          set -exu
+          mkdir -p /tmp/artifacts/${{ matrix.job-name }}/
+      - name: Setup server access logs file and directory
+        shell: bash
+        run: |
+          set -exu
+          sudo mkdir -p /logs
+          sudo chmod 0777 /logs
+          sudo touch /logs/server-access.log && sudo chmod 0666 /logs/server-access.log
+      - name: Modify md-config.json for vformat
+        run: |
+          sed -i 's/\("METADATA_NEW_BUCKETS_VFORMAT":\s*\)"[^"]*"/\1"${{ matrix.vformat }}"/' .github/docker/md-config.json
+      - name: Copy S3C config
+        run: cp .github/docker/config.s3c.json tests/functional/sse-kms-migration/config.json
+      - name: Setup CI services
+        run: docker compose up -d --quiet-pull redis sproxyd metadata-standalone vault cloudserver-sse-before-migration
+        working-directory: .github/docker
+      - name: Wait for services to be ready
+        run: |-
+          set -o pipefail;
+          bash wait_for_local_port.bash 81 40
+          bash wait_for_local_port.bash 9000 40
+          bash wait_for_local_port.bash 8000 40
+      - name: Setup vault credentials like S3C Integration
+        run: ./setup-s3c.sh
+        working-directory: .github/docker
+      - name: Set config files env variables
+        run: |-
+          echo "S3_CONFIG_FILE=${{ github.workspace }}/.github/docker/config.s3c.json" >> $GITHUB_ENV
+          echo "S3_LOCATION_FILE=${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json" >> $GITHUB_ENV
+      - name: Run cloudserver-object tests
+        run: |-
+          set -o pipefail;
+          yarn run ft_awssdk_objects_misc | tee /tmp/artifacts/${{ matrix.job-name }}/ft_awssdk_objects_misc.log
+      - name: Run cloudserver-version tests
+        run: |-
+          set -o pipefail;
+          yarn run ft_awssdk_versioning | tee /tmp/artifacts/${{ matrix.job-name }}/ft_awssdk_versioning.log
+      - name: Run cloudserver-bucket tests
+        run: |-
+          set -o pipefail;
+          yarn run ft_awssdk_buckets | tee /tmp/artifacts/${{ matrix.job-name }}/ft_awssdk_buckets.log
+      - name: Run cloudserver-routes (metadata) tests
+        run: |-
+          set -o pipefail;
+          yarn run ft_node_routes | tee /tmp/artifacts/${{ matrix.job-name }}/ft_node_routes.log
+      - name: Run backbeat route tests
+        run: |-
+          set -o pipefail;
+          yarn run ft_route_backbeat | tee /tmp/artifacts/${{ matrix.job-name }}/ft_route_backbeat.log
+      - name: Run backbeat tests
+        run: |-
+          set -o pipefail;
+          yarn run ft_backbeat | tee /tmp/artifacts/${{ matrix.job-name }}/ft_backbeat.log
+      - name: Run healthchecks tests
+        run: |-
+          set -o pipefail;
+          yarn run ft_healthchecks | tee /tmp/artifacts/${{ matrix.job-name }}/ft_healthchecks.log
+      - name: Teardown CI services
+        run: docker compose down redis sproxyd metadata-standalone vault cloudserver-sse-before-migration
+        working-directory: .github/docker
+      - name: Cleanup and upload coverage
+        uses: ./.github/actions/cleanup-and-coverage
+        with:
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+          flags: ${{ matrix.job-name }}
+        if: always()
+      - name: Upload test results to Codecov
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: '**/junit/*junit*.xml'
+          flags: ${{ matrix.job-name }}
+        if: always() && !cancelled()
+      - name: Upload logs to artifacts
+        uses: scality/action-artifacts@v4
+        with:
+          method: upload
+          url: https://artifacts.scality.net
+          user: ${{ secrets.ARTIFACTS_USER }}
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          source: /tmp/artifacts
+        if: always()
 
   utapi-v2-tests:
     runs-on: ubuntu-24.04
@@ -667,39 +667,39 @@ jobs:
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Setup CI environment
-      uses: ./.github/actions/setup-ci
-    - name: Setup CI services
-      run: docker compose up -d
-      working-directory: .github/docker
-    - name: Run file utapi v2 tests
-      run: |-
-        set -ex -o pipefail;
-        bash wait_for_local_port.bash 8000 40
-        yarn run test_utapi_v2 | tee /tmp/artifacts/${{ github.job }}/tests.log
-    - name: Cleanup and upload coverage
-      uses: ./.github/actions/cleanup-and-coverage
-      with:
-        codecov-token: ${{ secrets.CODECOV_TOKEN }}
-      if: always()
-    - name: Upload test results to Codecov
-      uses: codecov/test-results-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: '**/junit/*junit*.xml'
-        flags: utapi-v2-tests
-      if: always() && !cancelled()
-    - name: Upload logs to artifacts
-      uses: scality/action-artifacts@v4
-      with:
-        method: upload
-        url: https://artifacts.scality.net
-        user: ${{ secrets.ARTIFACTS_USER }}
-        password: ${{ secrets.ARTIFACTS_PASSWORD }}
-        source: /tmp/artifacts
-      if: always()
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup CI environment
+        uses: ./.github/actions/setup-ci
+      - name: Setup CI services
+        run: docker compose up -d
+        working-directory: .github/docker
+      - name: Run file utapi v2 tests
+        run: |-
+          set -ex -o pipefail;
+          bash wait_for_local_port.bash 8000 40
+          yarn run test_utapi_v2 | tee /tmp/artifacts/${{ github.job }}/tests.log
+      - name: Cleanup and upload coverage
+        uses: ./.github/actions/cleanup-and-coverage
+        with:
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+        if: always()
+      - name: Upload test results to Codecov
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: '**/junit/*junit*.xml'
+          flags: utapi-v2-tests
+        if: always() && !cancelled()
+      - name: Upload logs to artifacts
+        uses: scality/action-artifacts@v4
+        with:
+          method: upload
+          url: https://artifacts.scality.net
+          user: ${{ secrets.ARTIFACTS_USER }}
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          source: /tmp/artifacts
+        if: always()
 
   sur-tests:
     runs-on: ubuntu-24.04
@@ -707,10 +707,10 @@ jobs:
     strategy:
       matrix:
         inflights:
-          - name: "With Inflights"
-            value: "true"
-          - name: "Without Inflights"
-            value: "false"
+          - name: 'With Inflights'
+            value: 'true'
+          - name: 'Without Inflights'
+            value: 'false'
     env:
       S3METADATA: mongodb
       S3BACKEND: mem
@@ -723,41 +723,41 @@ jobs:
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Setup CI environment
-      uses: ./.github/actions/setup-ci
-    - name: Setup CI services
-      run: docker compose --profile mongo up -d
-      working-directory: .github/docker
-    - name: Run SUR-related tests
-      run: |-
-        set -ex -o pipefail;
-        bash wait_for_local_port.bash 8000 40
-        yarn run test_sur | tee /tmp/artifacts/${{ github.job }}/tests.log
-    - name: Cleanup and upload coverage
-      uses: ./.github/actions/cleanup-and-coverage
-      with:
-        profiles: mongo
-        codecov-token: ${{ secrets.CODECOV_TOKEN }}
-        flags: ${{ github.job }}${{ matrix.inflights.value == 'true' && '-inflights' || '' }}
-      if: always()
-    - name: Upload test results to Codecov
-      uses: codecov/test-results-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: '**/junit/*junit*.xml'
-        flags: ${{ github.job }}${{ matrix.inflights.value == 'true' && '-inflights' || '' }}
-      if: always() && !cancelled()
-    - name: Upload logs to artifacts
-      uses: scality/action-artifacts@v4
-      with:
-        method: upload
-        url: https://artifacts.scality.net
-        user: ${{ secrets.ARTIFACTS_USER }}
-        password: ${{ secrets.ARTIFACTS_PASSWORD }}
-        source: /tmp/artifacts
-      if: always()
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup CI environment
+        uses: ./.github/actions/setup-ci
+      - name: Setup CI services
+        run: docker compose --profile mongo up -d
+        working-directory: .github/docker
+      - name: Run SUR-related tests
+        run: |-
+          set -ex -o pipefail;
+          bash wait_for_local_port.bash 8000 40
+          yarn run test_sur | tee /tmp/artifacts/${{ github.job }}/tests.log
+      - name: Cleanup and upload coverage
+        uses: ./.github/actions/cleanup-and-coverage
+        with:
+          profiles: mongo
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+          flags: ${{ github.job }}${{ matrix.inflights.value == 'true' && '-inflights' || '' }}
+        if: always()
+      - name: Upload test results to Codecov
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: '**/junit/*junit*.xml'
+          flags: ${{ github.job }}${{ matrix.inflights.value == 'true' && '-inflights' || '' }}
+        if: always() && !cancelled()
+      - name: Upload logs to artifacts
+        uses: scality/action-artifacts@v4
+        with:
+          method: upload
+          url: https://artifacts.scality.net
+          user: ${{ secrets.ARTIFACTS_USER }}
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          source: /tmp/artifacts
+        if: always()
 
   kmip-ft-tests:
     runs-on: ubuntu-24.04
@@ -765,7 +765,7 @@ jobs:
     env:
       S3BACKEND: file
       S3VAULT: mem
-      MPU_TESTING: "yes" 
+      MPU_TESTING: 'yes'
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       PYKMIP_IMAGE: ghcr.io/${{ github.repository }}/pykmip:${{ github.sha }}
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
@@ -780,44 +780,44 @@ jobs:
       S3KMIP_CERT: /tmp/ssl-kmip/kmip-client-cert.pem
       S3KMIP_CA: /tmp/ssl-kmip/kmip-ca.pem
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Setup CI environment
-      uses: ./.github/actions/setup-ci
-    - name: Copy KMIP certs
-      run: cp -r ./certs /tmp/ssl-kmip
-      working-directory: .github/pykmip
-    - name: Setup CI services
-      run: docker compose --profile pykmip up -d
-      working-directory: .github/docker
-    - name: Run file KMIP tests
-      run: |-
-        set -ex -o pipefail;
-        bash wait_for_local_port.bash 8000 40
-        bash wait_for_local_port.bash 5696 40
-        yarn run ft_kmip | tee /tmp/artifacts/${{ github.job }}/tests.log
-    - name: Cleanup and upload coverage
-      uses: ./.github/actions/cleanup-and-coverage
-      with:
-        profiles: pykmip
-        codecov-token: ${{ secrets.CODECOV_TOKEN }}
-      if: always()
-    - name: Upload test results to Codecov
-      uses: codecov/test-results-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: '**/junit/*junit*.xml'
-        flags: kmip-ft-tests
-      if: always() && !cancelled()
-    - name: Upload logs to artifacts
-      uses: scality/action-artifacts@v4
-      with:
-        method: upload
-        url: https://artifacts.scality.net
-        user: ${{ secrets.ARTIFACTS_USER }}
-        password: ${{ secrets.ARTIFACTS_PASSWORD }}
-        source: /tmp/artifacts
-      if: always()
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup CI environment
+        uses: ./.github/actions/setup-ci
+      - name: Copy KMIP certs
+        run: cp -r ./certs /tmp/ssl-kmip
+        working-directory: .github/pykmip
+      - name: Setup CI services
+        run: docker compose --profile pykmip up -d
+        working-directory: .github/docker
+      - name: Run file KMIP tests
+        run: |-
+          set -ex -o pipefail;
+          bash wait_for_local_port.bash 8000 40
+          bash wait_for_local_port.bash 5696 40
+          yarn run ft_kmip | tee /tmp/artifacts/${{ github.job }}/tests.log
+      - name: Cleanup and upload coverage
+        uses: ./.github/actions/cleanup-and-coverage
+        with:
+          profiles: pykmip
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+        if: always()
+      - name: Upload test results to Codecov
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: '**/junit/*junit*.xml'
+          flags: kmip-ft-tests
+        if: always() && !cancelled()
+      - name: Upload logs to artifacts
+        uses: scality/action-artifacts@v4
+        with:
+          method: upload
+          url: https://artifacts.scality.net
+          user: ${{ secrets.ARTIFACTS_USER }}
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          source: /tmp/artifacts
+        if: always()
 
   kmip-cluster-ft-tests:
     runs-on: ubuntu-latest
@@ -832,54 +832,54 @@ jobs:
       COMPOSE_FILE: docker-compose.yaml:docker-compose.sse.yaml
       S3KMS: kmip
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
-      with:
-        python-version: 3.9
-    - name: Setup CI environment
-      uses: ./.github/actions/setup-ci
-    - name: Install tcpdump to analyze traffic on kmip cluster interfaces
-      run: sudo apt-get update && sudo apt-get install -y tcpdump
-    - name: Copy KMIP certs
-      run: cp -r ./certs /tmp/ssl-kmip
-      working-directory: .github/pykmip
-    - name: Merge config.json and kmip-cluster config
-      run: |
-        jq -s '
-          .[0] * .[1]
-        ' \
-          configs/base.json \
-          configs/kmip-cluster.json \
-          > config.json
-      working-directory: tests/functional/sse-kms-migration
-    - name: Setup CI services
-      run: docker compose up -d --quiet-pull redis pykmip cloudserver-sse-before-migration
-      working-directory: .github/docker
-    - name: Run file KMIP cluster tests
-      shell: bash # for pipefail
-      env:
-        # Functional tests needs access to the running config to use the same
-        # KMS kmip cluster config
-        # yarn run does a cd into the test folder
-        # absolute path to override default root config
-        S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
-        S3KMS: kmip
-        S3_END_TO_END: true # to use the default credentials profile and not vault profile
-      run: |-
-        set -ex -o pipefail;
-        bash wait_for_local_port.bash 8000 40
-        bash wait_for_local_port.bash 5696 40
-        yarn run ft_kmip_cluster | tee /tmp/artifacts/${{ github.job }}/tests.log
-    - name: Upload logs to artifacts
-      uses: scality/action-artifacts@v4
-      with:
-        method: upload
-        url: https://artifacts.scality.net
-        user: ${{ secrets.ARTIFACTS_USER }}
-        password: ${{ secrets.ARTIFACTS_PASSWORD }}
-        source: /tmp/artifacts
-      if: always()
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+      - name: Setup CI environment
+        uses: ./.github/actions/setup-ci
+      - name: Install tcpdump to analyze traffic on kmip cluster interfaces
+        run: sudo apt-get update && sudo apt-get install -y tcpdump
+      - name: Copy KMIP certs
+        run: cp -r ./certs /tmp/ssl-kmip
+        working-directory: .github/pykmip
+      - name: Merge config.json and kmip-cluster config
+        run: |
+          jq -s '
+            .[0] * .[1]
+          ' \
+            configs/base.json \
+            configs/kmip-cluster.json \
+            > config.json
+        working-directory: tests/functional/sse-kms-migration
+      - name: Setup CI services
+        run: docker compose up -d --quiet-pull redis pykmip cloudserver-sse-before-migration
+        working-directory: .github/docker
+      - name: Run file KMIP cluster tests
+        shell: bash # for pipefail
+        env:
+          # Functional tests needs access to the running config to use the same
+          # KMS kmip cluster config
+          # yarn run does a cd into the test folder
+          # absolute path to override default root config
+          S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
+          S3KMS: kmip
+          S3_END_TO_END: true # to use the default credentials profile and not vault profile
+        run: |-
+          set -ex -o pipefail;
+          bash wait_for_local_port.bash 8000 40
+          bash wait_for_local_port.bash 5696 40
+          yarn run ft_kmip_cluster | tee /tmp/artifacts/${{ github.job }}/tests.log
+      - name: Upload logs to artifacts
+        uses: scality/action-artifacts@v4
+        with:
+          method: upload
+          url: https://artifacts.scality.net
+          user: ${{ secrets.ARTIFACTS_USER }}
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          source: /tmp/artifacts
+        if: always()
 
   # This test with the final yarn run ft_sse_arn covers more code than the kmip tests
   sse-kms-migration-tests:
@@ -924,7 +924,7 @@ jobs:
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       VAULT_IMAGE: ghcr.io/scality/vault:7.70.32
       KMS_IMAGE: nsmithuk/local-kms:3.11.7
-      MPU_TESTING: "yes"
+      MPU_TESTING: 'yes'
       JOB_NAME: >-
         sse-kms-migration-${{
           matrix.kms.provider
@@ -935,130 +935,130 @@ jobs:
         }}
       COMPOSE_FILE: docker-compose.yaml:docker-compose.sse.yaml
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
-      with:
-        python-version: 3.9
-    - name: Login to GitHub Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.repository_owner }}
-        password: ${{ github.token }}
-    - name: Setup CI environment
-      uses: ./.github/actions/setup-ci
-    - name: Copy KMIP certs
-      run: cp -r ./certs /tmp/ssl-kmip
-      working-directory: .github/pykmip
-    - name: Setup matrix job artifacts directory
-      shell: bash
-      run: |
-        set -exu
-        mkdir -p /tmp/artifacts/${{ env.JOB_NAME }}/
-    - name: Copy base config
-      run: cp configs/base.json config.json
-      working-directory: tests/functional/sse-kms-migration
-    - name: Setup CI services (with old cloudserver image before sse migration)
-      run: docker compose up -d --quiet-pull redis vault-sse-before-migration cloudserver-sse-before-migration
-      working-directory: .github/docker
-      env:
-        CLOUDSERVER_IMAGE: ${{ env.CLOUDSERVER_IMAGE_BEFORE_SSE_MIGRATION }}
-        VAULT_IMAGE: ${{ env.VAULT_IMAGE_BEFORE_SSE_MIGRATION }}
-    - name: Wait for services vault and s3
-      run: |-
-        bash wait_for_local_port.bash 8500 40
-        bash wait_for_local_port.bash 8000 40
-    - name: Ensure old version of cloudserver and vault is used
-      run: |-
-        ./ensure-version.sh cloudserver-sse-before-migration ${{ env.CLOUDSERVER_VERSION_BEFORE }}
-        ./ensure-version.sh vault-sse-before-migration ${{ env.VAULT_VERSION_BEFORE }}
-      working-directory: .github/docker
-    - name: Create vault account and keys
-      run: |-
-        export PATH="$PATH:$(pwd)/node_modules/vaultclient/bin/"
-        vaultclient --config .github/docker/admin.json delete-account --name test || true
-        vaultclient --config .github/docker/admin.json create-account --name test --email test@scality.com
-        vaultclient --config .github/docker/admin.json generate-account-access-key --name test --accesskey TESTAK00000000000000 --secretkey TESTSK0000000000000000000000000000000000
-        vaultclient --config .github/docker/admin.json get-account --account-name test
-    - name: Run SSE before migration tests (setup buckets and objects)
-      shell: bash # for pipefail
-      env:
-        # absolute path to override default root config
-        S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
-        S3KMS: file
-      run: yarn run ft_sse_before_migration | tee /tmp/artifacts/${{ env.JOB_NAME }}/beforeMigration.log
-    - name: Merge config.json files for options
-      run: |
-        jq -s '
-          .[0] * .[1] * .[2] *
-          { kmsHideScalityArn: ${{ matrix.opts.kmsHideScalityArn }} } *
-          { globalEncryptionEnabled: ${{ matrix.opts.globalEncryptionEnabled }} }
-        ' \
-          configs/base.json \
-          configs/${{ matrix.kms.provider }}.json \
-          configs/sseMigration.json \
-          > config.json
-      working-directory: tests/functional/sse-kms-migration
-    - name: Replace old cloudserver image with current one
-      run: |-
-        docker compose down cloudserver-sse-before-migration vault-sse-before-migration
-        docker compose up -d --quiet-pull ${{ matrix.kms.container }} vault-sse-migration cloudserver-sse-migration
-      working-directory: .github/docker
-      env:
-        S3KMS: ${{ matrix.kms.provider }} # S3
-        KMS_BACKEND: ${{ matrix.kms.provider == 'aws' && 'aws' || '' }} # vault only supports aws
-    - name: Wait for services kms vault and s3
-      run: |-
-        bash wait_for_local_port.bash ${{ matrix.kms.port }} 40
-        bash wait_for_local_port.bash 8500 40
-        bash wait_for_local_port.bash 8000 40
-    - name: Ensure latest version of cloudserver and vault is used
-      run: |-
-        ./ensure-version.sh cloudserver-sse-migration `jq -r .version ../../package.json`
-        ./ensure-version.sh vault-sse-migration ${{ env.VAULT_VERSION_CURRENT }}
-      working-directory: .github/docker
-    - name: Run SSE migration tests
-      shell: bash # for pipefail
-      env:
-        # Functional tests needs access to the running config to use the same
-        # KMS provider and sseMigration
-        # absolute path to override default root config
-        S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
-        S3KMS: ${{ matrix.kms.provider }}
-      run: yarn run ft_sse_migration | tee /tmp/artifacts/${{ env.JOB_NAME }}/migration.log
-    - name: Run SSE arnPrefix tests
-      shell: bash # for pipefail
-      env:
-        # Functional tests needs access to the running config to use the same
-        # KMS provider and sseMigration
-        # absolute path to override default root config
-        S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
-        S3KMS: ${{ matrix.kms.provider }}
-      run: yarn run ft_sse_arn | tee /tmp/artifacts/${{ env.JOB_NAME }}/arnPrefix.log
-    - name: Print docker compose logs
-      run: |-
-        docker compose logs \
-          cloudserver-sse-before-migration \
-          cloudserver-sse-migration \
-          vault-sse-before-migration \
-          vault-sse-migration \
-          ${{ matrix.kms.container == 'localkms' && 'localkms' || '' }}
-      # pykmip logs are already uploaded to artifacts, but not localkms
-      working-directory: .github/docker
-      if: failure()
-    - name: Remove empty artifact files to simplify viewing artifacts
-      run: find /tmp/artifacts/${{ env.JOB_NAME }}/ -size 0 -delete
-      if: always()
-    - name: Upload logs to artifacts
-      uses: scality/action-artifacts@v4
-      with:
-        method: upload
-        url: https://artifacts.scality.net
-        user: ${{ secrets.ARTIFACTS_USER }}
-        password: ${{ secrets.ARTIFACTS_PASSWORD }}
-        source: /tmp/artifacts
-      if: always()
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+      - name: Login to GitHub Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+      - name: Setup CI environment
+        uses: ./.github/actions/setup-ci
+      - name: Copy KMIP certs
+        run: cp -r ./certs /tmp/ssl-kmip
+        working-directory: .github/pykmip
+      - name: Setup matrix job artifacts directory
+        shell: bash
+        run: |
+          set -exu
+          mkdir -p /tmp/artifacts/${{ env.JOB_NAME }}/
+      - name: Copy base config
+        run: cp configs/base.json config.json
+        working-directory: tests/functional/sse-kms-migration
+      - name: Setup CI services (with old cloudserver image before sse migration)
+        run: docker compose up -d --quiet-pull redis vault-sse-before-migration cloudserver-sse-before-migration
+        working-directory: .github/docker
+        env:
+          CLOUDSERVER_IMAGE: ${{ env.CLOUDSERVER_IMAGE_BEFORE_SSE_MIGRATION }}
+          VAULT_IMAGE: ${{ env.VAULT_IMAGE_BEFORE_SSE_MIGRATION }}
+      - name: Wait for services vault and s3
+        run: |-
+          bash wait_for_local_port.bash 8500 40
+          bash wait_for_local_port.bash 8000 40
+      - name: Ensure old version of cloudserver and vault is used
+        run: |-
+          ./ensure-version.sh cloudserver-sse-before-migration ${{ env.CLOUDSERVER_VERSION_BEFORE }}
+          ./ensure-version.sh vault-sse-before-migration ${{ env.VAULT_VERSION_BEFORE }}
+        working-directory: .github/docker
+      - name: Create vault account and keys
+        run: |-
+          export PATH="$PATH:$(pwd)/node_modules/vaultclient/bin/"
+          vaultclient --config .github/docker/admin.json delete-account --name test || true
+          vaultclient --config .github/docker/admin.json create-account --name test --email test@scality.com
+          vaultclient --config .github/docker/admin.json generate-account-access-key --name test --accesskey TESTAK00000000000000 --secretkey TESTSK0000000000000000000000000000000000
+          vaultclient --config .github/docker/admin.json get-account --account-name test
+      - name: Run SSE before migration tests (setup buckets and objects)
+        shell: bash # for pipefail
+        env:
+          # absolute path to override default root config
+          S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
+          S3KMS: file
+        run: yarn run ft_sse_before_migration | tee /tmp/artifacts/${{ env.JOB_NAME }}/beforeMigration.log
+      - name: Merge config.json files for options
+        run: |
+          jq -s '
+            .[0] * .[1] * .[2] *
+            { kmsHideScalityArn: ${{ matrix.opts.kmsHideScalityArn }} } *
+            { globalEncryptionEnabled: ${{ matrix.opts.globalEncryptionEnabled }} }
+          ' \
+            configs/base.json \
+            configs/${{ matrix.kms.provider }}.json \
+            configs/sseMigration.json \
+            > config.json
+        working-directory: tests/functional/sse-kms-migration
+      - name: Replace old cloudserver image with current one
+        run: |-
+          docker compose down cloudserver-sse-before-migration vault-sse-before-migration
+          docker compose up -d --quiet-pull ${{ matrix.kms.container }} vault-sse-migration cloudserver-sse-migration
+        working-directory: .github/docker
+        env:
+          S3KMS: ${{ matrix.kms.provider }} # S3
+          KMS_BACKEND: ${{ matrix.kms.provider == 'aws' && 'aws' || '' }} # vault only supports aws
+      - name: Wait for services kms vault and s3
+        run: |-
+          bash wait_for_local_port.bash ${{ matrix.kms.port }} 40
+          bash wait_for_local_port.bash 8500 40
+          bash wait_for_local_port.bash 8000 40
+      - name: Ensure latest version of cloudserver and vault is used
+        run: |-
+          ./ensure-version.sh cloudserver-sse-migration `jq -r .version ../../package.json`
+          ./ensure-version.sh vault-sse-migration ${{ env.VAULT_VERSION_CURRENT }}
+        working-directory: .github/docker
+      - name: Run SSE migration tests
+        shell: bash # for pipefail
+        env:
+          # Functional tests needs access to the running config to use the same
+          # KMS provider and sseMigration
+          # absolute path to override default root config
+          S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
+          S3KMS: ${{ matrix.kms.provider }}
+        run: yarn run ft_sse_migration | tee /tmp/artifacts/${{ env.JOB_NAME }}/migration.log
+      - name: Run SSE arnPrefix tests
+        shell: bash # for pipefail
+        env:
+          # Functional tests needs access to the running config to use the same
+          # KMS provider and sseMigration
+          # absolute path to override default root config
+          S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
+          S3KMS: ${{ matrix.kms.provider }}
+        run: yarn run ft_sse_arn | tee /tmp/artifacts/${{ env.JOB_NAME }}/arnPrefix.log
+      - name: Print docker compose logs
+        run: |-
+          docker compose logs \
+            cloudserver-sse-before-migration \
+            cloudserver-sse-migration \
+            vault-sse-before-migration \
+            vault-sse-migration \
+            ${{ matrix.kms.container == 'localkms' && 'localkms' || '' }}
+        # pykmip logs are already uploaded to artifacts, but not localkms
+        working-directory: .github/docker
+        if: failure()
+      - name: Remove empty artifact files to simplify viewing artifacts
+        run: find /tmp/artifacts/${{ env.JOB_NAME }}/ -size 0 -delete
+        if: always()
+      - name: Upload logs to artifacts
+        uses: scality/action-artifacts@v4
+        with:
+          method: upload
+          url: https://artifacts.scality.net
+          user: ${{ secrets.ARTIFACTS_USER }}
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          source: /tmp/artifacts
+        if: always()
 
   cleanup-gcp-buckets:
     runs-on: ubuntu-24.04
@@ -1069,16 +1069,16 @@ jobs:
       - file-ft-tests
     if: always()
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: '22'
-        cache: yarn
-    - name: Install dependencies
-      run: yarn install --frozen-lockfile --network-concurrency 1
-    - name: Delete stale GCP CI buckets
-      run: yarn run cleanup_gcp_buckets
-      env:
-        AWS_GCP_BACKEND_ACCESS_KEY: ${{ secrets.AWS_GCP_BACKEND_ACCESS_KEY }}
-        AWS_GCP_BACKEND_SECRET_KEY: ${{ secrets.AWS_GCP_BACKEND_SECRET_KEY }}
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: yarn
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --network-concurrency 1
+      - name: Delete stale GCP CI buckets
+        run: yarn run cleanup_gcp_buckets
+        env:
+          AWS_GCP_BACKEND_ACCESS_KEY: ${{ secrets.AWS_GCP_BACKEND_ACCESS_KEY }}
+          AWS_GCP_BACKEND_SECRET_KEY: ${{ secrets.AWS_GCP_BACKEND_SECRET_KEY }}
