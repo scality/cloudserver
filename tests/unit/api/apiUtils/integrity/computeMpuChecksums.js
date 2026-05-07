@@ -27,34 +27,34 @@ describe('computeCompositeMPUChecksum', () => {
 
     COMPOSITE_ALGOS.forEach(algo => {
         const label = algo.toUpperCase();
-        it(`should match ${label}(decode(c1) || ... || decode(cN)) + "-N"`, () => {
+        it(`should match ${label}(decode(c1) || ... || decode(cN)) + "-N"`, async () => {
             const partChecksums = parts.map(p => algorithms[algo].digest(p));
             const expectedConcat = Buffer.concat(partChecksums.map(c => Buffer.from(c, 'base64')));
             const expected = `${algorithms[algo].digest(expectedConcat)}-3`;
 
-            const got = computeCompositeMPUChecksum(algo, partChecksums);
+            const got = await computeCompositeMPUChecksum(algo, partChecksums);
             assert.strictEqual(got.error, null);
             assert.strictEqual(got.checksum, expected);
         });
     });
 
-    it('should return N=1 for a single part', () => {
+    it('should return N=1 for a single part', async () => {
         const partChecksums = [algorithms.sha256.digest(parts[0])];
-        const got = computeCompositeMPUChecksum('sha256', partChecksums);
+        const got = await computeCompositeMPUChecksum('sha256', partChecksums);
         assert.strictEqual(got.error, null);
         assert(got.checksum.endsWith('-1'));
     });
 
-    it('should return an error object on unsupported algorithm', () => {
-        const got = computeCompositeMPUChecksum('md5', ['AAAA']);
+    it('should return an error object on unsupported algorithm', async () => {
+        const got = await computeCompositeMPUChecksum('md5', ['AAAA']);
         assert.strictEqual(got.checksum, null);
         assert(got.error);
         assert.strictEqual(got.error.code, 'MPUAlgoNotSupported');
         assert.deepStrictEqual(got.error.details, { algorithm: 'md5' });
     });
 
-    it('should return an error object for crc64nvme (not allowed for COMPOSITE)', () => {
-        const got = computeCompositeMPUChecksum('crc64nvme', ['AQIDBAUGBwg=']);
+    it('should return an error object for crc64nvme (not allowed for COMPOSITE)', async () => {
+        const got = await computeCompositeMPUChecksum('crc64nvme', ['AQIDBAUGBwg=']);
         assert.strictEqual(got.checksum, null);
         assert.strictEqual(got.error.code, 'MPUAlgoNotSupported');
     });
