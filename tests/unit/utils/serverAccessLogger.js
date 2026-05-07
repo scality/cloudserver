@@ -296,6 +296,20 @@ describe('serverAccessLogger utility functions', () => {
             const result = getOperation(req);
             assert.strictEqual(result, 'REST.PUT.OBJECT');
         });
+
+        it('should return REST.DELETE.OBJECT for delete-marker replication', () => {
+            const req = {
+                method: 'PUT',
+                apiMethod: 'routeBackbeat',
+                serverAccessLog: {
+                    backbeat: true,
+                    replication: true,
+                    deleteMarker: true,
+                },
+            };
+            const result = getOperation(req);
+            assert.strictEqual(result, 'REST.DELETE.OBJECT');
+        });
     });
 
     describe('getRequester', () => {
@@ -1810,6 +1824,75 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.hostHeader, '127.0.0.1:8000');
             assert.strictEqual(loggedData.signatureVersion, 'AWS4-HMAC-SHA256');
             assert.strictEqual(loggedData.authenticationType, 'REST-HEADER');
+        });
+
+        it('should produce a REST.DELETE.OBJECT entry for delete-marker replication', () => {
+            setServerAccessLogger(mockLogger);
+            const authInfo = {
+                getAccountDisplayName: () => 'replicationAccount',
+                getCanonicalID: () => 'replication-canonical-id',
+                isRequesterPublicUser: () => false,
+                isRequesterAnIAMUser: () => false,
+                getArn: () =>
+                    'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication',
+                getAuthVersion: () => 'AWS4-HMAC-SHA256',
+                getAuthType: () => 'REST-HEADER',
+                getAccessKey: () => 'replication-access-key',
+            };
+            const req = {
+                serverAccessLog: {
+                    backbeat: true,
+                    replication: true,
+                    deleteMarker: true,
+                    enabled: true,
+                    loggingEnabled: {
+                        TargetBucket: 'log-bucket',
+                        TargetPrefix: 'logs/',
+                    },
+                    bucketOwner: 'bucket-owner-id',
+                    bucketName: 'dest-bucket',
+                    objectKey: 'replicated.txt',
+                    authInfo,
+                    startTime: process.hrtime.bigint(),
+                    startTimeUnixMS: Date.now(),
+                },
+                method: 'PUT',
+                apiMethod: 'routeBackbeat',
+                url: '/_/backbeat/metadata/dest-bucket/replicated.txt',
+                httpVersion: '1.1',
+                headers: {
+                    host: '127.0.0.1:8000',
+                    referer: 'http://example.com',
+                    'user-agent': 'aws-sdk-nodejs/2.1692.0',
+                },
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {
+                    endTurnAroundTime: process.hrtime.bigint(),
+                },
+                statusCode: 200,
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+
+            assert.strictEqual(loggedData.operation, 'REST.DELETE.OBJECT');
+            assert.strictEqual(loggedData.loggingEnabled, true);
+            assert.strictEqual(loggedData.requestURI,
+                'DELETE /dest-bucket/replicated.txt HTTP/1.1');
+
+            // HTTP-layer fields that AWS blanks for replication
+            assert.strictEqual(loggedData.clientIP, undefined);
+            assert.strictEqual(loggedData.userAgent, undefined);
+            assert.strictEqual(loggedData.referer, undefined);
+
+            // Replication identity preserved
+            assert.strictEqual(loggedData.requester,
+                'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication');
         });
 
         it('should log replication with error code on failure', () => {
