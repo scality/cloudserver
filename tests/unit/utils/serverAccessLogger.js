@@ -324,6 +324,20 @@ describe('serverAccessLogger utility functions', () => {
             const result = getOperation(req);
             assert.strictEqual(result, 'REST.PUT.OBJECT_TAGGING');
         });
+
+        it('should return REST.PUT.ACL for ACL-only replication', () => {
+            const req = {
+                method: 'PUT',
+                apiMethod: 'routeBackbeat',
+                serverAccessLog: {
+                    backbeat: true,
+                    replication: true,
+                    acl: true,
+                },
+            };
+            const result = getOperation(req);
+            assert.strictEqual(result, 'REST.PUT.ACL');
+        });
     });
 
     describe('getRequester', () => {
@@ -1970,6 +1984,80 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.requestURI,
                 `PUT /dest-bucket/replicated.txt?tagging&versionId=${versionId} HTTP/1.1`);
             assert.strictEqual(loggedData.versionId, versionId);
+
+            // HTTP-layer fields that AWS blanks for replication
+            assert.strictEqual(loggedData.clientIP, undefined);
+            assert.strictEqual(loggedData.userAgent, undefined);
+            assert.strictEqual(loggedData.referer, undefined);
+
+            // Replication identity preserved
+            assert.strictEqual(loggedData.requester,
+                'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication');
+        });
+
+        it('should produce a REST.PUT.ACL entry for ACL-only replication', () => {
+            setServerAccessLogger(mockLogger);
+            const authInfo = {
+                getAccountDisplayName: () => 'replicationAccount',
+                getCanonicalID: () => 'replication-canonical-id',
+                isRequesterPublicUser: () => false,
+                isRequesterAnIAMUser: () => false,
+                getArn: () =>
+                    'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication',
+                getAuthVersion: () => 'AWS4-HMAC-SHA256',
+                getAuthType: () => 'REST-HEADER',
+                getAccessKey: () => 'replication-access-key',
+            };
+            const versionId = 'aIXVkw5Tw2Pd00000000001I4j3QKsvf';
+            const req = {
+                serverAccessLog: {
+                    backbeat: true,
+                    replication: true,
+                    acl: true,
+                    aclRequired: 'Yes',
+                    enabled: true,
+                    loggingEnabled: {
+                        TargetBucket: 'log-bucket',
+                        TargetPrefix: 'logs/',
+                    },
+                    bucketOwner: 'bucket-owner-id',
+                    bucketName: 'dest-bucket',
+                    objectKey: 'replicated.txt',
+                    authInfo,
+                    startTime: process.hrtime.bigint(),
+                    startTimeUnixMS: Date.now(),
+                },
+                method: 'PUT',
+                apiMethod: 'routeBackbeat',
+                url: `/_/backbeat/metadata/dest-bucket/replicated.txt?versionId=${versionId}`,
+                query: { versionId },
+                httpVersion: '1.1',
+                headers: {
+                    host: '127.0.0.1:8000',
+                    referer: 'http://example.com',
+                    'user-agent': 'aws-sdk-nodejs/2.1692.0',
+                },
+                socket: {},
+            };
+            const res = {
+                serverAccessLog: {
+                    endTurnAroundTime: process.hrtime.bigint(),
+                },
+                statusCode: 200,
+                getHeader: () => null,
+            };
+
+            logServerAccess(req, res);
+
+            assert.strictEqual(mockLogger.write.callCount, 1);
+            const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
+
+            assert.strictEqual(loggedData.operation, 'REST.PUT.ACL');
+            assert.strictEqual(loggedData.loggingEnabled, true);
+            assert.strictEqual(loggedData.requestURI,
+                `PUT /dest-bucket/replicated.txt?acl&versionId=${versionId} HTTP/1.1`);
+            assert.strictEqual(loggedData.versionId, versionId);
+            assert.strictEqual(loggedData.aclRequired, 'Yes');
 
             // HTTP-layer fields that AWS blanks for replication
             assert.strictEqual(loggedData.clientIP, undefined);
