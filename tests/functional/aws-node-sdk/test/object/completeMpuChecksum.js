@@ -134,53 +134,126 @@ describe('CompleteMultipartUpload final-object checksum', () =>
             });
         });
 
-        it('should return CRC64NVME/FULL_OBJECT on CompleteMPU response when CreateMPU sent no checksum headers', async () => {
-            const key = `complete-default-${Date.now()}`;
+        it(
+            'should return CRC64NVME/FULL_OBJECT on CompleteMPU response ' + 'when CreateMPU sent no checksum headers',
+            async () => {
+                const key = `complete-default-${Date.now()}`;
 
-            const create = await s3.send(
-                new CreateMultipartUploadCommand({
-                    Bucket: bucket,
-                    Key: key,
-                }),
-            );
+                const create = await s3.send(
+                    new CreateMultipartUploadCommand({
+                        Bucket: bucket,
+                        Key: key,
+                    }),
+                );
 
-            const uploadPart = await s3.send(
-                new UploadPartCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    UploadId: create.UploadId,
-                    PartNumber: 1,
-                    Body: partBody,
-                }),
-            );
+                const uploadPart = await s3.send(
+                    new UploadPartCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        UploadId: create.UploadId,
+                        PartNumber: 1,
+                        Body: partBody,
+                    }),
+                );
 
-            const complete = await s3.send(
-                new CompleteMultipartUploadCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    UploadId: create.UploadId,
-                    MultipartUpload: {
-                        Parts: [{ PartNumber: 1, ETag: uploadPart.ETag }],
-                    },
-                }),
-            );
+                const complete = await s3.send(
+                    new CompleteMultipartUploadCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        UploadId: create.UploadId,
+                        MultipartUpload: {
+                            Parts: [{ PartNumber: 1, ETag: uploadPart.ETag }],
+                        },
+                    }),
+                );
 
-            assert(
-                complete.ChecksumCRC64NVME,
-                `expected ChecksumCRC64NVME for default MPU, got: ${JSON.stringify(complete)}`,
-            );
-            assert.strictEqual(complete.ChecksumType, 'FULL_OBJECT');
+                assert(
+                    complete.ChecksumCRC64NVME,
+                    `expected ChecksumCRC64NVME for default MPU, got: ${JSON.stringify(complete)}`,
+                );
+                assert.strictEqual(complete.ChecksumType, 'FULL_OBJECT');
 
-            // Default MPU is FULL_OBJECT — checksum is persisted, so
-            // HeadObject must return the same value.
-            const head = await s3.send(
-                new HeadObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    ChecksumMode: 'ENABLED',
-                }),
-            );
-            assert.strictEqual(head.ChecksumCRC64NVME, complete.ChecksumCRC64NVME);
-            assert.strictEqual(head.ChecksumType, 'FULL_OBJECT');
+                // Default MPU is FULL_OBJECT — checksum is persisted, so
+                // HeadObject must return the same value.
+                const head = await s3.send(
+                    new HeadObjectCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        ChecksumMode: 'ENABLED',
+                    }),
+                );
+                assert.strictEqual(head.ChecksumCRC64NVME, complete.ChecksumCRC64NVME);
+                assert.strictEqual(head.ChecksumType, 'FULL_OBJECT');
+            },
+        );
+
+        // AWS S3 rejects any per-part
+        // Checksum<X> field on a default MPU (one created without an
+        // explicit ChecksumAlgorithm) with InvalidPart — even when the
+        // field matches the implicit CRC64NVME algorithm and value.
+        describe('default MPU rejects per-part Checksum fields', () => {
+            async function setupDefaultMpu() {
+                const key = `complete-default-rejects-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+                const create = await s3.send(new CreateMultipartUploadCommand({ Bucket: bucket, Key: key }));
+                const uploadPart = await s3.send(
+                    new UploadPartCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        UploadId: create.UploadId,
+                        PartNumber: 1,
+                        Body: partBody,
+                    }),
+                );
+                return { key, uploadId: create.UploadId, eTag: uploadPart.ETag };
+            }
+
+            async function assertInvalidPart(promise) {
+                let caught;
+                try {
+                    await promise;
+                } catch (err) {
+                    caught = err;
+                }
+                assert(caught, 'expected CompleteMPU to reject');
+                assert.strictEqual(
+                    caught.name,
+                    'InvalidPart',
+                    `expected InvalidPart, got ${caught.name}: ${caught.message}`,
+                );
+            }
+
+            it('should return InvalidPart when Part includes matching ChecksumCRC64NVME (correct value)', async () => {
+                const { key, uploadId, eTag } = await setupDefaultMpu();
+                const crc64 = await algorithms.crc64nvme.digest(partBody);
+                await assertInvalidPart(
+                    s3.send(
+                        new CompleteMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            UploadId: uploadId,
+                            MultipartUpload: {
+                                Parts: [{ PartNumber: 1, ETag: eTag, ChecksumCRC64NVME: crc64 }],
+                            },
+                        }),
+                    ),
+                );
+            });
+
+            it('should return InvalidPart when Part includes a non-matching algorithm field', async () => {
+                const { key, uploadId, eTag } = await setupDefaultMpu();
+                const crc32 = await algorithms.crc32.digest(partBody);
+                await assertInvalidPart(
+                    s3.send(
+                        new CompleteMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            UploadId: uploadId,
+                            MultipartUpload: {
+                                Parts: [{ PartNumber: 1, ETag: eTag, ChecksumCRC32: crc32 }],
+                            },
+                        }),
+                    ),
+                );
+            });
         });
     }));
