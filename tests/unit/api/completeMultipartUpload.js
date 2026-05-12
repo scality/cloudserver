@@ -573,13 +573,23 @@ describe('computeFinalChecksum', () => {
         }));
     }
 
-    it('should return null when MPU has no checksumAlgorithm', async () => {
+    function assertSoftNull(got) {
+        assert.deepStrictEqual(got, { result: null, error: null });
+    }
+
+    function assertInternalError(got) {
+        assert.strictEqual(got.result, null);
+        assert(got.error, 'expected an error on the result');
+        assert.strictEqual(got.error.is.InternalError, true);
+    }
+
+    it('should return { result: null, error: null } when MPU has no checksumAlgorithm', async () => {
         const stored = [makeStoredPart(1, { algorithm: 'sha256', value: SAMPLE_DIGESTS.sha256[0] })];
         const got = await computeFinalChecksum(stored, partListFromStored(stored), {}, SPLITTER, uploadId, log);
-        assert.strictEqual(got, null);
+        assertSoftNull(got);
     });
 
-    it('should return null when MPU has no checksumType', async () => {
+    it('should return { result: null, error: null } when MPU has no checksumType', async () => {
         const stored = [makeStoredPart(1, { algorithm: 'sha256', value: SAMPLE_DIGESTS.sha256[0] })];
         const got = await computeFinalChecksum(
             stored,
@@ -589,7 +599,7 @@ describe('computeFinalChecksum', () => {
             uploadId,
             log,
         );
-        assert.strictEqual(got, null);
+        assertSoftNull(got);
     });
 
     it('should return COMPOSITE checksum with -N suffix for SHA256 MPU', async () => {
@@ -599,7 +609,7 @@ describe('computeFinalChecksum', () => {
             makeStoredPart(2, { algorithm: 'sha256', value: d2 }),
             makeStoredPart(3, { algorithm: 'sha256', value: d3 }),
         ];
-        const got = await computeFinalChecksum(
+        const { result, error } = await computeFinalChecksum(
             stored,
             partListFromStored(stored),
             { checksumAlgorithm: 'sha256', checksumType: 'COMPOSITE' },
@@ -607,17 +617,18 @@ describe('computeFinalChecksum', () => {
             uploadId,
             log,
         );
-        assert(got);
-        assert.strictEqual(got.algorithm, 'sha256');
-        assert.strictEqual(got.type, 'COMPOSITE');
-        assert(got.value.endsWith('-3'), `expected -N suffix, got ${got.value}`);
+        assert.strictEqual(error, null);
+        assert(result);
+        assert.strictEqual(result.algorithm, 'sha256');
+        assert.strictEqual(result.type, 'COMPOSITE');
+        assert(result.value.endsWith('-3'), `expected -N suffix, got ${result.value}`);
         // computeCompositeMPUChecksum's deterministic output for these
         // exact placeholder digests:
         const expected = crypto
             .createHash('sha256')
             .update(Buffer.concat([d1, d2, d3].map(x => Buffer.from(x, 'base64'))))
             .digest('base64');
-        assert.strictEqual(got.value, `${expected}-3`);
+        assert.strictEqual(result.value, `${expected}-3`);
     });
 
     ['sha1', 'crc32', 'crc32c'].forEach(algo => {
@@ -627,7 +638,7 @@ describe('computeFinalChecksum', () => {
                 makeStoredPart(1, { algorithm: algo, value: d1 }),
                 makeStoredPart(2, { algorithm: algo, value: d2 }),
             ];
-            const got = await computeFinalChecksum(
+            const { result, error } = await computeFinalChecksum(
                 stored,
                 partListFromStored(stored),
                 { checksumAlgorithm: algo, checksumType: 'COMPOSITE' },
@@ -635,10 +646,11 @@ describe('computeFinalChecksum', () => {
                 uploadId,
                 log,
             );
-            assert(got);
-            assert.strictEqual(got.algorithm, algo);
-            assert.strictEqual(got.type, 'COMPOSITE');
-            assert(got.value.endsWith('-2'));
+            assert.strictEqual(error, null);
+            assert(result);
+            assert.strictEqual(result.algorithm, algo);
+            assert.strictEqual(result.type, 'COMPOSITE');
+            assert(result.value.endsWith('-2'));
         });
     });
 
@@ -671,7 +683,7 @@ describe('computeFinalChecksum', () => {
                 },
             },
         ];
-        const got = await computeFinalChecksum(
+        const { result, error } = await computeFinalChecksum(
             stored,
             partListFromStored(stored),
             { checksumAlgorithm: 'crc64nvme', checksumType: 'FULL_OBJECT' },
@@ -679,15 +691,39 @@ describe('computeFinalChecksum', () => {
             uploadId,
             log,
         );
-        assert(got);
-        assert.strictEqual(got.algorithm, 'crc64nvme');
-        assert.strictEqual(got.type, 'FULL_OBJECT');
-        assert(!got.value.includes('-'), `FULL_OBJECT should have no -N suffix, got ${got.value}`);
+        assert.strictEqual(error, null);
+        assert(result);
+        assert.strictEqual(result.algorithm, 'crc64nvme');
+        assert.strictEqual(result.type, 'FULL_OBJECT');
+        assert(!result.value.includes('-'), `FULL_OBJECT should have no -N suffix, got ${result.value}`);
         const expected = await algorithms.crc64nvme.digest(Buffer.concat([a, b]));
-        assert.strictEqual(got.value, expected);
+        assert.strictEqual(result.value, expected);
     });
 
-    it('should return null and log when a part is missing ChecksumValue', async () => {
+    // Soft-null (`{ result: null, error: null }`) is intentional only for
+    // default MPUs — the client didn't opt in to a checksum, so missing it
+    // on the response is graceful degradation. Explicit MPUs return
+    // `{ result: null, error: InternalError }` because silently dropping
+    // a checksum the client asked for would violate the CreateMPU contract.
+
+    it('should soft-null when a default-MPU part is missing ChecksumValue', async () => {
+        const stored = [
+            makeStoredPart(1, { algorithm: 'crc64nvme', value: SAMPLE_DIGESTS.crc64nvme[0] }),
+            makeStoredPart(2, null),
+            makeStoredPart(3, { algorithm: 'crc64nvme', value: SAMPLE_DIGESTS.crc64nvme[1] }),
+        ];
+        const got = await computeFinalChecksum(
+            stored,
+            partListFromStored(stored),
+            { checksumAlgorithm: 'crc64nvme', checksumType: 'FULL_OBJECT', checksumIsDefault: true },
+            SPLITTER,
+            uploadId,
+            log,
+        );
+        assertSoftNull(got);
+    });
+
+    it('should return InternalError when an explicit-MPU part is missing ChecksumValue', async () => {
         const stored = [
             makeStoredPart(1, { algorithm: 'sha256', value: SAMPLE_DIGESTS.sha256[0] }),
             makeStoredPart(2, null),
@@ -696,42 +732,55 @@ describe('computeFinalChecksum', () => {
         const got = await computeFinalChecksum(
             stored,
             partListFromStored(stored),
-            { checksumAlgorithm: 'sha256', checksumType: 'COMPOSITE' },
+            { checksumAlgorithm: 'sha256', checksumType: 'COMPOSITE', checksumIsDefault: false },
             SPLITTER,
             uploadId,
             log,
         );
-        assert.strictEqual(got, null);
+        assertInternalError(got);
     });
 
-    it('should return null when checksumType is unknown', async () => {
+    it('should soft-null when checksumType is unknown on a default MPU', async () => {
+        const stored = [makeStoredPart(1, { algorithm: 'crc64nvme', value: SAMPLE_DIGESTS.crc64nvme[0] })];
+        const got = await computeFinalChecksum(
+            stored,
+            partListFromStored(stored),
+            { checksumAlgorithm: 'crc64nvme', checksumType: 'WEIRD', checksumIsDefault: true },
+            SPLITTER,
+            uploadId,
+            log,
+        );
+        assertSoftNull(got);
+    });
+
+    it('should return InternalError when checksumType is unknown on an explicit MPU', async () => {
         const stored = [makeStoredPart(1, { algorithm: 'sha256', value: SAMPLE_DIGESTS.sha256[0] })];
         const got = await computeFinalChecksum(
             stored,
             partListFromStored(stored),
-            { checksumAlgorithm: 'sha256', checksumType: 'WEIRD' },
+            { checksumAlgorithm: 'sha256', checksumType: 'WEIRD', checksumIsDefault: false },
             SPLITTER,
             uploadId,
             log,
         );
-        assert.strictEqual(got, null);
+        assertInternalError(got);
     });
 
-    it(
-        'should return null when underlying compute reports an error ' + '(crc64nvme COMPOSITE is not allowed)',
-        async () => {
-            const stored = [makeStoredPart(1, { algorithm: 'crc64nvme', value: SAMPLE_DIGESTS.crc64nvme[0] })];
-            const got = await computeFinalChecksum(
-                stored,
-                partListFromStored(stored),
-                { checksumAlgorithm: 'crc64nvme', checksumType: 'COMPOSITE' },
-                SPLITTER,
-                uploadId,
-                log,
-            );
-            assert.strictEqual(got, null);
-        },
-    );
+    it('should return InternalError when underlying compute reports an error on an explicit MPU', async () => {
+        // crc64nvme + COMPOSITE is not allowed by computeCompositeMPUChecksum.
+        // Reaching here on an explicit MPU means upstream validation failed,
+        // which is exactly the kind of internal-state bug we want to surface.
+        const stored = [makeStoredPart(1, { algorithm: 'crc64nvme', value: SAMPLE_DIGESTS.crc64nvme[0] })];
+        const got = await computeFinalChecksum(
+            stored,
+            partListFromStored(stored),
+            { checksumAlgorithm: 'crc64nvme', checksumType: 'COMPOSITE', checksumIsDefault: false },
+            SPLITTER,
+            uploadId,
+            log,
+        );
+        assertInternalError(got);
+    });
 
     it('should compute over filteredPartList (subset), not all storedParts', async () => {
         const [d1, d2, d3] = [SAMPLE_DIGESTS.sha256[0], SAMPLE_DIGESTS.sha256[1], SAMPLE_DIGESTS.sha256[0]];
@@ -747,7 +796,7 @@ describe('computeFinalChecksum', () => {
             size: s.value.Size,
             locations: s.value.partLocations,
         }));
-        const got = await computeFinalChecksum(
+        const { result, error } = await computeFinalChecksum(
             stored,
             filtered,
             { checksumAlgorithm: 'sha256', checksumType: 'COMPOSITE' },
@@ -755,13 +804,14 @@ describe('computeFinalChecksum', () => {
             uploadId,
             log,
         );
-        assert(got);
-        assert(got.value.endsWith('-2'), `should reflect 2 completed parts, got ${got.value}`);
+        assert.strictEqual(error, null);
+        assert(result);
+        assert(result.value.endsWith('-2'), `should reflect 2 completed parts, got ${result.value}`);
         const expected = crypto
             .createHash('sha256')
             .update(Buffer.concat([d1, d3].map(x => Buffer.from(x, 'base64'))))
             .digest('base64');
-        assert.strictEqual(got.value, `${expected}-2`);
+        assert.strictEqual(result.value, `${expected}-2`);
     });
 });
 
