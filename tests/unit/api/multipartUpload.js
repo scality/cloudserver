@@ -3688,11 +3688,11 @@ describe('initiateMultipartUpload checksum headers', () => {
 
 describe('validatePerPartChecksums', () => {
     describe('AWS combination matrix', () => {
-        MATRIX.forEach(({ algorithm, type, isDefault }) => {
-            const label = `${algorithm}/${type}${isDefault ? ' (default)' : ''}`;
+        MATRIX.forEach(({ algorithm, type }) => {
+            const label = `${algorithm}/${type}`;
             const tag = TAG_BY_ALGO[algorithm];
             const [d1, d2] = SAMPLE_DIGESTS[algorithm];
-            const mpuChecksum = { algorithm, type, isDefault };
+            const mpuChecksum = { algorithm, type, isDefault: false };
 
             const stored = [makeStoredPart(1, { algorithm, value: d1 }), makeStoredPart(2, { algorithm, value: d2 })];
 
@@ -3743,7 +3743,7 @@ describe('validatePerPartChecksums', () => {
                     );
                 });
 
-                const requiresPerPart = type === 'COMPOSITE' && !isDefault;
+                const requiresPerPart = type === 'COMPOSITE';
                 const missingLabel = requiresPerPart
                     ? 'should return InvalidRequest when a part is missing its checksum'
                     : 'should accept a parts list missing per-part checksums';
@@ -3762,6 +3762,60 @@ describe('validatePerPartChecksums', () => {
                     }
                 });
             });
+        });
+    });
+
+    describe('default MPU (isDefault=true)', () => {
+        // AWS S3 rejects any per-part
+        // Checksum<X> field on a default MPU with InvalidPart — even when
+        // the field matches the implicit CRC64NVME algorithm and the value
+        // is the same one the part was stored with.
+        const mpuChecksum = { algorithm: 'crc64nvme', type: 'FULL_OBJECT', isDefault: true };
+        const [d1, d2] = SAMPLE_DIGESTS.crc64nvme;
+        const stored = [
+            makeStoredPart(1, { algorithm: 'crc64nvme', value: d1 }),
+            makeStoredPart(2, { algorithm: 'crc64nvme', value: d2 }),
+        ];
+        const invalidPartMessage =
+            'One or more of the specified parts could not be ' +
+            'found.  The part may not have been uploaded, or ' +
+            'the specified entity tag may not match the ' +
+            "part's entity tag.";
+
+        it('should accept when no parts include a checksum field', () => {
+            const jsonList = { Part: [makeJsonPart(1, 'etag1'), makeJsonPart(2, 'etag2')] };
+            const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum);
+            assert.strictEqual(err, null);
+        });
+
+        it('should return InvalidPart when a part includes the matching field (correct value)', () => {
+            const jsonList = {
+                Part: [makeJsonPart(1, 'etag1', { ChecksumCRC64NVME: d1 }), makeJsonPart(2, 'etag2')],
+            };
+            const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum);
+            assert(err);
+            assert.strictEqual(err.is.InvalidPart, true);
+            assert.strictEqual(err.description, invalidPartMessage);
+        });
+
+        it('should return InvalidPart when a part includes the matching field (wrong value)', () => {
+            const jsonList = {
+                Part: [makeJsonPart(1, 'etag1', { ChecksumCRC64NVME: d2 }), makeJsonPart(2, 'etag2')],
+            };
+            const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum);
+            assert(err);
+            assert.strictEqual(err.is.InvalidPart, true);
+            assert.strictEqual(err.description, invalidPartMessage);
+        });
+
+        it('should return InvalidPart when a part includes a non-matching algorithm field', () => {
+            const jsonList = {
+                Part: [makeJsonPart(1, 'etag1', { ChecksumCRC32: SAMPLE_DIGESTS.crc32[0] }), makeJsonPart(2, 'etag2')],
+            };
+            const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum);
+            assert(err);
+            assert.strictEqual(err.is.InvalidPart, true);
+            assert.strictEqual(err.description, invalidPartMessage);
         });
     });
 

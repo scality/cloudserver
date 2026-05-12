@@ -134,7 +134,7 @@ describe('CompleteMultipartUpload final-object checksum', () =>
             });
         });
 
-        it('should return CRC64NVME/FULL_OBJECT on response when CreateMPU sent no checksum headers', async () => {
+        it('should return CRC64NVME/FULL_OBJECT on CompleteMPU when CreateMPU sent no checksum headers', async () => {
             const key = `complete-default-${Date.now()}`;
 
             const create = await s3.send(
@@ -205,18 +205,14 @@ describe('CompleteMultipartUpload final-object checksum', () =>
             }
 
             async function assertInvalidPart(promise) {
-                let caught;
-                try {
-                    await promise;
-                } catch (err) {
-                    caught = err;
-                }
-                assert(caught, 'expected CompleteMPU to reject');
-                assert.strictEqual(
-                    caught.name,
-                    'InvalidPart',
-                    `expected InvalidPart, got ${caught.name}: ${caught.message}`,
-                );
+                await assert.rejects(promise, err => {
+                    assert.strictEqual(
+                        err.name,
+                        'InvalidPart',
+                        `expected InvalidPart, got ${err.name}: ${err.message}`,
+                    );
+                    return true;
+                });
             }
 
             it('should return InvalidPart when Part includes matching ChecksumCRC64NVME (correct value)', async () => {
