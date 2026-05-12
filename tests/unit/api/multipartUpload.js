@@ -27,6 +27,7 @@ const multipartDelete = require('../../../lib/api/multipartDelete');
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const services = require('../../../lib/services');
 const DummyRequest = require('../DummyRequest');
+const mpuUtils = require('../utils/mpuUtils');
 const changeObjectLock = require('../../utilities/objectLock-util');
 const metadataswitch = require('../metadataswitch');
 const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
@@ -1327,9 +1328,9 @@ describe('Multipart Upload API', () => {
                             actionImplicitDenies: false,
                         };
                         completeMultipartUpload(authInfo, completeRequest, log, (err, result) => {
-                            assert.strictEqual(err, null);
+                            assert.ifError(err);
                             parseString(result, err => {
-                                assert.strictEqual(err, null);
+                                assert.ifError(err);
                                 const MD = metadata.keyMaps.get(bucketName).get(objectKey);
                                 assert(MD);
                                 assert.strictEqual(MD['content-length'], 6000100);
@@ -1431,9 +1432,9 @@ describe('Multipart Upload API', () => {
                             actionImplicitDenies: false,
                         };
                         completeMultipartUpload(authInfo, completeRequest, log, (err, result) => {
-                            assert.strictEqual(err, null);
+                            assert.ifError(err);
                             parseString(result, err => {
-                                assert.strictEqual(err, null);
+                                assert.ifError(err);
                                 const MD = metadata.keyMaps.get(bucketName).get(objectKey);
                                 assert(MD);
                                 assert.strictEqual(MD.acl.Canned, 'authenticated-read');
@@ -1538,9 +1539,9 @@ describe('Multipart Upload API', () => {
                             actionImplicitDenies: false,
                         };
                         completeMultipartUpload(authInfo, completeRequest, log, (err, result) => {
-                            assert.strictEqual(err, null);
+                            assert.ifError(err);
                             parseString(result, err => {
-                                assert.strictEqual(err, null);
+                                assert.ifError(err);
                                 const MD = metadata.keyMaps.get(bucketName).get(objectKey);
                                 assert(MD);
                                 assert.strictEqual(MD.acl.READ[0], granteeId);
@@ -1593,7 +1594,7 @@ describe('Multipart Upload API', () => {
                     };
                     assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 2);
                     multipartDelete(authInfo, deleteRequest, log, err => {
-                        assert.strictEqual(err, null);
+                        assert.ifError(err);
                         assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 0);
                         done();
                     });
@@ -2037,7 +2038,7 @@ describe('Multipart Upload API', () => {
                             // show that second part data is there
                             assert(ds[2]);
                             completeMultipartUpload(authInfo, completeRequest, log, err => {
-                                assert.strictEqual(err, null);
+                                assert.ifError(err);
                                 process.nextTick(() => {
                                     // data has been deleted
                                     assert.strictEqual(ds[2], undefined);
@@ -2173,7 +2174,7 @@ describe('Multipart Upload API', () => {
                         };
                         assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 2);
                         multipartDelete(authInfo, deleteRequest, log, err => {
-                            assert.strictEqual(err, null);
+                            assert.ifError(err);
                             assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 0);
                             done();
                         });
@@ -3702,7 +3703,7 @@ describe('validatePerPartChecksums', () => {
                         Part: [makeJsonPart(1, 'etag1', { [tag]: d1 }), makeJsonPart(2, 'etag2', { [tag]: d2 })],
                     };
                     const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum);
-                    assert.strictEqual(err, null);
+                    assert.ifError(err);
                 });
 
                 it('should return BadDigest when a part uses the wrong checksum field', () => {
@@ -3758,7 +3759,7 @@ describe('validatePerPartChecksums', () => {
                         assert(err.description.includes(algorithm));
                         assert(err.description.includes('part 2 in the request'));
                     } else {
-                        assert.strictEqual(err, null);
+                        assert.ifError(err);
                     }
                 });
             });
@@ -3785,7 +3786,7 @@ describe('validatePerPartChecksums', () => {
         it('should accept when no parts include a checksum field', () => {
             const jsonList = { Part: [makeJsonPart(1, 'etag1'), makeJsonPart(2, 'etag2')] };
             const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum);
-            assert.strictEqual(err, null);
+            assert.ifError(err);
         });
 
         it('should return InvalidPart when a part includes the matching field (correct value)', () => {
@@ -3830,7 +3831,7 @@ describe('validatePerPartChecksums', () => {
         it('should accept when no parts include a checksum field', () => {
             const jsonList = { Part: [makeJsonPart(1, 'etag1'), makeJsonPart(2, 'etag2')] };
             const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum);
-            assert.strictEqual(err, null);
+            assert.ifError(err);
         });
 
         it('should accept when a part includes a single Checksum<X> field', () => {
@@ -3841,7 +3842,7 @@ describe('validatePerPartChecksums', () => {
                 ],
             };
             const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum);
-            assert.strictEqual(err, null);
+            assert.ifError(err);
         });
 
         it('should accept when parts include multiple Checksum<X> fields', () => {
@@ -3855,7 +3856,7 @@ describe('validatePerPartChecksums', () => {
                 ],
             };
             const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum);
-            assert.strictEqual(err, null);
+            assert.ifError(err);
         });
     });
     describe('edge cases', () => {
@@ -3866,7 +3867,7 @@ describe('validatePerPartChecksums', () => {
                 isDefault: false,
             };
             const err = validatePerPartChecksums({ Part: [] }, [], splitter, mpuChecksum);
-            assert.strictEqual(err, null);
+            assert.ifError(err);
         });
 
         it('should accept a parts list with no Part array (treated as empty)', () => {
@@ -3876,7 +3877,7 @@ describe('validatePerPartChecksums', () => {
                 isDefault: true,
             };
             const err = validatePerPartChecksums({}, [], splitter, mpuChecksum);
-            assert.strictEqual(err, null);
+            assert.ifError(err);
         });
 
         it('should accept a FULL_OBJECT mixed list (one part with checksum, one without)', () => {
@@ -3894,7 +3895,7 @@ describe('validatePerPartChecksums', () => {
                 Part: [makeJsonPart(1, 'etag1', { ChecksumCRC32: d1 }), makeJsonPart(2, 'etag2')],
             };
             const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum);
-            assert.strictEqual(err, null);
+            assert.ifError(err);
         });
 
         it('should not enforce per-part presence when MPU algorithm is unknown', () => {
@@ -3910,7 +3911,7 @@ describe('validatePerPartChecksums', () => {
                 Part: [makeJsonPart(1, 'etag1'), makeJsonPart(2, 'etag2')],
             };
             const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum);
-            assert.strictEqual(err, null);
+            assert.ifError(err);
         });
 
         it('should return InvalidPart when stored part has no checksum but request does', () => {
@@ -3936,187 +3937,66 @@ describe('validatePerPartChecksums', () => {
 
 describe('CompleteMultipartUpload x-amz-checksum-type header', () => {
     const log = new DummyRequestLogger();
-    const authInfo = makeAuthInfo('accessKey1');
-    const namespace = 'default';
     const bucketName = 'bucketname-checksum-type';
     const objectKey = 'testObject';
-
-    const bucketPutRequest = {
-        bucketName,
-        namespace,
-        headers: { host: `${bucketName}.s3.amazonaws.com` },
-        url: '/',
-        post:
-            '<CreateBucketConfiguration ' +
-            'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-            '<LocationConstraint>scality-internal-mem</LocationConstraint>' +
-            '</CreateBucketConfiguration >',
-        actionImplicitDenies: false,
+    const explicitMpuHeaders = {
+        'x-amz-checksum-algorithm': 'CRC32',
+        'x-amz-checksum-type': 'FULL_OBJECT',
     };
 
-    function setupMpu(initiateHeaders, cb) {
-        async.waterfall(
-            [
-                next => bucketPut(authInfo, bucketPutRequest, log, next),
-                (corsHeaders, next) => {
-                    const initiateRequest = {
-                        bucketName,
-                        namespace,
-                        objectKey,
-                        headers: {
-                            host: `${bucketName}.s3.amazonaws.com`,
-                            ...initiateHeaders,
-                        },
-                        url: `/${objectKey}?uploads`,
-                        actionImplicitDenies: false,
-                    };
-                    initiateMultipartUpload(authInfo, initiateRequest, log, next);
-                },
-                (xml, corsHeaders, next) => parseString(xml, next),
-                (json, next) => {
-                    const uploadId = json.InitiateMultipartUploadResult.UploadId[0];
-                    const partBody = Buffer.from('I am a part\n', 'utf8');
-                    const partHash = crypto.createHash('md5').update(partBody).digest('hex');
-                    const partRequest = new DummyRequest(
-                        {
-                            bucketName,
-                            namespace,
-                            objectKey,
-                            headers: { host: `${bucketName}.s3.amazonaws.com` },
-                            url: `/${objectKey}?partNumber=1&uploadId=${uploadId}`,
-                            query: { partNumber: '1', uploadId },
-                            partHash,
-                            actionImplicitDenies: false,
-                        },
-                        partBody,
-                    );
-                    objectPutPart(authInfo, partRequest, undefined, log, err => next(err, uploadId, partHash));
-                },
-            ],
-            cb,
-        );
+    async function setupMpu(initiateHeaders) {
+        await mpuUtils.bucketPutP(bucketName, namespace, log);
+        const uploadId = await mpuUtils.initiateMpuP(bucketName, namespace, objectKey, log, initiateHeaders);
+        await mpuUtils.uploadPartP(bucketName, namespace, objectKey, uploadId, log);
+        return uploadId;
     }
 
-    function makeCompleteRequest(uploadId, partHash, extraHeaders) {
-        const completeBody =
-            '<CompleteMultipartUpload>' +
-            '<Part>' +
-            '<PartNumber>1</PartNumber>' +
-            `<ETag>"${partHash}"</ETag>` +
-            '</Part>' +
-            '</CompleteMultipartUpload>';
-        return {
-            bucketName,
-            namespace,
-            objectKey,
-            parsedHost: 's3.amazonaws.com',
-            url: `/${objectKey}?uploadId=${uploadId}`,
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
-                ...extraHeaders,
-            },
-            query: { uploadId },
-            post: completeBody,
-            actionImplicitDenies: false,
-        };
+    function complete(uploadId, extraHeaders) {
+        return mpuUtils.completeMpuP(bucketName, namespace, objectKey, uploadId, log, { extraHeaders });
     }
 
     beforeEach(() => cleanup());
 
-    it('should accept CompleteMPU when no x-amz-checksum-type header is sent', done => {
-        const initiateHeaders = {
-            'x-amz-checksum-algorithm': 'CRC32',
-            'x-amz-checksum-type': 'FULL_OBJECT',
-        };
-        setupMpu(initiateHeaders, (err, uploadId, partHash) => {
-            assert.ifError(err);
-            const req = makeCompleteRequest(uploadId, partHash, {});
-            completeMultipartUpload(authInfo, req, log, completeErr => {
-                assert.ifError(completeErr);
-                done();
-            });
+    it('should accept CompleteMPU when no x-amz-checksum-type header is sent', async () => {
+        const uploadId = await setupMpu(explicitMpuHeaders);
+        await complete(uploadId, {});
+    });
+
+    it('should accept CompleteMPU when x-amz-checksum-type matches the MPU type', async () => {
+        const uploadId = await setupMpu(explicitMpuHeaders);
+        await complete(uploadId, { 'x-amz-checksum-type': 'FULL_OBJECT' });
+    });
+
+    it('should reject CompleteMPU with InvalidRequest when checksum-type does not match the MPU type', async () => {
+        const uploadId = await setupMpu(explicitMpuHeaders);
+        await assert.rejects(complete(uploadId, { 'x-amz-checksum-type': 'COMPOSITE' }), err => {
+            assert.strictEqual(err.is.InvalidRequest, true);
+            // AWS-style mode-mismatch wording.
+            assert.strictEqual(
+                err.description,
+                'The upload was created using the FULL_OBJECT checksum ' +
+                    'mode. The complete request must use the same checksum ' +
+                    'mode.',
+            );
+            return true;
         });
     });
 
-    it('should accept CompleteMPU when x-amz-checksum-type matches the MPU type', done => {
-        const initiateHeaders = {
-            'x-amz-checksum-algorithm': 'CRC32',
-            'x-amz-checksum-type': 'FULL_OBJECT',
-        };
-        setupMpu(initiateHeaders, (err, uploadId, partHash) => {
-            assert.ifError(err);
-            const req = makeCompleteRequest(uploadId, partHash, {
-                'x-amz-checksum-type': 'FULL_OBJECT',
-            });
-            completeMultipartUpload(authInfo, req, log, completeErr => {
-                assert.ifError(completeErr);
-                done();
-            });
+    it('should reject CompleteMPU with InvalidRequest when x-amz-checksum-type value is bogus', async () => {
+        const uploadId = await setupMpu(explicitMpuHeaders);
+        await assert.rejects(complete(uploadId, { 'x-amz-checksum-type': 'BOGUS' }), err => {
+            assert.strictEqual(err.is.InvalidRequest, true);
+            assert.strictEqual(err.description, 'Value for x-amz-checksum-type header is invalid.');
+            return true;
         });
     });
 
-    it('should reject CompleteMPU with InvalidRequest when x-amz-checksum-type does not match the MPU type', done => {
-        const initiateHeaders = {
-            'x-amz-checksum-algorithm': 'CRC32',
-            'x-amz-checksum-type': 'FULL_OBJECT',
-        };
-        setupMpu(initiateHeaders, (err, uploadId, partHash) => {
-            assert.ifError(err);
-            const req = makeCompleteRequest(uploadId, partHash, {
-                'x-amz-checksum-type': 'COMPOSITE',
-            });
-            completeMultipartUpload(authInfo, req, log, completeErr => {
-                assert(completeErr);
-                assert.strictEqual(completeErr.is.InvalidRequest, true);
-                // AWS-style mode-mismatch wording.
-                assert.strictEqual(
-                    completeErr.description,
-                    'The upload was created using the FULL_OBJECT checksum ' +
-                        'mode. The complete request must use the same checksum ' +
-                        'mode.',
-                );
-                done();
-            });
-        });
+    it('should compare x-amz-checksum-type case-insensitively', async () => {
+        const uploadId = await setupMpu(explicitMpuHeaders);
+        await complete(uploadId, { 'x-amz-checksum-type': 'full_object' });
     });
 
-    it('should reject CompleteMPU with InvalidRequest when x-amz-checksum-type value is bogus', done => {
-        const initiateHeaders = {
-            'x-amz-checksum-algorithm': 'CRC32',
-            'x-amz-checksum-type': 'FULL_OBJECT',
-        };
-        setupMpu(initiateHeaders, (err, uploadId, partHash) => {
-            assert.ifError(err);
-            const req = makeCompleteRequest(uploadId, partHash, {
-                'x-amz-checksum-type': 'BOGUS',
-            });
-            completeMultipartUpload(authInfo, req, log, completeErr => {
-                assert(completeErr);
-                assert.strictEqual(completeErr.is.InvalidRequest, true);
-                assert.strictEqual(completeErr.description, 'Value for x-amz-checksum-type header is invalid.');
-                done();
-            });
-        });
-    });
-
-    it('should compare x-amz-checksum-type case-insensitively', done => {
-        const initiateHeaders = {
-            'x-amz-checksum-algorithm': 'CRC32',
-            'x-amz-checksum-type': 'FULL_OBJECT',
-        };
-        setupMpu(initiateHeaders, (err, uploadId, partHash) => {
-            assert.ifError(err);
-            const req = makeCompleteRequest(uploadId, partHash, {
-                'x-amz-checksum-type': 'full_object',
-            });
-            completeMultipartUpload(authInfo, req, log, completeErr => {
-                assert.ifError(completeErr);
-                done();
-            });
-        });
-    });
-
-    it('should reject CompleteMPU with a dedicated message when the MPU has no checksum mode', done => {
+    it('should reject CompleteMPU with a dedicated message when the MPU has no checksum mode', async () => {
         const original = services.metadataValidateMultipart;
         const stub = sinon.stub(services, 'metadataValidateMultipart').callsFake((params, cb) =>
             original.call(services, params, (validateErr, mpuBucket, mpuOverview, storedMetadata) => {
@@ -4127,23 +4007,20 @@ describe('CompleteMultipartUpload x-amz-checksum-type header', () => {
                 cb(validateErr, mpuBucket, mpuOverview, storedMetadata);
             }),
         );
-        setupMpu({}, (err, uploadId, partHash) => {
-            assert.ifError(err);
-            const req = makeCompleteRequest(uploadId, partHash, {
-                'x-amz-checksum-type': 'FULL_OBJECT',
-            });
-            completeMultipartUpload(authInfo, req, log, completeErr => {
-                stub.restore();
-                assert(completeErr);
-                assert.strictEqual(completeErr.is.InvalidRequest, true);
+        try {
+            const uploadId = await setupMpu({});
+            await assert.rejects(complete(uploadId, { 'x-amz-checksum-type': 'FULL_OBJECT' }), err => {
+                assert.strictEqual(err.is.InvalidRequest, true);
                 assert.strictEqual(
-                    completeErr.description,
+                    err.description,
                     'The upload was not created with a checksum mode. ' +
                         'The complete request must not include a x-amz-checksum-type header.',
                 );
-                done();
+                return true;
             });
-        });
+        } finally {
+            stub.restore();
+        }
     });
 });
 
@@ -4168,24 +4045,21 @@ describe('CompleteMultipartUpload body-checksum bypass', () => {
                 headers: { 'x-amz-checksum-sha256': finalObjectChecksum },
             };
             const err = await validateMethodChecksumNoChunking(request, body, log);
-            assert.strictEqual(err, null);
+            assert.ifError(err);
         },
     );
 
-    it(
-        'should still reject body mismatch for methods that remain in checksumedMethods ' + '(sanity check)',
-        async () => {
-            const body = Buffer.from('{"Objects":[]}');
-            const finalObjectChecksum = '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=';
-            const request = {
-                apiMethod: 'multiObjectDelete',
-                headers: { 'x-amz-checksum-sha256': finalObjectChecksum },
-            };
-            const err = await validateMethodChecksumNoChunking(request, body, log);
-            assert(err, 'expected an error for body checksum mismatch');
-            assert.strictEqual(err.is.BadDigest, true);
-        },
-    );
+    it('should still reject body mismatch for methods that remain in checksumedMethods (sanity check)', async () => {
+        const body = Buffer.from('{"Objects":[]}');
+        const finalObjectChecksum = '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=';
+        const request = {
+            apiMethod: 'multiObjectDelete',
+            headers: { 'x-amz-checksum-sha256': finalObjectChecksum },
+        };
+        const err = await validateMethodChecksumNoChunking(request, body, log);
+        assert(err, 'expected an error for body checksum mismatch');
+        assert.strictEqual(err.is.BadDigest, true);
+    });
 });
 
 describe('computeFinalChecksum', () => {
@@ -4201,13 +4075,23 @@ describe('computeFinalChecksum', () => {
         }));
     }
 
-    it('should return null when MPU has no checksumAlgorithm', async () => {
+    function assertSoftNull(got) {
+        assert.deepStrictEqual(got, { result: null, error: null });
+    }
+
+    function assertInternalError(got) {
+        assert.strictEqual(got.result, null);
+        assert(got.error, 'expected an error on the result');
+        assert.strictEqual(got.error.is.InternalError, true);
+    }
+
+    it('should return { result: null, error: null } when MPU has no checksumAlgorithm', async () => {
         const stored = [makeStoredPart(1, { algorithm: 'sha256', value: SAMPLE_DIGESTS.sha256[0] })];
         const got = await computeFinalChecksum(stored, partListFromStored(stored), {}, splitter, uploadId, log);
-        assert.strictEqual(got, null);
+        assertSoftNull(got);
     });
 
-    it('should return null when MPU has no checksumType', async () => {
+    it('should return { result: null, error: null } when MPU has no checksumType', async () => {
         const stored = [makeStoredPart(1, { algorithm: 'sha256', value: SAMPLE_DIGESTS.sha256[0] })];
         const got = await computeFinalChecksum(
             stored,
@@ -4217,45 +4101,24 @@ describe('computeFinalChecksum', () => {
             uploadId,
             log,
         );
-        assert.strictEqual(got, null);
+        assertSoftNull(got);
     });
 
-    it('should return COMPOSITE checksum with -N suffix for SHA256 MPU', async () => {
-        const [d1, d2, d3] = [SAMPLE_DIGESTS.sha256[0], SAMPLE_DIGESTS.sha256[1], SAMPLE_DIGESTS.sha256[0]];
-        const stored = [
-            makeStoredPart(1, { algorithm: 'sha256', value: d1 }),
-            makeStoredPart(2, { algorithm: 'sha256', value: d2 }),
-            makeStoredPart(3, { algorithm: 'sha256', value: d3 }),
-        ];
-        const got = await computeFinalChecksum(
-            stored,
-            partListFromStored(stored),
-            { checksumAlgorithm: 'sha256', checksumType: 'COMPOSITE' },
-            splitter,
-            uploadId,
-            log,
-        );
-        assert(got);
-        assert.strictEqual(got.algorithm, 'sha256');
-        assert.strictEqual(got.type, 'COMPOSITE');
-        assert(got.value.endsWith('-3'), `expected -N suffix, got ${got.value}`);
-        // computeCompositeMPUChecksum's deterministic output for these
-        // exact placeholder digests:
-        const expected = crypto
-            .createHash('sha256')
-            .update(Buffer.concat([d1, d2, d3].map(x => Buffer.from(x, 'base64'))))
-            .digest('base64');
-        assert.strictEqual(got.value, `${expected}-3`);
-    });
+    const EXPECTED_COMPOSITE = {
+        sha256: 'vEejNiXBXuAzj1ghK13TfXu99Nfc/iyTLrLBIGDNSQY=-2',
+        sha1: 'Iyp/dAvD9//9rlS1OLDWrZF/MDI=-2',
+        crc32: 'P8qIxQ==-2',
+        crc32c: 'Jnj0vQ==-2',
+    };
 
-    ['sha1', 'crc32', 'crc32c'].forEach(algo => {
+    Object.entries(EXPECTED_COMPOSITE).forEach(([algo, expectedValue]) => {
         it(`should compute COMPOSITE checksum for ${algo.toUpperCase()}`, async () => {
             const [d1, d2] = SAMPLE_DIGESTS[algo];
             const stored = [
                 makeStoredPart(1, { algorithm: algo, value: d1 }),
                 makeStoredPart(2, { algorithm: algo, value: d2 }),
             ];
-            const got = await computeFinalChecksum(
+            const { result, error } = await computeFinalChecksum(
                 stored,
                 partListFromStored(stored),
                 { checksumAlgorithm: algo, checksumType: 'COMPOSITE' },
@@ -4263,59 +4126,82 @@ describe('computeFinalChecksum', () => {
                 uploadId,
                 log,
             );
-            assert(got);
-            assert.strictEqual(got.algorithm, algo);
-            assert.strictEqual(got.type, 'COMPOSITE');
-            assert(got.value.endsWith('-2'));
+            assert.ifError(error);
+            assert.deepStrictEqual(result, { algorithm: algo, type: 'COMPOSITE', value: expectedValue });
         });
     });
 
-    it('should return FULL_OBJECT checksum without -N suffix for CRC64NVME', async () => {
-        // Real CRCs over real bytes so we can verify against the equivalent
-        // direct CRC of the concatenation.
-        const a = crypto.randomBytes(1024);
-        const b = crypto.randomBytes(2048);
-        const dA = await algorithms.crc64nvme.digest(a);
-        const dB = await algorithms.crc64nvme.digest(b);
+    const EXPECTED_FULL_OBJECT = {
+        crc32: 'jDYBxg==',
+        crc32c: 'q4EL7g==',
+        crc64nvme: '0YI0QcH8/Y4=',
+    };
+
+    Object.entries(EXPECTED_FULL_OBJECT).forEach(([algo, expectedValue]) => {
+        it(`should return FULL_OBJECT checksum without -N suffix for ${algo.toUpperCase()}`, async () => {
+            const a = Buffer.alloc(1024, 0xaa);
+            const b = Buffer.alloc(2048, 0x55);
+            const dA = await algorithms[algo].digest(a);
+            const dB = await algorithms[algo].digest(b);
+            const stored = [
+                {
+                    key: `${UPLOAD_ID}${splitter}1`,
+                    value: {
+                        ETag: 'e',
+                        Size: a.length,
+                        ChecksumAlgorithm: algo,
+                        ChecksumValue: dA,
+                        partLocations: [],
+                    },
+                },
+                {
+                    key: `${UPLOAD_ID}${splitter}2`,
+                    value: {
+                        ETag: 'e',
+                        Size: b.length,
+                        ChecksumAlgorithm: algo,
+                        ChecksumValue: dB,
+                        partLocations: [],
+                    },
+                },
+            ];
+            const { result, error } = await computeFinalChecksum(
+                stored,
+                partListFromStored(stored),
+                { checksumAlgorithm: algo, checksumType: 'FULL_OBJECT' },
+                splitter,
+                uploadId,
+                log,
+            );
+            assert.ifError(error);
+            assert.deepStrictEqual(result, { algorithm: algo, type: 'FULL_OBJECT', value: expectedValue });
+        });
+    });
+
+    // Soft-null (`{ result: null, error: null }`) is intentional only for
+    // default MPUs — the client didn't opt in to a checksum, so missing it
+    // on the response is graceful degradation. Explicit MPUs return
+    // `{ result: null, error: InternalError }` because silently dropping
+    // a checksum the client asked for would violate the CreateMPU contract.
+
+    it('should soft-null when a default-MPU part is missing ChecksumValue', async () => {
         const stored = [
-            {
-                key: `${UPLOAD_ID}${splitter}1`,
-                value: {
-                    ETag: 'e',
-                    Size: a.length,
-                    ChecksumAlgorithm: 'crc64nvme',
-                    ChecksumValue: dA,
-                    partLocations: [],
-                },
-            },
-            {
-                key: `${UPLOAD_ID}${splitter}2`,
-                value: {
-                    ETag: 'e',
-                    Size: b.length,
-                    ChecksumAlgorithm: 'crc64nvme',
-                    ChecksumValue: dB,
-                    partLocations: [],
-                },
-            },
+            makeStoredPart(1, { algorithm: 'crc64nvme', value: SAMPLE_DIGESTS.crc64nvme[0] }),
+            makeStoredPart(2, null),
+            makeStoredPart(3, { algorithm: 'crc64nvme', value: SAMPLE_DIGESTS.crc64nvme[1] }),
         ];
         const got = await computeFinalChecksum(
             stored,
             partListFromStored(stored),
-            { checksumAlgorithm: 'crc64nvme', checksumType: 'FULL_OBJECT' },
+            { checksumAlgorithm: 'crc64nvme', checksumType: 'FULL_OBJECT', checksumIsDefault: true },
             splitter,
             uploadId,
             log,
         );
-        assert(got);
-        assert.strictEqual(got.algorithm, 'crc64nvme');
-        assert.strictEqual(got.type, 'FULL_OBJECT');
-        assert(!got.value.includes('-'), `FULL_OBJECT should have no -N suffix, got ${got.value}`);
-        const expected = await algorithms.crc64nvme.digest(Buffer.concat([a, b]));
-        assert.strictEqual(got.value, expected);
+        assertSoftNull(got);
     });
 
-    it('should return null and log when a part is missing ChecksumValue', async () => {
+    it('should return InternalError when an explicit-MPU part is missing ChecksumValue', async () => {
         const stored = [
             makeStoredPart(1, { algorithm: 'sha256', value: SAMPLE_DIGESTS.sha256[0] }),
             makeStoredPart(2, null),
@@ -4324,42 +4210,55 @@ describe('computeFinalChecksum', () => {
         const got = await computeFinalChecksum(
             stored,
             partListFromStored(stored),
-            { checksumAlgorithm: 'sha256', checksumType: 'COMPOSITE' },
+            { checksumAlgorithm: 'sha256', checksumType: 'COMPOSITE', checksumIsDefault: false },
             splitter,
             uploadId,
             log,
         );
-        assert.strictEqual(got, null);
+        assertInternalError(got);
     });
 
-    it('should return null when checksumType is unknown', async () => {
+    it('should soft-null when checksumType is unknown on a default MPU', async () => {
+        const stored = [makeStoredPart(1, { algorithm: 'crc64nvme', value: SAMPLE_DIGESTS.crc64nvme[0] })];
+        const got = await computeFinalChecksum(
+            stored,
+            partListFromStored(stored),
+            { checksumAlgorithm: 'crc64nvme', checksumType: 'WEIRD', checksumIsDefault: true },
+            splitter,
+            uploadId,
+            log,
+        );
+        assertSoftNull(got);
+    });
+
+    it('should return InternalError when checksumType is unknown on an explicit MPU', async () => {
         const stored = [makeStoredPart(1, { algorithm: 'sha256', value: SAMPLE_DIGESTS.sha256[0] })];
         const got = await computeFinalChecksum(
             stored,
             partListFromStored(stored),
-            { checksumAlgorithm: 'sha256', checksumType: 'WEIRD' },
+            { checksumAlgorithm: 'sha256', checksumType: 'WEIRD', checksumIsDefault: false },
             splitter,
             uploadId,
             log,
         );
-        assert.strictEqual(got, null);
+        assertInternalError(got);
     });
 
-    it(
-        'should return null when underlying compute reports an error ' + '(crc64nvme COMPOSITE is not allowed)',
-        async () => {
-            const stored = [makeStoredPart(1, { algorithm: 'crc64nvme', value: SAMPLE_DIGESTS.crc64nvme[0] })];
-            const got = await computeFinalChecksum(
-                stored,
-                partListFromStored(stored),
-                { checksumAlgorithm: 'crc64nvme', checksumType: 'COMPOSITE' },
-                splitter,
-                uploadId,
-                log,
-            );
-            assert.strictEqual(got, null);
-        },
-    );
+    it('should return InternalError when underlying compute reports an error on an explicit MPU', async () => {
+        // crc64nvme + COMPOSITE is not allowed by computeCompositeMPUChecksum.
+        // Reaching here on an explicit MPU means upstream validation failed,
+        // which is exactly the kind of internal-state bug we want to surface.
+        const stored = [makeStoredPart(1, { algorithm: 'crc64nvme', value: SAMPLE_DIGESTS.crc64nvme[0] })];
+        const got = await computeFinalChecksum(
+            stored,
+            partListFromStored(stored),
+            { checksumAlgorithm: 'crc64nvme', checksumType: 'COMPOSITE', checksumIsDefault: false },
+            splitter,
+            uploadId,
+            log,
+        );
+        assertInternalError(got);
+    });
 
     it('should compute over filteredPartList (subset), not all storedParts', async () => {
         const [d1, d2, d3] = [SAMPLE_DIGESTS.sha256[0], SAMPLE_DIGESTS.sha256[1], SAMPLE_DIGESTS.sha256[0]];
@@ -4375,7 +4274,7 @@ describe('computeFinalChecksum', () => {
             size: s.value.Size,
             locations: s.value.partLocations,
         }));
-        const got = await computeFinalChecksum(
+        const { result, error } = await computeFinalChecksum(
             stored,
             filtered,
             { checksumAlgorithm: 'sha256', checksumType: 'COMPOSITE' },
@@ -4383,37 +4282,21 @@ describe('computeFinalChecksum', () => {
             uploadId,
             log,
         );
-        assert(got);
-        assert(got.value.endsWith('-2'), `should reflect 2 completed parts, got ${got.value}`);
+        assert.ifError(error);
+        assert(result);
+        assert(result.value.endsWith('-2'), `should reflect 2 completed parts, got ${result.value}`);
         const expected = crypto
             .createHash('sha256')
             .update(Buffer.concat([d1, d3].map(x => Buffer.from(x, 'base64'))))
             .digest('base64');
-        assert.strictEqual(got.value, `${expected}-2`);
+        assert.strictEqual(result.value, `${expected}-2`);
     });
 });
 
 describe('CompleteMultipartUpload final-object checksum storage', () => {
     const log = new DummyRequestLogger();
-    const authInfo = makeAuthInfo('accessKey1');
-    const namespace = 'default';
     const bucketName = 'bucketname-final-checksum';
     const objectKey = 'testObject';
-    const partBody = Buffer.from('I am a part\n', 'utf8');
-    const partHash = crypto.createHash('md5').update(partBody).digest('hex');
-
-    const bucketPutRequest = {
-        bucketName,
-        namespace,
-        headers: { host: `${bucketName}.s3.amazonaws.com` },
-        url: '/',
-        post:
-            '<CreateBucketConfiguration ' +
-            'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-            '<LocationConstraint>scality-internal-mem</LocationConstraint>' +
-            '</CreateBucketConfiguration >',
-        actionImplicitDenies: false,
-    };
 
     // (algorithm, type) pairs valid for an MPU per AWS rules.
     // shouldStore reflects Part 3's gating: only FULL_OBJECT is persisted.
@@ -4427,90 +4310,6 @@ describe('CompleteMultipartUpload final-object checksum storage', () => {
         { algorithm: 'sha256', type: 'COMPOSITE', shouldStore: false },
     ];
 
-    function bucketPutP() {
-        return new Promise((resolve, reject) =>
-            bucketPut(authInfo, bucketPutRequest, log, err => (err ? reject(err) : resolve())),
-        );
-    }
-
-    function initiateMpuP(headers) {
-        return new Promise((resolve, reject) => {
-            initiateMultipartUpload(
-                authInfo,
-                {
-                    bucketName,
-                    namespace,
-                    objectKey,
-                    headers: { host: `${bucketName}.s3.amazonaws.com`, ...headers },
-                    url: `/${objectKey}?uploads`,
-                    actionImplicitDenies: false,
-                },
-                log,
-                (err, xml) => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    return parseString(xml, (parseErr, json) =>
-                        parseErr ? reject(parseErr) : resolve(json.InitiateMultipartUploadResult.UploadId[0]),
-                    );
-                },
-            );
-        });
-    }
-
-    function uploadPartP(uploadId, headers = {}) {
-        return new Promise((resolve, reject) => {
-            const partRequest = new DummyRequest(
-                {
-                    bucketName,
-                    namespace,
-                    objectKey,
-                    headers: { host: `${bucketName}.s3.amazonaws.com`, ...headers },
-                    url: `/${objectKey}?partNumber=1&uploadId=${uploadId}`,
-                    query: { partNumber: '1', uploadId },
-                    partHash,
-                    actionImplicitDenies: false,
-                },
-                partBody,
-            );
-            objectPutPart(authInfo, partRequest, undefined, log, err => (err ? reject(err) : resolve()));
-        });
-    }
-
-    function completeMpuP(uploadId, partChecksumXml = '') {
-        const completeBody =
-            '<CompleteMultipartUpload>' +
-            '<Part>' +
-            '<PartNumber>1</PartNumber>' +
-            `<ETag>"${partHash}"</ETag>${partChecksumXml}` +
-            '</Part>' +
-            '</CompleteMultipartUpload>';
-        return new Promise((resolve, reject) => {
-            completeMultipartUpload(
-                authInfo,
-                {
-                    bucketName,
-                    namespace,
-                    objectKey,
-                    parsedHost: 's3.amazonaws.com',
-                    url: `/${objectKey}?uploadId=${uploadId}`,
-                    headers: { host: `${bucketName}.s3.amazonaws.com` },
-                    query: { uploadId },
-                    post: completeBody,
-                    actionImplicitDenies: false,
-                },
-                log,
-                err => (err ? reject(err) : resolve()),
-            );
-        });
-    }
-
-    function fetchObjectMDP() {
-        return new Promise((resolve, reject) =>
-            metadataswitch.getObjectMD(bucketName, objectKey, {}, log, (err, md) => (err ? reject(err) : resolve(md))),
-        );
-    }
-
     beforeEach(() => cleanup());
 
     STORAGE_MATRIX.forEach(({ algorithm, type, shouldStore }) => {
@@ -4519,19 +4318,19 @@ describe('CompleteMultipartUpload final-object checksum storage', () => {
         const tag = TAG_BY_ALGO[algorithm];
 
         it(`${verb} ${type} ${upper} checksum on the ObjectMD`, async () => {
-            await bucketPutP();
-            const uploadId = await initiateMpuP({
+            await mpuUtils.bucketPutP(bucketName, namespace, log);
+            const uploadId = await mpuUtils.initiateMpuP(bucketName, namespace, objectKey, log, {
                 'x-amz-checksum-algorithm': upper,
                 'x-amz-checksum-type': type,
             });
             // Pre-compute the part's checksum so we can supply it on
             // UploadPart and (for COMPOSITE non-default) in the Complete body.
-            const partChecksum = await algorithms[algorithm].digest(partBody);
+            const partChecksum = await algorithms[algorithm].digest(mpuUtils.partBody);
             const uploadHeaders = type === 'COMPOSITE' ? { [`x-amz-checksum-${algorithm}`]: partChecksum } : {};
-            await uploadPartP(uploadId, uploadHeaders);
+            await mpuUtils.uploadPartP(bucketName, namespace, objectKey, uploadId, log, uploadHeaders);
             const partChecksumXml = type === 'COMPOSITE' ? `<${tag}>${partChecksum}</${tag}>` : '';
-            await completeMpuP(uploadId, partChecksumXml);
-            const md = await fetchObjectMDP();
+            await mpuUtils.completeMpuP(bucketName, namespace, objectKey, uploadId, log, { partChecksumXml });
+            const md = await mpuUtils.getObjectMDP(bucketName, objectKey, log);
             if (shouldStore) {
                 assert(md.checksum, `expected ${type} ${upper} checksum on ObjectMD`);
                 assert.strictEqual(md.checksum.checksumAlgorithm, algorithm);
@@ -4547,11 +4346,11 @@ describe('CompleteMultipartUpload final-object checksum storage', () => {
     it('should persist FULL_OBJECT CRC64NVME checksum for default MPU (no checksum headers)', async () => {
         // No x-amz-checksum-algorithm / x-amz-checksum-type headers — AWS
         // defaults to crc64nvme/FULL_OBJECT and still persists the result.
-        await bucketPutP();
-        const uploadId = await initiateMpuP({});
-        await uploadPartP(uploadId);
-        await completeMpuP(uploadId);
-        const md = await fetchObjectMDP();
+        await mpuUtils.bucketPutP(bucketName, namespace, log);
+        const uploadId = await mpuUtils.initiateMpuP(bucketName, namespace, objectKey, log);
+        await mpuUtils.uploadPartP(bucketName, namespace, objectKey, uploadId, log);
+        await mpuUtils.completeMpuP(bucketName, namespace, objectKey, uploadId, log);
+        const md = await mpuUtils.getObjectMDP(bucketName, objectKey, log);
         assert(md.checksum, 'default MPU should still persist a checksum');
         assert.strictEqual(md.checksum.checksumAlgorithm, 'crc64nvme');
         assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
@@ -4560,14 +4359,14 @@ describe('CompleteMultipartUpload final-object checksum storage', () => {
     it('should not leak checksumAlgorithm/Type/IsDefault into ObjectMD top-level fields', async () => {
         // keysNotNeeded keeps these MPU-overview-only keys out of metaHeaders,
         // which prevents them from sticking around on the final ObjectMD.
-        await bucketPutP();
-        const uploadId = await initiateMpuP({
+        await mpuUtils.bucketPutP(bucketName, namespace, log);
+        const uploadId = await mpuUtils.initiateMpuP(bucketName, namespace, objectKey, log, {
             'x-amz-checksum-algorithm': 'CRC32',
             'x-amz-checksum-type': 'FULL_OBJECT',
         });
-        await uploadPartP(uploadId);
-        await completeMpuP(uploadId);
-        const md = await fetchObjectMDP();
+        await mpuUtils.uploadPartP(bucketName, namespace, objectKey, uploadId, log);
+        await mpuUtils.completeMpuP(bucketName, namespace, objectKey, uploadId, log);
+        const md = await mpuUtils.getObjectMDP(bucketName, objectKey, log);
         assert.strictEqual(md.checksumAlgorithm, undefined);
         assert.strictEqual(md.checksumType, undefined);
         assert.strictEqual(md.checksumIsDefault, undefined);
@@ -4576,25 +4375,8 @@ describe('CompleteMultipartUpload final-object checksum storage', () => {
 
 describe('CompleteMultipartUpload final-object checksum response', () => {
     const log = new DummyRequestLogger();
-    const authInfo = makeAuthInfo('accessKey1');
-    const namespace = 'default';
     const bucketName = 'bucketname-final-checksum-resp';
     const objectKey = 'testObject';
-    const partBody = Buffer.from('I am a part\n', 'utf8');
-    const partHash = crypto.createHash('md5').update(partBody).digest('hex');
-
-    const bucketPutRequest = {
-        bucketName,
-        namespace,
-        headers: { host: `${bucketName}.s3.amazonaws.com` },
-        url: '/',
-        post:
-            '<CreateBucketConfiguration ' +
-            'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-            '<LocationConstraint>scality-internal-mem</LocationConstraint>' +
-            '</CreateBucketConfiguration >',
-        actionImplicitDenies: false,
-    };
 
     const RESPONSE_MATRIX = [
         { algorithm: 'crc32', type: 'FULL_OBJECT' },
@@ -4606,92 +4388,6 @@ describe('CompleteMultipartUpload final-object checksum response', () => {
         { algorithm: 'sha256', type: 'COMPOSITE' },
     ];
 
-    function bucketPutP() {
-        return new Promise((resolve, reject) =>
-            bucketPut(authInfo, bucketPutRequest, log, err => (err ? reject(err) : resolve())),
-        );
-    }
-
-    function initiateMpuP(headers) {
-        return new Promise((resolve, reject) => {
-            initiateMultipartUpload(
-                authInfo,
-                {
-                    bucketName,
-                    namespace,
-                    objectKey,
-                    headers: { host: `${bucketName}.s3.amazonaws.com`, ...headers },
-                    url: `/${objectKey}?uploads`,
-                    actionImplicitDenies: false,
-                },
-                log,
-                (err, xml) => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    return parseString(xml, (parseErr, json) =>
-                        parseErr ? reject(parseErr) : resolve(json.InitiateMultipartUploadResult.UploadId[0]),
-                    );
-                },
-            );
-        });
-    }
-
-    function uploadPartP(uploadId, headers = {}) {
-        return new Promise((resolve, reject) => {
-            const partRequest = new DummyRequest(
-                {
-                    bucketName,
-                    namespace,
-                    objectKey,
-                    headers: { host: `${bucketName}.s3.amazonaws.com`, ...headers },
-                    url: `/${objectKey}?partNumber=1&uploadId=${uploadId}`,
-                    query: { partNumber: '1', uploadId },
-                    partHash,
-                    actionImplicitDenies: false,
-                },
-                partBody,
-            );
-            objectPutPart(authInfo, partRequest, undefined, log, err => (err ? reject(err) : resolve()));
-        });
-    }
-
-    // Resolves with { xml, headers } so callers can inspect both the
-    // response body and the response headers.
-    function completeMpuP(uploadId, partChecksumXml = '') {
-        const completeBody =
-            '<CompleteMultipartUpload>' +
-            '<Part>' +
-            '<PartNumber>1</PartNumber>' +
-            `<ETag>"${partHash}"</ETag>${partChecksumXml}` +
-            '</Part>' +
-            '</CompleteMultipartUpload>';
-        return new Promise((resolve, reject) => {
-            completeMultipartUpload(
-                authInfo,
-                {
-                    bucketName,
-                    namespace,
-                    objectKey,
-                    parsedHost: 's3.amazonaws.com',
-                    url: `/${objectKey}?uploadId=${uploadId}`,
-                    headers: { host: `${bucketName}.s3.amazonaws.com` },
-                    query: { uploadId },
-                    post: completeBody,
-                    actionImplicitDenies: false,
-                },
-                log,
-                (err, xml, headers) => (err ? reject(err) : resolve({ xml, headers })),
-            );
-        });
-    }
-
-    function parseXmlP(xmlStr) {
-        return new Promise((resolve, reject) =>
-            parseString(xmlStr, (err, json) => (err ? reject(err) : resolve(json))),
-        );
-    }
-
     beforeEach(() => cleanup());
 
     RESPONSE_MATRIX.forEach(({ algorithm, type }) => {
@@ -4699,17 +4395,19 @@ describe('CompleteMultipartUpload final-object checksum response', () => {
         const tag = TAG_BY_ALGO[algorithm];
 
         it(`should emit ${type} ${upper} in response XML`, async () => {
-            await bucketPutP();
-            const uploadId = await initiateMpuP({
+            await mpuUtils.bucketPutP(bucketName, namespace, log);
+            const uploadId = await mpuUtils.initiateMpuP(bucketName, namespace, objectKey, log, {
                 'x-amz-checksum-algorithm': upper,
                 'x-amz-checksum-type': type,
             });
-            const partChecksum = await algorithms[algorithm].digest(partBody);
+            const partChecksum = await algorithms[algorithm].digest(mpuUtils.partBody);
             const uploadHeaders = type === 'COMPOSITE' ? { [`x-amz-checksum-${algorithm}`]: partChecksum } : {};
-            await uploadPartP(uploadId, uploadHeaders);
+            await mpuUtils.uploadPartP(bucketName, namespace, objectKey, uploadId, log, uploadHeaders);
             const partChecksumXml = type === 'COMPOSITE' ? `<${tag}>${partChecksum}</${tag}>` : '';
-            const { xml, headers } = await completeMpuP(uploadId, partChecksumXml);
-            const json = await parseXmlP(xml);
+            const { xml, headers } = await mpuUtils.completeMpuP(bucketName, namespace, objectKey, uploadId, log, {
+                partChecksumXml,
+            });
+            const json = await mpuUtils.parseXmlP(xml);
             const result = json.CompleteMultipartUploadResult;
             assert(result[tag], `expected ${tag} in response XML`);
             const xmlValue = result[tag][0];
@@ -4732,11 +4430,11 @@ describe('CompleteMultipartUpload final-object checksum response', () => {
         // AWS-verified: a default MPU still surfaces the CRC64NVME
         // checksum and ChecksumType=FULL_OBJECT in the CompleteMPU response
         // BODY (not headers).
-        await bucketPutP();
-        const uploadId = await initiateMpuP({});
-        await uploadPartP(uploadId);
-        const { xml, headers } = await completeMpuP(uploadId);
-        const json = await parseXmlP(xml);
+        await mpuUtils.bucketPutP(bucketName, namespace, log);
+        const uploadId = await mpuUtils.initiateMpuP(bucketName, namespace, objectKey, log);
+        await mpuUtils.uploadPartP(bucketName, namespace, objectKey, uploadId, log);
+        const { xml, headers } = await mpuUtils.completeMpuP(bucketName, namespace, objectKey, uploadId, log);
+        const json = await mpuUtils.parseXmlP(xml);
         const result = json.CompleteMultipartUploadResult;
         assert(result.ChecksumCRC64NVME, 'default MPU should emit ChecksumCRC64NVME');
         assert.strictEqual(result.ChecksumType[0], 'FULL_OBJECT');
