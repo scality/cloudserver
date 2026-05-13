@@ -20,7 +20,7 @@ describe('validateChecksumsNoChunking MD5', () => {
             const body = 'Hello, World!';
             const expectedMd5 = crypto.createHash('md5').update(body, 'utf8').digest('base64');
             const headers = {
-                'content-md5': expectedMd5
+                'content-md5': expectedMd5,
             };
 
             const result = await validateChecksumsNoChunking(headers, body);
@@ -34,7 +34,7 @@ describe('validateChecksumsNoChunking MD5', () => {
             const wrongMd5 = '1B2M2Y8AsgTpgAmY7PhCfg==';
             const expectedMd5 = crypto.createHash('md5').update(body, 'utf8').digest('base64');
             const headers = {
-                'content-md5': wrongMd5
+                'content-md5': wrongMd5,
             };
 
             const result = await validateChecksumsNoChunking(headers, body);
@@ -67,7 +67,7 @@ describe('validateChecksumsNoChunking MD5', () => {
             const body = 'Hello, World!';
             const headers = {
                 'content-type': 'application/json',
-                'content-md5': undefined
+                'content-md5': undefined,
             };
 
             const result = await validateChecksumsNoChunking(headers, body);
@@ -79,7 +79,7 @@ describe('validateChecksumsNoChunking MD5', () => {
             const body = 'Hello, World!';
             const headers = {
                 'content-type': 'application/json',
-                'content-md5': null
+                'content-md5': null,
             };
 
             const result = await validateChecksumsNoChunking(headers, body);
@@ -91,7 +91,7 @@ describe('validateChecksumsNoChunking MD5', () => {
             const body = 'Hello, World!';
             const headers = {
                 'content-type': 'application/json',
-                'content-md5': ''
+                'content-md5': '',
             };
 
             const result = await validateChecksumsNoChunking(headers, body);
@@ -106,17 +106,25 @@ describe('validateChecksumsNoChunking CRC32, CRC32C, SHA1, SHA256, CRC64NVME', (
         { name: 'crc32', data: 'crc32 data', digest: 'xCSBHA==', invalid: 'x', validWrong: 'AAAAAA==' },
         { name: 'crc32c', data: 'crc32c data', digest: 'oEjFGQ==', invalid: 'x', validWrong: 'AAAAAA==' },
         {
-            name: 'sha1', data: 'sha1 data', digest: 'roREeoJPb6jNZz8PPT+/KtdXm0o=', invalid: 'x',
-            validWrong: 'AAAAAAAAAAAAAAAAAAAAAAAAAAA='
+            name: 'sha1',
+            data: 'sha1 data',
+            digest: 'roREeoJPb6jNZz8PPT+/KtdXm0o=',
+            invalid: 'x',
+            validWrong: 'AAAAAAAAAAAAAAAAAAAAAAAAAAA=',
         },
         {
-            name: 'sha256', data: 'sha256 data',
-            digest: 'jS/UevcoKxbM33kmPFujS72ior/9/i374VmGvbTAwAc=', invalid: 'x',
-            validWrong: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+            name: 'sha256',
+            data: 'sha256 data',
+            digest: 'jS/UevcoKxbM33kmPFujS72ior/9/i374VmGvbTAwAc=',
+            invalid: 'x',
+            validWrong: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
         },
         {
-            name: 'crc64nvme', data: 'crc64nvme data', digest: 'Tpz+dGVqyhg=', invalid: 'x',
-            validWrong: 'AAAAAAAAAAA='
+            name: 'crc64nvme',
+            data: 'crc64nvme data',
+            digest: 'Tpz+dGVqyhg=',
+            invalid: 'x',
+            validWrong: 'AAAAAAAAAAA=',
         },
     ];
 
@@ -305,8 +313,8 @@ describe('validateMethodChecksumNoChunking', () => {
                 const request = {
                     apiMethod: method,
                     headers: {
-                        'content-md5': wrongMd5
-                    }
+                        'content-md5': wrongMd5,
+                    },
                 };
                 const log = { debug: sandbox.stub() };
 
@@ -328,8 +336,8 @@ describe('validateMethodChecksumNoChunking', () => {
                 const request = {
                     apiMethod: method,
                     headers: {
-                        'content-md5': wrongMd5
-                    }
+                        'content-md5': wrongMd5,
+                    },
                 };
                 const log = { debug: sandbox.stub() };
 
@@ -349,7 +357,7 @@ describe('validateMethodChecksumNoChunking', () => {
                 const body = 'Hello, World!';
                 const request = {
                     apiMethod: method,
-                    headers: {}
+                    headers: {},
                 };
                 const log = { debug: sandbox.stub() };
 
@@ -371,8 +379,8 @@ describe('validateMethodChecksumNoChunking', () => {
                 const request = {
                     apiMethod: method,
                     headers: {
-                        'content-md5': correctMd5
-                    }
+                        'content-md5': correctMd5,
+                    },
                 };
                 const log = { debug: sandbox.stub() };
 
@@ -394,8 +402,8 @@ describe('validateMethodChecksumNoChunking', () => {
                 const request = {
                     apiMethod: method,
                     headers: {
-                        'content-md5': wrongMd5
-                    }
+                        'content-md5': wrongMd5,
+                    },
                 };
                 const log = { debug: sandbox.stub() };
 
@@ -417,8 +425,8 @@ describe('validateMethodChecksumNoChunking', () => {
             const request = {
                 apiMethod: unsupportedMethod,
                 headers: {
-                    'content-md5': wrongMd5
-                }
+                    'content-md5': wrongMd5,
+                },
             };
             const log = { debug: sandbox.stub() };
 
@@ -434,8 +442,8 @@ describe('validateMethodChecksumNoChunking', () => {
             const body = 'Hello, World!';
             const request = {
                 headers: {
-                    'content-md5': 'wrongchecksum123='
-                }
+                    'content-md5': 'wrongchecksum123=',
+                },
             };
             const log = { debug: sandbox.stub() };
 
@@ -449,8 +457,8 @@ describe('validateMethodChecksumNoChunking', () => {
             const request = {
                 apiMethod: 'nonExistentMethod',
                 headers: {
-                    'content-md5': 'wrongchecksum123='
-                }
+                    'content-md5': 'wrongchecksum123=',
+                },
             };
             const log = { debug: sandbox.stub() };
 
@@ -464,8 +472,8 @@ describe('validateMethodChecksumNoChunking', () => {
 describe('getChecksumDataFromHeaders', () => {
     // Valid-format digests (correct length and base64, content not verified by getChecksumDataFromHeaders)
     const validDigests = {
-        crc32: 'AAAAAA==',     // 8 chars
-        crc32c: 'AAAAAA==',     // 8 chars
+        crc32: 'AAAAAA==', // 8 chars
+        crc32c: 'AAAAAA==', // 8 chars
         sha1: 'AAAAAAAAAAAAAAAAAAAAAAAAAAA=', // 28 chars
         sha256: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', // 44 chars
         crc64nvme: 'AAAAAAAAAAA=', // 12 chars
@@ -514,12 +522,11 @@ describe('getChecksumDataFromHeaders', () => {
         assert.strictEqual(result.error, ChecksumError.MultipleChecksumTypes);
     });
 
-    it('should return MissingCorresponding when x-amz-sdk-checksum-algorithm has no x-amz-checksum- or x-amz-trailer',
-        () => {
-            const result = getChecksumDataFromHeaders({ 'x-amz-sdk-checksum-algorithm': 'crc32' });
-            assert.strictEqual(result.error, ChecksumError.MissingCorresponding);
-            assert.strictEqual(result.details.expected, 'crc32');
-        });
+    it('should return MissingCorresponding when x-amz-sdk-checksum-algorithm has no x-amz-checksum- or x-amz-trailer', () => {
+        const result = getChecksumDataFromHeaders({ 'x-amz-sdk-checksum-algorithm': 'crc32' });
+        assert.strictEqual(result.error, ChecksumError.MissingCorresponding);
+        assert.strictEqual(result.details.expected, 'crc32');
+    });
 
     it('should return success for x-amz-checksum-crc32 with matching x-amz-sdk-checksum-algorithm CRC32', () => {
         const result = getChecksumDataFromHeaders({
@@ -529,25 +536,23 @@ describe('getChecksumDataFromHeaders', () => {
         assert.deepStrictEqual(result, { algorithm: 'crc32', isTrailer: false, expected: validDigests.crc32 });
     });
 
-    it('should return AlgoNotSupportedSDK for x-amz-checksum-crc32 with mismatched x-amz-sdk-checksum-algorithm SHA256',
-        () => {
-            const result = getChecksumDataFromHeaders({
-                'x-amz-checksum-crc32': validDigests.crc32,
-                'x-amz-sdk-checksum-algorithm': 'sha256',
-            });
-            assert.strictEqual(result.error, ChecksumError.AlgoNotSupportedSDK);
-            assert.strictEqual(result.details.algorithm, 'sha256');
+    it('should return AlgoNotSupportedSDK for x-amz-checksum-crc32 with mismatched x-amz-sdk-checksum-algorithm SHA256', () => {
+        const result = getChecksumDataFromHeaders({
+            'x-amz-checksum-crc32': validDigests.crc32,
+            'x-amz-sdk-checksum-algorithm': 'sha256',
         });
+        assert.strictEqual(result.error, ChecksumError.AlgoNotSupportedSDK);
+        assert.strictEqual(result.details.algorithm, 'sha256');
+    });
 
-    it('should return AlgoNotSupportedSDK for x-amz-checksum-crc32 with non-string x-amz-sdk-checksum-algorithm',
-        () => {
-            const result = getChecksumDataFromHeaders({
-                'x-amz-checksum-crc32': validDigests.crc32,
-                'x-amz-sdk-checksum-algorithm': 1234,
-            });
-            assert.strictEqual(result.error, ChecksumError.AlgoNotSupportedSDK);
-            assert.strictEqual(result.details.algorithm, 1234);
+    it('should return AlgoNotSupportedSDK for x-amz-checksum-crc32 with non-string x-amz-sdk-checksum-algorithm', () => {
+        const result = getChecksumDataFromHeaders({
+            'x-amz-checksum-crc32': validDigests.crc32,
+            'x-amz-sdk-checksum-algorithm': 1234,
         });
+        assert.strictEqual(result.error, ChecksumError.AlgoNotSupportedSDK);
+        assert.strictEqual(result.details.algorithm, 1234);
+    });
 
     it('should return AlgoNotSupportedSDK for x-amz-checksum-crc32 with unknown x-amz-sdk-checksum-algorithm', () => {
         const result = getChecksumDataFromHeaders({
@@ -568,12 +573,11 @@ describe('getChecksumDataFromHeaders', () => {
         assert.deepStrictEqual(result, { algorithm: 'crc64nvme', isTrailer: true, expected: undefined });
     });
 
-    it('should return TrailerNotSupported for x-amz-trailer with unsupported value (not x-amz-checksum- prefix)',
-        () => {
-            const result = getChecksumDataFromHeaders({ 'x-amz-trailer': 'x-custom-header' });
-            assert.strictEqual(result.error, ChecksumError.TrailerNotSupported);
-            assert.strictEqual(result.details.value, 'x-custom-header');
-        });
+    it('should return TrailerNotSupported for x-amz-trailer with unsupported value (not x-amz-checksum- prefix)', () => {
+        const result = getChecksumDataFromHeaders({ 'x-amz-trailer': 'x-custom-header' });
+        assert.strictEqual(result.error, ChecksumError.TrailerNotSupported);
+        assert.strictEqual(result.details.value, 'x-custom-header');
+    });
 
     it('should return TrailerNotSupported for x-amz-trailer: x-amz-checksum-unknown-algo', () => {
         const result = getChecksumDataFromHeaders({ 'x-amz-trailer': 'x-amz-checksum-md4' });
@@ -749,8 +753,7 @@ describe('arsenalErrorFromChecksumError', () => {
             details: { type: 'BADTYPE' },
         });
         assert.strictEqual(result.message, 'InvalidRequest');
-        assert.strictEqual(result.description,
-            'Value for x-amz-checksum-type header is invalid.');
+        assert.strictEqual(result.description, 'Value for x-amz-checksum-type header is invalid.');
     });
 
     it('should return InvalidRequest for MPUTypeWithoutAlgo', () => {
@@ -759,8 +762,10 @@ describe('arsenalErrorFromChecksumError', () => {
             details: { type: 'COMPOSITE' },
         });
         assert.strictEqual(result.message, 'InvalidRequest');
-        assert.match(result.description,
-            /x-amz-checksum-type header can only be used with the x-amz-checksum-algorithm header/);
+        assert.match(
+            result.description,
+            /x-amz-checksum-type header can only be used with the x-amz-checksum-algorithm header/,
+        );
     });
 
     it('should return InvalidRequest for MPUInvalidCombination mentioning type and algorithm', () => {
@@ -769,8 +774,10 @@ describe('arsenalErrorFromChecksumError', () => {
             details: { algorithm: 'sha256', type: 'FULL_OBJECT' },
         });
         assert.strictEqual(result.message, 'InvalidRequest');
-        assert.strictEqual(result.description,
-            'The FULL_OBJECT checksum type cannot be used with the SHA256 checksum algorithm.');
+        assert.strictEqual(
+            result.description,
+            'The FULL_OBJECT checksum type cannot be used with the SHA256 checksum algorithm.',
+        );
     });
 });
 
@@ -779,7 +786,9 @@ describe('getChecksumDataFromMPUHeaders', () => {
         it('should return crc64nvme/FULL_OBJECT with isDefault=true when no headers', () => {
             const result = getChecksumDataFromMPUHeaders({});
             assert.deepStrictEqual(result, {
-                algorithm: 'crc64nvme', type: 'FULL_OBJECT', isDefault: true,
+                algorithm: 'crc64nvme',
+                type: 'FULL_OBJECT',
+                isDefault: true,
             });
         });
     });
@@ -799,7 +808,9 @@ describe('getChecksumDataFromMPUHeaders', () => {
                     'x-amz-checksum-algorithm': algo,
                 });
                 assert.deepStrictEqual(result, {
-                    algorithm: algo, type: expectedType, isDefault: false,
+                    algorithm: algo,
+                    type: expectedType,
+                    isDefault: false,
                 });
             });
         }
@@ -809,7 +820,9 @@ describe('getChecksumDataFromMPUHeaders', () => {
                 'x-amz-checksum-algorithm': 'CRC32',
             });
             assert.deepStrictEqual(result, {
-                algorithm: 'crc32', type: 'COMPOSITE', isDefault: false,
+                algorithm: 'crc32',
+                type: 'COMPOSITE',
+                isDefault: false,
             });
         });
 
@@ -818,7 +831,9 @@ describe('getChecksumDataFromMPUHeaders', () => {
                 'x-amz-checksum-algorithm': 'Sha256',
             });
             assert.deepStrictEqual(result, {
-                algorithm: 'sha256', type: 'COMPOSITE', isDefault: false,
+                algorithm: 'sha256',
+                type: 'COMPOSITE',
+                isDefault: false,
             });
         });
     });
@@ -841,7 +856,9 @@ describe('getChecksumDataFromMPUHeaders', () => {
                     'x-amz-checksum-type': type,
                 });
                 assert.deepStrictEqual(result, {
-                    algorithm: algo, type, isDefault: false,
+                    algorithm: algo,
+                    type,
+                    isDefault: false,
                 });
             });
         }
