@@ -19,8 +19,9 @@ describe('Test x-amz-checksums', () => {
         { name: 'CRC64NVME', objDataDigest: 'jC+ERbTL/Dw=', validWrong: 'AAAAAAAAAAA=' },
         { name: 'SHA1', objDataDigest: 'hvfkN/qlp/zhXR3cuerq6jd2Z7g=', validWrong: 'AAAAAAAAAAAAAAAAAAAAAAAAAAA=' },
         {
-            name: 'SHA256', objDataDigest: 'ypeBEsobvcr6wjGzmiPcTaeG7/gUfE5yuYB3ha/uSLs=',
-            validWrong: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+            name: 'SHA256',
+            objDataDigest: 'ypeBEsobvcr6wjGzmiPcTaeG7/gUfE5yuYB3ha/uSLs=',
+            validWrong: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
         },
     ];
     const methods = [
@@ -153,7 +154,7 @@ describe('Test x-amz-checksums', () => {
                         ...headers,
                     },
                 },
-                authCredentials
+                authCredentials,
             ),
             res => {
                 let data = '';
@@ -167,13 +168,12 @@ describe('Test x-amz-checksums', () => {
                     }
                     done();
                 });
-            }
+            },
         );
 
         req.on('error', err => {
             assert.ifError(err);
         });
-
 
         req.once('drain', () => {
             req.end();
@@ -188,13 +188,14 @@ describe('Test x-amz-checksums', () => {
     for (const algo of algos) {
         for (const method of methods) {
             itSkipIfAWS(
-                `${method.Name} should respond BadDigest ` +
-                `with invalid x-amz-checksum-${algo.name.toLowerCase()}`, done => {
+                `${method.Name} should respond BadDigest ` + `with invalid x-amz-checksum-${algo.name.toLowerCase()}`,
+                done => {
                     const headers = {
                         [`x-amz-checksum-${algo.name.toLowerCase()}`]: algo.validWrong,
                     };
                     doTest(headers, method, 400, ['BadDigest'], done);
-                });
+                },
+            );
         }
     }
 
@@ -225,20 +226,19 @@ describe('Test x-amz-checksums', () => {
         );
     });
 
-    itSkipIfAWS(
-        'should respond InvalidRequest if the value of x-amz-sdk-checksum-algorithm is invalid', done => {
-            const headers = {
-                'x-amz-sdk-checksum-algorithm': 'BAD',
-                [`x-amz-checksum-${algos[0].name.toLowerCase()}`]: algos[0].objDataDigest,
-            };
-            doTest(
-                headers,
-                methods[0],
-                400,
-                ['InvalidRequest', 'Value for x-amz-sdk-checksum-algorithm header is invalid.'],
-                done,
-            );
-        });
+    itSkipIfAWS('should respond InvalidRequest if the value of x-amz-sdk-checksum-algorithm is invalid', done => {
+        const headers = {
+            'x-amz-sdk-checksum-algorithm': 'BAD',
+            [`x-amz-checksum-${algos[0].name.toLowerCase()}`]: algos[0].objDataDigest,
+        };
+        doTest(
+            headers,
+            methods[0],
+            400,
+            ['InvalidRequest', 'Value for x-amz-sdk-checksum-algorithm header is invalid.'],
+            done,
+        );
+    });
 
     itSkipIfAWS('should respond InvalidRequest with if invalid x-amz-checksum- value', done => {
         const headers = {
@@ -254,7 +254,8 @@ describe('Test x-amz-checksums', () => {
     });
 
     itSkipIfAWS(
-        'should respond InvalidRequest with if missing x-amz-checksum- for x-amz-sdk-checksum-algorithm ', done => {
+        'should respond InvalidRequest with if missing x-amz-checksum- for x-amz-sdk-checksum-algorithm ',
+        done => {
             const headers = {
                 'x-amz-sdk-checksum-algorithm': 'SHA1',
             };
@@ -262,17 +263,22 @@ describe('Test x-amz-checksums', () => {
                 headers,
                 methods[0],
                 400,
-                ['InvalidRequest', 'x-amz-sdk-checksum-algorithm specified, but no corresponding x-amz-checksum-* ' +
-                    'or x-amz-trailer headers were found.'],
+                [
+                    'InvalidRequest',
+                    'x-amz-sdk-checksum-algorithm specified, but no corresponding x-amz-checksum-* ' +
+                        'or x-amz-trailer headers were found.',
+                ],
                 done,
             );
-        });
+        },
+    );
 
     for (const algo of algos) {
         for (const method of methods) {
             itSkipIfAWS(
                 `${method.Name} should not respond BadDigest if ` +
-                `x-amz-checksum-${algo.name.toLowerCase()} is correct`, done => {
+                    `x-amz-checksum-${algo.name.toLowerCase()} is correct`,
+                done => {
                     const url = `http://localhost:8000/${bucket}/${method.Key}?${method.Query}`;
                     const req = new HttpRequestAuthV4(
                         url,
@@ -286,7 +292,7 @@ describe('Test x-amz-checksums', () => {
                                     [`x-amz-checksum-${algo.name.toLowerCase()}`]: algo.objDataDigest,
                                 },
                             },
-                            authCredentials
+                            authCredentials,
                         ),
                         res => {
                             let data = '';
@@ -301,13 +307,12 @@ describe('Test x-amz-checksums', () => {
                                 assert(!data.includes('did not match the calculated checksum'));
                                 done();
                             });
-                        }
+                        },
                     );
 
                     req.on('error', err => {
                         assert.ifError(err);
                     });
-
 
                     req.once('drain', () => {
                         req.end();
@@ -317,7 +322,8 @@ describe('Test x-amz-checksums', () => {
                         assert.ifError(err);
                         req.end();
                     });
-                });
+                },
+            );
         }
     }
 });

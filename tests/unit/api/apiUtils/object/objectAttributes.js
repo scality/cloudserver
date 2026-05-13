@@ -1,7 +1,7 @@
 const assert = require('assert');
 const {
     parseAttributesHeaders,
-    buildAttributesXml
+    buildAttributesXml,
 } = require('../../../../../lib/api/apiUtils/object/objectAttributes');
 const { algorithms } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
 const { DummyRequestLogger } = require('../../../helpers');
@@ -51,16 +51,15 @@ describe('parseAttributesHeaders', () => {
     });
 });
 
-
 describe('buildXmlAttributes', () => {
     const objectMD = {
         'content-md5': '16e37e19194511993498801d4692795f',
         'content-length': 5000,
         'x-amz-storage-class': 'STANDARD',
-        'restoreStatus': {
+        restoreStatus: {
             inProgress: false,
-            expiryDate: 'Fri, 20 Feb 2026 12:00:00 GMT'
-        }
+            expiryDate: 'Fri, 20 Feb 2026 12:00:00 GMT',
+        },
     };
 
     const userMetadata = {
@@ -164,9 +163,11 @@ describe('buildXmlAttributes', () => {
         const expectedDigests = {};
 
         before(async () => {
-            await Promise.all(Object.keys(algorithms).map(async name => {
-                expectedDigests[name] = await algorithms[name].digest(testData);
-            }));
+            await Promise.all(
+                Object.keys(algorithms).map(async name => {
+                    expectedDigests[name] = await algorithms[name].digest(testData);
+                }),
+            );
         });
 
         it('should not generate Checksum XML when checksumAlgorithm is unknown', () => {
