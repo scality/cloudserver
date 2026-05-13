@@ -499,11 +499,472 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
             });
         });
 
+        const listObjectsV2WithOptionalAttributes = (
+            s3, Bucket, headerValue, extraParams = {},
+        ) => new Promise((resolve, reject) => {
+            let rawXml = '';
+            const req = s3.listObjectsV2({ Bucket, ...extraParams });
+            req.on('build', () => {
+                req.httpRequest.headers['x-amz-optional-object-attributes'] = headerValue;
+            });
+            req.on('httpData', chunk => { rawXml += chunk; });
+            req.on('error', err => reject(err));
+            req.on('success', response => {
+                parseString(rawXml, (err, parsedXml) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve({ data: response.data, parsedXml, rawXml });
+                });
+            });
+            req.send();
+        });
+
+        describe('x-amz-optional-object-attributes', () => {
+            it('should reject a malformed header value with 400 InvalidArgument', async () => {
+                const s3 = bucketUtil.s3;
+                try {
+                    await listObjectsV2WithOptionalAttributes(s3, bucketName, 'Foo');
+                    throw new Error('Request should have been rejected');
+                } catch (err) {
+                    assert.strictEqual(err.statusCode, 400);
+                    assert.strictEqual(err.code, 'InvalidArgument');
+                }
+            });
+
+            it('should return the requested user-metadata element in the listing response', async () => {
+                const s3 = bucketUtil.s3;
+                await s3.putObject({
+                    Bucket: bucketName,
+                    Key: 'object-with-color',
+                    Metadata: { color: 'red' },
+                }).promise();
+
+                const { data, parsedXml } = await listObjectsV2WithOptionalAttributes(
+                    s3,
+                    bucketName,
+                    'x-amz-meta-color',
+                );
+
+                assert.ok(Array.isArray(data.Contents));
+                assert.strictEqual(data.Contents.length, 1);
+
+                const contents = parsedXml.ListBucketResult.Contents;
+                assert.strictEqual(contents[0].Key[0], 'object-with-color');
+                assert.deepStrictEqual(contents[0]['x-amz-meta-color'], ['red']);
+            });
+
+            it('should omit the user-metadata element when the object has no matching metadata', async () => {
+                const s3 = bucketUtil.s3;
+                await s3.putObject({
+                    Bucket: bucketName,
+                    Key: 'object-without-metadata',
+                }).promise();
+
+                const { parsedXml } = await listObjectsV2WithOptionalAttributes(
+                    s3,
+                    bucketName,
+                    'x-amz-meta-color',
+                );
+
+                const contents = parsedXml.ListBucketResult.Contents;
+                assert.strictEqual(contents.length, 1);
+                assert.strictEqual(contents[0].Key[0], 'object-without-metadata');
+                assert.strictEqual(contents[0]['x-amz-meta-color'], undefined);
+            });
+
+            it('should use HEAD\'s key case for the user-metadata element regardless of header case', async () => {
+                const s3 = bucketUtil.s3;
+                await s3.putObject({
+                    Bucket: bucketName,
+                    Key: 'case-probe-object',
+                    Metadata: { MyKey: 'foo' },
+                }).promise();
+
+                const head = await s3.headObject({
+                    Bucket: bucketName,
+                    Key: 'case-probe-object',
+                }).promise();
+
+                const metadataKeys = Object.keys(head.Metadata || {});
+                assert.strictEqual(metadataKeys.length, 1);
+                const storedKeyCase = metadataKeys[0];
+                assert.strictEqual(head.Metadata[storedKeyCase], 'foo');
+                const expectedElementName = `x-amz-meta-${storedKeyCase}`;
+
+                for (const headerCase of ['x-amz-meta-mykey', 'x-amz-meta-MyKey']) {
+                    const { parsedXml } = await listObjectsV2WithOptionalAttributes(
+                        s3,
+                        bucketName,
+                        headerCase,
+                    );
+                    const contents = parsedXml.ListBucketResult.Contents;
+                    assert.strictEqual(contents.length, 1);
+                    assert.strictEqual(contents[0].Key[0], 'case-probe-object');
+                    assert.deepStrictEqual(
+                        contents[0][expectedElementName],
+                        ['foo'],
+                        `header "${headerCase}" should return element "${expectedElementName}"`,
+                    );
+                }
+            });
+
+            it('should return all user-metadata elements when the header is the wildcard', async () => {
+                const s3 = bucketUtil.s3;
+                await s3.putObject({
+                    Bucket: bucketName,
+                    Key: 'wildcard-object',
+                    Metadata: { color: 'red', size: 'large' },
+                }).promise();
+
+                const { parsedXml } = await listObjectsV2WithOptionalAttributes(
+                    s3,
+                    bucketName,
+                    'x-amz-meta-*',
+                );
+
+                const contents = parsedXml.ListBucketResult.Contents;
+                assert.strictEqual(contents.length, 1);
+                assert.strictEqual(contents[0].Key[0], 'wildcard-object');
+                assert.deepStrictEqual(contents[0]['x-amz-meta-color'], ['red']);
+                assert.deepStrictEqual(contents[0]['x-amz-meta-size'], ['large']);
+            });
+
+            it('should omit the user-metadata element for objects with no metadata', async () => {
+                const s3 = bucketUtil.s3;
+                await s3.putObject({
+                    Bucket: bucketName,
+                    Key: 'a-object-with-meta',
+                    Metadata: { color: 'red' },
+                }).promise();
+                await s3.putObject({
+                    Bucket: bucketName,
+                    Key: 'b-object-without-meta',
+                }).promise();
+
+                const { parsedXml } = await listObjectsV2WithOptionalAttributes(
+                    s3,
+                    bucketName,
+                    'x-amz-meta-*',
+                );
+
+                const contents = parsedXml.ListBucketResult.Contents;
+                assert.strictEqual(contents.length, 2);
+                const byKey = Object.fromEntries(contents.map(c => [c.Key[0], c]));
+                assert.deepStrictEqual(byKey['a-object-with-meta']['x-amz-meta-color'], ['red']);
+                assert.strictEqual(byKey['b-object-without-meta']['x-amz-meta-color'], undefined);
+            });
+
+            it('should not duplicate elements when wildcard and explicit key are both requested', async () => {
+                const s3 = bucketUtil.s3;
+                await s3.putObject({
+                    Bucket: bucketName,
+                    Key: 'no-dup-object',
+                    Metadata: { color: 'red', size: 'large' },
+                }).promise();
+
+                const { parsedXml } = await listObjectsV2WithOptionalAttributes(
+                    s3,
+                    bucketName,
+                    'x-amz-meta-*,x-amz-meta-color',
+                );
+
+                const contents = parsedXml.ListBucketResult.Contents;
+                assert.strictEqual(contents.length, 1);
+                assert.strictEqual(contents[0].Key[0], 'no-dup-object');
+                assert.deepStrictEqual(contents[0]['x-amz-meta-color'], ['red']);
+                assert.deepStrictEqual(contents[0]['x-amz-meta-size'], ['large']);
+            });
+
+            it('should return IsRestoreInProgress=false and no RestoreExpiryDate for non-restored object', async () => {
+                const s3 = bucketUtil.s3;
+                await s3.putObject({
+                    Bucket: bucketName,
+                    Key: 'restore-status-object',
+                }).promise();
+
+                const { parsedXml } = await listObjectsV2WithOptionalAttributes(
+                    s3,
+                    bucketName,
+                    'RestoreStatus',
+                );
+
+                const contents = parsedXml.ListBucketResult.Contents;
+                assert.strictEqual(contents.length, 1);
+                assert.strictEqual(contents[0].Key[0], 'restore-status-object');
+
+                const restoreStatus = contents[0].RestoreStatus;
+                assert.ok(Array.isArray(restoreStatus));
+                assert.strictEqual(restoreStatus.length, 1);
+                assert.deepStrictEqual(restoreStatus[0].IsRestoreInProgress, ['false']);
+                assert.strictEqual(restoreStatus[0].RestoreExpiryDate, undefined);
+            });
+
+            it('should return each version\'s own user-metadata in ListObjectVersions', async () => {
+                const s3 = bucketUtil.s3;
+                await s3.putBucketVersioning({
+                    Bucket: bucketName,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }).promise();
+
+                await s3.putObject({
+                    Bucket: bucketName,
+                    Key: 'versioned-object',
+                    Metadata: { color: 'red' },
+                }).promise();
+                await s3.putObject({
+                    Bucket: bucketName,
+                    Key: 'versioned-object',
+                    Metadata: { color: 'blue' },
+                }).promise();
+
+                const parsedXml = await new Promise((resolve, reject) => {
+                    let rawXml = '';
+                    const req = s3.listObjectVersions({ Bucket: bucketName });
+                    req.on('build', () => {
+                        req.httpRequest.headers['x-amz-optional-object-attributes'] = 'x-amz-meta-color';
+                    });
+                    req.on('httpData', chunk => { rawXml += chunk; });
+                    req.on('error', err => reject(err));
+                    req.on('success', () => {
+                        parseString(rawXml, (err, parsed) => {
+                            if (err) {
+                                return reject(err);
+                            }
+                            return resolve(parsed);
+                        });
+                    });
+                    req.send();
+                });
+
+                const versions = parsedXml.ListVersionsResult.Version;
+                assert.strictEqual(versions.length, 2);
+                for (const v of versions) {
+                    assert.strictEqual(v.Key[0], 'versioned-object');
+                    assert.ok(Array.isArray(v['x-amz-meta-color']));
+                    assert.strictEqual(v['x-amz-meta-color'].length, 1);
+                }
+                const colors = versions.map(v => v['x-amz-meta-color'][0]).sort();
+                assert.deepStrictEqual(colors, ['blue', 'red']);
+
+                const latest = versions.find(v => v.IsLatest[0] === 'true');
+                assert.strictEqual(latest['x-amz-meta-color'][0], 'blue');
+            });
+
+            it('should not include optional-attributes on delete markers in ListObjectVersions', async () => {
+                const s3 = bucketUtil.s3;
+                await s3.putBucketVersioning({
+                    Bucket: bucketName,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }).promise();
+
+                await s3.putObject({
+                    Bucket: bucketName,
+                    Key: 'delete-marker-object',
+                    Metadata: { color: 'red' },
+                }).promise();
+                await s3.deleteObject({
+                    Bucket: bucketName,
+                    Key: 'delete-marker-object',
+                }).promise();
+
+                const parsedXml = await new Promise((resolve, reject) => {
+                    let rawXml = '';
+                    const req = s3.listObjectVersions({ Bucket: bucketName });
+                    req.on('build', () => {
+                        req.httpRequest.headers['x-amz-optional-object-attributes'] =
+                            'RestoreStatus,x-amz-meta-color';
+                    });
+                    req.on('httpData', chunk => { rawXml += chunk; });
+                    req.on('error', err => reject(err));
+                    req.on('success', () => {
+                        parseString(rawXml, (err, parsed) => {
+                            if (err) {
+                                return reject(err);
+                            }
+                            return resolve(parsed);
+                        });
+                    });
+                    req.send();
+                });
+
+                const result = parsedXml.ListVersionsResult;
+                assert.strictEqual(result.Version.length, 1);
+                assert.strictEqual(result.Version[0].Key[0], 'delete-marker-object');
+                assert.deepStrictEqual(result.Version[0]['x-amz-meta-color'], ['red']);
+                assert.strictEqual(result.Version[0].RestoreStatus.length, 1);
+
+                assert.strictEqual(result.DeleteMarker.length, 1);
+                assert.strictEqual(result.DeleteMarker[0].Key[0], 'delete-marker-object');
+                assert.strictEqual(result.DeleteMarker[0]['x-amz-meta-color'], undefined);
+                assert.strictEqual(result.DeleteMarker[0].RestoreStatus, undefined);
+            });
+
+            it('should apply prefix filter and return the user-metadata element on matching objects', async () => {
+                const s3 = bucketUtil.s3;
+                await s3.putObject({
+                    Bucket: bucketName, Key: 'match/a', Metadata: { color: 'red' },
+                }).promise();
+                await s3.putObject({
+                    Bucket: bucketName, Key: 'match/b', Metadata: { color: 'blue' },
+                }).promise();
+                await s3.putObject({
+                    Bucket: bucketName, Key: 'other/c', Metadata: { color: 'green' },
+                }).promise();
+
+                const { parsedXml } = await listObjectsV2WithOptionalAttributes(
+                    s3,
+                    bucketName,
+                    'x-amz-meta-color',
+                    { Prefix: 'match/' },
+                );
+
+                const contents = parsedXml.ListBucketResult.Contents;
+                assert.strictEqual(contents.length, 2);
+                const keys = contents.map(c => c.Key[0]).sort();
+                assert.deepStrictEqual(keys, ['match/a', 'match/b']);
+                for (const c of contents) {
+                    const expected = c.Key[0] === 'match/a' ? 'red' : 'blue';
+                    assert.deepStrictEqual(c['x-amz-meta-color'], [expected]);
+                }
+            });
+
+            it('should not attach user-metadata elements to CommonPrefixes entries', async () => {
+                const s3 = bucketUtil.s3;
+                await s3.putObject({
+                    Bucket: bucketName, Key: 'group-a/x', Metadata: { color: 'red' },
+                }).promise();
+                await s3.putObject({
+                    Bucket: bucketName, Key: 'group-b/y', Metadata: { color: 'blue' },
+                }).promise();
+
+                const { parsedXml } = await listObjectsV2WithOptionalAttributes(
+                    s3,
+                    bucketName,
+                    'x-amz-meta-color',
+                    { Delimiter: '/' },
+                );
+
+                const result = parsedXml.ListBucketResult;
+                const prefixes = result.CommonPrefixes.map(cp => cp.Prefix[0]).sort();
+                assert.deepStrictEqual(prefixes, ['group-a/', 'group-b/']);
+                for (const cp of result.CommonPrefixes) {
+                    assert.strictEqual(cp['x-amz-meta-color'], undefined);
+                }
+                assert.ok(result.Contents === undefined || result.Contents.length === 0);
+            });
+
+            it('should apply the user-metadata element consistently across paginated responses', async () => {
+                const s3 = bucketUtil.s3;
+                for (const k of ['p1', 'p2', 'p3']) {
+                    await s3.putObject({
+                        Bucket: bucketName, Key: k, Metadata: { color: 'red' },
+                    }).promise();
+                }
+
+                const page1 = await listObjectsV2WithOptionalAttributes(
+                    s3,
+                    bucketName,
+                    'x-amz-meta-color',
+                    { MaxKeys: 2 },
+                );
+                const c1 = page1.parsedXml.ListBucketResult.Contents;
+                assert.strictEqual(c1.length, 2);
+                for (const c of c1) {
+                    assert.deepStrictEqual(c['x-amz-meta-color'], ['red']);
+                }
+
+                const nextToken = page1.parsedXml.ListBucketResult.NextContinuationToken[0];
+                assert.ok(nextToken);
+
+                const page2 = await listObjectsV2WithOptionalAttributes(
+                    s3,
+                    bucketName,
+                    'x-amz-meta-color',
+                    { MaxKeys: 2, ContinuationToken: nextToken },
+                );
+                const c2 = page2.parsedXml.ListBucketResult.Contents;
+                assert.strictEqual(c2.length, 1);
+                assert.deepStrictEqual(c2[0]['x-amz-meta-color'], ['red']);
+            });
+
+            it('should coexist Owner with user-metadata in fetch-owner=true and keep schema order', async () => {
+                const s3 = bucketUtil.s3;
+                await s3.putObject({
+                    Bucket: bucketName,
+                    Key: 'fetch-owner-object',
+                    Metadata: { color: 'red' },
+                }).promise();
+
+                const { parsedXml, rawXml } = await listObjectsV2WithOptionalAttributes(
+                    s3,
+                    bucketName,
+                    'RestoreStatus,x-amz-meta-color',
+                    { FetchOwner: true },
+                );
+
+                const contents = parsedXml.ListBucketResult.Contents;
+                assert.strictEqual(contents.length, 1);
+                assert.strictEqual(contents[0].Key[0], 'fetch-owner-object');
+                assert.ok(Array.isArray(contents[0].Owner));
+                assert.strictEqual(contents[0].Owner.length, 1);
+                assert.deepStrictEqual(contents[0]['x-amz-meta-color'], ['red']);
+                assert.strictEqual(contents[0].RestoreStatus.length, 1);
+
+                const contentsBlock = rawXml.match(/<Contents>([\s\S]*?)<\/Contents>/)[1];
+                const expectedOrder = [
+                    'Key',
+                    'LastModified',
+                    'ETag',
+                    'Size',
+                    'Owner',
+                    'RestoreStatus',
+                    'x-amz-meta-color',
+                    'StorageClass',
+                ];
+                const positions = expectedOrder.map(tag => ({
+                    tag,
+                    pos: contentsBlock.indexOf(`<${tag}>`),
+                }));
+                for (const p of positions) {
+                    assert.ok(p.pos >= 0, `expected <${p.tag}> inside <Contents>`);
+                }
+                for (let i = 1; i < positions.length; i++) {
+                    assert.ok(
+                        positions[i - 1].pos < positions[i].pos,
+                        `expected <${positions[i - 1].tag}> before <${positions[i].tag}>`,
+                    );
+                }
+            });
+
+            it('should return no Contents and no metadata elements when MaxKeys=0', async () => {
+                const s3 = bucketUtil.s3;
+                await s3.putObject({
+                    Bucket: bucketName,
+                    Key: 'will-not-list',
+                    Metadata: { color: 'red' },
+                }).promise();
+
+                const { data, parsedXml } = await listObjectsV2WithOptionalAttributes(
+                    s3,
+                    bucketName,
+                    'RestoreStatus,x-amz-meta-color',
+                    { MaxKeys: 0 },
+                );
+
+                const result = parsedXml.ListBucketResult;
+                assert.strictEqual(result.Contents, undefined);
+                assert.strictEqual(result.RestoreStatus, undefined);
+                assert.strictEqual(result['x-amz-meta-color'], undefined);
+                assert.ok(!data.Contents || data.Contents.length === 0);
+            });
+        });
+
         const describeBypass = isVaultScality && internalPortBypassBP ? describe : describe.skip;
         describeBypass('x-amz-optional-attributes header', () => {
-            let policyWithoutPermission;
-            let userWithoutPermission;
-            let s3ClientWithoutPermission;
+            let policyWithListBucketOnly;
+            let userWithListBucketOnly;
+            let s3ClientWithListBucketOnly;
 
             const iamConfig = getConfig('default', { region: 'us-east-1' });
             iamConfig.endpoint = `http://${vaultHost}:8600`;
@@ -526,35 +987,35 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         }),
                     })
                     .promise();
-                policyWithoutPermission = policyRes.Policy;
+                policyWithListBucketOnly = policyRes.Policy;
                 const userRes = await iamClient.createUser({ UserName: 'user-without-permission' }).promise();
-                userWithoutPermission = userRes.User;
+                userWithListBucketOnly = userRes.User;
                 await iamClient
                     .attachUserPolicy({
-                        UserName: userWithoutPermission.UserName,
-                        PolicyArn: policyWithoutPermission.Arn,
+                        UserName: userWithListBucketOnly.UserName,
+                        PolicyArn: policyWithListBucketOnly.Arn,
                     })
                     .promise();
 
                 const accessKeyRes = await iamClient.createAccessKey({
-                    UserName: userWithoutPermission.UserName,
+                    UserName: userWithListBucketOnly.UserName,
                 }).promise();
                 const accessKey = accessKeyRes.AccessKey;
                 const s3Config = getConfig('default', {
                     credentials: new AWS.Credentials(accessKey.AccessKeyId, accessKey.SecretAccessKey),
                 });
-                s3ClientWithoutPermission = new AWS.S3(s3Config);
+                s3ClientWithListBucketOnly = new AWS.S3(s3Config);
             });
 
             after(async () => {
                 await iamClient
                     .detachUserPolicy({
-                        UserName: userWithoutPermission.UserName,
-                        PolicyArn: policyWithoutPermission.Arn,
+                        UserName: userWithListBucketOnly.UserName,
+                        PolicyArn: policyWithListBucketOnly.Arn,
                     })
                     .promise();
-                await iamClient.deletePolicy({ PolicyArn: policyWithoutPermission.Arn }).promise();
-                await iamClient.deleteUser({ UserName: userWithoutPermission.UserName }).promise();
+                await iamClient.deletePolicy({ PolicyArn: policyWithListBucketOnly.Arn }).promise();
+                await iamClient.deleteUser({ UserName: userWithListBucketOnly.UserName }).promise();
             });
 
             // eslint-disable-next-line max-len
@@ -634,7 +1095,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
 
                 try {
                     await listObjectsV2WithOptionalAttributes(
-                        s3ClientWithoutPermission,
+                        s3ClientWithListBucketOnly,
                         Bucket,
                         'x-amz-meta-*,RestoreStatus,x-amz-meta-department',
                     );
@@ -658,7 +1119,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                     },
                 }).promise();
                 const result = await listObjectsV2WithOptionalAttributes(
-                    s3ClientWithoutPermission,
+                    s3ClientWithListBucketOnly,
                     Bucket,
                     'RestoreStatus',
                 );
@@ -667,6 +1128,273 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 assert.strictEqual(result.Contents[0].Key, 'super-power-object');
                 assert.strictEqual(result.Contents[0]['x-amz-meta-department'], undefined);
                 assert.strictEqual(result.Contents[0]['x-amz-meta-hr'], undefined);
+            });
+
+            describe('AccessDenied when scality:ListBucketOptionalObjectAttributes is not granted', () => {
+                let userOptAttrsOnly;
+                let policyOptAttrsOnly;
+                let s3ClientOptAttrsOnly;
+
+                let userNoPermissions;
+                let s3ClientNoPermissions;
+
+                let userListAllowAttrsDeny;
+                let policyListAllowAttrsDeny;
+                let s3ClientListAllowAttrsDeny;
+
+                const setupIamUser = async (userName, policyDoc) => {
+                    let policy;
+                    if (policyDoc) {
+                        const res = await iamClient.createPolicy({
+                            PolicyName: `${userName}-policy`,
+                            PolicyDocument: JSON.stringify(policyDoc),
+                        }).promise();
+                        policy = res.Policy;
+                    }
+                    const userRes = await iamClient.createUser({ UserName: userName }).promise();
+                    if (policy) {
+                        await iamClient.attachUserPolicy({
+                            UserName: userName,
+                            PolicyArn: policy.Arn,
+                        }).promise();
+                    }
+                    const accessKeyRes = await iamClient.createAccessKey({
+                        UserName: userName,
+                    }).promise();
+                    const ak = accessKeyRes.AccessKey;
+                    const s3Cfg = getConfig('default', {
+                        credentials: new AWS.Credentials(ak.AccessKeyId, ak.SecretAccessKey),
+                    });
+                    return { user: userRes.User, policy, s3: new AWS.S3(s3Cfg) };
+                };
+
+                const teardownIamUser = async (user, policy) => {
+                    if (policy) {
+                        await iamClient.detachUserPolicy({
+                            UserName: user.UserName,
+                            PolicyArn: policy.Arn,
+                        }).promise();
+                        await iamClient.deletePolicy({ PolicyArn: policy.Arn }).promise();
+                    }
+                    await iamClient.deleteUser({ UserName: user.UserName }).promise();
+                };
+
+                before(async () => {
+                    ({
+                        user: userOptAttrsOnly,
+                        policy: policyOptAttrsOnly,
+                        s3: s3ClientOptAttrsOnly,
+                    } = await setupIamUser('user-opt-attrs-only', {
+                        Version: '2012-10-17',
+                        Statement: [{
+                            Sid: 'AllowOptAttrsOnly',
+                            Effect: 'Allow',
+                            Action: ['scality:ListBucketOptionalObjectAttributes'],
+                            Resource: ['*'],
+                        }],
+                    }));
+
+                    ({
+                        user: userNoPermissions,
+                        s3: s3ClientNoPermissions,
+                    } = await setupIamUser('user-no-permissions', null));
+
+                    ({
+                        user: userListAllowAttrsDeny,
+                        policy: policyListAllowAttrsDeny,
+                        s3: s3ClientListAllowAttrsDeny,
+                    } = await setupIamUser('user-list-allow-attrs-deny', {
+                        Version: '2012-10-17',
+                        Statement: [
+                            {
+                                Sid: 'AllowS3ListBucket',
+                                Effect: 'Allow',
+                                Action: ['s3:ListBucket'],
+                                Resource: ['*'],
+                            },
+                            {
+                                Sid: 'DenyOptAttrs',
+                                Effect: 'Deny',
+                                Action: ['scality:ListBucketOptionalObjectAttributes'],
+                                Resource: ['*'],
+                            },
+                        ],
+                    }));
+                });
+
+                after(async () => {
+                    await teardownIamUser(userOptAttrsOnly, policyOptAttrsOnly);
+                    await teardownIamUser(userNoPermissions, null);
+                    await teardownIamUser(userListAllowAttrsDeny, policyListAllowAttrsDeny);
+                });
+
+                it('should reject when user has only the new permission and not s3:ListBucket', async () => {
+                    try {
+                        await listObjectsV2WithOptionalAttributes(
+                            s3ClientOptAttrsOnly,
+                            bucketName,
+                            'x-amz-meta-foo',
+                        );
+                        throw new Error('Request should have been rejected');
+                    } catch (err) {
+                        assert.strictEqual(err.statusCode, 403);
+                        assert.strictEqual(err.code, 'AccessDenied');
+                    }
+                });
+
+                it('should reject when user has neither permission', async () => {
+                    try {
+                        await listObjectsV2WithOptionalAttributes(
+                            s3ClientNoPermissions,
+                            bucketName,
+                            'x-amz-meta-foo',
+                        );
+                        throw new Error('Request should have been rejected');
+                    } catch (err) {
+                        assert.strictEqual(err.statusCode, 403);
+                        assert.strictEqual(err.code, 'AccessDenied');
+                    }
+                });
+
+                it('should reject when explicit deny on the new permission overrides allow', async () => {
+                    try {
+                        await listObjectsV2WithOptionalAttributes(
+                            s3ClientListAllowAttrsDeny,
+                            bucketName,
+                            'x-amz-meta-foo',
+                        );
+                        throw new Error('Request should have been rejected');
+                    } catch (err) {
+                        assert.strictEqual(err.statusCode, 403);
+                        assert.strictEqual(err.code, 'AccessDenied');
+                    }
+                });
+            });
+
+            describe('bucket policy evaluation of scality:ListBucketOptionalObjectAttributes', () => {
+                let userWithBothPerms;
+                let policyWithBothPerms;
+                let s3ClientWithBothPerms;
+
+                before(async () => {
+                    const userName = 'user-with-both-perms';
+                    const policyRes = await iamClient.createPolicy({
+                        PolicyName: `${userName}-policy`,
+                        PolicyDocument: JSON.stringify({
+                            Version: '2012-10-17',
+                            Statement: [
+                                {
+                                    Effect: 'Allow',
+                                    Action: ['s3:ListBucket'],
+                                    Resource: ['*'],
+                                },
+                                {
+                                    Effect: 'Allow',
+                                    Action: ['scality:ListBucketOptionalObjectAttributes'],
+                                    Resource: ['*'],
+                                },
+                            ],
+                        }),
+                    }).promise();
+                    policyWithBothPerms = policyRes.Policy;
+                    const userRes = await iamClient.createUser({ UserName: userName }).promise();
+                    userWithBothPerms = userRes.User;
+                    await iamClient.attachUserPolicy({
+                        UserName: userName,
+                        PolicyArn: policyWithBothPerms.Arn,
+                    }).promise();
+                    const accessKeyRes = await iamClient.createAccessKey({
+                        UserName: userName,
+                    }).promise();
+                    const ak = accessKeyRes.AccessKey;
+                    const s3Cfg = getConfig('default', {
+                        credentials: new AWS.Credentials(ak.AccessKeyId, ak.SecretAccessKey),
+                    });
+                    s3ClientWithBothPerms = new AWS.S3(s3Cfg);
+                });
+
+                after(async () => {
+                    await iamClient.detachUserPolicy({
+                        UserName: userWithBothPerms.UserName,
+                        PolicyArn: policyWithBothPerms.Arn,
+                    }).promise();
+                    await iamClient.deletePolicy({ PolicyArn: policyWithBothPerms.Arn }).promise();
+                    await iamClient.deleteUser({ UserName: userWithBothPerms.UserName }).promise();
+                });
+
+                afterEach(async () => {
+                    await bucketUtil.s3
+                        .deleteBucketPolicy({ Bucket: bucketName })
+                        .promise()
+                        .catch(() => {});
+                });
+
+                // eslint-disable-next-line max-len
+                it('should allow when the bucket policy supplies scality:ListBucketOptionalObjectAttributes that IAM lacks', async () => {
+                    // IAM grants s3:ListBucket only; the bucket policy supplies the missing
+                    // scality:ListBucketOptionalObjectAttributes so the request is allowed.
+                    await bucketUtil.s3.putBucketPolicy({
+                        Bucket: bucketName,
+                        Policy: JSON.stringify({
+                            Version: '2012-10-17',
+                            Statement: [{
+                                Effect: 'Allow',
+                                Principal: { AWS: userWithListBucketOnly.Arn },
+                                Action: ['scality:ListBucketOptionalObjectAttributes'],
+                                Resource: [
+                                    `arn:aws:s3:::${bucketName}`,
+                                    `arn:aws:s3:::${bucketName}/*`,
+                                ],
+                            }],
+                        }),
+                    }).promise();
+
+                    await bucketUtil.s3.putObject({
+                        Bucket: bucketName,
+                        Key: 'object-with-color',
+                        Metadata: { color: 'red' },
+                    }).promise();
+
+                    const result = await listObjectsV2WithOptionalAttributes(
+                        s3ClientWithListBucketOnly,
+                        bucketName,
+                        'x-amz-meta-color',
+                    );
+
+                    assert.ok(Array.isArray(result.Contents));
+                    assert.strictEqual(result.Contents.length, 1);
+                    assert.strictEqual(result.Contents[0].Key, 'object-with-color');
+                });
+
+                it('should reject when the bucket policy denies the new action even if IAM allows it', async () => {
+                    await bucketUtil.s3.putBucketPolicy({
+                        Bucket: bucketName,
+                        Policy: JSON.stringify({
+                            Version: '2012-10-17',
+                            Statement: [{
+                                Effect: 'Deny',
+                                Principal: { AWS: userWithBothPerms.Arn },
+                                Action: ['scality:ListBucketOptionalObjectAttributes'],
+                                Resource: [
+                                    `arn:aws:s3:::${bucketName}`,
+                                    `arn:aws:s3:::${bucketName}/*`,
+                                ],
+                            }],
+                        }),
+                    }).promise();
+
+                    try {
+                        await listObjectsV2WithOptionalAttributes(
+                            s3ClientWithBothPerms,
+                            bucketName,
+                            'x-amz-meta-foo',
+                        );
+                        throw new Error('Request should have been rejected');
+                    } catch (err) {
+                        assert.strictEqual(err.statusCode, 403);
+                        assert.strictEqual(err.code, 'AccessDenied');
+                    }
+                });
             });
         });
     });
