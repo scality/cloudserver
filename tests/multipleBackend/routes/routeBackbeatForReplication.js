@@ -109,10 +109,39 @@ describe(`backbeat routes for replication (${name})`, () => {
     });
 
     afterEach(async () => {
+        const deleteBucketWithProbeF = async (s3, bucket) => {
+            try {
+                await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+            } catch (err) {
+                if (err.name === 'BucketNotEmpty') {
+                    // eslint-disable-next-line no-console
+                    console.log('[DEBUG afterEach probeF] deleteBucket BucketNotEmpty, waiting 20s and re-listing',
+                        JSON.stringify({ bucket }));
+                    await new Promise(resolve => setTimeout(resolve, 20000));
+                    try {
+                        const data = await s3.send(new ListObjectVersionsCommand({ Bucket: bucket }));
+                        // eslint-disable-next-line no-console
+                        console.log('[DEBUG afterEach probeF] after 20s:', JSON.stringify({
+                            bucket,
+                            versions: (data.Versions || []).map(v => ({
+                                Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                            })),
+                            deleteMarkers: (data.DeleteMarkers || []).map(v => ({
+                                Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                            })),
+                        }));
+                    } catch (listErr) {
+                        // eslint-disable-next-line no-console
+                        console.log('[DEBUG afterEach probeF] re-list error:', listErr.name);
+                    }
+                }
+                throw err;
+            }
+        };
         await srcBucketUtil.empty(bucketSource);
-        await srcS3.send(new DeleteBucketCommand({ Bucket: bucketSource }));
+        await deleteBucketWithProbeF(srcS3, bucketSource);
         await dstBucketUtil.empty(bucketDestination);
-        await dstS3.send(new DeleteBucketCommand({ Bucket: bucketDestination }));
+        await deleteBucketWithProbeF(dstS3, bucketDestination);
     });
 
     it('should successfully replicate a version', done => {
