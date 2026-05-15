@@ -25,7 +25,16 @@ function _deleteVersionList(versionList, bucket, callback) {
             Key: version.Key, VersionId: version.VersionId });
     });
 
-    return s3Client.send(new DeleteObjectsCommand(params)).then(() => callback()).catch(err => callback(err));
+    return s3Client.send(new DeleteObjectsCommand(params))
+        .then(data => {
+            if (data && data.Errors && data.Errors.length > 0) {
+                // eslint-disable-next-line no-console
+                console.log('[DEBUG _deleteVersionList] deleteObjects errors:',
+                    JSON.stringify({ bucket, errors: data.Errors }));
+            }
+            return callback();
+        })
+        .catch(err => callback(err));
 }
 
 async function checkOneVersion(s3, bucket, versionId) {
@@ -55,7 +64,26 @@ function removeAllVersions(params, callback) {
                 };
                 return removeAllVersions(params, cb);
             }
-            return cb();
+            return s3Client.send(new ListObjectVersionsCommand({ Bucket: bucket }))
+                .then(remaining => {
+                    const versions = remaining.Versions || [];
+                    const markers = remaining.DeleteMarkers || [];
+                    if (versions.length > 0 || markers.length > 0) {
+                        // eslint-disable-next-line no-console
+                        console.log('[DEBUG removeAllVersions] remaining after cleanup:',
+                            JSON.stringify({
+                                bucket,
+                                versions: versions.map(v => ({
+                                    Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                                })),
+                                deleteMarkers: markers.map(v => ({
+                                    Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                                })),
+                            }));
+                    }
+                    return cb();
+                })
+                .catch(err => cb(err));
         },
     ], callback);
 }

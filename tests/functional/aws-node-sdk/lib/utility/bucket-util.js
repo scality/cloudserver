@@ -126,6 +126,9 @@ class BucketUtility {
                                 ` (versionId=${e.VersionId}): ${e.Code} - ${e.Message}`
                             );
                         }
+                        // eslint-disable-next-line no-console
+                        console.log('[DEBUG BucketUtility.empty] deleteObjects errors:',
+                            JSON.stringify({ bucket: bucketName, errors: result.Errors }));
                     }
                 } catch (err) {
                     // Older cloudserver versions reject DeleteObjects with BadDigest
@@ -149,6 +152,23 @@ class BucketUtility {
                 keyMarker = response.NextKeyMarker;
                 versionIdMarker = response.NextVersionIdMarker;
             }
+        }
+
+        const verify = await this.s3.send(new ListObjectVersionsCommand({ Bucket: bucketName }));
+        const remainingVersions = verify.Versions || [];
+        const remainingMarkers = verify.DeleteMarkers || [];
+        if (remainingVersions.length > 0 || remainingMarkers.length > 0) {
+            // eslint-disable-next-line no-console
+            console.log('[DEBUG BucketUtility.empty] remaining after cleanup:',
+                JSON.stringify({
+                    bucket: bucketName,
+                    versions: remainingVersions.map(v => ({
+                        Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                    })),
+                    deleteMarkers: remainingMarkers.map(v => ({
+                        Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                    })),
+                }));
         }
     }
 
