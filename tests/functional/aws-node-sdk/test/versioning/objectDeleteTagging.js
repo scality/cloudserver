@@ -7,6 +7,7 @@ const {
     DeleteObjectCommand,
     PutObjectTaggingCommand,
     DeleteObjectTaggingCommand,
+    ListObjectVersionsCommand,
 } = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
@@ -42,7 +43,33 @@ describe('Delete object tagging with versioning', () => {
         afterEach(async () => {
             await removeAllVersions({ Bucket: bucketName });
             await bucketUtil.empty(bucketName);
-            await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
+            try {
+                await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
+            } catch (err) {
+                if (err.name === 'BucketNotEmpty') {
+                    // eslint-disable-next-line no-console
+                    console.log('[DEBUG afterEach probeF] deleteBucket BucketNotEmpty, waiting 20s and re-listing',
+                        JSON.stringify({ bucket: bucketName }));
+                    await new Promise(resolve => setTimeout(resolve, 20000));
+                    try {
+                        const data = await s3.send(new ListObjectVersionsCommand({ Bucket: bucketName }));
+                        // eslint-disable-next-line no-console
+                        console.log('[DEBUG afterEach probeF] after 20s:', JSON.stringify({
+                            bucket: bucketName,
+                            versions: (data.Versions || []).map(v => ({
+                                Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                            })),
+                            deleteMarkers: (data.DeleteMarkers || []).map(v => ({
+                                Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                            })),
+                        }));
+                    } catch (listErr) {
+                        // eslint-disable-next-line no-console
+                        console.log('[DEBUG afterEach probeF] re-list error:', listErr.name);
+                    }
+                }
+                throw err;
+            }
         });
 
         it('should be able to delete tag set with versioning', async () => {

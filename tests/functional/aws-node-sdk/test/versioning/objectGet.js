@@ -14,7 +14,8 @@ const { CreateBucketCommand,
     PutObjectCommand,
     GetObjectCommand,
     DeleteObjectCommand,
-    PutObjectTaggingCommand
+    PutObjectTaggingCommand,
+    ListObjectVersionsCommand,
  } = require('@aws-sdk/client-s3');
 
 const key = 'objectKey';
@@ -51,7 +52,33 @@ describe('get behavior on versioning-enabled bucket', () => {
         afterEach(async () => {
             await removeAllVersions({ Bucket: bucket });
             await bucketUtil.empty(bucket);
-            await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+            try {
+                await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
+            } catch (err) {
+                if (err.name === 'BucketNotEmpty') {
+                    // eslint-disable-next-line no-console
+                    console.log('[DEBUG afterEach probeF] deleteBucket BucketNotEmpty, waiting 20s and re-listing',
+                        JSON.stringify({ bucket }));
+                    await new Promise(resolve => setTimeout(resolve, 20000));
+                    try {
+                        const data = await s3.send(new ListObjectVersionsCommand({ Bucket: bucket }));
+                        // eslint-disable-next-line no-console
+                        console.log('[DEBUG afterEach probeF] after 20s:', JSON.stringify({
+                            bucket,
+                            versions: (data.Versions || []).map(v => ({
+                                Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                            })),
+                            deleteMarkers: (data.DeleteMarkers || []).map(v => ({
+                                Key: v.Key, VersionId: v.VersionId, IsLatest: v.IsLatest,
+                            })),
+                        }));
+                    } catch (listErr) {
+                        // eslint-disable-next-line no-console
+                        console.log('[DEBUG afterEach probeF] re-list error:', listErr.name);
+                    }
+                }
+                throw err;
+            }
         });
 
         describe('behavior when only version put is a regular version', () => {
