@@ -471,6 +471,40 @@ describe('bucketGet API V2', () => {
             });
         });
 
+        it('should not duplicate elements when the header repeats tokens', done => {
+            const objectNameMeta = 'objectWithRepeatedTokens';
+            const putRequest = new DummyRequest({
+                bucketName,
+                headers: { 'x-amz-meta-color': 'red' },
+                url: `/${bucketName}/${objectNameMeta}`,
+                namespace,
+                objectKey: objectNameMeta,
+            }, postBody);
+
+            const testGetRequest = Object.assign({
+                query: {},
+                url: baseUrl,
+            }, baseGetRequest);
+            testGetRequest.headers['x-amz-optional-object-attributes'] =
+                'RestoreStatus,RestoreStatus,x-amz-meta-color,x-amz-meta-color';
+
+            async.waterfall([
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                (_, next) => objectPut(authInfo, putRequest, undefined, log, next),
+                (_, next) => bucketGet(authInfo, testGetRequest, log, next),
+                (result, _, next) => parseString(result, next),
+            ],
+            (err, result) => {
+                assert.strictEqual(err, null);
+                const content = result.ListBucketResult.Contents[0];
+                assert.strictEqual(content.Key[0], objectNameMeta);
+                assert.strictEqual(content.RestoreStatus.length, 1);
+                assert.strictEqual(content['x-amz-meta-color'].length, 1);
+                assert.strictEqual(content['x-amz-meta-color'][0], 'red');
+                done();
+            });
+        });
+
         it('should return all user metadata if wildcard requested', done => {
             const objectNameMeta = 'objectWithMetaWildcard';
             const putRequest = new DummyRequest({
