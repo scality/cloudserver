@@ -107,7 +107,7 @@ services:
     volumes:
       - /tmp/artifacts/${JOB_NAME}/sproxyd:/logs
   vault:
-    image: ghcr.io/scality/vault:7.76.0
+    image: ghcr.io/scality/vault:7.89.0
     profiles: ['vault']
     user: root
     command: sh -c "chmod 400 tests/utils/keyfile && yarn start > /artifacts/vault.log 2> /artifacts/vault-stderr.log"
@@ -122,6 +122,8 @@ services:
       - ENABLE_LOCAL_CACHE=true
       - REDIS_HOST=0.0.0.0
       - REDIS_PORT=6379
+      # TODO: drop NODE_AUTH_TOKEN when VAULT-721 is done
+      - NODE_AUTH_TOKEN=dummy
     depends_on:
       - redis
   metadata-standalone:
