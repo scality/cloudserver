@@ -4,6 +4,7 @@ const { cleanup, DummyRequestLogger } = require('../helpers');
 const { createBucket } =
     require('../../../lib/api/apiUtils/bucket/bucketCreation');
 const { makeAuthInfo } = require('../helpers');
+const metadata = require('../../../lib/metadata/wrapper');
 
 const bucketName = 'creationbucket';
 const log = new DummyRequestLogger();
@@ -19,6 +20,22 @@ describe('bucket creation', () => {
             normalBehaviorLocationConstraint, log, err => {
                 assert.ifError(err);
                 done();
+            });
+    });
+
+    it('should initialize Veeam SOSAPI capacity with available space', done => {
+        const veeamBucketName = 'creationbucket-veeam';
+        createBucket(authInfo, veeamBucketName, headers,
+            normalBehaviorLocationConstraint, log, err => {
+                assert.ifError(err);
+                metadata.getBucket(veeamBucketName, log, (err, bucket) => {
+                    assert.ifError(err);
+                    const capacityInfo =
+                        bucket._capabilities.VeeamSOSApi.CapacityInfo;
+                    assert.strictEqual(capacityInfo.Available, capacityInfo.Capacity);
+                    assert.strictEqual(capacityInfo.Used, 0n);
+                    done();
+                });
             });
     });
 
