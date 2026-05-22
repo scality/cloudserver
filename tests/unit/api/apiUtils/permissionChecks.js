@@ -48,7 +48,6 @@ describe('authInfoHelper', () => {
 });
 
 describe('checkBucketPolicy Principal logic', () => {
-    /* eslint-disable max-len */
     const tests = [
         {
             description: 'bucket owner with same canonicalID as requesters should return ALLOW',
@@ -702,7 +701,6 @@ describe('checkBucketPolicy Principal logic', () => {
             expectedResult: checkBucketPolicyResult.ALLOW,
         },
     ];
-    /* eslint-enable max-len */
 
     tests.forEach(t => {
         it(t.description, () => {
