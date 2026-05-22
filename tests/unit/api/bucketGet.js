@@ -6,6 +6,8 @@ const { parseString } = require('xml2js');
 
 const { bucketGet } = require('../../../lib/api/bucketGet');
 const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
+const { objectDelete } = require('../../../lib/api/objectDelete');
 const objectPut = require('../../../lib/api/objectPut');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
@@ -471,6 +473,40 @@ describe('bucketGet API V2', () => {
             });
         });
 
+        it('should not duplicate elements when the header repeats tokens', done => {
+            const objectNameMeta = 'objectWithRepeatedTokens';
+            const putRequest = new DummyRequest({
+                bucketName,
+                headers: { 'x-amz-meta-color': 'red' },
+                url: `/${bucketName}/${objectNameMeta}`,
+                namespace,
+                objectKey: objectNameMeta,
+            }, postBody);
+
+            const testGetRequest = Object.assign({
+                query: {},
+                url: baseUrl,
+            }, baseGetRequest);
+            testGetRequest.headers['x-amz-optional-object-attributes'] =
+                'RestoreStatus,RestoreStatus,x-amz-meta-color,x-amz-meta-color';
+
+            async.waterfall([
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                (_, next) => objectPut(authInfo, putRequest, undefined, log, next),
+                (_, next) => bucketGet(authInfo, testGetRequest, log, next),
+                (result, _, next) => parseString(result, next),
+            ],
+            (err, result) => {
+                assert.strictEqual(err, null);
+                const content = result.ListBucketResult.Contents[0];
+                assert.strictEqual(content.Key[0], objectNameMeta);
+                assert.strictEqual(content.RestoreStatus.length, 1);
+                assert.strictEqual(content['x-amz-meta-color'].length, 1);
+                assert.strictEqual(content['x-amz-meta-color'][0], 'red');
+                done();
+            });
+        });
+
         it('should return all user metadata if wildcard requested', done => {
             const objectNameMeta = 'objectWithMetaWildcard';
             const putRequest = new DummyRequest({
@@ -530,6 +566,64 @@ describe('bucketGet API V2', () => {
                 const version = result.ListVersionsResult.Version[0];
                 assert.strictEqual(version.Key[0], objectNameMeta);
                 assert.strictEqual(version['x-amz-meta-ver'][0], '1');
+                done();
+            });
+        });
+
+        it('should not include optional attributes on delete markers in versions listing', done => {
+            const objectNameMeta = 'objectWithMetaAndDeleteMarker';
+            const putRequest = new DummyRequest({
+                bucketName,
+                headers: { 'x-amz-meta-color': 'red' },
+                url: `/${bucketName}/${objectNameMeta}`,
+                namespace,
+                objectKey: objectNameMeta,
+            }, postBody);
+            const deleteRequest = new DummyRequest({
+                bucketName,
+                headers: {},
+                url: `/${bucketName}/${objectNameMeta}`,
+                namespace,
+                objectKey: objectNameMeta,
+                actionImplicitDenies: false,
+            });
+            const versioningRequest = {
+                bucketName,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: '/?versioning',
+                query: { versioning: '' },
+                actionImplicitDenies: false,
+                post: '<VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
+                    + '<Status>Enabled</Status></VersioningConfiguration>',
+            };
+
+            const testGetRequest = Object.assign({
+                query: { versions: '' },
+                url: `${baseUrl}?versions`,
+            }, baseGetRequest);
+            testGetRequest.headers['x-amz-optional-object-attributes'] =
+                'RestoreStatus,x-amz-meta-color';
+
+            async.waterfall([
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                (_, next) => bucketPutVersioning(authInfo, versioningRequest, log, next),
+                (_, next) => objectPut(authInfo, putRequest, undefined, log, next),
+                (_, next) => objectDelete(authInfo, deleteRequest, log, next),
+                (_, next) => bucketGet(authInfo, testGetRequest, log, next),
+                (result, _, next) => parseString(result, next),
+            ],
+            (err, result) => {
+                assert.strictEqual(err, null);
+                const { Version, DeleteMarker } = result.ListVersionsResult;
+                assert.strictEqual(Version.length, 1);
+                assert.strictEqual(Version[0].Key[0], objectNameMeta);
+                assert.strictEqual(Version[0]['x-amz-meta-color'][0], 'red');
+                assert.strictEqual(Version[0].RestoreStatus.length, 1);
+
+                assert.strictEqual(DeleteMarker.length, 1);
+                assert.strictEqual(DeleteMarker[0].Key[0], objectNameMeta);
+                assert.strictEqual(DeleteMarker[0]['x-amz-meta-color'], undefined);
+                assert.strictEqual(DeleteMarker[0].RestoreStatus, undefined);
                 done();
             });
         });

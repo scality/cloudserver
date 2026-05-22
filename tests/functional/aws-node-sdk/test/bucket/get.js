@@ -4,6 +4,8 @@ const {
     PutObjectCommand,
     ListObjectsCommand,
     ListObjectsV2Command,
+    PutBucketPolicyCommand,
+    DeleteBucketPolicyCommand,
     S3Client,
 } = require('@aws-sdk/client-s3');
 const { ListObjectsV2ExtendedCommand } = require('@scality/cloudserverclient');
@@ -554,9 +556,9 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
 
         const describeBypass = isVaultScality && internalPortBypassBP ? describe : describe.skip;
         describeBypass('x-amz-optional-attributes header', () => {
-            let policyWithoutPermission;
-            let userWithoutPermission;
-            let s3ClientWithoutPermission;
+            let policyWithListBucketOnly;
+            let userWithListBucketOnly;
+            let s3ClientWithListBucketOnly;
 
             const iamConfig = getConfig('default', { region: 'us-east-1' });
             iamConfig.endpoint = `http://${vaultHost}:8600`;
@@ -577,16 +579,16 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         }],
                     }),
                 }));
-                policyWithoutPermission = policyRes.Policy;
+                policyWithListBucketOnly = policyRes.Policy;
                 const userRes = await iamClient.send(new CreateUserCommand({ UserName: 'user-without-permission' }));
-                userWithoutPermission = userRes.User;
+                userWithListBucketOnly = userRes.User;
                 await iamClient.send(new AttachUserPolicyCommand({
-                    UserName: userWithoutPermission.UserName,
-                    PolicyArn: policyWithoutPermission.Arn,
+                    UserName: userWithListBucketOnly.UserName,
+                    PolicyArn: policyWithListBucketOnly.Arn,
                 }));
 
                 const accessKeyRes = await iamClient.send(new CreateAccessKeyCommand({
-                    UserName: userWithoutPermission.UserName,
+                    UserName: userWithListBucketOnly.UserName,
                 }));
                 const accessKey = accessKeyRes.AccessKey;
                 const s3Config = getConfig('default', {
@@ -595,16 +597,16 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         secretAccessKey: accessKey.SecretAccessKey,
                     },
                 });
-                s3ClientWithoutPermission = new S3Client(s3Config);
+                s3ClientWithListBucketOnly = new S3Client(s3Config);
             });
 
             after(async () => {
                 await iamClient.send(new DetachUserPolicyCommand({
-                    UserName: userWithoutPermission.UserName,
-                    PolicyArn: policyWithoutPermission.Arn,
+                    UserName: userWithListBucketOnly.UserName,
+                    PolicyArn: policyWithListBucketOnly.Arn,
                 }));
-                await iamClient.send(new DeletePolicyCommand({ PolicyArn: policyWithoutPermission.Arn }));
-                await iamClient.send(new DeleteUserCommand({ UserName: userWithoutPermission.UserName }));
+                await iamClient.send(new DeletePolicyCommand({ PolicyArn: policyWithListBucketOnly.Arn }));
+                await iamClient.send(new DeleteUserCommand({ UserName: userWithListBucketOnly.UserName }));
             });
 
             it('should return an XML if the header is set', async () => {
@@ -644,7 +646,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 }));
 
                 try {
-                    await s3ClientWithoutPermission.send(new ListObjectsV2ExtendedCommand({
+                    await s3ClientWithListBucketOnly.send(new ListObjectsV2ExtendedCommand({
                         Bucket,
                         ObjectAttributes: ['x-amz-meta-*', 'RestoreStatus', 'x-amz-meta-department'],
                     }));
@@ -670,7 +672,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         hr: 'true',
                     },
                 }));
-                const result = await s3ClientWithoutPermission.send(new ListObjectsV2ExtendedCommand({
+                const result = await s3ClientWithListBucketOnly.send(new ListObjectsV2ExtendedCommand({
                     Bucket,
                     ObjectAttributes: ['RestoreStatus'],
                 }));
@@ -679,6 +681,283 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 assert.strictEqual(result.Contents[0].Key, 'super-power-object');
                 assert.strictEqual(result.Contents[0]['x-amz-meta-department'], undefined);
                 assert.strictEqual(result.Contents[0]['x-amz-meta-hr'], undefined);
+            });
+
+            describe('AccessDenied when scality:ListBucketOptionalObjectAttributes is not granted', () => {
+                let userOptAttrsOnly;
+                let policyOptAttrsOnly;
+                let s3ClientOptAttrsOnly;
+
+                let userNoPermissions;
+                let s3ClientNoPermissions;
+
+                let userListAllowAttrsDeny;
+                let policyListAllowAttrsDeny;
+                let s3ClientListAllowAttrsDeny;
+
+                const setupIamUser = async (userName, policyDoc) => {
+                    let policy;
+                    if (policyDoc) {
+                        const res = await iamClient.send(new CreatePolicyCommand({
+                            PolicyName: `${userName}-policy`,
+                            PolicyDocument: JSON.stringify(policyDoc),
+                        }));
+                        policy = res.Policy;
+                    }
+                    const userRes = await iamClient.send(new CreateUserCommand({ UserName: userName }));
+                    if (policy) {
+                        await iamClient.send(new AttachUserPolicyCommand({
+                            UserName: userName,
+                            PolicyArn: policy.Arn,
+                        }));
+                    }
+                    const accessKeyRes = await iamClient.send(new CreateAccessKeyCommand({
+                        UserName: userName,
+                    }));
+                    const ak = accessKeyRes.AccessKey;
+                    const s3Cfg = getConfig('default', {
+                        credentials: {
+                            accessKeyId: ak.AccessKeyId,
+                            secretAccessKey: ak.SecretAccessKey,
+                        },
+                    });
+                    return { user: userRes.User, policy, s3: new S3Client(s3Cfg) };
+                };
+
+                const teardownIamUser = async (user, policy) => {
+                    if (policy) {
+                        await iamClient.send(new DetachUserPolicyCommand({
+                            UserName: user.UserName,
+                            PolicyArn: policy.Arn,
+                        }));
+                        await iamClient.send(new DeletePolicyCommand({ PolicyArn: policy.Arn }));
+                    }
+                    await iamClient.send(new DeleteUserCommand({ UserName: user.UserName }));
+                };
+
+                before(async () => {
+                    ({
+                        user: userOptAttrsOnly,
+                        policy: policyOptAttrsOnly,
+                        s3: s3ClientOptAttrsOnly,
+                    } = await setupIamUser('user-opt-attrs-only', {
+                        Version: '2012-10-17',
+                        Statement: [{
+                            Sid: 'AllowOptAttrsOnly',
+                            Effect: 'Allow',
+                            Action: ['scality:ListBucketOptionalObjectAttributes'],
+                            Resource: ['*'],
+                        }],
+                    }));
+
+                    ({
+                        user: userNoPermissions,
+                        s3: s3ClientNoPermissions,
+                    } = await setupIamUser('user-no-permissions', null));
+
+                    ({
+                        user: userListAllowAttrsDeny,
+                        policy: policyListAllowAttrsDeny,
+                        s3: s3ClientListAllowAttrsDeny,
+                    } = await setupIamUser('user-list-allow-attrs-deny', {
+                        Version: '2012-10-17',
+                        Statement: [
+                            {
+                                Sid: 'AllowS3ListBucket',
+                                Effect: 'Allow',
+                                Action: ['s3:ListBucket'],
+                                Resource: ['*'],
+                            },
+                            {
+                                Sid: 'DenyOptAttrs',
+                                Effect: 'Deny',
+                                Action: ['scality:ListBucketOptionalObjectAttributes'],
+                                Resource: ['*'],
+                            },
+                        ],
+                    }));
+                });
+
+                after(async () => {
+                    await teardownIamUser(userOptAttrsOnly, policyOptAttrsOnly);
+                    await teardownIamUser(userNoPermissions, null);
+                    await teardownIamUser(userListAllowAttrsDeny, policyListAllowAttrsDeny);
+                });
+
+                it('should reject when user has only the new permission and not s3:ListBucket', async () => {
+                    try {
+                        await s3ClientOptAttrsOnly.send(new ListObjectsV2ExtendedCommand({
+                            Bucket: bucketName,
+                            ObjectAttributes: ['x-amz-meta-foo'],
+                        }));
+                        throw new Error('Request should have been rejected');
+                    } catch (err) {
+                        if (err.message === 'Request should have been rejected') {
+                            throw err;
+                        }
+                        assert.strictEqual(err.$metadata.httpStatusCode, 403);
+                        assert.strictEqual(err.name, 'AccessDenied');
+                    }
+                });
+
+                it('should reject when user has neither permission', async () => {
+                    try {
+                        await s3ClientNoPermissions.send(new ListObjectsV2ExtendedCommand({
+                            Bucket: bucketName,
+                            ObjectAttributes: ['x-amz-meta-foo'],
+                        }));
+                        throw new Error('Request should have been rejected');
+                    } catch (err) {
+                        if (err.message === 'Request should have been rejected') {
+                            throw err;
+                        }
+                        assert.strictEqual(err.$metadata.httpStatusCode, 403);
+                        assert.strictEqual(err.name, 'AccessDenied');
+                    }
+                });
+
+                it('should reject when explicit deny on the new permission overrides allow', async () => {
+                    try {
+                        await s3ClientListAllowAttrsDeny.send(new ListObjectsV2ExtendedCommand({
+                            Bucket: bucketName,
+                            ObjectAttributes: ['x-amz-meta-foo'],
+                        }));
+                        throw new Error('Request should have been rejected');
+                    } catch (err) {
+                        if (err.message === 'Request should have been rejected') {
+                            throw err;
+                        }
+                        assert.strictEqual(err.$metadata.httpStatusCode, 403);
+                        assert.strictEqual(err.name, 'AccessDenied');
+                    }
+                });
+            });
+
+            describe('bucket policy evaluation of scality:ListBucketOptionalObjectAttributes', () => {
+                let userWithBothPerms;
+                let policyWithBothPerms;
+                let s3ClientWithBothPerms;
+
+                before(async () => {
+                    const userName = 'user-with-both-perms';
+                    const policyRes = await iamClient.send(new CreatePolicyCommand({
+                        PolicyName: `${userName}-policy`,
+                        PolicyDocument: JSON.stringify({
+                            Version: '2012-10-17',
+                            Statement: [
+                                {
+                                    Effect: 'Allow',
+                                    Action: ['s3:ListBucket'],
+                                    Resource: ['*'],
+                                },
+                                {
+                                    Effect: 'Allow',
+                                    Action: ['scality:ListBucketOptionalObjectAttributes'],
+                                    Resource: ['*'],
+                                },
+                            ],
+                        }),
+                    }));
+                    policyWithBothPerms = policyRes.Policy;
+                    const userRes = await iamClient.send(new CreateUserCommand({ UserName: userName }));
+                    userWithBothPerms = userRes.User;
+                    await iamClient.send(new AttachUserPolicyCommand({
+                        UserName: userName,
+                        PolicyArn: policyWithBothPerms.Arn,
+                    }));
+                    const accessKeyRes = await iamClient.send(new CreateAccessKeyCommand({
+                        UserName: userName,
+                    }));
+                    const ak = accessKeyRes.AccessKey;
+                    const s3Cfg = getConfig('default', {
+                        credentials: {
+                            accessKeyId: ak.AccessKeyId,
+                            secretAccessKey: ak.SecretAccessKey,
+                        },
+                    });
+                    s3ClientWithBothPerms = new S3Client(s3Cfg);
+                });
+
+                after(async () => {
+                    await iamClient.send(new DetachUserPolicyCommand({
+                        UserName: userWithBothPerms.UserName,
+                        PolicyArn: policyWithBothPerms.Arn,
+                    }));
+                    await iamClient.send(new DeletePolicyCommand({ PolicyArn: policyWithBothPerms.Arn }));
+                    await iamClient.send(new DeleteUserCommand({ UserName: userWithBothPerms.UserName }));
+                });
+
+                afterEach(async () => {
+                    await bucketUtil.s3
+                        .send(new DeleteBucketPolicyCommand({ Bucket: bucketName }))
+                        .catch(() => {});
+                });
+
+                // eslint-disable-next-line max-len
+                it('should allow when the bucket policy supplies scality:ListBucketOptionalObjectAttributes that IAM lacks', async () => {
+                    await bucketUtil.s3.send(new PutBucketPolicyCommand({
+                        Bucket: bucketName,
+                        Policy: JSON.stringify({
+                            Version: '2012-10-17',
+                            Statement: [{
+                                Effect: 'Allow',
+                                Principal: { AWS: userWithListBucketOnly.Arn },
+                                Action: ['scality:ListBucketOptionalObjectAttributes'],
+                                Resource: [
+                                    `arn:aws:s3:::${bucketName}`,
+                                    `arn:aws:s3:::${bucketName}/*`,
+                                ],
+                            }],
+                        }),
+                    }));
+
+                    await bucketUtil.s3.send(new PutObjectCommand({
+                        Bucket: bucketName,
+                        Key: 'object-with-color',
+                        Metadata: { color: 'red' },
+                    }));
+
+                    const result = await s3ClientWithListBucketOnly.send(new ListObjectsV2ExtendedCommand({
+                        Bucket: bucketName,
+                        ObjectAttributes: ['x-amz-meta-color'],
+                    }));
+
+                    assert.ok(Array.isArray(result.Contents));
+                    assert.strictEqual(result.Contents.length, 1);
+                    assert.strictEqual(result.Contents[0].Key, 'object-with-color');
+                });
+
+                it('should reject when the bucket policy denies the new action even if IAM allows it', async () => {
+                    await bucketUtil.s3.send(new PutBucketPolicyCommand({
+                        Bucket: bucketName,
+                        Policy: JSON.stringify({
+                            Version: '2012-10-17',
+                            Statement: [{
+                                Effect: 'Deny',
+                                Principal: { AWS: userWithBothPerms.Arn },
+                                Action: ['scality:ListBucketOptionalObjectAttributes'],
+                                Resource: [
+                                    `arn:aws:s3:::${bucketName}`,
+                                    `arn:aws:s3:::${bucketName}/*`,
+                                ],
+                            }],
+                        }),
+                    }));
+
+                    try {
+                        await s3ClientWithBothPerms.send(new ListObjectsV2ExtendedCommand({
+                            Bucket: bucketName,
+                            ObjectAttributes: ['x-amz-meta-foo'],
+                        }));
+                        throw new Error('Request should have been rejected');
+                    } catch (err) {
+                        if (err.message === 'Request should have been rejected') {
+                            throw err;
+                        }
+                        assert.strictEqual(err.$metadata.httpStatusCode, 403);
+                        assert.strictEqual(err.name, 'AccessDenied');
+                    }
+                });
             });
         });
     });
