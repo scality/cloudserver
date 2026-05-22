@@ -7516,6 +7516,11 @@ eslint-compat-utils@^0.5.1:
   dependencies:
     semver "^7.5.4"
 
+eslint-config-prettier@^9.1.0:
+  version "9.1.2"
+  resolved "https://registry.yarnpkg.com/eslint-config-prettier/-/eslint-config-prettier-9.1.2.tgz#90deb4fa0259592df774b600dbd1d2249a78ce91"
+  integrity sha512-iI1f+D2ViGn+uvv5HuHVUamg8ll4tN+JRHGc6IJi4TP9Kl976C57fzPXgseXNs8v0iA8aSJpHsTWjDb9QJamGQ==
+
 eslint-import-resolver-node@^0.3.9:
   version "0.3.9"
   resolved "https://registry.yarnpkg.com/eslint-import-resolver-node/-/eslint-import-resolver-node-0.3.9.tgz#d4eaac52b8a2e7c3cd1903eb00f7e053356118ac"

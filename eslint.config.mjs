@@ -1,6 +1,7 @@
 import mocha from "eslint-plugin-mocha";
 import promise from "eslint-plugin-promise";
 import n from "eslint-plugin-n";
+import prettier from "eslint-config-prettier";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import js from "@eslint/js";
@@ -74,4 +75,4 @@ export default [...compat.extends('@scality/scality'), {
         "promise/prefer-await-to-then": "warn",
         "n/callback-return": "warn",
     },
-}];
+}, prettier];
