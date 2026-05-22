@@ -11,8 +11,7 @@ const genUniqID = () => {
 
 const genBucketName = testName => `cldsrvci-${testName}-${genUniqID()}`;
 
-const defaultShouldRetry = err =>
-    err && (err.name === 'SlowDown' || err.$metadata?.httpStatusCode === 429);
+const defaultShouldRetry = err => err && (err.name === 'SlowDown' || err.$metadata?.httpStatusCode === 429);
 
 async function gcpRetryCall(callFn, retryOptions) {
     const {
@@ -33,9 +32,9 @@ async function gcpRetryCall(callFn, retryOptions) {
             }
             const delay = getDelayMs(attempt);
             process.stdout.write(
-                'Retryable error from GCP, retrying in ' +
-                `${delay}ms (attempt ${attempt + 1}): ${err}\n`);
-             
+                'Retryable error from GCP, retrying in ' + `${delay}ms (attempt ${attempt + 1}): ${err}\n`,
+            );
+
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
@@ -45,41 +44,40 @@ async function gcpRetryCall(callFn, retryOptions) {
 
 async function gcpRetry(gcpClient, command, retryOptions, cb) {
     if (cb) {
-        return callbackify(() => gcpRetry(gcpClient, command,
-            retryOptions))(cb);
+        return callbackify(() => gcpRetry(gcpClient, command, retryOptions))(cb);
     }
 
     return gcpRetryCall(() => gcpClient.send(command), retryOptions);
 }
 
-const defaultShouldRetryUpload = err => err && (
-    err.name === 'NoSuchBucket'
-    || err.name === 'NotFound'
-    || err.$metadata?.httpStatusCode === 404
-    || err.name === 'SlowDown'
-    || err.$metadata?.httpStatusCode === 429
-    || (typeof err.message === 'string'
-        && (err.message.includes('NoSuchBucket')
-            || err.message.includes('unable to complete upload')))
-);
+const defaultShouldRetryUpload = err =>
+    err &&
+    (err.name === 'NoSuchBucket' ||
+        err.name === 'NotFound' ||
+        err.$metadata?.httpStatusCode === 404 ||
+        err.name === 'SlowDown' ||
+        err.$metadata?.httpStatusCode === 429 ||
+        (typeof err.message === 'string' &&
+            (err.message.includes('NoSuchBucket') || err.message.includes('unable to complete upload'))));
 
-const defaultShouldRetryMpuCreate = err => err && (
-    err.name === 'NoSuchBucket'
-    || err.name === 'NotFound'
-    || err.$metadata?.httpStatusCode === 404
-    || err.name === 'SlowDown'
-    || err.$metadata?.httpStatusCode === 429
-);
+const defaultShouldRetryMpuCreate = err =>
+    err &&
+    (err.name === 'NoSuchBucket' ||
+        err.name === 'NotFound' ||
+        err.$metadata?.httpStatusCode === 404 ||
+        err.name === 'SlowDown' ||
+        err.$metadata?.httpStatusCode === 429);
 
 async function gcpUploadWithRetry(gcpClient, params, retryOptions) {
-    const callFn = () => new Promise((resolve, reject) => {
-        gcpClient.upload(params, (err, data) => {
-            if (err) {
-                return reject(err);
-            }
-            return resolve(data);
+    const callFn = () =>
+        new Promise((resolve, reject) => {
+            gcpClient.upload(params, (err, data) => {
+                if (err) {
+                    return reject(err);
+                }
+                return resolve(data);
+            });
         });
-    });
 
     return gcpRetryCall(callFn, {
         maxAttempts: 6,
@@ -90,10 +88,10 @@ async function gcpUploadWithRetry(gcpClient, params, retryOptions) {
 }
 
 async function gcpCreateMultipartUploadWithRetry(gcpClient, params, retryOptions) {
-    const callFn = () => new Promise((resolve, reject) => {
-        gcpClient.createMultipartUpload(params,
-            (err, res) => (err ? reject(err) : resolve(res)));
-    });
+    const callFn = () =>
+        new Promise((resolve, reject) => {
+            gcpClient.createMultipartUpload(params, (err, res) => (err ? reject(err) : resolve(res)));
+        });
     return gcpRetryCall(callFn, {
         maxAttempts: 6,
         shouldRetry: defaultShouldRetryMpuCreate,
@@ -106,52 +104,63 @@ async function gcpCreateMultipartUploadWithRetry(gcpClient, params, retryOptions
 function gcpMpuSetup(params, callback) {
     const { gcpClient, bucketNames, key, partCount, partSize } = params;
 
-    return async.waterfall([
-        next => gcpCreateMultipartUploadWithRetry(gcpClient, {
-                Bucket: bucketNames.mpu.Name,
-                Key: key,
-            })
-                .then(res => next(null, res.UploadId))
-                .catch(err => next(err)),
-        (uploadId, next) => {
-            if (partCount <= 0) {
-                return next('SkipPutPart', { uploadId });
-            }
-            const arrayData = Array.from(Array(partCount).keys());
-            const etagList = Array(partCount);
-            let count = 0;
-            return async.eachLimit(arrayData, 10,
-            (info, moveOn) => {
-                gcpClient.uploadPart({
+    return async.waterfall(
+        [
+            next =>
+                gcpCreateMultipartUploadWithRetry(gcpClient, {
                     Bucket: bucketNames.mpu.Name,
                     Key: key,
-                    UploadId: uploadId,
-                    PartNumber: info + 1,
-                    Body: Buffer.alloc(partSize),
-                    ContentLength: partSize,
-                }, (err, res) => {
-                    if (err) {
-                        return moveOn(err);
-                    }
-                    if (!(++count % 100)) {
-                        process.stdout.write(`Uploaded Parts: ${count}\n`);
-                    }
-                    etagList[info] = res.ETag;
-                    return moveOn(null);
-                });
-            }, err => {
-                next(err, { uploadId, etagList });
-            });
-        },
-    ], (err, result) => {
-        if (err) {
-            if (err === 'SkipPutPart') {
-                return callback(null, result);
+                })
+                    .then(res => next(null, res.UploadId))
+                    .catch(err => next(err)),
+            (uploadId, next) => {
+                if (partCount <= 0) {
+                    return next('SkipPutPart', { uploadId });
+                }
+                const arrayData = Array.from(Array(partCount).keys());
+                const etagList = Array(partCount);
+                let count = 0;
+                return async.eachLimit(
+                    arrayData,
+                    10,
+                    (info, moveOn) => {
+                        gcpClient.uploadPart(
+                            {
+                                Bucket: bucketNames.mpu.Name,
+                                Key: key,
+                                UploadId: uploadId,
+                                PartNumber: info + 1,
+                                Body: Buffer.alloc(partSize),
+                                ContentLength: partSize,
+                            },
+                            (err, res) => {
+                                if (err) {
+                                    return moveOn(err);
+                                }
+                                if (!(++count % 100)) {
+                                    process.stdout.write(`Uploaded Parts: ${count}\n`);
+                                }
+                                etagList[info] = res.ETag;
+                                return moveOn(null);
+                            },
+                        );
+                    },
+                    err => {
+                        next(err, { uploadId, etagList });
+                    },
+                );
+            },
+        ],
+        (err, result) => {
+            if (err) {
+                if (err === 'SkipPutPart') {
+                    return callback(null, result);
+                }
+                return callback(err);
             }
-            return callback(err);
-        }
-        return callback(null, result);
-    });
+            return callback(null, result);
+        },
+    );
 }
 
 function genPutTagObj(size, duplicate) {
@@ -200,12 +209,13 @@ function genDelTagObj(size, tagPrefix) {
 const regionalLoc = 'us-west1';
 const multiRegionalLoc = 'us';
 function setBucketClass(storageClass) {
-    const locationConstraint =
-        storageClass === 'REGIONAL' ? regionalLoc : multiRegionalLoc;
-    return '<CreateBucketConfiguration>' +
+    const locationConstraint = storageClass === 'REGIONAL' ? regionalLoc : multiRegionalLoc;
+    return (
+        '<CreateBucketConfiguration>' +
         `<LocationConstraint>${locationConstraint}</LocationConstraint>` +
         `<StorageClass>${storageClass}</StorageClass>` +
-        '</CreateBucketConfiguration>';
+        '</CreateBucketConfiguration>'
+    );
 }
 
 async function waitForBucketReady(gcpClient, bucketName, retryOptions) {

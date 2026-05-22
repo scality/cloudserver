@@ -1,6 +1,6 @@
 ---
-name: "Setup CI environment"
-description: "Setup Cloudserver CI environment"
+name: 'Setup CI environment'
+description: 'Setup Cloudserver CI environment'
 
 runs:
   using: composite

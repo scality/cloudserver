@@ -1,10 +1,12 @@
 const assert = require('assert');
 const { errors } = require('arsenal');
-const { S3Client,
+const {
+    S3Client,
     CreateBucketCommand,
     DeleteBucketCommand,
     GetBucketLifecycleConfigurationCommand,
-    PutBucketLifecycleConfigurationCommand } = require('@aws-sdk/client-s3');
+    PutBucketLifecycleConfigurationCommand,
+} = require('@aws-sdk/client-s3');
 
 const getConfig = require('../support/config');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -15,11 +17,16 @@ function assertError(err, expectedErr) {
     if (expectedErr === null) {
         assert.strictEqual(err, null, `expected no error but got '${err}'`);
     } else {
-        assert.strictEqual(err.name, expectedErr, 'incorrect error response ' +
-            `code: should be '${expectedErr}' but got '${err.name}'`);
-        assert.strictEqual(err.$metadata.httpStatusCode, errors[expectedErr].code,
-            'incorrect error status code: should be 400 but got ' +
-            `'${err.$metadata.httpStatusCode}'`);
+        assert.strictEqual(
+            err.name,
+            expectedErr,
+            'incorrect error response ' + `code: should be '${expectedErr}' but got '${err.name}'`,
+        );
+        assert.strictEqual(
+            err.$metadata.httpStatusCode,
+            errors[expectedErr].code,
+            'incorrect error status code: should be 400 but got ' + `'${err.$metadata.httpStatusCode}'`,
+        );
     }
 }
 
@@ -57,8 +64,7 @@ describe('aws-sdk test get bucket lifecycle', () => {
             }
         });
 
-        it('should return NoSuchLifecycleConfiguration error if no lifecycle ' +
-        'put to bucket', async () => {
+        it('should return NoSuchLifecycleConfiguration error if no lifecycle ' + 'put to bucket', async () => {
             try {
                 await s3.send(new GetBucketLifecycleConfigurationCommand({ Bucket: bucket }));
                 throw new Error('Expected NoSuchLifecycleConfiguration error');
@@ -68,17 +74,21 @@ describe('aws-sdk test get bucket lifecycle', () => {
         });
 
         it('should get bucket lifecycle config with top-level prefix', async () => {
-            await s3.send(new PutBucketLifecycleConfigurationCommand({
-                Bucket: bucket,
-                LifecycleConfiguration: {
-                    Rules: [{
-                        ID: 'test-id',
-                        Status: 'Enabled',
-                        Prefix: '',
-                        Expiration: { Days: 1 },
-                    }],
-                },
-            }));
+            await s3.send(
+                new PutBucketLifecycleConfigurationCommand({
+                    Bucket: bucket,
+                    LifecycleConfiguration: {
+                        Rules: [
+                            {
+                                ID: 'test-id',
+                                Status: 'Enabled',
+                                Prefix: '',
+                                Expiration: { Days: 1 },
+                            },
+                        ],
+                    },
+                }),
+            );
             const res = await s3.send(new GetBucketLifecycleConfigurationCommand({ Bucket: bucket }));
             assert.strictEqual(res.Rules.length, 1);
             assert.deepStrictEqual(res.Rules[0], {
@@ -90,17 +100,21 @@ describe('aws-sdk test get bucket lifecycle', () => {
         });
 
         it('should get bucket lifecycle config with filter prefix', async () => {
-            await s3.send(new PutBucketLifecycleConfigurationCommand({
-                Bucket: bucket,
-                LifecycleConfiguration: {
-                    Rules: [{
-                        ID: 'test-id',
-                        Status: 'Enabled',
-                        Filter: { Prefix: '' },
-                        Expiration: { Days: 1 },
-                    }],
-                },
-            }));
+            await s3.send(
+                new PutBucketLifecycleConfigurationCommand({
+                    Bucket: bucket,
+                    LifecycleConfiguration: {
+                        Rules: [
+                            {
+                                ID: 'test-id',
+                                Status: 'Enabled',
+                                Filter: { Prefix: '' },
+                                Expiration: { Days: 1 },
+                            },
+                        ],
+                    },
+                }),
+            );
             const res = await s3.send(new GetBucketLifecycleConfigurationCommand({ Bucket: bucket }));
             assert.strictEqual(res.Rules.length, 1);
             assert.deepStrictEqual(res.Rules[0], {
@@ -112,27 +126,31 @@ describe('aws-sdk test get bucket lifecycle', () => {
         });
 
         it('should get bucket lifecycle config with filter prefix and tags', async () => {
-            await s3.send(new PutBucketLifecycleConfigurationCommand({
-                Bucket: bucket,
-                LifecycleConfiguration: {
-                    Rules: [{
-                        ID: 'test-id',
-                        Status: 'Enabled',
-                        Filter: {
-                            And: {
-                                Prefix: '',
-                                Tags: [
-                                    {
-                                        Key: 'key',
-                                        Value: 'value',
+            await s3.send(
+                new PutBucketLifecycleConfigurationCommand({
+                    Bucket: bucket,
+                    LifecycleConfiguration: {
+                        Rules: [
+                            {
+                                ID: 'test-id',
+                                Status: 'Enabled',
+                                Filter: {
+                                    And: {
+                                        Prefix: '',
+                                        Tags: [
+                                            {
+                                                Key: 'key',
+                                                Value: 'value',
+                                            },
+                                        ],
                                     },
-                                ],
+                                },
+                                Expiration: { Days: 1 },
                             },
-                        },
-                        Expiration: { Days: 1 },
-                    }],
-                },
-            }));
+                        ],
+                    },
+                }),
+            );
             const res = await s3.send(new GetBucketLifecycleConfigurationCommand({ Bucket: bucket }));
             assert.strictEqual(res.Rules.length, 1);
             assert.deepStrictEqual(res.Rules[0], {

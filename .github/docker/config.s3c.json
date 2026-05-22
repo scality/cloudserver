@@ -35,25 +35,17 @@
         "dumpLevel": "error"
     },
     "replicationEndpoints": [
-        {"site": "zenko", "servers": ["127.0.0.1:9080"], "echo": false, "default": true}, 
-        {"site": "us-east-2", "servers": ["127.0.0.1:9080"]}
+        { "site": "zenko", "servers": ["127.0.0.1:9080"], "echo": false, "default": true },
+        { "site": "us-east-2", "servers": ["127.0.0.1:9080"] }
     ],
     "requests": {
         "extractClientIPFromHeader": "x-forwarded-for",
         "extractProtocolFromHeader": "x-forwarded-proto",
-        "trustedProxyCIDRs": [
-            "127.0.0.1/32",
-            "::ffff:127.0.0.1/128",
-            "127.0.0.1"
-        ],
+        "trustedProxyCIDRs": ["127.0.0.1/32", "::ffff:127.0.0.1/128", "127.0.0.1"],
         "viaProxy": true
     },
     "multiObjectDeleteEnableOptimizations": false,
-    "supportedLifecycleRules": [
-        "Expiration",
-        "NoncurrentVersionExpiration",
-        "AbortIncompleteMultipartUpload"
-    ],
+    "supportedLifecycleRules": ["Expiration", "NoncurrentVersionExpiration", "AbortIncompleteMultipartUpload"],
     "bucketNotificationDestinations": [
         {
             "resource": "target1",

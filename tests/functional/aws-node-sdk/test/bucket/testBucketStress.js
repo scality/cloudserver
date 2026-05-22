@@ -1,8 +1,10 @@
-const { S3Client,
+const {
+    S3Client,
     CreateBucketCommand,
     DeleteBucketCommand,
     PutObjectCommand,
-    DeleteObjectCommand } = require('@aws-sdk/client-s3');
+    DeleteObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const getConfig = require('../support/config');
 

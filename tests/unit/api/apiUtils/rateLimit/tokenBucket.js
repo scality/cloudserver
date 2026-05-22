@@ -145,7 +145,12 @@ describe('WorkerTokenBucket', () => {
     describe('updateLimit', () => {
         it('should update limitConfig and interval when limit changes', () => {
             const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100, burstCapacity: 1000 }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, burstCapacity: 1000 },
+                mockLog,
+            );
             const oldInterval = bucket.interval;
 
             const result = bucket.updateLimit({ limit: 200, burstCapacity: 1000 });
@@ -158,7 +163,12 @@ describe('WorkerTokenBucket', () => {
 
         it('should update limitConfig when burstCapacity changes', () => {
             const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100, burstCapacity: 1000 }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, burstCapacity: 1000 },
+                mockLog,
+            );
 
             const result = bucket.updateLimit({ limit: 100, burstCapacity: 2000 });
 
@@ -168,7 +178,12 @@ describe('WorkerTokenBucket', () => {
 
         it('should return updated: false when config is unchanged', () => {
             const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100, burstCapacity: 1000 }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, burstCapacity: 1000 },
+                mockLog,
+            );
 
             const result = bucket.updateLimit({ limit: 100, burstCapacity: 1000 });
 
@@ -178,8 +193,7 @@ describe('WorkerTokenBucket', () => {
 
     describe('refillIfNeeded', () => {
         it('should skip refill when above threshold', async () => {
-            const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100 }, mockLog);
+            const bucket = new tokenBucket.WorkerTokenBucket('bucket', 'test-bucket', 'rps', { limit: 100 }, mockLog);
             bucket.tokens = 30; // Above threshold of 20
 
             await bucket.refillIfNeeded();
@@ -189,8 +203,7 @@ describe('WorkerTokenBucket', () => {
         });
 
         it('should skip refill when already in progress', async () => {
-            const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100 }, mockLog);
+            const bucket = new tokenBucket.WorkerTokenBucket('bucket', 'test-bucket', 'rps', { limit: 100 }, mockLog);
             bucket.tokens = 10; // Below threshold
             bucket.refillInProgress = true;
 
@@ -202,7 +215,12 @@ describe('WorkerTokenBucket', () => {
 
         it('should trigger refill when below threshold', async () => {
             const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100, burstCapacity: 1000 }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, burstCapacity: 1000 },
+                mockLog,
+            );
             bucket.tokens = 10; // Below threshold of 20
 
             await bucket.refillIfNeeded();
@@ -291,11 +309,21 @@ describe('Token bucket management functions', () => {
 
         it('should update limitConfig when limit changes', () => {
             const bucket1 = tokenBucket.getTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100, source: 'bucket' }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, source: 'bucket' },
+                mockLog,
+            );
             assert.strictEqual(bucket1.limitConfig.limit, 100);
 
             const bucket2 = tokenBucket.getTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 200, source: 'bucket' }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 200, source: 'bucket' },
+                mockLog,
+            );
 
             assert.strictEqual(bucket1, bucket2);
             assert.strictEqual(bucket2.limitConfig.limit, 200);

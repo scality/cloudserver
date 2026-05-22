@@ -2,11 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
-const {
-    removeAllVersions,
-    versioningEnabled,
-    versioningSuspended,
-} = require('../../lib/utility/versioning-util.js');
+const { removeAllVersions, versioningEnabled, versioningSuspended } = require('../../lib/utility/versioning-util.js');
 const { taggingTests } = require('../../lib/utility/tagging');
 const {
     CreateBucketCommand,
@@ -17,13 +13,12 @@ const {
     GetObjectCommand,
     PutBucketVersioningCommand,
     GetObjectTaggingCommand,
-    NoSuchKey
+    NoSuchKey,
 } = require('@aws-sdk/client-s3');
 
 const date = Date.now();
 const bucket = `completempu${date}`;
 const key = 'key';
-
 
 describe('Complete MPU', () => {
     withV4(sigCfg => {
@@ -32,59 +27,68 @@ describe('Complete MPU', () => {
 
         function _completeMpuAndCheckVid(uploadId, eTag, expectedVid, cb) {
             let versionId;
-            s3.send(new CompleteMultipartUploadCommand({
-                Bucket: bucket,
-                Key: key,
-                MultipartUpload: {
-                    Parts: [{ ETag: eTag, PartNumber: 1 }],
-                },
-                UploadId: uploadId 
-            }))
-            .then(data => {
-                versionId = data.VersionId;
-                if (expectedVid) {
-                    assert.notEqual(versionId, undefined);
-                } else {
-                    assert.strictEqual(versionId, expectedVid);
-                }
-                return s3.send(new GetObjectCommand({
+            s3.send(
+                new CompleteMultipartUploadCommand({
                     Bucket: bucket,
                     Key: key,
-                }));
-            })
-            .then(data => {
-                if (versionId) {
-                    assert.strictEqual(data.VersionId, versionId);
-                }
-                cb();
-            })
-            .catch(cb);
+                    MultipartUpload: {
+                        Parts: [{ ETag: eTag, PartNumber: 1 }],
+                    },
+                    UploadId: uploadId,
+                }),
+            )
+                .then(data => {
+                    versionId = data.VersionId;
+                    if (expectedVid) {
+                        assert.notEqual(versionId, undefined);
+                    } else {
+                        assert.strictEqual(versionId, expectedVid);
+                    }
+                    return s3.send(
+                        new GetObjectCommand({
+                            Bucket: bucket,
+                            Key: key,
+                        }),
+                    );
+                })
+                .then(data => {
+                    if (versionId) {
+                        assert.strictEqual(data.VersionId, versionId);
+                    }
+                    cb();
+                })
+                .catch(cb);
         }
 
         function _initiateMpuAndPutOnePart() {
             const result = {};
-            return s3.send(new CreateMultipartUploadCommand({
-                Bucket: bucket, 
-                Key: key 
-            }))
-            .then(data => {
-                result.uploadId = data.UploadId;
-                return s3.send(new UploadPartCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    PartNumber: 1,
-                    UploadId: data.UploadId,
-                    Body: 'foo',
-                }));
-            })
-            .then(data => {
-                result.eTag = data.ETag;
-                return result;
-            })
-            .catch(err => {
-                process.stdout.write(`Error in beforeEach: ${err}\n`);
-                throw err;
-            });
+            return s3
+                .send(
+                    new CreateMultipartUploadCommand({
+                        Bucket: bucket,
+                        Key: key,
+                    }),
+                )
+                .then(data => {
+                    result.uploadId = data.UploadId;
+                    return s3.send(
+                        new UploadPartCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            PartNumber: 1,
+                            UploadId: data.UploadId,
+                            Body: 'foo',
+                        }),
+                    );
+                })
+                .then(data => {
+                    result.eTag = data.ETag;
+                    return result;
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in beforeEach: ${err}\n`);
+                    throw err;
+                });
         }
 
         beforeEach(async () => {
@@ -109,59 +113,74 @@ describe('Complete MPU', () => {
             let uploadId;
             let eTag;
 
-            beforeEach(() => _initiateMpuAndPutOnePart()
-                .then(result => {
+            beforeEach(() =>
+                _initiateMpuAndPutOnePart().then(result => {
                     uploadId = result.uploadId;
                     eTag = result.eTag;
-                })
+                }),
             );
 
-            it('should complete an MPU with fewer parts than were ' +
-                'originally put without returning a version id', done => {
-                _completeMpuAndCheckVid(uploadId, eTag, undefined, done);
-            });
+            it(
+                'should complete an MPU with fewer parts than were ' + 'originally put without returning a version id',
+                done => {
+                    _completeMpuAndCheckVid(uploadId, eTag, undefined, done);
+                },
+            );
         });
 
         describe('on bucket with enabled versioning', () => {
             let uploadId;
             let eTag;
 
-            beforeEach(() => s3.send(new PutBucketVersioningCommand({ 
-                Bucket: bucket,
-                VersioningConfiguration: versioningEnabled 
-            }))
-                .then(() => _initiateMpuAndPutOnePart())
-                .then(result => {
-                    uploadId = result.uploadId;
-                    eTag = result.eTag;
-                })
+            beforeEach(() =>
+                s3
+                    .send(
+                        new PutBucketVersioningCommand({
+                            Bucket: bucket,
+                            VersioningConfiguration: versioningEnabled,
+                        }),
+                    )
+                    .then(() => _initiateMpuAndPutOnePart())
+                    .then(result => {
+                        uploadId = result.uploadId;
+                        eTag = result.eTag;
+                    }),
             );
 
-            it('should complete an MPU with fewer parts than were ' +
-                'originally put and return a version id', done => {
-                _completeMpuAndCheckVid(uploadId, eTag, true, done);
-            });
+            it(
+                'should complete an MPU with fewer parts than were ' + 'originally put and return a version id',
+                done => {
+                    _completeMpuAndCheckVid(uploadId, eTag, true, done);
+                },
+            );
         });
 
         describe('on bucket with suspended versioning', () => {
             let uploadId;
             let eTag;
 
-            beforeEach(() => s3.send(new PutBucketVersioningCommand({ 
-                Bucket: bucket,
-                VersioningConfiguration: versioningSuspended 
-            }))
-                .then(() => _initiateMpuAndPutOnePart())
-                .then(result => {
-                    uploadId = result.uploadId;
-                    eTag = result.eTag;
-                })
+            beforeEach(() =>
+                s3
+                    .send(
+                        new PutBucketVersioningCommand({
+                            Bucket: bucket,
+                            VersioningConfiguration: versioningSuspended,
+                        }),
+                    )
+                    .then(() => _initiateMpuAndPutOnePart())
+                    .then(result => {
+                        uploadId = result.uploadId;
+                        eTag = result.eTag;
+                    }),
             );
 
-            it('should complete an MPU with fewer parts than were ' +
-                'originally put and should not return a version id', done => {
-                _completeMpuAndCheckVid(uploadId, eTag, undefined, done);
-            });
+            it(
+                'should complete an MPU with fewer parts than were ' +
+                    'originally put and should not return a version id',
+                done => {
+                    _completeMpuAndCheckVid(uploadId, eTag, undefined, done);
+                },
+            );
         });
 
         describe('with tags set on initiation', () => {
@@ -169,78 +188,91 @@ describe('Complete MPU', () => {
 
             taggingTests.forEach(test => {
                 it(test.it, done => {
-                    const [key, value] =
-                        [test.tag.key, test.tag.value].map(encodeURIComponent);
+                    const [key, value] = [test.tag.key, test.tag.value].map(encodeURIComponent);
                     const tagging = `${key}=${value}`;
 
-                    async.waterfall([
-                        next => {
-                            s3.send(new CreateMultipartUploadCommand({
-                                Bucket: bucket,
-                                Key: tagKey,
-                                Tagging: tagging,
-                            }))
-                            .then(data => {
-                                if (test.error) {
-                                    return next(new Error('Expected error but got success'));
-                                }
-                                return next(null, data.UploadId);
-                            })
-                            .catch(err => {
-                                if (test.error) {
-                                    assert.strictEqual(err.name, test.error);
-                                    assert.strictEqual(err.$metadata.httpStatusCode, 400);
-                                    return next('expected');
-                                }
-                                return next(err);
-                            });
-                        },
-                        (uploadId, next) => {
-                            s3.send(new UploadPartCommand({
-                                Bucket: bucket,
-                                Key: tagKey,
-                                PartNumber: 1,
-                                UploadId: uploadId,
-                                Body: 'foo',
-                            }))
-                            .then(data => next(null, data.ETag, uploadId))
-                            .catch(err => next(err));
-                        },
-                        (eTag, uploadId, next) => {
-                            s3.send(new CompleteMultipartUploadCommand({
-                                Bucket: bucket,
-                                Key: tagKey,
-                                UploadId: uploadId,
-                                MultipartUpload: {
-                                    Parts: [{
-                                        ETag: eTag,
+                    async.waterfall(
+                        [
+                            next => {
+                                s3.send(
+                                    new CreateMultipartUploadCommand({
+                                        Bucket: bucket,
+                                        Key: tagKey,
+                                        Tagging: tagging,
+                                    }),
+                                )
+                                    .then(data => {
+                                        if (test.error) {
+                                            return next(new Error('Expected error but got success'));
+                                        }
+                                        return next(null, data.UploadId);
+                                    })
+                                    .catch(err => {
+                                        if (test.error) {
+                                            assert.strictEqual(err.name, test.error);
+                                            assert.strictEqual(err.$metadata.httpStatusCode, 400);
+                                            return next('expected');
+                                        }
+                                        return next(err);
+                                    });
+                            },
+                            (uploadId, next) => {
+                                s3.send(
+                                    new UploadPartCommand({
+                                        Bucket: bucket,
+                                        Key: tagKey,
                                         PartNumber: 1,
-                                    }],
-                                },
-                            }))
-                            .then(() => next())
-                            .catch(err => next(err));
-                        },
-                    ], err => {
-                        if (err === 'expected') {
-                            done();
-                        } else {
-                            assert.ifError(err);
-                            s3.send(new GetObjectTaggingCommand({
-                                Bucket: bucket,
-                                Key: tagKey,
-                            }))
-                            .then(tagData => {
-                                assert.deepStrictEqual(tagData.TagSet,
-                                    [{
-                                        Key: test.tag.key,
-                                        Value: test.tag.value,
-                                    }]);
+                                        UploadId: uploadId,
+                                        Body: 'foo',
+                                    }),
+                                )
+                                    .then(data => next(null, data.ETag, uploadId))
+                                    .catch(err => next(err));
+                            },
+                            (eTag, uploadId, next) => {
+                                s3.send(
+                                    new CompleteMultipartUploadCommand({
+                                        Bucket: bucket,
+                                        Key: tagKey,
+                                        UploadId: uploadId,
+                                        MultipartUpload: {
+                                            Parts: [
+                                                {
+                                                    ETag: eTag,
+                                                    PartNumber: 1,
+                                                },
+                                            ],
+                                        },
+                                    }),
+                                )
+                                    .then(() => next())
+                                    .catch(err => next(err));
+                            },
+                        ],
+                        err => {
+                            if (err === 'expected') {
                                 done();
-                            })
-                            .catch(err => done(err));
-                        }
-                    });
+                            } else {
+                                assert.ifError(err);
+                                s3.send(
+                                    new GetObjectTaggingCommand({
+                                        Bucket: bucket,
+                                        Key: tagKey,
+                                    }),
+                                )
+                                    .then(tagData => {
+                                        assert.deepStrictEqual(tagData.TagSet, [
+                                            {
+                                                Key: test.tag.key,
+                                                Value: test.tag.value,
+                                            },
+                                        ]);
+                                        done();
+                                    })
+                                    .catch(err => done(err));
+                            }
+                        },
+                    );
                 });
             });
         });
@@ -249,37 +281,41 @@ describe('Complete MPU', () => {
             let uploadId;
             let eTag;
 
-            beforeEach(() => _initiateMpuAndPutOnePart()
-                .then(result => {
+            beforeEach(() =>
+                _initiateMpuAndPutOnePart().then(result => {
                     uploadId = result.uploadId;
                     eTag = result.eTag;
-                })
+                }),
             );
 
             it('should complete the MPU successfully and leave a readable object', done => {
-                async.parallel([
-                    doneReUpload => {
-                        s3.send(new UploadPartCommand({
-                            Bucket: bucket,
-                            Key: key,
-                            PartNumber: 1,
-                            UploadId: uploadId,
-                            Body: 'foo',
-                        }))
-                        .then(() => doneReUpload())
-                        .catch(err => {
-                            // in case the CompleteMPU finished earlier,
-                            // we may get a NoSuchKey error, so just
-                            // ignore it
-                            if (err instanceof NoSuchKey) {
-                                return doneReUpload();
-                            }
-                            return doneReUpload(err);
-                        });
-                    },
-                    doneComplete => _completeMpuAndCheckVid(
-                        uploadId, eTag, undefined, doneComplete),
-                ], done);
+                async.parallel(
+                    [
+                        doneReUpload => {
+                            s3.send(
+                                new UploadPartCommand({
+                                    Bucket: bucket,
+                                    Key: key,
+                                    PartNumber: 1,
+                                    UploadId: uploadId,
+                                    Body: 'foo',
+                                }),
+                            )
+                                .then(() => doneReUpload())
+                                .catch(err => {
+                                    // in case the CompleteMPU finished earlier,
+                                    // we may get a NoSuchKey error, so just
+                                    // ignore it
+                                    if (err instanceof NoSuchKey) {
+                                        return doneReUpload();
+                                    }
+                                    return doneReUpload(err);
+                                });
+                        },
+                        doneComplete => _completeMpuAndCheckVid(uploadId, eTag, undefined, doneComplete),
+                    ],
+                    done,
+                );
             });
         });
     });

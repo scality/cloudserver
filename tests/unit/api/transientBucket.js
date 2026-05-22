@@ -14,15 +14,12 @@ const bucketPutWebsite = require('../../../lib/api/bucketPutWebsite');
 const bucketDelete = require('../../../lib/api/bucketDelete');
 const bucketDeleteCors = require('../../../lib/api/bucketDeleteCors');
 const bucketDeleteWebsite = require('../../../lib/api/bucketDeleteWebsite');
-const completeMultipartUpload
-    = require('../../../lib/api/completeMultipartUpload');
+const completeMultipartUpload = require('../../../lib/api/completeMultipartUpload');
 const { config } = require('../../../lib/Config');
 const constants = require('../../../constants');
 const DummyRequest = require('../DummyRequest');
-const initiateMultipartUpload
-    = require('../../../lib/api/initiateMultipartUpload');
-const { cleanup, createAlteredRequest, DummyRequestLogger, makeAuthInfo }
-    = require('../helpers');
+const initiateMultipartUpload = require('../../../lib/api/initiateMultipartUpload');
+const { cleanup, createAlteredRequest, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const listMultipartUploads = require('../../../lib/api/listMultipartUploads');
 const listParts = require('../../../lib/api/listParts');
 const metadata = require('../metadataswitch');
@@ -63,18 +60,15 @@ const serviceGetRequest = {
 
 const userBucketOwner = 'admin';
 const creationDate = new Date().toJSON();
-const usersBucket = new BucketInfo(usersBucketName,
-    userBucketOwner, userBucketOwner, creationDate);
+const usersBucket = new BucketInfo(usersBucketName, userBucketOwner, userBucketOwner, creationDate);
 const locationConstraint = 'us-east-1';
 
 describe('transient bucket handling', () => {
     beforeEach(done => {
         cleanup();
-        const bucketMD = new BucketInfo(bucketName, canonicalID,
-            authInfo.getAccountDisplayName(), creationDate);
+        const bucketMD = new BucketInfo(bucketName, canonicalID, authInfo.getAccountDisplayName(), creationDate);
         bucketMD.addTransientFlag();
-        bucketMD.setSpecificAcl(otherAccountAuthInfo.getCanonicalID(),
-            'WRITE_ACP');
+        bucketMD.setSpecificAcl(otherAccountAuthInfo.getCanonicalID(), 'WRITE_ACP');
         bucketMD.setLocationConstraint(locationConstraint);
         metadata.createBucket(bucketName, bucketMD, log, () => {
             metadata.createBucket(usersBucketName, usersBucket, log, () => {
@@ -83,86 +77,108 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('putBucket request should complete creation of transient bucket if ' +
-        'request is from same account that originally put', done => {
-        bucketPut(authInfo, baseTestRequest, log, err => {
-            assert.ifError(err);
-            serviceGet(authInfo, serviceGetRequest, log, (err, data) => {
+    it(
+        'putBucket request should complete creation of transient bucket if ' +
+            'request is from same account that originally put',
+        done => {
+            bucketPut(authInfo, baseTestRequest, log, err => {
+                assert.ifError(err);
+                serviceGet(authInfo, serviceGetRequest, log, (err, data) => {
+                    parseString(data, (err, result) => {
+                        assert.strictEqual(result.ListAllMyBucketsResult.Buckets[0].Bucket.length, 1);
+                        assert.strictEqual(result.ListAllMyBucketsResult.Buckets[0].Bucket[0].Name[0], bucketName);
+                        done();
+                    });
+                });
+            });
+        },
+    );
+
+    it('putBucket request should return error if ' + 'transient bucket created by different account', done => {
+        bucketPut(otherAccountAuthInfo, baseTestRequest, log, err => {
+            assert.strictEqual(err.is.BucketAlreadyExists, true);
+            serviceGet(otherAccountAuthInfo, serviceGetRequest, log, (err, data) => {
                 parseString(data, (err, result) => {
-                    assert.strictEqual(result.ListAllMyBucketsResult
-                        .Buckets[0].Bucket.length, 1);
-                    assert.strictEqual(result.ListAllMyBucketsResult
-                        .Buckets[0].Bucket[0].Name[0], bucketName);
+                    assert.strictEqual(result.ListAllMyBucketsResult.Buckets[0], '');
                     done();
                 });
             });
         });
     });
 
-    it('putBucket request should return error if ' +
-        'transient bucket created by different account', done => {
-        bucketPut(otherAccountAuthInfo, baseTestRequest, log, err => {
-            assert.strictEqual(err.is.BucketAlreadyExists, true);
-            serviceGet(otherAccountAuthInfo, serviceGetRequest,
-                log, (err, data) => {
-                    parseString(data, (err, result) => {
-                        assert.strictEqual(result.ListAllMyBucketsResult
-                        .Buckets[0], '');
-                        done();
-                    });
+    it(
+        'ACLs from clean up putBucket request should overwrite ACLs from ' +
+            'original failed request that resulted in transient state',
+        done => {
+            const alteredRequest = createAlteredRequest(
+                {
+                    'x-amz-acl': 'public-read',
+                },
+                'headers',
+                baseTestRequest,
+                baseTestRequest.headers,
+            );
+            bucketPut(authInfo, alteredRequest, log, err => {
+                assert.ifError(err);
+                metadata.getBucket(bucketName, log, (err, data) => {
+                    assert.strictEqual(data._transient, false);
+                    assert.strictEqual(data._acl.Canned, 'public-read');
+                    assert.strictEqual(data._owner, authInfo.getCanonicalID());
+                    done();
                 });
-        });
-    });
-
-    it('ACLs from clean up putBucket request should overwrite ACLs from ' +
-        'original failed request that resulted in transient state', done => {
-        const alteredRequest = createAlteredRequest({
-            'x-amz-acl': 'public-read' }, 'headers',
-            baseTestRequest, baseTestRequest.headers);
-        bucketPut(authInfo, alteredRequest, log, err => {
-            assert.ifError(err);
-            metadata.getBucket(bucketName, log, (err, data) => {
-                assert.strictEqual(data._transient, false);
-                assert.strictEqual(data._acl.Canned, 'public-read');
-                assert.strictEqual(data._owner, authInfo.getCanonicalID());
-                done();
             });
-        });
-    });
+        },
+    );
 
-    it('putBucketACL request should complete creation of transient bucket if ' +
-        'request is from same account that originally put', done => {
-        const putACLRequest = createAlteredRequest({
-            'x-amz-acl': 'public-read' }, 'headers',
-            baseTestRequest, baseTestRequest.headers);
-        putACLRequest.url = '/?acl';
-        putACLRequest.query = { acl: '' };
-        bucketPutACL(authInfo, putACLRequest, log, err => {
-            assert.ifError(err);
-            metadata.getBucket(bucketName, log, (err, data) => {
-                assert.strictEqual(data._transient, false);
-                assert.strictEqual(data._acl.Canned, 'public-read');
-                assert.strictEqual(data._owner, authInfo.getCanonicalID());
-                done();
+    it(
+        'putBucketACL request should complete creation of transient bucket if ' +
+            'request is from same account that originally put',
+        done => {
+            const putACLRequest = createAlteredRequest(
+                {
+                    'x-amz-acl': 'public-read',
+                },
+                'headers',
+                baseTestRequest,
+                baseTestRequest.headers,
+            );
+            putACLRequest.url = '/?acl';
+            putACLRequest.query = { acl: '' };
+            bucketPutACL(authInfo, putACLRequest, log, err => {
+                assert.ifError(err);
+                metadata.getBucket(bucketName, log, (err, data) => {
+                    assert.strictEqual(data._transient, false);
+                    assert.strictEqual(data._acl.Canned, 'public-read');
+                    assert.strictEqual(data._owner, authInfo.getCanonicalID());
+                    done();
+                });
             });
-        });
-    });
+        },
+    );
 
-    it('putBucketACL request should complete creation of transient bucket if ' +
-        'request is from another authorized account', done => {
-        const putACLRequest = createAlteredRequest({
-            'x-amz-acl': 'public-read' }, 'headers',
-            baseTestRequest, baseTestRequest.headers);
-        bucketPutACL(otherAccountAuthInfo, putACLRequest, log, err => {
-            assert.ifError(err);
-            metadata.getBucket(bucketName, log, (err, data) => {
-                assert.strictEqual(data._transient, false);
-                assert.strictEqual(data._acl.Canned, 'public-read');
-                assert.strictEqual(data._owner, authInfo.getCanonicalID());
-                done();
+    it(
+        'putBucketACL request should complete creation of transient bucket if ' +
+            'request is from another authorized account',
+        done => {
+            const putACLRequest = createAlteredRequest(
+                {
+                    'x-amz-acl': 'public-read',
+                },
+                'headers',
+                baseTestRequest,
+                baseTestRequest.headers,
+            );
+            bucketPutACL(otherAccountAuthInfo, putACLRequest, log, err => {
+                assert.ifError(err);
+                metadata.getBucket(bucketName, log, (err, data) => {
+                    assert.strictEqual(data._transient, false);
+                    assert.strictEqual(data._acl.Canned, 'public-read');
+                    assert.strictEqual(data._owner, authInfo.getCanonicalID());
+                    done();
+                });
             });
-        });
-    });
+        },
+    );
 
     describe('objectPut on a transient bucket', () => {
         const objName = 'objectName';
@@ -172,10 +188,8 @@ describe('transient bucket handling', () => {
             });
         });
 
-        it('objectPut request should complete creation of transient bucket',
-        done => {
-            const setUpRequest = createAlteredRequest({}, 'headers',
-            baseTestRequest, baseTestRequest.headers);
+        it('objectPut request should complete creation of transient bucket', done => {
+            const setUpRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
             setUpRequest.objectKey = objName;
             const postBody = Buffer.from('I am a body', 'utf8');
             const md5Hash = crypto.createHash('md5');
@@ -186,12 +200,11 @@ describe('transient bucket handling', () => {
                 metadata.getBucket(bucketName, log, (err, data) => {
                     assert.strictEqual(data._transient, false);
                     assert.strictEqual(data._owner, authInfo.getCanonicalID());
-                    metadata.getObjectMD(bucketName, objName, {}, log,
-                        (err, obj) => {
-                            assert.ifError(err);
-                            assert.strictEqual(obj['content-md5'], etag);
-                            done();
-                        });
+                    metadata.getObjectMD(bucketName, objName, {}, log, (err, obj) => {
+                        assert.ifError(err);
+                        assert.strictEqual(obj['content-md5'], etag);
+                        done();
+                    });
                 });
             });
         });
@@ -200,19 +213,15 @@ describe('transient bucket handling', () => {
     describe('initiateMultipartUpload on a transient bucket', () => {
         const objName = 'objectName';
         after(done => {
-            metadata.deleteObjectMD(`${constants.mpuBucketPrefix}` +
-                `${bucketName}`, objName, {}, log, () => {
-                    metadata.deleteBucket(`${constants.mpuBucketPrefix}` +
-                        `${bucketName}`, log, () => {
-                            done();
-                        });
+            metadata.deleteObjectMD(`${constants.mpuBucketPrefix}` + `${bucketName}`, objName, {}, log, () => {
+                metadata.deleteBucket(`${constants.mpuBucketPrefix}` + `${bucketName}`, log, () => {
+                    done();
                 });
+            });
         });
 
-        it('initiateMultipartUpload request should complete ' +
-            'creation of transient bucket', done => {
-            const initiateRequest = createAlteredRequest({}, 'headers',
-            baseTestRequest, baseTestRequest.headers);
+        it('initiateMultipartUpload request should complete ' + 'creation of transient bucket', done => {
+            const initiateRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
             initiateRequest.objectKey = objName;
             initiateRequest.url = `/${objName}?uploads`;
             initiateMultipartUpload(authInfo, initiateRequest, log, err => {
@@ -220,21 +229,22 @@ describe('transient bucket handling', () => {
                 metadata.getBucket(bucketName, log, (err, data) => {
                     assert.strictEqual(data._transient, false);
                     assert.strictEqual(data._owner, authInfo.getCanonicalID());
-                    metadata.listObject(`${constants.mpuBucketPrefix}` +
-                        `${bucketName}`,
+                    metadata.listObject(
+                        `${constants.mpuBucketPrefix}` + `${bucketName}`,
                         { prefix: `overview${constants.splitter}${objName}` },
-                        log, (err, results) => {
+                        log,
+                        (err, results) => {
                             assert.ifError(err);
                             assert.strictEqual(results.Contents.length, 1);
                             done();
-                        });
+                        },
+                    );
                 });
             });
         });
     });
 
-    it('deleteBucket request should delete transient bucket if ' +
-        'request is from owner', done => {
+    it('deleteBucket request should delete transient bucket if ' + 'request is from owner', done => {
         bucketDelete(authInfo, baseTestRequest, log, err => {
             assert.ifError(err);
             metadata.getBucket(bucketName, log, err => {
@@ -244,166 +254,140 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('deleteBucket request should return error if ' +
-        'request is not from owner', done => {
-        bucketDelete(otherAccountAuthInfo, baseTestRequest,
-            log, err => {
-                assert.strictEqual(err.is.AccessDenied, true);
-                done();
-            });
+    it('deleteBucket request should return error if ' + 'request is not from owner', done => {
+        bucketDelete(otherAccountAuthInfo, baseTestRequest, log, err => {
+            assert.strictEqual(err.is.AccessDenied, true);
+            done();
+        });
     });
 
-    it('bucketGet request on transient bucket should return NoSuchBucket' +
-        'error', done => {
-        const bucketGetRequest = createAlteredRequest({}, 'headers',
-            baseTestRequest, baseTestRequest.headers);
+    it('bucketGet request on transient bucket should return NoSuchBucket' + 'error', done => {
+        const bucketGetRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         bucketGetRequest.url = `/${bucketName}`;
         bucketGetRequest.query = {};
-        bucketGet(authInfo, bucketGetRequest,
-            log, err => {
-                assert.strictEqual(err.is.NoSuchBucket, true);
-                done();
-            });
+        bucketGet(authInfo, bucketGetRequest, log, err => {
+            assert.strictEqual(err.is.NoSuchBucket, true);
+            done();
+        });
     });
 
-    it('bucketGetACL request on transient bucket should return NoSuchBucket' +
-        'error', done => {
-        const bucketGetACLRequest = createAlteredRequest({}, 'headers',
-            baseTestRequest, baseTestRequest.headers);
+    it('bucketGetACL request on transient bucket should return NoSuchBucket' + 'error', done => {
+        const bucketGetACLRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         bucketGetACLRequest.url = '/?acl';
         bucketGetACLRequest.query = { acl: '' };
-        bucketGetACL(authInfo, bucketGetACLRequest,
-            log, err => {
-                assert.strictEqual(err.is.NoSuchBucket, true);
-                done();
-            });
+        bucketGetACL(authInfo, bucketGetACLRequest, log, err => {
+            assert.strictEqual(err.is.NoSuchBucket, true);
+            done();
+        });
     });
 
-    it('bucketGetCors request on transient bucket should return ' +
-        'NoSuchBucket error', done => {
+    it('bucketGetCors request on transient bucket should return ' + 'NoSuchBucket error', done => {
         bucketGetCors(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('bucketPutCors request on transient bucket should return ' +
-        'NoSuchBucket error', done => {
-        const bucketPutCorsRequest = createAlteredRequest({}, 'headers',
-            baseTestRequest, baseTestRequest.headers);
-        bucketPutCorsRequest.post = '<CORSConfiguration><CORSRule>' +
-        '<AllowedMethod>PUT</AllowedMethod>' +
-        '<AllowedOrigin>http://www.example.com</AllowedOrigin>' +
-        '</CORSRule></CORSConfiguration>';
-        bucketPutCorsRequest.headers['content-md5'] = crypto.createHash('md5')
-            .update(bucketPutCorsRequest.post, 'utf8').digest('base64');
+    it('bucketPutCors request on transient bucket should return ' + 'NoSuchBucket error', done => {
+        const bucketPutCorsRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
+        bucketPutCorsRequest.post =
+            '<CORSConfiguration><CORSRule>' +
+            '<AllowedMethod>PUT</AllowedMethod>' +
+            '<AllowedOrigin>http://www.example.com</AllowedOrigin>' +
+            '</CORSRule></CORSConfiguration>';
+        bucketPutCorsRequest.headers['content-md5'] = crypto
+            .createHash('md5')
+            .update(bucketPutCorsRequest.post, 'utf8')
+            .digest('base64');
         bucketPutCors(authInfo, bucketPutCorsRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('bucketDeleteCors request on transient bucket should return ' +
-        'NoSuchBucket error', done => {
+    it('bucketDeleteCors request on transient bucket should return ' + 'NoSuchBucket error', done => {
         bucketDeleteCors(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('bucketGetWebsite request on transient bucket should return ' +
-        'NoSuchBucket error', done => {
+    it('bucketGetWebsite request on transient bucket should return ' + 'NoSuchBucket error', done => {
         bucketGetWebsite(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('bucketPutWebsite request on transient bucket should return ' +
-        'NoSuchBucket error', done => {
-        const bucketPutWebsiteRequest = createAlteredRequest({}, 'headers',
-            baseTestRequest, baseTestRequest.headers);
-        bucketPutWebsiteRequest.post = '<WebsiteConfiguration>' +
-        '<IndexDocument><Suffix>index.html</Suffix></IndexDocument>' +
-        '</WebsiteConfiguration>';
+    it('bucketPutWebsite request on transient bucket should return ' + 'NoSuchBucket error', done => {
+        const bucketPutWebsiteRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
+        bucketPutWebsiteRequest.post =
+            '<WebsiteConfiguration>' +
+            '<IndexDocument><Suffix>index.html</Suffix></IndexDocument>' +
+            '</WebsiteConfiguration>';
         bucketPutWebsite(authInfo, bucketPutWebsiteRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('bucketDeleteWebsite request on transient bucket should return ' +
-        'NoSuchBucket error', done => {
+    it('bucketDeleteWebsite request on transient bucket should return ' + 'NoSuchBucket error', done => {
         bucketDeleteWebsite(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('bucketHead request on transient bucket should return NoSuchBucket' +
-        'error', done => {
-        bucketHead(authInfo, baseTestRequest,
-            log, err => {
-                assert.strictEqual(err.is.NoSuchBucket, true);
-                done();
-            });
+    it('bucketHead request on transient bucket should return NoSuchBucket' + 'error', done => {
+        bucketHead(authInfo, baseTestRequest, log, err => {
+            assert.strictEqual(err.is.NoSuchBucket, true);
+            done();
+        });
     });
 
-    it('completeMultipartUpload request on transient bucket should ' +
-        'return NoSuchUpload error', done => {
-        const completeMpuRequest = createAlteredRequest({}, 'headers',
-            baseTestRequest, baseTestRequest.headers);
+    it('completeMultipartUpload request on transient bucket should ' + 'return NoSuchUpload error', done => {
+        const completeMpuRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         const uploadId = '5555';
         completeMpuRequest.objectKey = 'objectName';
         completeMpuRequest.query = { uploadId };
-        completeMultipartUpload(authInfo, completeMpuRequest,
-            log, err => {
-                assert.strictEqual(err.is.NoSuchUpload, true);
-                done();
-            });
+        completeMultipartUpload(authInfo, completeMpuRequest, log, err => {
+            assert.strictEqual(err.is.NoSuchUpload, true);
+            done();
+        });
     });
 
-    it('listParts request on transient bucket should ' +
-        'return NoSuchUpload error', done => {
-        const listRequest = createAlteredRequest({}, 'headers',
-            baseTestRequest, baseTestRequest.headers);
+    it('listParts request on transient bucket should ' + 'return NoSuchUpload error', done => {
+        const listRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         const uploadId = '5555';
         listRequest.objectKey = 'objectName';
         listRequest.query = { uploadId };
-        listParts(authInfo, listRequest,
-            log, err => {
-                assert.strictEqual(err.is.NoSuchUpload, true);
-                done();
-            });
+        listParts(authInfo, listRequest, log, err => {
+            assert.strictEqual(err.is.NoSuchUpload, true);
+            done();
+        });
     });
 
     describe('multipartDelete request on a transient bucket', () => {
-        const deleteRequest = createAlteredRequest({}, 'headers',
-            baseTestRequest, baseTestRequest.headers);
+        const deleteRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         const uploadId = '5555';
         deleteRequest.objectKey = 'objectName';
         deleteRequest.query = { uploadId };
-        const originalLegacyAWSBehavior =
-            config.locationConstraints[locationConstraint].legacyAwsBehavior;
+        const originalLegacyAWSBehavior = config.locationConstraints[locationConstraint].legacyAwsBehavior;
 
         after(done => {
-            config.locationConstraints[locationConstraint].legacyAwsBehavior =
-                originalLegacyAWSBehavior;
+            config.locationConstraints[locationConstraint].legacyAwsBehavior = originalLegacyAWSBehavior;
             done();
         });
 
-        it('should return NoSuchUpload error if legacyAwsBehavior is enabled',
-        done => {
-            config.locationConstraints[locationConstraint].
-                legacyAwsBehavior = true;
+        it('should return NoSuchUpload error if legacyAwsBehavior is enabled', done => {
+            config.locationConstraints[locationConstraint].legacyAwsBehavior = true;
             multipartDelete(authInfo, deleteRequest, log, err => {
                 assert.strictEqual(err.is.NoSuchUpload, true);
                 done();
             });
         });
 
-        it('should return no error if legacyAwsBehavior is not enabled',
-        done => {
+        it('should return no error if legacyAwsBehavior is not enabled', done => {
             config.locationConstraints[locationConstraint].legacyAwsBehavior = false;
             multipartDelete(authInfo, deleteRequest, log, err => {
                 assert.ifError(err);
@@ -412,75 +396,59 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('objectPutPart request on transient bucket should ' +
-        'return NoSuchUpload error', done => {
-        const putPartRequest = createAlteredRequest({}, 'headers',
-            baseTestRequest, baseTestRequest.headers);
+    it('objectPutPart request on transient bucket should ' + 'return NoSuchUpload error', done => {
+        const putPartRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         const uploadId = '5555';
         putPartRequest.objectKey = 'objectName';
         putPartRequest.query = {
             uploadId,
-            partNumber: '1' };
-        objectPutPart(authInfo, putPartRequest, undefined,
-            log, err => {
-                assert.strictEqual(err.is.NoSuchUpload, true);
-                done();
-            });
+            partNumber: '1',
+        };
+        objectPutPart(authInfo, putPartRequest, undefined, log, err => {
+            assert.strictEqual(err.is.NoSuchUpload, true);
+            done();
+        });
     });
 
-    it('list multipartUploads request on transient bucket should ' +
-        'return NoSuchBucket error', done => {
-        const listRequest = createAlteredRequest({}, 'headers',
-            baseTestRequest, baseTestRequest.headers);
+    it('list multipartUploads request on transient bucket should ' + 'return NoSuchBucket error', done => {
+        const listRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         listRequest.query = {};
-        listMultipartUploads(authInfo, listRequest,
-            log, err => {
-                assert.strictEqual(err.is.NoSuchBucket, true);
-                done();
-            });
-    });
-
-    it('objectGet request on transient bucket should' +
-        'return NoSuchBucket error',
-        done => {
-            objectGet(authInfo, baseTestRequest, false,
-            log, err => {
-                assert.strictEqual(err.is.NoSuchBucket, true);
-                done();
-            });
-        });
-
-    it('objectGetACL request on transient bucket should return ' +
-        'NoSuchBucket error', done => {
-        objectGetACL(authInfo, baseTestRequest,
-        log, err => {
+        listMultipartUploads(authInfo, listRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('objectHead request on transient bucket should return ' +
-        'NoSuchBucket error', done => {
-        objectHead(authInfo, baseTestRequest,
-        log, err => {
+    it('objectGet request on transient bucket should' + 'return NoSuchBucket error', done => {
+        objectGet(authInfo, baseTestRequest, false, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('objectPutACL request on transient bucket should return ' +
-        'NoSuchBucket error', done => {
-        objectPutACL(authInfo, baseTestRequest,
-        log, err => {
+    it('objectGetACL request on transient bucket should return ' + 'NoSuchBucket error', done => {
+        objectGetACL(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('objectDelete request on transient bucket should return ' +
-        'NoSuchBucket error', done => {
-        objectDelete(authInfo, baseTestRequest,
-        log, err => {
+    it('objectHead request on transient bucket should return ' + 'NoSuchBucket error', done => {
+        objectHead(authInfo, baseTestRequest, log, err => {
+            assert.strictEqual(err.is.NoSuchBucket, true);
+            done();
+        });
+    });
+
+    it('objectPutACL request on transient bucket should return ' + 'NoSuchBucket error', done => {
+        objectPutACL(authInfo, baseTestRequest, log, err => {
+            assert.strictEqual(err.is.NoSuchBucket, true);
+            done();
+        });
+    });
+
+    it('objectDelete request on transient bucket should return ' + 'NoSuchBucket error', done => {
+        objectDelete(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });

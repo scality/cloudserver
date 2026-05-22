@@ -25,38 +25,44 @@ const bucketPutRequest = {
     actionImplicitDenies: false,
 };
 
-const putObjectRequest = new DummyRequest({
-    bucketName,
-    namespace,
-    objectKey: objectName,
-    headers: {},
-    url: `/${bucketName}/${objectName}`,
-}, postBody);
+const putObjectRequest = new DummyRequest(
+    {
+        bucketName,
+        namespace,
+        objectKey: objectName,
+        headers: {},
+        url: `/${bucketName}/${objectName}`,
+    },
+    postBody,
+);
 
-const objectRestoreXml = '<RestoreRequest ' +
+const objectRestoreXml =
+    '<RestoreRequest ' +
     'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
     `<Days>${restoreDays}</Days>` +
     '<Tier>Standard</Tier>' +
     '</RestoreRequest>';
 
-const objectRestoreXmlBulkTier = '<RestoreRequest ' +
+const objectRestoreXmlBulkTier =
+    '<RestoreRequest ' +
     'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
     `<Days>${restoreDays}</Days>` +
     '<Tier>Bulk</Tier>' +
     '</RestoreRequest>';
 
-const objectRestoreXmlExpeditedTier = '<RestoreRequest ' +
+const objectRestoreXmlExpeditedTier =
+    '<RestoreRequest ' +
     'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
     `<Days>${restoreDays}</Days>` +
     '<Tier>Expedited</Tier>' +
     '</RestoreRequest>';
 
 const objectRestoreRequest = requestXml => ({
-        bucketName,
-        objectKey: objectName,
-        headers: { host: `${bucketName}.s3.amazonaws.com` },
-        post: requestXml,
-    });
+    bucketName,
+    objectKey: objectName,
+    headers: { host: `${bucketName}.s3.amazonaws.com` },
+    post: requestXml,
+});
 
 describe('restoreObject API', () => {
     before(cleanup);
@@ -87,7 +93,7 @@ describe('restoreObject API', () => {
         });
     });
 
-    it('should return NotImplemented error when object restore Tier is \'Bulk\'', done => {
+    it("should return NotImplemented error when object restore Tier is 'Bulk'", done => {
         mdColdHelper.putBucketMock(bucketName, null, () => {
             mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchivedObjectMD(), () => {
                 objectRestore(authInfo, objectRestoreRequest(objectRestoreXmlBulkTier), log, err => {
@@ -98,7 +104,7 @@ describe('restoreObject API', () => {
         });
     });
 
-    it('should return NotImplemented error when object restore Tier is \'Expedited\'', done => {
+    it("should return NotImplemented error when object restore Tier is 'Expedited'", done => {
         mdColdHelper.putBucketMock(bucketName, null, () => {
             mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchivedObjectMD(), () => {
                 objectRestore(authInfo, objectRestoreRequest(objectRestoreXmlExpeditedTier), log, err => {
@@ -109,48 +115,53 @@ describe('restoreObject API', () => {
         });
     });
 
-    it('should return Accepted and update objectMD ' +
-        'while restoring an object from cold storage ' +
-        'and the object doesn\'t have a restored copy in bucket', done => {
-        const testStartTime = new Date(Date.now());
-        mdColdHelper.putBucketMock(bucketName, null, () => {
-            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchivedObjectMD(), () => {
-                objectRestore(authInfo, objectRestoreRequest(objectRestoreXml), log, (err, statusCode) => {
-                    assert.ifError(err);
-                    assert.strictEqual(statusCode, 202);
-                    metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
-                        const testEndTime = new Date(Date.now());
-                        assert.strictEqual(md.archive.restoreRequestedDays, restoreDays);
-                        assert.strictEqual(testStartTime < md.archive.restoreRequestedAt < testEndTime, true);
-                        done();
-                        });
-                });
-            });
-        });
-    });
-
-    it('should update the expiry time and return OK ' +
-        'while restoring an object from cold storage ' +
-        'and the object have a restored copy in bucket', done => {
-        const testStartTime = new Date(Date.now());
-        mdColdHelper.putBucketMock(bucketName, null, () => {
-            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getRestoredObjectMD(), () => {
-                objectRestore(authInfo, objectRestoreRequest(objectRestoreXml), log, (err, statusCode) => {
-                    assert.ifError(err);
-                    assert.strictEqual(statusCode, 200);
-                    metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
-                        const testEndTime = new Date(Date.now());
-                        assert.strictEqual(md.archive.restoreRequestedDays, restoreDays);
-                        assert.strictEqual(testStartTime < md.archive.restoreRequestedAt < testEndTime, true);
+    it(
+        'should return Accepted and update objectMD ' +
+            'while restoring an object from cold storage ' +
+            "and the object doesn't have a restored copy in bucket",
+        done => {
+            const testStartTime = new Date(Date.now());
+            mdColdHelper.putBucketMock(bucketName, null, () => {
+                mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchivedObjectMD(), () => {
+                    objectRestore(authInfo, objectRestoreRequest(objectRestoreXml), log, (err, statusCode) => {
+                        assert.ifError(err);
+                        assert.strictEqual(statusCode, 202);
+                        metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                            const testEndTime = new Date(Date.now());
+                            assert.strictEqual(md.archive.restoreRequestedDays, restoreDays);
+                            assert.strictEqual(testStartTime < md.archive.restoreRequestedAt < testEndTime, true);
                             done();
                         });
+                    });
                 });
             });
-        });
-    });
+        },
+    );
 
-    it('should return InvalidObjectState ' +
-        'while restoring an expired restored object', () => {
+    it(
+        'should update the expiry time and return OK ' +
+            'while restoring an object from cold storage ' +
+            'and the object have a restored copy in bucket',
+        done => {
+            const testStartTime = new Date(Date.now());
+            mdColdHelper.putBucketMock(bucketName, null, () => {
+                mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getRestoredObjectMD(), () => {
+                    objectRestore(authInfo, objectRestoreRequest(objectRestoreXml), log, (err, statusCode) => {
+                        assert.ifError(err);
+                        assert.strictEqual(statusCode, 200);
+                        metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                            const testEndTime = new Date(Date.now());
+                            assert.strictEqual(md.archive.restoreRequestedDays, restoreDays);
+                            assert.strictEqual(testStartTime < md.archive.restoreRequestedAt < testEndTime, true);
+                            done();
+                        });
+                    });
+                });
+            });
+        },
+    );
+
+    it('should return InvalidObjectState ' + 'while restoring an expired restored object', () => {
         mdColdHelper.putBucketMock(bucketName, null, () => {
             mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getExpiredObjectMD(), () => {
                 objectRestore(authInfo, objectRestoreRequest(objectRestoreXml), log, err => {
@@ -176,8 +187,11 @@ describe('restoreObject API', () => {
             try {
                 assert(err, 'Expected an error');
                 assert.strictEqual(err.is.NoSuchKey, true);
-                assert.strictEqual(typeof err.customizeDescription, 'function',
-                    'Error should be from errorInstances which has customizeDescription method');
+                assert.strictEqual(
+                    typeof err.customizeDescription,
+                    'function',
+                    'Error should be from errorInstances which has customizeDescription method',
+                );
                 done();
             } catch (assertionError) {
                 done(assertionError);
@@ -204,8 +218,11 @@ describe('restoreObject API', () => {
             try {
                 assert(err, 'Expected an error');
                 assert.strictEqual(err.is.MethodNotAllowed, true);
-                assert.strictEqual(typeof err.customizeDescription, 'function',
-                    'Error should be from errorInstances which has customizeDescription method');
+                assert.strictEqual(
+                    typeof err.customizeDescription,
+                    'function',
+                    'Error should be from errorInstances which has customizeDescription method',
+                );
                 done();
             } catch (assertionError) {
                 done(assertionError);

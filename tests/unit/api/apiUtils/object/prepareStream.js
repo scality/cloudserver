@@ -102,10 +102,13 @@ describe('prepareStream', () => {
 
         it('should call setExpectedChecksum on ChecksumTransform when trailer event fires', done => {
             const body = '0\r\nx-amz-checksum-crc32:AAAAAA==\r\n';
-            const request = makeRequest({
-                'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
-                'x-amz-trailer': 'x-amz-checksum-crc32',
-            }, body);
+            const request = makeRequest(
+                {
+                    'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
+                    'x-amz-trailer': 'x-amz-checksum-crc32',
+                },
+                body,
+            );
             const checksums = makeChecksums('crc32', undefined, true);
             const result = prepareStream(request, null, checksums, log, done);
             result.stream.resume();
@@ -119,10 +122,13 @@ describe('prepareStream', () => {
 
         it('should call errCb when TrailingChecksumTransform emits an error', done => {
             // malformed chunked data triggers an error in TrailingChecksumTransform
-            const request = makeRequest({
-                'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
-                'x-amz-trailer': 'x-amz-checksum-crc32',
-            }, 'zz\r\n'); // invalid hex chunk size
+            const request = makeRequest(
+                {
+                    'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
+                    'x-amz-trailer': 'x-amz-checksum-crc32',
+                },
+                'zz\r\n',
+            ); // invalid hex chunk size
             const checksums = makeChecksums('crc32', undefined, true);
             prepareStream(request, null, checksums, log, err => {
                 assert.strictEqual(err.message, 'InvalidArgument');
@@ -206,10 +212,13 @@ describe('prepareStream', () => {
 
         it('should wire trailer to secondaryChecksumStream for STREAMING-UNSIGNED-PAYLOAD-TRAILER', done => {
             const body = '0\r\nx-amz-checksum-sha256:test-value\r\n';
-            const request = makeRequest({
-                'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
-                'x-amz-trailer': 'x-amz-checksum-sha256',
-            }, body);
+            const request = makeRequest(
+                {
+                    'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
+                    'x-amz-trailer': 'x-amz-checksum-sha256',
+                },
+                body,
+            );
             const checksums = {
                 primary: { algorithm: 'crc64nvme', isTrailer: false, expected: undefined },
                 secondary: { algorithm: 'sha256', isTrailer: true, expected: undefined },

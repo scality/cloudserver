@@ -6,7 +6,7 @@ const {
     PutObjectCommand,
     DeleteObjectCommand,
     PutObjectRetentionCommand,
-    PutBucketPolicyCommand
+    PutBucketPolicyCommand,
 } = require('@aws-sdk/client-s3');
 const { errorInstances } = require('arsenal');
 
@@ -24,7 +24,6 @@ const retentionConfig = {
     RetainUntilDate: moment().add(1, 'd').add(123, 'ms').toDate(),
 };
 
-
 const changeObjectLockPromise = promisify(changeObjectLock);
 
 describe('PUT object retention', () => {
@@ -36,10 +35,12 @@ describe('PUT object retention', () => {
         let versionId;
 
         beforeEach(async () => {
-            await s3.send(new CreateBucketCommand({
-                Bucket: bucketName,
-                ObjectLockEnabledForBucket: true,
-            }));
+            await s3.send(
+                new CreateBucketCommand({
+                    Bucket: bucketName,
+                    ObjectLockEnabledForBucket: true,
+                }),
+            );
             await s3.send(new CreateBucketCommand({ Bucket: unlockedBucket }));
             await s3.send(new PutObjectCommand({ Bucket: unlockedBucket, Key: objectName }));
             const putRes = await s3.send(new PutObjectCommand({ Bucket: bucketName, Key: objectName }));
@@ -54,11 +55,13 @@ describe('PUT object retention', () => {
 
         it('should return AccessDenied putting retention with another account', async () => {
             try {
-                await otherAccountS3.send(new PutObjectRetentionCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    Retention: retentionConfig,
-                }));
+                await otherAccountS3.send(
+                    new PutObjectRetentionCommand({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        Retention: retentionConfig,
+                    }),
+                );
                 assert.fail('Expected error');
             } catch (err) {
                 checkError(err, 'AccessDenied', 403);
@@ -67,11 +70,13 @@ describe('PUT object retention', () => {
 
         it('should return NoSuchKey error if key does not exist', async () => {
             try {
-                await s3.send(new PutObjectRetentionCommand({
-                    Bucket: bucketName,
-                    Key: 'thiskeydoesnotexist',
-                    Retention: retentionConfig,
-                }));
+                await s3.send(
+                    new PutObjectRetentionCommand({
+                        Bucket: bucketName,
+                        Key: 'thiskeydoesnotexist',
+                        Retention: retentionConfig,
+                    }),
+                );
                 assert.fail('Expected error');
             } catch (err) {
                 checkError(err, 'NoSuchKey', 404);
@@ -80,40 +85,48 @@ describe('PUT object retention', () => {
 
         it('should return NoSuchVersion error if version does not exist', async () => {
             try {
-                await s3.send(new PutObjectRetentionCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    VersionId: '012345678901234567890123456789012',
-                    Retention: retentionConfig,
-                }));
+                await s3.send(
+                    new PutObjectRetentionCommand({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        VersionId: '012345678901234567890123456789012',
+                        Retention: retentionConfig,
+                    }),
+                );
                 assert.fail('Expected error');
             } catch (err) {
                 checkError(err, 'NoSuchVersion', 404);
             }
         });
 
-        it('should return InvalidRequest error putting retention to object in bucket with no object lock ' +
-            'enabled', async () => {
-            try {
-                await s3.send(new PutObjectRetentionCommand({
-                    Bucket: unlockedBucket,
-                    Key: objectName,
-                    Retention: retentionConfig,
-                }));
-                assert.fail('Expected error');
-            } catch (err) {
-                checkError(err, 'InvalidRequest', 400);
-            }
-        });
+        it(
+            'should return InvalidRequest error putting retention to object in bucket with no object lock ' + 'enabled',
+            async () => {
+                try {
+                    await s3.send(
+                        new PutObjectRetentionCommand({
+                            Bucket: unlockedBucket,
+                            Key: objectName,
+                            Retention: retentionConfig,
+                        }),
+                    );
+                    assert.fail('Expected error');
+                } catch (err) {
+                    checkError(err, 'InvalidRequest', 400);
+                }
+            },
+        );
 
         it('should return MethodNotAllowed if object version is delete marker', async () => {
             await s3.send(new DeleteObjectCommand({ Bucket: bucketName, Key: objectName }));
             try {
-                await s3.send(new PutObjectRetentionCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    Retention: retentionConfig,
-                }));
+                await s3.send(
+                    new PutObjectRetentionCommand({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        Retention: retentionConfig,
+                    }),
+                );
                 assert.fail('Expected error');
             } catch (err) {
                 checkError(err, 'MethodNotAllowed', 405);
@@ -121,21 +134,25 @@ describe('PUT object retention', () => {
         });
 
         it('should put object retention', async () => {
-            await s3.send(new PutObjectRetentionCommand({
-                Bucket: bucketName,
-                Key: objectName,
-                Retention: retentionConfig,
-            }));
+            await s3.send(
+                new PutObjectRetentionCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    Retention: retentionConfig,
+                }),
+            );
             await changeObjectLockPromise([{ bucket: bucketName, key: objectName, versionId }], '');
         });
 
         it('should support request with versionId parameter', async () => {
-            await s3.send(new PutObjectRetentionCommand({
-                Bucket: bucketName,
-                Key: objectName,
-                Retention: retentionConfig,
-                VersionId: versionId,
-            }));
+            await s3.send(
+                new PutObjectRetentionCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    Retention: retentionConfig,
+                    VersionId: versionId,
+                }),
+            );
             await changeObjectLockPromise([{ bucket: bucketName, key: objectName, versionId }], '');
         });
     });
@@ -161,12 +178,12 @@ describe('PUT object retention iam action and version id', () => {
                 const unauthBucketUtil = new BucketUtility('default', sigCfg, true);
                 const unauthS3 = unauthBucketUtil.s3;
                 const CommandClass = eval(operation);
-                unauthS3.send(new CommandClass(params))
+                unauthS3
+                    .send(new CommandClass(params))
                     .then(data => callback(null, data))
                     .catch(err => callback(err));
             }
         }
-
 
         function cbNoError(done) {
             return err => {
@@ -183,10 +200,12 @@ describe('PUT object retention iam action and version id', () => {
         }
 
         beforeEach(async () => {
-            await s3.send(new CreateBucketCommand({
-                Bucket: testBucket,
-                ObjectLockEnabledForBucket: true,
-            }));
+            await s3.send(
+                new CreateBucketCommand({
+                    Bucket: testBucket,
+                    ObjectLockEnabledForBucket: true,
+                }),
+            );
             const res = await s3.send(new PutObjectCommand({ Bucket: testBucket, Key: objectName }));
             versionId = res.VersionId;
         });
@@ -223,15 +242,19 @@ describe('PUT object retention iam action and version id', () => {
                         Version: '2012-10-17',
                         Statement: [statement],
                     };
-                    s3.send(new PutBucketPolicyCommand({
-                        Bucket: testBucket,
-                        Policy: JSON.stringify(bucketPolicy),
-                    })).then(() => {
-                        done();
-                    }).catch(err => {
-                        assert.ifError(err);
-                        done();
-                    });
+                    s3.send(
+                        new PutBucketPolicyCommand({
+                            Bucket: testBucket,
+                            Policy: JSON.stringify(bucketPolicy),
+                        }),
+                    )
+                        .then(() => {
+                            done();
+                        })
+                        .catch(err => {
+                            assert.ifError(err);
+                            done();
+                        });
                 });
 
                 it(`should ${testCase.expectedResult} unauthenticated putObjectRetention without VersionId`, done => {

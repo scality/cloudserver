@@ -2,8 +2,7 @@ const assert = require('assert');
 const { parseString } = require('xml2js');
 
 const { DummyRequestLogger } = require('../helpers');
-const { getReplicationConfigurationXML } =
-    require('../../../lib/api/apiUtils/bucket/getReplicationConfiguration');
+const { getReplicationConfigurationXML } = require('../../../lib/api/apiUtils/bucket/getReplicationConfiguration');
 
 // Compare the values from the parsedXML with the original configuration values.
 function checkXML(parsedXML, config) {
@@ -58,29 +57,25 @@ describe("'getReplicationConfigurationXML' function", () => {
     it('should return XML from the bucket replication configuration', done =>
         getAndCheckXML(getReplicationConfig(), done));
 
-    it('should not return XML with StorageClass tag if `storageClass` ' +
-    'property is omitted', done => {
+    it('should not return XML with StorageClass tag if `storageClass` ' + 'property is omitted', done => {
         const config = getReplicationConfig();
         delete config.rules[0].storageClass;
         return getAndCheckXML(config, done);
     });
 
-    it("should return XML with StorageClass tag set to 'Disabled' if " +
-        '`enabled` property is false', done => {
+    it("should return XML with StorageClass tag set to 'Disabled' if " + '`enabled` property is false', done => {
         const config = getReplicationConfig();
         config.rules[0].enabled = false;
         return getAndCheckXML(config, done);
     });
 
-    it('should return XML with a self-closing Prefix tag if `prefix` ' +
-    "property is ''", done => {
+    it('should return XML with a self-closing Prefix tag if `prefix` ' + "property is ''", done => {
         const config = getReplicationConfig();
         config.rules[0].prefix = '';
         return getAndCheckXML(config, done);
     });
 
-    it('should return XML from the bucket replication configuration with ' +
-    'multiple rules', done => {
+    it('should return XML from the bucket replication configuration with ' + 'multiple rules', done => {
         const config = getReplicationConfig();
         config.rules.push({
             id: 'test-id-2',

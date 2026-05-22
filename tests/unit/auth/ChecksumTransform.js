@@ -154,15 +154,14 @@ describe('ChecksumTransform', () => {
             assert.strictEqual(result.details.algorithm, 'crc32');
         });
 
-        it('should return TrailerChecksumMalformed when trailer value is not a valid digest for the algo',
-            async () => {
-                const stream = new ChecksumTransform('crc32', undefined, true, log);
-                stream.setExpectedChecksum('x-amz-checksum-crc32', 'not-valid!');
-                await drainTransform(stream, [testData]);
-                const result = stream.validateChecksum();
-                assert.strictEqual(result.error, ChecksumError.TrailerChecksumMalformed);
-                assert.strictEqual(result.details.algorithm, 'crc32');
-            });
+        it('should return TrailerChecksumMalformed when trailer value is not a valid digest for the algo', async () => {
+            const stream = new ChecksumTransform('crc32', undefined, true, log);
+            stream.setExpectedChecksum('x-amz-checksum-crc32', 'not-valid!');
+            await drainTransform(stream, [testData]);
+            const result = stream.validateChecksum();
+            assert.strictEqual(result.error, ChecksumError.TrailerChecksumMalformed);
+            assert.strictEqual(result.details.algorithm, 'crc32');
+        });
 
         it('should return XAmzMismatch when trailer value is valid but does not match computed digest', async () => {
             const stream = new ChecksumTransform('crc32', undefined, true, log);

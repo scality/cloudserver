@@ -1,11 +1,7 @@
 const assert = require('assert');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
-const { cleanup,
-    DummyRequestLogger,
-    makeAuthInfo,
-    TaggingConfigTester,
-} = require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo, TaggingConfigTester } = require('../helpers');
 const bucketPutTagging = require('../../../lib/api/bucketPutTagging');
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
@@ -28,8 +24,7 @@ describe('putBucketTagging API', () => {
 
     it('should set tags resource', done => {
         const taggingUtil = new TaggingConfigTester();
-        const testBucketPutTaggingRequest = taggingUtil
-            .createBucketTaggingRequest('PUT', bucketName);
+        const testBucketPutTaggingRequest = taggingUtil.createBucketTaggingRequest('PUT', bucketName);
         bucketPutTagging(authInfo, testBucketPutTaggingRequest, log, err => {
             if (err) {
                 process.stdout.write(`Err putting object tagging ${err}`);
@@ -42,8 +37,7 @@ describe('putBucketTagging API', () => {
 
     it('should return access denied if the authorization check fails', done => {
         const taggingUtil = new TaggingConfigTester();
-        const testBucketPutTaggingRequest = taggingUtil
-            .createBucketTaggingRequest('PUT', bucketName);
+        const testBucketPutTaggingRequest = taggingUtil.createBucketTaggingRequest('PUT', bucketName);
         const authInfo = makeAuthInfo('accessKey2');
         bucketPutTagging(authInfo, testBucketPutTaggingRequest, log, err => {
             assert(err.AccessDenied);

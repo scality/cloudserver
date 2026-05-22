@@ -11,17 +11,10 @@ import { Project, SyntaxKind } from 'ts-morph';
 const CALLBACK_PARAM_PATTERN = /^(cb|callback|next|done)$/i;
 
 function getChangedJsFiles() {
-    const base = process.env.GITHUB_BASE_REF
-        ? `origin/${process.env.GITHUB_BASE_REF}`
-        : 'HEAD';
-    const output = execFileSync('git', [
-        'diff',
-        '--name-only',
-        '--diff-filter=ACMR',
-        base,
-        '--',
-        '**/*.js',
-    ], { encoding: 'utf8' }).trim();
+    const base = process.env.GITHUB_BASE_REF ? `origin/${process.env.GITHUB_BASE_REF}` : 'HEAD';
+    const output = execFileSync('git', ['diff', '--name-only', '--diff-filter=ACMR', base, '--', '**/*.js'], {
+        encoding: 'utf8',
+    }).trim();
 
     return output ? output.split('\n').filter(f => f.endsWith('.js')) : [];
 }
@@ -30,9 +23,7 @@ function getChangedJsFiles() {
  * Get added line numbers for a file in the current diff.
  */
 function getAddedLineNumbers(filePath) {
-    const base = process.env.GITHUB_BASE_REF
-        ? `origin/${process.env.GITHUB_BASE_REF}`
-        : 'HEAD';
+    const base = process.env.GITHUB_BASE_REF ? `origin/${process.env.GITHUB_BASE_REF}` : 'HEAD';
     const diff = execFileSync('git', ['diff', base, '--', filePath], { encoding: 'utf8' });
     const addedLines = new Set();
     let currentLine = 0;
@@ -69,14 +60,11 @@ const project = new Project({
     skipAddingFilesFromTsConfig: true,
 });
 
-const filesToCheck = changedFiles.filter(f =>
-    !f.startsWith('tests/') &&
-    !f.startsWith('node_modules/') &&
-    (
-        f.startsWith('lib/') ||
-        f.startsWith('bin/') ||
-        !f.includes('/')
-    )
+const filesToCheck = changedFiles.filter(
+    f =>
+        !f.startsWith('tests/') &&
+        !f.startsWith('node_modules/') &&
+        (f.startsWith('lib/') || f.startsWith('bin/') || !f.includes('/')),
 );
 if (filesToCheck.length === 0) {
     console.log('No source JS files in diff (tests and node_modules excluded).');

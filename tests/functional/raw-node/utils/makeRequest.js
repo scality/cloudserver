@@ -11,18 +11,18 @@ const constructStringToSignV2 = require('arsenal/build/lib/auth/v2/constructStri
 
 function signGcpRequest(request, credentials, date) {
     if (!credentials || !credentials.secretKey || !credentials.accessKey) {
-        throw new Error('Invalid GCP credentials: must have accessKey and secretKey properties. ' +
-            `Got: ${JSON.stringify(credentials)}`);
-    }    
+        throw new Error(
+            'Invalid GCP credentials: must have accessKey and secretKey properties. ' +
+                `Got: ${JSON.stringify(credentials)}`,
+        );
+    }
     // eslint-disable-next-line no-param-reassign
     request.headers['x-goog-date'] = date.toUTCString();
     const data = Object.assign({}, request.headers);
     const logger = { trace: () => {} };
     const stringToSign = constructStringToSignV2(request, data, logger, 'GCP');
     // Sign with HMAC-SHA1
-    const signature = crypto.createHmac('sha1', credentials.secretKey)
-        .update(stringToSign)
-        .digest('base64');        
+    const signature = crypto.createHmac('sha1', credentials.secretKey).update(stringToSign).digest('base64');
     // eslint-disable-next-line no-param-reassign
     request.headers['Authorization'] = `GOOG1 ${credentials.accessKey}:${signature}`;
 }
@@ -73,9 +73,18 @@ function _decodeURI(uri) {
  * @return {undefined} - and call callback
  */
 function makeRequest(params, callback) {
-    const { hostname, port, method, queryObj, headers, path,
-            authCredentials, requestBody, jsonResponse,
-            urlForSignature } = params;
+    const {
+        hostname,
+        port,
+        method,
+        queryObj,
+        headers,
+        path,
+        authCredentials,
+        requestBody,
+        jsonResponse,
+        urlForSignature,
+    } = params;
     const options = {
         hostname,
         port,
@@ -139,8 +148,16 @@ function makeRequest(params, callback) {
     // decode path because signing code re-encodes it
     req.path = _decodeURI(encodedPath);
     if (authCredentials && !params.GCP) {
-        auth.client.generateV4Headers(req, queryObj || '',
-            authCredentials.accessKey, authCredentials.secretKey, 's3', undefined, undefined, requestBody);
+        auth.client.generateV4Headers(
+            req,
+            queryObj || '',
+            authCredentials.accessKey,
+            authCredentials.secretKey,
+            's3',
+            undefined,
+            undefined,
+            requestBody,
+        );
     }
     // restore original URL-encoded path
     req.path = savedPath;
@@ -167,8 +184,7 @@ function makeRequest(params, callback) {
  * @return {undefined} - and call callback
  */
 function makeS3Request(params, callback) {
-    const { method, queryObj, headers, bucket, objectKey, authCredentials, requestBody }
-        = params;
+    const { method, queryObj, headers, bucket, objectKey, authCredentials, requestBody } = params;
     const options = {
         authCredentials,
         hostname: process.env.AWS_ON_AIR ? 's3.amazonaws.com' : ipAddress,
@@ -202,8 +218,7 @@ function makeS3Request(params, callback) {
  * @return {undefined} - and call callback
  */
 function makeBackbeatRequest(params, callback) {
-    const { method, headers, bucket, objectKey, resourceType,
-            authCredentials, requestBody, queryObj } = params;
+    const { method, headers, bucket, objectKey, resourceType, authCredentials, requestBody, queryObj } = params;
     const options = {
         authCredentials,
         hostname: ipAddress,

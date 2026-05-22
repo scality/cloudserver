@@ -1,21 +1,25 @@
 const assert = require('assert');
 const { errors } = require('arsenal');
-const { S3Client,
+const {
+    S3Client,
     CreateBucketCommand,
     DeleteBucketCommand,
     GetBucketNotificationConfigurationCommand,
-    PutBucketNotificationConfigurationCommand } = require('@aws-sdk/client-s3');
+    PutBucketNotificationConfigurationCommand,
+} = require('@aws-sdk/client-s3');
 
 const getConfig = require('../support/config');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucket = 'notificationtestbucket';
 const notificationConfig = {
-    QueueConfigurations: [{
-        Events: ['s3:ObjectCreated:*'],
-        QueueArn: 'arn:scality:bucketnotif:::target1',
-        Id: 'test-id',
-    }],
+    QueueConfigurations: [
+        {
+            Events: ['s3:ObjectCreated:*'],
+            QueueArn: 'arn:scality:bucketnotif:::target1',
+            Id: 'test-id',
+        },
+    ],
 };
 
 // Check for the expected error response code and status code.
@@ -61,14 +65,17 @@ describe('aws-sdk test get bucket notification', () => {
             }
         });
 
-        it('should not return an error if no notification configuration ' +
-        'put to bucket', () => s3.send(new GetBucketNotificationConfigurationCommand({ Bucket: bucket })));
+        it('should not return an error if no notification configuration ' + 'put to bucket', () =>
+            s3.send(new GetBucketNotificationConfigurationCommand({ Bucket: bucket })),
+        );
 
         it('should get bucket notification config', async () => {
-            await s3.send(new PutBucketNotificationConfigurationCommand({
-                Bucket: bucket,
-                NotificationConfiguration: notificationConfig,
-            }));
+            await s3.send(
+                new PutBucketNotificationConfigurationCommand({
+                    Bucket: bucket,
+                    NotificationConfiguration: notificationConfig,
+                }),
+            );
             const res = await s3.send(new GetBucketNotificationConfigurationCommand({ Bucket: bucket }));
             assert.deepStrictEqual(res.QueueConfigurations, notificationConfig.QueueConfigurations);
         });

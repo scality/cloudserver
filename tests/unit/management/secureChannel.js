@@ -19,16 +19,16 @@ describe('report handler', () => {
     });
 
     [
-        { value: 'true',    result: true  },
-        { value: 'TRUE',    result: true  },
-        { value: 'tRuE',    result: true  },
-        { value: '1',       result: true  },
-        { value: 'false',   result: false },
-        { value: 'FALSE',   result: false },
-        { value: 'FaLsE',   result: false },
-        { value: '0',       result: false },
-        { value: 'foo',     result: false },
-        { value: '',        result: true },
+        { value: 'true', result: true },
+        { value: 'TRUE', result: true },
+        { value: 'tRuE', result: true },
+        { value: '1', result: true },
+        { value: 'false', result: false },
+        { value: 'FALSE', result: false },
+        { value: 'FaLsE', result: false },
+        { value: '0', result: false },
+        { value: 'foo', result: false },
+        { value: '', result: true },
         { value: undefined, result: true },
     ].forEach(param =>
         it(`should allow set local file system capability ${param.value}`, () => {
@@ -40,6 +40,6 @@ describe('report handler', () => {
             assert.strictEqual(getCapabilities().locationTypeLocal, param.result);
 
             process.env = OLD_ENV;
-        })
+        }),
     );
 });

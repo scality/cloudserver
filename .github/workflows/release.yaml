@@ -69,8 +69,7 @@ jobs:
           push: true
           context: images/federation
           provenance: false
-          build-args:
-            CLOUDSERVER_VERSION=${{ github.event.inputs.tag }}
+          build-args: CLOUDSERVER_VERSION=${{ github.event.inputs.tag }}
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.event.inputs.tag }}-federation
           labels: |

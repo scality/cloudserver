@@ -9,15 +9,7 @@ const http = require('http');
 const https = require('https');
 const logger = require('../lib/utilities/logger');
 
-function _performSearch(host,
-                        port,
-                        bucketName,
-                        query,
-                        listVersions,
-                        accessKey,
-                        secretKey,
-                        sessionToken,
-                        verbose, ssl) {
+function _performSearch(host, port, bucketName, query, listVersions, accessKey, secretKey, sessionToken, verbose, ssl) {
     const escapedSearch = encodeURIComponent(query);
     const options = {
         host,
@@ -88,12 +80,13 @@ function searchBucket() {
         .option('-h, --host <host>', 'Host of the server')
         .option('-p, --port <port>', 'Port of the server')
         .option('-s', '--ssl', 'Enable ssl')
-        .option('-l, --list-versions', 'List all versions of the objects that meet the search query, ' +
-            'otherwise only list the latest version')
+        .option(
+            '-l, --list-versions',
+            'List all versions of the objects that meet the search query, ' + 'otherwise only list the latest version',
+        )
         .option('-v, --verbose')
         .parse(process.argv);
-    const { host, port, accessKey, secretKey, sessionToken, bucket, query, listVersions, verbose, ssl } =
-        commander;
+    const { host, port, accessKey, secretKey, sessionToken, bucket, query, listVersions, verbose, ssl } = commander;
 
     if (!host || !port || !accessKey || !secretKey || !bucket || !query) {
         logger.error('missing parameter');
@@ -101,8 +94,7 @@ function searchBucket() {
         process.exit(1);
     }
 
-    _performSearch(host, port, bucket, query, listVersions, accessKey, secretKey, sessionToken, verbose,
-        ssl);
+    _performSearch(host, port, bucket, query, listVersions, accessKey, secretKey, sessionToken, verbose, ssl);
 }
 
 searchBucket();

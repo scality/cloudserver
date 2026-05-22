@@ -16,16 +16,18 @@ const bucketName = 'testdeletetaggingbucket';
 const objectName = 'testtaggingobject';
 const objectNameAcl = 'testtaggingobjectacl';
 
-const taggingConfig = { TagSet: [
-    {
-        Key: 'key1',
-        Value: 'value1',
-    },
-    {
-        Key: 'key2',
-        Value: 'value2',
-    },
-] };
+const taggingConfig = {
+    TagSet: [
+        {
+            Key: 'key1',
+            Value: 'value1',
+        },
+        {
+            Key: 'key2',
+            Value: 'value2',
+        },
+    ],
+};
 
 function _checkError(err, code, statusCode) {
     assert(err, 'Expected error but found none');
@@ -53,120 +55,155 @@ describe('DELETE object taggings', () => {
         });
 
         it('should delete tag set', async () => {
-            await s3.send(new PutObjectTaggingCommand({
-                Bucket: bucketName,
-                Key: objectName,
-                Tagging: taggingConfig,
-            }));
-            await s3.send(new DeleteObjectTaggingCommand({ 
-                Bucket: bucketName, 
-                Key: objectName 
-            }));
-            const dataGet = await s3.send(new GetObjectTaggingCommand({
-                Bucket: bucketName,
-                Key: objectName,
-            }));
+            await s3.send(
+                new PutObjectTaggingCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    Tagging: taggingConfig,
+                }),
+            );
+            await s3.send(
+                new DeleteObjectTaggingCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                }),
+            );
+            const dataGet = await s3.send(
+                new GetObjectTaggingCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                }),
+            );
             assert.strictEqual(dataGet.TagSet.length, 0);
         });
 
         it('should delete a non-existing tag set', async () => {
-            await s3.send(new DeleteObjectTaggingCommand({ 
-                Bucket: bucketName, 
-                Key: objectName 
-            }));
-            const dataGet = await s3.send(new GetObjectTaggingCommand({
-                Bucket: bucketName,
-                Key: objectName
-            }));
+            await s3.send(
+                new DeleteObjectTaggingCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                }),
+            );
+            const dataGet = await s3.send(
+                new GetObjectTaggingCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                }),
+            );
             assert.strictEqual(dataGet.TagSet.length, 0);
         });
 
-        it('should return NoSuchKey deleting tag set to a non-existing object',
-        async () => {
+        it('should return NoSuchKey deleting tag set to a non-existing object', async () => {
             try {
-                await s3.send(new DeleteObjectTaggingCommand({
-                    Bucket: bucketName,
-                    Key: 'nonexisting',
-                }));
+                await s3.send(
+                    new DeleteObjectTaggingCommand({
+                        Bucket: bucketName,
+                        Key: 'nonexisting',
+                    }),
+                );
                 assert.fail('Expected NoSuchKey error');
             } catch (err) {
                 _checkError(err, 'NoSuchKey', 404);
             }
         });
 
-        it('should return 403 AccessDenied deleting tag set with another ' +
-            'account', async () => {
+        it('should return 403 AccessDenied deleting tag set with another ' + 'account', async () => {
             try {
-                await otherAccountS3.send(new DeleteObjectTaggingCommand({ 
-                    Bucket: bucketName, 
-                    Key: objectName 
-                }));
+                await otherAccountS3.send(
+                    new DeleteObjectTaggingCommand({
+                        Bucket: bucketName,
+                        Key: objectName,
+                    }),
+                );
                 assert.fail('Expected AccessDenied error');
             } catch (err) {
                 _checkError(err, 'AccessDenied', 403);
             }
         });
 
-        it('should return 403 AccessDenied deleting tag set with a different ' +
-            'account to an object with ACL "public-read-write"', 
+        it(
+            'should return 403 AccessDenied deleting tag set with a different ' +
+                'account to an object with ACL "public-read-write"',
             async () => {
-            await s3.send(new PutObjectAclCommand({ 
-                Bucket: bucketName, 
-                Key: objectName,
-                ACL: 'public-read-write' 
-            }));
-            
-            try {
-                await otherAccountS3.send(new DeleteObjectTaggingCommand({ 
-                    Bucket: bucketName,
-                    Key: objectName 
-                }));
-                assert.fail('Expected AccessDenied error');
-            } catch (err) {
-                _checkError(err, 'AccessDenied', 403);
-            }
-        });
+                await s3.send(
+                    new PutObjectAclCommand({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        ACL: 'public-read-write',
+                    }),
+                );
 
-        it('should return 403 AccessDenied deleting tag set to an object '+
-            ' in a bucket created with a different account',
+                try {
+                    await otherAccountS3.send(
+                        new DeleteObjectTaggingCommand({
+                            Bucket: bucketName,
+                            Key: objectName,
+                        }),
+                    );
+                    assert.fail('Expected AccessDenied error');
+                } catch (err) {
+                    _checkError(err, 'AccessDenied', 403);
+                }
+            },
+        );
+
+        it(
+            'should return 403 AccessDenied deleting tag set to an object ' +
+                ' in a bucket created with a different account',
             async () => {
-            await s3.send(new PutBucketAclCommand({ 
-                Bucket: bucketName, 
-                ACL: 'public-read-write' 
-            }));
-            
-            await otherAccountS3.send(new PutObjectCommand({ 
-                Bucket: bucketName, 
-                Key: objectNameAcl 
-            }));
-            
-            try {
-                await otherAccountS3.send(new DeleteObjectTaggingCommand({ 
-                    Bucket: bucketName,
-                    Key: objectNameAcl 
-                }));
-                assert.fail('Expected AccessDenied error');
-            } catch (err) {
-                _checkError(err, 'AccessDenied', 403);
-            }
-        });
+                await s3.send(
+                    new PutBucketAclCommand({
+                        Bucket: bucketName,
+                        ACL: 'public-read-write',
+                    }),
+                );
 
-        it('should delete tag set to an object in a bucket created with '+
-            'same account even though object put by other account', async () => {
-            await s3.send(new PutBucketAclCommand({ 
-                Bucket: bucketName, 
-                ACL: 'public-read-write' 
-            }));
-            
-            await otherAccountS3.send(new PutObjectCommand({ 
-                Bucket: bucketName, 
-                Key: objectNameAcl 
-            }));
-            
-            await s3.send(new DeleteObjectTaggingCommand({ 
-                Bucket: bucketName,
-                Key: objectNameAcl 
-            }));
-        });
+                await otherAccountS3.send(
+                    new PutObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectNameAcl,
+                    }),
+                );
+
+                try {
+                    await otherAccountS3.send(
+                        new DeleteObjectTaggingCommand({
+                            Bucket: bucketName,
+                            Key: objectNameAcl,
+                        }),
+                    );
+                    assert.fail('Expected AccessDenied error');
+                } catch (err) {
+                    _checkError(err, 'AccessDenied', 403);
+                }
+            },
+        );
+
+        it(
+            'should delete tag set to an object in a bucket created with ' +
+                'same account even though object put by other account',
+            async () => {
+                await s3.send(
+                    new PutBucketAclCommand({
+                        Bucket: bucketName,
+                        ACL: 'public-read-write',
+                    }),
+                );
+
+                await otherAccountS3.send(
+                    new PutObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectNameAcl,
+                    }),
+                );
+
+                await s3.send(
+                    new DeleteObjectTaggingCommand({
+                        Bucket: bucketName,
+                        Key: objectNameAcl,
+                    }),
+                );
+            },
+        );
     });
 });

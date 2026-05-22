@@ -1,11 +1,13 @@
 const assert = require('assert');
-const { S3Client,
+const {
+    S3Client,
     CreateBucketCommand,
     DeleteBucketCommand,
     PutBucketVersioningCommand,
     PutBucketReplicationCommand,
     DeleteBucketReplicationCommand,
-    GetBucketReplicationCommand } = require('@aws-sdk/client-s3');
+    GetBucketReplicationCommand,
+} = require('@aws-sdk/client-s3');
 const { errorInstances } = require('arsenal');
 
 const getConfig = require('../support/config');
@@ -13,8 +15,7 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucket = 'source-bucket';
 const replicationConfig = {
-    Role: 'arn:aws:iam::account-id:role/src-resource,' +
-        'arn:aws:iam::account-id:role/dest-resource',
+    Role: 'arn:aws:iam::account-id:role/src-resource,' + 'arn:aws:iam::account-id:role/dest-resource',
     Rules: [
         {
             Destination: { Bucket: 'arn:aws:s3:::destination-bucket' },
@@ -31,24 +32,27 @@ describe('aws-node-sdk test deleteBucketReplication', () => {
     const config = getConfig('default', { signatureVersion: 'v4' });
 
     function putVersioningOnBucket(bucket) {
-        return s3.send(new PutBucketVersioningCommand({
-            Bucket: bucket,
-            VersioningConfiguration: { Status: 'Enabled' },
-        }));
+        return s3.send(
+            new PutBucketVersioningCommand({
+                Bucket: bucket,
+                VersioningConfiguration: { Status: 'Enabled' },
+            }),
+        );
     }
 
     function putReplicationOnBucket(bucket) {
-        return s3.send(new PutBucketReplicationCommand({
-            Bucket: bucket,
-            ReplicationConfiguration: replicationConfig,
-        }));
+        return s3.send(
+            new PutBucketReplicationCommand({
+                Bucket: bucket,
+                ReplicationConfiguration: replicationConfig,
+            }),
+        );
     }
 
     function deleteReplicationAndCheckResponse(bucket) {
-        return s3.send(new DeleteBucketReplicationCommand({ Bucket: bucket }))
-            .then(data => {
-                assert.deepStrictEqual(data.$metadata.httpStatusCode, 204);
-            });
+        return s3.send(new DeleteBucketReplicationCommand({ Bucket: bucket })).then(data => {
+            assert.deepStrictEqual(data.$metadata.httpStatusCode, 204);
+        });
     }
 
     beforeEach(() => {
@@ -59,8 +63,8 @@ describe('aws-node-sdk test deleteBucketReplication', () => {
 
     afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
-    it('should return empty object if bucket has no replication config', 
-        () => deleteReplicationAndCheckResponse(bucket));
+    it('should return empty object if bucket has no replication config', () =>
+        deleteReplicationAndCheckResponse(bucket));
 
     it('should delete a bucket replication config when it has one', async () => {
         await putVersioningOnBucket(bucket);
@@ -68,23 +72,26 @@ describe('aws-node-sdk test deleteBucketReplication', () => {
         await deleteReplicationAndCheckResponse(bucket);
     });
 
-    it('should return ReplicationConfigurationNotFoundError if getting ' +
-    'replication config after it has been deleted', async () => {
-        await putVersioningOnBucket(bucket);
-        await putReplicationOnBucket(bucket);
-        
-        const data = await s3.send(new GetBucketReplicationCommand({ Bucket: bucket }));
-        assert.deepStrictEqual(data.ReplicationConfiguration, replicationConfig);
+    it(
+        'should return ReplicationConfigurationNotFoundError if getting ' +
+            'replication config after it has been deleted',
+        async () => {
+            await putVersioningOnBucket(bucket);
+            await putReplicationOnBucket(bucket);
 
-        await deleteReplicationAndCheckResponse(bucket);
-        
-        try {
-            await s3.send(new GetBucketReplicationCommand({ Bucket: bucket }));
-            assert.fail('Expected ReplicationConfigurationNotFoundError');
-        } catch (err) {
-            assert(errorInstances.ReplicationConfigurationNotFoundError.is[err.name]);
-        }
-    });
+            const data = await s3.send(new GetBucketReplicationCommand({ Bucket: bucket }));
+            assert.deepStrictEqual(data.ReplicationConfiguration, replicationConfig);
+
+            await deleteReplicationAndCheckResponse(bucket);
+
+            try {
+                await s3.send(new GetBucketReplicationCommand({ Bucket: bucket }));
+                assert.fail('Expected ReplicationConfigurationNotFoundError');
+            } catch (err) {
+                assert(errorInstances.ReplicationConfigurationNotFoundError.is[err.name]);
+            }
+        },
+    );
 
     it('should return AccessDenied if user is not bucket owner', async () => {
         try {

@@ -17,21 +17,15 @@ const testBucketPutRequest = {
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
 };
-const canonicalIDforSample1 =
-    '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
-const canonicalIDforSample2 =
-    '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
+const canonicalIDforSample1 = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
+const canonicalIDforSample2 = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
 
 const invalidIds = {
     'too short': 'id="invalid_id"',
-    'too long':
-        'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2aaa',
-    'only numbers':
-        'id=0000000000000000000000000000000000000000000000000000000000000000',
-    'only letters':
-        'id=abcdefabcdefabcdefabcdefabcdefacbdefabcdefabcdefabcdefabcdefabcd',
-    'non-hex letters':
-        'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2ZZ',
+    'too long': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2aaa',
+    'only numbers': 'id=0000000000000000000000000000000000000000000000000000000000000000',
+    'only letters': 'id=abcdefabcdefabcdefabcdefabcdefacbdefabcdefabcdefabcdefabcdefabcd',
+    'non-hex letters': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2ZZ',
 };
 
 describe('putBucketACL API', () => {
@@ -65,7 +59,7 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'not-a-valid-option',
             },
             url: '/?acl',
@@ -84,7 +78,7 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'public-read-write',
             },
             url: '/?acl',
@@ -100,13 +94,12 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should set a canned public-read ACL followed by '
-        + 'a canned authenticated-read ACL', done => {
+    it('should set a canned public-read ACL followed by ' + 'a canned authenticated-read ACL', done => {
         const testACLRequest = {
             bucketName,
             namespace,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'public-read',
             },
             url: '/?acl',
@@ -117,7 +110,7 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'authenticated-read',
             },
             url: '/?acl',
@@ -131,8 +124,7 @@ describe('putBucketACL API', () => {
                 bucketPutACL(authInfo, testACLRequest2, log, err => {
                     assert.strictEqual(err, undefined);
                     metadata.getBucket(bucketName, log, (err, md) => {
-                        assert.strictEqual(md.getAcl().Canned,
-                                           'authenticated-read');
+                        assert.strictEqual(md.getAcl().Canned, 'authenticated-read');
                         done();
                     });
                 });
@@ -140,13 +132,12 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should set a canned private ACL ' +
-        'followed by a log-delivery-write ACL', done => {
+    it('should set a canned private ACL ' + 'followed by a log-delivery-write ACL', done => {
         const testACLRequest = {
             bucketName,
             namespace,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'private',
             },
             url: '/?acl',
@@ -157,7 +148,7 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'log-delivery-write',
             },
             url: '/?acl',
@@ -172,8 +163,7 @@ describe('putBucketACL API', () => {
                 bucketPutACL(authInfo, testACLRequest2, log, err => {
                     assert.strictEqual(err, undefined);
                     metadata.getBucket(bucketName, log, (err, md) => {
-                        assert.strictEqual(md.getAcl().Canned,
-                                           'log-delivery-write');
+                        assert.strictEqual(md.getAcl().Canned, 'log-delivery-write');
                         done();
                     });
                 });
@@ -186,18 +176,13 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
-                    'emailaddress="sampleaccount1@sampling.com"' +
-                    ',emailaddress="sampleaccount2@sampling.com"',
+                    'emailaddress="sampleaccount1@sampling.com"' + ',emailaddress="sampleaccount2@sampling.com"',
                 'x-amz-grant-read': `uri=${constants.logId}`,
                 'x-amz-grant-write': `uri=${constants.publicId}`,
-                'x-amz-grant-read-acp':
-                    'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2be',
-                'x-amz-grant-write-acp':
-                    'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2bf',
+                'x-amz-grant-read-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2be',
+                'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2bf',
             },
             url: '/?acl',
             query: { acl: '' },
@@ -207,95 +192,77 @@ describe('putBucketACL API', () => {
             assert.strictEqual(err, undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(md.getAcl().WRITE[0], constants.publicId);
-                assert(md.getAcl().FULL_CONTROL
-                    .indexOf(canonicalIDforSample1) > -1);
-                assert(md.getAcl().FULL_CONTROL
-                    .indexOf(canonicalIDforSample2) > -1);
-                assert(md.getAcl().READ_ACP
-                    .indexOf(canonicalIDforSample1) > -1);
-                assert(md.getAcl().WRITE_ACP
-                    .indexOf(canonicalIDforSample2) > -1);
+                assert(md.getAcl().FULL_CONTROL.indexOf(canonicalIDforSample1) > -1);
+                assert(md.getAcl().FULL_CONTROL.indexOf(canonicalIDforSample2) > -1);
+                assert(md.getAcl().READ_ACP.indexOf(canonicalIDforSample1) > -1);
+                assert(md.getAcl().WRITE_ACP.indexOf(canonicalIDforSample2) > -1);
                 done();
             });
         });
     });
 
-    it('should set all ACLs sharing the same email in request headers',
-        done => {
-            const testACLRequest = {
-                bucketName,
-                namespace,
-                headers: {
-                    'host': `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-grant-full-control':
-                        'emailaddress="sampleaccount1@sampling.com"' +
-                        ',emailaddress="sampleaccount2@sampling.com"',
-                    'x-amz-grant-read':
-                        'emailaddress="sampleaccount1@sampling.com"',
-                    'x-amz-grant-write':
-                        'emailaddress="sampleaccount1@sampling.com"',
-                    'x-amz-grant-read-acp':
-                        'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                        'f8f8d5218e7cd47ef2be',
-                    'x-amz-grant-write-acp':
-                        'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                        'f8f8d5218e7cd47ef2bf',
-                },
-                url: '/?acl',
-                query: { acl: '' },
-                actionImplicitDenies: false,
-            };
-            bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.strictEqual(err, undefined);
-                metadata.getBucket(bucketName, log, (err, md) => {
-                    assert(md.getAcl().WRITE.indexOf(canonicalIDforSample1)
-                        > -1);
-                    assert(md.getAcl().READ.indexOf(canonicalIDforSample1)
-                        > -1);
-                    assert(md.getAcl().FULL_CONTROL
-                        .indexOf(canonicalIDforSample1) > -1);
-                    assert(md.getAcl().FULL_CONTROL
-                        .indexOf(canonicalIDforSample2) > -1);
-                    assert(md.getAcl().READ_ACP
-                        .indexOf(canonicalIDforSample1) > -1);
-                    assert(md.getAcl().WRITE_ACP
-                        .indexOf(canonicalIDforSample2) > -1);
-                    done();
-                });
-            });
-        });
-
-    Object.keys(invalidIds).forEach(idType => {
-        it('should return an error if grantee canonical ID provided in ACL ' +
-        `request invalid because ${idType}`, done => {
-            const testACLRequest = {
-                bucketName,
-                namespace,
-                headers: {
-                    'host': `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-grant-full-control': invalidIds[idType],
-                },
-                url: '/?acl',
-                query: { acl: '' },
-                actionImplicitDenies: false,
-            };
-            return bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.strictEqual(err.is.InvalidArgument, true);
-                done();
-            });
-        });
-    });
-
-    it('should return an error if invalid email ' +
-        'provided in ACL header request', done => {
+    it('should set all ACLs sharing the same email in request headers', done => {
         const testACLRequest = {
             bucketName,
             namespace,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
-                    'emailaddress="sampleaccount1@sampling.com"' +
-                    ',emailaddress="nonexistentEmail@sampling.com"',
+                    'emailaddress="sampleaccount1@sampling.com"' + ',emailaddress="sampleaccount2@sampling.com"',
+                'x-amz-grant-read': 'emailaddress="sampleaccount1@sampling.com"',
+                'x-amz-grant-write': 'emailaddress="sampleaccount1@sampling.com"',
+                'x-amz-grant-read-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2be',
+                'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2bf',
+            },
+            url: '/?acl',
+            query: { acl: '' },
+            actionImplicitDenies: false,
+        };
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.strictEqual(err, undefined);
+            metadata.getBucket(bucketName, log, (err, md) => {
+                assert(md.getAcl().WRITE.indexOf(canonicalIDforSample1) > -1);
+                assert(md.getAcl().READ.indexOf(canonicalIDforSample1) > -1);
+                assert(md.getAcl().FULL_CONTROL.indexOf(canonicalIDforSample1) > -1);
+                assert(md.getAcl().FULL_CONTROL.indexOf(canonicalIDforSample2) > -1);
+                assert(md.getAcl().READ_ACP.indexOf(canonicalIDforSample1) > -1);
+                assert(md.getAcl().WRITE_ACP.indexOf(canonicalIDforSample2) > -1);
+                done();
+            });
+        });
+    });
+
+    Object.keys(invalidIds).forEach(idType => {
+        it(
+            'should return an error if grantee canonical ID provided in ACL ' + `request invalid because ${idType}`,
+            done => {
+                const testACLRequest = {
+                    bucketName,
+                    namespace,
+                    headers: {
+                        host: `${bucketName}.s3.amazonaws.com`,
+                        'x-amz-grant-full-control': invalidIds[idType],
+                    },
+                    url: '/?acl',
+                    query: { acl: '' },
+                    actionImplicitDenies: false,
+                };
+                return bucketPutACL(authInfo, testACLRequest, log, err => {
+                    assert.strictEqual(err.is.InvalidArgument, true);
+                    done();
+                });
+            },
+        );
+    });
+
+    it('should return an error if invalid email ' + 'provided in ACL header request', done => {
+        const testACLRequest = {
+            bucketName,
+            namespace,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-grant-full-control':
+                    'emailaddress="sampleaccount1@sampling.com"' + ',emailaddress="nonexistentEmail@sampling.com"',
             },
             url: '/?acl',
             query: { acl: '' },
@@ -313,49 +280,50 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
-            post: '<AccessControlPolicy xmlns=' +
-                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
-                    '<ID>79a59df900b949e55d96a1e698fbaced' +
-                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
-                    '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
-                  '<AccessControlList>' +
-                    '<Grant>' +
-                      '<Grantee xsi:type="CanonicalUser">' +
-                        '<ID>79a59df900b949e55d96a1e698fbaced' +
-                        'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
-                        '<DisplayName>OwnerDisplayName</DisplayName>' +
-                      '</Grantee>' +
-                      '<Permission>FULL_CONTROL</Permission>' +
-                    '</Grant>' +
-                    '<Grant>' +
-                      '<Grantee xsi:type="Group">' +
-                        `<URI>${constants.publicId}</URI>` +
-                      '</Grantee>' +
-                      '<Permission>READ</Permission>' +
-                    '</Grant>' +
-                    '<Grant>' +
-                      '<Grantee xsi:type="Group">' +
-                        `<URI>${constants.logId}</URI>` +
-                      '</Grantee>' +
-                      '<Permission>WRITE</Permission>' +
-                    '</Grant>' +
-                    '<Grant>' +
-                      '<Grantee xsi:type="AmazonCustomerByEmail">' +
-                        '<EmailAddress>sampleaccount1@sampling.com' +
-                        '</EmailAddress>' +
-                      '</Grantee>' +
-                      '<Permission>WRITE_ACP</Permission>' +
-                    '</Grant>' +
-                    '<Grant>' +
-                      '<Grantee xsi:type="CanonicalUser">' +
-                        '<ID>79a59df900b949e55d96a1e698fbacedfd' +
-                        '6e09d98eacf8f8d5218e7cd47ef2bf</ID>' +
-                      '</Grantee>' +
-                      '<Permission>READ_ACP</Permission>' +
-                    '</Grant>' +
-                  '</AccessControlList>' +
+            post:
+                '<AccessControlPolicy xmlns=' +
+                '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                '<Owner>' +
+                '<ID>79a59df900b949e55d96a1e698fbaced' +
+                'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
+                '<DisplayName>OwnerDisplayName</DisplayName>' +
+                '</Owner>' +
+                '<AccessControlList>' +
+                '<Grant>' +
+                '<Grantee xsi:type="CanonicalUser">' +
+                '<ID>79a59df900b949e55d96a1e698fbaced' +
+                'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
+                '<DisplayName>OwnerDisplayName</DisplayName>' +
+                '</Grantee>' +
+                '<Permission>FULL_CONTROL</Permission>' +
+                '</Grant>' +
+                '<Grant>' +
+                '<Grantee xsi:type="Group">' +
+                `<URI>${constants.publicId}</URI>` +
+                '</Grantee>' +
+                '<Permission>READ</Permission>' +
+                '</Grant>' +
+                '<Grant>' +
+                '<Grantee xsi:type="Group">' +
+                `<URI>${constants.logId}</URI>` +
+                '</Grantee>' +
+                '<Permission>WRITE</Permission>' +
+                '</Grant>' +
+                '<Grant>' +
+                '<Grantee xsi:type="AmazonCustomerByEmail">' +
+                '<EmailAddress>sampleaccount1@sampling.com' +
+                '</EmailAddress>' +
+                '</Grantee>' +
+                '<Permission>WRITE_ACP</Permission>' +
+                '</Grant>' +
+                '<Grant>' +
+                '<Grantee xsi:type="CanonicalUser">' +
+                '<ID>79a59df900b949e55d96a1e698fbacedfd' +
+                '6e09d98eacf8f8d5218e7cd47ef2bf</ID>' +
+                '</Grantee>' +
+                '<Permission>READ_ACP</Permission>' +
+                '</Grant>' +
+                '</AccessControlList>' +
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
@@ -366,14 +334,11 @@ describe('putBucketACL API', () => {
             assert.strictEqual(err, undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(md.getAcl().Canned, '');
-                assert.strictEqual(md.getAcl().FULL_CONTROL[0],
-                    canonicalIDforSample1);
+                assert.strictEqual(md.getAcl().FULL_CONTROL[0], canonicalIDforSample1);
                 assert.strictEqual(md.getAcl().READ[0], constants.publicId);
                 assert.strictEqual(md.getAcl().WRITE[0], constants.logId);
-                assert.strictEqual(md.getAcl().WRITE_ACP[0],
-                                   canonicalIDforSample1);
-                assert.strictEqual(md.getAcl().READ_ACP[0],
-                    canonicalIDforSample2);
+                assert.strictEqual(md.getAcl().WRITE_ACP[0], canonicalIDforSample1);
+                assert.strictEqual(md.getAcl().READ_ACP[0], canonicalIDforSample2);
                 done();
             });
         });
@@ -384,14 +349,15 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
-            post: '<AccessControlPolicy xmlns=' +
-                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
-                    '<ID>79a59df900b949e55d96a1e698fbaced' +
-                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
-                    '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
-                  '<AccessControlList></AccessControlList>' +
+            post:
+                '<AccessControlPolicy xmlns=' +
+                '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                '<Owner>' +
+                '<ID>79a59df900b949e55d96a1e698fbaced' +
+                'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
+                '<DisplayName>OwnerDisplayName</DisplayName>' +
+                '</Owner>' +
+                '<AccessControlList></AccessControlList>' +
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
@@ -412,19 +378,19 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should not be able to set ACLs without AccessControlList section',
-    done => {
+    it('should not be able to set ACLs without AccessControlList section', done => {
         const testACLRequest = {
             bucketName,
             namespace,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
-            post: '<AccessControlPolicy xmlns=' +
-                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
-                    '<ID>79a59df900b949e55d96a1e698fbaced' +
-                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
-                    '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
+            post:
+                '<AccessControlPolicy xmlns=' +
+                '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                '<Owner>' +
+                '<ID>79a59df900b949e55d96a1e698fbaced' +
+                'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
+                '<DisplayName>OwnerDisplayName</DisplayName>' +
+                '</Owner>' +
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
@@ -442,33 +408,34 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
-            post: '<AccessControlPolicy xmlns=' +
-                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
-                    '<ID>79a59df900b949e55d96a1e698fbaced' +
-                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
-                    '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
-                  '<AccessControlList>' +
-                    '<Grant>' +
-                      '<Grantee xsi:type="CanonicalUser">' +
-                        '<ID>79a59df900b949e55d96a1e698fbaced' +
-                        'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
-                        '<DisplayName>OwnerDisplayName</DisplayName>' +
-                      '</Grantee>' +
-                      '<Permission>FULL_CONTROL</Permission>' +
-                    '</Grant>' +
-                  '</AccessControlList>' +
-                  '<AccessControlList>' +
-                    '<Grant>' +
-                      '<Grantee xsi:type="CanonicalUser">' +
-                        '<ID>79a59df900b949e55d96a1e698fbaced' +
-                        'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
-                        '<DisplayName>OwnerDisplayName</DisplayName>' +
-                      '</Grantee>' +
-                      '<Permission>READ</Permission>' +
-                    '</Grant>' +
-                  '</AccessControlList>' +
+            post:
+                '<AccessControlPolicy xmlns=' +
+                '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                '<Owner>' +
+                '<ID>79a59df900b949e55d96a1e698fbaced' +
+                'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
+                '<DisplayName>OwnerDisplayName</DisplayName>' +
+                '</Owner>' +
+                '<AccessControlList>' +
+                '<Grant>' +
+                '<Grantee xsi:type="CanonicalUser">' +
+                '<ID>79a59df900b949e55d96a1e698fbaced' +
+                'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
+                '<DisplayName>OwnerDisplayName</DisplayName>' +
+                '</Grantee>' +
+                '<Permission>FULL_CONTROL</Permission>' +
+                '</Grant>' +
+                '</AccessControlList>' +
+                '<AccessControlList>' +
+                '<Grant>' +
+                '<Grantee xsi:type="CanonicalUser">' +
+                '<ID>79a59df900b949e55d96a1e698fbaced' +
+                'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
+                '<DisplayName>OwnerDisplayName</DisplayName>' +
+                '</Grantee>' +
+                '<Permission>READ</Permission>' +
+                '</Grant>' +
+                '</AccessControlList>' +
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
@@ -481,27 +448,27 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid grantee user ID ' +
-    'provided in ACL request body', done => {
+    it('should return an error if invalid grantee user ID ' + 'provided in ACL request body', done => {
         const testACLRequest = {
             bucketName,
             namespace,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
-            post: '<AccessControlPolicy xmlns=' +
-                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
-                    '<ID>79a59df900b949e55d96a1e698fbaced' +
-                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
-                    '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
-                  '<AccessControlList>' +
-                  '<Grant>' +
-                    '<Grantee xsi:type="CanonicalUser">' +
-                      '<ID>invalid_id</ID>' +
-                    '</Grantee>' +
-                    '<Permission>READ_ACP</Permission>' +
-                  '</Grant>' +
-                  '</AccessControlList>' +
+            post:
+                '<AccessControlPolicy xmlns=' +
+                '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                '<Owner>' +
+                '<ID>79a59df900b949e55d96a1e698fbaced' +
+                'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
+                '<DisplayName>OwnerDisplayName</DisplayName>' +
+                '</Owner>' +
+                '<AccessControlList>' +
+                '<Grant>' +
+                '<Grantee xsi:type="CanonicalUser">' +
+                '<ID>invalid_id</ID>' +
+                '</Grantee>' +
+                '<Permission>READ_ACP</Permission>' +
+                '</Grant>' +
+                '</AccessControlList>' +
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
@@ -514,27 +481,27 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid email ' +
-    'address provided in ACLs set out in request body', done => {
+    it('should return an error if invalid email ' + 'address provided in ACLs set out in request body', done => {
         const testACLRequest = {
             bucketName,
             namespace,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
-            post: '<AccessControlPolicy xmlns=' +
-                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
-                    '<ID>79a59df900b949e55d96a1e698fbaced' +
-                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
-                    '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
-                  '<AccessControlList>' +
-                    '<Grant>' +
-                      '<Grantee xsi:type="AmazonCustomerByEmail">' +
-                        '<EmailAddress>xyz@amazon.com</EmailAddress>' +
-                      '</Grantee>' +
-                      '<Permission>WRITE_ACP</Permission>' +
-                    '</Grant>' +
-                  '</AccessControlList>' +
+            post:
+                '<AccessControlPolicy xmlns=' +
+                '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                '<Owner>' +
+                '<ID>79a59df900b949e55d96a1e698fbaced' +
+                'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
+                '<DisplayName>OwnerDisplayName</DisplayName>' +
+                '</Owner>' +
+                '<AccessControlList>' +
+                '<Grant>' +
+                '<Grantee xsi:type="AmazonCustomerByEmail">' +
+                '<EmailAddress>xyz@amazon.com</EmailAddress>' +
+                '</Grantee>' +
+                '<Permission>WRITE_ACP</Permission>' +
+                '</Grant>' +
+                '</AccessControlList>' +
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
@@ -546,31 +513,31 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if xml provided does not match s3 '
-       + 'scheme for setting ACLs', done => {
+    it('should return an error if xml provided does not match s3 ' + 'scheme for setting ACLs', done => {
         const testACLRequest = {
             bucketName,
             namespace,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             /** XML below uses the term "PowerGrant" instead of
-            * "Grant" which is part of the s3 xml scheme for ACLs
-            * so an error should be returned
-            */
-            post: '<AccessControlPolicy xmlns=' +
-                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
-                    '<ID>79a59df900b949e55d96a1e698fbaced' +
-                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
-                    '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
-                  '<AccessControlList>' +
-                    '<PowerGrant>' +
-                      '<Grantee xsi:type="AmazonCustomerByEmail">' +
-                        '<EmailAddress>xyz@amazon.com</EmailAddress>' +
-                      '</Grantee>' +
-                      '<Permission>WRITE_ACP</Permission>' +
-                    '</PowerGrant>' +
-                  '</AccessControlList>' +
+             * "Grant" which is part of the s3 xml scheme for ACLs
+             * so an error should be returned
+             */
+            post:
+                '<AccessControlPolicy xmlns=' +
+                '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                '<Owner>' +
+                '<ID>79a59df900b949e55d96a1e698fbaced' +
+                'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
+                '<DisplayName>OwnerDisplayName</DisplayName>' +
+                '</Owner>' +
+                '<AccessControlList>' +
+                '<PowerGrant>' +
+                '<Grantee xsi:type="AmazonCustomerByEmail">' +
+                '<EmailAddress>xyz@amazon.com</EmailAddress>' +
+                '</Grantee>' +
+                '<Permission>WRITE_ACP</Permission>' +
+                '</PowerGrant>' +
+                '</AccessControlList>' +
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
@@ -583,51 +550,54 @@ describe('putBucketACL API', () => {
         });
     });
 
-
-    it('should return an error if xml provided does not match s3 '
-       + 'scheme for setting ACLs using multiple Grant section', done => {
-        const testACLRequest = {
-            bucketName,
-            namespace,
-            headers: { host: `${bucketName}.s3.amazonaws.com` },
-            /** XML below uses the term "PowerGrant" instead of
-            * "Grant" which is part of the s3 xml scheme for ACLs
-            * so an error should be returned
-            */
-            post: '<AccessControlPolicy xmlns=' +
+    it(
+        'should return an error if xml provided does not match s3 ' +
+            'scheme for setting ACLs using multiple Grant section',
+        done => {
+            const testACLRequest = {
+                bucketName,
+                namespace,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                /** XML below uses the term "PowerGrant" instead of
+                 * "Grant" which is part of the s3 xml scheme for ACLs
+                 * so an error should be returned
+                 */
+                post:
+                    '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
+                    '<Owner>' +
                     '<ID>79a59df900b949e55d96a1e698fbaced' +
                     'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
                     '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
-                  '<AccessControlList>' +
+                    '</Owner>' +
+                    '<AccessControlList>' +
                     '<Grant>' +
-                      '<Grantee xsi:type="CanonicalUser">' +
-                        '<ID>79a59df900b949e55d96a1e698fbaced' +
-                        'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
-                        '<DisplayName>OwnerDisplayName</DisplayName>' +
-                      '</Grantee>' +
-                      '<Permission>FULL_CONTROL</Permission>' +
+                    '<Grantee xsi:type="CanonicalUser">' +
+                    '<ID>79a59df900b949e55d96a1e698fbaced' +
+                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
+                    '<DisplayName>OwnerDisplayName</DisplayName>' +
+                    '</Grantee>' +
+                    '<Permission>FULL_CONTROL</Permission>' +
                     '</Grant>' +
                     '<PowerGrant>' +
-                      '<Grantee xsi:type="AmazonCustomerByEmail">' +
-                        '<EmailAddress>xyz@amazon.com</EmailAddress>' +
-                      '</Grantee>' +
-                      '<Permission>WRITE_ACP</Permission>' +
+                    '<Grantee xsi:type="AmazonCustomerByEmail">' +
+                    '<EmailAddress>xyz@amazon.com</EmailAddress>' +
+                    '</Grantee>' +
+                    '<Permission>WRITE_ACP</Permission>' +
                     '</PowerGrant>' +
-                  '</AccessControlList>' +
-                '</AccessControlPolicy>',
-            url: '/?acl',
-            query: { acl: '' },
-            actionImplicitDenies: false,
-        };
+                    '</AccessControlList>' +
+                    '</AccessControlPolicy>',
+                url: '/?acl',
+                query: { acl: '' },
+                actionImplicitDenies: false,
+            };
 
-        bucketPutACL(authInfo, testACLRequest, log, err => {
-            assert.strictEqual(err.is.MalformedACLError, true);
-            done();
-        });
-    });
+            bucketPutACL(authInfo, testACLRequest, log, err => {
+                assert.strictEqual(err.is.MalformedACLError, true);
+                done();
+            });
+        },
+    );
 
     it('should return an error if malformed xml provided', done => {
         const testACLRequest = {
@@ -639,20 +609,20 @@ describe('putBucketACL API', () => {
             post: {
                 '<AccessControlPolicy xmlns':
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
+                    '<Owner>' +
                     '<ID>79a59df900b949e55d96a1e698fbaced' +
                     'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
                     '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '<Owner>' +
-                  '<AccessControlList>' +
+                    '<Owner>' +
+                    '<AccessControlList>' +
                     '<Grant>' +
-                      '<Grantee xsi:type="AmazonCustomerByEmail">' +
-                        '<EmailAddress>xyz@amazon.com</EmailAddress>' +
-                      '<Grantee>' +
-                      '<Permission>WRITE_ACP</Permission>' +
+                    '<Grantee xsi:type="AmazonCustomerByEmail">' +
+                    '<EmailAddress>xyz@amazon.com</EmailAddress>' +
+                    '<Grantee>' +
+                    '<Permission>WRITE_ACP</Permission>' +
                     '<Grant>' +
-                  '<AccessControlList>' +
-                '<AccessControlPolicy>',
+                    '<AccessControlList>' +
+                    '<AccessControlPolicy>',
             },
             url: '/?acl',
             query: { acl: '' },
@@ -665,29 +635,29 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid group ' +
-    'uri provided in ACLs set out in request body', done => {
+    it('should return an error if invalid group ' + 'uri provided in ACLs set out in request body', done => {
         const testACLRequest = {
             bucketName,
             namespace,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             // URI in grant below is not valid group URI for s3
-            post: '<AccessControlPolicy xmlns=' +
-                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
-                    '<ID>79a59df900b949e55d96a1e698fbaced' +
-                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
-                    '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
-                  '<AccessControlList>' +
-                  '<Grant>' +
-                    '<Grantee xsi:type="Group">' +
-                      '<URI>http://acs.amazonaws.com/groups/' +
-                      'global/NOTAVALIDGROUP</URI>' +
-                    '</Grantee>' +
-                    '<Permission>READ</Permission>' +
-                  '</Grant>' +
-                  '</AccessControlList>' +
+            post:
+                '<AccessControlPolicy xmlns=' +
+                '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                '<Owner>' +
+                '<ID>79a59df900b949e55d96a1e698fbaced' +
+                'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
+                '<DisplayName>OwnerDisplayName</DisplayName>' +
+                '</Owner>' +
+                '<AccessControlList>' +
+                '<Grant>' +
+                '<Grantee xsi:type="Group">' +
+                '<URI>http://acs.amazonaws.com/groups/' +
+                'global/NOTAVALIDGROUP</URI>' +
+                '</Grantee>' +
+                '<Permission>READ</Permission>' +
+                '</Grant>' +
+                '</AccessControlList>' +
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
@@ -700,16 +670,13 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid group uri' +
-        'provided in ACL header request', done => {
+    it('should return an error if invalid group uri' + 'provided in ACL header request', done => {
         const testACLRequest = {
             bucketName,
             namespace,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
-                'x-amz-grant-full-control':
-                    'uri="http://acs.amazonaws.com/groups/' +
-                    'global/NOTAVALIDGROUP"',
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-grant-full-control': 'uri="http://acs.amazonaws.com/groups/' + 'global/NOTAVALIDGROUP"',
             },
             url: '/?acl',
             query: { acl: '' },

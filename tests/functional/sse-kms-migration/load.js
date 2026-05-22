@@ -37,7 +37,6 @@ async function spawnTcpdump(port, packetCount) {
                 detached: true,
                 stdio: ['ignore', 'pipe', 'pipe'], // ignored stdin
                 shell: false, // no need as it's detached
-
             },
         );
         let stderr = '';
@@ -51,7 +50,8 @@ async function spawnTcpdump(port, packetCount) {
             spawnTimeout = setTimeout(() => {
                 if (child.exitCode !== null || child.signalCode !== null) {
                     const err = `countPacketsByIp.sh stopped after spawn with code ${
-                        child.exitCode} and signal ${child.signalCode}.\nStderr: ${stderr}`;
+                        child.exitCode
+                    } and signal ${child.signalCode}.\nStderr: ${stderr}`;
                     reject(new Error(err));
                 } else {
                     resolve(child);
@@ -70,9 +70,7 @@ async function spawnTcpdump(port, packetCount) {
                 if (spawnTimeout) {
                     clearTimeout(spawnTimeout);
                 }
-                reject(new Error(
-                    `tcpdump script closed with code ${code} and signal ${signal}.\nStderr: ${stderr}`
-                ));
+                reject(new Error(`tcpdump script closed with code ${code} and signal ${signal}.\nStderr: ${stderr}`));
             }
         });
     });
@@ -89,8 +87,9 @@ async function stopTcpdump(tcpdump) {
     });
 }
 
-describe(`KMS load (kmip cluster ${KMS_NODES} nodes): ${OBJECT_NUMBER
-    } objs each in ${BUCKET_NUMBER} bkts (${TOTAL_OBJECTS} objs)`, () => {
+describe(`KMS load (kmip cluster ${KMS_NODES} nodes): ${
+    OBJECT_NUMBER
+} objs each in ${BUCKET_NUMBER} bkts (${TOTAL_OBJECTS} objs)`, () => {
     let buckets = [];
     let tcpdumpProcess;
     let stdout;
@@ -107,18 +106,23 @@ describe(`KMS load (kmip cluster ${KMS_NODES} nodes): ${OBJECT_NUMBER
                 await helpers.s3.putBucketEncryption({
                     Bucket,
                     ServerSideEncryptionConfiguration: helpers.hydrateSSEConfig({
-                        algo: 'aws:kms', masterKeyId: masterKeyArn }),
+                        algo: 'aws:kms',
+                        masterKeyId: masterKeyArn,
+                    }),
                 });
 
                 return { Bucket, masterKeyArn };
-            }));
+            }),
+        );
     });
 
     after(async () => {
-        await Promise.all(buckets.map(async ({ Bucket, masterKeyArn }) => {
-            await helpers.cleanup(Bucket);
-            return helpers.destroyKmsKey(masterKeyArn, log);
-        }));
+        await Promise.all(
+            buckets.map(async ({ Bucket, masterKeyArn }) => {
+                await helpers.cleanup(Bucket);
+                return helpers.destroyKmsKey(masterKeyArn, log);
+            }),
+        );
         await promisify(kms.client.stop.bind(kms.client))();
     });
 
@@ -147,7 +151,7 @@ describe(`KMS load (kmip cluster ${KMS_NODES} nodes): ${OBJECT_NUMBER
                             const [count, ip] = line.trim().split(' ');
                             return { count: +count, ip };
                         }),
-                })
+                }),
             );
         });
     });
@@ -175,30 +179,37 @@ describe(`KMS load (kmip cluster ${KMS_NODES} nodes): ${OBJECT_NUMBER
         const repartitionCount = repartition.map(({ count }) => count);
         assert.strictEqual(code, 0, `tcpdump script closed with code ${code} and signal ${signal}`);
         assert(repartition.length === KMS_NODES, `Expected ${KMS_NODES} IPs but got ${repartition.length}`);
-        assert(repartitionCount.every(count =>
-            count >= EXPECTED_MIN && count <= EXPECTED_MAX),
+        assert(
+            repartitionCount.every(count => count >= EXPECTED_MIN && count <= EXPECTED_MAX),
             `Repartition counts should be around ${TOTAL_OBJECTS_PER_NODE} ` +
-            `(±${APPROX}, min: ${EXPECTED_MIN}, max: ${EXPECTED_MAX}) but got ${repartitionCount}`);
+                `(±${APPROX}, min: ${EXPECTED_MIN}, max: ${EXPECTED_MAX}) but got ${repartitionCount}`,
+        );
     }
 
     it(`should encrypt ${TOTAL_OBJECTS} times in parallel, ~${TOTAL_OBJECTS_PER_NODE} per node`, async () => {
-        await (Promise.all(
-            buckets.map(async ({ Bucket }) => Promise.all(
-                // Send little more request in case a packet is missed.
-                new Array(OBJECT_NUMBER + 1).fill(0).map(async (_, i) =>
-                    helpers.s3.putObject({ Bucket, Key: `obj-${i}`, Body: `body-${i}` }))
-            ))
-        ));
+        await Promise.all(
+            buckets.map(async ({ Bucket }) =>
+                Promise.all(
+                    // Send little more request in case a packet is missed.
+                    new Array(OBJECT_NUMBER + 1)
+                        .fill(0)
+                        .map(async (_, i) => helpers.s3.putObject({ Bucket, Key: `obj-${i}`, Body: `body-${i}` })),
+                ),
+            ),
+        );
         await assertRepartition(closePromise);
     });
 
     it(`should decrypt ${TOTAL_OBJECTS} times in parallel, ~${TOTAL_OBJECTS_PER_NODE} per node`, async () => {
         await Promise.all(
-            buckets.map(async ({ Bucket }) => Promise.all(
-                // Send little more request in case a packet is missed.
-                new Array(OBJECT_NUMBER + 1).fill(0).map(async (_, i) =>
-                    helpers.s3.getObject({ Bucket, Key: `obj-${i}` }))
-            ))
+            buckets.map(async ({ Bucket }) =>
+                Promise.all(
+                    // Send little more request in case a packet is missed.
+                    new Array(OBJECT_NUMBER + 1)
+                        .fill(0)
+                        .map(async (_, i) => helpers.s3.getObject({ Bucket, Key: `obj-${i}` })),
+                ),
+            ),
         );
         await assertRepartition(closePromise);
     });

@@ -102,10 +102,7 @@ function testHandler(req, res) {
         case '/raw':
             return respondWithValue(req, res, ['bitsandbytes']);
         case '/json':
-            return respondWithValue(req, res, [
-                postJsonStringified.slice(0, 3),
-                postJsonStringified.slice(3)
-            ]);
+            return respondWithValue(req, res, [postJsonStringified.slice(0, 3), postJsonStringified.slice(3)]);
         case '/post':
             if (req.method !== 'POST') {
                 return respondWithError(req, res, 405);
@@ -124,7 +121,7 @@ function testHandler(req, res) {
 }
 
 function createProxyServer(proto, targetHost, hostname, port, callback) {
-    const target =  new URL(targetHost);
+    const target = new URL(targetHost);
     let options = {};
     let serverType = http;
     if (proto === 'https') {
@@ -138,10 +135,7 @@ function createProxyServer(proto, targetHost, hostname, port, callback) {
     proxy.on('connect', (req, clnt) => {
         const svr = net.connect(target.port, target.hostname, () => {
             // handle http -> https
-            clnt.write(
-                `HTTP/${req.httpVersion} 200 Connection Established\r\n` +
-                '\r\n'
-            );
+            clnt.write(`HTTP/${req.httpVersion} 200 Connection Established\r\n` + '\r\n');
             svr.pipe(clnt);
             clnt.pipe(svr);
         });
@@ -157,8 +151,7 @@ function createTestServer(proto, hostname, port, handler, callback) {
         options = { key: testKey, cert: testCert };
         serverType = https;
     }
-    const server = serverType.createServer(options,
-                                              handler);
+    const server = serverType.createServer(options, handler);
     server.on('error', err => {
         process.stdout.write(`https server: ${err.stack}\n`);
         process.exit(1);
@@ -167,10 +160,7 @@ function createTestServer(proto, hostname, port, handler, callback) {
     return server;
 }
 
-[
-    'http',
-    'https',
-].forEach(protocol => {
+['http', 'https'].forEach(protocol => {
     describe(`test against ${protocol} server`, () => {
         const hostname = 'localhost';
         const testPort = 4242;
@@ -185,37 +175,45 @@ function createTestServer(proto, hostname, port, handler, callback) {
 
         before(done => {
             process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
-            async.series([
-                next => {
-                    server = createTestServer(
-                        protocol, hostname, testPort, testHandler, next);
-                },
-                next => {
-                    proxyTarget = createTestServer(protocol, hostname, 8081,
-                        (req, res) => res.end('proxyTarget'), next);
-                },
-                next => {
-                    proxyServer = createProxyServer('http',
-                        targetHost, hostname, proxyPort, next);
-                },
-                next => {
-                    sproxyServer = createProxyServer('https',
-                        targetHost, hostname, sproxyPort, next);
-                },
-            ], done);
+            async.series(
+                [
+                    next => {
+                        server = createTestServer(protocol, hostname, testPort, testHandler, next);
+                    },
+                    next => {
+                        proxyTarget = createTestServer(
+                            protocol,
+                            hostname,
+                            8081,
+                            (req, res) => res.end('proxyTarget'),
+                            next,
+                        );
+                    },
+                    next => {
+                        proxyServer = createProxyServer('http', targetHost, hostname, proxyPort, next);
+                    },
+                    next => {
+                        sproxyServer = createProxyServer('https', targetHost, hostname, sproxyPort, next);
+                    },
+                ],
+                done,
+            );
         });
 
         after(done => {
             process.env.NODE_TLS_REJECT_UNAUTHORIZED = 1;
-            async.series([
-                next => server.close(next),
-                next => proxyTarget.close(next),
-                next => {
-                    proxyServer.close();
-                    sproxyServer.close();
-                    next();
-                },
-            ], done);
+            async.series(
+                [
+                    next => server.close(next),
+                    next => proxyTarget.close(next),
+                    next => {
+                        proxyServer.close();
+                        sproxyServer.close();
+                        next();
+                    },
+                ],
+                done,
+            );
         });
 
         afterEach(() => {
@@ -251,35 +249,34 @@ function createTestServer(proto, hostname, port, handler, callback) {
             });
 
             it('should return data', done => {
-                request.request(`${host}/raw`, { json: false },
-                    (err, res, body) => {
-                        assert.ifError(err);
-                        assert.equal(body, 'bitsandbytes');
-                        done();
-                    });
+                request.request(`${host}/raw`, { json: false }, (err, res, body) => {
+                    assert.ifError(err);
+                    assert.equal(body, 'bitsandbytes');
+                    done();
+                });
             });
 
             it('should convert output to json if "json" flag is set', done => {
-                request.request(`${host}/json`, { json: true },
-                    (err, res, body) => {
-                        assert.ifError(err);
-                        assert.deepStrictEqual(body, postJson);
-                        done();
-                    });
+                request.request(`${host}/json`, { json: true }, (err, res, body) => {
+                    assert.ifError(err);
+                    assert.deepStrictEqual(body, postJson);
+                    done();
+                });
             });
 
             it('should set method to GET if it is missing', done => {
-                const req = request.request(`${host}`,
-                    (err, res) => {
-                        assert.ifError(err);
-                        assert.equal(res.statusCode, 200);
-                        assert.equal(req.method, 'GET');
-                        done();
-                    });
+                const req = request.request(`${host}`, (err, res) => {
+                    assert.ifError(err);
+                    assert.equal(res.statusCode, 200);
+                    assert.equal(req.method, 'GET');
+                    done();
+                });
             });
 
             it('should set headers', done => {
-                const req = request.request(`${host}`, {
+                const req = request.request(
+                    `${host}`,
+                    {
                         headers: {
                             'TEST-HEADERS-ONE': 'test-value-one',
                             'TEST-HEADERS-TWO': 'test-value-two',
@@ -293,75 +290,74 @@ function createTestServer(proto, hostname, port, handler, callback) {
                             'test-headers-two': 'test-value-two',
                         });
                         done();
-                    });
+                    },
+                );
             });
         });
 
         describe('post', () => {
             it('should post data', done => {
-                request.post(`${host}/post`, { body: postData },
-                    (err, res, body) => {
-                        assert.ifError(err);
-                        assert.equal(res.statusCode, 200);
-                        assert.equal(body, '{"body": "post completed"}');
-                        done();
-                    });
+                request.post(`${host}/post`, { body: postData }, (err, res, body) => {
+                    assert.ifError(err);
+                    assert.equal(res.statusCode, 200);
+                    assert.equal(body, '{"body": "post completed"}');
+                    done();
+                });
             });
 
             it('should post with json data', done => {
-                request.post(`${host}/postjson`, { body: { key: 'value' } },
-                    (err, res, body) => {
-                        assert.ifError(err);
-                        assert.equal(res.statusCode, 200);
-                        assert.equal(body, '{"body": "post completed"}');
-                        done();
-                    });
+                request.post(`${host}/postjson`, { body: { key: 'value' } }, (err, res, body) => {
+                    assert.ifError(err);
+                    assert.equal(res.statusCode, 200);
+                    assert.equal(body, '{"body": "post completed"}');
+                    done();
+                });
             });
 
             it('should post with empty body', done => {
-                request.post(`${host}/postempty`,
-                    (err, res, body) => {
-                        assert.ifError(err);
-                        assert.equal(res.statusCode, 200);
-                        assert.equal(body, '{"body": "post completed"}');
-                        done();
-                    });
+                request.post(`${host}/postempty`, (err, res, body) => {
+                    assert.ifError(err);
+                    assert.equal(res.statusCode, 200);
+                    assert.equal(body, '{"body": "post completed"}');
+                    done();
+                });
             });
 
             it('should post with json data (json response)', done => {
-                request.post(`${host}/postjson`,
-                    { body: { key: 'value' }, json: true },
-                    (err, res, body) => {
-                        assert.ifError(err);
-                        assert.equal(res.statusCode, 200);
-                        assert.deepStrictEqual(body, {
-                            body: 'post completed',
-                        });
-                        done();
+                request.post(`${host}/postjson`, { body: { key: 'value' }, json: true }, (err, res, body) => {
+                    assert.ifError(err);
+                    assert.equal(res.statusCode, 200);
+                    assert.deepStrictEqual(body, {
+                        body: 'post completed',
                     });
+                    done();
+                });
             });
 
             it('should set content-type JSON if missing', done => {
-                const req = request.post(`${host}`, {
+                const req = request.post(
+                    `${host}`,
+                    {
                         body: postJson,
-                        headers: { 'EXTRA': 'header' },
+                        headers: { EXTRA: 'header' },
                     },
                     (err, res) => {
                         assert.ifError(err);
                         assert.equal(res.statusCode, 200);
                         checkForHeaders(req.getHeaders(), {
                             'content-type': 'application/json',
-                            'content-length':
-                                Buffer.byteLength(postJsonStringified),
-                            'extra': 'header',
+                            'content-length': Buffer.byteLength(postJsonStringified),
+                            extra: 'header',
                         });
                         done();
-                    });
+                    },
+                );
             });
 
-            it('should not overwrite existing content-type header value',
-                done => {
-                    const req = request.post(`${host}`, {
+            it('should not overwrite existing content-type header value', done => {
+                const req = request.post(
+                    `${host}`,
+                    {
                         body: postJson,
                         headers: { 'Content-Type': 'text/plain' },
                     },
@@ -370,22 +366,22 @@ function createTestServer(proto, hostname, port, handler, callback) {
                         assert.equal(res.statusCode, 200);
                         checkForHeaders(req.getHeaders(), {
                             'content-type': 'text/plain',
-                            'content-length':
-                                Buffer.byteLength(postJsonStringified),
+                            'content-length': Buffer.byteLength(postJsonStringified),
                         });
                         done();
-                    });
-                });
+                    },
+                );
+            });
         });
     });
 });
 
 describe('utilities::request error handling', () => {
-    it('should throw an error if arguments are missing', () =>  {
+    it('should throw an error if arguments are missing', () => {
         assert.throws(request.request);
     });
 
-    it('should throw an error if callback argument is missing', () =>  {
+    it('should throw an error if callback argument is missing', () => {
         assert.throws(() => request.request('http://test'));
     });
 
@@ -427,7 +423,7 @@ describe('utilities::createHeaders', () => {
             {
                 'content-type': 'test/one',
                 'content-length': 1,
-            }
+            },
         );
     });
 });

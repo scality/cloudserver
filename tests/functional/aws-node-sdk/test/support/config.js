@@ -26,7 +26,7 @@ const DEFAULT_MEM_OPTIONS = {
     endpoint: `${transport}://127.0.0.1:8000`,
     port: 8000,
     forcePathStyle: true,
-    region: 'us-east-1', 
+    region: 'us-east-1',
     maxAttempts: 3,
     requestHandler: new NodeHttpHandler({
         connectionTimeout: 5000,
@@ -64,9 +64,7 @@ function _getMemCredentials(profile) {
 function _getMemConfig(profile, config) {
     const credentials = _getMemCredentials(profile);
 
-    const memConfig = Object.assign({}
-        , DEFAULT_GLOBAL_OPTIONS, DEFAULT_MEM_OPTIONS
-        , { credentials }, config);
+    const memConfig = Object.assign({}, DEFAULT_GLOBAL_OPTIONS, DEFAULT_MEM_OPTIONS, { credentials }, config);
 
     if (process.env.IP) {
         memConfig.endpoint = `${transport}://${process.env.IP}:8000`;
@@ -78,9 +76,7 @@ function _getMemConfig(profile, config) {
 function _getAwsConfig(profile, config) {
     const credentials = getAwsCredentials(profile);
 
-    const awsConfig = Object.assign({}
-        , DEFAULT_GLOBAL_OPTIONS, DEFAULT_AWS_OPTIONS
-        , { credentials }, config);
+    const awsConfig = Object.assign({}, DEFAULT_GLOBAL_OPTIONS, DEFAULT_AWS_OPTIONS, { credentials }, config);
 
     return awsConfig;
 }

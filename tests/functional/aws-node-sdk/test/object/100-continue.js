@@ -45,7 +45,7 @@ class ContinueRequestHandler {
             method: 'PUT',
             headers: {
                 'content-length': body.length,
-                'Expect': this.expectHeader,
+                Expect: this.expectHeader,
             },
         };
     }
@@ -102,8 +102,7 @@ class ContinueRequestHandler {
         req.flushHeaders();
         // At this point we have only sent the header.
         const headerLen = req._header.length;
-        req.on('continue', () =>
-            cb('Continue beeing seen when 403 is expected'));
+        req.on('continue', () => cb('Continue beeing seen when 403 is expected'));
         req.on('response', res => {
             res.on('data', () => {});
             res.on('end', () => {
@@ -138,30 +137,22 @@ describeSkipIfE2E('PUT public object with 100-continue header', () => {
             await s3.send(new CreateBucketCommand({ Bucket: bucket }));
         });
 
-        afterEach(() =>
-            bucketUtil.empty(bucket)
-            .then(() => bucketUtil.deleteOne(bucket)));
+        afterEach(() => bucketUtil.empty(bucket).then(() => bucketUtil.deleteOne(bucket)));
 
-        it('should return 200 status code', done =>
-            continueRequest.hasStatusCode(200, done));
+        it('should return 200 status code', done => continueRequest.hasStatusCode(200, done));
 
         it('should return 200 status code with upper case value', done =>
-            continueRequest.setExpectHeader('100-CONTINUE')
-                .hasStatusCode(200, done));
+            continueRequest.setExpectHeader('100-CONTINUE').hasStatusCode(200, done));
 
         it('should return 200 status code if incorrect value', done =>
-            continueRequest.setExpectHeader('101-continue')
-                .hasStatusCode(200, done));
+            continueRequest.setExpectHeader('101-continue').hasStatusCode(200, done));
 
         it('should return 403 status code if cannot authenticate', done =>
-            continueRequest.setRequestPath(invalidSignedURL)
-                .hasStatusCode(403, done));
+            continueRequest.setRequestPath(invalidSignedURL).hasStatusCode(403, done));
 
-        it('should wait for continue event before sending body', done =>
-            continueRequest.sendsBodyOnContinue(done));
+        it('should wait for continue event before sending body', done => continueRequest.sendsBodyOnContinue(done));
 
         it('should not send continue if denied for a public user', done =>
-            continueRequest.setRequestPath(invalidSignedURL)
-                .shouldNotGetContinue(done));
+            continueRequest.setRequestPath(invalidSignedURL).shouldNotGetContinue(done));
     });
 });

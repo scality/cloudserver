@@ -1,9 +1,5 @@
 const assert = require('assert');
-const {
-    CreateBucketCommand,
-    GetBucketLoggingCommand,
-    PutBucketLoggingCommand,
-} = require('@aws-sdk/client-s3');
+const { CreateBucketCommand, GetBucketLoggingCommand, PutBucketLoggingCommand } = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -30,7 +26,9 @@ function cleanUp(bucketUtil, cb) {
                 throw err;
             }
         }),
-    ]).then(() => cb()).catch(err => cb(err));
+    ])
+        .then(() => cb())
+        .catch(err => cb(err));
 }
 
 describe('GET bucket logging', () => {
@@ -38,10 +36,14 @@ describe('GET bucket logging', () => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
 
-        after(done => { cleanUp(bucketUtil, done); });
+        after(done => {
+            cleanUp(bucketUtil, done);
+        });
 
         describe('without existing bucket', () => {
-            afterEach(done => { cleanUp(bucketUtil, done); });
+            afterEach(done => {
+                cleanUp(bucketUtil, done);
+            });
 
             it('should return NoSuchBucket', done => {
                 s3.send(new GetBucketLoggingCommand({ Bucket: bucketName }))
@@ -58,7 +60,9 @@ describe('GET bucket logging', () => {
         });
 
         describe('on bucket without logging configuration', () => {
-            afterEach(done => { cleanUp(bucketUtil, done); });
+            afterEach(done => {
+                cleanUp(bucketUtil, done);
+            });
 
             beforeEach(done => {
                 process.stdout.write('Creating bucket without logging\n');
@@ -86,16 +90,22 @@ describe('GET bucket logging', () => {
         });
 
         describe('with existing logging configuration', () => {
-            afterEach(done => { cleanUp(bucketUtil, done); });
+            afterEach(done => {
+                cleanUp(bucketUtil, done);
+            });
 
             beforeEach(done => {
                 process.stdout.write('Creating buckets and setting logging\n');
                 s3.send(new CreateBucketCommand({ Bucket: bucketName }))
                     .then(() => s3.send(new CreateBucketCommand({ Bucket: targetBucket })))
-                    .then(() => s3.send(new PutBucketLoggingCommand({
-                        Bucket: bucketName,
-                        BucketLoggingStatus: validLoggingConfig,
-                    })))
+                    .then(() =>
+                        s3.send(
+                            new PutBucketLoggingCommand({
+                                Bucket: bucketName,
+                                BucketLoggingStatus: validLoggingConfig,
+                            }),
+                        ),
+                    )
                     .then(() => done())
                     .catch(done);
             });
