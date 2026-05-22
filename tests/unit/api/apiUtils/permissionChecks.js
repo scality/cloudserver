@@ -1,8 +1,13 @@
 const assert = require('assert');
 
-const { isLifecycleSession, checkBucketPolicyResult, checkBucketPolicy,
-    isBucketAuthorized, isObjAuthorized, evaluateBucketPolicyWithIAM } =
-    require('../../../../lib/api/apiUtils/authorization/permissionChecks.js');
+const {
+    isLifecycleSession,
+    checkBucketPolicyResult,
+    checkBucketPolicy,
+    isBucketAuthorized,
+    isObjAuthorized,
+    evaluateBucketPolicyWithIAM,
+} = require('../../../../lib/api/apiUtils/authorization/permissionChecks.js');
 const { DummyRequestLogger } = require('../../helpers');
 
 const stubLog = new DummyRequestLogger();
@@ -85,12 +90,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             AWS: 'arn:aws:iam::123456789012:root',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -105,7 +106,8 @@ describe('checkBucketPolicy Principal logic', () => {
             expectedResult: checkBucketPolicyResult.ALLOW,
         },
         {
-            description: 'bucket owner and requester share the same account, principal account ID, Allow policy should return ALLOW',
+            description:
+                'bucket owner and requester share the same account, principal account ID, Allow policy should return ALLOW',
             policy: {
                 Statement: [
                     {
@@ -114,12 +116,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             AWS: '123456789012',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -143,12 +141,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             AWS: 'arn:aws:iam::123456789012:root',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -163,7 +157,8 @@ describe('checkBucketPolicy Principal logic', () => {
             expectedResult: checkBucketPolicyResult.EXPLICIT_DENY,
         },
         {
-            description: 'bucket owner and requester don\'t share the same account, Allow policy should return CROSS ACCOUNT',
+            description:
+                "bucket owner and requester don't share the same account, Allow policy should return CROSS ACCOUNT",
             policy: {
                 Statement: [
                     {
@@ -172,12 +167,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             AWS: 'arn:aws:iam::123456789012:root',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -192,7 +183,8 @@ describe('checkBucketPolicy Principal logic', () => {
             expectedResult: checkBucketPolicyResult.CROSS_ACCOUNT_ALLOW,
         },
         {
-            description: 'bucket owner and requester don\'t share the same account, principal account ID, Allow policy should return CROSS ACCOUNT',
+            description:
+                "bucket owner and requester don't share the same account, principal account ID, Allow policy should return CROSS ACCOUNT",
             policy: {
                 Statement: [
                     {
@@ -201,12 +193,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             AWS: '123456789012',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -221,7 +209,7 @@ describe('checkBucketPolicy Principal logic', () => {
             expectedResult: checkBucketPolicyResult.CROSS_ACCOUNT_ALLOW,
         },
         {
-            description: 'bucket owner and requester don\'t share the same account, Deny policy should return DENY',
+            description: "bucket owner and requester don't share the same account, Deny policy should return DENY",
             policy: {
                 Statement: [
                     {
@@ -230,12 +218,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             AWS: 'arn:aws:iam::123456789012:root',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -250,7 +234,8 @@ describe('checkBucketPolicy Principal logic', () => {
             expectedResult: checkBucketPolicyResult.EXPLICIT_DENY,
         },
         {
-            description: 'bucket owner and requester don\'t share the same account, requester is root, Allow policy should return ALLOW',
+            description:
+                "bucket owner and requester don't share the same account, requester is root, Allow policy should return ALLOW",
             policy: {
                 Statement: [
                     {
@@ -259,12 +244,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             AWS: 'arn:aws:iam::123456789012:root',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -279,7 +260,8 @@ describe('checkBucketPolicy Principal logic', () => {
             expectedResult: checkBucketPolicyResult.ALLOW,
         },
         {
-            description: 'bucket owner and requester don\'t share the same account, requester is root, Deny policy should return DENY',
+            description:
+                "bucket owner and requester don't share the same account, requester is root, Deny policy should return DENY",
             policy: {
                 Statement: [
                     {
@@ -288,12 +270,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             AWS: 'arn:aws:iam::123456789012:root',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -308,7 +286,8 @@ describe('checkBucketPolicy Principal logic', () => {
             expectedResult: checkBucketPolicyResult.EXPLICIT_DENY,
         },
         {
-            description: 'bucket owner and requester don\'t share the same account, requester and principal are users, Allow policy should return CROSS_ACCOUNT',
+            description:
+                "bucket owner and requester don't share the same account, requester and principal are users, Allow policy should return CROSS_ACCOUNT",
             policy: {
                 Statement: [
                     {
@@ -317,12 +296,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             AWS: 'arn:aws:iam::123456789012:user/testuser',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -337,7 +312,8 @@ describe('checkBucketPolicy Principal logic', () => {
             expectedResult: checkBucketPolicyResult.CROSS_ACCOUNT_ALLOW,
         },
         {
-            description: 'bucket owner and requester don\'t share the same account, requester and principal are users, Deny policy should return EXPLICIT_DENY',
+            description:
+                "bucket owner and requester don't share the same account, requester and principal are users, Deny policy should return EXPLICIT_DENY",
             policy: {
                 Statement: [
                     {
@@ -346,12 +322,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             AWS: 'arn:aws:iam::123456789012:user/testuser',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -366,7 +338,8 @@ describe('checkBucketPolicy Principal logic', () => {
             expectedResult: checkBucketPolicyResult.EXPLICIT_DENY,
         },
         {
-            description: 'bucket owner and requester don\'t share the same account, wildcard "*" principal, Allow policy should return CROSS_ACCOUNT_ALLOW',
+            description:
+                'bucket owner and requester don\'t share the same account, wildcard "*" principal, Allow policy should return CROSS_ACCOUNT_ALLOW',
             policy: {
                 Statement: [
                     {
@@ -375,12 +348,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             AWS: '*',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -395,7 +364,8 @@ describe('checkBucketPolicy Principal logic', () => {
             expectedResult: checkBucketPolicyResult.CROSS_ACCOUNT_ALLOW,
         },
         {
-            description: 'bucket owner and requester share the same account, wildcard "*" principal, Allow policy should return ALLOW',
+            description:
+                'bucket owner and requester share the same account, wildcard "*" principal, Allow policy should return ALLOW',
             policy: {
                 Statement: [
                     {
@@ -404,12 +374,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             AWS: '*',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -424,19 +390,16 @@ describe('checkBucketPolicy Principal logic', () => {
             expectedResult: checkBucketPolicyResult.ALLOW,
         },
         {
-            description: 'bucket owner and requester share the same account, wildcard "*" principal, string typeof principal , Allow policy should return ALLOW',
+            description:
+                'bucket owner and requester share the same account, wildcard "*" principal, string typeof principal , Allow policy should return ALLOW',
             policy: {
                 Statement: [
                     {
                         Sid: 'Example permissions',
                         Effect: 'Allow',
                         Principal: '*',
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -451,19 +414,16 @@ describe('checkBucketPolicy Principal logic', () => {
             expectedResult: checkBucketPolicyResult.ALLOW,
         },
         {
-            description: 'bucket owner and requester don\'t share the same account, wildcard "*" principal, string typeof principal, Allow policy should return CROSS_ACCOUNT_ALLOW',
+            description:
+                'bucket owner and requester don\'t share the same account, wildcard "*" principal, string typeof principal, Allow policy should return CROSS_ACCOUNT_ALLOW',
             policy: {
                 Statement: [
                     {
                         Sid: 'Example permissions',
                         Effect: 'Allow',
                         Principal: '*',
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -478,7 +438,8 @@ describe('checkBucketPolicy Principal logic', () => {
             expectedResult: checkBucketPolicyResult.CROSS_ACCOUNT_ALLOW,
         },
         {
-            description: 'bucket owner and requester don\'t share the same account, no bucket policy for user, canonical user principal, Allow policy should return DEFAULT_DENY',
+            description:
+                "bucket owner and requester don't share the same account, no bucket policy for user, canonical user principal, Allow policy should return DEFAULT_DENY",
             policy: {
                 Statement: [
                     {
@@ -487,12 +448,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             CanonicalUser: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -507,7 +464,8 @@ describe('checkBucketPolicy Principal logic', () => {
             expectedResult: checkBucketPolicyResult.DEFAULT_DENY,
         },
         {
-            description: 'bucket owner and requester don\'t share the same account, canonical user principal, Allow policy should return CROSS_ACCOUNT_ALLOW',
+            description:
+                "bucket owner and requester don't share the same account, canonical user principal, Allow policy should return CROSS_ACCOUNT_ALLOW",
             policy: {
                 Statement: [
                     {
@@ -516,12 +474,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             CanonicalUser: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -545,12 +499,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             CanonicalUser: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                     {
                         Sid: 'Example permissions',
@@ -558,12 +508,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             CanonicalUser: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -587,12 +533,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             CanonicalUser: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                     {
                         Sid: 'Example permissions',
@@ -600,12 +542,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Principal: {
                             CanonicalUser: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
                         },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -627,12 +565,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Sid: 'Example permissions',
                         Effect: 'Allow',
                         Principal: '*',
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -654,12 +588,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Sid: 'Example permissions',
                         Effect: 'Allow',
                         Principal: { AWS: '*' },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -681,12 +611,8 @@ describe('checkBucketPolicy Principal logic', () => {
                         Sid: 'Example permissions',
                         Effect: 'Allow',
                         Principal: { CanonicalUser: '*' },
-                        Action: [
-                            's3:*',
-                        ],
-                        Resource: [
-                            'arn:aws:s3:::amzn-s3-demo-bucket',
-                        ],
+                        Action: ['s3:*'],
+                        Resource: ['arn:aws:s3:::amzn-s3-demo-bucket'],
                     },
                 ],
             },
@@ -704,8 +630,16 @@ describe('checkBucketPolicy Principal logic', () => {
 
     tests.forEach(t => {
         it(t.description, () => {
-            const res = checkBucketPolicy(t.policy, t.requestType, t.canonicalID, t.arn, t.bucketOwner,
-                t.log, t.request, t.actionImplicitDenies);
+            const res = checkBucketPolicy(
+                t.policy,
+                t.requestType,
+                t.canonicalID,
+                t.arn,
+                t.bucketOwner,
+                t.log,
+                t.request,
+                t.actionImplicitDenies,
+            );
             assert.equal(res, t.expectedResult);
         });
     });
@@ -743,8 +677,7 @@ describe('aclRequired field in isBucketAuthorized', () => {
         const request = makeRequest();
         const bucket = makeBucket(ownerCanonicalId);
         const authInfo = makeAuthInfo(ownerCanonicalId, 'arn:aws:iam::123456789012:/owner/');
-        isBucketAuthorized(bucket, 'bucketGet', ownerCanonicalId, authInfo, stubLog,
-            request, { bucketGet: false });
+        isBucketAuthorized(bucket, 'bucketGet', ownerCanonicalId, authInfo, stubLog, request, { bucketGet: false });
         assert.strictEqual(request.serverAccessLog.aclRequired, undefined);
     });
 
@@ -752,8 +685,7 @@ describe('aclRequired field in isBucketAuthorized', () => {
         const request = makeRequest();
         const bucket = makeBucket(ownerCanonicalId, { READ: [otherCanonicalId] });
         const authInfo = makeAuthInfo(otherCanonicalId, 'arn:aws:iam::999999999999:user/other');
-        isBucketAuthorized(bucket, 'bucketGet', otherCanonicalId, authInfo, stubLog,
-            request, { bucketGet: false });
+        isBucketAuthorized(bucket, 'bucketGet', otherCanonicalId, authInfo, stubLog, request, { bucketGet: false });
         assert.strictEqual(request.serverAccessLog.aclRequired, 'Yes');
     });
 
@@ -762,34 +694,44 @@ describe('aclRequired field in isBucketAuthorized', () => {
         // Use an IAM user in the bucket owner's account so principal match is OK (not CROSS_ACCOUNT)
         // and the owner early-return doesn't fire (requester is IAM user, not account root)
         const iamUserCanonicalId = ownerCanonicalId;
-        const bucket = makeBucket(ownerCanonicalId, {}, {
-            Statement: [{
-                Effect: 'Allow',
-                Principal: { AWS: 'arn:aws:iam::123456789012:user/iamuser' },
-                Action: ['s3:ListBucket'],
-                Resource: ['arn:aws:s3:::test-bucket'],
-            }],
-        });
+        const bucket = makeBucket(
+            ownerCanonicalId,
+            {},
+            {
+                Statement: [
+                    {
+                        Effect: 'Allow',
+                        Principal: { AWS: 'arn:aws:iam::123456789012:user/iamuser' },
+                        Action: ['s3:ListBucket'],
+                        Resource: ['arn:aws:s3:::test-bucket'],
+                    },
+                ],
+            },
+        );
         const authInfo = makeAuthInfo(iamUserCanonicalId, 'arn:aws:iam::123456789012:user/iamuser', true);
-        isBucketAuthorized(bucket, 'bucketGet', iamUserCanonicalId, authInfo, stubLog,
-            request, { bucketGet: false });
+        isBucketAuthorized(bucket, 'bucketGet', iamUserCanonicalId, authInfo, stubLog, request, { bucketGet: false });
         assert.strictEqual(request.serverAccessLog.aclRequired, undefined);
     });
 
     it('should not set aclRequired when bucket policy explicitly denies', () => {
         const request = makeRequest();
         const iamUserCanonicalId = ownerCanonicalId;
-        const bucket = makeBucket(ownerCanonicalId, { READ: [iamUserCanonicalId] }, {
-            Statement: [{
-                Effect: 'Deny',
-                Principal: { AWS: 'arn:aws:iam::123456789012:user/iamuser' },
-                Action: ['s3:ListBucket'],
-                Resource: ['arn:aws:s3:::test-bucket'],
-            }],
-        });
+        const bucket = makeBucket(
+            ownerCanonicalId,
+            { READ: [iamUserCanonicalId] },
+            {
+                Statement: [
+                    {
+                        Effect: 'Deny',
+                        Principal: { AWS: 'arn:aws:iam::123456789012:user/iamuser' },
+                        Action: ['s3:ListBucket'],
+                        Resource: ['arn:aws:s3:::test-bucket'],
+                    },
+                ],
+            },
+        );
         const authInfo = makeAuthInfo(iamUserCanonicalId, 'arn:aws:iam::123456789012:user/iamuser', true);
-        isBucketAuthorized(bucket, 'bucketGet', iamUserCanonicalId, authInfo, stubLog,
-            request, { bucketGet: false });
+        isBucketAuthorized(bucket, 'bucketGet', iamUserCanonicalId, authInfo, stubLog, request, { bucketGet: false });
         assert.strictEqual(request.serverAccessLog.aclRequired, undefined);
     });
 
@@ -798,17 +740,22 @@ describe('aclRequired field in isBucketAuthorized', () => {
         // Policy grants PutObject to a different principal — nothing matches
         // the bucketGet request from otherCanonicalId, so checkBucketPolicy
         // returns DEFAULT_DENY and falls back to ACL evaluation.
-        const bucket = makeBucket(ownerCanonicalId, { READ: [otherCanonicalId] }, {
-            Statement: [{
-                Effect: 'Allow',
-                Principal: { AWS: 'arn:aws:iam::111111111111:root' },
-                Action: ['s3:PutObject'],
-                Resource: ['arn:aws:s3:::test-bucket/*'],
-            }],
-        });
+        const bucket = makeBucket(
+            ownerCanonicalId,
+            { READ: [otherCanonicalId] },
+            {
+                Statement: [
+                    {
+                        Effect: 'Allow',
+                        Principal: { AWS: 'arn:aws:iam::111111111111:root' },
+                        Action: ['s3:PutObject'],
+                        Resource: ['arn:aws:s3:::test-bucket/*'],
+                    },
+                ],
+            },
+        );
         const authInfo = makeAuthInfo(otherCanonicalId, 'arn:aws:iam::999999999999:user/other');
-        isBucketAuthorized(bucket, 'bucketGet', otherCanonicalId, authInfo, stubLog,
-            request, { bucketGet: false });
+        isBucketAuthorized(bucket, 'bucketGet', otherCanonicalId, authInfo, stubLog, request, { bucketGet: false });
         assert.strictEqual(request.serverAccessLog.aclRequired, 'Yes');
     });
 
@@ -817,8 +764,7 @@ describe('aclRequired field in isBucketAuthorized', () => {
         const bucket = makeBucket(ownerCanonicalId, { READ: [otherCanonicalId] });
         const authInfo = makeAuthInfo(otherCanonicalId, 'arn:aws:iam::999999999999:user/other');
         assert.doesNotThrow(() => {
-            isBucketAuthorized(bucket, 'bucketGet', otherCanonicalId, authInfo, stubLog,
-                request, { bucketGet: false });
+            isBucketAuthorized(bucket, 'bucketGet', otherCanonicalId, authInfo, stubLog, request, { bucketGet: false });
         });
     });
 });
@@ -871,8 +817,9 @@ describe('aclRequired field in isObjAuthorized', () => {
         const bucket = makeBucket(ownerCanonicalId);
         const objectMD = makeObjectMD(otherCanonicalId);
         const authInfo = makeAuthInfo(otherCanonicalId, 'arn:aws:iam::999999999999:/account/');
-        isObjAuthorized(bucket, objectMD, 'objectGet', otherCanonicalId, authInfo, stubLog,
-            request, { objectGet: false });
+        isObjAuthorized(bucket, objectMD, 'objectGet', otherCanonicalId, authInfo, stubLog, request, {
+            objectGet: false,
+        });
         assert.strictEqual(request.serverAccessLog.aclRequired, undefined);
     });
 
@@ -882,8 +829,9 @@ describe('aclRequired field in isObjAuthorized', () => {
         const objectMD = makeObjectMD(ownerCanonicalId);
         objectMD.acl.READ = [otherCanonicalId];
         const authInfo = makeAuthInfo(otherCanonicalId, 'arn:aws:iam::999999999999:user/other');
-        isObjAuthorized(bucket, objectMD, 'objectGet', otherCanonicalId, authInfo, stubLog,
-            request, { objectGet: false });
+        isObjAuthorized(bucket, objectMD, 'objectGet', otherCanonicalId, authInfo, stubLog, request, {
+            objectGet: false,
+        });
         assert.strictEqual(request.serverAccessLog.aclRequired, 'Yes');
     });
 });
@@ -916,8 +864,15 @@ describe('aclRequired field in evaluateBucketPolicyWithIAM', () => {
         const request = { serverAccessLog: {} };
         const bucket = makeBucket(ownerCanonicalId);
         const authInfo = makeAuthInfo(otherCanonicalId, 'arn:aws:iam::999999999999:user/other');
-        evaluateBucketPolicyWithIAM(bucket, 'objectDelete', otherCanonicalId, authInfo,
-            { objectDelete: false }, stubLog, request);
+        evaluateBucketPolicyWithIAM(
+            bucket,
+            'objectDelete',
+            otherCanonicalId,
+            authInfo,
+            { objectDelete: false },
+            stubLog,
+            request,
+        );
         assert.strictEqual(request.serverAccessLog.aclRequired, undefined);
     });
 });
