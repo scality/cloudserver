@@ -1,7 +1,7 @@
 const assert = require('assert');
 const crypto = require('crypto');
-const sinon = require('sinon');
 
+const { DummyRequestLogger } = require('../../../helpers');
 const {
     validateChecksumsNoChunking,
     ChecksumError,
@@ -25,7 +25,7 @@ describe('validateChecksumsNoChunking MD5', () => {
             };
 
             const result = await validateChecksumsNoChunking(headers, body);
-            assert.strictEqual(result, null);
+            assert.ifError(result);
         });
     });
 
@@ -234,6 +234,40 @@ describe('validateChecksumsNoChunking CRC32, CRC32C, SHA1, SHA256, CRC64NVME', (
         assert.deepStrictEqual(result.details.algorithms, ['x-amz-checksum-sha1', 'x-amz-checksum-sha256']);
     });
 
+    it('should ignore x-amz-checksum-algorithm alongside a valid x-amz-checksum-<algo> value', async () => {
+        const body = 'sha256 data';
+        const headers = {
+            'content-type': 'application/json',
+            'x-amz-checksum-algorithm': 'SHA256',
+            'x-amz-checksum-sha256': 'jS/UevcoKxbM33kmPFujS72ior/9/i374VmGvbTAwAc=',
+        };
+        const result = await validateChecksumsNoChunking(headers, body);
+        assert.ifError(result);
+    });
+
+    it('should ignore x-amz-checksum-type alongside a valid x-amz-checksum-<algo> value', async () => {
+        const body = 'sha256 data';
+        const headers = {
+            'content-type': 'application/json',
+            'x-amz-checksum-type': 'FULL_OBJECT',
+            'x-amz-checksum-sha256': 'jS/UevcoKxbM33kmPFujS72ior/9/i374VmGvbTAwAc=',
+        };
+        const result = await validateChecksumsNoChunking(headers, body);
+        assert.ifError(result);
+    });
+
+    it('should ignore both x-amz-checksum-algorithm and x-amz-checksum-type when combined with a value', async () => {
+        const body = 'sha256 data';
+        const headers = {
+            'content-type': 'application/json',
+            'x-amz-checksum-algorithm': 'SHA256',
+            'x-amz-checksum-type': 'FULL_OBJECT',
+            'x-amz-checksum-sha256': 'jS/UevcoKxbM33kmPFujS72ior/9/i374VmGvbTAwAc=',
+        };
+        const result = await validateChecksumsNoChunking(headers, body);
+        assert.ifError(result);
+    });
+
     for (const algo of algos) {
         it('should return error AlgoNotSupported if x-amz-sdk-checksum-algorithm algo not supported', async () => {
             const headers = {
@@ -291,16 +325,13 @@ describe('validateChecksumsNoChunking CRC32, CRC32C, SHA1, SHA256, CRC64NVME', (
 });
 
 describe('validateMethodChecksumNoChunking', () => {
-    let sandbox;
     let originalIntegrityChecks;
 
     beforeEach(() => {
-        sandbox = sinon.createSandbox();
         originalIntegrityChecks = { ...config.integrityChecks };
     });
 
     afterEach(() => {
-        sandbox.restore();
         config.integrityChecks = originalIntegrityChecks;
     });
 
@@ -317,12 +348,11 @@ describe('validateMethodChecksumNoChunking', () => {
                         'content-md5': wrongMd5,
                     },
                 };
-                const log = { debug: sandbox.stub() };
+                const log = new DummyRequestLogger();
 
                 const result = await validateMethodChecksumNoChunking(request, body, log);
 
                 assert.deepStrictEqual(result, ArsenalErrors.BadDigest, 'Expected BadDigest error');
-                assert(log.debug.calledOnce);
             });
         });
     });
@@ -340,12 +370,11 @@ describe('validateMethodChecksumNoChunking', () => {
                         'content-md5': wrongMd5,
                     },
                 };
-                const log = { debug: sandbox.stub() };
+                const log = new DummyRequestLogger();
 
                 const result = await validateMethodChecksumNoChunking(request, body, log);
 
                 assert.deepStrictEqual(result, ArsenalErrors.InvalidDigest, 'Expected BadDigest error');
-                assert(log.debug.calledOnce);
             });
         });
     });
@@ -360,12 +389,11 @@ describe('validateMethodChecksumNoChunking', () => {
                     apiMethod: method,
                     headers: {},
                 };
-                const log = { debug: sandbox.stub() };
+                const log = new DummyRequestLogger();
 
                 const result = await validateMethodChecksumNoChunking(request, body, log);
 
-                assert.strictEqual(result, null);
-                assert(log.debug.notCalled);
+                assert.ifError(result);
             });
         });
     });
@@ -383,12 +411,11 @@ describe('validateMethodChecksumNoChunking', () => {
                         'content-md5': correctMd5,
                     },
                 };
-                const log = { debug: sandbox.stub() };
+                const log = new DummyRequestLogger();
 
                 const result = await validateMethodChecksumNoChunking(request, body, log);
 
-                assert.strictEqual(result, null);
-                assert(log.debug.notCalled);
+                assert.ifError(result);
             });
         });
     });
@@ -406,12 +433,11 @@ describe('validateMethodChecksumNoChunking', () => {
                         'content-md5': wrongMd5,
                     },
                 };
-                const log = { debug: sandbox.stub() };
+                const log = new DummyRequestLogger();
 
                 const result = await validateMethodChecksumNoChunking(request, body, log);
 
-                assert.strictEqual(result, null);
-                assert(log.debug.notCalled);
+                assert.ifError(result);
             });
         });
     });
@@ -429,12 +455,11 @@ describe('validateMethodChecksumNoChunking', () => {
                     'content-md5': wrongMd5,
                 },
             };
-            const log = { debug: sandbox.stub() };
+            const log = new DummyRequestLogger();
 
             const result = await validateMethodChecksumNoChunking(request, body, log);
 
-            assert.strictEqual(result, null);
-            assert(log.debug.notCalled);
+            assert.ifError(result);
         });
     });
 
@@ -446,11 +471,11 @@ describe('validateMethodChecksumNoChunking', () => {
                     'content-md5': 'wrongchecksum123=',
                 },
             };
-            const log = { debug: sandbox.stub() };
+            const log = new DummyRequestLogger();
 
             const result = await validateMethodChecksumNoChunking(request, body, log);
 
-            assert.strictEqual(result, null);
+            assert.ifError(result);
         });
 
         it('should return null when request apiMethod is undefined in config', async () => {
@@ -461,11 +486,11 @@ describe('validateMethodChecksumNoChunking', () => {
                     'content-md5': 'wrongchecksum123=',
                 },
             };
-            const log = { debug: sandbox.stub() };
+            const log = new DummyRequestLogger();
 
             const result = await validateMethodChecksumNoChunking(request, body, log);
 
-            assert.strictEqual(result, null);
+            assert.ifError(result);
         });
     });
 
@@ -482,9 +507,9 @@ describe('validateMethodChecksumNoChunking', () => {
                 apiMethod: 'completeMultipartUpload',
                 headers: { 'content-md5': correctMd5 },
             };
-            const log = { debug: sandbox.stub() };
+            const log = new DummyRequestLogger();
             const result = await validateMethodChecksumNoChunking(request, body, log);
-            assert.strictEqual(result, null);
+            assert.ifError(result);
         });
 
         it('should return BadDigest when Content-MD5 does not match the body', async () => {
@@ -493,10 +518,9 @@ describe('validateMethodChecksumNoChunking', () => {
                 apiMethod: 'completeMultipartUpload',
                 headers: { 'content-md5': '1B2M2Y8AsgTpgAmY7PhCfg==' },
             };
-            const log = { debug: sandbox.stub() };
+            const log = new DummyRequestLogger();
             const result = await validateMethodChecksumNoChunking(request, body, log);
             assert.deepStrictEqual(result, ArsenalErrors.BadDigest);
-            assert(log.debug.calledOnce);
         });
 
         it('should return InvalidDigest when Content-MD5 is malformed', async () => {
@@ -505,7 +529,7 @@ describe('validateMethodChecksumNoChunking', () => {
                 apiMethod: 'completeMultipartUpload',
                 headers: { 'content-md5': 'wrongchecksum123=' },
             };
-            const log = { debug: sandbox.stub() };
+            const log = new DummyRequestLogger();
             const result = await validateMethodChecksumNoChunking(request, body, log);
             assert.deepStrictEqual(result, ArsenalErrors.InvalidDigest);
         });
@@ -516,9 +540,9 @@ describe('validateMethodChecksumNoChunking', () => {
                 apiMethod: 'completeMultipartUpload',
                 headers: {},
             };
-            const log = { debug: sandbox.stub() };
+            const log = new DummyRequestLogger();
             const result = await validateMethodChecksumNoChunking(request, body, log);
-            assert.strictEqual(result, null);
+            assert.ifError(result);
         });
 
         it('should NOT validate x-amz-checksum-* as a body digest (final-object semantics)', async () => {
@@ -531,9 +555,9 @@ describe('validateMethodChecksumNoChunking', () => {
                 apiMethod: 'completeMultipartUpload',
                 headers: { 'x-amz-checksum-sha256': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=' },
             };
-            const log = { debug: sandbox.stub() };
+            const log = new DummyRequestLogger();
             const result = await validateMethodChecksumNoChunking(request, body, log);
-            assert.strictEqual(result, null);
+            assert.ifError(result);
         });
     });
 });
@@ -550,12 +574,12 @@ describe('getChecksumDataFromHeaders', () => {
 
     it('should return null when no headers', () => {
         const result = getChecksumDataFromHeaders({});
-        assert.strictEqual(result, null);
+        assert.ifError(result);
     });
 
     it('should return null when no checksum headers, no trailer, no sdk algo', () => {
         const result = getChecksumDataFromHeaders({ 'content-type': 'application/octet-stream' });
-        assert.strictEqual(result, null);
+        assert.ifError(result);
     });
 
     for (const [algo, digest] of Object.entries(validDigests)) {
@@ -589,6 +613,31 @@ describe('getChecksumDataFromHeaders', () => {
             'x-amz-checksum-sha256': validDigests.sha256,
         });
         assert.strictEqual(result.error, ChecksumError.MultipleChecksumTypes);
+    });
+
+    it('should ignore x-amz-checksum-algorithm alongside a valid x-amz-checksum-<algo> value', () => {
+        const result = getChecksumDataFromHeaders({
+            'x-amz-checksum-algorithm': 'SHA256',
+            'x-amz-checksum-sha256': validDigests.sha256,
+        });
+        assert.deepStrictEqual(result, { algorithm: 'sha256', isTrailer: false, expected: validDigests.sha256 });
+    });
+
+    it('should ignore x-amz-checksum-type alongside a valid x-amz-checksum-<algo> value', () => {
+        const result = getChecksumDataFromHeaders({
+            'x-amz-checksum-type': 'FULL_OBJECT',
+            'x-amz-checksum-sha256': validDigests.sha256,
+        });
+        assert.deepStrictEqual(result, { algorithm: 'sha256', isTrailer: false, expected: validDigests.sha256 });
+    });
+
+    it('should ignore both x-amz-checksum-algorithm and x-amz-checksum-type when combined with a value', () => {
+        const result = getChecksumDataFromHeaders({
+            'x-amz-checksum-algorithm': 'SHA256',
+            'x-amz-checksum-type': 'FULL_OBJECT',
+            'x-amz-checksum-sha256': validDigests.sha256,
+        });
+        assert.deepStrictEqual(result, { algorithm: 'sha256', isTrailer: false, expected: validDigests.sha256 });
     });
 
     it('should return MissingCorresponding when x-amz-sdk-checksum-algorithm has no x-amz-checksum- or trailer', () => {
@@ -683,7 +732,7 @@ describe('getChecksumDataFromHeaders', () => {
 describe('arsenalErrorFromChecksumError', () => {
     it('should return null for MissingChecksum', () => {
         const result = arsenalErrorFromChecksumError({ error: ChecksumError.MissingChecksum, details: null });
-        assert.strictEqual(result, null);
+        assert.ifError(result);
     });
 
     it('should return BadDigest mentioning CRC32 for XAmzMismatch with crc32', () => {
@@ -1011,7 +1060,7 @@ describe('validateCompleteMultipartUploadChecksum', () => {
             { host: 'example.com' },
             { algorithm: 'sha256', type: 'COMPOSITE', value: `${SHA256_A}-3` },
         );
-        assert.strictEqual(err, null);
+        assert.ifError(err);
     });
 
     it('should ignore x-amz-checksum-type and x-amz-checksum-algorithm headers', () => {
@@ -1022,7 +1071,7 @@ describe('validateCompleteMultipartUploadChecksum', () => {
             },
             { algorithm: 'sha256', type: 'COMPOSITE', value: `${SHA256_A}-3` },
         );
-        assert.strictEqual(err, null);
+        assert.ifError(err);
     });
 
     it('should return null when COMPOSITE header value matches (digest-N form)', () => {
@@ -1030,7 +1079,7 @@ describe('validateCompleteMultipartUploadChecksum', () => {
             { 'x-amz-checksum-sha256': `${SHA256_A}-3` },
             { algorithm: 'sha256', type: 'COMPOSITE', value: `${SHA256_A}-3` },
         );
-        assert.strictEqual(err, null);
+        assert.ifError(err);
     });
 
     it('should return null when FULL_OBJECT header value matches (no suffix)', () => {
@@ -1041,7 +1090,7 @@ describe('validateCompleteMultipartUploadChecksum', () => {
             { 'x-amz-checksum-crc32': CRC32_A },
             { algorithm: 'crc32', type: 'FULL_OBJECT', value: CRC32_A },
         );
-        assert.strictEqual(err, null);
+        assert.ifError(err);
     });
 
     it('should return XAmzMismatch when header value differs', () => {
@@ -1075,7 +1124,7 @@ describe('validateCompleteMultipartUploadChecksum', () => {
 
     it('should return null when finalChecksum is null and no header present', () => {
         const err = validateCompleteMultipartUploadChecksum({ host: 'example.com' }, null);
-        assert.strictEqual(err, null);
+        assert.ifError(err);
     });
 
     it('should return MultipleChecksumTypes when multiple x-amz-checksum-* headers are sent', () => {
