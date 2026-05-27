@@ -984,6 +984,48 @@ describe('objectCopy checksum recompute', () => {
             done();
         });
     });
+    it('should recompute checksum on an Azure source via the per-part PassThrough path', done => {
+        // The mem backend's data.get returns a Readable; Azure backend's data.get
+        // instead writes part bytes into the response writable. Stub data.get for
+        // Azure-flagged parts so the test exercises the Azure branch end-to-end
+        // without a real Azure backend.
+        const originalGet = data.get;
+        const dataGetStub = sinon.stub(data, 'get').callsFake((info, response, l, cb) => {
+            if (info?.dataStoreType === 'azure') {
+                // Simulate Azure: write the (already-known) source bytes to the
+                // provided writable, end it, and signal completion.
+                setImmediate(() => {
+                    response.write(objData[0]);
+                    response.end();
+                    cb(null);
+                });
+                return;
+            }
+            originalGet.call(data, info, response, l, cb);
+        });
+        metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, md) => {
+            assert.ifError(err);
+            // eslint-disable-next-line no-param-reassign
+            md.location = [{ ...md.location[0], dataStoreType: 'azure' }];
+            metadata.putObjectMD(sourceBucketName, objectKey, md, {}, log, err => {
+                assert.ifError(err);
+                Promise.resolve(algorithms.sha256.digest(objData[0])).then(expectedDigest => {
+                    const req = _createObjectCopyRequest(destBucketName, {
+                        'x-amz-checksum-algorithm': 'SHA256',
+                    });
+                    objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
+                        (err, xml) => {
+                            dataGetStub.restore();
+                            assertRecomputed('sha256', 'ChecksumSHA256', expectedDigest, done)(err, xml);
+                        });
+                }, err => {
+                    dataGetStub.restore();
+                    done(err);
+                });
+            });
+        });
+    });
+
     const copyToSelfFixtures = [
         { algo: 'crc32', header: 'CRC32', xmlTag: 'ChecksumCRC32' },
         { algo: 'crc32c', header: 'CRC32C', xmlTag: 'ChecksumCRC32C' },
