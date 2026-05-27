@@ -1,5 +1,6 @@
 const assert = require('assert');
 const async = require('async');
+const { Readable } = require('stream');
 const { storage, versioning } = require('arsenal');
 const sinon = require('sinon');
 
@@ -14,7 +15,10 @@ const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
 const mpuUtils = require('../utils/mpuUtils');
 const metadata = require('../metadataswitch');
 const { data } = require('../../../lib/data/wrapper');
+const kms = require('../../../lib/kms/wrapper');
 const { objectLocationConstraintHeader } = require('../../../constants');
+const { algorithms } =
+    require('../../../lib/api/apiUtils/integrity/validateChecksums');
 const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
 const { config } = require('../../../lib/Config');
 
@@ -638,6 +642,589 @@ describe('objectCopy with objectKeyByteLimit', () => {
                 assert.match(err.description, /1024/);
                 done();
             });
+    });
+});
+
+// Set or clear the source object's stored checksum directly in metadata.
+function setSourceChecksum(checksum, cb) {
+    metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, md) => {
+        if (err) {
+            return cb(err);
+        }
+        if (checksum) {
+            // eslint-disable-next-line no-param-reassign
+            md.checksum = checksum;
+        } else {
+            // eslint-disable-next-line no-param-reassign
+            delete md.checksum;
+        }
+        return metadata.putObjectMD(sourceBucketName, objectKey, md, {}, log, cb);
+    });
+}
+
+describe('objectCopy checksum propagation', () => {
+    beforeEach(done => {
+        cleanup();
+        async.series([
+            next => bucketPut(authInfo, putDestBucketRequest, log, next),
+            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+            next => objectPut(authInfo, versioningTestUtils.createPutObjectRequest(
+                sourceBucketName, objectKey, objData[0]), undefined, log, next),
+        ], done);
+    });
+
+    afterEach(() => cleanup());
+
+    const algorithmFixtures = [
+        { algo: 'crc32', header: 'CRC32', xmlTag: 'ChecksumCRC32', value: 'AAAAAA==' },
+        { algo: 'crc32c', header: 'CRC32C', xmlTag: 'ChecksumCRC32C', value: 'AAAAAA==' },
+        { algo: 'crc64nvme', header: 'CRC64NVME', xmlTag: 'ChecksumCRC64NVME', value: 'AAAAAAAAAAA=' },
+        { algo: 'sha1', header: 'SHA1', xmlTag: 'ChecksumSHA1', value: 'AAAAAAAAAAAAAAAAAAAAAAAAAAA=' },
+        {
+            algo: 'sha256', header: 'SHA256', xmlTag: 'ChecksumSHA256',
+            value: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+        },
+    ];
+
+    algorithmFixtures.forEach(({ algo, header, xmlTag, value }) => {
+        const sourceChecksum = {
+            checksumAlgorithm: algo,
+            checksumValue: value,
+            checksumType: 'FULL_OBJECT',
+        };
+
+        function assertPropagated(xml, cb) {
+            assert(xml.includes(`<${xmlTag}>${value}</${xmlTag}>`), `XML should contain ${xmlTag}`);
+            assert(xml.includes('<ChecksumType>FULL_OBJECT</ChecksumType>'), 'XML should contain ChecksumType');
+            metadata.getObjectMD(destBucketName, objectKey, {}, log,
+                (err, md) => {
+                    assert.ifError(err);
+                    assert(md.checksum, 'destination should have a checksum');
+                    assert.strictEqual(md.checksum.checksumAlgorithm, algo);
+                    assert.strictEqual(md.checksum.checksumValue, value);
+                    assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
+                    cb();
+                });
+        }
+
+        it(`should propagate a FULL_OBJECT ${algo} checksum from source to destination`,
+            done => {
+                setSourceChecksum(sourceChecksum, err => {
+                    assert.ifError(err);
+                    const req = _createObjectCopyRequest(destBucketName);
+                    objectCopy(authInfo, req, sourceBucketName, objectKey,
+                        undefined, log, (err, xml) => {
+                            assert.ifError(err);
+                            assertPropagated(xml, done);
+                        });
+                });
+            });
+
+        it(`should propagate when x-amz-checksum-algorithm matches source ${algo} algorithm`,
+            done => {
+                setSourceChecksum(sourceChecksum, err => {
+                    assert.ifError(err);
+                    const req = _createObjectCopyRequest(destBucketName, {
+                        'x-amz-checksum-algorithm': header,
+                    });
+                    objectCopy(authInfo, req, sourceBucketName, objectKey,
+                        undefined, log, (err, xml) => {
+                            assert.ifError(err);
+                            assertPropagated(xml, done);
+                        });
+                });
+            });
+    });
+
+    it('should default to CRC64NVME when source has no checksum and no algorithm is requested', done => {
+        setSourceChecksum(null, err => {
+            if (err) {
+                return done(err);
+            }
+            return Promise.resolve(algorithms.crc64nvme.digest(objData[0])).then(expectedDigest => {
+                const req = _createObjectCopyRequest(destBucketName);
+                objectCopy(authInfo, req, sourceBucketName, objectKey,
+                    undefined, log,
+                    assertRecomputed('crc64nvme', 'ChecksumCRC64NVME', expectedDigest, done));
+            }, done);
+        });
+    });
+});
+
+describe('objectCopy checksum recompute', () => {
+    beforeEach(done => {
+        cleanup();
+        async.series([
+            next => bucketPut(authInfo, putDestBucketRequest, log, next),
+            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+            next => objectPut(authInfo, versioningTestUtils.createPutObjectRequest(
+                sourceBucketName, objectKey, objData[0]), undefined, log, next),
+        ], done);
+    });
+
+    afterEach(() => cleanup());
+
+    // Builds the objectCopy callback that asserts a successful FULL_OBJECT recompute:
+    // response XML and destination metadata both carry the expected algo and digest.
+    function assertRecomputed(algo, xmlTag, expectedDigest, done) {
+        return (err, xml) => {
+            if (err) {
+                return done(err);
+            }
+            try {
+                assert(xml.includes(`<${xmlTag}>${expectedDigest}</${xmlTag}>`),
+                    `XML should contain ${xmlTag}=${expectedDigest}`);
+                assert(xml.includes('<ChecksumType>FULL_OBJECT</ChecksumType>'),
+                    'XML should contain ChecksumType FULL_OBJECT');
+            } catch (e) {
+                return done(e);
+            }
+            return metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
+                if (err) {
+                    return done(err);
+                }
+                try {
+                    assert(md.checksum, 'destination should have a checksum');
+                    assert.strictEqual(md.checksum.checksumAlgorithm, algo);
+                    assert.strictEqual(md.checksum.checksumValue, expectedDigest);
+                    assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
+                    return done();
+                } catch (e) {
+                    return done(e);
+                }
+            });
+        };
+    }
+
+    const recomputeFixtures = [
+        { algo: 'crc32', header: 'CRC32', xmlTag: 'ChecksumCRC32' },
+        { algo: 'crc32c', header: 'CRC32C', xmlTag: 'ChecksumCRC32C' },
+        { algo: 'crc64nvme', header: 'CRC64NVME', xmlTag: 'ChecksumCRC64NVME' },
+        { algo: 'sha1', header: 'SHA1', xmlTag: 'ChecksumSHA1' },
+        { algo: 'sha256', header: 'SHA256', xmlTag: 'ChecksumSHA256' },
+    ];
+
+    recomputeFixtures.forEach(({ algo, header, xmlTag }) => {
+        it(`should recompute ${algo} when x-amz-checksum-algorithm differs from source`, done => {
+            // Seed source with a different algorithm so the request forces a recompute.
+            // crc32 ↔ sha256 swap covers both pivots.
+            const sourceAlgo = algo === 'crc32' ? 'sha256' : 'crc32';
+            const sourceValue = sourceAlgo === 'crc32'
+                ? 'AAAAAA=='
+                : '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=';
+            setSourceChecksum({
+                checksumAlgorithm: sourceAlgo,
+                checksumValue: sourceValue,
+                checksumType: 'FULL_OBJECT',
+            }, err => {
+                if (err) {
+                    return done(err);
+                }
+                return Promise.resolve(algorithms[algo].digest(objData[0])).then(expectedDigest => {
+                    const req = _createObjectCopyRequest(destBucketName, {
+                        'x-amz-checksum-algorithm': header,
+                    });
+                    objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
+                        assertRecomputed(algo, xmlTag, expectedDigest, done));
+                }, done);
+            });
+        });
+
+        // CRC64NVME cannot be used as COMPOSITE (AWS rejects it at MPU init); only test
+        // the COMPOSITE-source path for the four other algorithms.
+        if (algo !== 'crc64nvme') {
+            it(`should recompute ${algo} when source is COMPOSITE and no algorithm requested`, done => {
+                setSourceChecksum({
+                    checksumAlgorithm: algo,
+                    // valid-shape placeholder; the test does not depend on the source value
+                    // matching the body — only on the destination digest being recomputed.
+                    checksumValue: 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBA=',
+                    checksumType: 'COMPOSITE',
+                }, err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    return Promise.resolve(algorithms[algo].digest(objData[0])).then(expectedDigest => {
+                        const req = _createObjectCopyRequest(destBucketName);
+                        objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
+                            assertRecomputed(algo, xmlTag, expectedDigest, done));
+                    }, done);
+                });
+            });
+
+            it(`should recompute ${algo} when source is COMPOSITE and different algorithm requested`, done => {
+                // Force a recompute by both source-type (COMPOSITE) and algo mismatch.
+                // Seed source with sha256 COMPOSITE so the requested algo always differs.
+                const sourceAlgo = algo === 'sha256' ? 'sha1' : 'sha256';
+                const sourceValue = sourceAlgo === 'sha1'
+                    ? 'AAAAAAAAAAAAAAAAAAAAAAAAAAA='
+                    : '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=';
+                setSourceChecksum({
+                    checksumAlgorithm: sourceAlgo,
+                    checksumValue: sourceValue,
+                    checksumType: 'COMPOSITE',
+                }, err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    return Promise.resolve(algorithms[algo].digest(objData[0])).then(expectedDigest => {
+                        const req = _createObjectCopyRequest(destBucketName, {
+                            'x-amz-checksum-algorithm': header,
+                        });
+                        objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
+                            assertRecomputed(algo, xmlTag, expectedDigest, done));
+                    }, done);
+                });
+            });
+        }
+
+        it(`should compute ${algo} when source has no checksum and algorithm is requested`, done => {
+            setSourceChecksum(null, err => {
+                if (err) {
+                    return done(err);
+                }
+                return Promise.resolve(algorithms[algo].digest(objData[0])).then(expectedDigest => {
+                    const req = _createObjectCopyRequest(destBucketName, {
+                        'x-amz-checksum-algorithm': header,
+                    });
+                    objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
+                        assertRecomputed(algo, xmlTag, expectedDigest, done));
+                }, done);
+            });
+        });
+    });
+
+    it('should recompute the checksum across all parts of a multi-part source', done => {
+        const partA = Buffer.from('part-a-bytes', 'utf8');
+        const partB = Buffer.from('part-b-bytes-longer', 'utf8');
+        const fullBody = Buffer.concat([partA, partB]);
+        const parts = { 'mpart-a': partA, 'mpart-b': partB };
+        const dataGetStub = sinon.stub(data, 'get').callsFake((info, _response, _l, cb) => {
+            const buf = parts[info.key];
+            return cb(null, Readable.from(buf));
+        });
+        metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, md) => {
+            assert.ifError(err);
+            // eslint-disable-next-line no-param-reassign
+            md.location = [
+                { key: 'mpart-a', dataStoreName: 'us-east-1', size: partA.length, start: 0 },
+                { key: 'mpart-b', dataStoreName: 'us-east-1', size: partB.length, start: partA.length },
+            ];
+            // eslint-disable-next-line no-param-reassign
+            md['content-length'] = fullBody.length;
+            metadata.putObjectMD(sourceBucketName, objectKey, md, {}, log, err => {
+                assert.ifError(err);
+                Promise.resolve(algorithms.sha256.digest(fullBody)).then(expectedDigest => {
+                    const req = _createObjectCopyRequest(destBucketName, {
+                        'x-amz-checksum-algorithm': 'SHA256',
+                    });
+                    objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
+                        (err, xml) => {
+                            dataGetStub.restore();
+                            assertRecomputed('sha256', 'ChecksumSHA256', expectedDigest, done)(err, xml);
+                        });
+                }, err => {
+                    dataGetStub.restore();
+                    done(err);
+                });
+            });
+        });
+    });
+
+    it('should recompute the checksum and encrypt the destination when SSE is requested', done => {
+        // Recompute path must create a cipher bundle via kms when SSE is configured.
+        // Confirm the cipher bundle is forwarded to data.put and the checksum is
+        // still over the cleartext bytes.
+        const cipherBundleSpy = sinon.spy(kms, 'createCipherBundle');
+        const dataPutSpy = sinon.spy(data, 'put');
+        Promise.resolve(algorithms.sha256.digest(objData[0])).then(expectedDigest => {
+            const req = _createObjectCopyRequest(destBucketName, {
+                'x-amz-checksum-algorithm': 'SHA256',
+                'x-amz-server-side-encryption': 'AES256',
+            });
+            objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
+                assertRecomputed('sha256', 'ChecksumSHA256', expectedDigest, err => {
+                    cipherBundleSpy.restore();
+                    dataPutSpy.restore();
+                    if (err) {
+                        return done(err);
+                    }
+                    try {
+                        assert(cipherBundleSpy.calledOnce,
+                            'kms.createCipherBundle should be called once');
+                        const sseConfig = cipherBundleSpy.firstCall.args[0];
+                        assert.strictEqual(sseConfig.algorithm, 'AES256');
+                        // The data.put call that consumed the checksum stream
+                        // (size > 0) should have received a non-null cipherBundle.
+                        const recomputePut = dataPutSpy.getCalls()
+                            .find(call => call.args[1] !== null);
+                        assert(recomputePut,
+                            'expected at least one data.put with a real stream');
+                        assert(recomputePut.args[0],
+                            'cipherBundle should be non-null for SSE recompute');
+                        return done();
+                    } catch (e) {
+                        return done(e);
+                    }
+                }));
+        }, done);
+    });
+
+    it('should reject an unknown x-amz-checksum-algorithm value with InvalidRequest', done => {
+        const req = _createObjectCopyRequest(destBucketName, {
+            'x-amz-checksum-algorithm': 'GARBAGE',
+        });
+        objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
+            assert(err);
+            assert.strictEqual(err.is.InvalidRequest, true);
+            done();
+        });
+    });
+    const copyToSelfFixtures = [
+        { algo: 'crc32', header: 'CRC32', xmlTag: 'ChecksumCRC32' },
+        { algo: 'crc32c', header: 'CRC32C', xmlTag: 'ChecksumCRC32C' },
+        { algo: 'crc64nvme', header: 'CRC64NVME', xmlTag: 'ChecksumCRC64NVME' },
+        { algo: 'sha1', header: 'SHA1', xmlTag: 'ChecksumSHA1' },
+        { algo: 'sha256', header: 'SHA256', xmlTag: 'ChecksumSHA256' },
+    ];
+
+    copyToSelfFixtures.forEach(({ algo, header, xmlTag }) => {
+        it(`should compute the ${algo} checksum on copy-to-self without rewriting data`, done => {
+            const dataPutSpy = sinon.spy(data, 'put');
+            const batchDeleteSpy = sinon.spy(data, 'batchDelete');
+            metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, srcMd) => {
+                assert.ifError(err);
+                const sourceLocation = srcMd.location;
+                Promise.resolve(algorithms[algo].digest(objData[0])).then(expectedDigest => {
+                    const req = new DummyRequest({
+                        bucketName: sourceBucketName,
+                        namespace,
+                        objectKey,
+                        headers: {
+                            'x-amz-checksum-algorithm': header,
+                            'x-amz-metadata-directive': 'REPLACE',
+                        },
+                        url: `/${sourceBucketName}/${objectKey}`,
+                        socket: {},
+                    });
+                    objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
+                        dataPutSpy.restore();
+                        batchDeleteSpy.restore();
+                        assert.ifError(err);
+                        assert(!dataPutSpy.called, 'data.put should NOT be called');
+                        assert(!batchDeleteSpy.called, 'data.batchDelete should NOT be called');
+                        assert(xml.includes(`<${xmlTag}>${expectedDigest}</${xmlTag}>`),
+                            'response XML should carry the new checksum');
+                        metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, md) => {
+                            assert.ifError(err);
+                            assert.deepStrictEqual(
+                                md.location.map(l => l.key),
+                                sourceLocation.map(l => l.key),
+                                'data location keys should be reused');
+                            assert.strictEqual(md.checksum.checksumAlgorithm, algo);
+                            assert.strictEqual(md.checksum.checksumValue, expectedDigest);
+                            assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
+                            done();
+                        });
+                    });
+                }, done);
+            });
+        });
+    });
+
+    const compositeFixtures = [
+        { algo: 'crc32', xmlTag: 'ChecksumCRC32' },
+        { algo: 'crc32c', xmlTag: 'ChecksumCRC32C' },
+        { algo: 'sha1', xmlTag: 'ChecksumSHA1' },
+        { algo: 'sha256', xmlTag: 'ChecksumSHA256' },
+    ];
+
+    compositeFixtures.forEach(({ algo, xmlTag }) => {
+        it(`should recompute a FULL_OBJECT ${algo} checksum on copy-to-self of a COMPOSITE (MPU) source`, done => {
+            // A copy of an MPU/COMPOSITE source must never preserve the COMPOSITE
+            // checksum: it is recomputed as FULL_OBJECT (algorithm carried over),
+            // reusing the data location.
+            const dataPutSpy = sinon.spy(data, 'put');
+            const batchDeleteSpy = sinon.spy(data, 'batchDelete');
+            setSourceChecksum({
+                checksumAlgorithm: algo,
+                // placeholder COMPOSITE value, distinct from the FULL_OBJECT digest
+                checksumValue: 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBA=',
+                checksumType: 'COMPOSITE',
+            }, err => {
+                assert.ifError(err);
+                Promise.resolve(algorithms[algo].digest(objData[0])).then(expectedDigest => {
+                    const req = new DummyRequest({
+                        bucketName: sourceBucketName,
+                        namespace,
+                        objectKey,
+                        headers: { 'x-amz-metadata-directive': 'REPLACE' },
+                        url: `/${sourceBucketName}/${objectKey}`,
+                        socket: {},
+                    });
+                    objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
+                        dataPutSpy.restore();
+                        batchDeleteSpy.restore();
+                        assert.ifError(err);
+                        assert(!dataPutSpy.called, 'data.put should NOT be called (location reused)');
+                        assert(!batchDeleteSpy.called, 'data.batchDelete should NOT be called');
+                        assert(xml.includes(`<${xmlTag}>${expectedDigest}</${xmlTag}>`),
+                            'response XML should carry the recomputed FULL_OBJECT digest');
+                        assert(xml.includes('<ChecksumType>FULL_OBJECT</ChecksumType>'),
+                            'response XML must say FULL_OBJECT, never COMPOSITE');
+                        metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, md) => {
+                            assert.ifError(err);
+                            assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT',
+                                'stored checksum must be FULL_OBJECT, never COMPOSITE');
+                            assert.strictEqual(md.checksum.checksumAlgorithm, algo);
+                            assert.strictEqual(md.checksum.checksumValue, expectedDigest,
+                                'value must be the recomputed FULL_OBJECT digest, not the source COMPOSITE value');
+                            done();
+                        });
+                    });
+                }, done);
+            });
+        });
+    });
+
+    it('should still PUT on copy-to-self when versioning is enabled (no metadata-only shortcut)', done => {
+        // Versioned copies produce a new version-id; the metadata-only path
+        // is skipped so the new version gets its own data write.
+        const enableVersioning = versioningTestUtils
+            .createBucketPutVersioningReq(sourceBucketName, 'Enabled');
+        bucketPutVersioning(authInfo, enableVersioning, log, err => {
+            assert.ifError(err);
+            const dataPutSpy = sinon.spy(data, 'put');
+            const req = new DummyRequest({
+                bucketName: sourceBucketName,
+                namespace,
+                objectKey,
+                headers: {
+                    'x-amz-checksum-algorithm': 'SHA256',
+                    'x-amz-metadata-directive': 'REPLACE',
+                },
+                url: `/${sourceBucketName}/${objectKey}`,
+                socket: {},
+            });
+            objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
+                dataPutSpy.restore();
+                assert.ifError(err);
+                assert(dataPutSpy.called,
+                    'data.put should be called because versioning forces a new version write');
+                done();
+            });
+        });
+    });
+});
+describe('objectCopy checksum recompute on external backends', () => {
+    const prevConfigBackendsData = data.config.backends.data;
+    const prevConfigLocationConstraint = data.config.locationConstraints['us-east-1'].type;
+    const prevConfigLocationConstraint2 = data.config.locationConstraints['us-east-2'].type;
+
+    before(() => {
+        data.config.backends.data = 'multiple';
+        data.config.locationConstraints['us-east-1'].type = 'aws_s3';
+        data.config.locationConstraints['us-east-2'].type = 'aws_s3';
+    });
+
+    after(() => {
+        data.config.backends.data = prevConfigBackendsData;
+        data.config.locationConstraints['us-east-1'].type = prevConfigLocationConstraint;
+        data.config.locationConstraints['us-east-2'].type = prevConfigLocationConstraint2;
+    });
+
+    beforeEach(done => {
+        cleanup();
+        async.series([
+            next => bucketPut(authInfo, putDestBucketRequest, log, next),
+            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+            next => objectPut(authInfo, versioningTestUtils.createPutObjectRequest(
+                sourceBucketName, objectKey, objData[0]), undefined, log, next),
+        ], done);
+    });
+
+    afterEach(() => cleanup());
+
+    it('should recompute the checksum on a cross-key copy on an external backend', done => {
+        // A recompute streams the source through CloudServer (GET + PUT) and
+        // writes a FULL_OBJECT checksum on the destination.
+        const copyObjectSpy = sinon.spy(data, 'copyObject');
+        Promise.resolve(algorithms.sha256.digest(objData[0])).then(expectedDigest => {
+            const req = _createObjectCopyRequest(destBucketName, {
+                'x-amz-checksum-algorithm': 'SHA256',
+            });
+            objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
+                copyObjectSpy.restore();
+                assert.ifError(err);
+                assert(!copyObjectSpy.called,
+                    'data.copyObject should NOT be called (recompute streams instead)');
+                assert(xml.includes(`<ChecksumSHA256>${expectedDigest}</ChecksumSHA256>`),
+                    'response XML should carry the recomputed checksum');
+                metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
+                    assert.ifError(err);
+                    assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
+                    assert.strictEqual(md.checksum.checksumAlgorithm, 'sha256');
+                    assert.strictEqual(md.checksum.checksumValue, expectedDigest);
+                    done();
+                });
+            });
+        }, done);
+    });
+
+    it('should recompute the checksum on a cross-location copy within the same external backend type', done => {
+        // AWS S3 us-east-1 -> us-east-2: the bytes stream through CloudServer and a FULL_OBJECT checksum is written.
+        const copyObjectSpy = sinon.spy(data, 'copyObject');
+        Promise.resolve(algorithms.sha256.digest(objData[0])).then(expectedDigest => {
+            const req = _createObjectCopyRequest(destBucketName, {
+                'x-amz-checksum-algorithm': 'SHA256',
+                'x-amz-metadata-directive': 'REPLACE',
+                'x-amz-meta-scal-location-constraint': 'us-east-2',
+            });
+            objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
+                copyObjectSpy.restore();
+                assert.ifError(err);
+                assert(!copyObjectSpy.called,
+                    'data.copyObject should NOT be called (recompute streams instead)');
+                assert(xml.includes(`<ChecksumSHA256>${expectedDigest}</ChecksumSHA256>`),
+                    'response XML should carry the recomputed checksum');
+                done();
+            });
+        }, done);
+    });
+
+    it('should recompute the checksum in place on copy-to-self for an external backend', done => {
+        // Copy-to-self reuses the data location (no PUT) but GETs the bytes to
+        // recompute the checksum, written as FULL_OBJECT.
+        const copyObjectSpy = sinon.spy(data, 'copyObject');
+        const dataPutSpy = sinon.spy(data, 'put');
+        Promise.resolve(algorithms.sha256.digest(objData[0])).then(expectedDigest => {
+            const req = new DummyRequest({
+                bucketName: sourceBucketName,
+                namespace,
+                objectKey,
+                headers: {
+                    'x-amz-checksum-algorithm': 'SHA256',
+                    'x-amz-metadata-directive': 'REPLACE',
+                },
+                url: `/${sourceBucketName}/${objectKey}`,
+                socket: {},
+            });
+            objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
+                copyObjectSpy.restore();
+                dataPutSpy.restore();
+                assert.ifError(err);
+                assert(!copyObjectSpy.called, 'data.copyObject should NOT be called (location reused)');
+                assert(!dataPutSpy.called, 'data.put should NOT be called (location reused)');
+                assert(xml.includes(`<ChecksumSHA256>${expectedDigest}</ChecksumSHA256>`),
+                    'response XML should carry the recomputed checksum');
+                metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, md) => {
+                    assert.ifError(err);
+                    assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
+                    assert.strictEqual(md.checksum.checksumValue, expectedDigest);
+                    done();
+                });
+            });
+        }, done);
     });
 });
 
