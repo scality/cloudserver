@@ -662,6 +662,42 @@ function setSourceChecksum(checksum, cb) {
     });
 }
 
+// Truncate the source object to 0 bytes by clearing its data location and
+// content-length. Lets a single beforeEach setup serve both non-empty and
+// empty-source tests without rebuilding the bucket each time.
+function setSourceEmptyBody(cb) {
+    metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, md) => {
+        if (err) {
+            return cb(err);
+        }
+        // eslint-disable-next-line no-param-reassign
+        md.location = null;
+        // eslint-disable-next-line no-param-reassign
+        md['content-length'] = 0;
+        return metadata.putObjectMD(sourceBucketName, objectKey, md, {}, log, cb);
+    });
+}
+
+// Builds the objectCopy callback that asserts a successful FULL_OBJECT recompute:
+// response XML and destination metadata both carry the expected algo and digest.
+function assertRecomputed(algo, xmlTag, expectedDigest, done) {
+    return (err, xml) => {
+        assert.ifError(err);
+        assert(xml.includes(`<${xmlTag}>${expectedDigest}</${xmlTag}>`),
+            `XML should contain ${xmlTag}=${expectedDigest}`);
+        assert(xml.includes('<ChecksumType>FULL_OBJECT</ChecksumType>'),
+            'XML should contain ChecksumType FULL_OBJECT');
+        metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
+            assert.ifError(err);
+            assert(md.checksum, 'destination should have a checksum');
+            assert.strictEqual(md.checksum.checksumAlgorithm, algo);
+            assert.strictEqual(md.checksum.checksumValue, expectedDigest);
+            assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
+            done();
+        });
+    };
+}
+
 describe('objectCopy checksum propagation', () => {
     beforeEach(done => {
         cleanup();
@@ -763,38 +799,6 @@ describe('objectCopy checksum recompute', () => {
     });
 
     afterEach(() => cleanup());
-
-    // Builds the objectCopy callback that asserts a successful FULL_OBJECT recompute:
-    // response XML and destination metadata both carry the expected algo and digest.
-    function assertRecomputed(algo, xmlTag, expectedDigest, done) {
-        return (err, xml) => {
-            if (err) {
-                return done(err);
-            }
-            try {
-                assert(xml.includes(`<${xmlTag}>${expectedDigest}</${xmlTag}>`),
-                    `XML should contain ${xmlTag}=${expectedDigest}`);
-                assert(xml.includes('<ChecksumType>FULL_OBJECT</ChecksumType>'),
-                    'XML should contain ChecksumType FULL_OBJECT');
-            } catch (e) {
-                return done(e);
-            }
-            return metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
-                if (err) {
-                    return done(err);
-                }
-                try {
-                    assert(md.checksum, 'destination should have a checksum');
-                    assert.strictEqual(md.checksum.checksumAlgorithm, algo);
-                    assert.strictEqual(md.checksum.checksumValue, expectedDigest);
-                    assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
-                    return done();
-                } catch (e) {
-                    return done(e);
-                }
-            });
-        };
-    }
 
     const recomputeFixtures = [
         { algo: 'crc32', header: 'CRC32', xmlTag: 'ChecksumCRC32' },
@@ -1225,6 +1229,102 @@ describe('objectCopy checksum recompute on external backends', () => {
                 });
             });
         }, done);
+    });
+});
+
+describe('objectCopy checksum recompute on 0-byte source', () => {
+    beforeEach(done => {
+        cleanup();
+        async.series([
+            next => bucketPut(authInfo, putDestBucketRequest, log, next),
+            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+            next => objectPut(authInfo, versioningTestUtils.createPutObjectRequest(
+                sourceBucketName, objectKey, objData[0]), undefined, log, next),
+            // Truncate the source to 0 bytes (no data location, content-length 0).
+            // Matches the AWS behavior we're exercising: empty source + recompute.
+            next => setSourceEmptyBody(next),
+        ], done);
+    });
+
+    afterEach(() => cleanup());
+
+    const recomputeFixtures = [
+        { algo: 'crc32', header: 'CRC32', xmlTag: 'ChecksumCRC32' },
+        { algo: 'crc32c', header: 'CRC32C', xmlTag: 'ChecksumCRC32C' },
+        { algo: 'crc64nvme', header: 'CRC64NVME', xmlTag: 'ChecksumCRC64NVME' },
+        { algo: 'sha1', header: 'SHA1', xmlTag: 'ChecksumSHA1' },
+        { algo: 'sha256', header: 'SHA256', xmlTag: 'ChecksumSHA256' },
+    ];
+
+    recomputeFixtures.forEach(({ algo, header, xmlTag }) => {
+        it(`should compute empty-bytes ${algo} digest when source has no checksum`, done => {
+            setSourceChecksum(null, err => {
+                if (err) {
+                    return done(err);
+                }
+                return Promise.resolve(algorithms[algo].digest(Buffer.alloc(0))).then(expectedDigest => {
+                    const req = _createObjectCopyRequest(destBucketName, {
+                        'x-amz-checksum-algorithm': header,
+                    });
+                    objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
+                        assertRecomputed(algo, xmlTag, expectedDigest, done));
+                }, done);
+            });
+        });
+    });
+
+    it('should recompute empty-bytes digest on COMPOSITE 0-byte source (no algo header)', done => {
+        // COMPOSITE source forces recompute even with no algorithm header.
+        // Use sha256 placeholder; the dest digest will be the empty-bytes sha256.
+        setSourceChecksum({
+            checksumAlgorithm: 'sha256',
+            checksumValue: '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=',
+            checksumType: 'COMPOSITE',
+        }, err => {
+            assert.ifError(err);
+            Promise.resolve(algorithms.sha256.digest(Buffer.alloc(0))).then(expectedDigest => {
+                const req = _createObjectCopyRequest(destBucketName);
+                objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
+                    assertRecomputed('sha256', 'ChecksumSHA256', expectedDigest, done));
+            }, done);
+        });
+    });
+
+    it('should propagate FULL_OBJECT checksum on 0-byte source (no algo header)', done => {
+        // The 0-byte recompute path must not override propagation set by _prepMetadata.
+        setSourceChecksum({
+            checksumAlgorithm: 'crc32',
+            checksumValue: 'AAAAAA==',
+            checksumType: 'FULL_OBJECT',
+        }, err => {
+            assert.ifError(err);
+            const req = _createObjectCopyRequest(destBucketName);
+            objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
+                assert.ifError(err);
+                assert(xml.includes('<ChecksumCRC32>AAAAAA==</ChecksumCRC32>'));
+                assert(xml.includes('<ChecksumType>FULL_OBJECT</ChecksumType>'));
+                metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
+                    assert.ifError(err);
+                    assert.strictEqual(md.checksum.checksumAlgorithm, 'crc32');
+                    assert.strictEqual(md.checksum.checksumValue, 'AAAAAA==');
+                    assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should compute empty-bytes CRC64NVME on 0-byte source with no source checksum and no algo header', done => {
+        setSourceChecksum(null, err => {
+            if (err) {
+                return done(err);
+            }
+            return Promise.resolve(algorithms.crc64nvme.digest(Buffer.alloc(0))).then(expectedDigest => {
+                const req = _createObjectCopyRequest(destBucketName);
+                objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
+                    assertRecomputed('crc64nvme', 'ChecksumCRC64NVME', expectedDigest, done));
+            }, done);
+        });
     });
 });
 
