@@ -18,6 +18,8 @@ const { taggingTests } = require('../../lib/utility/tagging');
 const genMaxSizeMetaHeaders
     = require('../../lib/utility/genMaxSizeMetaHeaders');
 const constants = require('../../../../../constants');
+const { algorithms } =
+    require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
 
 const sourceBucketName = 'supersourcebucket8102016';
 const sourceObjName = 'supersourceobject';
@@ -1534,4 +1536,168 @@ describe('Object Copy with object lock enabled on both destination ' +
             });
         });
 
+});
+
+describe('Object Copy checksum behavior', () => {
+    withV4(sigCfg => {
+        let bucketUtil;
+        let s3;
+
+        before(async () => {
+            try {
+                bucketUtil = new BucketUtility('default', sigCfg);
+                s3 = bucketUtil.s3;
+                await bucketUtil.empty(sourceBucketName);
+                await bucketUtil.empty(destBucketName);
+                await bucketUtil.deleteMany([sourceBucketName, destBucketName]);
+            } catch (err) {
+                if (err.name !== 'NoSuchBucket') {
+                    throw err;
+                }
+            }
+            await bucketUtil.createOne(sourceBucketName);
+            await bucketUtil.createOne(destBucketName);
+        });
+
+        afterEach(async () => {
+            await bucketUtil.empty(sourceBucketName, true);
+            await bucketUtil.empty(destBucketName, true);
+        });
+
+        after(async () => bucketUtil.deleteMany([sourceBucketName, destBucketName]));
+
+        const checksumFixtures = [
+            { algo: 'crc32', header: 'CRC32', key: 'ChecksumCRC32' },
+            { algo: 'crc32c', header: 'CRC32C', key: 'ChecksumCRC32C' },
+            { algo: 'crc64nvme', header: 'CRC64NVME', key: 'ChecksumCRC64NVME' },
+            { algo: 'sha1', header: 'SHA1', key: 'ChecksumSHA1' },
+            { algo: 'sha256', header: 'SHA256', key: 'ChecksumSHA256' },
+        ];
+
+        const propagateBody = 'checksum-propagate-body';
+        const recomputeBody = 'recompute-different-algo-body';
+
+        checksumFixtures.forEach(({ algo, header, key }) => {
+            it(`should propagate a FULL_OBJECT ${algo} checksum on CopyObject`, async () => {
+                const putRes = await s3.send(new PutObjectCommand({
+                    Bucket: sourceBucketName,
+                    Key: sourceObjName,
+                    Body: propagateBody,
+                    ChecksumAlgorithm: header,
+                }));
+                const sourceValue = putRes[key];
+                assert(sourceValue, `PutObject response should carry ${key}`);
+
+                const copyRes = await s3.send(new CopyObjectCommand({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                }));
+                assert.strictEqual(copyRes.CopyObjectResult[key], sourceValue);
+                assert.strictEqual(copyRes.CopyObjectResult.ChecksumType, 'FULL_OBJECT');
+
+                const headRes = await s3.send(new HeadObjectCommand({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    ChecksumMode: 'ENABLED',
+                }));
+                assert.strictEqual(headRes[key], sourceValue);
+                assert.strictEqual(headRes.ChecksumType, 'FULL_OBJECT');
+            });
+        });
+
+        // Recompute path: every (source algo, requested algo) pair where the
+        // two differ should produce the requested algo's digest of the body.
+        checksumFixtures.forEach(({ algo: sourceAlgo, header: sourceHeader }) => {
+            checksumFixtures.forEach(({ algo, header, key }) => {
+                if (sourceAlgo === algo) {
+                    return; // same-algo is the propagation case, covered above
+                }
+                it(`should recompute ${algo} when source is ${sourceAlgo} and ${header} requested`, async () => {
+                    await s3.send(new PutObjectCommand({
+                        Bucket: sourceBucketName,
+                        Key: sourceObjName,
+                        Body: recomputeBody,
+                        ChecksumAlgorithm: sourceHeader,
+                    }));
+                    const expectedDigest = await Promise.resolve(
+                        algorithms[algo].digest(Buffer.from(recomputeBody)));
+
+                    const copyRes = await s3.send(new CopyObjectCommand({
+                        Bucket: destBucketName,
+                        Key: destObjName,
+                        CopySource: `${sourceBucketName}/${sourceObjName}`,
+                        ChecksumAlgorithm: header,
+                    }));
+                    assert.strictEqual(copyRes.CopyObjectResult[key], expectedDigest);
+                    assert.strictEqual(copyRes.CopyObjectResult.ChecksumType, 'FULL_OBJECT');
+
+                    const headRes = await s3.send(new HeadObjectCommand({
+                        Bucket: destBucketName,
+                        Key: destObjName,
+                        ChecksumMode: 'ENABLED',
+                    }));
+                    assert.strictEqual(headRes[key], expectedDigest);
+                    assert.strictEqual(headRes.ChecksumType, 'FULL_OBJECT');
+                });
+            });
+        });
+
+        // 0-byte source: each requested algo produces the empty-bytes digest.
+        // Source algo doesn't matter (empty body has the same content
+        // regardless), so we pivot on CRC32 ↔ SHA256 to force recompute.
+        checksumFixtures.forEach(({ algo, header, key }) => {
+            const sourceHeader = header === 'CRC32' ? 'SHA256' : 'CRC32';
+            it(`should compute empty-bytes ${algo} digest on a 0-byte source recompute`, async () => {
+                await s3.send(new PutObjectCommand({
+                    Bucket: sourceBucketName,
+                    Key: sourceObjName,
+                    Body: '',
+                    ChecksumAlgorithm: sourceHeader,
+                }));
+                const expectedDigest = await Promise.resolve(
+                    algorithms[algo].digest(Buffer.alloc(0)));
+
+                const copyRes = await s3.send(new CopyObjectCommand({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    ChecksumAlgorithm: header,
+                }));
+                assert.strictEqual(copyRes.CopyObjectResult[key], expectedDigest);
+                assert.strictEqual(copyRes.CopyObjectResult.ChecksumType, 'FULL_OBJECT');
+
+                const headRes = await s3.send(new HeadObjectCommand({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    ChecksumMode: 'ENABLED',
+                }));
+                assert.strictEqual(headRes[key], expectedDigest);
+                assert.strictEqual(headRes.ChecksumType, 'FULL_OBJECT');
+            });
+        });
+
+        it('should reject an unknown ChecksumAlgorithm with InvalidRequest', async () => {
+            await s3.send(new PutObjectCommand({
+                Bucket: sourceBucketName,
+                Key: sourceObjName,
+                Body: 'whatever',
+            }));
+            try {
+                await s3.send(new CopyObjectCommand({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    ChecksumAlgorithm: 'GARBAGE',
+                }));
+                throw new Error('Expected 400 InvalidRequest');
+            } catch (err) {
+                checkError(err, 'InvalidRequest', 400);
+                const expected = 'Checksum algorithm provided is unsupported. '
+                    + 'Please try again with any of the valid types: '
+                    + '[CRC32, CRC32C, CRC64NVME, SHA1, SHA256]';
+                assert.strictEqual(err.message, expected);
+            }
+        });
+    });
 });
