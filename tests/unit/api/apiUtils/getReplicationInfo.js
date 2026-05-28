@@ -609,4 +609,47 @@ describe('getReplicationInfo helper', () => {
             assert.strictEqual(cloudBackend.storageType, undefined);
         });
     });
+
+    describe('blockedSiteTypes filtering', () => {
+        const RING_TYPE = 'location-scality-ring-s3-v1';
+        const configWithRing = {
+            ...TEST_CONFIG,
+            locationConstraints: {
+                ...TEST_CONFIG.locationConstraints,
+                'ring-site': { type: RING_TYPE },
+            },
+        };
+
+        it('should exclude backends whose location type is blocked', () => {
+            const replicationConfig = {
+                role: TWO_PART_ROLE,
+                rules: [
+                    { prefix: '', enabled: true, storageClass: 'awsbackend' },
+                    { prefix: '', enabled: true, storageClass: 'ring-site' },
+                ],
+                destination: 'tosomewhere',
+            };
+            const info = getReplicationInfo(
+                configWithRing, 'fookey',
+                new BucketInfo('b', 'id', 'name', new Date().toJSON(),
+                    null, null, null, null, null, null, null, null, null, replicationConfig),
+                true, 123, null, null, null, [RING_TYPE]);
+            assert.strictEqual(info.backends.length, 1);
+            assert.strictEqual(info.backends[0].site, 'awsbackend');
+        });
+
+        it('should return undefined when all backends are blocked', () => {
+            const replicationConfig = {
+                role: TWO_PART_ROLE,
+                rules: [{ prefix: '', enabled: true, storageClass: 'ring-site' }],
+                destination: 'tosomewhere',
+            };
+            const info = getReplicationInfo(
+                configWithRing, 'fookey',
+                new BucketInfo('b', 'id', 'name', new Date().toJSON(),
+                    null, null, null, null, null, null, null, null, null, replicationConfig),
+                true, 123, null, null, null, [RING_TYPE]);
+            assert.strictEqual(info, undefined);
+        });
+    });
 });

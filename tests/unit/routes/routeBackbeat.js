@@ -10,7 +10,7 @@ const { routeBackbeat } = require('../../../lib/routes/routeBackbeat');
 const { DummyRequestLogger, versioningTestUtils, makeAuthInfo } = require('../helpers');
 const dataWrapper = require('../../../lib/data/wrapper');
 const DummyRequest = require('../DummyRequest');
-const { auth, errors } = require('arsenal');
+const { auth, errors, versioning } = require('arsenal');
 const AuthInfo = auth.AuthInfo;
 const { config } = require('../../../lib/Config');
 const quotaUtils = require('../../../lib/api/apiUtils/quotas/quotaUtils');
@@ -180,10 +180,52 @@ describe('routeBackbeat', () => {
         assert.deepStrictEqual(mockResponse.body, [{}]);
     });
 
+    it('should return 409 VersionIdCollisionException when versionId matches master, no microVersionId', async () => {
+        // Old objects without microVersionId: data is already at destination.
+        // Cloudserver returns 409 VersionIdCollisionException with empty x-scal-micro-version-id.
+        // Backbeat sees empty MicroVersionId and proceeds to putMetadata (partAlreadyAtDest).
+        const rawVersionId = versioning.VersionID.generateVersionId('test', 'RG001');
+        const encodedVersionId = versioning.VersionID.encode(rawVersionId);
+
+        mockRequest = prepareDummyRequest({
+            'x-scal-canonical-id': 'id',
+            'content-md5': '1234',
+            'content-length': '0',
+            'x-scal-versioning-required': 'true',
+            'x-scal-version-id': encodedVersionId,
+        });
+        mockRequest.method = 'PUT';
+        mockRequest.url = '/_/backbeat/data/bucket0/key0';
+        mockRequest.destroy = () => {};
+
+        metadataUtils.standardMetadataValidateBucketAndObj.callsFake(
+            (params, denies, log, callback) => {
+                callback(null, {
+                    getVersioningConfiguration: () => ({ Status: 'Enabled' }),
+                    isVersioningEnabled: () => true,
+                    getLocationConstraint: () => undefined,
+                }, {
+                    versionId: rawVersionId,
+                    // no microVersionId — old-format object
+                });
+            });
+
+        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+        void await endPromise;
+
+        sinon.assert.notCalled(storeObject.dataStore);
+        assert.strictEqual(mockResponse.statusCode, 409);
+        assert.strictEqual(mockResponse.body.code, 'VersionIdCollisionException');
+        const [, responseHeaders] = mockResponse.writeHead.firstCall.args;
+        assert.strictEqual(responseHeaders['x-scal-micro-version-id'], '',
+            'should have empty x-scal-micro-version-id header for old-format objects');
+    });
+
     describe('putMetadata', () => {
         const bucketInfo = {
             getVersioningConfiguration: () => ({ Status: 'Enabled' }),
             isVersioningEnabled: () => true,
+            getReplicationConfiguration: () => null,
         };
         let dataDeleteSpy;
 

@@ -64,11 +64,11 @@
         "vaultclient": "scality/vaultclient#8.5.3",
         "werelogs": "scality/werelogs#semver:^8.2.4",
         "ws": "^8.18.0",
+        "@scality/cloudserverclient": "1.0.9",
         "xml2js": "^0.6.2"
     },
     "devDependencies": {
         "@eslint/compat": "^1.2.2",
-        "@scality/cloudserverclient": "1.0.7",
         "@scality/eslint-config-scality": "scality/Guidelines#8.3.1",
         "eslint": "^9.14.0",
         "eslint-plugin-import": "^2.31.0",

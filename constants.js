@@ -279,6 +279,13 @@ const constants = {
     rateLimitDefaultConfigCacheTTL: 30000, // 30 seconds
     rateLimitDefaultBurstCapacity: 1,
     rateLimitCleanupInterval: 10000, // 10 seconds
+    // S3-compatible Scality locations excluded as CRR cascade targets: they use the
+    // MultiBackend S3 path which bypasses putData/putMetadata routes, so loop detection
+    // cannot fire on those destinations.
+    crrCascadeBlockedLocationTypes: [
+        'location-scality-ring-s3-v1',
+        'location-scality-artesca-s3-v1',
+    ],
     // Supported attributes for the GetObjectAttributes 'x-amz-optional-attributes' header.
     supportedGetObjectAttributes: new Set([
         'StorageClass',
