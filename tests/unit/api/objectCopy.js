@@ -16,7 +16,8 @@ const mpuUtils = require('../utils/mpuUtils');
 const metadata = require('../metadataswitch');
 const { data } = require('../../../lib/data/wrapper');
 const kms = require('../../../lib/kms/wrapper');
-const { objectLocationConstraintHeader } = require('../../../constants');
+const constants = require('../../../constants');
+const { objectLocationConstraintHeader } = constants;
 const { algorithms } = require('../../../lib/api/apiUtils/integrity/validateChecksums');
 const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
 const { config } = require('../../../lib/Config');
@@ -1863,5 +1864,52 @@ describe('_orphanedDataLocations', () => {
 
     it('should flag a legacy string location that is no longer referenced', () => {
         assert.deepStrictEqual(orphanedDataLocations(['oldKey'], [{ key: 'newKey' }]), ['oldKey']);
+    });
+});
+
+describe('objectCopy source size limit', () => {
+    const testPutObjectRequest = versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]);
+    const sourceSize = objData[0].length;
+    let originalMaximumUploadSize;
+
+    before(done => {
+        cleanup();
+        originalMaximumUploadSize = constants.maximumAllowedUploadSize;
+        async.series(
+            [
+                callback => bucketPut(authInfo, putDestBucketRequest, log, callback),
+                callback => bucketPut(authInfo, putSourceBucketRequest, log, callback),
+                callback => objectPut(authInfo, testPutObjectRequest, undefined, log, callback),
+            ],
+            done,
+        );
+    });
+
+    after(() => {
+        constants.maximumAllowedUploadSize = originalMaximumUploadSize;
+        cleanup();
+    });
+
+    it('should allow CopyObject when source size equals the limit', done => {
+        constants.maximumAllowedUploadSize = sourceSize;
+        const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
+        objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+
+    it('should reject CopyObject when source size exceeds the limit', done => {
+        constants.maximumAllowedUploadSize = sourceSize - 1;
+        const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
+        objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+            assert(err);
+            assert.strictEqual(err.is.InvalidRequest, true);
+            assert.match(
+                err.description,
+                /The specified copy source is larger than the maximum allowable size for a copy source/,
+            );
+            done();
+        });
     });
 });
