@@ -16,6 +16,8 @@ const completeMultipartUpload = require('../../../lib/api/completeMultipartUploa
 const objectPutACL = require('../../../lib/api/objectPutACL');
 const objectPutTagging = require('../../../lib/api/objectPutTagging');
 const objectDeleteTagging = require('../../../lib/api/objectDeleteTagging');
+const objectPutLegalHold = require('../../../lib/api/objectPutLegalHold');
+const objectPutRetention = require('../../../lib/api/objectPutRetention');
 const { config } = require('../../../lib/Config');
 
 const log = new DummyRequestLogger();
@@ -68,6 +70,27 @@ function getObjectPutReq(key, hasContent) {
 
 const taggingPutReq = new TaggingConfigTester().createObjectTaggingRequest('PUT', bucketName, keyA);
 const taggingDeleteReq = new TaggingConfigTester().createObjectTaggingRequest('DELETE', bucketName, keyA);
+
+const legalHoldReq = {
+    bucketName,
+    objectKey: keyA,
+    headers: { host: `${bucketName}.s3.amazonaws.com` },
+    post: '<LegalHold xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' + '<Status>ON</Status></LegalHold>',
+    actionImplicitDenies: false,
+};
+
+const retentionFutureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+const retentionReq = {
+    bucketName,
+    objectKey: keyA,
+    headers: { host: `${bucketName}.s3.amazonaws.com` },
+    post:
+        '<Retention xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+        '<Mode>GOVERNANCE</Mode>' +
+        `<RetainUntilDate>${retentionFutureDate}</RetainUntilDate>` +
+        '</Retention>',
+    actionImplicitDenies: false,
+};
 
 const emptyReplicationMD = {
     status: '',
@@ -883,5 +906,47 @@ describe('Replication object MD with CRR and cloud destinations on the same obje
 
         assert.strictEqual(crrBackend.status, 'PENDING');
         assert.strictEqual(cloudBackend, undefined, 'new cloud backend should not be added');
+    });
+});
+
+const metadataOnlyWrites = [
+    { name: 'objectPutTagging', fn: objectPutTagging, req: taggingPutReq },
+    { name: 'objectDeleteTagging', fn: objectDeleteTagging, req: taggingDeleteReq },
+    { name: 'objectPutACL', fn: objectPutACL, req: objectACLReq, skipSubsequentBump: true },
+    { name: 'objectPutLegalHold', fn: objectPutLegalHold, req: legalHoldReq, requiresObjectLock: true },
+    { name: 'objectPutRetention', fn: objectPutRetention, req: retentionReq, requiresObjectLock: true },
+];
+
+describe('microVersionId is bumped on metadata-only writes', () => {
+    const getMD = key => metadata.keyMaps.get(bucketName).get(key);
+    const objectPutAsync = promisify(objectPut);
+
+    beforeEach(() => {
+        cleanup();
+        createBucketWithReplication(true);
+        metadata.buckets.get(bucketName).setObjectLockEnabled(true);
+    });
+
+    afterEach(() => cleanup());
+
+    metadataOnlyWrites.forEach(({ name, fn, req, skipSubsequentBump }) => {
+        const asyncFn = promisify(fn);
+
+        it(`should set microVersionId on ${name}`, async () => {
+            await objectPutAsync(authInfo, getObjectPutReq(keyA, true), undefined, log);
+            await asyncFn(authInfo, req, log);
+            assert(getMD(keyA).microVersionId, `expected microVersionId to be set after ${name}`);
+        });
+
+        if (!skipSubsequentBump) {
+            it(`should bump microVersionId on subsequent ${name}`, async () => {
+                await objectPutAsync(authInfo, getObjectPutReq(keyA, true), undefined, log);
+                await asyncFn(authInfo, req, log);
+                const before = getMD(keyA).microVersionId;
+                await asyncFn(authInfo, req, log);
+                const after = getMD(keyA).microVersionId;
+                assert(after && after !== before, `expected microVersionId to change after ${name}`);
+            });
+        }
     });
 });

@@ -324,4 +324,39 @@ describe('services', () => {
             });
         });
     });
+
+    describe('metadataStoreObject', () => {
+        const authInfo = makeAuthInfo('accessKey1');
+        const params = {
+            objectKey,
+            authInfo,
+            size: 0,
+            contentMD5: 'd41d8cd98f00b204e9800998ecf8427e',
+            metaHeaders: {},
+            headers: {},
+            log,
+        };
+
+        beforeEach(() => {
+            sinon.stub(metadata, 'putObjectMD').yields(null);
+        });
+
+        it('should set microVersionId on the stored MD when updateMicroVersionId is true', done => {
+            services.metadataStoreObject(bucketName, null, null, { ...params, updateMicroVersionId: true }, err => {
+                assert.ifError(err);
+                const storedMD = metadata.putObjectMD.firstCall.args[2];
+                assert(storedMD.getMicroVersionId(), 'expected microVersionId to be set on stored MD');
+                done();
+            });
+        });
+
+        it('should not set microVersionId when updateMicroVersionId is not set', done => {
+            services.metadataStoreObject(bucketName, null, null, params, err => {
+                assert.ifError(err);
+                const storedMD = metadata.putObjectMD.firstCall.args[2];
+                assert.strictEqual(storedMD.getMicroVersionId(), undefined);
+                done();
+            });
+        });
+    });
 });
