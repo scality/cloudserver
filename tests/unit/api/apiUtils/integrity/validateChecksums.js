@@ -338,8 +338,6 @@ describe('validateMethodChecksumNoChunking', () => {
     describe('when checksum mismatches', () => {
         Object.keys(checksumedMethods).forEach(method => {
             it(`should return BadDigest error for ${method} when checksum mismatch`, async () => {
-                config.integrityChecks[method] = true;
-
                 const body = 'Hello, World!';
                 const wrongMd5 = '1B2M2Y8AsgTpgAmY7PhCfg==';
                 const request = {
@@ -360,8 +358,6 @@ describe('validateMethodChecksumNoChunking', () => {
     describe('when checksum mismatches', () => {
         Object.keys(checksumedMethods).forEach(method => {
             it(`should return InvalidDigest error for ${method} when checksum mismatch`, async () => {
-                config.integrityChecks[method] = true;
-
                 const body = 'Hello, World!';
                 const wrongMd5 = 'wrongchecksum123=';
                 const request = {
@@ -382,8 +378,6 @@ describe('validateMethodChecksumNoChunking', () => {
     describe('when no checksum is provided', () => {
         Object.keys(checksumedMethods).forEach(method => {
             it(`should return null for ${method} when no checksum is provided`, async () => {
-                config.integrityChecks[method] = true;
-
                 const body = 'Hello, World!';
                 const request = {
                     apiMethod: method,
@@ -401,8 +395,6 @@ describe('validateMethodChecksumNoChunking', () => {
     describe('when checksum matches', () => {
         Object.keys(checksumedMethods).forEach(method => {
             it(`should return null for ${method} when checksum matches`, async () => {
-                config.integrityChecks[method] = true;
-
                 const body = 'Hello, World!';
                 const correctMd5 = crypto.createHash('md5').update(body, 'utf8').digest('base64');
                 const request = {
@@ -443,9 +435,8 @@ describe('validateMethodChecksumNoChunking', () => {
     });
 
     describe('when method is not in validation function mapping', () => {
-        it('should return null for unsupported method even when enabled in config', async () => {
+        it('should return null for unsupported method', async () => {
             const unsupportedMethod = 'someUnsupportedMethod';
-            config.integrityChecks[unsupportedMethod] = true;
 
             const body = 'Hello, World!';
             const wrongMd5 = 'wrongchecksum123=';
@@ -502,7 +493,6 @@ describe('validateMethodChecksumNoChunking', () => {
         const correctMd5 = crypto.createHash('md5').update(body, 'utf8').digest('base64');
 
         it('should return null when Content-MD5 matches the body', async () => {
-            config.integrityChecks.completeMultipartUpload = true;
             const request = {
                 apiMethod: 'completeMultipartUpload',
                 headers: { 'content-md5': correctMd5 },
@@ -513,7 +503,6 @@ describe('validateMethodChecksumNoChunking', () => {
         });
 
         it('should return BadDigest when Content-MD5 does not match the body', async () => {
-            config.integrityChecks.completeMultipartUpload = true;
             const request = {
                 apiMethod: 'completeMultipartUpload',
                 headers: { 'content-md5': '1B2M2Y8AsgTpgAmY7PhCfg==' },
@@ -524,7 +513,6 @@ describe('validateMethodChecksumNoChunking', () => {
         });
 
         it('should return InvalidDigest when Content-MD5 is malformed', async () => {
-            config.integrityChecks.completeMultipartUpload = true;
             const request = {
                 apiMethod: 'completeMultipartUpload',
                 headers: { 'content-md5': 'wrongchecksum123=' },
@@ -535,7 +523,6 @@ describe('validateMethodChecksumNoChunking', () => {
         });
 
         it('should return null when no Content-MD5 header is present', async () => {
-            config.integrityChecks.completeMultipartUpload = true;
             const request = {
                 apiMethod: 'completeMultipartUpload',
                 headers: {},
@@ -550,7 +537,6 @@ describe('validateMethodChecksumNoChunking', () => {
             // the other methods, this wrong x-amz-checksum-sha256 (treated
             // as a body digest) would return BadDigest. The md5-only path
             // must ignore it — the final-object validator handles it later.
-            config.integrityChecks.completeMultipartUpload = true;
             const request = {
                 apiMethod: 'completeMultipartUpload',
                 headers: { 'x-amz-checksum-sha256': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=' },

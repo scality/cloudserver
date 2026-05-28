@@ -186,7 +186,7 @@ describe('Test x-amz-checksums', () => {
     for (const algo of algos) {
         for (const method of methods) {
             itSkipIfAWS(
-                `${method.Name} should respond BadDigest ` + `with invalid x-amz-checksum-${algo.name.toLowerCase()}`,
+                `${method.Name} should respond BadDigest with invalid x-amz-checksum-${algo.name.toLowerCase()}`,
                 done => {
                     const headers = {
                         [`x-amz-checksum-${algo.name.toLowerCase()}`]: algo.validWrong,
@@ -274,8 +274,7 @@ describe('Test x-amz-checksums', () => {
     for (const algo of algos) {
         for (const method of methods) {
             itSkipIfAWS(
-                `${method.Name} should not respond BadDigest if ` +
-                    `x-amz-checksum-${algo.name.toLowerCase()} is correct`,
+                `${method.Name} should not respond BadDigest if x-amz-checksum-${algo.name.toLowerCase()} is correct`,
                 done => {
                     const url = `http://localhost:8000/${bucket}/${method.Key}?${method.Query}`;
                     const req = new HttpRequestAuthV4(
