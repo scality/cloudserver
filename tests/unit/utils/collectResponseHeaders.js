@@ -8,6 +8,22 @@ describe('Middleware: Collect Response Headers', () => {
         assert.deepStrictEqual(headers['x-amz-replication-status'], 'REPLICA');
     });
 
+    it('should set REPLICA header from isReplica even when status is PENDING', () => {
+        const objectMD = {
+            replicationInfo: { status: 'PENDING', isReplica: true },
+        };
+        const headers = collectResponseHeaders(objectMD);
+        assert.deepStrictEqual(headers['x-amz-replication-status'], 'REPLICA');
+    });
+
+    it('should use replicationInfo.status when isReplica is false', () => {
+        const objectMD = {
+            replicationInfo: { status: 'PENDING', isReplica: false },
+        };
+        const headers = collectResponseHeaders(objectMD);
+        assert.deepStrictEqual(headers['x-amz-replication-status'], 'PENDING');
+    });
+
     it('should set the replication status of each site', () => {
         const objectMD = {
             replicationInfo: {
