@@ -950,3 +950,33 @@ describe('microVersionId is bumped on metadata-only writes', () => {
         }
     });
 });
+
+describe('isReplica is cleared on direct user writes overwriting a replica', () => {
+    const getMD = key => metadata.keyMaps.get(bucketName).get(key);
+    const objectPutAsync = promisify(objectPut);
+
+    beforeEach(() => {
+        cleanup();
+        createBucketWithReplication(true);
+        metadata.buckets.get(bucketName).setObjectLockEnabled(true);
+    });
+
+    afterEach(() => cleanup());
+
+    metadataOnlyWrites.forEach(({ name, fn, req }) => {
+        const asyncFn = promisify(fn);
+
+        it(`should clear isReplica on ${name} when prior MD has it true`, async () => {
+            await objectPutAsync(authInfo, getObjectPutReq(keyA, true), undefined, log);
+            getMD(keyA).replicationInfo.isReplica = true;
+            await asyncFn(authInfo, req, log);
+            assert.strictEqual(getMD(keyA).replicationInfo.isReplica, undefined);
+        });
+
+        it(`should leave isReplica undefined on ${name} when prior MD does not have it`, async () => {
+            await objectPutAsync(authInfo, getObjectPutReq(keyA, true), undefined, log);
+            await asyncFn(authInfo, req, log);
+            assert.strictEqual(getMD(keyA).replicationInfo.isReplica, undefined);
+        });
+    });
+});

@@ -95,6 +95,7 @@ describe('getReplicationInfo helper', () => {
                 content: ['METADATA'],
                 role: 'arn:aws:iam::root:role/src-role',
                 isNFS: undefined,
+                isReplica: undefined,
             });
         });
 
@@ -166,6 +167,7 @@ describe('getReplicationInfo helper', () => {
                 content: ['METADATA'],
                 role: 'arn:aws:iam::root:role/src-role',
                 isNFS: undefined,
+                isReplica: undefined,
             });
         });
 
@@ -200,6 +202,7 @@ describe('getReplicationInfo helper', () => {
                 content: ['METADATA'],
                 role: 'arn:aws:iam::root:role/src-role',
                 isNFS: undefined,
+                isReplica: undefined,
             });
         });
 
@@ -302,6 +305,7 @@ describe('getReplicationInfo helper', () => {
                 content: ['METADATA'],
                 role: 'arn:aws:iam::root:role/src-role',
                 isNFS: undefined,
+                isReplica: undefined,
             });
         });
 
@@ -331,6 +335,7 @@ describe('getReplicationInfo helper', () => {
                 content: ['METADATA'],
                 role: 'arn:aws:iam::root:role/src-role',
                 isNFS: undefined,
+                isReplica: undefined,
             });
         });
 
@@ -363,6 +368,7 @@ describe('getReplicationInfo helper', () => {
                 content: ['METADATA'],
                 role: 'arn:aws:iam::root:role/src-role',
                 isNFS: undefined,
+                isReplica: undefined,
             });
         });
 
