@@ -904,6 +904,14 @@ bson@^1.1.4:
   resolved "https://registry.yarnpkg.com/bson/-/bson-1.1.6.tgz#fb819be9a60cd677e0853aee4ca712a785d6618a"
   integrity sha512-EvVNVeGo4tHxwi8L6bPj3y3itEvStdwvvlojVxxbyYfoaxJ6keLgrTuKdyfEAszFK+H3olzBuafE0yoh0D1gdg==
 
+bucketclient@scality/bucketclient#7.10.21:
+  version "7.10.21"
+  resolved "https://codeload.github.com/scality/bucketclient/tar.gz/95fb3d4c48ed51c68a048cb01021c7a1eb339922"
+  dependencies:
+    agentkeepalive "^4.1.4"
+    arsenal "git+https://github.com/scality/Arsenal#7.10.46"
+    werelogs scality/werelogs#8.1.0
+
 bucketclient@scality/bucketclient#7.10.6:
   version "7.10.6"
   resolved "https://codeload.github.com/scality/bucketclient/tar.gz/115ab1ae974781aafaba455cf83228b1732191af"
