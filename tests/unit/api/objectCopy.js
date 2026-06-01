@@ -753,6 +753,7 @@ describe('objectCopy source size limit', () => {
 
     after(() => {
         constants.maximumAllowedUploadSize = originalMaximumUploadSize;
+        config.bypassMaxPutObjectSize = false;
         cleanup();
     });
 
@@ -777,5 +778,16 @@ describe('objectCopy source size limit', () => {
             );
             done();
         });
+    });
+
+    it('should allow CopyObject when source size exceeds the limit but bypass flag is set', done => {
+        constants.maximumAllowedUploadSize = sourceSize - 1;
+        config.bypassMaxPutObjectSize = true;
+        const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
+        objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
+            undefined, log, err => {
+                assert.ifError(err);
+                done();
+            });
     });
 });
