@@ -6,6 +6,8 @@ const {
     CreateMultipartUploadCommand,
     UploadPartCommand,
     CompleteMultipartUploadCommand,
+    ListMultipartUploadsCommand,
+    AbortMultipartUploadCommand,
     PutObjectCommand,
     PutBucketVersioningCommand,
     DeleteObjectCommand,
@@ -116,6 +118,24 @@ async function putMPU(s3, bucketName, objectName) {
     return putMPUVersion(s3, bucketName, objectName, undefined);
 }
 
+// Error-handling cases initiate MPUs that intentionally fail to complete,
+// leaving an in-progress upload behind. bucketUtil.empty only removes object
+// versions, so without aborting these uploads the per-bucket mpuShadowBucket
+// survives bucket deletion and pollutes the shared metadata bucket list.
+async function abortAllMPUs(s3, bucketName) {
+    const { Uploads } = await s3.send(new ListMultipartUploadsCommand({ Bucket: bucketName }));
+    if (!Uploads) {
+        return;
+    }
+    for (const upload of Uploads) {
+        await s3.send(new AbortMultipartUploadCommand({
+            Bucket: bucketName,
+            Key: upload.Key,
+            UploadId: upload.UploadId,
+        }));
+    }
+}
+
 function checkVersionsAndUpdate(versionsBefore, versionsAfter, indexes) {
     indexes.forEach(i => {
         assert.notStrictEqual(versionsAfter[i].value.Size, versionsBefore[i].value.Size);
@@ -181,6 +201,8 @@ describe('MPU with x-scal-s3-version-id header', () => {
         });
 
         afterEach(async () => {
+            await abortAllMPUs(s3, bucketName);
+            await abortAllMPUs(s3, bucketNameMD);
             await bucketUtil.emptyMany([bucketName, bucketNameMD]);
             await bucketUtil.deleteMany([bucketName, bucketNameMD]);
         });
