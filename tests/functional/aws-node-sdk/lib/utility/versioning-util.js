@@ -15,9 +15,9 @@ const s3Client = new S3Client(config);
 const versioningEnabled = { Status: 'Enabled' };
 const versioningSuspended = { Status: 'Suspended' };
 
-function _deleteVersionList(versionList, bucket, callback) {
+async function _deleteVersionList(versionList, bucket) {
     if (versionList === undefined || versionList.length === 0) {
-        return callback();
+        return;
     }
     const params = { Bucket: bucket, Delete: { Objects: [] } };
     versionList.forEach(version => {
@@ -25,7 +25,7 @@ function _deleteVersionList(versionList, bucket, callback) {
             Key: version.Key, VersionId: version.VersionId });
     });
 
-    return s3Client.send(new DeleteObjectsCommand(params)).then(() => callback()).catch(err => callback(err));
+    await s3Client.send(new DeleteObjectsCommand(params));
 }
 
 async function checkOneVersion(s3, bucket, versionId) {
@@ -37,27 +37,23 @@ async function checkOneVersion(s3, bucket, versionId) {
     assert.strictEqual((data.DeleteMarkers || []).length, 0);
 }
 
-function removeAllVersions(params, callback) {
+async function removeAllVersions(params, callback) {
+    // trampoline: keep legacy callback + promisify callers working
+    if (callback) {
+        return removeAllVersions(params).then(() => callback(null), callback);
+    }
     const bucket = params.Bucket;
-    async.waterfall([
-        cb => s3Client.send(new ListObjectVersionsCommand(params)).then(data =>
-            cb(null, data)).catch(err => cb(err)),
-        (data, cb) => _deleteVersionList(data.DeleteMarkers, bucket,
-            err => cb(err, data)),
-        (data, cb) => _deleteVersionList(data.Versions, bucket,
-            err => cb(err, data)),
-        (data, cb) => {
-            if (data.IsTruncated) {
-                const params = {
-                    Bucket: bucket,
-                    KeyMarker: data.NextKeyMarker,
-                    VersionIdMarker: data.NextVersionIdMarker,
-                };
-                return removeAllVersions(params, cb);
-            }
-            return cb();
-        },
-    ], callback);
+    const data = await s3Client.send(new ListObjectVersionsCommand(params));
+    await _deleteVersionList(data.DeleteMarkers, bucket);
+    await _deleteVersionList(data.Versions, bucket);
+    if (data.IsTruncated) {
+        await removeAllVersions({
+            Bucket: bucket,
+            KeyMarker: data.NextKeyMarker,
+            VersionIdMarker: data.NextVersionIdMarker,
+        });
+    }
+    return undefined;
 }
 
 function suspendVersioning(bucket, callback) {
