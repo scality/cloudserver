@@ -9,6 +9,7 @@ const {
     setCachedConfig,
     expireCachedConfigs,
     deleteCachedConfig,
+    MAX_CACHE_ITEMS,
 } = require('../../../../../lib/api/apiUtils/rateLimit/cache');
 
 describe('test limit config cache storage', () => {
@@ -69,6 +70,25 @@ describe('test limit config cache storage', () => {
         assert.strictEqual(configCache.get('past'), undefined);
         assert.strictEqual(configCache.get('present'), undefined);
         assert.deepStrictEqual(configCache.get('future'), {
+            expiry: now + 10000,
+            value: 10,
+        });
+    });
+
+    it('should trim cache to MAX_CACHE_ITEMS length', () => {
+        for (let i = 0; i < MAX_CACHE_ITEMS + 10; i++) {
+            configCache.set(`item-${i}`, {
+                expiry: now + 10000,
+                value: i
+            });
+        }
+
+        // expireCachedConfigs uses Date.now() internally; fake clock is set to `now`
+        const numDeleted = expireCachedConfigs();
+        assert.strictEqual(numDeleted, 10);
+        assert.strictEqual(configCache.size, MAX_CACHE_ITEMS);
+        assert.strictEqual(configCache.get('item-0'), undefined);
+        assert.deepStrictEqual(configCache.get('item-10'), {
             expiry: now + 10000,
             value: 10,
         });

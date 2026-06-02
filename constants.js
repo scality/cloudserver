@@ -277,6 +277,7 @@ const constants = {
     ],
     // Rate limiting defaults
     rateLimitDefaultConfigCacheTTL: 30000, // 30 seconds
+    rateLimitDefaultCacheMaxItems: 1000,
     rateLimitDefaultBurstCapacity: 1,
     rateLimitCleanupInterval: 10000, // 10 seconds
 };

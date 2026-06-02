@@ -792,6 +792,14 @@
     httpagent "github:scality/httpagent#1.1.0"
     werelogs "github:scality/werelogs#8.2.2"
 
+"@scality/hdclient@^1.3.2":
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/@scality/hdclient/-/hdclient-1.3.2.tgz#544d08a5b88869a9c30107c05d774e13595966fb"
+  integrity sha512-voy67AlH1irNmaXno0KP/KpiEBYzzdW8EoGjBXsVztLFjGe+RQnNtAyzCn05secZZy43jBYLOrZ7032gorxvrg==
+  dependencies:
+    httpagent "github:scality/httpagent#1.1.0"
+    werelogs "github:scality/werelogs#8.2.2"
+
 "@senx/warp10@^2.0.3":
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/@senx/warp10/-/warp10-2.0.3.tgz#dcce3890d491c6380f2967abcf126909ed208969"
@@ -1527,14 +1535,14 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#8.2.50":
-  version "8.2.50"
-  resolved "git+https://github.com/scality/arsenal#2b0a8026cb62e0f6a621738e78f5e9fcc977275e"
+"arsenal@git+https://github.com/scality/arsenal#user/tmacro/cross_account_rate_limit":
+  version "8.2.51"
+  resolved "git+https://github.com/scality/arsenal#3374e5247028f487791cac646d66b10717865f3d"
   dependencies:
     "@azure/identity" "^4.13.0"
     "@azure/storage-blob" "^12.28.0"
     "@js-sdsl/ordered-set" "^4.4.2"
-    "@scality/hdclient" "^1.3.1"
+    "@scality/hdclient" "^1.3.2"
     JSONStream "^1.3.5"
     agentkeepalive "^4.6.0"
     ajv "6.12.3"
@@ -7263,6 +7271,17 @@ vary@^1, vary@~1.1.2:
 vaultclient@scality/vaultclient#8.5.3:
   version "8.5.3"
   resolved "https://codeload.github.com/scality/vaultclient/tar.gz/24e33cfe2a98cc4545ddc615371bfd8d2f2e98d1"
+  dependencies:
+    "@aws-crypto/sha256-universal" "^5.2.0"
+    "@smithy/signature-v4" "^4.1.0"
+    commander "^11.0.0"
+    httpagent "git+https://github.com/scality/httpagent#1.1.0"
+    werelogs scality/werelogs#8.2.0
+    xml2js "^0.6.2"
+
+vaultclient@scality/vaultclient#user/tmacro/cross_account_rate_limit:
+  version "8.5.6"
+  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/5ee6f4da2811a18214c0673fc2f6a679cf1296c3"
   dependencies:
     "@aws-crypto/sha256-universal" "^5.2.0"
     "@smithy/signature-v4" "^4.1.0"
