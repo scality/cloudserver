@@ -8,6 +8,7 @@ const arsenal = require('arsenal');
 const uuid = require('uuid');
 const logger = require('../../lib/utilities/logger');
 const { config: defaultConfig } = require('../../lib/Config');
+const tracing = require('arsenal/build/lib/tracing');
 const { S3Server } = require('../../lib/server');
 
 describe('S3Server', () => {
@@ -249,5 +250,85 @@ describe('S3Server request timeout', () => {
 
         // Verify that requestTimeout was set to 0
         assert.strictEqual(mockServer.requestTimeout, 0);
+    });
+});
+
+describe('S3Server shutdown', () => {
+    let server;
+    let tracingCloseStub;
+    let exitStub;
+
+    beforeEach(() => {
+        server = new S3Server({
+            ...defaultConfig,
+            port: undefined,
+            listenOn: [],
+            internalPort: undefined,
+            internalListenOn: [],
+            metricsListenOn: [],
+            metricsPort: 8002,
+        });
+        // S3Server.cleanUp iterates this.servers and closes each — empty
+        // array makes the Promise.all in cleanUp resolve immediately.
+        server.servers = [];
+        // Avoid touching the rateLimiting refill-job teardown path.
+        server.config = { ...server.config, rateLimiting: { enabled: false } };
+
+        tracingCloseStub = sinon.stub(tracing, 'close').resolves();
+        exitStub = sinon.stub(process, 'exit');
+    });
+
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    it('should flush OTEL via tracing.close before process.exit(0) on cleanUp', async () => {
+        await server.cleanUp();
+        sinon.assert.callOrder(tracingCloseStub, exitStub);
+        assert.strictEqual(tracingCloseStub.callCount, 1);
+        assert.strictEqual(exitStub.callCount, 1);
+        assert.strictEqual(exitStub.firstCall.args[0], 0);
+    });
+
+    it('should flush OTEL on cleanUp even when a server.close errors', async () => {
+        const erroringServer = {
+            close(cb) {
+                cb(new Error('socket already closed'));
+            },
+        };
+        server.servers = [erroringServer];
+        await assert.rejects(() => server.cleanUp(), /socket already closed/);
+        assert.strictEqual(tracingCloseStub.callCount, 1);
+        assert.strictEqual(exitStub.callCount, 1);
+        assert.strictEqual(exitStub.firstCall.args[0], 0);
+    });
+
+    it('should still exit(0) on cleanUp even if tracing.close rejects', async () => {
+        tracingCloseStub.rejects(new Error('flush failed'));
+        await assert.rejects(() => server.cleanUp(), /flush failed/);
+        assert.strictEqual(tracingCloseStub.callCount, 1);
+        assert.strictEqual(exitStub.firstCall.args[0], 0);
+    });
+
+    it('should flush OTEL before process.exit(1) on caughtExceptionShutdown (non-cluster)', async () => {
+        server.cluster = false;
+        await server.caughtExceptionShutdown();
+        sinon.assert.callOrder(tracingCloseStub, exitStub);
+        assert.strictEqual(tracingCloseStub.callCount, 1);
+        assert.strictEqual(exitStub.firstCall.args[0], 1);
+    });
+
+    it('should flush OTEL before worker.kill on caughtExceptionShutdown (cluster worker)', async () => {
+        const killStub = sinon.stub();
+        server.cluster = true;
+        server.worker = { id: 1, process: { pid: 12345 }, kill: killStub };
+
+        await server.caughtExceptionShutdown();
+
+        sinon.assert.callOrder(tracingCloseStub, killStub);
+        assert.strictEqual(tracingCloseStub.callCount, 1);
+        assert.strictEqual(killStub.callCount, 1);
+        // The non-cluster process.exit branch is skipped in this path.
+        assert.strictEqual(exitStub.callCount, 0);
     });
 });
