@@ -94,8 +94,12 @@ describe('services', () => {
                 IsTruncated: false,
             });
 
-            services.findObjectVersionByUploadId(bucketName, objectKey, 'non-existent-upload-id',
-                log, (err, foundVersion) => {
+            services.findObjectVersionByUploadId(
+                bucketName,
+                objectKey,
+                'non-existent-upload-id',
+                log,
+                (err, foundVersion) => {
                     assert.ifError(err);
                     sinon.assert.calledTwice(getObjectListingStub);
 
@@ -104,7 +108,8 @@ describe('services', () => {
                     assert.strictEqual(secondCallParams.versionIdMarker, 'version-marker');
                     assert.strictEqual(foundVersion, null);
                     done();
-                });
+                },
+            );
         });
 
         it('should find a version on the first page of many and stop listing', done => {
@@ -176,10 +181,10 @@ describe('services', () => {
         let putObjectMDStub;
 
         beforeEach(() => {
-            putObjectMDStub = sinon.stub(metadata, 'putObjectMD')
+            putObjectMDStub = sinon
+                .stub(metadata, 'putObjectMD')
                 .callsFake((bucket, key, md, opts, reqLog, cb) => cb(null));
-            sinon.stub(acl, 'parseAclFromHeaders')
-                .callsFake((params, cb) => cb(null, { Canned: 'private' }));
+            sinon.stub(acl, 'parseAclFromHeaders').callsFake((params, cb) => cb(null, { Canned: 'private' }));
         });
 
         it('should store checksumAlgorithm, checksumType and checksumIsDefault when provided', done => {
@@ -241,8 +246,7 @@ describe('services', () => {
         const authInfo = makeAuthInfo('accessKey1');
         const ownerID = authInfo.getCanonicalID();
         const mpuBucketName = `${constants.mpuBucketPrefix}${bucketName}`;
-        const mpuOverviewKey = `overview${constants.splitter}${objectKey}` +
-            `${constants.splitter}${uploadId}`;
+        const mpuOverviewKey = `overview${constants.splitter}${objectKey}` + `${constants.splitter}${uploadId}`;
         const mpuBucket = {
             getName: () => mpuBucketName,
             getMdBucketModelVersion: () => 2,
@@ -268,46 +272,48 @@ describe('services', () => {
                 assert.strictEqual(name, mpuBucketName);
                 done(null, mpuBucket);
             });
-            sinon.stub(metadata, 'getObjectMD')
-                .callsFake((bucket, key, params, reqLog, done) => {
-                    assert.strictEqual(bucket, mpuBucketName);
-                    assert.strictEqual(key, mpuOverviewKey);
-                    done(null, {
-                        ...storedMetadata,
-                        ...storedMetadataOverride,
-                    });
+            sinon.stub(metadata, 'getObjectMD').callsFake((bucket, key, params, reqLog, done) => {
+                assert.strictEqual(bucket, mpuBucketName);
+                assert.strictEqual(key, mpuOverviewKey);
+                done(null, {
+                    ...storedMetadata,
+                    ...storedMetadataOverride,
                 });
+            });
 
-            services.metadataValidateMultipart({
-                bucketName,
-                objectKey,
-                uploadId,
-                authInfo,
-                requestType: 'listParts',
-                log,
-            }, cb);
+            services.metadataValidateMultipart(
+                {
+                    bucketName,
+                    objectKey,
+                    uploadId,
+                    authInfo,
+                    requestType: 'listParts',
+                    log,
+                },
+                cb,
+            );
         }
 
-        it('should expose checksum fields from stored MPU overview metadata',
-        done => {
-            validateMultipart({
-                checksumAlgorithm: 'sha256',
-                checksumType: 'COMPOSITE',
-                checksumIsDefault: false,
-            }, (err, bucket, mpuOverview, returnedStoredMetadata) => {
-                assert.ifError(err);
-                assert.strictEqual(bucket, mpuBucket);
-                assert.strictEqual(returnedStoredMetadata.checksumAlgorithm,
-                    'sha256');
-                assert.strictEqual(mpuOverview.checksumAlgorithm, 'sha256');
-                assert.strictEqual(mpuOverview.checksumType, 'COMPOSITE');
-                assert.strictEqual(mpuOverview.checksumIsDefault, false);
-                done();
-            });
+        it('should expose checksum fields from stored MPU overview metadata', done => {
+            validateMultipart(
+                {
+                    checksumAlgorithm: 'sha256',
+                    checksumType: 'COMPOSITE',
+                    checksumIsDefault: false,
+                },
+                (err, bucket, mpuOverview, returnedStoredMetadata) => {
+                    assert.ifError(err);
+                    assert.strictEqual(bucket, mpuBucket);
+                    assert.strictEqual(returnedStoredMetadata.checksumAlgorithm, 'sha256');
+                    assert.strictEqual(mpuOverview.checksumAlgorithm, 'sha256');
+                    assert.strictEqual(mpuOverview.checksumType, 'COMPOSITE');
+                    assert.strictEqual(mpuOverview.checksumIsDefault, false);
+                    done();
+                },
+            );
         });
 
-        it('should leave checksum fields undefined for legacy MPU overview metadata',
-        done => {
+        it('should leave checksum fields undefined for legacy MPU overview metadata', done => {
             validateMultipart({}, (err, bucket, mpuOverview) => {
                 assert.ifError(err);
                 assert.strictEqual(bucket, mpuBucket);
