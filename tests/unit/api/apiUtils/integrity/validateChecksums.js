@@ -11,6 +11,7 @@ const {
     arsenalErrorFromChecksumError,
     getChecksumDataFromMPUHeaders,
     validateCompleteMultipartUploadChecksum,
+    getCopyObjectChecksumAlgorithm,
 } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
 const { errors: ArsenalErrors } = require('arsenal');
 const { config } = require('../../../../../lib/Config');
@@ -755,6 +756,19 @@ describe('arsenalErrorFromChecksumError', () => {
         assert.strictEqual(result.message, 'InvalidRequest');
     });
 
+    it('should return InvalidRequest with the AWS-shaped message for CopyChecksumAlgoNotSupported', () => {
+        const result = arsenalErrorFromChecksumError({
+            error: ChecksumError.CopyChecksumAlgoNotSupported,
+            details: { algorithm: 'GARBAGE' },
+        });
+        assert.strictEqual(result.message, 'InvalidRequest');
+        assert.match(
+            result.description,
+            /Checksum algorithm provided is unsupported/,
+            'expected AWS-shaped error description',
+        );
+    });
+
     it('should return InvalidRequest for MissingCorresponding', () => {
         const result = arsenalErrorFromChecksumError({
             error: ChecksumError.MissingCorresponding,
@@ -1221,5 +1235,66 @@ describe('validateCompleteMultipartUploadChecksum', () => {
         assert(err);
         assert.strictEqual(err.error, ChecksumError.AlgoNotSupported);
         assert.strictEqual(err.details.algorithm, 'md5');
+    });
+});
+
+describe('getCopyObjectChecksumAlgorithm', () => {
+    it('should return algorithm null and no error when the header is absent', () => {
+        const result = getCopyObjectChecksumAlgorithm({});
+        assert.strictEqual(result.error, null);
+        assert.strictEqual(result.algorithm, null);
+    });
+
+    it('should ignore unrelated headers', () => {
+        const result = getCopyObjectChecksumAlgorithm({
+            'content-type': 'application/octet-stream',
+            host: 'example.com',
+        });
+        assert.strictEqual(result.error, null);
+        assert.strictEqual(result.algorithm, null);
+    });
+
+    const validAlgorithms = [
+        ['CRC32', 'crc32'],
+        ['CRC32C', 'crc32c'],
+        ['CRC64NVME', 'crc64nvme'],
+        ['SHA1', 'sha1'],
+        ['SHA256', 'sha256'],
+        // mixed-case input is lowercased
+        ['Sha256', 'sha256'],
+        // already-lowercase input is accepted as-is
+        ['crc32', 'crc32'],
+    ];
+
+    for (const [header, normalized] of validAlgorithms) {
+        it(`should return algorithm '${normalized}' for header '${header}'`, () => {
+            const result = getCopyObjectChecksumAlgorithm({
+                'x-amz-checksum-algorithm': header,
+            });
+            assert.strictEqual(result.error, null);
+            assert.strictEqual(result.algorithm, normalized);
+        });
+    }
+
+    it('should return CopyChecksumAlgoNotSupported for an unknown algorithm', () => {
+        const result = getCopyObjectChecksumAlgorithm({
+            'x-amz-checksum-algorithm': 'GARBAGE',
+        });
+        assert.strictEqual(result.algorithm, null);
+        assert(result.error);
+        assert.strictEqual(result.error.error, ChecksumError.CopyChecksumAlgoNotSupported);
+        assert.strictEqual(result.error.details.algorithm, 'GARBAGE');
+    });
+
+    it('should reject algorithms AWS may know about but cloudserver does not support', () => {
+        // AWS error message lists MD5/SHA512/XXHASH* as known names; we only
+        // accept the five FULL_OBJECT-capable algorithms.
+        for (const algo of ['MD5', 'SHA512', 'XXHASH128', 'XXHASH3', 'XXHASH64']) {
+            const result = getCopyObjectChecksumAlgorithm({
+                'x-amz-checksum-algorithm': algo,
+            });
+            assert.strictEqual(result.algorithm, null, `expected null algorithm for ${algo}`);
+            assert.strictEqual(result.error.error, ChecksumError.CopyChecksumAlgoNotSupported);
+        }
     });
 });
