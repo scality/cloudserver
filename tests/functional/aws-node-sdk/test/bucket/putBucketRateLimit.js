@@ -1,9 +1,5 @@
 const assert = require('assert');
-const {
-    S3Client,
-    CreateBucketCommand,
-    DeleteBucketCommand,
-} = require('@aws-sdk/client-s3');
+const { S3Client, CreateBucketCommand, DeleteBucketCommand } = require('@aws-sdk/client-s3');
 const getConfig = require('../support/config');
 const { sendRateLimitRequest, skipIfRateLimitDisabled } = require('../rateLimit/tooling');
 const { config } = require('../../../../../lib/Config');
@@ -39,8 +35,12 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
 
     it('should set the rate limit config', async () => {
         try {
-            await sendRateLimitRequest('PUT', '127.0.0.1:8000',
-                `/${bucket}/?rate-limit`, JSON.stringify(rateLimitConfig));
+            await sendRateLimitRequest(
+                'PUT',
+                '127.0.0.1:8000',
+                `/${bucket}/?rate-limit`,
+                JSON.stringify(rateLimitConfig),
+            );
             assert.ok(true);
         } catch (err) {
             assert.ifError(err);
@@ -50,15 +50,22 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
     it('should update existing rate limit config', async () => {
         try {
             const initialConfig = { RequestsPerSecond: 100 };
-            await sendRateLimitRequest('PUT', '127.0.0.1:8000',
-                `/${bucket}/?rate-limit`, JSON.stringify(initialConfig));
+            await sendRateLimitRequest(
+                'PUT',
+                '127.0.0.1:8000',
+                `/${bucket}/?rate-limit`,
+                JSON.stringify(initialConfig),
+            );
 
-            await sendRateLimitRequest('PUT', '127.0.0.1:8000',
-                `/${bucket}/?rate-limit`, JSON.stringify(rateLimitConfig));
+            await sendRateLimitRequest(
+                'PUT',
+                '127.0.0.1:8000',
+                `/${bucket}/?rate-limit`,
+                JSON.stringify(rateLimitConfig),
+            );
 
             // Verify the update
-            const data = await sendRateLimitRequest('GET', '127.0.0.1:8000',
-                `/${bucket}/?rate-limit`);
+            const data = await sendRateLimitRequest('GET', '127.0.0.1:8000', `/${bucket}/?rate-limit`);
             assert.strictEqual(data.RequestsPerSecond.Limit, 200);
         } catch (err) {
             assert.ifError(err);
@@ -67,8 +74,12 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
 
     it('should return NoSuchBucket error when bucket does not exist', async () => {
         try {
-            await sendRateLimitRequest('PUT', '127.0.0.1:8000',
-                `/${nonExistentBucket}/?rate-limit`, JSON.stringify(rateLimitConfig));
+            await sendRateLimitRequest(
+                'PUT',
+                '127.0.0.1:8000',
+                `/${nonExistentBucket}/?rate-limit`,
+                JSON.stringify(rateLimitConfig),
+            );
         } catch (err) {
             assert.strictEqual(err.Error.Code[0], 'NoSuchBucket');
         }
@@ -76,8 +87,12 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
 
     it('should return InvalidArgument error when RequestsPerSecond is negative', async () => {
         try {
-            await sendRateLimitRequest('PUT', '127.0.0.1:8000',
-                `/${bucket}/?rate-limit`, JSON.stringify(invalidConfig));
+            await sendRateLimitRequest(
+                'PUT',
+                '127.0.0.1:8000',
+                `/${bucket}/?rate-limit`,
+                JSON.stringify(invalidConfig),
+            );
         } catch (err) {
             assert.strictEqual(err.Error.Code[0], 'InvalidArgument');
         }
@@ -85,8 +100,12 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
 
     it('should return InvalidArgument error when RequestsPerSecond is not an integer', async () => {
         try {
-            await sendRateLimitRequest('PUT', '127.0.0.1:8000',
-                `/${bucket}/?rate-limit`, JSON.stringify(invalidConfigNotInteger));
+            await sendRateLimitRequest(
+                'PUT',
+                '127.0.0.1:8000',
+                `/${bucket}/?rate-limit`,
+                JSON.stringify(invalidConfigNotInteger),
+            );
         } catch (err) {
             assert.strictEqual(err.Error.Code[0], 'InvalidArgument');
         }
@@ -94,8 +113,12 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
 
     it('should return InvalidArgument error when RequestsPerSecond is missing', async () => {
         try {
-            await sendRateLimitRequest('PUT', '127.0.0.1:8000',
-                `/${bucket}/?rate-limit`, JSON.stringify(missingLimitConfig));
+            await sendRateLimitRequest(
+                'PUT',
+                '127.0.0.1:8000',
+                `/${bucket}/?rate-limit`,
+                JSON.stringify(missingLimitConfig),
+            );
         } catch (err) {
             assert.strictEqual(err.Error.Code[0], 'InvalidArgument');
         }
@@ -103,8 +126,7 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
 
     it('should return InvalidArgument error when request body is invalid JSON', async () => {
         try {
-            await sendRateLimitRequest('PUT', '127.0.0.1:8000',
-                `/${bucket}/?rate-limit`, 'invalid json{');
+            await sendRateLimitRequest('PUT', '127.0.0.1:8000', `/${bucket}/?rate-limit`, 'invalid json{');
         } catch (err) {
             assert.strictEqual(err.Error.Code[0], 'InvalidArgument');
         }
@@ -113,19 +135,16 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
     it('should allow zero as a valid RequestsPerSecond value', async () => {
         try {
             const zeroConfig = { RequestsPerSecond: 0 };
-            await sendRateLimitRequest('PUT', '127.0.0.1:8000',
-                `/${bucket}/?rate-limit`, JSON.stringify(zeroConfig));
+            await sendRateLimitRequest('PUT', '127.0.0.1:8000', `/${bucket}/?rate-limit`, JSON.stringify(zeroConfig));
 
-            const data = await sendRateLimitRequest('GET', '127.0.0.1:8000',
-                `/${bucket}/?rate-limit`);
-            assert.deepStrictEqual(data, { RequestsPerSecond:  { Limit: 0 } });
+            const data = await sendRateLimitRequest('GET', '127.0.0.1:8000', `/${bucket}/?rate-limit`);
+            assert.deepStrictEqual(data, { RequestsPerSecond: { Limit: 0 } });
         } catch (err) {
             assert.ifError(err);
         }
     });
 
     describe('validation against node and worker count', () => {
-
         const nodes = config.rateLimiting?.nodes || 1;
         const workers = config.clusters || 1;
         const minLimit = nodes * workers;
@@ -138,8 +157,12 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
             let error;
             try {
                 const invalidConfig = { RequestsPerSecond: minLimit - 1 };
-                await sendRateLimitRequest('PUT', '127.0.0.1:8000',
-                    `/${bucket}/?rate-limit`, JSON.stringify(invalidConfig));
+                await sendRateLimitRequest(
+                    'PUT',
+                    '127.0.0.1:8000',
+                    `/${bucket}/?rate-limit`,
+                    JSON.stringify(invalidConfig),
+                );
             } catch (err) {
                 error = err;
             } finally {
@@ -151,11 +174,14 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
         it('should accept limits equal to (nodes x workers)', async () => {
             try {
                 const validConfig = { RequestsPerSecond: minLimit };
-                await sendRateLimitRequest('PUT', '127.0.0.1:8000',
-                    `/${bucket}/?rate-limit`, JSON.stringify(validConfig));
+                await sendRateLimitRequest(
+                    'PUT',
+                    '127.0.0.1:8000',
+                    `/${bucket}/?rate-limit`,
+                    JSON.stringify(validConfig),
+                );
 
-                const data = await sendRateLimitRequest('GET', '127.0.0.1:8000',
-                    `/${bucket}/?rate-limit`);
+                const data = await sendRateLimitRequest('GET', '127.0.0.1:8000', `/${bucket}/?rate-limit`);
                 assert.strictEqual(data.RequestsPerSecond.Limit, minLimit);
             } catch (err) {
                 assert.ifError(err);
@@ -165,11 +191,14 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
         it('should accept limits greater than (nodes x workers)', async () => {
             try {
                 const validConfig = { RequestsPerSecond: minLimit + 1000 };
-                await sendRateLimitRequest('PUT', '127.0.0.1:8000',
-                    `/${bucket}/?rate-limit`, JSON.stringify(validConfig));
+                await sendRateLimitRequest(
+                    'PUT',
+                    '127.0.0.1:8000',
+                    `/${bucket}/?rate-limit`,
+                    JSON.stringify(validConfig),
+                );
 
-                const data = await sendRateLimitRequest('GET', '127.0.0.1:8000',
-                    `/${bucket}/?rate-limit`);
+                const data = await sendRateLimitRequest('GET', '127.0.0.1:8000', `/${bucket}/?rate-limit`);
                 assert.strictEqual(data.RequestsPerSecond.Limit, minLimit + 1000);
             } catch (err) {
                 assert.ifError(err);

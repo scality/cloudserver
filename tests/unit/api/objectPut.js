@@ -11,25 +11,18 @@ const bucketPutACL = require('../../../lib/api/bucketPutACL');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');
 const { parseTagFromQuery } = s3middleware.tagging;
-const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
-    = require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils } = require('../helpers');
 const metadata = require('../metadataswitch');
 const { data } = require('../../../lib/data/wrapper');
 const objectPut = require('../../../lib/api/objectPut');
 const { objectLockTestUtils } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
-const {
-    lastModifiedHeader,
-    maximumAllowedUploadSize,
-    objectLocationConstraintHeader,
-} = require('../../../constants');
+const { lastModifiedHeader, maximumAllowedUploadSize, objectLocationConstraintHeader } = require('../../../constants');
 const mpuUtils = require('../utils/mpuUtils');
 const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
 const { config } = require('../../../lib/Config');
 
-const {
-    LOCATION_NAME_CRR,
-} = require('../../constants');
+const { LOCATION_NAME_CRR } = require('../../constants');
 
 const { ds } = storage.data.inMemory.datastore;
 
@@ -53,7 +46,7 @@ const testPutBucketRequestLock = new DummyRequest({
     bucketName,
     namespace,
     headers: {
-        'host': `${bucketName}.s3.amazonaws.com`,
+        host: `${bucketName}.s3.amazonaws.com`,
         'x-amz-bucket-object-lock-enabled': 'true',
     },
     url: '/',
@@ -63,21 +56,18 @@ const originalputObjectMD = metadata.putObjectMD;
 const objectName = 'objectName';
 
 let testPutObjectRequest;
-const enableVersioningRequest =
-    versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
-const suspendVersioningRequest =
-    versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Suspended');
+const enableVersioningRequest = versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
+const suspendVersioningRequest = versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Suspended');
 
 function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
     bucketPut(bucketOwner, bucketPutReq, log, () => {
         bucketPutACL(bucketOwner, testPutBucketRequest, log, err => {
             assert.strictEqual(err, undefined);
-            objectPut(authUser, testPutObjectRequest, undefined,
-                log, (err, resHeaders) => {
-                    assert.strictEqual(err, null);
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
-                    cb();
-                });
+            objectPut(authUser, testPutObjectRequest, undefined, log, (err, resHeaders) => {
+                assert.strictEqual(err, null);
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                cb();
+            });
         });
     });
 }
@@ -88,8 +78,7 @@ describe('parseTagFromQuery', () => {
     const allowedChar = '+- =._:/';
     const tests = [
         { tagging: 'key1=value1', result: { key1: 'value1' } },
-        { tagging: `key1=${encodeURIComponent(allowedChar)}`,
-            result: { key1: allowedChar } },
+        { tagging: `key1=${encodeURIComponent(allowedChar)}`, result: { key1: allowedChar } },
         { tagging: 'key1=value1=value2', error: invalidArgument },
         { tagging: '=value1', error: invalidArgument },
         { tagging: 'key1%=value1', error: invalidArgument },
@@ -120,13 +109,16 @@ describe('objectPut API', () => {
     beforeEach(() => {
         cleanup();
         sinon.spy(metadata, 'putObjectMD');
-        testPutObjectRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: { host: `${bucketName}.s3.amazonaws.com` },
-            url: '/',
-        }, postBody);
+        testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: '/',
+            },
+            postBody,
+        );
     });
 
     afterEach(() => {
@@ -143,40 +135,38 @@ describe('objectPut API', () => {
 
     it('should return an error if user is not authorized', done => {
         const putAuthInfo = makeAuthInfo('accessKey2');
-        bucketPut(putAuthInfo, testPutBucketRequest,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest,
-                    undefined, log, err => {
-                        assert.strictEqual(err.is.AccessDenied, true);
-                        done();
-                    });
-            });
-    });
-
-    it('should return error if the upload size exceeds the ' +
-    'maximum allowed upload size for a single PUT request', done => {
-        testPutObjectRequest.parsedContentLength = maximumAllowedUploadSize + 1;
-        bucketPut(authInfo, testPutBucketRequest, log, () => {
+        bucketPut(putAuthInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-                assert.strictEqual(err.is.EntityTooLarge, true);
+                assert.strictEqual(err.is.AccessDenied, true);
                 done();
             });
         });
     });
 
+    it(
+        'should return error if the upload size exceeds the ' + 'maximum allowed upload size for a single PUT request',
+        done => {
+            testPutObjectRequest.parsedContentLength = maximumAllowedUploadSize + 1;
+            bucketPut(authInfo, testPutBucketRequest, log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                    assert.strictEqual(err.is.EntityTooLarge, true);
+                    done();
+                });
+            });
+        },
+    );
+
     it('should put object if user has FULL_CONTROL grant on bucket', done => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
-        testPutBucketRequest.headers['x-amz-grant-full-control'] =
-            `id=${authUser.getCanonicalID()}`;
+        testPutBucketRequest.headers['x-amz-grant-full-control'] = `id=${authUser.getCanonicalID()}`;
         testAuth(bucketOwner, authUser, testPutBucketRequest, log, done);
     });
 
     it('should put object if user has WRITE grant on bucket', done => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
-        testPutBucketRequest.headers['x-amz-grant-write'] =
-            `id=${authUser.getCanonicalID()}`;
+        testPutBucketRequest.headers['x-amz-grant-write'] = `id=${authUser.getCanonicalID()}`;
 
         testAuth(bucketOwner, authUser, testPutBucketRequest, log, done);
     });
@@ -190,60 +180,61 @@ describe('objectPut API', () => {
     });
 
     it('should successfully put an object', done => {
-        const testPutObjectRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {},
-            url: `/${bucketName}/${objectName}`,
-            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
-        }, postBody);
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {},
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+            },
+            postBody,
+        );
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
-                    metadata.getObjectMD(bucketName, objectName,
-                        {}, log, (err, md) => {
-                            assert(md);
-                            assert
-                            .strictEqual(md['content-md5'], correctMD5);
-                            done();
-                        });
+            objectPut(authInfo, testPutObjectRequest, undefined, log, (err, resHeaders) => {
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                    assert(md);
+                    assert.strictEqual(md['content-md5'], correctMD5);
+                    done();
                 });
+            });
         });
     });
 
     const mockModes = ['GOVERNANCE', 'COMPLIANCE'];
     mockModes.forEach(mockMode => {
         it(`should put an object with valid date & ${mockMode} mode`, done => {
-            const testPutObjectRequest = new DummyRequest({
-                bucketName,
-                namespace,
-                objectKey: objectName,
-                headers: {
-                    'x-amz-object-lock-retain-until-date': mockDate,
-                    'x-amz-object-lock-mode': mockMode,
+            const testPutObjectRequest = new DummyRequest(
+                {
+                    bucketName,
+                    namespace,
+                    objectKey: objectName,
+                    headers: {
+                        'x-amz-object-lock-retain-until-date': mockDate,
+                        'x-amz-object-lock-mode': mockMode,
+                    },
+                    url: `/${bucketName}/${objectName}`,
+                    calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
                 },
-                url: `/${bucketName}/${objectName}`,
-                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
-            }, postBody);
+                postBody,
+            );
             bucketPut(authInfo, testPutBucketRequestLock, log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, headers) => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log, (err, headers) => {
+                    assert.ifError(err);
+                    assert.strictEqual(headers.ETag, `"${correctMD5}"`);
+                    metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                        const mode = md.retentionMode;
+                        const retainUntilDate = md.retentionDate;
                         assert.ifError(err);
-                        assert.strictEqual(headers.ETag, `"${correctMD5}"`);
-                        metadata.getObjectMD(bucketName, objectName, {}, log,
-                            (err, md) => {
-                                const mode = md.retentionMode;
-                                const retainUntilDate = md.retentionDate;
-                                assert.ifError(err);
-                                assert(md);
-                                assert.strictEqual(mode, mockMode);
-                                assert.strictEqual(retainUntilDate, mockDate);
-                                done();
-                            });
+                        assert(md);
+                        assert.strictEqual(mode, mockMode);
+                        assert.strictEqual(retainUntilDate, mockDate);
+                        done();
                     });
+                });
             });
         });
     });
@@ -262,311 +253,323 @@ describe('objectPut API', () => {
     ];
     testObjectLockConfigs.forEach(lockConfig => {
         const { testMode, type, val } = lockConfig;
-        it('should put an object with default retention if object does not ' +
-            'have retention configuration but bucket has', done => {
-            const testPutObjectRequest = new DummyRequest({
-                bucketName,
-                namespace,
-                objectKey: objectName,
-                headers: {},
-                url: `/${bucketName}/${objectName}`,
-                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
-            }, postBody);
+        it(
+            'should put an object with default retention if object does not ' +
+                'have retention configuration but bucket has',
+            done => {
+                const testPutObjectRequest = new DummyRequest(
+                    {
+                        bucketName,
+                        namespace,
+                        objectKey: objectName,
+                        headers: {},
+                        url: `/${bucketName}/${objectName}`,
+                        calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+                    },
+                    postBody,
+                );
 
-            const testObjLockRequest = {
-                bucketName,
-                headers: { host: `${bucketName}.s3.amazonaws.com` },
-                post: objectLockTestUtils.generateXml(testMode, val, type),
-            };
+                const testObjLockRequest = {
+                    bucketName,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    post: objectLockTestUtils.generateXml(testMode, val, type),
+                };
 
-            bucketPut(authInfo, testPutBucketRequestLock, log, () => {
-                bucketPutObjectLock(authInfo, testObjLockRequest, log, () => {
-                    objectPut(authInfo, testPutObjectRequest, undefined, log,
-                        (err, headers) => {
+                bucketPut(authInfo, testPutBucketRequestLock, log, () => {
+                    bucketPutObjectLock(authInfo, testObjLockRequest, log, () => {
+                        objectPut(authInfo, testPutObjectRequest, undefined, log, (err, headers) => {
                             assert.ifError(err);
                             assert.strictEqual(headers.ETag, `"${correctMD5}"`);
-                            metadata.getObjectMD(bucketName, objectName, {},
-                                log, (err, md) => {
-                                    assert.ifError(err);
+                            metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                                assert.ifError(err);
 
-                                    const mode = md.retentionMode;
-                                    assert.strictEqual(mode, testMode);
+                                const mode = md.retentionMode;
+                                assert.strictEqual(mode, testMode);
 
-                                    const retainDate = moment(md.retentionDate);
-                                    const days = type === 'Days' ? val : val * 365;
-                                    const { scaledMsPerDay } = config.getTimeOptions();
-                                    const date = moment().add(days * scaledMsPerDay, 'ms');
-                                    const dateDiff = retainDate.diff(date, 'ms');
-                                    assert.ok(dateDiff < 10);
+                                const retainDate = moment(md.retentionDate);
+                                const days = type === 'Days' ? val : val * 365;
+                                const { scaledMsPerDay } = config.getTimeOptions();
+                                const date = moment().add(days * scaledMsPerDay, 'ms');
+                                const dateDiff = retainDate.diff(date, 'ms');
+                                assert.ok(dateDiff < 10);
 
-                                    done();
-                                });
+                                done();
+                            });
                         });
+                    });
                 });
-            });
-        });
+            },
+        );
     });
 
     it('should successfully put an object with legal hold ON', done => {
-        const request = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {
-                'x-amz-object-lock-legal-hold': 'ON',
+        const request = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'x-amz-object-lock-legal-hold': 'ON',
+                },
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
             },
-            url: `/${bucketName}/${objectName}`,
-            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
-        }, postBody);
+            postBody,
+        );
 
         bucketPut(authInfo, testPutBucketRequestLock, log, () => {
             objectPut(authInfo, request, undefined, log, (err, headers) => {
                 assert.ifError(err);
                 assert.strictEqual(headers.ETag, `"${correctMD5}"`);
-                metadata.getObjectMD(bucketName, objectName, {}, log,
-                    (err, md) => {
-                        assert.ifError(err);
-                        assert.strictEqual(md.legalHold, true);
-                        done();
-                    });
+                metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                    assert.ifError(err);
+                    assert.strictEqual(md.legalHold, true);
+                    done();
+                });
             });
         });
     });
 
     it('should successfully put an object with legal hold OFF', done => {
-        const request = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {
-                'x-amz-object-lock-legal-hold': 'OFF',
+        const request = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'x-amz-object-lock-legal-hold': 'OFF',
+                },
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
             },
-            url: `/${bucketName}/${objectName}`,
-            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
-        }, postBody);
+            postBody,
+        );
 
         bucketPut(authInfo, testPutBucketRequestLock, log, () => {
             objectPut(authInfo, request, undefined, log, (err, headers) => {
                 assert.ifError(err);
                 assert.strictEqual(headers.ETag, `"${correctMD5}"`);
-                metadata.getObjectMD(bucketName, objectName, {}, log,
-                    (err, md) => {
-                        assert.ifError(err);
-                        assert(md);
-                        assert.strictEqual(md.legalHold, false);
-                        done();
-                    });
+                metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                    assert.ifError(err);
+                    assert(md);
+                    assert.strictEqual(md.legalHold, false);
+                    done();
+                });
             });
         });
     });
 
     it('should successfully put an object with user metadata', done => {
-        const testPutObjectRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {
-                // Note that Node will collapse common headers into one
-                // (e.g. "x-amz-meta-test: hi" and "x-amz-meta-test:
-                // there" becomes "x-amz-meta-test: hi, there")
-                // Here we are not going through an actual http
-                // request so will not collapse properly.
-                'x-amz-meta-test': 'some metadata',
-                'x-amz-meta-test2': 'some more metadata',
-                'x-amz-meta-test3': 'even more metadata',
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    // Note that Node will collapse common headers into one
+                    // (e.g. "x-amz-meta-test: hi" and "x-amz-meta-test:
+                    // there" becomes "x-amz-meta-test: hi, there")
+                    // Here we are not going through an actual http
+                    // request so will not collapse properly.
+                    'x-amz-meta-test': 'some metadata',
+                    'x-amz-meta-test2': 'some more metadata',
+                    'x-amz-meta-test3': 'even more metadata',
+                },
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
             },
-            url: `/${bucketName}/${objectName}`,
-            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
-        }, postBody);
+            postBody,
+        );
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
-                    metadata.getObjectMD(bucketName, objectName, {}, log,
-                        (err, md) => {
-                            assert(md);
-                            assert.strictEqual(md['x-amz-meta-test'],
-                                        'some metadata');
-                            assert.strictEqual(md['x-amz-meta-test2'],
-                                        'some more metadata');
-                            assert.strictEqual(md['x-amz-meta-test3'],
-                                        'even more metadata');
-                            done();
-                        });
+            objectPut(authInfo, testPutObjectRequest, undefined, log, (err, resHeaders) => {
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                    assert(md);
+                    assert.strictEqual(md['x-amz-meta-test'], 'some metadata');
+                    assert.strictEqual(md['x-amz-meta-test2'], 'some more metadata');
+                    assert.strictEqual(md['x-amz-meta-test3'], 'even more metadata');
+                    done();
                 });
+            });
         });
     });
 
     it('If testingMode=true and the last-modified header is given, should set last-modified accordingly', done => {
         const imposedLastModified = '2024-07-19';
-        const testPutObjectRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {
-                [lastModifiedHeader]: imposedLastModified,
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    [lastModifiedHeader]: imposedLastModified,
+                },
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
             },
-            url: `/${bucketName}/${objectName}`,
-            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
-        }, postBody);
+            postBody,
+        );
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             config.testingMode = true;
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
-                    metadata.getObjectMD(bucketName, objectName, {}, log,
-                        (err, md) => {
-                            assert(md);
+            objectPut(authInfo, testPutObjectRequest, undefined, log, (err, resHeaders) => {
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                    assert(md);
 
-                            const lastModified = md['last-modified'];
-                            const lastModifiedDate = lastModified.split('T')[0];
-                            // last-modified date should be the one set by the last-modified header
-                            assert.strictEqual(lastModifiedDate, imposedLastModified);
+                    const lastModified = md['last-modified'];
+                    const lastModifiedDate = lastModified.split('T')[0];
+                    // last-modified date should be the one set by the last-modified header
+                    assert.strictEqual(lastModifiedDate, imposedLastModified);
 
-                            // The header should be removed after being treated.
-                            assert(md[lastModifiedHeader] === undefined);
+                    // The header should be removed after being treated.
+                    assert(md[lastModifiedHeader] === undefined);
 
-                            config.testingMode = false;
-                            done();
-                        });
+                    config.testingMode = false;
+                    done();
                 });
+            });
         });
     });
 
     it('should not take into acccount the last-modified header when testingMode=false', done => {
         const imposedLastModified = '2024-07-19';
 
-        const testPutObjectRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {
-                'x-amz-meta-x-scal-last-modified': imposedLastModified,
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'x-amz-meta-x-scal-last-modified': imposedLastModified,
+                },
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
             },
-            url: `/${bucketName}/${objectName}`,
-            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
-        }, postBody);
+            postBody,
+        );
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             config.testingMode = false;
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
-                    metadata.getObjectMD(bucketName, objectName, {}, log,
-                        (err, md) => {
-                            assert(md);
-                            assert.strictEqual(md['x-amz-meta-x-scal-last-modified'],
-                                        imposedLastModified);
-                            const lastModified = md['last-modified'];
-                            const lastModifiedDate = lastModified.split('T')[0];
-                            const currentTs = new Date().toJSON();
-                            const currentDate = currentTs.split('T')[0];
-                            assert.strictEqual(lastModifiedDate, currentDate);
-                            done();
-                        });
+            objectPut(authInfo, testPutObjectRequest, undefined, log, (err, resHeaders) => {
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                    assert(md);
+                    assert.strictEqual(md['x-amz-meta-x-scal-last-modified'], imposedLastModified);
+                    const lastModified = md['last-modified'];
+                    const lastModifiedDate = lastModified.split('T')[0];
+                    const currentTs = new Date().toJSON();
+                    const currentDate = currentTs.split('T')[0];
+                    assert.strictEqual(lastModifiedDate, currentDate);
+                    done();
                 });
+            });
         });
     });
 
     it('should put an object with user metadata but no data', done => {
         const postBody = '';
         const correctMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
-        const testPutObjectRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {
-                'content-length': '0',
-                'x-amz-meta-test': 'some metadata',
-                'x-amz-meta-test2': 'some more metadata',
-                'x-amz-meta-test3': 'even more metadata',
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'content-length': '0',
+                    'x-amz-meta-test': 'some metadata',
+                    'x-amz-meta-test2': 'some more metadata',
+                    'x-amz-meta-test3': 'even more metadata',
+                },
+                parsedContentLength: 0,
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: 'd41d8cd98f00b204e9800998ecf8427e',
             },
-            parsedContentLength: 0,
-            url: `/${bucketName}/${objectName}`,
-            calculatedHash: 'd41d8cd98f00b204e9800998ecf8427e',
-        }, postBody);
+            postBody,
+        );
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
-                    assert.deepStrictEqual(ds, []);
-                    metadata.getObjectMD(bucketName, objectName, {}, log,
-                        (err, md) => {
-                            assert(md);
-                            assert.strictEqual(md.location, null);
-                            assert.strictEqual(md['x-amz-meta-test'],
-                                        'some metadata');
-                            assert.strictEqual(md['x-amz-meta-test2'],
-                                       'some more metadata');
-                            assert.strictEqual(md['x-amz-meta-test3'],
-                                       'even more metadata');
-                            done();
-                        });
+            objectPut(authInfo, testPutObjectRequest, undefined, log, (err, resHeaders) => {
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                assert.deepStrictEqual(ds, []);
+                metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                    assert(md);
+                    assert.strictEqual(md.location, null);
+                    assert.strictEqual(md['x-amz-meta-test'], 'some metadata');
+                    assert.strictEqual(md['x-amz-meta-test2'], 'some more metadata');
+                    assert.strictEqual(md['x-amz-meta-test3'], 'even more metadata');
+                    done();
                 });
+            });
         });
     });
 
     it('should not leave orphans in data when overwriting an object', done => {
-        const testPutObjectRequest2 = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {},
-            url: `/${bucketName}/${objectName}`,
-        }, Buffer.from('I am another body', 'utf8'));
+        const testPutObjectRequest2 = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {},
+                url: `/${bucketName}/${objectName}`,
+            },
+            Buffer.from('I am another body', 'utf8'),
+        );
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest,
-                undefined, log, () => {
-                    objectPut(authInfo, testPutObjectRequest2, undefined,
-                        log,
-                    () => {
-                        // orphan objects don't get deleted
-                        // until the next tick
-                        // in memory
-                        setImmediate(() => {
-                            // Data store starts at index 1
-                            assert.strictEqual(ds[0], undefined);
-                            assert.strictEqual(ds[1], undefined);
-                            assert.deepStrictEqual(ds[2].value,
-                                Buffer.from('I am another body', 'utf8'));
-                            done();
-                        });
+            objectPut(authInfo, testPutObjectRequest, undefined, log, () => {
+                objectPut(authInfo, testPutObjectRequest2, undefined, log, () => {
+                    // orphan objects don't get deleted
+                    // until the next tick
+                    // in memory
+                    setImmediate(() => {
+                        // Data store starts at index 1
+                        assert.strictEqual(ds[0], undefined);
+                        assert.strictEqual(ds[1], undefined);
+                        assert.deepStrictEqual(ds[2].value, Buffer.from('I am another body', 'utf8'));
+                        done();
                     });
                 });
+            });
         });
     });
 
     it('should not leave orphans in data when overwriting an multipart upload object', done => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
-            mpuUtils.createMPU(namespace, bucketName, objectName, log,
-                (err, testUploadId) => {
-                    objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-                        assert.ifError(err);
-                        sinon.assert.calledWith(metadata.putObjectMD,
-                            any, any, any, sinon.match({ oldReplayId: testUploadId }), any, any);
-                        done();
-                    });
+            mpuUtils.createMPU(namespace, bucketName, objectName, log, (err, testUploadId) => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                    assert.ifError(err);
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD,
+                        any,
+                        any,
+                        any,
+                        sinon.match({ oldReplayId: testUploadId }),
+                        any,
+                        any,
+                    );
+                    done();
                 });
+            });
         });
     });
 
-    it('should not put object with retention configuration if object lock ' +
-        'is not enabled on the bucket', done => {
-        const testPutObjectRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {
-                'x-amz-object-lock-retain-until-date': mockDate,
-                'x-amz-object-lock-mode': 'GOVERNANCE',
+    it('should not put object with retention configuration if object lock ' + 'is not enabled on the bucket', done => {
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'x-amz-object-lock-retain-until-date': mockDate,
+                    'x-amz-object-lock-mode': 'GOVERNANCE',
+                },
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
             },
-            url: `/${bucketName}/${objectName}`,
-            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
-        }, postBody);
+            postBody,
+        );
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
@@ -578,233 +581,313 @@ describe('objectPut API', () => {
     });
 
     it('should forward a 400 back to client on metadata 408 response', () => {
-        data.switch(new storage.data.MultipleBackendGateway({
-            'us-east-1': dataClient,
-            'us-east-2': dataClient,
-        }, metadata, data.locStorageCheckFn));
+        data.switch(
+            new storage.data.MultipleBackendGateway(
+                {
+                    'us-east-1': dataClient,
+                    'us-east-2': dataClient,
+                },
+                metadata,
+                data.locStorageCheckFn,
+            ),
+        );
         data.implName = 'multipleBackends';
 
         const originalPut = data.client.put;
-        data.client.put = (hashedStream, valueSize, keyContext, backendInfo, log, cb) =>
-            cb({ httpCode: 408 });
+        data.client.put = (hashedStream, valueSize, keyContext, backendInfo, log, cb) => cb({ httpCode: 408 });
         bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                err => {
-                    assert.strictEqual(err.code, 400);
-                    data.client.put = originalPut;
-                    data.switch(dataClient);
-                    data.implName = prevDataImplName;
-                });
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert.strictEqual(err.code, 400);
+                data.client.put = originalPut;
+                data.switch(dataClient);
+                data.implName = prevDataImplName;
+            });
         });
     });
 
     it('should forward a 503 to the client for 4xx != 408', () => {
-        data.switch(new storage.data.MultipleBackendGateway({
-            'us-east-1': dataClient,
-            'us-east-2': dataClient,
-        }, metadata, data.locStorageCheckFn));
+        data.switch(
+            new storage.data.MultipleBackendGateway(
+                {
+                    'us-east-1': dataClient,
+                    'us-east-2': dataClient,
+                },
+                metadata,
+                data.locStorageCheckFn,
+            ),
+        );
         data.implName = 'multipleBackends';
 
         const originalPut = data.client.put;
-        data.client.put = (hashedStream, valueSize, keyContext, backendInfo, log, cb) =>
-            cb({ httpCode: 412 });
+        data.client.put = (hashedStream, valueSize, keyContext, backendInfo, log, cb) => cb({ httpCode: 412 });
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                err => {
-                    assert.strictEqual(err.code, 503);
-                    data.client.put = originalPut;
-                    data.switch(dataClient);
-                    data.implName = prevDataImplName;
-                });
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert.strictEqual(err.code, 503);
+                data.client.put = originalPut;
+                data.switch(dataClient);
+                data.implName = prevDataImplName;
+            });
         });
     });
 
     it('should not put object with storage-class header not equal to STANDARD', done => {
-        const testPutObjectRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {
-                'x-amz-storage-class': 'COLD',
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'x-amz-storage-class': 'COLD',
+                },
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
             },
-            url: `/${bucketName}/${objectName}`,
-            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
-        }, postBody);
+            postBody,
+        );
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                err => {
-                    assert.strictEqual(err.is.InvalidStorageClass, true);
-                    done();
-                });
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert.strictEqual(err.is.InvalidStorageClass, true);
+                done();
+            });
         });
     });
 
     it('should pass overheadField to metadata.putObjectMD for a non-versioned request', done => {
-        const testPutObjectRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {},
-            url: `/${bucketName}/${objectName}`,
-            contentMD5: correctMD5,
-        }, postBody);
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {},
+                url: `/${bucketName}/${objectName}`,
+                contentMD5: correctMD5,
+            },
+            postBody,
+        );
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                err => {
-                    assert.ifError(err);
-                    sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                        bucketName, objectName, any, sinon.match({ overheadField: sinon.match.array }), any, any);
-                    done();
-                });
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert.ifError(err);
+                sinon.assert.calledWith(
+                    metadata.putObjectMD.lastCall,
+                    bucketName,
+                    objectName,
+                    any,
+                    sinon.match({ overheadField: sinon.match.array }),
+                    any,
+                    any,
+                );
+                done();
+            });
         });
     });
 
     it('should pass overheadField to metadata.putObjectMD for a versioned request', done => {
-        const testPutObjectRequest = versioningTestUtils
-            .createPutObjectRequest(bucketName, objectName, Buffer.from('I am another body', 'utf8'));
+        const testPutObjectRequest = versioningTestUtils.createPutObjectRequest(
+            bucketName,
+            objectName,
+            Buffer.from('I am another body', 'utf8'),
+        );
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             bucketPutVersioning(authInfo, enableVersioningRequest, log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    err => {
-                        assert.ifError(err);
-                        sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                            bucketName, objectName, any, sinon.match({ overheadField: sinon.match.array }), any, any);
-                        done();
-                    }
-                );
+                objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                    assert.ifError(err);
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        bucketName,
+                        objectName,
+                        any,
+                        sinon.match({ overheadField: sinon.match.array }),
+                        any,
+                        any,
+                    );
+                    done();
+                });
             });
         });
     });
 
     it('should pass overheadField to metadata.putObjectMD for a version-suspended request', done => {
-        const testPutObjectRequest = versioningTestUtils
-            .createPutObjectRequest(bucketName, objectName, Buffer.from('I am another body', 'utf8'));
+        const testPutObjectRequest = versioningTestUtils.createPutObjectRequest(
+            bucketName,
+            objectName,
+            Buffer.from('I am another body', 'utf8'),
+        );
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             bucketPutVersioning(authInfo, suspendVersioningRequest, log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    err => {
-                        assert.ifError(err);
-                        sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                            bucketName, objectName, any, sinon.match({ overheadField: sinon.match.array }), any, any);
-                        done();
-                    }
-                );
+                objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                    assert.ifError(err);
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        bucketName,
+                        objectName,
+                        any,
+                        sinon.match({ overheadField: sinon.match.array }),
+                        any,
+                        any,
+                    );
+                    done();
+                });
             });
         });
     });
 
     it('should not pass needOplogUpdate when writing new object', done => {
-        async.series([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-            async () => {
-                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                    bucketName, objectName, any, sinon.match({
-                        needOplogUpdate: undefined,
-                        originOp: undefined,
-                    }), any, any);
-            },
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+                async () => {
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        bucketName,
+                        objectName,
+                        any,
+                        sinon.match({
+                            needOplogUpdate: undefined,
+                            originOp: undefined,
+                        }),
+                        any,
+                        any,
+                    );
+                },
+            ],
+            done,
+        );
     });
 
     it('should not pass needOplogUpdate when replacing object', done => {
-        async.series([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-            async () => {
-                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                    bucketName, objectName, any, sinon.match({
-                        needOplogUpdate: undefined,
-                        originOp: undefined,
-                    }), any, any);
-            },
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+                async () => {
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        bucketName,
+                        objectName,
+                        any,
+                        sinon.match({
+                            needOplogUpdate: undefined,
+                            originOp: undefined,
+                        }),
+                        any,
+                        any,
+                    );
+                },
+            ],
+            done,
+        );
     });
 
     it('should pass needOplogUpdate to metadata when replacing archived object', done => {
         const archived = {
-            archiveInfo: { foo: 0, bar: 'stuff' }
+            archiveInfo: { foo: 0, bar: 'stuff' },
         };
 
-        async.series([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-            next => fakeMetadataArchive(bucketName, objectName, undefined, archived, next),
-            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-            async () => {
-                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                    bucketName, objectName, any, sinon.match({
-                        needOplogUpdate: true,
-                        originOp: 's3:ReplaceArchivedObject',
-                    }), any, any);
-            },
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+                next => fakeMetadataArchive(bucketName, objectName, undefined, archived, next),
+                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+                async () => {
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        bucketName,
+                        objectName,
+                        any,
+                        sinon.match({
+                            needOplogUpdate: true,
+                            originOp: 's3:ReplaceArchivedObject',
+                        }),
+                        any,
+                        any,
+                    );
+                },
+            ],
+            done,
+        );
     });
 
     it('should pass needOplogUpdate to metadata when replacing archived object in version suspended bucket', done => {
         const archived = {
-            archiveInfo: { foo: 0, bar: 'stuff' }
+            archiveInfo: { foo: 0, bar: 'stuff' },
         };
 
-        async.series([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
-            next => bucketPutVersioning(authInfo, suspendVersioningRequest, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-            next => fakeMetadataArchive(bucketName, objectName, undefined, archived, next),
-            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-            async () => {
-                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                    bucketName, objectName, any, sinon.match({
-                        needOplogUpdate: true,
-                        originOp: 's3:ReplaceArchivedObject',
-                    }), any, any);
-            },
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                next => bucketPutVersioning(authInfo, suspendVersioningRequest, log, next),
+                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+                next => fakeMetadataArchive(bucketName, objectName, undefined, archived, next),
+                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+                async () => {
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        bucketName,
+                        objectName,
+                        any,
+                        sinon.match({
+                            needOplogUpdate: true,
+                            originOp: 's3:ReplaceArchivedObject',
+                        }),
+                        any,
+                        any,
+                    );
+                },
+            ],
+            done,
+        );
     });
 
     it('should not set bucketOwnerId if requester owns the bucket', done => {
-        const testPutObjectRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {},
-            url: `/${bucketName}/${objectName}`,
-            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
-        }, postBody);
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {},
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+            },
+            postBody,
+        );
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    err => {
-                        assert.ifError(err);
-                        sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                            bucketName,
-                            objectName,
-                            sinon.match({ bucketOwnerId: sinon.match.typeOf('undefined') }),
-                            any,
-                            any,
-                            any
-                        );
-                        done();
-                    }
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert.ifError(err);
+                sinon.assert.calledWith(
+                    metadata.putObjectMD.lastCall,
+                    bucketName,
+                    objectName,
+                    sinon.match({ bucketOwnerId: sinon.match.typeOf('undefined') }),
+                    any,
+                    any,
+                    any,
                 );
+                done();
+            });
         });
     });
 
     it('should set bucketOwnerId if requester does not own the bucket', done => {
         const authInfo2 = makeAuthInfo('accessKey2');
 
-        const testPutObjectRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {},
-            url: `/${bucketName}/${objectName}`,
-            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
-        }, postBody);
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {},
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+            },
+            postBody,
+        );
 
         const testPutPolicyRequest = new DummyRequest({
             bucketName,
@@ -828,57 +911,61 @@ describe('objectPut API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             bucketPutPolicy(authInfo, testPutPolicyRequest, log, err => {
                 assert.ifError(err);
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    err => {
-                        assert.ifError(err);
-                        sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                            bucketName,
-                            objectName,
-                            sinon.match({ bucketOwnerId: authInfo.canonicalId }),
-                            any,
-                            any,
-                            any
-                        );
-                        done();
-                    }
-                );
+                objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                    assert.ifError(err);
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        bucketName,
+                        objectName,
+                        sinon.match({ bucketOwnerId: authInfo.canonicalId }),
+                        any,
+                        any,
+                        any,
+                    );
+                    done();
+                });
             });
         });
     });
 
     it('should fail to put object when setting a crr location as the locationConstraint', done => {
-        const testPutObjectRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {
-                [objectLocationConstraintHeader]: LOCATION_NAME_CRR,
+        const testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    [objectLocationConstraintHeader]: LOCATION_NAME_CRR,
+                },
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
             },
-            url: `/${bucketName}/${objectName}`,
-            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
-        }, postBody);
+            postBody,
+        );
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                err => {
-                    assert(err.is.InvalidArgument);
-                    done();
-                });
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert(err.is.InvalidArgument);
+                done();
+            });
         });
     });
 
     it('should store sha256 checksum in metadata when x-amz-checksum-sha256 header is provided', done => {
         const sha256Value = crypto.createHash('sha256').update(postBody).digest('base64');
-        const request = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
-                'x-amz-checksum-sha256': sha256Value,
+        const request = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    host: `${bucketName}.s3.amazonaws.com`,
+                    'x-amz-checksum-sha256': sha256Value,
+                },
+                url: '/',
             },
-            url: '/',
-        }, postBody);
+            postBody,
+        );
 
         bucketPut(authInfo, testPutBucketRequest, log, err => {
             assert.ifError(err);
@@ -918,14 +1005,17 @@ describe('objectPut API', () => {
 
     it('should return crc64nvme response header for zero-byte object when no checksum header is provided', done => {
         const expectedCrc64nvme = 'AAAAAAAAAAA=';
-        const zeroBytePutRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: { host: `${bucketName}.s3.amazonaws.com` },
-            url: `/${bucketName}/${objectName}`,
-            parsedContentLength: 0,
-        }, Buffer.alloc(0));
+        const zeroBytePutRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: `/${bucketName}/${objectName}`,
+                parsedContentLength: 0,
+            },
+            Buffer.alloc(0),
+        );
 
         bucketPut(authInfo, testPutBucketRequest, log, err => {
             assert.ifError(err);
@@ -949,13 +1039,16 @@ describe('objectPut API with versioning', () => {
     beforeEach(() => {
         cleanup();
         sinon.spy(metadata, 'putObjectMD');
-        testPutObjectRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: { host: `${bucketName}.s3.amazonaws.com` },
-            url: '/',
-        }, postBody);
+        testPutObjectRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: '/',
+            },
+            postBody,
+        );
     });
 
     afterEach(() => {
@@ -963,197 +1056,241 @@ describe('objectPut API with versioning', () => {
         metadata.putObjectMD = originalputObjectMD;
     });
 
-    const objData = ['foo0', 'foo1', 'foo2'].map(str =>
-        Buffer.from(str, 'utf8'));
-    const testPutObjectRequests = objData.map(data => versioningTestUtils
-        .createPutObjectRequest(bucketName, objectName, data));
+    const objData = ['foo0', 'foo1', 'foo2'].map(str => Buffer.from(str, 'utf8'));
+    const testPutObjectRequests = objData.map(data =>
+        versioningTestUtils.createPutObjectRequest(bucketName, objectName, data),
+    );
 
-    it('should delete latest version when creating new null version ' +
-    'if latest version is null version', done => {
-        async.series([
-            callback => bucketPut(authInfo, testPutBucketRequest, log,
-                callback),
-            // putting null version by putting obj before versioning configured
-            callback => objectPut(authInfo, testPutObjectRequests[0], undefined,
-                log, err => {
-                    versioningTestUtils.assertDataStoreValues(ds, [objData[0]]);
-                    callback(err);
-                }),
-            callback => bucketPutVersioning(authInfo, suspendVersioningRequest,
-                log, callback),
-            // creating new null version by putting obj after ver suspended
-            callback => objectPut(authInfo, testPutObjectRequests[1],
-                undefined, log, err => {
-                    // wait until next tick since mem backend executes
-                    // deletes in the next tick
-                    setImmediate(() => {
-                        // old null version should be deleted
-                        versioningTestUtils.assertDataStoreValues(ds,
-                            [undefined, objData[1]]);
+    it('should delete latest version when creating new null version ' + 'if latest version is null version', done => {
+        async.series(
+            [
+                callback => bucketPut(authInfo, testPutBucketRequest, log, callback),
+                // putting null version by putting obj before versioning configured
+                callback =>
+                    objectPut(authInfo, testPutObjectRequests[0], undefined, log, err => {
+                        versioningTestUtils.assertDataStoreValues(ds, [objData[0]]);
                         callback(err);
-                    });
-                }),
-            // create another null version
-            callback => objectPut(authInfo, testPutObjectRequests[2],
-                undefined, log, err => {
-                    setImmediate(() => {
-                        // old null version should be deleted
-                        versioningTestUtils.assertDataStoreValues(ds,
-                            [undefined, undefined, objData[2]]);
-                        callback(err);
-                    });
-                }),
-        ], done);
+                    }),
+                callback => bucketPutVersioning(authInfo, suspendVersioningRequest, log, callback),
+                // creating new null version by putting obj after ver suspended
+                callback =>
+                    objectPut(authInfo, testPutObjectRequests[1], undefined, log, err => {
+                        // wait until next tick since mem backend executes
+                        // deletes in the next tick
+                        setImmediate(() => {
+                            // old null version should be deleted
+                            versioningTestUtils.assertDataStoreValues(ds, [undefined, objData[1]]);
+                            callback(err);
+                        });
+                    }),
+                // create another null version
+                callback =>
+                    objectPut(authInfo, testPutObjectRequests[2], undefined, log, err => {
+                        setImmediate(() => {
+                            // old null version should be deleted
+                            versioningTestUtils.assertDataStoreValues(ds, [undefined, undefined, objData[2]]);
+                            callback(err);
+                        });
+                    }),
+            ],
+            done,
+        );
     });
 
     describe('when null version is not the latest version', () => {
-        const objData = ['foo0', 'foo1', 'foo2'].map(str =>
-            Buffer.from(str, 'utf8'));
-        const testPutObjectRequests = objData.map(data => versioningTestUtils
-            .createPutObjectRequest(bucketName, objectName, data));
+        const objData = ['foo0', 'foo1', 'foo2'].map(str => Buffer.from(str, 'utf8'));
+        const testPutObjectRequests = objData.map(data =>
+            versioningTestUtils.createPutObjectRequest(bucketName, objectName, data),
+        );
         beforeEach(done => {
-            async.series([
-                callback => bucketPut(authInfo, testPutBucketRequest, log,
-                    callback),
-                // putting null version: put obj before versioning configured
-                callback => objectPut(authInfo, testPutObjectRequests[0],
-                    undefined, log, callback),
-                callback => bucketPutVersioning(authInfo,
-                    enableVersioningRequest, log, callback),
-                // put another version:
-                callback => objectPut(authInfo, testPutObjectRequests[1],
-                    undefined, log, callback),
-                callback => bucketPutVersioning(authInfo,
-                    suspendVersioningRequest, log, callback),
-            ], err => {
-                if (err) {
-                    return done(err);
-                }
-                versioningTestUtils.assertDataStoreValues(ds,
-                    objData.slice(0, 2));
-                return done();
-            });
+            async.series(
+                [
+                    callback => bucketPut(authInfo, testPutBucketRequest, log, callback),
+                    // putting null version: put obj before versioning configured
+                    callback => objectPut(authInfo, testPutObjectRequests[0], undefined, log, callback),
+                    callback => bucketPutVersioning(authInfo, enableVersioningRequest, log, callback),
+                    // put another version:
+                    callback => objectPut(authInfo, testPutObjectRequests[1], undefined, log, callback),
+                    callback => bucketPutVersioning(authInfo, suspendVersioningRequest, log, callback),
+                ],
+                err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    versioningTestUtils.assertDataStoreValues(ds, objData.slice(0, 2));
+                    return done();
+                },
+            );
         });
 
-        it('should still delete null version when creating new null version',
+        it('should still delete null version when creating new null version', done => {
+            objectPut(authInfo, testPutObjectRequests[2], undefined, log, err => {
+                assert.ifError(err, `Unexpected err: ${err}`);
+                setImmediate(() => {
+                    // old null version should be deleted after putting
+                    // new null version
+                    versioningTestUtils.assertDataStoreValues(ds, [undefined, objData[1], objData[2]]);
+                    done(err);
+                });
+            });
+        });
+    });
+
+    it(
+        'should return BadDigest error and not leave orphans in data when ' +
+            'contentMD5 and completedHash do not match',
         done => {
-            objectPut(authInfo, testPutObjectRequests[2], undefined,
-                log, err => {
-                    assert.ifError(err, `Unexpected err: ${err}`);
+            const testPutObjectRequest = new DummyRequest(
+                {
+                    bucketName,
+                    namespace,
+                    objectKey: objectName,
+                    headers: {},
+                    url: `/${bucketName}/${objectName}`,
+                    contentMD5: 'vnR+tLdVF79rPPfF+7YvOg==',
+                },
+                Buffer.from('I am another body', 'utf8'),
+            );
+
+            bucketPut(authInfo, testPutBucketRequest, log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                    assert.strictEqual(err.is.BadDigest, true);
+                    // orphan objects don't get deleted
+                    // until the next tick
+                    // in memory
                     setImmediate(() => {
-                        // old null version should be deleted after putting
-                        // new null version
-                        versioningTestUtils.assertDataStoreValues(ds,
-                            [undefined, objData[1], objData[2]]);
-                        done(err);
+                        // Data store starts at index 1
+                        assert.strictEqual(ds[0], undefined);
+                        assert.strictEqual(ds[1], undefined);
+                        done();
                     });
                 });
-        });
-    });
-
-    it('should return BadDigest error and not leave orphans in data when ' +
-    'contentMD5 and completedHash do not match', done => {
-        const testPutObjectRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: {},
-            url: `/${bucketName}/${objectName}`,
-            contentMD5: 'vnR+tLdVF79rPPfF+7YvOg==',
-        }, Buffer.from('I am another body', 'utf8'));
-
-        bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-            err => {
-                assert.strictEqual(err.is.BadDigest, true);
-                // orphan objects don't get deleted
-                // until the next tick
-                // in memory
-                setImmediate(() => {
-                    // Data store starts at index 1
-                    assert.strictEqual(ds[0], undefined);
-                    assert.strictEqual(ds[1], undefined);
-                    done();
-                });
             });
-        });
-    });
+        },
+    );
 
     it('should set originOp when moving master-only document to a version document', done => {
-        async.series([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-            next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-            async () => {
-                // Old master-only document was moved to a proper version, with originOp overridden to prevent
-                // unexpected bucket notifications.
-                const calls = metadata.putObjectMD.getCalls();
-                sinon.assert.calledWith(calls[calls.length - 2],
-                    bucketName, objectName, sinon.match({
-                        originOp: 's3:StoreNullVersion',
-                    }), any, any, any);
-            },
-            async () => {
-                // New version document was created with the right originOp.
-                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                    bucketName, objectName, sinon.match({
-                       _data: { originOp: 's3:ObjectCreated:Put' },
-                    }), any, any, any);
-            },
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+                next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
+                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+                async () => {
+                    // Old master-only document was moved to a proper version, with originOp overridden to prevent
+                    // unexpected bucket notifications.
+                    const calls = metadata.putObjectMD.getCalls();
+                    sinon.assert.calledWith(
+                        calls[calls.length - 2],
+                        bucketName,
+                        objectName,
+                        sinon.match({
+                            originOp: 's3:StoreNullVersion',
+                        }),
+                        any,
+                        any,
+                        any,
+                    );
+                },
+                async () => {
+                    // New version document was created with the right originOp.
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        bucketName,
+                        objectName,
+                        sinon.match({
+                            _data: { originOp: 's3:ObjectCreated:Put' },
+                        }),
+                        any,
+                        any,
+                        any,
+                    );
+                },
+            ],
+            done,
+        );
     });
 
     it('should not pass needOplogUpdate when writing new object', done => {
-        async.series([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
-            next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-            async () => {
-                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                    bucketName, objectName, any, sinon.match({
-                        needOplogUpdate: undefined,
-                        originOp: undefined,
-                    }), any, any);
-            },
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
+                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+                async () => {
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        bucketName,
+                        objectName,
+                        any,
+                        sinon.match({
+                            needOplogUpdate: undefined,
+                            originOp: undefined,
+                        }),
+                        any,
+                        any,
+                    );
+                },
+            ],
+            done,
+        );
     });
 
     it('should not pass needOplogUpdate when replacing object', done => {
-        async.series([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
-            next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-            async () => {
-                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                    bucketName, objectName, any, sinon.match({
-                        needOplogUpdate: undefined,
-                        originOp: undefined,
-                    }), any, any);
-            },
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
+                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+                async () => {
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        bucketName,
+                        objectName,
+                        any,
+                        sinon.match({
+                            needOplogUpdate: undefined,
+                            originOp: undefined,
+                        }),
+                        any,
+                        any,
+                    );
+                },
+            ],
+            done,
+        );
     });
 
     it('should not pass needOplogUpdate when replacing archived object', done => {
         const archived = {
-            archiveInfo: { foo: 0, bar: 'stuff' }
+            archiveInfo: { foo: 0, bar: 'stuff' },
         };
 
-        async.series([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
-            next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-            next => fakeMetadataArchive(bucketName, objectName, undefined, archived, next),
-            next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-            async () => {
-                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                    bucketName, objectName, any, sinon.match({
-                        needOplogUpdate: undefined,
-                        originOp: undefined,
-                    }), any, any);
-            },
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
+                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+                next => fakeMetadataArchive(bucketName, objectName, undefined, archived, next),
+                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+                async () => {
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        bucketName,
+                        objectName,
+                        any,
+                        sinon.match({
+                            needOplogUpdate: undefined,
+                            originOp: undefined,
+                        }),
+                        any,
+                        any,
+                    );
+                },
+            ],
+            done,
+        );
     });
 });
 
@@ -1163,10 +1300,16 @@ describe('objectPut API in ingestion bucket', () => {
 
     before(() => {
         // Setup multi-backend, this is required for ingestion
-        data.switch(new storage.data.MultipleBackendGateway({
-            'us-east-1': dataClient,
-            'us-east-2': dataClient,
-        }, metadata, data.locStorageCheckFn));
+        data.switch(
+            new storage.data.MultipleBackendGateway(
+                {
+                    'us-east-1': dataClient,
+                    'us-east-2': dataClient,
+                },
+                metadata,
+                data.locStorageCheckFn,
+            ),
+        );
         data.implName = 'multipleBackends';
     });
 
@@ -1185,8 +1328,11 @@ describe('objectPut API in ingestion bucket', () => {
 
     const newPutObjectRequest = params => {
         const { location, versionID } = params || {};
-        const r = versioningTestUtils
-            .createPutObjectRequest(bucketName, objectName, Buffer.from('I am another body', 'utf8'));
+        const r = versioningTestUtils.createPutObjectRequest(
+            bucketName,
+            objectName,
+            Buffer.from('I am another body', 'utf8'),
+        );
         if (location) {
             r.headers[objectLocationConstraintHeader] = location;
         }
@@ -1195,17 +1341,19 @@ describe('objectPut API in ingestion bucket', () => {
         }
         return r;
     };
-    const newPutIngestBucketRequest = location => new DummyRequest({
-        bucketName,
-        namespace,
-        headers: { host: `${bucketName}.s3.amazonaws.com` },
-        url: '/',
-        post: '<?xml version="1.0" encoding="UTF-8"?>' +
-            '<CreateBucketConfiguration ' +
-            'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-            `<LocationConstraint>${location}</LocationConstraint>` +
-            '</CreateBucketConfiguration>',
-    });
+    const newPutIngestBucketRequest = location =>
+        new DummyRequest({
+            bucketName,
+            namespace,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            url: '/',
+            post:
+                '<?xml version="1.0" encoding="UTF-8"?>' +
+                '<CreateBucketConfiguration ' +
+                'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+                `<LocationConstraint>${location}</LocationConstraint>` +
+                '</CreateBucketConfiguration>',
+        });
     const archiveRestoreRequested = {
         archiveInfo: { foo: 0, bar: 'stuff' }, // opaque, can be anything...
         restoreRequestedAt: new Date().toString(),
@@ -1220,13 +1368,17 @@ describe('objectPut API in ingestion bucket', () => {
             cb(null, `${keyContext.bucketName}/${keyContext.objectKey}`, versionID, size, 'md5');
         });
 
-        async.series([
-            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
-            next => objectPut(authInfo, newPutObjectRequest(), undefined, log, (err, headers) => {
-                assert.strictEqual(headers['x-amz-version-id'], versionID);
-                next(err);
-            }),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+                next =>
+                    objectPut(authInfo, newPutObjectRequest(), undefined, log, (err, headers) => {
+                        assert.strictEqual(headers['x-amz-version-id'], versionID);
+                        next(err);
+                    }),
+            ],
+            done,
+        );
     });
 
     it('should not use the versionID from the backend when writing in another location', done => {
@@ -1237,16 +1389,26 @@ describe('objectPut API in ingestion bucket', () => {
             cb(null, `${keyContext.bucketName}/${keyContext.objectKey}`, versionID, size, 'md5');
         });
 
-        async.series([
-            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
-            next => objectPut(authInfo, newPutObjectRequest({
-                location: 'us-east-2',
-            }), undefined, log, (err, headers) => {
-                assert.ok(headers['x-amz-version-id']);
-                assert.notEqual(headers['x-amz-version-id'], versionID);
-                next(err);
-            }),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+                next =>
+                    objectPut(
+                        authInfo,
+                        newPutObjectRequest({
+                            location: 'us-east-2',
+                        }),
+                        undefined,
+                        log,
+                        (err, headers) => {
+                            assert.ok(headers['x-amz-version-id']);
+                            assert.notEqual(headers['x-amz-version-id'], versionID);
+                            next(err);
+                        },
+                    ),
+            ],
+            done,
+        );
     });
 
     it('should not use the versionID from the backend when it is not a valid versionID', done => {
@@ -1257,24 +1419,32 @@ describe('objectPut API in ingestion bucket', () => {
             cb(null, `${keyContext.bucketName}/${keyContext.objectKey}`, versionID, size, 'md5');
         });
 
-        async.series([
-            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
-            next => objectPut(authInfo, newPutObjectRequest(), undefined, log, (err, headers) => {
-                assert.ok(headers['x-amz-version-id']);
-                assert.notEqual(headers['x-amz-version-id'], versionID);
-                next(err);
-            }),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+                next =>
+                    objectPut(authInfo, newPutObjectRequest(), undefined, log, (err, headers) => {
+                        assert.ok(headers['x-amz-version-id']);
+                        assert.notEqual(headers['x-amz-version-id'], versionID);
+                        next(err);
+                    }),
+            ],
+            done,
+        );
     });
 
     it('should not use the versionID from the backend when it is not provided', done => {
-        async.series([
-            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
-            next => objectPut(authInfo, newPutObjectRequest(), undefined, log, (err, headers) => {
-                assert.ok(headers['x-amz-version-id']);
-                next(err);
-            }),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+                next =>
+                    objectPut(authInfo, newPutObjectRequest(), undefined, log, (err, headers) => {
+                        assert.ok(headers['x-amz-version-id']);
+                        next(err);
+                    }),
+            ],
+            done,
+        );
     });
 
     it('should add versionID to backend putObject when restoring object', done => {
@@ -1282,31 +1452,39 @@ describe('objectPut API in ingestion bucket', () => {
         const restoredVersionID = versioning.VersionID.encode(versioning.VersionID.generateVersionId('0', ''));
 
         // Use a "mock" data location, simulating a write to an ingest location
-        sinon.stub(dataClient, 'put')
-            .onCall(0).callsFake((writeStream, size, keyContext, reqUids, cb) => {
+        sinon
+            .stub(dataClient, 'put')
+            .onCall(0)
+            .callsFake((writeStream, size, keyContext, reqUids, cb) => {
                 // First call: regular object creation, should not pass extra metadata header
                 assert.strictEqual(keyContext.metaHeaders['x-amz-meta-scal-version-id'], undefined);
                 cb(null, `${keyContext.bucketName}/${keyContext.objectKey}`, versionID, size, 'md5');
             })
-            .onCall(1).callsFake((writeStream, size, keyContext, reqUids, cb) => {
+            .onCall(1)
+            .callsFake((writeStream, size, keyContext, reqUids, cb) => {
                 // Second call: "restored" data, should pass extra metadata header
                 assert.strictEqual(keyContext.metaHeaders['x-amz-meta-scal-version-id'], versionID);
                 cb(null, `${keyContext.bucketName}/${keyContext.objectKey}`, restoredVersionID, size, 'md5');
             });
 
-        async.series([
-            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
-            next => objectPut(authInfo, newPutObjectRequest(), undefined, log, (err, headers) => {
-                assert.strictEqual(headers['x-amz-version-id'], versionID);
-                next(err);
-            }),
-            next => fakeMetadataArchive(bucketName, objectName, versionID, archiveRestoreRequested, next),
-            next => objectPut(authInfo, newPutObjectRequest({ versionID }), undefined, log, (err, headers) => {
-                assert.ok(headers['x-amz-version-id']);
-                assert.strictEqual(headers['x-amz-version-id'], versionID); // keep the same versionID
-                next(err);
-            }),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+                next =>
+                    objectPut(authInfo, newPutObjectRequest(), undefined, log, (err, headers) => {
+                        assert.strictEqual(headers['x-amz-version-id'], versionID);
+                        next(err);
+                    }),
+                next => fakeMetadataArchive(bucketName, objectName, versionID, archiveRestoreRequested, next),
+                next =>
+                    objectPut(authInfo, newPutObjectRequest({ versionID }), undefined, log, (err, headers) => {
+                        assert.ok(headers['x-amz-version-id']);
+                        assert.strictEqual(headers['x-amz-version-id'], versionID); // keep the same versionID
+                        next(err);
+                    }),
+            ],
+            done,
+        );
     });
 
     it('should not add versionID to backend putObject when restoring object to another location', done => {
@@ -1314,34 +1492,48 @@ describe('objectPut API in ingestion bucket', () => {
         const restoredVersionID = versioning.VersionID.encode(versioning.VersionID.generateVersionId('0', ''));
 
         // Use a "mock" data location, simulating a write to an ingest location
-        sinon.stub(dataClient, 'put')
-            .onCall(0).callsFake((writeStream, size, keyContext, reqUids, cb) => {
+        sinon
+            .stub(dataClient, 'put')
+            .onCall(0)
+            .callsFake((writeStream, size, keyContext, reqUids, cb) => {
                 // First call: regular object creation, should not pass extra metadata header
                 assert.strictEqual(keyContext.metaHeaders['x-amz-meta-scal-version-id'], undefined);
                 cb(null, `${keyContext.bucketName}/${keyContext.objectKey}`, versionID, size, 'md5');
             })
-            .onCall(1).callsFake((writeStream, size, keyContext, reqUids, cb) => {
+            .onCall(1)
+            .callsFake((writeStream, size, keyContext, reqUids, cb) => {
                 // Second call: "restored" data, should not pass extra metadata header (different location)
                 assert.strictEqual(keyContext.metaHeaders['x-amz-meta-scal-version-id'], undefined);
                 cb(null, `${keyContext.bucketName}/${keyContext.objectKey}`, restoredVersionID, size, 'md5');
             });
 
-        async.series([
-            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
-            next => objectPut(authInfo, newPutObjectRequest(), undefined, log, (err, headers) => {
-                assert.strictEqual(headers['x-amz-version-id'], versionID);
-                next(err);
-            }),
-            next => fakeMetadataArchive(bucketName, objectName, versionID, archiveRestoreRequested, next),
-            next => objectPut(authInfo, newPutObjectRequest({
-                versionID,
-                location: 'us-east-2',
-            }), undefined, log, (err, headers) => {
-                assert.ok(headers['x-amz-version-id']);
-                assert.strictEqual(headers['x-amz-version-id'], versionID); // keep the same versionID
-                next(err);
-            }),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+                next =>
+                    objectPut(authInfo, newPutObjectRequest(), undefined, log, (err, headers) => {
+                        assert.strictEqual(headers['x-amz-version-id'], versionID);
+                        next(err);
+                    }),
+                next => fakeMetadataArchive(bucketName, objectName, versionID, archiveRestoreRequested, next),
+                next =>
+                    objectPut(
+                        authInfo,
+                        newPutObjectRequest({
+                            versionID,
+                            location: 'us-east-2',
+                        }),
+                        undefined,
+                        log,
+                        (err, headers) => {
+                            assert.ok(headers['x-amz-version-id']);
+                            assert.strictEqual(headers['x-amz-version-id'], versionID); // keep the same versionID
+                            next(err);
+                        },
+                    ),
+            ],
+            done,
+        );
     });
 });
 
@@ -1356,13 +1548,17 @@ describe('objectPut with objectKeyByteLimit', () => {
         config.objectKeyByteLimit = originalObjectKeyByteLimit;
     });
 
-    const createTestPutObjectRequest = longKey => new DummyRequest({
-        bucketName,
-        namespace,
-        objectKey: longKey,
-        headers: {},
-        url: `/${bucketName}/${longKey}`,
-    }, postBody);
+    const createTestPutObjectRequest = longKey =>
+        new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: longKey,
+                headers: {},
+                url: `/${bucketName}/${longKey}`,
+            },
+            postBody,
+        );
 
     it('should reject object key longer than 915 bytes by default', done => {
         const longKey = 'a'.repeat(916);

@@ -1,7 +1,9 @@
-const { S3Client,
+const {
+    S3Client,
     CreateBucketCommand,
     DeleteBucketCommand,
-    PutObjectLockConfigurationCommand } = require('@aws-sdk/client-s3');
+    PutObjectLockConfigurationCommand,
+} = require('@aws-sdk/client-s3');
 
 const checkError = require('../../lib/utility/checkError');
 const getConfig = require('../support/config');
@@ -51,7 +53,7 @@ describe('aws-sdk test put object lock configuration', () => {
     });
 
     describe('on object lock disabled bucket', () => {
-        beforeEach(() => s3.send(new CreateBucketCommand({Bucket: bucket})));
+        beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
         afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
@@ -82,10 +84,14 @@ describe('aws-sdk test put object lock configuration', () => {
     });
 
     describe('config rules', () => {
-        beforeEach(() => s3.send(new CreateBucketCommand({
-            Bucket: bucket,
-            ObjectLockEnabledForBucket: true,
-        })));
+        beforeEach(() =>
+            s3.send(
+                new CreateBucketCommand({
+                    Bucket: bucket,
+                    ObjectLockEnabledForBucket: true,
+                }),
+            ),
+        );
 
         afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 

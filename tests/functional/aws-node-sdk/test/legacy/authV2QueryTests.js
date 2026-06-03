@@ -19,10 +19,7 @@ const provideRawOutputAsync = util.promisify(provideRawOutput);
 const random = Math.round(Math.random() * 100).toString();
 const bucket = `mybucket-${random}`;
 const almostOutsideTime = 99990;
-const itSkipAWS = process.env.AWS_ON_AIR
-    ? it.skip
-    : it;
-
+const itSkipAWS = process.env.AWS_ON_AIR ? it.skip : it;
 
 function diff(putFile, receivedFile, done) {
     process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
@@ -51,13 +48,11 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
     // AWS allows an expiry further in the future
     // 604810 seconds is higher that the Expires time limit: 604800 seconds
     // ( seven days)
-    itSkipAWS('should return an error code if expires header is too far ' +
-        'in the future', async () => {
-        
+    itSkipAWS('should return an error code if expires header is too far ' + 'in the future', async () => {
         // First, get a valid signed URL with maximum allowed expiry
         const command = new CreateBucketCommand({ Bucket: bucket });
         const validUrl = await getSignedUrl(s3, command, { expiresIn: 604800 }); // Exactly 7 days
-        
+
         // Manually modify the URL to have a longer expiry
         const urlObj = new URL(validUrl);
         const futureExpiry = Math.floor(Date.now() / 1000) + 604810; // 10 seconds more than limit
@@ -82,12 +77,10 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
         assert.strictEqual(httpCode, '200 OK');
     });
 
-
     it('should put an object', async () => {
         const command = new PutObjectCommand({ Bucket: bucket, Key: 'key' });
         const url = await getSignedUrl(s3, command, { expiresIn: almostOutsideTime });
-        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url,
-            '--upload-file', 'uploadFile']);
+        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url, '--upload-file', 'uploadFile']);
         assert.strictEqual(httpCode, '200 OK');
     });
 
@@ -97,18 +90,16 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
         // This will also test that query params that contain "x-amz-"
         // are being added to the canonical headers list in our string
         // to sign.
-        const command = new PutObjectCommand({ 
-            Bucket: bucket, 
+        const command = new PutObjectCommand({
+            Bucket: bucket,
             Key: 'key',
-            ACL: 'public-read', 
-            StorageClass: 'STANDARD' 
+            ACL: 'public-read',
+            StorageClass: 'STANDARD',
         });
         const url = await getSignedUrl(s3, command);
-        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url,
-            '--upload-file', 'uploadFile']);
+        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url, '--upload-file', 'uploadFile']);
         assert.strictEqual(httpCode, '200 OK');
     });
-
 
     it('should get an object', async () => {
         const command = new GetObjectCommand({ Bucket: bucket, Key: 'key' });
@@ -129,7 +120,6 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
         const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'DELETE', url]);
         assert.strictEqual(httpCode, '204 NO CONTENT');
     });
-
 
     it('should delete a bucket', async () => {
         const command = new DeleteBucketCommand({ Bucket: bucket });

@@ -46,22 +46,24 @@ function _getCreateBucketParams(bucket, location) {
 }
 
 function createBuckets(testParams, cb) {
-    const { sourceBucket, sourceLocation, destBucket, destLocation }
-        = testParams;
+    const { sourceBucket, sourceLocation, destBucket, destLocation } = testParams;
     const sourceParams = _getCreateBucketParams(sourceBucket, sourceLocation);
     const destParams = _getCreateBucketParams(destBucket, destLocation);
     if (sourceBucket === destBucket) {
-        return s3.send(new CreateBucketCommand(sourceParams))
+        return s3
+            .send(new CreateBucketCommand(sourceParams))
             .then(() => cb())
             .catch(err => cb(err));
     }
-    return async.map([sourceParams, destParams],
+    return async.map(
+        [sourceParams, destParams],
         (createParams, next) => {
             s3.send(new CreateBucketCommand(createParams))
                 .then(() => next())
                 .catch(next);
         },
-        err => cb(err));
+        err => cb(err),
+    );
 }
 
 function putSourceObj(testParams, cb) {
@@ -92,9 +94,16 @@ function putSourceObj(testParams, cb) {
 }
 
 function copyObject(testParams, cb) {
-    const { sourceBucket, sourceKey, sourceVersionId, sourceVersioningState,
-        destBucket, directive, destVersioningState, isEmptyObj }
-        = testParams;
+    const {
+        sourceBucket,
+        sourceKey,
+        sourceVersionId,
+        sourceVersioningState,
+        destBucket,
+        directive,
+        destVersioningState,
+        isEmptyObj,
+    } = testParams;
     const destKey = `destkey-${genUniqID()}`;
     const copyParams = {
         Bucket: destBucket,
@@ -103,11 +112,9 @@ function copyObject(testParams, cb) {
         MetadataDirective: directive,
     };
     if (sourceVersionId) {
-        copyParams.CopySource =
-            `${copyParams.CopySource}?versionId=${sourceVersionId}`;
+        copyParams.CopySource = `${copyParams.CopySource}?versionId=${sourceVersionId}`;
     } else if (sourceVersioningState === 'Suspended') {
-        copyParams.CopySource =
-            `${copyParams.CopySource}?versionId=null`;
+        copyParams.CopySource = `${copyParams.CopySource}?versionId=null`;
     }
     s3.send(new CopyObjectCommand(copyParams))
         .then(data => {
@@ -117,26 +124,24 @@ function copyObject(testParams, cb) {
                 assert.strictEqual(data.VersionId, undefined);
             }
             const expectedBody = isEmptyObj ? '' : someBody;
-            return awsGetLatestVerId(destKey, expectedBody,
-                (err, awsVersionId) => {
-                    if (err) {
-                        cb(err);
-                        return;
-                    }
-                    Object.assign(testParams, {
-                        destKey,
-                        destVersionId: data.VersionId,
-                        awsVersionId,
-                    });
-                    if (!data.VersionId && destVersioningState === 'Suspended') {
-                        // eslint-disable-next-line no-param-reassign
-                        testParams.destVersionId = 'null';
-                    }
-                    cb();
+            return awsGetLatestVerId(destKey, expectedBody, (err, awsVersionId) => {
+                if (err) {
+                    cb(err);
+                    return;
+                }
+                Object.assign(testParams, {
+                    destKey,
+                    destVersionId: data.VersionId,
+                    awsVersionId,
                 });
+                if (!data.VersionId && destVersioningState === 'Suspended') {
+                    // eslint-disable-next-line no-param-reassign
+                    testParams.destVersionId = 'null';
+                }
+                cb();
+            });
         })
-        .catch(err => cb(new Error(
-            `Error copying object to destination: ${err}`)));
+        .catch(err => cb(new Error(`Error copying object to destination: ${err}`)));
 }
 
 async function loadBodyBuffer(res) {
@@ -169,106 +174,108 @@ function assertGetObjects(testParams, cb) {
         isEmptyObj,
         directive,
     } = testParams;
-    const sourceGetParams = { Bucket: sourceBucket, Key: sourceKey,
-        VersionId: sourceVersionId };
-    const destGetParams = { Bucket: destBucket, Key: destKey,
-        VersionId: destVersionId };
-    const awsParams = { Bucket: awsBucket, Key: destKey,
-        VersionId: awsVersionId };
+    const sourceGetParams = { Bucket: sourceBucket, Key: sourceKey, VersionId: sourceVersionId };
+    const destGetParams = { Bucket: destBucket, Key: destKey, VersionId: destVersionId };
+    const awsParams = { Bucket: awsBucket, Key: destKey, VersionId: awsVersionId };
 
-    async.series([
-        cb => {
-            s3.send(new GetObjectCommand(sourceGetParams))
-                .then(async res => {
-                    const bodyBuffer = await loadBodyBuffer(res);
-                    if (bodyBuffer !== undefined) {
-                        // eslint-disable-next-line no-param-reassign
-                        res.Body = bodyBuffer;
-                    }
-                    cb(null, res);
-                })
-                .catch(cb);
+    async.series(
+        [
+            cb => {
+                s3.send(new GetObjectCommand(sourceGetParams))
+                    .then(async res => {
+                        const bodyBuffer = await loadBodyBuffer(res);
+                        if (bodyBuffer !== undefined) {
+                            // eslint-disable-next-line no-param-reassign
+                            res.Body = bodyBuffer;
+                        }
+                        cb(null, res);
+                    })
+                    .catch(cb);
+            },
+            cb => {
+                s3.send(new GetObjectCommand(destGetParams))
+                    .then(async res => {
+                        const bodyBuffer = await loadBodyBuffer(res);
+                        if (bodyBuffer !== undefined) {
+                            // eslint-disable-next-line no-param-reassign
+                            res.Body = bodyBuffer;
+                        }
+                        cb(null, res);
+                    })
+                    .catch(cb);
+            },
+            cb => awsS3.getObject(awsParams, cb),
+        ],
+        (err, results) => {
+            assert.strictEqual(err, null, `Error in assertGetObjects: ${err}`);
+            const [sourceRes, destRes, awsRes] = results;
+            if (isEmptyObj) {
+                assert.strictEqual(sourceRes.ETag, `"${emptyMD5}"`);
+                assert.strictEqual(destRes.ETag, `"${emptyMD5}"`);
+                assert.strictEqual(awsRes.ETag, `"${emptyMD5}"`);
+            } else {
+                assert.strictEqual(sourceRes.ETag, `"${correctMD5}"`);
+                assert.strictEqual(destRes.ETag, `"${correctMD5}"`);
+                assert.deepStrictEqual(sourceRes.Body, destRes.Body);
+                assert.strictEqual(awsRes.ETag, `"${correctMD5}"`);
+                assert.deepStrictEqual(sourceRes.Body, awsRes.Body);
+            }
+            if (directive === 'COPY') {
+                assert.deepStrictEqual(sourceRes.Metadata, testMetadata);
+                assert.deepStrictEqual(sourceRes.Metadata, destRes.Metadata);
+                assert.deepStrictEqual(sourceRes.Metadata, awsRes.Metadata);
+            } else if (directive === 'REPLACE') {
+                assert.deepStrictEqual(destRes.Metadata, {});
+                assert.deepStrictEqual(awsRes.Metadata, {});
+            }
+            assert.strictEqual(sourceRes.ContentLength, destRes.ContentLength);
+            cb();
         },
-        cb => {
-            s3.send(new GetObjectCommand(destGetParams))
-                .then(async res => {
-                    const bodyBuffer = await loadBodyBuffer(res);
-                    if (bodyBuffer !== undefined) {
-                        // eslint-disable-next-line no-param-reassign
-                        res.Body = bodyBuffer;
-                    }
-                    cb(null, res);
-                })
-                .catch(cb);
-        },
-        cb => awsS3.getObject(awsParams, cb),
-    ], (err, results) => {
-        assert.strictEqual(err, null, `Error in assertGetObjects: ${err}`);
-        const [sourceRes, destRes, awsRes] = results;
-        if (isEmptyObj) {
-            assert.strictEqual(sourceRes.ETag, `"${emptyMD5}"`);
-            assert.strictEqual(destRes.ETag, `"${emptyMD5}"`);
-            assert.strictEqual(awsRes.ETag, `"${emptyMD5}"`);
-        } else {
-            assert.strictEqual(sourceRes.ETag, `"${correctMD5}"`);
-            assert.strictEqual(destRes.ETag, `"${correctMD5}"`);
-            assert.deepStrictEqual(sourceRes.Body, destRes.Body);
-            assert.strictEqual(awsRes.ETag, `"${correctMD5}"`);
-            assert.deepStrictEqual(sourceRes.Body, awsRes.Body);
-        }
-        if (directive === 'COPY') {
-            assert.deepStrictEqual(sourceRes.Metadata, testMetadata);
-            assert.deepStrictEqual(sourceRes.Metadata, destRes.Metadata);
-            assert.deepStrictEqual(sourceRes.Metadata, awsRes.Metadata);
-        } else if (directive === 'REPLACE') {
-            assert.deepStrictEqual(destRes.Metadata, {});
-            assert.deepStrictEqual(awsRes.Metadata, {});
-        }
-        assert.strictEqual(sourceRes.ContentLength, destRes.ContentLength);
-        cb();
-    });
+    );
 }
 
-describeSkipIfNotMultiple('AWS backend object copy with versioning',
-function testSuite() {
+describeSkipIfNotMultiple('AWS backend object copy with versioning', function testSuite() {
     this.timeout(250000);
     withV4(sigCfg => {
         bucketUtil = new BucketUtility('default', sigCfg);
         s3 = bucketUtil.s3;
 
-        afterEach(() => bucketUtil.empty(sourceBucketName)
-            .then(() => bucketUtil.deleteOne(sourceBucketName))
-            .catch(err => {
-                process.stdout.write('Error deleting source bucket ' +
-                `in afterEach: ${err}\n`);
-                throw err;
-            })
-            .then(() => bucketUtil.empty(destBucketName))
-            .then(() => bucketUtil.deleteOne(destBucketName))
-            .catch(err => {
-                if (err.code === 'NoSuchBucket') {
-                    process.stdout.write('Warning: did not find dest bucket ' +
-                    'for deletion');
-                    // we do not throw err since dest bucket may not exist
-                    // if we are using source as dest
-                } else {
-                    process.stdout.write('Error deleting dest bucket ' +
-                    `in afterEach: ${err}\n`);
+        afterEach(() =>
+            bucketUtil
+                .empty(sourceBucketName)
+                .then(() => bucketUtil.deleteOne(sourceBucketName))
+                .catch(err => {
+                    process.stdout.write('Error deleting source bucket ' + `in afterEach: ${err}\n`);
                     throw err;
-                }
-            })
+                })
+                .then(() => bucketUtil.empty(destBucketName))
+                .then(() => bucketUtil.deleteOne(destBucketName))
+                .catch(err => {
+                    if (err.code === 'NoSuchBucket') {
+                        process.stdout.write('Warning: did not find dest bucket ' + 'for deletion');
+                        // we do not throw err since dest bucket may not exist
+                        // if we are using source as dest
+                    } else {
+                        process.stdout.write('Error deleting dest bucket ' + `in afterEach: ${err}\n`);
+                        throw err;
+                    }
+                }),
         );
 
-        [{
-            directive: 'REPLACE',
-            isEmptyObj: true,
-        }, {
-            directive: 'REPLACE',
-            isEmptyObj: false,
-        }, {
-            directive: 'COPY',
-            isEmptyObj: false,
-        }].forEach(testParams => {
+        [
+            {
+                directive: 'REPLACE',
+                isEmptyObj: true,
+            },
+            {
+                directive: 'REPLACE',
+                isEmptyObj: false,
+            },
+            {
+                directive: 'COPY',
+                isEmptyObj: false,
+            },
+        ].forEach(testParams => {
             Object.assign(testParams, {
                 sourceBucket: sourceBucketName,
                 sourceLocation: awsLocation,
@@ -276,180 +283,215 @@ function testSuite() {
                 destLocation: awsLocation,
             });
             const { isEmptyObj, directive } = testParams;
-            it(`should copy ${isEmptyObj ? 'an empty' : ''} ` +
-            'object from AWS backend non-versioned bucket' +
-            'to AWS backend versioned bucket ' +
-            `with ${directive} directive`, done => {
-                Object.assign(testParams, {
+            it(
+                `should copy ${isEmptyObj ? 'an empty' : ''} ` +
+                    'object from AWS backend non-versioned bucket' +
+                    'to AWS backend versioned bucket ' +
+                    `with ${directive} directive`,
+                done => {
+                    Object.assign(testParams, {
+                        sourceVersioningState: undefined,
+                        destVersioningState: 'Enabled',
+                    });
+                    async.waterfall(
+                        [
+                            next => createBuckets(testParams, next),
+                            next => putSourceObj(testParams, next),
+                            next => enableVersioning(s3, testParams.destBucket, next),
+                            next => copyObject(testParams, next),
+                            // put another version to test and make sure version id from
+                            // copy was stored to get the right version
+                            next =>
+                                putToAwsBackend(s3, destBucketName, testParams.destKey, wrongVersionBody, () => next()),
+                            next => assertGetObjects(testParams, next),
+                        ],
+                        done,
+                    );
+                },
+            );
+
+            it(
+                `should copy ${isEmptyObj ? 'an empty ' : ''}version ` +
+                    'from one AWS backend versioned bucket' +
+                    `to another on ${directive} directive`,
+                done => {
+                    Object.assign(testParams, {
+                        sourceVersioningState: 'Enabled',
+                        destVersioningState: 'Enabled',
+                    });
+                    async.waterfall(
+                        [
+                            next => createBuckets(testParams, next),
+                            next => enableVersioning(s3, testParams.sourceBucket, next),
+                            next => putSourceObj(testParams, next),
+                            next => enableVersioning(s3, testParams.destBucket, next),
+                            next => copyObject(testParams, next),
+                            // put another version to test and make sure version id from
+                            // copy was stored to get the right version
+                            next =>
+                                putToAwsBackend(s3, destBucketName, testParams.destKey, wrongVersionBody, () => next()),
+                            next => assertGetObjects(testParams, next),
+                        ],
+                        done,
+                    );
+                },
+            );
+
+            it(
+                `should copy ${isEmptyObj ? 'an empty ' : ''}null ` +
+                    'version from one AWS backend versioning suspended bucket to ' +
+                    ` another versioning suspended bucket with ${directive} directive`,
+                done => {
+                    Object.assign(testParams, {
+                        sourceVersioningState: 'Suspended',
+                        destVersioningState: 'Suspended',
+                    });
+                    async.waterfall(
+                        [
+                            next => createBuckets(testParams, next),
+                            next => suspendVersioning(s3, testParams.sourceBucket, next),
+                            next => putSourceObj(testParams, next),
+                            next => suspendVersioning(s3, testParams.destBucket, next),
+                            next => copyObject(testParams, next),
+                            next => enableVersioning(s3, testParams.destBucket, next),
+                            // put another version to test and make sure version id from
+                            // copy was stored to get the right version
+                            next =>
+                                putToAwsBackend(s3, destBucketName, testParams.destKey, wrongVersionBody, () => next()),
+                            next => assertGetObjects(testParams, next),
+                        ],
+                        done,
+                    );
+                },
+            );
+
+            it(
+                `should copy ${isEmptyObj ? 'an empty ' : ''}version ` +
+                    'from a AWS backend versioned bucket to a versioned-suspended' +
+                    `one with ${directive} directive`,
+                done => {
+                    Object.assign(testParams, {
+                        sourceVersioningState: 'Enabled',
+                        destVersioningState: 'Suspended',
+                    });
+                    async.waterfall(
+                        [
+                            next => createBuckets(testParams, next),
+                            next => enableVersioning(s3, testParams.sourceBucket, next),
+                            next => putSourceObj(testParams, next),
+                            next => suspendVersioning(s3, testParams.destBucket, next),
+                            next => copyObject(testParams, next),
+                            // put another version to test and make sure version id from
+                            // copy was stored to get the right version
+                            next => enableVersioning(s3, testParams.destBucket, next),
+                            next =>
+                                putToAwsBackend(s3, destBucketName, testParams.destKey, wrongVersionBody, () => next()),
+                            next => assertGetObjects(testParams, next),
+                        ],
+                        done,
+                    );
+                },
+            );
+        });
+
+        it(
+            'versioning not configured: if copy object to a ' +
+                'pre-existing object on AWS backend, metadata should be overwritten ' +
+                'but data of  previous version in AWS should not be deleted',
+            function itF(done) {
+                const destKey = `destkey-${genUniqID()}`;
+                const testParams = {
+                    sourceBucket: sourceBucketName,
+                    sourceLocation: awsLocation,
                     sourceVersioningState: undefined,
-                    destVersioningState: 'Enabled',
-                });
-                async.waterfall([
-                    next => createBuckets(testParams, next),
-                    next => putSourceObj(testParams, next),
-                    next => enableVersioning(s3, testParams.destBucket, next),
-                    next => copyObject(testParams, next),
-                    // put another version to test and make sure version id from
-                    // copy was stored to get the right version
-                    next => putToAwsBackend(s3, destBucketName,
-                        testParams.destKey, wrongVersionBody, () => next()),
-                    next => assertGetObjects(testParams, next),
-                ], done);
-            });
-
-            it(`should copy ${isEmptyObj ? 'an empty ' : ''}version ` +
-            'from one AWS backend versioned bucket' +
-            `to another on ${directive} directive`,
-            done => {
-                Object.assign(testParams, {
-                    sourceVersioningState: 'Enabled',
-                    destVersioningState: 'Enabled',
-                });
-                async.waterfall([
-                    next => createBuckets(testParams, next),
-                    next => enableVersioning(s3, testParams.sourceBucket, next),
-                    next => putSourceObj(testParams, next),
-                    next => enableVersioning(s3, testParams.destBucket, next),
-                    next => copyObject(testParams, next),
-                    // put another version to test and make sure version id from
-                    // copy was stored to get the right version
-                    next => putToAwsBackend(s3, destBucketName,
-                        testParams.destKey, wrongVersionBody, () => next()),
-                    next => assertGetObjects(testParams, next),
-                ], done);
-            });
-
-            it(`should copy ${isEmptyObj ? 'an empty ' : ''}null ` +
-            'version from one AWS backend versioning suspended bucket to ' +
-            ` another versioning suspended bucket with ${directive} directive`,
-            done => {
-                Object.assign(testParams, {
-                    sourceVersioningState: 'Suspended',
-                    destVersioningState: 'Suspended',
-                });
-                async.waterfall([
-                    next => createBuckets(testParams, next),
-                    next => suspendVersioning(s3, testParams.sourceBucket,
-                        next),
-                    next => putSourceObj(testParams, next),
-                    next => suspendVersioning(s3, testParams.destBucket, next),
-                    next => copyObject(testParams, next),
-                    next => enableVersioning(s3, testParams.destBucket, next),
-                    // put another version to test and make sure version id from
-                    // copy was stored to get the right version
-                    next => putToAwsBackend(s3, destBucketName,
-                        testParams.destKey, wrongVersionBody, () => next()),
-                    next => assertGetObjects(testParams, next),
-                ], done);
-            });
-
-            it(`should copy ${isEmptyObj ? 'an empty ' : ''}version ` +
-            'from a AWS backend versioned bucket to a versioned-suspended' +
-            `one with ${directive} directive`, done => {
-                Object.assign(testParams, {
-                    sourceVersioningState: 'Enabled',
-                    destVersioningState: 'Suspended',
-                });
-                async.waterfall([
-                    next => createBuckets(testParams, next),
-                    next => enableVersioning(s3, testParams.sourceBucket, next),
-                    next => putSourceObj(testParams, next),
-                    next => suspendVersioning(s3, testParams.destBucket, next),
-                    next => copyObject(testParams, next),
-                    // put another version to test and make sure version id from
-                    // copy was stored to get the right version
-                    next => enableVersioning(s3, testParams.destBucket, next),
-                    next => putToAwsBackend(s3, destBucketName,
-                        testParams.destKey, wrongVersionBody, () => next()),
-                    next => assertGetObjects(testParams, next),
-                ], done);
-            });
-        });
-
-        it('versioning not configured: if copy object to a ' +
-        'pre-existing object on AWS backend, metadata should be overwritten ' +
-        'but data of  previous version in AWS should not be deleted',
-        function itF(done) {
-            const destKey = `destkey-${genUniqID()}`;
-            const testParams = {
-                sourceBucket: sourceBucketName,
-                sourceLocation: awsLocation,
-                sourceVersioningState: undefined,
-                destBucket: sourceBucketName,
-                destLocation: awsLocation,
-                destVersioningState: undefined,
-                isEmptyObj: true,
-                directive: 'REPLACE',
-            };
-            async.waterfall([
-                next => createBuckets(testParams, next),
-                next => putToAwsBackend(s3, testParams.destBucket, destKey,
-                    someBody, err => next(err)),
-                next => awsGetLatestVerId(destKey, someBody, next),
-                (awsVerId, next) => {
-                    this.test.awsVerId = awsVerId;
-                    next();
-                },
-                next => putSourceObj(testParams, next),
-                next => {
-                    s3.send(new CopyObjectCommand({
-                        Bucket: testParams.destBucket,
-                        Key: destKey,
-                        CopySource: `/${testParams.sourceBucket}` +
-                            `/${testParams.sourceKey}`,
-                        MetadataDirective: testParams.directive,
-                        Metadata: {
-                            'scal-location-constraint':
-                                testParams.destLocation,
+                    destBucket: sourceBucketName,
+                    destLocation: awsLocation,
+                    destVersioningState: undefined,
+                    isEmptyObj: true,
+                    directive: 'REPLACE',
+                };
+                async.waterfall(
+                    [
+                        next => createBuckets(testParams, next),
+                        next => putToAwsBackend(s3, testParams.destBucket, destKey, someBody, err => next(err)),
+                        next => awsGetLatestVerId(destKey, someBody, next),
+                        (awsVerId, next) => {
+                            this.test.awsVerId = awsVerId;
+                            next();
                         },
-                    }))
-                        .then(res => next(null, res))
-                        .catch(next);
-                },
-                (copyResult, next) => awsGetLatestVerId(destKey, '',
-                    (err, awsVersionId) => {
-                        testParams.destKey = destKey;
-                        testParams.destVersionId = copyResult.VersionId;
-                        testParams.awsVersionId = awsVersionId;
-                        next();
-                    }),
-                next => {
-                    s3.send(new DeleteObjectCommand({
-                        Bucket: testParams.destBucket,
-                        Key: testParams.destKey,
-                        VersionId: 'null',
-                    }))
-                        .then(res => next(null, res))
-                        .catch(next);
-                },
-                (delData, next) => getAndAssertResult(s3, { bucket:
-                    testParams.destBucket, key: testParams.destKey,
-                    expectedError: 'NoSuchKey' }, next),
-                next => awsGetLatestVerId(testParams.destKey, someBody, next),
-                (awsVerId, next) => {
-                    assert.strictEqual(awsVerId, this.test.awsVerId);
-                    next();
-                },
-            ], done);
-        });
+                        next => putSourceObj(testParams, next),
+                        next => {
+                            s3.send(
+                                new CopyObjectCommand({
+                                    Bucket: testParams.destBucket,
+                                    Key: destKey,
+                                    CopySource: `/${testParams.sourceBucket}` + `/${testParams.sourceKey}`,
+                                    MetadataDirective: testParams.directive,
+                                    Metadata: {
+                                        'scal-location-constraint': testParams.destLocation,
+                                    },
+                                }),
+                            )
+                                .then(res => next(null, res))
+                                .catch(next);
+                        },
+                        (copyResult, next) =>
+                            awsGetLatestVerId(destKey, '', (err, awsVersionId) => {
+                                testParams.destKey = destKey;
+                                testParams.destVersionId = copyResult.VersionId;
+                                testParams.awsVersionId = awsVersionId;
+                                next();
+                            }),
+                        next => {
+                            s3.send(
+                                new DeleteObjectCommand({
+                                    Bucket: testParams.destBucket,
+                                    Key: testParams.destKey,
+                                    VersionId: 'null',
+                                }),
+                            )
+                                .then(res => next(null, res))
+                                .catch(next);
+                        },
+                        (delData, next) =>
+                            getAndAssertResult(
+                                s3,
+                                { bucket: testParams.destBucket, key: testParams.destKey, expectedError: 'NoSuchKey' },
+                                next,
+                            ),
+                        next => awsGetLatestVerId(testParams.destKey, someBody, next),
+                        (awsVerId, next) => {
+                            assert.strictEqual(awsVerId, this.test.awsVerId);
+                            next();
+                        },
+                    ],
+                    done,
+                );
+            },
+        );
 
-        [{
-            sourceLocation: memLocation,
-            directive: 'REPLACE',
-            isEmptyObj: true,
-        }, {
-            sourceLocation: fileLocation,
-            directive: 'REPLACE',
-            isEmptyObj: true,
-        }, {
-            sourceLocation: memLocation,
-            directive: 'COPY',
-            isEmptyObj: false,
-        }, {
-            sourceLocation: fileLocation,
-            directive: 'COPY',
-            isEmptyObj: false,
-        }].forEach(testParams => {
+        [
+            {
+                sourceLocation: memLocation,
+                directive: 'REPLACE',
+                isEmptyObj: true,
+            },
+            {
+                sourceLocation: fileLocation,
+                directive: 'REPLACE',
+                isEmptyObj: true,
+            },
+            {
+                sourceLocation: memLocation,
+                directive: 'COPY',
+                isEmptyObj: false,
+            },
+            {
+                sourceLocation: fileLocation,
+                directive: 'COPY',
+                isEmptyObj: false,
+            },
+        ].forEach(testParams => {
             Object.assign(testParams, {
                 sourceBucket: sourceBucketName,
                 sourceVersioningState: 'Enabled',
@@ -459,36 +501,48 @@ function testSuite() {
             });
             const { sourceLocation, directive, isEmptyObj } = testParams;
 
-            it(`should copy ${isEmptyObj ? 'empty ' : ''}object from ` +
-            `${sourceLocation} to bucket on AWS backend with ` +
-            `versioning with ${directive}`, done => {
-                async.waterfall([
-                    next => createBuckets(testParams, next),
-                    next => putSourceObj(testParams, next),
-                    next => enableVersioning(s3, testParams.destBucket, next),
-                    next => copyObject(testParams, next),
-                    next => assertGetObjects(testParams, next),
-                ], done);
-            });
+            it(
+                `should copy ${isEmptyObj ? 'empty ' : ''}object from ` +
+                    `${sourceLocation} to bucket on AWS backend with ` +
+                    `versioning with ${directive}`,
+                done => {
+                    async.waterfall(
+                        [
+                            next => createBuckets(testParams, next),
+                            next => putSourceObj(testParams, next),
+                            next => enableVersioning(s3, testParams.destBucket, next),
+                            next => copyObject(testParams, next),
+                            next => assertGetObjects(testParams, next),
+                        ],
+                        done,
+                    );
+                },
+            );
 
-            it(`should copy ${isEmptyObj ? 'an empty ' : ''}version from ` +
-            `${sourceLocation} to bucket on AWS backend with ` +
-            `versioning with ${directive} directive`, done => {
-                async.waterfall([
-                    next => createBuckets(testParams, next),
-                    next => enableVersioning(s3, testParams.sourceBucket, next),
-                    // returns a version id which is added to testParams
-                    // to be used in object copy
-                    next => putSourceObj(testParams, next),
-                    next => enableVersioning(s3, testParams.destBucket, next),
-                    next => copyObject(testParams, next),
-                    // put another version to test and make sure version id
-                    // from copy was stored to get the right version
-                    next => putToAwsBackend(s3, destBucketName,
-                        testParams.destKey, wrongVersionBody, () => next()),
-                    next => assertGetObjects(testParams, next),
-                ], done);
-            });
+            it(
+                `should copy ${isEmptyObj ? 'an empty ' : ''}version from ` +
+                    `${sourceLocation} to bucket on AWS backend with ` +
+                    `versioning with ${directive} directive`,
+                done => {
+                    async.waterfall(
+                        [
+                            next => createBuckets(testParams, next),
+                            next => enableVersioning(s3, testParams.sourceBucket, next),
+                            // returns a version id which is added to testParams
+                            // to be used in object copy
+                            next => putSourceObj(testParams, next),
+                            next => enableVersioning(s3, testParams.destBucket, next),
+                            next => copyObject(testParams, next),
+                            // put another version to test and make sure version id
+                            // from copy was stored to get the right version
+                            next =>
+                                putToAwsBackend(s3, destBucketName, testParams.destKey, wrongVersionBody, () => next()),
+                            next => assertGetObjects(testParams, next),
+                        ],
+                        done,
+                    );
+                },
+            );
         });
     });
 });

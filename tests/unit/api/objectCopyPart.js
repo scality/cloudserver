@@ -6,13 +6,11 @@ const { storage } = require('arsenal');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
 const objectPutCopyPart = require('../../../lib/api/objectPutCopyPart');
-const initiateMultipartUpload
-= require('../../../lib/api/initiateMultipartUpload');
+const initiateMultipartUpload = require('../../../lib/api/initiateMultipartUpload');
 const { metadata } = storage.metadata.inMemory.metadata;
 const metadataswitch = require('../metadataswitch');
 const DummyRequest = require('../DummyRequest');
-const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
-    = require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils } = require('../helpers');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -64,30 +62,27 @@ const initiateRequest = _createInitiateRequest(destBucketName);
 describe('objectCopyPart', () => {
     let uploadId;
     const objData = Buffer.from('foo', 'utf8');
-    const testPutObjectRequest =
-        versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey,
-            objData);
+    const testPutObjectRequest = versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData);
     before(done => {
         cleanup();
         sinon.spy(metadataswitch, 'putObjectMD');
-        async.waterfall([
-            callback => bucketPut(authInfo, putDestBucketRequest, log,
-                err => callback(err)),
-            callback => bucketPut(authInfo, putSourceBucketRequest, log,
-                err => callback(err)),
-            callback => objectPut(authInfo, testPutObjectRequest,
-                undefined, log, err => callback(err)),
-            callback => initiateMultipartUpload(authInfo, initiateRequest,
-                log, (err, res) => callback(err, res)),
-        ], (err, res) => {
-            if (err) {
-                return done(err);
-            }
-            return parseString(res, (err, json) => {
-                uploadId = json.InitiateMultipartUploadResult.UploadId[0];
-                return done();
-            });
-        });
+        async.waterfall(
+            [
+                callback => bucketPut(authInfo, putDestBucketRequest, log, err => callback(err)),
+                callback => bucketPut(authInfo, putSourceBucketRequest, log, err => callback(err)),
+                callback => objectPut(authInfo, testPutObjectRequest, undefined, log, err => callback(err)),
+                callback => initiateMultipartUpload(authInfo, initiateRequest, log, (err, res) => callback(err, res)),
+            ],
+            (err, res) => {
+                if (err) {
+                    return done(err);
+                }
+                return parseString(res, (err, json) => {
+                    uploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                    return done();
+                });
+            },
+        );
     });
 
     after(() => {
@@ -95,8 +90,7 @@ describe('objectCopyPart', () => {
         cleanup();
     });
 
-    it('should copy part even if legacy metadata without dataStoreName',
-    done => {
+    it('should copy part even if legacy metadata without dataStoreName', done => {
         // force metadata for dataStoreName to be undefined
         metadata.keyMaps.get(sourceBucketName).get(objectKey).dataStoreName = undefined;
         const testObjectCopyRequest = _createObjectCopyPartRequest(destBucketName, uploadId);
@@ -108,17 +102,17 @@ describe('objectCopyPart', () => {
 
     it('should return InvalidArgument error given invalid range', done => {
         const headers = { 'x-amz-copy-source-range': 'bad-range-parameter' };
-        const req =
-            _createObjectCopyPartRequest(destBucketName, uploadId, headers);
-        objectPutCopyPart(
-            authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
-                assert(err.is.InvalidArgument);
-                assert.strictEqual(err.description,
-                    'The x-amz-copy-source-range value must be of the form ' +
+        const req = _createObjectCopyPartRequest(destBucketName, uploadId, headers);
+        objectPutCopyPart(authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
+            assert(err.is.InvalidArgument);
+            assert.strictEqual(
+                err.description,
+                'The x-amz-copy-source-range value must be of the form ' +
                     'bytes=first-last where first and last are the ' +
-                    'zero-based offsets of the first and last bytes to copy');
-                done();
-            });
+                    'zero-based offsets of the first and last bytes to copy',
+            );
+            done();
+        });
     });
 
     it('should pass overheadField', done => {
@@ -132,7 +126,7 @@ describe('objectCopyPart', () => {
                 sinon.match.any,
                 sinon.match({ overheadField: sinon.match.array }),
                 sinon.match.any,
-                sinon.match.any
+                sinon.match.any,
             );
             done();
         });
@@ -149,7 +143,7 @@ describe('objectCopyPart', () => {
                 sinon.match({ 'owner-id': authInfo.canonicalID }),
                 sinon.match.any,
                 sinon.match.any,
-                sinon.match.any
+                sinon.match.any,
             );
             done();
         });

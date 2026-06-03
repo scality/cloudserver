@@ -32,8 +32,7 @@ function getOuterRange(range, bytes) {
         arr[1] = Number.parseInt(bytes, 10) - 1;
     } else {
         arr[0] = arr[0] === '' ? 0 : Number.parseInt(arr[0], 10);
-        arr[1] = arr[1] === '' || Number.parseInt(arr[1], 10) >= bytes ?
-            Number.parseInt(bytes, 10) - 1 : arr[1];
+        arr[1] = arr[1] === '' || Number.parseInt(arr[1], 10) >= bytes ? Number.parseInt(bytes, 10) - 1 : arr[1];
     }
     return {
         begin: arr[0],
@@ -44,58 +43,69 @@ function getOuterRange(range, bytes) {
 // Get the ranged object from a bucket. Write the response body to a file, then
 // use getRangeExec to check that all the bytes are in the correct location.
 function checkRanges(range, bytes) {
-    return s3.send(new GetObjectCommand({
-        Bucket: bucket,
-        Key: key,
-        Range: `bytes=${range}`,
-    }))
-    .then(async res => {
-        const { begin, end } = getOuterRange(range, bytes);
-        const total = (end - begin) + 1;
-        // If the range header is '-' (i.e., it is invalid), content range
-        // should be undefined
-        const contentRange = range === '-' ? undefined :
-            `bytes ${begin}-${end}/${bytes}`;
+    return s3
+        .send(
+            new GetObjectCommand({
+                Bucket: bucket,
+                Key: key,
+                Range: `bytes=${range}`,
+            }),
+        )
+        .then(async res => {
+            const { begin, end } = getOuterRange(range, bytes);
+            const total = end - begin + 1;
+            // If the range header is '-' (i.e., it is invalid), content range
+            // should be undefined
+            const contentRange = range === '-' ? undefined : `bytes ${begin}-${end}/${bytes}`;
 
-        assert.deepStrictEqual(res.ContentLength, total);
-        assert.deepStrictEqual(res.ContentRange, contentRange);
-        assert(res.ContentType === undefined ||
-            res.ContentType === 'application/octet-stream');
-        assert.deepStrictEqual(res.Metadata, {});
+            assert.deepStrictEqual(res.ContentLength, total);
+            assert.deepStrictEqual(res.ContentRange, contentRange);
+            assert(res.ContentType === undefined || res.ContentType === 'application/octet-stream');
+            assert.deepStrictEqual(res.Metadata, {});
 
-        const bodyBytes = await res.Body.transformToByteArray();
-        const bodyBuffer = Buffer.from(bodyBytes);
-        await writeFileAsync(`hashedFile.${bytes}.${range}`, bodyBuffer);
-        return execFileAsync('./getRangeExec', ['--check', '--size', total,
-            '--offset', begin, `hashedFile.${bytes}.${range}`]);
-    });
+            const bodyBytes = await res.Body.transformToByteArray();
+            const bodyBuffer = Buffer.from(bodyBytes);
+            await writeFileAsync(`hashedFile.${bytes}.${range}`, bodyBuffer);
+            return execFileAsync('./getRangeExec', [
+                '--check',
+                '--size',
+                total,
+                '--offset',
+                begin,
+                `hashedFile.${bytes}.${range}`,
+            ]);
+        });
 }
 
 // Create 5MB parts and upload them as parts of a MPU. Returns array of part
 // responses (with ETag) for CompleteMultipartUpload.
 async function uploadParts(bytes, uploadId) {
     const name = `hashedFile.${bytes}`;
-    return Promise.all([1, 2].map(async part => {
-        try {
-            await execFileAsync('dd', [
-                `if=${name}`,
-                `of=${name}.mpuPart${part}`,
-                'bs=5242880',
-                `skip=${part - 1}`,
-                'count=1',
-            ]);
-            const res = await s3.send(new UploadPartCommand({
-                Bucket: bucket,
-                Key: key,
-                PartNumber: part,
-                UploadId: uploadId,
-                Body: createReadStream(`${name}.mpuPart${part}`),
-            }));
-            return res;
-        } catch (error) {
-            throw new Error(`Error uploading part ${part}: ${error.message}`);
-        }
-    }));
+    return Promise.all(
+        [1, 2].map(async part => {
+            try {
+                await execFileAsync('dd', [
+                    `if=${name}`,
+                    `of=${name}.mpuPart${part}`,
+                    'bs=5242880',
+                    `skip=${part - 1}`,
+                    'count=1',
+                ]);
+                const res = await s3.send(
+                    new UploadPartCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        PartNumber: part,
+                        UploadId: uploadId,
+                        Body: createReadStream(`${name}.mpuPart${part}`),
+                    }),
+                );
+                return res;
+            } catch (error) {
+                throw new Error(`Error uploading part ${part}: ${error.message}`);
+            }
+        }),
+    );
 }
 
 // Create a hashed file of size bytes
@@ -105,8 +115,7 @@ function createHashedFile(bytes) {
 }
 
 describe('aws-node-sdk range tests', () => {
-    before(() => execFileAsync('gcc', ['-o', 'getRangeExec',
-        'lib/utility/getRange.c']));
+    before(() => execFileAsync('gcc', ['-o', 'getRangeExec', 'lib/utility/getRange.c']));
     after(() => execAsync('rm getRangeExec'));
 
     describe('aws-node-sdk range test for object put by MPU', () =>
@@ -117,65 +126,79 @@ describe('aws-node-sdk range tests', () => {
             let uploadId;
 
             beforeEach(() =>
-                s3.send(new CreateBucketCommand({ Bucket: bucket }))
-                .then(() => s3.send(new CreateMultipartUploadCommand({
-                    Bucket: bucket,
-                    Key: key,
-                })))
-                .then(res => {
-                    uploadId = res.UploadId;
-                })
-                .then(() => createHashedFile(fileSize))
-                .then(() => uploadParts(fileSize, uploadId))
-                .then(res => s3.send(new CompleteMultipartUploadCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    UploadId: uploadId,
-                    MultipartUpload: {
-                        Parts: [
-                            {
-                                ETag: res[0].ETag,
-                                PartNumber: 1,
-                            },
-                            {
-                                ETag: res[1].ETag,
-                                PartNumber: 2,
-                            },
-                        ],
-                    },
-                })))
+                s3
+                    .send(new CreateBucketCommand({ Bucket: bucket }))
+                    .then(() =>
+                        s3.send(
+                            new CreateMultipartUploadCommand({
+                                Bucket: bucket,
+                                Key: key,
+                            }),
+                        ),
+                    )
+                    .then(res => {
+                        uploadId = res.UploadId;
+                    })
+                    .then(() => createHashedFile(fileSize))
+                    .then(() => uploadParts(fileSize, uploadId))
+                    .then(res =>
+                        s3.send(
+                            new CompleteMultipartUploadCommand({
+                                Bucket: bucket,
+                                Key: key,
+                                UploadId: uploadId,
+                                MultipartUpload: {
+                                    Parts: [
+                                        {
+                                            ETag: res[0].ETag,
+                                            PartNumber: 1,
+                                        },
+                                        {
+                                            ETag: res[1].ETag,
+                                            PartNumber: 2,
+                                        },
+                                    ],
+                                },
+                            }),
+                        ),
+                    ),
             );
 
-            afterEach(() => bucketUtil.empty(bucket)
-                .then(() => s3.send(new AbortMultipartUploadCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    UploadId: uploadId,
-                })))
-                .catch(err => {
-                    // Upload was already completed in beforeEach; abort is no-op
-                    if (err.name === 'NoSuchUpload' || err.code === 'NoSuchUpload') {
-                        return;
-                    }
-                    throw err;
-                })
-                .then(() => bucketUtil.deleteOne(bucket))
-                .then(() => execAsync(`rm hashedFile.${fileSize}*`))
+            afterEach(() =>
+                bucketUtil
+                    .empty(bucket)
+                    .then(() =>
+                        s3.send(
+                            new AbortMultipartUploadCommand({
+                                Bucket: bucket,
+                                Key: key,
+                                UploadId: uploadId,
+                            }),
+                        ),
+                    )
+                    .catch(err => {
+                        // Upload was already completed in beforeEach; abort is no-op
+                        if (err.name === 'NoSuchUpload' || err.code === 'NoSuchUpload') {
+                            return;
+                        }
+                        throw err;
+                    })
+                    .then(() => bucketUtil.deleteOne(bucket))
+                    .then(() => execAsync(`rm hashedFile.${fileSize}*`)),
             );
 
-            it('should get a range from the first part of an object', () =>
-                checkRanges('0-9', fileSize));
+            it('should get a range from the first part of an object', () => checkRanges('0-9', fileSize));
 
-            it('should get a range from the second part of an object', () =>
-                checkRanges('5242880-5242889', fileSize));
+            it('should get a range from the second part of an object', () => checkRanges('5242880-5242889', fileSize));
 
-            it('should get a range that spans both parts of an object', () =>
-                checkRanges('5242875-5242884', fileSize));
+            it('should get a range that spans both parts of an object', () => checkRanges('5242875-5242884', fileSize));
 
-            it('should get a range from the second part of an object and ' +
-                'include the end if the range requested goes beyond the ' +
-                'actual object end', () =>
-                checkRanges('10485750-10485790', fileSize));
+            it(
+                'should get a range from the second part of an object and ' +
+                    'include the end if the range requested goes beyond the ' +
+                    'actual object end',
+                () => checkRanges('10485750-10485790', fileSize),
+            );
         }));
 
     describe('aws-node-sdk range test of regular object put (non-MPU)', () =>
@@ -185,18 +208,26 @@ describe('aws-node-sdk range tests', () => {
             const fileSize = 2000;
 
             beforeEach(() =>
-                s3.send(new CreateBucketCommand({ Bucket: bucket }))
-                .then(() => createHashedFile(fileSize))
-                .then(() => s3.send(new PutObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    Body: createReadStream(`hashedFile.${fileSize}`),
-                }))));
+                s3
+                    .send(new CreateBucketCommand({ Bucket: bucket }))
+                    .then(() => createHashedFile(fileSize))
+                    .then(() =>
+                        s3.send(
+                            new PutObjectCommand({
+                                Bucket: bucket,
+                                Key: key,
+                                Body: createReadStream(`hashedFile.${fileSize}`),
+                            }),
+                        ),
+                    ),
+            );
 
             afterEach(() =>
-                bucketUtil.empty(bucket)
-                .then(() => bucketUtil.deleteOne(bucket))
-                .then(() => execAsync(`rm hashedFile.${fileSize}*`)));
+                bucketUtil
+                    .empty(bucket)
+                    .then(() => bucketUtil.deleteOne(bucket))
+                    .then(() => execAsync(`rm hashedFile.${fileSize}*`)),
+            );
 
             const putRangeTests = [
                 '-', // Test for invalid range
@@ -229,9 +260,9 @@ describe('aws-node-sdk range tests', () => {
             ];
 
             putRangeTests.forEach(range => {
-                it(`should get a range of ${range} bytes using a ${fileSize} ` +
-                    'byte sized object', () =>
-                    checkRanges(range, fileSize));
+                it(`should get a range of ${range} bytes using a ${fileSize} ` + 'byte sized object', () =>
+                    checkRanges(range, fileSize),
+                );
             });
         }));
 
@@ -242,26 +273,36 @@ describe('aws-node-sdk range tests', () => {
             const fileSize = 2900;
 
             beforeEach(() =>
-                s3.send(new CreateBucketCommand({ Bucket: bucket }))
-                .then(() => createHashedFile(fileSize))
-                .then(() => s3.send(new PutObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    Body: createReadStream(`hashedFile.${fileSize}`),
-                }))));
+                s3
+                    .send(new CreateBucketCommand({ Bucket: bucket }))
+                    .then(() => createHashedFile(fileSize))
+                    .then(() =>
+                        s3.send(
+                            new PutObjectCommand({
+                                Bucket: bucket,
+                                Key: key,
+                                Body: createReadStream(`hashedFile.${fileSize}`),
+                            }),
+                        ),
+                    ),
+            );
 
             afterEach(() =>
-                bucketUtil.empty(bucket)
-                .then(() => bucketUtil.deleteOne(bucket))
-                .then(() => execAsync(`rm hashedFile.${fileSize}*`)));
+                bucketUtil
+                    .empty(bucket)
+                    .then(() => bucketUtil.deleteOne(bucket))
+                    .then(() => execAsync(`rm hashedFile.${fileSize}*`)),
+            );
 
-            it('should get the final 90 bytes of a 2890 byte object for a ' +
-                'byte range of 2800-', () =>
-                checkRanges('2800-', fileSize));
+            it('should get the final 90 bytes of a 2890 byte object for a ' + 'byte range of 2800-', () =>
+                checkRanges('2800-', fileSize),
+            );
 
-            it('should get the final 90 bytes of a 2890 byte object for a ' +
-                'byte range of 2800-Number.MAX_SAFE_INTEGER', () =>
-                checkRanges(`2800-${Number.MAX_SAFE_INTEGER}`, fileSize));
+            it(
+                'should get the final 90 bytes of a 2890 byte object for a ' +
+                    'byte range of 2800-Number.MAX_SAFE_INTEGER',
+                () => checkRanges(`2800-${Number.MAX_SAFE_INTEGER}`, fileSize),
+            );
         });
     });
 });

@@ -8,8 +8,11 @@ const {
     TaggingConfigTester,
     createRequestContext,
 } = require('../../helpers');
-const { tagConditionKeyAuth, updateRequestContextsWithTags, makeTagQuery } =
-    require('../../../../lib/api/apiUtils/authorization/tagConditionKeys');
+const {
+    tagConditionKeyAuth,
+    updateRequestContextsWithTags,
+    makeTagQuery,
+} = require('../../../../lib/api/apiUtils/authorization/tagConditionKeys');
 const { bucketPut } = require('../../../../lib/api/bucketPut');
 const objectPut = require('../../../../lib/api/objectPut');
 
@@ -29,21 +32,22 @@ const bucketPutReq = {
 
 const taggingUtil = new TaggingConfigTester();
 
-const objectPutReq = new DummyRequest({
-    bucketName,
-    namespace,
-    objectKey,
-    headers: {
-        'host': `${bucketName}.s3.amazonaws.com`,
-        'x-amz-tagging': makeTagQuery(taggingUtil.getTags()),
+const objectPutReq = new DummyRequest(
+    {
+        bucketName,
+        namespace,
+        objectKey,
+        headers: {
+            host: `${bucketName}.s3.amazonaws.com`,
+            'x-amz-tagging': makeTagQuery(taggingUtil.getTags()),
+        },
+        url: `/${bucketName}/${objectKey}`,
+        calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
     },
-    url: `/${bucketName}/${objectKey}`,
-    calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
-}, postBody);
+    postBody,
+);
 
-const objectPutRequestContexts = [
-    createRequestContext('objectPut', objectPutReq),
-];
+const objectPutRequestContexts = [createRequestContext('objectPut', objectPutReq)];
 
 const objectGetReq = {
     bucketName,
@@ -87,8 +91,7 @@ describe('updateRequestContextsWithTags', () => {
         updateRequestContextsWithTags(objectPutReq, objectPutRequestContexts, 'objectPut', log, err => {
             assert.ifError(err);
             assert(objectPutRequestContexts[0].getNeedTagEval());
-            assert.strictEqual(objectPutRequestContexts[0].getRequestObjTags(),
-                               makeTagQuery(taggingUtil.getTags()));
+            assert.strictEqual(objectPutRequestContexts[0].getRequestObjTags(), makeTagQuery(taggingUtil.getTags()));
             assert.strictEqual(objectPutRequestContexts[0].getExistingObjTag(), null);
             done();
         });
@@ -97,14 +100,12 @@ describe('updateRequestContextsWithTags', () => {
     it('should update multiple request contexts with existing object tags', done => {
         objectPut(authInfo, objectPutReq, 'foobar', log, err => {
             assert.ifError(err);
-            updateRequestContextsWithTags(objectGetReq, objectGetRequestContexts, 'objectGet', log,
-            err => {
+            updateRequestContextsWithTags(objectGetReq, objectGetRequestContexts, 'objectGet', log, err => {
                 assert.ifError(err);
                 // FIXME introduced by CLDSRV-256, this syntax should be allowed by the linter
                 for (const requestContext of objectGetRequestContexts) {
                     assert(requestContext.getNeedTagEval());
-                    assert.strictEqual(requestContext.getExistingObjTag(),
-                                       makeTagQuery(taggingUtil.getTags()));
+                    assert.strictEqual(requestContext.getExistingObjTag(), makeTagQuery(taggingUtil.getTags()));
                     assert.strictEqual(requestContext.getRequestObjTags(), null);
                 }
                 done();

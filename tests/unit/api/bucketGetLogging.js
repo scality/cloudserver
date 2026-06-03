@@ -61,13 +61,15 @@ function createGetLoggingRequest(bucketName, headers = {}) {
 }
 
 function createValidLoggingXML(targetBucket, targetPrefix = 'logs/') {
-    return '<?xml version="1.0" encoding="UTF-8"?>' +
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>' +
         '<BucketLoggingStatus xmlns="http://doc.s3.amazonaws.com/2006-03-01">' +
         '<LoggingEnabled>' +
         `<TargetBucket>${targetBucket}</TargetBucket>` +
         `<TargetPrefix>${targetPrefix}</TargetPrefix>` +
         '</LoggingEnabled>' +
-        '</BucketLoggingStatus>';
+        '</BucketLoggingStatus>'
+    );
 }
 
 describe('bucketGetLogging API', () => {
@@ -90,7 +92,8 @@ describe('bucketGetLogging API', () => {
             assert.ifError(err);
             assert(xml);
             // Should return empty BucketLoggingStatus
-            const expectedXML = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+            const expectedXML =
+                '<?xml version="1.0" encoding="UTF-8"?>\n' +
                 '<BucketLoggingStatus xmlns="http://doc.s3.amazonaws.com/2006-03-01" />';
             assert.strictEqual(xml, expectedXML);
             done();
@@ -163,7 +166,8 @@ describe('bucketGetLogging API', () => {
             assert.ifError(err);
 
             // Disable logging
-            const disableXML = '<?xml version="1.0" encoding="UTF-8"?>' +
+            const disableXML =
+                '<?xml version="1.0" encoding="UTF-8"?>' +
                 '<BucketLoggingStatus xmlns="http://doc.s3.amazonaws.com/2006-03-01" />';
             const disableRequest = createLoggingRequest(bucketName, disableXML);
 

@@ -45,8 +45,11 @@ describe('Rate limit helpers', () => {
 
             for (const action of helpers.rateLimitApiActions) {
                 const request = { apiMethod: action };
-                assert.strictEqual(helpers.requestNeedsRateCheck(request), false,
-                    `Expected false for rate limit action: ${action}`);
+                assert.strictEqual(
+                    helpers.requestNeedsRateCheck(request),
+                    false,
+                    `Expected false for rate limit action: ${action}`,
+                );
             }
         });
 
@@ -228,7 +231,7 @@ describe('Rate limit helpers', () => {
                 bucket: {
                     defaultBurstCapacity: 1,
                 },
-            })
+            }),
         );
 
         afterEach(() => sinon.restore());
@@ -241,8 +244,11 @@ describe('Rate limit helpers', () => {
 
         it('should allow request when bucket has capacity', () => {
             const check = {
-                resourceClass: 'bkt', resourceId: 'test-bucket', measure: 'rps',
-                config: { limit: 100, burstCapacity: 1000, source: 'bucket' }, source: 'bucket',
+                resourceClass: 'bkt',
+                resourceId: 'test-bucket',
+                measure: 'rps',
+                config: { limit: 100, burstCapacity: 1000, source: 'bucket' },
+                source: 'bucket',
             };
 
             // Pre-populate token bucket with tokens
@@ -258,8 +264,11 @@ describe('Rate limit helpers', () => {
 
         it('should deny request when bucket has no tokens', () => {
             const check = {
-                resourceClass: 'bkt', resourceId: 'test-bucket', measure: 'rps',
-                config: { limit: 100, burstCapacity: 1000, source: 'bucket' }, source: 'bucket',
+                resourceClass: 'bkt',
+                resourceId: 'test-bucket',
+                measure: 'rps',
+                config: { limit: 100, burstCapacity: 1000, source: 'bucket' },
+                source: 'bucket',
             };
 
             const bucket = tokenBucket.getTokenBucket('bkt', 'test-bucket', 'rps', check.config, mockLog);
@@ -274,8 +283,11 @@ describe('Rate limit helpers', () => {
 
         it('should not consume tokens when denied', () => {
             const check = {
-                resourceClass: 'bkt', resourceId: 'test-bucket', measure: 'rps',
-                config: { limit: 100, burstCapacity: 1000, source: 'bucket' }, source: 'bucket',
+                resourceClass: 'bkt',
+                resourceId: 'test-bucket',
+                measure: 'rps',
+                config: { limit: 100, burstCapacity: 1000, source: 'bucket' },
+                source: 'bucket',
             };
 
             const bucket = tokenBucket.getTokenBucket('bkt', 'test-bucket', 'rps', check.config, mockLog);
@@ -288,12 +300,18 @@ describe('Rate limit helpers', () => {
 
         it('should consume tokens from all buckets when all have capacity', () => {
             const check1 = {
-                resourceClass: 'bkt', resourceId: 'bucket-1', measure: 'rps',
-                config: { limit: 100, burstCapacity: 1000, source: 'bucket' }, source: 'bucket',
+                resourceClass: 'bkt',
+                resourceId: 'bucket-1',
+                measure: 'rps',
+                config: { limit: 100, burstCapacity: 1000, source: 'bucket' },
+                source: 'bucket',
             };
             const check2 = {
-                resourceClass: 'acc', resourceId: 'account-1', measure: 'rps',
-                config: { limit: 200, burstCapacity: 1000, source: 'account' }, source: 'account',
+                resourceClass: 'acc',
+                resourceId: 'account-1',
+                measure: 'rps',
+                config: { limit: 200, burstCapacity: 1000, source: 'account' },
+                source: 'account',
             };
 
             const bucket1 = tokenBucket.getTokenBucket('bkt', 'bucket-1', 'rps', check1.config, mockLog);
@@ -310,12 +328,18 @@ describe('Rate limit helpers', () => {
 
         it('should deny on first exhausted bucket and not consume other buckets', () => {
             const check1 = {
-                resourceClass: 'bkt', resourceId: 'bucket-1', measure: 'rps',
-                config: { limit: 100, burstCapacity: 1000, source: 'bucket' }, source: 'bucket',
+                resourceClass: 'bkt',
+                resourceId: 'bucket-1',
+                measure: 'rps',
+                config: { limit: 100, burstCapacity: 1000, source: 'bucket' },
+                source: 'bucket',
             };
             const check2 = {
-                resourceClass: 'acc', resourceId: 'account-1', measure: 'rps',
-                config: { limit: 200, burstCapacity: 1000, source: 'account' }, source: 'account',
+                resourceClass: 'acc',
+                resourceId: 'account-1',
+                measure: 'rps',
+                config: { limit: 200, burstCapacity: 1000, source: 'account' },
+                source: 'account',
             };
 
             const bucket1 = tokenBucket.getTokenBucket('bkt', 'bucket-1', 'rps', check1.config, mockLog);
@@ -332,8 +356,11 @@ describe('Rate limit helpers', () => {
 
         it('should log debug info when request is denied', () => {
             const check = {
-                resourceClass: 'bkt', resourceId: 'test-bucket', measure: 'rps',
-                config: { limit: 100, burstCapacity: 1000, source: 'bucket' }, source: 'bucket',
+                resourceClass: 'bkt',
+                resourceId: 'test-bucket',
+                measure: 'rps',
+                config: { limit: 100, burstCapacity: 1000, source: 'bucket' },
+                source: 'bucket',
             };
 
             const bucket = tokenBucket.getTokenBucket('bkt', 'test-bucket', 'rps', check.config, mockLog);
@@ -342,9 +369,9 @@ describe('Rate limit helpers', () => {
 
             helpers.checkRateLimitsForRequest([check], mockLog);
 
-            const deniedCall = mockLog.debug.getCalls().find(
-                call => call.args[0] === 'Rate limit check: denied (no tokens available)'
-            );
+            const deniedCall = mockLog.debug
+                .getCalls()
+                .find(call => call.args[0] === 'Rate limit check: denied (no tokens available)');
             assert(deniedCall, 'Should have logged denied message');
             const logArgs = deniedCall.args[1];
             assert.strictEqual(logArgs.resourceClass, 'bkt');
@@ -355,8 +382,11 @@ describe('Rate limit helpers', () => {
 
         it('should log trace info when request is allowed', () => {
             const check = {
-                resourceClass: 'bkt', resourceId: 'test-bucket', measure: 'rps',
-                config: { limit: 100, burstCapacity: 1000, source: 'bucket' }, source: 'bucket',
+                resourceClass: 'bkt',
+                resourceId: 'test-bucket',
+                measure: 'rps',
+                config: { limit: 100, burstCapacity: 1000, source: 'bucket' },
+                source: 'bucket',
             };
 
             // Pre-populate token bucket
@@ -366,9 +396,9 @@ describe('Rate limit helpers', () => {
             const result = helpers.checkRateLimitsForRequest([check], mockLog);
 
             assert.strictEqual(result.allowed, true);
-            const allowedCall = mockLog.trace.getCalls().find(
-                call => call.args[0] === 'Rate limit check: allowed (token consumed)'
-            );
+            const allowedCall = mockLog.trace
+                .getCalls()
+                .find(call => call.args[0] === 'Rate limit check: allowed (token consumed)');
             assert(allowedCall, 'Should have logged allowed message');
             assert.strictEqual(allowedCall.args[1].resourceClass, 'bkt');
             assert.strictEqual(allowedCall.args[1].resourceId, 'test-bucket');
@@ -376,8 +406,11 @@ describe('Rate limit helpers', () => {
 
         it('should handle multiple sequential requests correctly', () => {
             const check = {
-                resourceClass: 'bkt', resourceId: 'test-bucket', measure: 'rps',
-                config: { limit: 100, burstCapacity: 1000, source: 'bucket' }, source: 'bucket',
+                resourceClass: 'bkt',
+                resourceId: 'test-bucket',
+                measure: 'rps',
+                config: { limit: 100, burstCapacity: 1000, source: 'bucket' },
+                source: 'bucket',
             };
 
             // Pre-populate token bucket with multiple tokens
@@ -434,8 +467,7 @@ describe('Rate limit helpers', () => {
                 },
             };
 
-            const result = helpers.extractRateLimitConfigFromRequest(
-                request, mockAuthInfo, mockBucket, mockLog);
+            const result = helpers.extractRateLimitConfigFromRequest(request, mockAuthInfo, mockBucket, mockLog);
 
             assert.deepStrictEqual(result.bucket, {
                 RequestsPerSecond: { BurstCapacity: 1, Limit: 200, source: 'resource' },
@@ -455,8 +487,7 @@ describe('Rate limit helpers', () => {
             };
             const request = {};
 
-            const result = helpers.extractRateLimitConfigFromRequest(
-                request, mockAuthInfo, mockBucket, mockLog);
+            const result = helpers.extractRateLimitConfigFromRequest(request, mockAuthInfo, mockBucket, mockLog);
 
             assert.deepStrictEqual(result.bucket, {
                 RequestsPerSecond: { BurstCapacity: 1, source: 'global' },
@@ -480,8 +511,7 @@ describe('Rate limit helpers', () => {
                 },
             };
 
-            const result = helpers.extractRateLimitConfigFromRequest(
-                request, mockAuthInfo, mockBucket, mockLog);
+            const result = helpers.extractRateLimitConfigFromRequest(request, mockAuthInfo, mockBucket, mockLog);
 
             assert.deepStrictEqual(result.account, {
                 RequestsPerSecond: { BurstCapacity: 5, Limit: 300, source: 'resource' },
@@ -502,8 +532,7 @@ describe('Rate limit helpers', () => {
                 },
             };
 
-            const result = helpers.extractRateLimitConfigFromRequest(
-                request, mockAuthInfo, mockBucket, mockLog);
+            const result = helpers.extractRateLimitConfigFromRequest(request, mockAuthInfo, mockBucket, mockLog);
 
             assert.deepStrictEqual(result.account, {
                 RequestsPerSecond: { BurstCapacity: 2, source: 'global' },

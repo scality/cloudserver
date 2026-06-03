@@ -1,10 +1,6 @@
 const assert = require('assert');
 const async = require('async');
-const {
-    ListObjectsCommand,
-    ListObjectVersionsCommand,
-    DeleteObjectsCommand,
-} = require('@aws-sdk/client-s3');
+const { ListObjectsCommand, ListObjectVersionsCommand, DeleteObjectsCommand } = require('@aws-sdk/client-s3');
 
 function _deleteVersionList(s3Client, versionList, bucket, callback) {
     if (versionList === undefined || versionList.length === 0) {
@@ -19,31 +15,30 @@ function _deleteVersionList(s3Client, versionList, bucket, callback) {
             })),
         },
     };
-    return s3Client.send(new DeleteObjectsCommand(params))
+    return s3Client
+        .send(new DeleteObjectsCommand(params))
         .then(() => callback())
         .catch(callback);
 }
 
 const testUtils = {};
 
-testUtils.runIfMongo = process.env.S3METADATA === 'mongodb' ?
-    describe : describe.skip;
+testUtils.runIfMongo = process.env.S3METADATA === 'mongodb' ? describe : describe.skip;
 
-testUtils.runAndCheckSearch = (s3Client, bucketName, encodedSearch, listVersions,
-    testResult, done) => {
+testUtils.runAndCheckSearch = (s3Client, bucketName, encodedSearch, listVersions, testResult, done) => {
     const makeRequest = async () => {
         try {
-            const input = { 
+            const input = {
                 Bucket: bucketName,
             };
-            
+
             let command;
             if (listVersions) {
                 command = new ListObjectVersionsCommand(input);
             } else {
                 command = new ListObjectsCommand(input);
             }
-            
+
             // Add middleware to inject the search query parameter
             // SDK v3 automatically encodes query parameters, so we decode first to avoid double-encoding
             command.middlewareStack.add(
@@ -59,26 +54,30 @@ testUtils.runAndCheckSearch = (s3Client, bucketName, encodedSearch, listVersions
                         // eslint-disable-next-line no-param-reassign
                         args.request.query.versions = '';
                     }
-                    
+
                     return next(args);
                 },
                 {
                     step: 'build',
                     name: 'addSearchQuery',
-                }
+                },
             );
-            
+
             const res = await s3Client.send(command);
-            
+
             if (listVersions) {
                 if (testResult) {
                     assert.notStrictEqual(res.Versions[0].VersionId, undefined);
                     if (Array.isArray(testResult)) {
                         assert.strictEqual(res.Versions.length, testResult.length);
-                        async.forEachOf(testResult, (expected, i, next) => {
-                            assert.strictEqual(res.Versions[i].Key, expected);
-                            next();
-                        }, done);
+                        async.forEachOf(
+                            testResult,
+                            (expected, i, next) => {
+                                assert.strictEqual(res.Versions[i].Key, expected);
+                                next();
+                            },
+                            done,
+                        );
                     } else {
                         assert(res.Versions[0], 'should be Contents listed');
                         assert.strictEqual(res.Versions[0].Key, testResult);
@@ -114,26 +113,29 @@ testUtils.runAndCheckSearch = (s3Client, bucketName, encodedSearch, listVersions
 };
 
 testUtils.removeAllVersions = (s3Client, bucket, callback) => {
-    async.waterfall([
-        cb => s3Client.send(new ListObjectVersionsCommand({ Bucket: bucket }))
-            .then(data => cb(null, data))
-            .catch(cb),
-        (data, cb) => _deleteVersionList(s3Client, data.DeleteMarkers, bucket,
-            err => cb(err, data)),
-        (data, cb) => _deleteVersionList(s3Client, data.Versions, bucket,
-            err => cb(err, data)),
-        (data, cb) => {
-            if (data.IsTruncated) {
-                const params = {
-                    Bucket: bucket,
-                    KeyMarker: data.NextKeyMarker,
-                    VersionIdMarker: data.NextVersionIdMarker,
-                };
-                return testUtils.removeAllVersions(s3Client, params, cb);
-            }
-            return cb();
-        },
-    ], callback);
+    async.waterfall(
+        [
+            cb =>
+                s3Client
+                    .send(new ListObjectVersionsCommand({ Bucket: bucket }))
+                    .then(data => cb(null, data))
+                    .catch(cb),
+            (data, cb) => _deleteVersionList(s3Client, data.DeleteMarkers, bucket, err => cb(err, data)),
+            (data, cb) => _deleteVersionList(s3Client, data.Versions, bucket, err => cb(err, data)),
+            (data, cb) => {
+                if (data.IsTruncated) {
+                    const params = {
+                        Bucket: bucket,
+                        KeyMarker: data.NextKeyMarker,
+                        VersionIdMarker: data.NextVersionIdMarker,
+                    };
+                    return testUtils.removeAllVersions(s3Client, params, cb);
+                }
+                return cb();
+            },
+        ],
+        callback,
+    );
 };
 
 module.exports = testUtils;

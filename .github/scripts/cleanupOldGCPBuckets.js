@@ -21,8 +21,7 @@ function buildClient() {
 
     if (!accessKeyId || !secretAccessKey) {
         console.error(
-            'Missing required environment variables: ' +
-            'AWS_GCP_BACKEND_ACCESS_KEY and AWS_GCP_BACKEND_SECRET_KEY'
+            'Missing required environment variables: ' + 'AWS_GCP_BACKEND_ACCESS_KEY and AWS_GCP_BACKEND_SECRET_KEY',
         );
         process.exit(1);
     }
@@ -56,21 +55,23 @@ async function abortMultipartUploads(client, bucketName) {
     let keyMarker;
 
     do {
-        const res = await client.send(new ListMultipartUploadsCommand({
-            Bucket: bucketName,
-            UploadIdMarker: uploadIdMarker,
-            KeyMarker: keyMarker,
-        }));
+        const res = await client.send(
+            new ListMultipartUploadsCommand({
+                Bucket: bucketName,
+                UploadIdMarker: uploadIdMarker,
+                KeyMarker: keyMarker,
+            }),
+        );
 
         for (const upload of res.Uploads || []) {
-            console.log(
-                `  Aborting MPU: ${upload.Key} (${upload.UploadId})`
+            console.log(`  Aborting MPU: ${upload.Key} (${upload.UploadId})`);
+            await client.send(
+                new AbortMultipartUploadCommand({
+                    Bucket: bucketName,
+                    Key: upload.Key,
+                    UploadId: upload.UploadId,
+                }),
             );
-            await client.send(new AbortMultipartUploadCommand({
-                Bucket: bucketName,
-                Key: upload.Key,
-                UploadId: upload.UploadId,
-            }));
         }
 
         uploadIdMarker = res.NextUploadIdMarker;
@@ -82,19 +83,23 @@ async function deleteAllObjects(client, bucketName) {
     let continuationToken;
 
     do {
-        const res = await client.send(new ListObjectsV2Command({
-            Bucket: bucketName,
-            ContinuationToken: continuationToken,
-        }));
+        const res = await client.send(
+            new ListObjectsV2Command({
+                Bucket: bucketName,
+                ContinuationToken: continuationToken,
+            }),
+        );
 
         const objects = res.Contents || [];
         if (objects.length > 0) {
             console.log(`  Deleting ${objects.length} object(s)...`);
             for (const obj of objects) {
-                await client.send(new DeleteObjectCommand({
-                    Bucket: bucketName,
-                    Key: obj.Key,
-                }));
+                await client.send(
+                    new DeleteObjectCommand({
+                        Bucket: bucketName,
+                        Key: obj.Key,
+                    }),
+                );
             }
         }
 
@@ -121,9 +126,8 @@ async function main() {
     const { Buckets = [] } = await client.send(new ListBucketsCommand({}));
 
     const now = Date.now();
-    const stale = Buckets.filter(b =>
-        b.Name.startsWith(BUCKET_PREFIX) &&
-        now - new Date(b.CreationDate).getTime() > ONE_WEEK_MS
+    const stale = Buckets.filter(
+        b => b.Name.startsWith(BUCKET_PREFIX) && now - new Date(b.CreationDate).getTime() > ONE_WEEK_MS,
     );
 
     if (stale.length === 0) {
@@ -131,10 +135,7 @@ async function main() {
         return;
     }
 
-    console.log(
-        `Found ${stale.length} stale GCP CI bucket(s) to clean up: ${ 
-        stale.map(b => b.Name).join(', ')}`
-    );
+    console.log(`Found ${stale.length} stale GCP CI bucket(s) to clean up: ${stale.map(b => b.Name).join(', ')}`);
 
     for (const bucket of stale) {
         await cleanupBucket(client, bucket.Name);

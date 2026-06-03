@@ -3,13 +3,8 @@ const { errors } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutCors = require('../../../lib/api/bucketPutCors');
-const { _validator, parseCorsXml }
-    = require('../../../lib/api/apiUtils/bucket/bucketCors');
-const { cleanup,
-    DummyRequestLogger,
-    makeAuthInfo,
-    CorsConfigTester }
-    = require('../helpers');
+const { _validator, parseCorsXml } = require('../../../lib/api/apiUtils/bucket/bucketCors');
+const { cleanup, DummyRequestLogger, makeAuthInfo, CorsConfigTester } = require('../helpers');
 const metadata = require('../../../lib/metadata/wrapper');
 
 const log = new DummyRequestLogger();
@@ -31,13 +26,14 @@ function _testPutBucketCors(authInfo, request, log, errCode, cb) {
 }
 
 function _generateSampleXml(value) {
-    const xml = '<CORSConfiguration>' +
-    '<CORSRule>' +
-    '<AllowedMethod>PUT</AllowedMethod>' +
-    '<AllowedOrigin>www.example.com</AllowedOrigin>' +
-    `${value}` +
-    '</CORSRule>' +
-    '</CORSConfiguration>';
+    const xml =
+        '<CORSConfiguration>' +
+        '<CORSRule>' +
+        '<AllowedMethod>PUT</AllowedMethod>' +
+        '<AllowedOrigin>www.example.com</AllowedOrigin>' +
+        `${value}` +
+        '</CORSRule>' +
+        '</CORSConfiguration>';
 
     return xml;
 }
@@ -49,10 +45,9 @@ describe('putBucketCORS API', () => {
     });
     afterEach(() => cleanup());
 
-    it('should update a bucket\'s metadata with cors resource', done => {
+    it("should update a bucket's metadata with cors resource", done => {
         const corsUtil = new CorsConfigTester();
-        const testBucketPutCorsRequest = corsUtil
-            .createBucketCorsRequest('PUT', bucketName);
+        const testBucketPutCorsRequest = corsUtil.createBucketCorsRequest('PUT', bucketName);
         bucketPutCors(authInfo, testBucketPutCorsRequest, log, err => {
             if (err) {
                 process.stdout.write(`Err putting bucket cors ${err}`);
@@ -73,18 +68,14 @@ describe('putBucketCORS API', () => {
     it('should return MalformedXML if body greater than 64KB', done => {
         const corsUtil = new CorsConfigTester();
         const body = Buffer.alloc(65537); // 64 * 1024 = 65536 bytes
-        const testBucketPutCorsRequest = corsUtil
-            .createBucketCorsRequest('PUT', bucketName, body);
-        _testPutBucketCors(authInfo, testBucketPutCorsRequest,
-            log, 'MalformedXML', done);
+        const testBucketPutCorsRequest = corsUtil.createBucketCorsRequest('PUT', bucketName, body);
+        _testPutBucketCors(authInfo, testBucketPutCorsRequest, log, 'MalformedXML', done);
     });
 
     it('should return InvalidRequest if more than one MaxAgeSeconds', done => {
         const corsUtil = new CorsConfigTester({ maxAgeSeconds: [60, 6000] });
-        const testBucketPutCorsRequest = corsUtil
-            .createBucketCorsRequest('PUT', bucketName);
-        _testPutBucketCors(authInfo, testBucketPutCorsRequest,
-            log, 'MalformedXML', done);
+        const testBucketPutCorsRequest = corsUtil.createBucketCorsRequest('PUT', bucketName);
+        _testPutBucketCors(authInfo, testBucketPutCorsRequest, log, 'MalformedXML', done);
     });
 });
 
@@ -95,8 +86,7 @@ describe('PUT bucket cors :: helper validation functions ', () => {
             const expectedResults = [true, true, false];
 
             for (let i = 0; i < testStrings.length; i++) {
-                const result = _validator
-                    .validateNumberWildcards(testStrings[i]);
+                const result = _validator.validateNumberWildcards(testStrings[i]);
                 assert.strictEqual(result, expectedResults[i]);
             }
             done();
@@ -117,8 +107,7 @@ describe('PUT bucket cors :: helper validation functions ', () => {
 
         it('should return MalformedXML if more than one ID per rule', done => {
             const testValue = 'testid';
-            const xml = _generateSampleXml(`<ID>${testValue}</ID>` +
-            `<ID>${testValue}</ID>`);
+            const xml = _generateSampleXml(`<ID>${testValue}</ID>` + `<ID>${testValue}</ID>`);
             parseCorsXml(xml, log, err => {
                 assert(err, 'Expected error but found none');
                 assert.strictEqual(err.is.MalformedXML, true);
@@ -149,8 +138,7 @@ describe('PUT bucket cors :: helper validation functions ', () => {
     describe('validateMaxAgeSeconds ', () => {
         it('should validate successfully for valid value', done => {
             const testValue = 60;
-            const xml = _generateSampleXml(`<MaxAgeSeconds>${testValue}` +
-                '</MaxAgeSeconds>');
+            const xml = _generateSampleXml(`<MaxAgeSeconds>${testValue}` + '</MaxAgeSeconds>');
             parseCorsXml(xml, log, (err, result) => {
                 assert.strictEqual(err, null, `Found unexpected err ${err}`);
                 assert.strictEqual(typeof result[0].maxAgeSeconds, 'number');
@@ -159,12 +147,11 @@ describe('PUT bucket cors :: helper validation functions ', () => {
             });
         });
 
-        it('should return MalformedXML if more than one MaxAgeSeconds ' +
-        'per rule', done => {
+        it('should return MalformedXML if more than one MaxAgeSeconds ' + 'per rule', done => {
             const testValue = '60';
             const xml = _generateSampleXml(
-                `<MaxAgeSeconds>${testValue}</MaxAgeSeconds>` +
-                `<MaxAgeSeconds>${testValue}</MaxAgeSeconds>`);
+                `<MaxAgeSeconds>${testValue}</MaxAgeSeconds>` + `<MaxAgeSeconds>${testValue}</MaxAgeSeconds>`,
+            );
             parseCorsXml(xml, log, err => {
                 assert(err, 'Expected error but found none');
                 assert.strictEqual(err.is.MalformedXML, true);
@@ -174,8 +161,7 @@ describe('PUT bucket cors :: helper validation functions ', () => {
 
         it('should validate & return undefined if empty value', done => {
             const testValue = '';
-            const xml = _generateSampleXml(`<MaxAgeSeconds>${testValue}` +
-                '</MaxAgeSeconds>');
+            const xml = _generateSampleXml(`<MaxAgeSeconds>${testValue}` + '</MaxAgeSeconds>');
             parseCorsXml(xml, log, (err, result) => {
                 assert.strictEqual(err, null, `Found unexpected err ${err}`);
                 assert.strictEqual(result[0].MaxAgeSeconds, undefined);

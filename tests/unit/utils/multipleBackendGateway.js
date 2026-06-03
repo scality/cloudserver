@@ -1,9 +1,7 @@
 const assert = require('assert');
 const { checkExternalBackend } = require('arsenal').storage.data.external.backendUtils;
 const sinon = require('sinon');
-const awsLocations = [
-    'awsbackend',
-];
+const awsLocations = ['awsbackend'];
 
 const statusSuccess = {
     versioningStatus: 'Enabled',
@@ -32,37 +30,46 @@ describe('Testing _checkExternalBackend', function describeF() {
     beforeEach(done => {
         this.clock = sinon.useFakeTimers({ shouldAdvanceTime: true });
         const clients = getClients(true);
-        return checkExternalBackend(clients, awsLocations, 'aws_s3', false,
-        externalBackendHealthCheckInterval, done);
+        return checkExternalBackend(clients, awsLocations, 'aws_s3', false, externalBackendHealthCheckInterval, done);
     });
     afterEach(() => {
         this.clock.restore();
     });
-    it('should not refresh response before externalBackendHealthCheckInterval',
-    done => {
+    it('should not refresh response before externalBackendHealthCheckInterval', done => {
         const clients = getClients(false);
-        return checkExternalBackend(clients, awsLocations, 'aws_s3',
-        false, externalBackendHealthCheckInterval, (err, res) => {
-            if (err) {
-                return done(err);
-            }
-            assert.strictEqual(res[0].awsbackend, statusSuccess);
-            return done();
-        });
-    });
-
-    it('should refresh response after externalBackendHealthCheckInterval',
-    done => {
-        const clients = getClients(false);
-        setTimeout(() => {
-            checkExternalBackend(clients, awsLocations, 'aws_s3',
-            false, externalBackendHealthCheckInterval, (err, res) => {
+        return checkExternalBackend(
+            clients,
+            awsLocations,
+            'aws_s3',
+            false,
+            externalBackendHealthCheckInterval,
+            (err, res) => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res[0].awsbackend, statusFailure);
+                assert.strictEqual(res[0].awsbackend, statusSuccess);
                 return done();
-            });
+            },
+        );
+    });
+
+    it('should refresh response after externalBackendHealthCheckInterval', done => {
+        const clients = getClients(false);
+        setTimeout(() => {
+            checkExternalBackend(
+                clients,
+                awsLocations,
+                'aws_s3',
+                false,
+                externalBackendHealthCheckInterval,
+                (err, res) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    assert.strictEqual(res[0].awsbackend, statusFailure);
+                    return done();
+                },
+            );
         }, externalBackendHealthCheckInterval + 1);
         this.clock.next(); // test faster
     });

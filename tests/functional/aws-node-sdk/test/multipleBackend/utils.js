@@ -22,9 +22,7 @@ const { getRealAwsConfig } = require('../support/awsConfig');
 const { config } = require('../../../../../lib/Config');
 const authdata = require('../../../../../conf/authdata.json');
 
-const {
-    describeSkipIfNotMultiple,
-} = require('../../lib/utility/test-utils');
+const { describeSkipIfNotMultiple } = require('../../lib/utility/test-utils');
 
 const memLocation = 'scality-internal-mem';
 const fileLocation = 'scality-internal-file';
@@ -56,22 +54,22 @@ if (config.backends.data === 'multiple') {
         awsS3 = new S3Client(awsConfig);
         awsBucket = config.locationConstraints[awsLocation].details.bucketName;
     } else {
-        process.stdout.write(`LocationConstraint for aws '${awsLocation}' not found in ${
-        Object.keys(config.locationConstraints)}\n`);
+        process.stdout.write(
+            `LocationConstraint for aws '${awsLocation}' not found in ${Object.keys(config.locationConstraints)}\n`,
+        );
     }
 
     if (config.locationConstraints[gcpLocation]) {
         const gcpConfig = getRealAwsConfig(gcpLocation);
         gcpClient = new GCP(gcpConfig);
         gcpBucket = config.locationConstraints[gcpLocation].details.bucketName;
-        gcpBucketMPU =
-            config.locationConstraints[gcpLocation].details.mpuBucketName;
+        gcpBucketMPU = config.locationConstraints[gcpLocation].details.mpuBucketName;
     } else {
-        process.stdout.write(`LocationConstraint for gcp '${gcpLocation}' not found in ${
-        Object.keys(config.locationConstraints)}\n`);
+        process.stdout.write(
+            `LocationConstraint for gcp '${gcpLocation}' not found in ${Object.keys(config.locationConstraints)}\n`,
+        );
     }
 }
-
 
 const utils = {
     describeSkipIfNotMultiple,
@@ -137,11 +135,12 @@ utils.getAzureClient = () => {
             return true;
         }
 
-        if (config.locationConstraints[azureLocation] &&
+        if (
+            config.locationConstraints[azureLocation] &&
             config.locationConstraints[azureLocation].details &&
-            config.locationConstraints[azureLocation].details[key]) {
-            params[key] =
-                config.locationConstraints[azureLocation].details[key];
+            config.locationConstraints[azureLocation].details[key]
+        ) {
+            params[key] = config.locationConstraints[azureLocation].details[key];
             return true;
         }
         return false;
@@ -151,20 +150,18 @@ utils.getAzureClient = () => {
         return undefined;
     }
 
-    const cred = new azure.StorageSharedKeyCredential(
-        params.azureStorageAccountName,
-        params.azureStorageAccessKey,
-    );
+    const cred = new azure.StorageSharedKeyCredential(params.azureStorageAccountName, params.azureStorageAccessKey);
     return new azure.BlobServiceClient(params.azureStorageEndpoint, cred);
 };
 
 utils.getAzureContainerName = azureLocation => {
     let azureContainerName;
-    if (config.locationConstraints[azureLocation] &&
-    config.locationConstraints[azureLocation].details &&
-    config.locationConstraints[azureLocation].details.azureContainerName) {
-        azureContainerName =
-          config.locationConstraints[azureLocation].details.azureContainerName;
+    if (
+        config.locationConstraints[azureLocation] &&
+        config.locationConstraints[azureLocation].details &&
+        config.locationConstraints[azureLocation].details.azureContainerName
+    ) {
+        azureContainerName = config.locationConstraints[azureLocation].details.azureContainerName;
     }
     return azureContainerName;
 };
@@ -195,8 +192,7 @@ utils.getAzureKeys = () => {
 
 // For contentMD5, Azure requires base64 but AWS requires hex, so convert
 // from base64 to hex
-utils.convertMD5 = contentMD5 =>
-    Buffer.from(contentMD5, 'base64').toString('hex');
+utils.convertMD5 = contentMD5 => Buffer.from(contentMD5, 'base64').toString('hex');
 
 utils.expectedETag = (body, getStringified = true) => {
     const eTagValue = crypto.createHash('md5').update(body).digest('hex');
@@ -215,9 +211,11 @@ utils.waitForVersioningBeforePut = async (s3, bucket, callback) => {
         for (let attempt = 1; attempt <= MAX_VERSIONING_CHECKS; attempt++) {
             let versioningEnabled = false;
             try {
-                const versioningResult = await s3.send(new GetBucketVersioningCommand({
-                    Bucket: bucket,
-                }));
+                const versioningResult = await s3.send(
+                    new GetBucketVersioningCommand({
+                        Bucket: bucket,
+                    }),
+                );
                 versioningEnabled = versioningResult.Status === 'Enabled';
             } catch {
                 if (attempt === MAX_VERSIONING_CHECKS) {
@@ -244,34 +242,44 @@ utils.waitForVersioningBeforePut = async (s3, bucket, callback) => {
 };
 
 utils.putToAwsBackend = (s3, bucket, key, body, callback) => {
-    const result = s3.send(new PutObjectCommand({ 
-        Bucket: bucket, 
-        Key: key, 
-        Body: body,
-        Metadata: { 'scal-location-constraint': awsLocation } 
-    }));
+    const result = s3.send(
+        new PutObjectCommand({
+            Bucket: bucket,
+            Key: key,
+            Body: body,
+            Metadata: { 'scal-location-constraint': awsLocation },
+        }),
+    );
     if (callback) {
-        return result.then(data => {
-            callback(null, data.VersionId);
-        }).catch(err => {
-            s3.send(new ListObjectVersionsCommand({
-                Bucket: bucket,
-                Prefix: key,
-            })).then(data => {
-            callback(err, data.VersionId);
-            }).catch(listErr => {
-                callback(listErr);
+        return result
+            .then(data => {
+                callback(null, data.VersionId);
+            })
+            .catch(err => {
+                s3.send(
+                    new ListObjectVersionsCommand({
+                        Bucket: bucket,
+                        Prefix: key,
+                    }),
+                )
+                    .then(data => {
+                        callback(err, data.VersionId);
+                    })
+                    .catch(listErr => {
+                        callback(listErr);
+                    });
             });
-        });
     }
     return result;
 };
 
 utils.enableVersioning = (s3, bucket, callback) => {
-    const promise = s3.send(new PutBucketVersioningCommand({ 
-        Bucket: bucket,
-        VersioningConfiguration: versioningEnabled 
-    }));
+    const promise = s3.send(
+        new PutBucketVersioningCommand({
+            Bucket: bucket,
+            VersioningConfiguration: versioningEnabled,
+        }),
+    );
 
     if (callback) {
         return promise.then(() => callback()).catch(err => callback(err));
@@ -280,11 +288,13 @@ utils.enableVersioning = (s3, bucket, callback) => {
 };
 
 utils.suspendVersioning = (s3, bucket, callback) => {
-    const promise = s3.send(new PutBucketVersioningCommand({ 
-        Bucket: bucket,
-        VersioningConfiguration: versioningSuspended 
-    }));
-    
+    const promise = s3.send(
+        new PutBucketVersioningCommand({
+            Bucket: bucket,
+            VersioningConfiguration: versioningSuspended,
+        }),
+    );
+
     if (callback) {
         return promise.then(() => callback()).catch(err => callback(err));
     }
@@ -355,8 +365,7 @@ utils.putNullVersionsToAws = async (s3, bucket, key, versions, callback) => {
 
 utils.getAndAssertResult = (s3, params, callback) => {
     const run = async () => {
-        const { bucket, key, body, versionId, expectedVersionId,
-            expectedTagCount, expectedError } = params;
+        const { bucket, key, body, versionId, expectedVersionId, expectedTagCount, expectedError } = params;
         const getParams = {
             Bucket: bucket,
             Key: key,
@@ -379,20 +388,25 @@ utils.getAndAssertResult = (s3, params, callback) => {
                     chunks.push(chunk);
                 }
                 const bodyBuffer = Buffer.concat(chunks);
-                assert.equal(bodyBuffer.length, data.ContentLength,
+                assert.equal(
+                    bodyBuffer.length,
+                    data.ContentLength,
                     `received data of length ${bodyBuffer.length} does not ` +
-                    'equal expected based on ' +
-                    `content length header of ${data.ContentLength}`);
+                        'equal expected based on ' +
+                        `content length header of ${data.ContentLength}`,
+                );
                 const expectedMD5 = utils.expectedETag(body, false);
                 const resultMD5 = utils.expectedETag(bodyBuffer, false);
                 assert.strictEqual(resultMD5, expectedMD5);
             }
             if (!expectedVersionId) {
-                assert.strictEqual(data.VersionId, undefined,
-                    `Expected undefined VersionId but got ${data.VersionId}`);
+                assert.strictEqual(data.VersionId, undefined, `Expected undefined VersionId but got ${data.VersionId}`);
             } else {
-                assert.strictEqual(data.VersionId, expectedVersionId,
-                    `Expected VersionId ${expectedVersionId} but got ${data.VersionId}`);
+                assert.strictEqual(
+                    data.VersionId,
+                    expectedVersionId,
+                    `Expected VersionId ${expectedVersionId} but got ${data.VersionId}`,
+                );
             }
             if (expectedTagCount && expectedTagCount === '0') {
                 assert.strictEqual(data.TagCount, undefined);
@@ -425,11 +439,11 @@ utils.getAwsRetry = (params, retryNumber, assertCb) => {
     };
     const maxRetries = 2;
     const timeout = retryTimeout[retryNumber];
-    
+
     const executeGet = async () => {
         try {
-            const params = { 
-                Bucket: awsBucket, 
+            const params = {
+                Bucket: awsBucket,
                 Key: key,
                 VersionId: versionId,
             };
@@ -439,7 +453,7 @@ utils.getAwsRetry = (params, retryNumber, assertCb) => {
             return { success: false, error: err };
         }
     };
-    
+
     return setTimeout(() => {
         executeGet()
             .then(result => {
@@ -461,9 +475,8 @@ utils.getAwsRetry = (params, retryNumber, assertCb) => {
 
 utils.awsGetLatestVerId = (key, body, cb) =>
     utils.getAwsRetry({ key }, 0, async (err, result) => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `getting object from AWS, got error ${err}`);
-        
+        assert.strictEqual(err, null, 'Expected success ' + `getting object from AWS, got error ${err}`);
+
         const chunks = [];
         for await (const chunk of result.Body) {
             chunks.push(chunk);
@@ -492,19 +505,21 @@ function _getTaggingConfig(tags) {
 utils.tagging.putTaggingAndAssert = async (s3, params) => {
     const { bucket, key, tags, versionId, expectedVersionId, expectedError } = params;
     const taggingConfig = _getTaggingConfig(tags);
-    
+
     try {
-        const data = await s3.send(new PutObjectTaggingCommand({ 
-            Bucket: bucket, 
-            Key: key, 
-            VersionId: versionId,
-            Tagging: taggingConfig 
-        }));
-        
+        const data = await s3.send(
+            new PutObjectTaggingCommand({
+                Bucket: bucket,
+                Key: key,
+                VersionId: versionId,
+                Tagging: taggingConfig,
+            }),
+        );
+
         if (expectedError) {
             throw new Error(`Expected error ${expectedError} but got success`);
         }
-        
+
         if (expectedVersionId) {
             assert.strictEqual(data.VersionId, expectedVersionId);
         } else {
@@ -521,35 +536,35 @@ utils.tagging.putTaggingAndAssert = async (s3, params) => {
 };
 
 utils.tagging.getTaggingAndAssert = async (s3, params) => {
-    const { bucket, key, expectedTags, versionId, expectedVersionId,
-        expectedError, getObject } = params;
-    
+    const { bucket, key, expectedTags, versionId, expectedVersionId, expectedError, getObject } = params;
+
     try {
-        const data = await s3.send(new GetObjectTaggingCommand({ 
-            Bucket: bucket, 
-            Key: key, 
-            VersionId: versionId 
-        }));
-        
+        const data = await s3.send(
+            new GetObjectTaggingCommand({
+                Bucket: bucket,
+                Key: key,
+                VersionId: versionId,
+            }),
+        );
+
         if (expectedError) {
             throw new Error(`Expected error ${expectedError} but got success`);
         }
-        
+
         const expectedTagResult = _getTaggingConfig(expectedTags);
         const expectedTagCount = `${Object.keys(expectedTags).length}`;
-        
+
         if (expectedVersionId) {
             assert.strictEqual(data.VersionId, expectedVersionId);
         } else {
             assert.strictEqual(data.VersionId, undefined);
         }
         assert.deepStrictEqual(data.TagSet, expectedTagResult.TagSet);
-        
+
         if (getObject !== false) {
-            await utils.getAndAssertResult(s3, { bucket, key, versionId,
-                expectedVersionId, expectedTagCount });
+            await utils.getAndAssertResult(s3, { bucket, key, versionId, expectedVersionId, expectedTagCount });
         }
-        
+
         return data.VersionId;
     } catch (err) {
         if (expectedError) {
@@ -562,26 +577,32 @@ utils.tagging.getTaggingAndAssert = async (s3, params) => {
 
 utils.tagging.delTaggingAndAssert = async (s3, params) => {
     const { bucket, key, versionId, expectedVersionId, expectedError } = params;
-    
+
     try {
-        const data = await s3.send(new DeleteObjectTaggingCommand({ 
-            Bucket: bucket, 
-            Key: key,
-            VersionId: versionId 
-        }));
-        
+        const data = await s3.send(
+            new DeleteObjectTaggingCommand({
+                Bucket: bucket,
+                Key: key,
+                VersionId: versionId,
+            }),
+        );
+
         if (expectedError) {
             throw new Error(`Expected error ${expectedError} but got success`);
         }
-        
+
         if (expectedVersionId) {
             assert.strictEqual(data.VersionId, expectedVersionId);
         } else {
             assert.strictEqual(data.VersionId, undefined);
         }
-        
-        await utils.tagging.getTaggingAndAssert(s3, { 
-            bucket, key, versionId, expectedVersionId, expectedTags: {} 
+
+        await utils.tagging.getTaggingAndAssert(s3, {
+            bucket,
+            key,
+            versionId,
+            expectedVersionId,
+            expectedTags: {},
         });
         return undefined;
     } catch (err) {
@@ -596,13 +617,15 @@ utils.tagging.delTaggingAndAssert = async (s3, params) => {
 utils.tagging.awsGetAssertTags = async params => {
     const { key, versionId, expectedTags } = params;
     const expectedTagResult = _getTaggingConfig(expectedTags);
-    
-    const data = await awsS3.send(new GetObjectTaggingCommand({ 
-        Bucket: awsBucket, 
-        Key: key,
-        VersionId: versionId 
-    }));
-    
+
+    const data = await awsS3.send(
+        new GetObjectTaggingCommand({
+            Bucket: awsBucket,
+            Key: key,
+            VersionId: versionId,
+        }),
+    );
+
     assert.deepStrictEqual(data.TagSet, expectedTagResult.TagSet);
 };
 

@@ -1,7 +1,7 @@
 services:
   cloudserver:
     image: ${CLOUDSERVER_IMAGE}
-    network_mode: "host"
+    network_mode: 'host'
     volumes:
       - /tmp/ssl:/ssl
       - /tmp/ssl-kmip:/tmp/ssl-kmip
@@ -56,13 +56,13 @@ services:
     depends_on:
       - redis
     extra_hosts:
-      - "bucketwebsitetester.s3-website-us-east-1.amazonaws.com:127.0.0.1"
-      - "pykmip.local:127.0.0.1"
+      - 'bucketwebsitetester.s3-website-us-east-1.amazonaws.com:127.0.0.1'
+      - 'pykmip.local:127.0.0.1'
   redis:
     image: redis:alpine
-    network_mode: "host"
+    network_mode: 'host'
   squid:
-    network_mode: "host"
+    network_mode: 'host'
     profiles: ['ci-proxy']
     image: scality/ci-squid
     command: >-
@@ -76,7 +76,7 @@ services:
     volumes:
       - /tmp/ssl:/ssl
   pykmip:
-    network_mode: "host"
+    network_mode: 'host'
     profiles: ['pykmip']
     image: ${PYKMIP_IMAGE:-ghcr.io/scality/cloudserver/pykmip}
     volumes:
@@ -86,17 +86,17 @@ services:
       - ../pykmip/policy.json:/etc/pykmip/policies/policy.json
       - ../pykmip/server.conf:/etc/pykmip/server.conf
   localkms:
-    network_mode: "host"
+    network_mode: 'host'
     profiles: ['localkms']
     image: ${KMS_IMAGE:-nsmithuk/local-kms:3.11.7}
   mongo:
-    network_mode: "host"
+    network_mode: 'host'
     profiles: ['mongo']
     image: ${MONGODB_IMAGE}
     volumes:
       - /tmp/artifacts/${JOB_NAME}:/logs
   sproxyd:
-    network_mode: "host"
+    network_mode: 'host'
     profiles: ['sproxyd']
     image: sproxyd-standalone
     build: ./sproxyd
@@ -109,7 +109,7 @@ services:
     profiles: ['vault']
     user: root
     command: sh -c "chmod 400 tests/utils/keyfile && yarn start > /artifacts/vault.log 2> /artifacts/vault-stderr.log"
-    network_mode: "host"
+    network_mode: 'host'
     volumes:
       - /tmp/artifacts/${JOB_NAME}:/artifacts
       - ./vault-config.json:/conf/config.json:ro

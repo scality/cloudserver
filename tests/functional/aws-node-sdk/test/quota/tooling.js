@@ -41,14 +41,14 @@ const sendRequest = async (method, host, path, body = '', config = null, signing
     // Get credentials - use same source as S3 client configuration
     let accessKeyId = config?.accessKey || config?.accessKeyId;
     let secretAccessKey = config?.secretKey || config?.secretAccessKey;
-    
+
     // If not provided in config, use getCredentials (matches S3 client credential source)
     if (!accessKeyId || !secretAccessKey) {
         const defaultCreds = getCredentials('default');
         accessKeyId = accessKeyId || defaultCreds.accessKeyId;
         secretAccessKey = secretAccessKey || defaultCreds.secretAccessKey;
     }
-    
+
     if (!accessKeyId || !secretAccessKey) {
         throw new Error('Missing accessKeyId or secretAccessKey in config');
     }

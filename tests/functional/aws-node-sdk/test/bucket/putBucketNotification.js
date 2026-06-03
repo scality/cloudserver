@@ -1,7 +1,9 @@
-const { S3Client,
+const {
+    S3Client,
     CreateBucketCommand,
     DeleteBucketCommand,
-    PutBucketNotificationConfigurationCommand } = require('@aws-sdk/client-s3');
+    PutBucketNotificationConfigurationCommand,
+} = require('@aws-sdk/client-s3');
 
 const checkError = require('../../lib/utility/checkError');
 const getConfig = require('../support/config');
@@ -52,7 +54,7 @@ describe('aws-sdk test put notification configuration', () => {
     });
 
     describe('config rules', () => {
-        beforeEach(() => s3.send(new CreateBucketCommand({Bucket: bucket})));
+        beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
         afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
@@ -72,8 +74,7 @@ describe('aws-sdk test put notification configuration', () => {
         });
 
         it('should put notification configuration on bucket with multiple events', async () => {
-            const params = getNotificationParams(
-                ['s3:ObjectCreated:*', 's3:ObjectRemoved:*']);
+            const params = getNotificationParams(['s3:ObjectCreated:*', 's3:ObjectRemoved:*']);
             await s3.send(new PutBucketNotificationConfigurationCommand(params));
         });
 
@@ -136,29 +137,35 @@ describe('aws-sdk test put notification configuration', () => {
                 it(`should handle ${event} events based on lifecycle rules configuration`, done => {
                     const params = getNotificationParams([event]);
                     const shouldSucceed = config.supportedLifecycleRules.some(rule => rule.includes(supported));
-                    s3.send(new PutBucketNotificationConfigurationCommand(params)).then(() => {
-                        if (shouldSucceed) {
-                            done();
-                        } else {
-                            done(new Error('Expected MalformedXML error but operation succeeded'));
-                        }
-                    }).catch(err => {
-                        if (shouldSucceed) {
-                            done(err);
-                        } else {
-                            checkError(err, 'MalformedXML', 400);
-                            done();
-                        }
-                    });
+                    s3.send(new PutBucketNotificationConfigurationCommand(params))
+                        .then(() => {
+                            if (shouldSucceed) {
+                                done();
+                            } else {
+                                done(new Error('Expected MalformedXML error but operation succeeded'));
+                            }
+                        })
+                        .catch(err => {
+                            if (shouldSucceed) {
+                                done(err);
+                            } else {
+                                checkError(err, 'MalformedXML', 400);
+                                done();
+                            }
+                        });
                 });
             });
         });
     });
 
     describe('cross origin requests', () => {
-        beforeEach(() => s3.send(new CreateBucketCommand({
-            Bucket: bucket,
-        })));
+        beforeEach(() =>
+            s3.send(
+                new CreateBucketCommand({
+                    Bucket: bucket,
+                }),
+            ),
+        );
 
         afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
@@ -167,11 +174,13 @@ describe('aws-sdk test put notification configuration', () => {
                 it: 'return valid error with invalid arn',
                 param: getNotificationParams(null, 'invalidArn'),
                 error: 'MalformedXML',
-            }, {
+            },
+            {
                 it: 'return valid error with unknown/unsupported destination',
                 param: getNotificationParams(null, 'arn:scality:bucketnotif:::target100'),
                 error: 'InvalidArgument',
-            }, {
+            },
+            {
                 it: 'save notification configuration with correct arn',
                 param: getNotificationParams(),
             },

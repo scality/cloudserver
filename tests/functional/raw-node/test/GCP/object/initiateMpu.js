@@ -9,12 +9,8 @@ const {
     gcpCreateMultipartUploadWithRetry,
     waitForBucketReady,
 } = require('../../../utils/gcpUtils');
-const { getRealAwsConfig } =
-    require('../../../../aws-node-sdk/test/support/awsConfig');
-const {
-    CreateBucketCommand,
-    DeleteBucketCommand,
-} = require('@aws-sdk/client-s3');
+const { getRealAwsConfig } = require('../../../../aws-node-sdk/test/support/awsConfig');
+const { CreateBucketCommand, DeleteBucketCommand } = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
 const bucketNames = {
@@ -35,29 +31,17 @@ describe('GCP: Initiate MPU', function testSuite() {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
         const buckets = Object.values(bucketNames);
-        await async.eachSeries(
-            buckets,
-            async bucket => {
-                await gcpRetry(
-                    gcpClient,
-                    new CreateBucketCommand({ Bucket: bucket.Name }),
-                );
-                await waitForBucketReady(gcpClient, bucket.Name);
-            },
-        );
+        await async.eachSeries(buckets, async bucket => {
+            await gcpRetry(gcpClient, new CreateBucketCommand({ Bucket: bucket.Name }));
+            await waitForBucketReady(gcpClient, bucket.Name);
+        });
     });
 
     after(async () => {
         const buckets = Object.values(bucketNames);
-        await async.eachSeries(
-            buckets,
-            async bucket => {
-                await gcpRetry(
-                    gcpClient,
-                    new DeleteBucketCommand({ Bucket: bucket.Name }),
-                );
-            },
-        );
+        await async.eachSeries(buckets, async bucket => {
+            await gcpRetry(gcpClient, new DeleteBucketCommand({ Bucket: bucket.Name }));
+        });
     });
 
     it('Should create a multipart upload object', async () => {
@@ -72,32 +56,37 @@ describe('GCP: Initiate MPU', function testSuite() {
 
         const mpuInitKey = `${keyName}-${createRes.UploadId}/init`;
         const headRes = await new Promise((resolve, reject) => {
-            gcpClient.headObject({
-                Bucket: bucketNames.mpu.Name,
-                Key: mpuInitKey,
-            }, (err, res) => {
-                if (err) {
-                    process.stdout
-                        .write(`err in retrieving object ${err}`);
-                    return reject(err);
-                }
-                return resolve(res);
-            });
+            gcpClient.headObject(
+                {
+                    Bucket: bucketNames.mpu.Name,
+                    Key: mpuInitKey,
+                },
+                (err, res) => {
+                    if (err) {
+                        process.stdout.write(`err in retrieving object ${err}`);
+                        return reject(err);
+                    }
+                    return resolve(res);
+                },
+            );
         });
         assert.strictEqual(headRes.Metadata.special, specialKey);
 
         await new Promise((resolve, reject) => {
-            gcpClient.abortMultipartUpload({
-                Bucket: bucketNames.main.Name,
-                MPU: bucketNames.mpu.Name,
-                UploadId: createRes.UploadId,
-                Key: keyName,
-            }, err => {
-                if (err) {
-                    return reject(err);
-                }
-                return resolve();
-            });
+            gcpClient.abortMultipartUpload(
+                {
+                    Bucket: bucketNames.main.Name,
+                    MPU: bucketNames.mpu.Name,
+                    UploadId: createRes.UploadId,
+                    Key: keyName,
+                },
+                err => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve();
+                },
+            );
         });
     });
 });

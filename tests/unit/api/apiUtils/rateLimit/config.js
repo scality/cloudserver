@@ -138,10 +138,7 @@ describe('parseRateLimitConfig', () => {
                 serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
             };
 
-            assert.throws(
-                () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid/
-            );
+            assert.throws(() => parseRateLimitConfig(config), /rateLimiting configuration is invalid/);
         });
     });
 
@@ -151,7 +148,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"serviceUserArn" is required/
+                /rateLimiting configuration is invalid.*"serviceUserArn" is required/,
             );
         });
 
@@ -162,7 +159,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"serviceUserArn" must be a string/
+                /rateLimiting configuration is invalid.*"serviceUserArn" must be a string/,
             );
         });
     });
@@ -195,7 +192,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"nodes" must be a positive number/
+                /rateLimiting configuration is invalid.*"nodes" must be a positive number/,
             );
         });
 
@@ -207,7 +204,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"nodes" must be a positive number/
+                /rateLimiting configuration is invalid.*"nodes" must be a positive number/,
             );
         });
 
@@ -219,7 +216,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"nodes" must be an integer/
+                /rateLimiting configuration is invalid.*"nodes" must be an integer/,
             );
         });
 
@@ -231,7 +228,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"nodes" must be a number/
+                /rateLimiting configuration is invalid.*"nodes" must be a number/,
             );
         });
     });
@@ -264,7 +261,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"tokenBucketBufferSize" must be a positive number/
+                /rateLimiting configuration is invalid.*"tokenBucketBufferSize" must be a positive number/,
             );
         });
 
@@ -276,7 +273,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"tokenBucketBufferSize" must be a positive number/
+                /rateLimiting configuration is invalid.*"tokenBucketBufferSize" must be a positive number/,
             );
         });
 
@@ -288,7 +285,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"tokenBucketBufferSize" must be an integer/
+                /rateLimiting configuration is invalid.*"tokenBucketBufferSize" must be an integer/,
             );
         });
     });
@@ -321,7 +318,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"tokenBucketRefillThreshold" must be a positive number/
+                /rateLimiting configuration is invalid.*"tokenBucketRefillThreshold" must be a positive number/,
             );
         });
 
@@ -333,7 +330,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"tokenBucketRefillThreshold" must be a positive number/
+                /rateLimiting configuration is invalid.*"tokenBucketRefillThreshold" must be a positive number/,
             );
         });
 
@@ -345,7 +342,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"tokenBucketRefillThreshold" must be an integer/
+                /rateLimiting configuration is invalid.*"tokenBucketRefillThreshold" must be an integer/,
             );
         });
     });
@@ -359,7 +356,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"bucket" must be of type object/
+                /rateLimiting configuration is invalid.*"bucket" must be of type object/,
             );
         });
 
@@ -391,7 +388,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"bucket.defaultConfig" must be of type object/
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig" must be of type object/,
             );
         });
 
@@ -407,7 +404,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond" must be of type object/
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond" must be of type object/,
             );
         });
 
@@ -442,8 +439,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                // eslint-disable-next-line max-len
-                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.limit" must be larger than or equal to 0/
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.limit" must be larger than or equal to 0/,
             );
         });
 
@@ -461,7 +457,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.limit" is required/
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.limit" is required/,
             );
         });
     });
@@ -482,7 +478,7 @@ describe('parseRateLimitConfig', () => {
             const result = parseRateLimitConfig(config);
             assert.strictEqual(
                 result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity,
-                constants.rateLimitDefaultBurstCapacity
+                constants.rateLimitDefaultBurstCapacity,
             );
         });
 
@@ -500,9 +496,7 @@ describe('parseRateLimitConfig', () => {
             };
 
             const result = parseRateLimitConfig(config);
-            assert.strictEqual(
-                result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity, 20
-            );
+            assert.strictEqual(result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity, 20);
         });
 
         it('should throw if burstCapacity is negative', () => {
@@ -520,8 +514,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                // eslint-disable-next-line max-len
-                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.burstCapacity" must be a positive number/
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.burstCapacity" must be a positive number/,
             );
         });
 
@@ -540,8 +533,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                // eslint-disable-next-line max-len
-                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.burstCapacity" must be a positive number/
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.burstCapacity" must be a positive number/,
             );
         });
 
@@ -560,8 +552,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                // eslint-disable-next-line max-len
-                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.burstCapacity" must be a number/
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.burstCapacity" must be a number/,
             );
         });
 
@@ -579,9 +570,7 @@ describe('parseRateLimitConfig', () => {
             };
 
             const result = parseRateLimitConfig(config);
-            assert.strictEqual(
-                result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity, 1.5
-            );
+            assert.strictEqual(result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity, 1.5);
         });
     });
 
@@ -608,7 +597,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"bucket.configCacheTTL" must be a positive number/
+                /rateLimiting configuration is invalid.*"bucket.configCacheTTL" must be a positive number/,
             );
         });
 
@@ -622,7 +611,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"bucket.configCacheTTL" must be a positive number/
+                /rateLimiting configuration is invalid.*"bucket.configCacheTTL" must be a positive number/,
             );
         });
 
@@ -636,7 +625,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"bucket.configCacheTTL" must be an integer/
+                /rateLimiting configuration is invalid.*"bucket.configCacheTTL" must be an integer/,
             );
         });
 
@@ -650,7 +639,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"bucket.configCacheTTL" must be a number/
+                /rateLimiting configuration is invalid.*"bucket.configCacheTTL" must be a number/,
             );
         });
     });
@@ -664,7 +653,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"error" must be of type object/
+                /rateLimiting configuration is invalid.*"error" must be of type object/,
             );
         });
 
@@ -707,7 +696,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"error.statusCode" must be larger than or equal to 400/
+                /rateLimiting configuration is invalid.*"error.statusCode" must be larger than or equal to 400/,
             );
         });
 
@@ -722,7 +711,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"error.statusCode" must be less than or equal to 599/
+                /rateLimiting configuration is invalid.*"error.statusCode" must be less than or equal to 599/,
             );
         });
 
@@ -737,7 +726,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"error.statusCode" must be an integer/
+                /rateLimiting configuration is invalid.*"error.statusCode" must be an integer/,
             );
         });
 
@@ -752,7 +741,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"error.statusCode" must be a number/
+                /rateLimiting configuration is invalid.*"error.statusCode" must be a number/,
             );
         });
 
@@ -781,7 +770,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"error.message" must be a string/
+                /rateLimiting configuration is invalid.*"error.message" must be a string/,
             );
         });
 
@@ -838,7 +827,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"error.code" must be a string/
+                /rateLimiting configuration is invalid.*"error.code" must be a string/,
             );
         });
     });
@@ -857,10 +846,7 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            assert.throws(
-                () => parseRateLimitConfig(config),
-                /requestsPerSecond\.limit \(3\) must be >= nodes \(5\)/
-            );
+            assert.throws(() => parseRateLimitConfig(config), /requestsPerSecond\.limit \(3\) must be >= nodes \(5\)/);
         });
     });
 
@@ -929,10 +915,7 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            assert.throws(
-                () => parseRateLimitConfig(config),
-                /requestsPerSecond\.limit \(7\) must be >= nodes \(10\)/
-            );
+            assert.throws(() => parseRateLimitConfig(config), /requestsPerSecond\.limit \(7\) must be >= nodes \(10\)/);
         });
 
         it('should throw if account is not an object', () => {
@@ -943,7 +926,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"account" must be of type object/
+                /rateLimiting configuration is invalid.*"account" must be of type object/,
             );
         });
 
@@ -982,7 +965,7 @@ describe('parseRateLimitConfig', () => {
             const result = parseRateLimitConfig(config);
             assert.strictEqual(
                 result.account.defaultConfig.RequestsPerSecond.BurstCapacity,
-                constants.rateLimitDefaultBurstCapacity
+                constants.rateLimitDefaultBurstCapacity,
             );
         });
 
@@ -1000,9 +983,7 @@ describe('parseRateLimitConfig', () => {
             };
 
             const result = parseRateLimitConfig(config);
-            assert.strictEqual(
-                result.account.defaultConfig.RequestsPerSecond.BurstCapacity, 20
-            );
+            assert.strictEqual(result.account.defaultConfig.RequestsPerSecond.BurstCapacity, 20);
         });
 
         it('should accept float burstCapacity', () => {
@@ -1019,9 +1000,7 @@ describe('parseRateLimitConfig', () => {
             };
 
             const result = parseRateLimitConfig(config);
-            assert.strictEqual(
-                result.account.defaultConfig.RequestsPerSecond.BurstCapacity, 1.5
-            );
+            assert.strictEqual(result.account.defaultConfig.RequestsPerSecond.BurstCapacity, 1.5);
         });
 
         it('should throw if burstCapacity is negative', () => {
@@ -1039,8 +1018,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                // eslint-disable-next-line max-len
-                /rateLimiting configuration is invalid.*"account.defaultConfig.requestsPerSecond.burstCapacity" must be a positive number/
+                /rateLimiting configuration is invalid.*"account.defaultConfig.requestsPerSecond.burstCapacity" must be a positive number/,
             );
         });
 
@@ -1059,8 +1037,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                // eslint-disable-next-line max-len
-                /rateLimiting configuration is invalid.*"account.defaultConfig.requestsPerSecond.burstCapacity" must be a positive number/
+                /rateLimiting configuration is invalid.*"account.defaultConfig.requestsPerSecond.burstCapacity" must be a positive number/,
             );
         });
 
@@ -1079,8 +1056,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                // eslint-disable-next-line max-len
-                /rateLimiting configuration is invalid.*"account.defaultConfig.requestsPerSecond.burstCapacity" must be a number/
+                /rateLimiting configuration is invalid.*"account.defaultConfig.requestsPerSecond.burstCapacity" must be a number/,
             );
         });
     });
@@ -1094,7 +1070,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"unknownField" is not allowed/
+                /rateLimiting configuration is invalid.*"unknownField" is not allowed/,
             );
         });
 
@@ -1108,7 +1084,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"bucket.unknownField" is not allowed/
+                /rateLimiting configuration is invalid.*"bucket.unknownField" is not allowed/,
             );
         });
 
@@ -1123,7 +1099,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"error.unknownField" is not allowed/
+                /rateLimiting configuration is invalid.*"error.unknownField" is not allowed/,
             );
         });
     });
@@ -1171,7 +1147,7 @@ describe('parseRateLimitConfig', () => {
             assert.strictEqual(result.bucket.defaultConfig.RequestsPerSecond.Limit, 100);
             assert.strictEqual(
                 result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity,
-                constants.rateLimitDefaultBurstCapacity
+                constants.rateLimitDefaultBurstCapacity,
             );
         });
 

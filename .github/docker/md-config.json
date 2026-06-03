@@ -11,7 +11,7 @@
     "logLevel": "info",
     "env": {
         "METADATA_NEW_BUCKETS_VFORMAT": "v0",
-        "S3_VERSION_ID_ENCODING_TYPE":"hex"
+        "S3_VERSION_ID_ENCODING_TYPE": "hex"
     },
     "migration": {
         "deploy": false,

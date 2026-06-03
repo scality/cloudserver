@@ -29,13 +29,10 @@ describe('test limit config cache storage', () => {
 
     it('should add config to cache', () => {
         setCachedConfig(namespace.bucket, 'foo', 10, constants.rateLimitDefaultConfigCacheTTL);
-        assert.deepStrictEqual(
-            configCache.get(`${namespace.bucket}:foo`),
-            {
-                expiry: now + constants.rateLimitDefaultConfigCacheTTL,
-                value: 10,
-            }
-        );
+        assert.deepStrictEqual(configCache.get(`${namespace.bucket}:foo`), {
+            expiry: now + constants.rateLimitDefaultConfigCacheTTL,
+            value: 10,
+        });
     });
 
     it('should get a non expired config', () => {

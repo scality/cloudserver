@@ -24,16 +24,13 @@ const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 const uploadKey = '$makememulti';
 const sixMBObjectETag = '"f3a9fb2071d3503b703938a74eb99846"';
 const lastPieceETag = '"555e4cd2f9eff38109d7a3ab13995a32"';
-const overviewKey = `overview${splitter}$makememulti${splitter}4db92ccc-` +
-    'd89d-49d3-9fa6-e9c2c1eb31b0';
+const overviewKey = `overview${splitter}$makememulti${splitter}4db92ccc-` + 'd89d-49d3-9fa6-e9c2c1eb31b0';
 const partOneKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00001`;
-const partTwoKey = '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0' +
-    `${splitter}00002`;
+const partTwoKey = '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0' + `${splitter}00002`;
 const partThreeKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00003`;
 const partFourKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00004`;
 const partFiveKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00005`;
-const partKeys = [partOneKey, partTwoKey, partThreeKey, partFourKey,
-    partFiveKey];
+const partKeys = [partOneKey, partTwoKey, partThreeKey, partFourKey, partFiveKey];
 const partChecksumValues = {
     crc32: 'AAAAAA==',
     crc32c: 'AQAAAA==',
@@ -54,8 +51,7 @@ function makeListRequest() {
     };
 }
 
-function setOverviewChecksum(checksumAlgorithm, checksumType,
-    checksumIsDefault) {
+function setOverviewChecksum(checksumAlgorithm, checksumType, checksumIsDefault) {
     const overview = inMemMetadata.keyMaps.get(mpuBucket).get(overviewKey);
     overview.checksumAlgorithm = checksumAlgorithm;
     overview.checksumType = checksumType;
@@ -72,74 +68,82 @@ describe('List Parts API', () => {
     beforeEach(done => {
         cleanup();
         const creationDate = new Date().toJSON();
-        const sampleNormalBucketInstance = new BucketInfo(bucketName,
-            canonicalID, authInfo.getAccountDisplayName(), creationDate,
-            BucketInfo.currentModelVersion());
-        const sampleMPUInstance = new BucketInfo(mpuBucket,
-            'admin', 'admin', creationDate, BucketInfo.currentModelVersion());
-        metadata.createBucket(bucketName, sampleNormalBucketInstance, log,
-            () => {
-                metadata.createBucket(mpuBucket, sampleMPUInstance, log, () => {
-                    inMemMetadata.keyMaps.get(mpuBucket).set(overviewKey, {
-                        'id': '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0',
-                        'owner-display-name': authInfo.getAccountDisplayName(),
-                        'owner-id': canonicalID,
-                        'initiator': {
-                            DisplayName: authInfo.getAccountDisplayName(),
-                            ID: canonicalID,
-                        },
-                        'key': '$makememulti',
-                        'initiated': '2015-11-30T22:40:07.858Z',
-                        'uploadId': '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0',
-                        'acl': {
-                            Canned: 'private',
-                            FULL_CONTROL: [],
-                            WRITE_ACP: [],
-                            READ: [],
-                            READ_ACP: [],
-                        },
-                        'eventualStorageBucket': 'freshestbucket',
-                        'mdBucketModelVersion': 2,
-                    });
-
-                    inMemMetadata.keyMaps.get(mpuBucket).set(partOneKey, {
-                        'key': partOneKey,
-                        'last-modified': '2015-11-30T22:41:18.658Z',
-                        'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
-                        'content-length': '6000000',
-                        'partLocations': ['068db6a6745a79d54c1b29ff99f9f131'],
-                    });
-                    inMemMetadata.keyMaps.get(mpuBucket).set(partTwoKey, {
-                        'key': partTwoKey,
-                        'last-modified': '2015-11-30T22:41:40.207Z',
-                        'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
-                        'content-length': '6000000',
-                        'partLocations': ['ff22f316b16956ff5118c93abce7d62d'],
-                    });
-                    inMemMetadata.keyMaps.get(mpuBucket).set(partThreeKey, {
-                        'key': partThreeKey,
-                        'last-modified': '2015-11-30T22:41:52.102Z',
-                        'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
-                        'content-length': '6000000',
-                        'partLocations': ['dea282f70edb6fc5f9433cd6f525d4a6'],
-                    });
-                    inMemMetadata.keyMaps.get(mpuBucket).set(partFourKey, {
-                        'key': partFourKey,
-                        'last-modified': '2015-11-30T22:42:03.493Z',
-                        'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
-                        'content-length': '6000000',
-                        'partLocations': ['afe24bc40153982e1f7f28066f7af6a4'],
-                    });
-                    inMemMetadata.keyMaps.get(mpuBucket).set(partFiveKey, {
-                        'key': partFiveKey,
-                        'last-modified': '2015-11-30T22:42:22.876Z',
-                        'content-md5': '555e4cd2f9eff38109d7a3ab13995a32',
-                        'content-length': '18',
-                        'partLocations': ['85bc16f5769687070fb13cfe66b5e41f'],
-                    });
-                    done();
+        const sampleNormalBucketInstance = new BucketInfo(
+            bucketName,
+            canonicalID,
+            authInfo.getAccountDisplayName(),
+            creationDate,
+            BucketInfo.currentModelVersion(),
+        );
+        const sampleMPUInstance = new BucketInfo(
+            mpuBucket,
+            'admin',
+            'admin',
+            creationDate,
+            BucketInfo.currentModelVersion(),
+        );
+        metadata.createBucket(bucketName, sampleNormalBucketInstance, log, () => {
+            metadata.createBucket(mpuBucket, sampleMPUInstance, log, () => {
+                inMemMetadata.keyMaps.get(mpuBucket).set(overviewKey, {
+                    id: '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0',
+                    'owner-display-name': authInfo.getAccountDisplayName(),
+                    'owner-id': canonicalID,
+                    initiator: {
+                        DisplayName: authInfo.getAccountDisplayName(),
+                        ID: canonicalID,
+                    },
+                    key: '$makememulti',
+                    initiated: '2015-11-30T22:40:07.858Z',
+                    uploadId: '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0',
+                    acl: {
+                        Canned: 'private',
+                        FULL_CONTROL: [],
+                        WRITE_ACP: [],
+                        READ: [],
+                        READ_ACP: [],
+                    },
+                    eventualStorageBucket: 'freshestbucket',
+                    mdBucketModelVersion: 2,
                 });
+
+                inMemMetadata.keyMaps.get(mpuBucket).set(partOneKey, {
+                    key: partOneKey,
+                    'last-modified': '2015-11-30T22:41:18.658Z',
+                    'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
+                    'content-length': '6000000',
+                    partLocations: ['068db6a6745a79d54c1b29ff99f9f131'],
+                });
+                inMemMetadata.keyMaps.get(mpuBucket).set(partTwoKey, {
+                    key: partTwoKey,
+                    'last-modified': '2015-11-30T22:41:40.207Z',
+                    'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
+                    'content-length': '6000000',
+                    partLocations: ['ff22f316b16956ff5118c93abce7d62d'],
+                });
+                inMemMetadata.keyMaps.get(mpuBucket).set(partThreeKey, {
+                    key: partThreeKey,
+                    'last-modified': '2015-11-30T22:41:52.102Z',
+                    'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
+                    'content-length': '6000000',
+                    partLocations: ['dea282f70edb6fc5f9433cd6f525d4a6'],
+                });
+                inMemMetadata.keyMaps.get(mpuBucket).set(partFourKey, {
+                    key: partFourKey,
+                    'last-modified': '2015-11-30T22:42:03.493Z',
+                    'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
+                    'content-length': '6000000',
+                    partLocations: ['afe24bc40153982e1f7f28066f7af6a4'],
+                });
+                inMemMetadata.keyMaps.get(mpuBucket).set(partFiveKey, {
+                    key: partFiveKey,
+                    'last-modified': '2015-11-30T22:42:22.876Z',
+                    'content-md5': '555e4cd2f9eff38109d7a3ab13995a32',
+                    'content-length': '18',
+                    partLocations: ['85bc16f5769687070fb13cfe66b5e41f'],
+                });
+                done();
             });
+        });
     });
 
     it('should list all parts of a multipart upload', done => {
@@ -153,32 +157,20 @@ describe('List Parts API', () => {
                 assert.strictEqual(json.ListPartsResult.Key[0], uploadKey);
                 assert.strictEqual(json.ListPartsResult.UploadId[0], uploadId);
                 assert.strictEqual(json.ListPartsResult.MaxParts[0], '1000');
-                assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0],
-                                   authInfo.getCanonicalID());
-                assert.strictEqual(json.ListPartsResult.IsTruncated[0],
-                    'false');
-                assert.strictEqual(json.ListPartsResult.PartNumberMarker,
-                                   undefined);
-                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker,
-                                   undefined);
-                assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0],
-                                   '1');
-                assert.strictEqual(json.ListPartsResult.Part[0].ETag[0],
-                                   sixMBObjectETag);
-                assert.strictEqual(json.ListPartsResult.Part[0].Size[0],
-                                   '6000000');
-                assert.strictEqual(json.ListPartsResult.Part[4].PartNumber[0],
-                                   '5');
-                assert.strictEqual(json.ListPartsResult.Part[4].ETag[0],
-                                   lastPieceETag);
+                assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0], authInfo.getCanonicalID());
+                assert.strictEqual(json.ListPartsResult.IsTruncated[0], 'false');
+                assert.strictEqual(json.ListPartsResult.PartNumberMarker, undefined);
+                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker, undefined);
+                assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0], '1');
+                assert.strictEqual(json.ListPartsResult.Part[0].ETag[0], sixMBObjectETag);
+                assert.strictEqual(json.ListPartsResult.Part[0].Size[0], '6000000');
+                assert.strictEqual(json.ListPartsResult.Part[4].PartNumber[0], '5');
+                assert.strictEqual(json.ListPartsResult.Part[4].ETag[0], lastPieceETag);
                 assert.strictEqual(json.ListPartsResult.Part[4].Size[0], '18');
                 assert.strictEqual(json.ListPartsResult.Part.length, 5);
-                assert.strictEqual(json.ListPartsResult.ChecksumAlgorithm,
-                    undefined);
-                assert.strictEqual(json.ListPartsResult.ChecksumType,
-                    undefined);
-                assert.strictEqual(json.ListPartsResult.Part[0].ChecksumSHA256,
-                    undefined);
+                assert.strictEqual(json.ListPartsResult.ChecksumAlgorithm, undefined);
+                assert.strictEqual(json.ListPartsResult.ChecksumType, undefined);
+                assert.strictEqual(json.ListPartsResult.Part[0].ChecksumSHA256, undefined);
                 done();
             });
         });
@@ -194,15 +186,10 @@ describe('List Parts API', () => {
             assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
                 assert.strictEqual(err, null);
-                assert.strictEqual(json.ListPartsResult.ChecksumAlgorithm[0],
-                    'SHA256');
-                assert.strictEqual(json.ListPartsResult.ChecksumType[0],
-                    'COMPOSITE');
-                assert.strictEqual(
-                    json.ListPartsResult.Part[0].ChecksumSHA256[0],
-                    partChecksumValues.sha256);
-                assert.strictEqual(json.ListPartsResult.Part[1].ChecksumSHA256,
-                    undefined);
+                assert.strictEqual(json.ListPartsResult.ChecksumAlgorithm[0], 'SHA256');
+                assert.strictEqual(json.ListPartsResult.ChecksumType[0], 'COMPOSITE');
+                assert.strictEqual(json.ListPartsResult.Part[0].ChecksumSHA256[0], partChecksumValues.sha256);
+                assert.strictEqual(json.ListPartsResult.Part[1].ChecksumSHA256, undefined);
                 done();
             });
         });
@@ -210,8 +197,7 @@ describe('List Parts API', () => {
 
     it('should omit default CRC64NVME checksum fields', done => {
         setOverviewChecksum('crc64nvme', 'FULL_OBJECT', true);
-        setPartChecksum(partOneKey, 'crc64nvme',
-            partChecksumValues.crc64nvme);
+        setPartChecksum(partOneKey, 'crc64nvme', partChecksumValues.crc64nvme);
 
         const listRequest = makeListRequest();
 
@@ -219,20 +205,15 @@ describe('List Parts API', () => {
             assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
                 assert.strictEqual(err, null);
-                assert.strictEqual(json.ListPartsResult.ChecksumAlgorithm,
-                    undefined);
-                assert.strictEqual(json.ListPartsResult.ChecksumType,
-                    undefined);
-                assert.strictEqual(
-                    json.ListPartsResult.Part[0].ChecksumCRC64NVME,
-                    undefined);
+                assert.strictEqual(json.ListPartsResult.ChecksumAlgorithm, undefined);
+                assert.strictEqual(json.ListPartsResult.ChecksumType, undefined);
+                assert.strictEqual(json.ListPartsResult.Part[0].ChecksumCRC64NVME, undefined);
                 done();
             });
         });
     });
 
-    it('should omit root checksum fields if only checksumAlgorithm is set',
-    done => {
+    it('should omit root checksum fields if only checksumAlgorithm is set', done => {
         setOverviewChecksum('sha256', undefined, false);
 
         const listRequest = makeListRequest();
@@ -241,10 +222,8 @@ describe('List Parts API', () => {
             assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
                 assert.strictEqual(err, null);
-                assert.strictEqual(json.ListPartsResult.ChecksumAlgorithm,
-                    undefined);
-                assert.strictEqual(json.ListPartsResult.ChecksumType,
-                    undefined);
+                assert.strictEqual(json.ListPartsResult.ChecksumAlgorithm, undefined);
+                assert.strictEqual(json.ListPartsResult.ChecksumType, undefined);
                 done();
             });
         });
@@ -259,17 +238,14 @@ describe('List Parts API', () => {
             assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
                 assert.strictEqual(err, null);
-                assert.strictEqual(json.ListPartsResult.ChecksumAlgorithm,
-                    undefined);
-                assert.strictEqual(json.ListPartsResult.ChecksumType,
-                    undefined);
+                assert.strictEqual(json.ListPartsResult.ChecksumAlgorithm, undefined);
+                assert.strictEqual(json.ListPartsResult.ChecksumType, undefined);
                 done();
             });
         });
     });
 
-    it('should render checksum tags for every supported part algorithm',
-    done => {
+    it('should render checksum tags for every supported part algorithm', done => {
         setOverviewChecksum('sha256', 'COMPOSITE', false);
 
         const checksumCases = [
@@ -280,8 +256,7 @@ describe('List Parts API', () => {
             ['sha256', 'ChecksumSHA256'],
         ];
         checksumCases.forEach(([algorithm], index) => {
-            setPartChecksum(partKeys[index], algorithm,
-                partChecksumValues[algorithm]);
+            setPartChecksum(partKeys[index], algorithm, partChecksumValues[algorithm]);
         });
 
         const listRequest = makeListRequest();
@@ -291,9 +266,7 @@ describe('List Parts API', () => {
             parseString(xml, (err, json) => {
                 assert.strictEqual(err, null);
                 checksumCases.forEach(([algorithm, xmlTag], index) => {
-                    assert.strictEqual(
-                        json.ListPartsResult.Part[index][xmlTag][0],
-                        partChecksumValues[algorithm]);
+                    assert.strictEqual(json.ListPartsResult.Part[index][xmlTag][0], partChecksumValues[algorithm]);
                 });
                 done();
             });
@@ -307,16 +280,18 @@ describe('List Parts API', () => {
         data.listParts = (mpuInfo, request, lcCheckFn, log, callback) =>
             callback(null, {
                 IsTruncated: false,
-                Contents: [{
-                    partNumber: 1,
-                    value: {
-                        LastModified: '2015-11-30T22:41:18.658Z',
-                        ETag: 'f3a9fb2071d3503b703938a74eb99846',
-                        Size: 6000000,
-                        ChecksumAlgorithm: 'sha256',
-                        ChecksumValue: partChecksumValues.sha256,
+                Contents: [
+                    {
+                        partNumber: 1,
+                        value: {
+                            LastModified: '2015-11-30T22:41:18.658Z',
+                            ETag: 'f3a9fb2071d3503b703938a74eb99846',
+                            Size: 6000000,
+                            ChecksumAlgorithm: 'sha256',
+                            ChecksumValue: partChecksumValues.sha256,
+                        },
                     },
-                }],
+                ],
             });
 
         const listRequest = makeListRequest();
@@ -327,11 +302,8 @@ describe('List Parts API', () => {
             parseString(xml, (err, json) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(json.ListPartsResult.Part.length, 1);
-                assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0],
-                    '1');
-                assert.strictEqual(
-                    json.ListPartsResult.Part[0].ChecksumSHA256[0],
-                    partChecksumValues.sha256);
+                assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0], '1');
+                assert.strictEqual(json.ListPartsResult.Part[0].ChecksumSHA256[0], partChecksumValues.sha256);
                 done();
             });
         });
@@ -355,15 +327,13 @@ describe('List Parts API', () => {
         listParts(authInfo, listRequest, log, (err, xml) => {
             assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
-                assert.strictEqual(json.ListPartsResult.Key[0],
-                                   urlEncodedObjectKey);
+                assert.strictEqual(json.ListPartsResult.Key[0], urlEncodedObjectKey);
                 done();
             });
         });
     });
 
-    it('should list only up to requested number ' +
-    'of max parts of a multipart upload', done => {
+    it('should list only up to requested number ' + 'of max parts of a multipart upload', done => {
         const listRequest = {
             bucketName,
             namespace,
@@ -385,27 +355,20 @@ describe('List Parts API', () => {
                 assert.strictEqual(json.ListPartsResult.Key[0], uploadKey);
                 assert.strictEqual(json.ListPartsResult.UploadId[0], uploadId);
                 assert.strictEqual(json.ListPartsResult.MaxParts[0], '4');
-                assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0],
-                                   authInfo.getCanonicalID());
+                assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0], authInfo.getCanonicalID());
                 assert.strictEqual(json.ListPartsResult.IsTruncated[0], 'true');
-                assert.strictEqual(json.ListPartsResult.PartNumberMarker,
-                                   undefined);
-                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker[0],
-                                   '4');
-                assert.strictEqual(json.ListPartsResult.Part[2].PartNumber[0],
-                                   '3');
-                assert.strictEqual(json.ListPartsResult.Part[2].ETag[0],
-                                   sixMBObjectETag);
-                assert.strictEqual(json.ListPartsResult.Part[2].Size[0],
-                                   '6000000');
+                assert.strictEqual(json.ListPartsResult.PartNumberMarker, undefined);
+                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker[0], '4');
+                assert.strictEqual(json.ListPartsResult.Part[2].PartNumber[0], '3');
+                assert.strictEqual(json.ListPartsResult.Part[2].ETag[0], sixMBObjectETag);
+                assert.strictEqual(json.ListPartsResult.Part[2].Size[0], '6000000');
                 assert.strictEqual(json.ListPartsResult.Part.length, 4);
                 done();
             });
         });
     });
 
-    it('should list all parts if requested max-parts ' +
-    'is greater than total number of parts', done => {
+    it('should list all parts if requested max-parts ' + 'is greater than total number of parts', done => {
         const listRequest = {
             bucketName,
             namespace,
@@ -427,20 +390,13 @@ describe('List Parts API', () => {
                 assert.strictEqual(json.ListPartsResult.Key[0], uploadKey);
                 assert.strictEqual(json.ListPartsResult.UploadId[0], uploadId);
                 assert.strictEqual(json.ListPartsResult.MaxParts[0], '6');
-                assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0],
-                                   authInfo.getCanonicalID());
-                assert.strictEqual(json.ListPartsResult.IsTruncated[0],
-                    'false');
-                assert.strictEqual(json.ListPartsResult.PartNumberMarker,
-                                   undefined);
-                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker,
-                                   undefined);
-                assert.strictEqual(json.ListPartsResult.Part[2].PartNumber[0],
-                                   '3');
-                assert.strictEqual(json.ListPartsResult.Part[2].ETag[0],
-                                   sixMBObjectETag);
-                assert.strictEqual(json.ListPartsResult.Part[2].Size[0],
-                                   '6000000');
+                assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0], authInfo.getCanonicalID());
+                assert.strictEqual(json.ListPartsResult.IsTruncated[0], 'false');
+                assert.strictEqual(json.ListPartsResult.PartNumberMarker, undefined);
+                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker, undefined);
+                assert.strictEqual(json.ListPartsResult.Part[2].PartNumber[0], '3');
+                assert.strictEqual(json.ListPartsResult.Part[2].ETag[0], sixMBObjectETag);
+                assert.strictEqual(json.ListPartsResult.Part[2].Size[0], '6000000');
                 assert.strictEqual(json.ListPartsResult.Part.length, 5);
                 done();
             });
@@ -469,30 +425,21 @@ describe('List Parts API', () => {
                 assert.strictEqual(json.ListPartsResult.Key[0], uploadKey);
                 assert.strictEqual(json.ListPartsResult.UploadId[0], uploadId);
                 assert.strictEqual(json.ListPartsResult.MaxParts[0], '1000');
-                assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0],
-                                   authInfo.getCanonicalID());
-                assert.strictEqual(json.ListPartsResult.IsTruncated[0],
-                    'false');
-                assert.strictEqual(json.ListPartsResult.PartNumberMarker[0],
-                                   '2');
-                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker,
-                                   undefined);
-                assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0],
-                                   '3');
-                assert.strictEqual(json.ListPartsResult.Part[0].ETag[0],
-                                   sixMBObjectETag);
-                assert.strictEqual(json.ListPartsResult.Part[0].Size[0],
-                                   '6000000');
-                assert.strictEqual(json.ListPartsResult.Part[2].PartNumber[0],
-                                   '5');
+                assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0], authInfo.getCanonicalID());
+                assert.strictEqual(json.ListPartsResult.IsTruncated[0], 'false');
+                assert.strictEqual(json.ListPartsResult.PartNumberMarker[0], '2');
+                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker, undefined);
+                assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0], '3');
+                assert.strictEqual(json.ListPartsResult.Part[0].ETag[0], sixMBObjectETag);
+                assert.strictEqual(json.ListPartsResult.Part[0].Size[0], '6000000');
+                assert.strictEqual(json.ListPartsResult.Part[2].PartNumber[0], '5');
                 assert.strictEqual(json.ListPartsResult.Part.length, 3);
                 done();
             });
         });
     });
 
-    it('should handle a part-number-marker specified ' +
-    'and a max-parts specified', done => {
+    it('should handle a part-number-marker specified ' + 'and a max-parts specified', done => {
         const listRequest = {
             bucketName,
             namespace,
@@ -515,21 +462,14 @@ describe('List Parts API', () => {
                 assert.strictEqual(json.ListPartsResult.Key[0], uploadKey);
                 assert.strictEqual(json.ListPartsResult.UploadId[0], uploadId);
                 assert.strictEqual(json.ListPartsResult.MaxParts[0], '2');
-                assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0],
-                                   authInfo.getCanonicalID());
+                assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0], authInfo.getCanonicalID());
                 assert.strictEqual(json.ListPartsResult.IsTruncated[0], 'true');
-                assert.strictEqual(json.ListPartsResult.PartNumberMarker[0],
-                                   '2');
-                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker[0],
-                                   '4');
-                assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0],
-                                   '3');
-                assert.strictEqual(json.ListPartsResult.Part[0].ETag[0],
-                                   sixMBObjectETag);
-                assert.strictEqual(json.ListPartsResult.Part[0].Size[0],
-                                   '6000000');
-                assert.strictEqual(json.ListPartsResult.Part[1].PartNumber[0],
-                                   '4');
+                assert.strictEqual(json.ListPartsResult.PartNumberMarker[0], '2');
+                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker[0], '4');
+                assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0], '3');
+                assert.strictEqual(json.ListPartsResult.Part[0].ETag[0], sixMBObjectETag);
+                assert.strictEqual(json.ListPartsResult.Part[0].Size[0], '6000000');
+                assert.strictEqual(json.ListPartsResult.Part[1].PartNumber[0], '4');
                 assert.strictEqual(json.ListPartsResult.Part.length, 2);
                 done();
             });

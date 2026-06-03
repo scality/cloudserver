@@ -22,18 +22,19 @@ const putBucketRequest = {
     actionImplicitDenies: false,
 };
 
-const putObjectRequest = new DummyRequest({
-    bucketName,
-    namespace,
-    objectKey: objectName,
-    headers: {},
-    url: `/${bucketName}/${objectName}`,
-}, postBody);
+const putObjectRequest = new DummyRequest(
+    {
+        bucketName,
+        namespace,
+        objectKey: objectName,
+        headers: {},
+        url: `/${bucketName}/${objectName}`,
+    },
+    postBody,
+);
 
-const objectLegalHoldXml = status => '<LegalHold ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    `<Status>${status}</Status>` +
-    '</LegalHold>';
+const objectLegalHoldXml = status =>
+    '<LegalHold ' + 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' + `<Status>${status}</Status>` + '</LegalHold>';
 
 const putLegalHoldReq = status => ({
     bucketName,
@@ -64,8 +65,9 @@ describe('putObjectLegalHold API', () => {
     });
 
     describe('with Object Lock enabled on bucket', () => {
-        const bucketObjLockRequest = Object.assign({}, putBucketRequest,
-            { headers: { 'x-amz-bucket-object-lock-enabled': 'true' } });
+        const bucketObjLockRequest = Object.assign({}, putBucketRequest, {
+            headers: { 'x-amz-bucket-object-lock-enabled': 'true' },
+        });
 
         beforeEach(done => {
             bucketPut(authInfo, bucketObjLockRequest, log, err => {
@@ -75,11 +77,10 @@ describe('putObjectLegalHold API', () => {
         });
         afterEach(cleanup);
 
-        it('should update object\'s metadata with legal hold status', done => {
+        it("should update object's metadata with legal hold status", done => {
             objectPutLegalHold(authInfo, putLegalHoldReq('ON'), log, err => {
                 assert.ifError(err);
-                return metadata.getObjectMD(bucketName, objectName, {}, log,
-                (err, objMD) => {
+                return metadata.getObjectMD(bucketName, objectName, {}, log, (err, objMD) => {
                     assert.ifError(err);
                     assert.strictEqual(objMD.legalHold, true);
                     return done();
@@ -87,11 +88,10 @@ describe('putObjectLegalHold API', () => {
             });
         });
 
-        it('should update object\'s metadata with legal hold status', done => {
+        it("should update object's metadata with legal hold status", done => {
             objectPutLegalHold(authInfo, putLegalHoldReq('OFF'), log, err => {
                 assert.ifError(err);
-                return metadata.getObjectMD(bucketName, objectName, {}, log,
-                (err, objMD) => {
+                return metadata.getObjectMD(bucketName, objectName, {}, log, (err, objMD) => {
                     assert.ifError(err);
                     assert.strictEqual(objMD.legalHold, false);
                     return done();
@@ -99,11 +99,10 @@ describe('putObjectLegalHold API', () => {
             });
         });
 
-        it('should set originOp in object\'s metadata to s3:ObjectLegalHold:Put', done => {
+        it("should set originOp in object's metadata to s3:ObjectLegalHold:Put", done => {
             objectPutLegalHold(authInfo, putLegalHoldReq('ON'), log, err => {
                 assert.ifError(err);
-                return metadata.getObjectMD(bucketName, objectName, {}, log,
-                (err, objMD) => {
+                return metadata.getObjectMD(bucketName, objectName, {}, log, (err, objMD) => {
                     assert.ifError(err);
                     assert.strictEqual(objMD.originOp, 's3:ObjectLegalHold:Put');
                     return done();

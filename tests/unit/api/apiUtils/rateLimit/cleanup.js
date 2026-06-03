@@ -1,10 +1,7 @@
 const assert = require('assert');
 const sinon = require('sinon');
 
-const {
-    startCleanupJob,
-    stopCleanupJob,
-} = require('../../../../../lib/api/apiUtils/rateLimit/cleanup');
+const { startCleanupJob, stopCleanupJob } = require('../../../../../lib/api/apiUtils/rateLimit/cleanup');
 const constants = require('../../../../../constants');
 
 describe('Rate limit cleanup job', () => {
@@ -32,9 +29,11 @@ describe('Rate limit cleanup job', () => {
         startCleanupJob(mockLog, { skipUnref: true });
 
         assert(mockLog.info.calledOnce);
-        assert(mockLog.info.calledWith('Starting rate limit cleanup job', {
-            interval: constants.rateLimitCleanupInterval,
-        }));
+        assert(
+            mockLog.info.calledWith('Starting rate limit cleanup job', {
+                interval: constants.rateLimitCleanupInterval,
+            }),
+        );
         assert(setTimeoutSpy.calledOnce);
         assert.strictEqual(setTimeoutSpy.firstCall.args[1], constants.rateLimitCleanupInterval);
     });

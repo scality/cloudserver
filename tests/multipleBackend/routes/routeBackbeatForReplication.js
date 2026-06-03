@@ -32,10 +32,8 @@ const destinationAuthCredentials = {
 };
 
 // Note: for S3C tests, those conf files needs to be modified beforehand
-const dstAccountInfo = require('../../../conf/authdata.json')
-    .accounts.find(acc => acc.name === 'Replication');
-const srcAccountInfo = require('../../../conf/authdata.json')
-    .accounts.find(acc => acc.name === 'Bart');
+const dstAccountInfo = require('../../../conf/authdata.json').accounts.find(acc => acc.name === 'Replication');
+const srcAccountInfo = require('../../../conf/authdata.json').accounts.find(acc => acc.name === 'Bart');
 
 const srcBucketUtil = new BucketUtility('default', { signatureVersion: 'v4' });
 const srcS3 = srcBucketUtil.s3;
@@ -74,9 +72,7 @@ function objectMDWithUpdatedAccountInfo(data, dstAccountInfo = null) {
     const objMD = objectMDFromRequestBody(data);
 
     if (dstAccountInfo) {
-        objMD
-            .setOwnerDisplayName(dstAccountInfo.name)
-            .setOwnerId(dstAccountInfo.canonicalID);
+        objMD.setOwnerDisplayName(dstAccountInfo.name).setOwnerId(dstAccountInfo.canonicalID);
     }
 
     return objMD.getSerialized();
@@ -89,1887 +85,2851 @@ const scenarios = [
 ];
 
 scenarios.forEach(({ name, src, dst }) => {
-describe(`backbeat routes for replication (${name})`, () => {
-    const { s3: srcS3, bucketUtil: srcBucketUtil, credentials: sourceAuthCredentials } = src;
-    const { s3: dstS3, bucketUtil: dstBucketUtil, credentials: destinationAuthCredentials } = dst;
-    const { accountInfo: dstAccountInfo } = dst;
+    describe(`backbeat routes for replication (${name})`, () => {
+        const { s3: srcS3, bucketUtil: srcBucketUtil, credentials: sourceAuthCredentials } = src;
+        const { s3: dstS3, bucketUtil: dstBucketUtil, credentials: destinationAuthCredentials } = dst;
+        const { accountInfo: dstAccountInfo } = dst;
 
-    let bucketSource;
-    let bucketDestination;
-    const keyName = 'key0';
-    const storageClass = 'foo';
+        let bucketSource;
+        let bucketDestination;
+        const keyName = 'key0';
+        const storageClass = 'foo';
 
-    beforeEach(async () => {
-        bucketSource = generateUniqueBucketName('backbeatbucket-replication-source');
-        bucketDestination = generateUniqueBucketName('backbeatbucket-replication-destination');
-        await srcBucketUtil.emptyIfExists(bucketSource);
-        await srcS3.send(new CreateBucketCommand({ Bucket: bucketSource }));
-        await dstBucketUtil.emptyIfExists(bucketDestination);
-        await dstS3.send(new CreateBucketCommand({ Bucket: bucketDestination }));
-    });
-
-    afterEach(async () => {
-        await srcBucketUtil.empty(bucketSource);
-        await srcS3.send(new DeleteBucketCommand({ Bucket: bucketSource }));
-        await dstBucketUtil.empty(bucketDestination);
-        await dstS3.send(new DeleteBucketCommand({ Bucket: bucketDestination }));
-    });
-
-    it('should successfully replicate a version', done => {
-        let objMD;
-        let versionId;
-
-        async.series({
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(() => next()).catch(next),
-
-            putObject: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data=> {
-                versionId = data.VersionId;
-                return next(null, data);
-            }).catch(err => next(err)),
-
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            getMetadata: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
-                },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            replicateMetadata: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
-                },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMD,
-            }, next),
-            headObject: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: versionId
-            })).then(data => next(null, data)).catch(err => next(err)),
-            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination
-            })).then(data => next(null, data)).catch(err => next(err)),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
-
-            const headObjectRes = results.headObject;
-            assert.strictEqual(headObjectRes.VersionId, versionId);
-
-            const listObjectVersionsRes = results.listObjectVersions;
-            const { Versions } = listObjectVersionsRes;
-            assert.strictEqual(Versions.length, 1);
-            assert.strictEqual(Versions[0].IsLatest, true);
-            assert.strictEqual(Versions[0].VersionId, versionId);
-
-            return done();
+        beforeEach(async () => {
+            bucketSource = generateUniqueBucketName('backbeatbucket-replication-source');
+            bucketDestination = generateUniqueBucketName('backbeatbucket-replication-destination');
+            await srcBucketUtil.emptyIfExists(bucketSource);
+            await srcS3.send(new CreateBucketCommand({ Bucket: bucketSource }));
+            await dstBucketUtil.emptyIfExists(bucketDestination);
+            await dstS3.send(new CreateBucketCommand({ Bucket: bucketDestination }));
         });
-    });
 
-    it('should successfully replicate a version and update it', done => {
-        let objMD;
-        let versionId;
+        afterEach(async () => {
+            await srcBucketUtil.empty(bucketSource);
+            await srcS3.send(new DeleteBucketCommand({ Bucket: bucketSource }));
+            await dstBucketUtil.empty(bucketDestination);
+            await dstS3.send(new DeleteBucketCommand({ Bucket: bucketDestination }));
+        });
 
-        async.series({
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
+        it('should successfully replicate a version', done => {
+            let objMD;
+            let versionId;
 
-            putObject: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => {
-                versionId = data.VersionId;
-                next(null, data);
-            }).catch(err => next(err)),
+            async.series(
+                {
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(() => next())
+                            .catch(next),
 
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
+                    putObject: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                versionId = data.VersionId;
+                                return next(null, data);
+                            })
+                            .catch(err => next(err)),
 
-            getMetadata: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    getMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
+                                return next();
+                            },
+                        ),
+                    replicateMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMD,
+                            },
+                            next,
+                        ),
+                    headObject: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: versionId,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    listObjectVersions: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
                 },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            replicateMetadata: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const headObjectRes = results.headObject;
+                    assert.strictEqual(headObjectRes.VersionId, versionId);
+
+                    const listObjectVersionsRes = results.listObjectVersions;
+                    const { Versions } = listObjectVersionsRes;
+                    assert.strictEqual(Versions.length, 1);
+                    assert.strictEqual(Versions[0].IsLatest, true);
+                    assert.strictEqual(Versions[0].VersionId, versionId);
+
+                    return done();
                 },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMD,
-            }, next),
-            updateMetadata: next => {
-                const { result, error } = ObjectMD.createFromBlob(objMD);
-                if (error) {
-                    return next(error);
-                }
-                result.setTags({ foo: 'bar' });
-                return makeBackbeatRequest({
-                    method: 'PUT',
-                    resourceType: 'metadata',
-                    bucket: bucketDestination,
-                    objectKey: keyName,
-                    queryObj: {
-                        versionId,
+            );
+        });
+
+        it('should successfully replicate a version and update it', done => {
+            let objMD;
+            let versionId;
+
+            async.series(
+                {
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    putObject: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                versionId = data.VersionId;
+                                next(null, data);
+                            })
+                            .catch(err => next(err)),
+
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    getMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
+                                return next();
+                            },
+                        ),
+                    replicateMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMD,
+                            },
+                            next,
+                        ),
+                    updateMetadata: next => {
+                        const { result, error } = ObjectMD.createFromBlob(objMD);
+                        if (error) {
+                            return next(error);
+                        }
+                        result.setTags({ foo: 'bar' });
+                        return makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: result.getSerialized(),
+                            },
+                            next,
+                        );
                     },
-                    authCredentials: destinationAuthCredentials,
-                    requestBody: result.getSerialized(),
-                }, next);
-            },
-            getObjectTagging: next => dstS3.send(new GetObjectTaggingCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: versionId
-            })).then(data => next(null, data)).catch(err => next(err)),
-            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination
-            })).then(data => next(null, data)).catch(err => next(err)),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
+                    getObjectTagging: next =>
+                        dstS3
+                            .send(
+                                new GetObjectTaggingCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: versionId,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    listObjectVersions: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                },
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
 
-            const getObjectTaggingRes = results.getObjectTagging;
-            assert.strictEqual(getObjectTaggingRes.VersionId, versionId);
-            assert.deepStrictEqual(getObjectTaggingRes.TagSet, [{ Key: 'foo', Value: 'bar' }]);
+                    const getObjectTaggingRes = results.getObjectTagging;
+                    assert.strictEqual(getObjectTaggingRes.VersionId, versionId);
+                    assert.deepStrictEqual(getObjectTaggingRes.TagSet, [{ Key: 'foo', Value: 'bar' }]);
 
-            const listObjectVersionsRes = results.listObjectVersions;
-            const { Versions } = listObjectVersionsRes;
-            assert.strictEqual(Versions.length, 1);
-            assert.strictEqual(Versions[0].IsLatest, true);
-            assert.strictEqual(Versions[0].VersionId, versionId);
+                    const listObjectVersionsRes = results.listObjectVersions;
+                    const { Versions } = listObjectVersionsRes;
+                    assert.strictEqual(Versions.length, 1);
+                    assert.strictEqual(Versions[0].IsLatest, true);
+                    assert.strictEqual(Versions[0].VersionId, versionId);
 
-            return done();
+                    return done();
+                },
+            );
         });
-    });
 
-    it('should successfully replicate a version and update account info', done => {
-        let objMD;
-        let versionId;
+        it('should successfully replicate a version and update account info', done => {
+            let objMD;
+            let versionId;
 
-        async.series({
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
+            async.series(
+                {
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
 
-            putObject: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => {
-                versionId = data.VersionId;
-                next(null, data);
-            }).catch(err => next(err)),
+                    putObject: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                versionId = data.VersionId;
+                                next(null, data);
+                            })
+                            .catch(err => next(err)),
 
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
 
-            getMetadata: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
+                    getMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                // AccountInfo not provided here as the replicateMetadata request should do it
+                                objMD = objectMDWithUpdatedAccountInfo(data, null);
+                                return next();
+                            },
+                        ),
+                    replicateMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                    // Specifying the account id in the query string
+                                    // should make it update the account info in the
+                                    // metadata to the destination account info
+                                    accountId: dstAccountInfo.shortid,
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMD,
+                            },
+                            next,
+                        ),
+                    getDestinationMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: destinationAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                return next(null, objectMDFromRequestBody(data));
+                            },
+                        ),
                 },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                // AccountInfo not provided here as the replicateMetadata request should do it
-                objMD = objectMDWithUpdatedAccountInfo(data, null);
-                return next();
-            }),
-            replicateMetadata: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
-                    // Specifying the account id in the query string
-                    // should make it update the account info in the
-                    // metadata to the destination account info
-                    accountId: dstAccountInfo.shortid,
-                },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMD,
-            }, next),
-            getDestinationMetadata: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
-                },
-                authCredentials: destinationAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                return next(null, objectMDFromRequestBody(data));
-            }),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
 
-            const dstObjMD = results.getDestinationMetadata;
-            assert.strictEqual(dstObjMD.getOwnerDisplayName(), dstAccountInfo.name);
-            assert.strictEqual(dstObjMD.getOwnerId(), dstAccountInfo.canonicalID);
+                    const dstObjMD = results.getDestinationMetadata;
+                    assert.strictEqual(dstObjMD.getOwnerDisplayName(), dstAccountInfo.name);
+                    assert.strictEqual(dstObjMD.getOwnerId(), dstAccountInfo.canonicalID);
 
-            return done();
+                    return done();
+                },
+            );
         });
-    });
 
-    it('should fail to replicate a version if the provided account is invalid', done => {
-        let objMD;
-        let versionId;
+        it('should fail to replicate a version if the provided account is invalid', done => {
+            let objMD;
+            let versionId;
 
-        async.series({
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
+            async.series(
+                {
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
 
-            putObject: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => {
-                versionId = data.VersionId;
-                return next(null, data);
-            }).catch(err => next(err)),
+                    putObject: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                versionId = data.VersionId;
+                                return next(null, data);
+                            })
+                            .catch(err => next(err)),
 
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
 
-            getMetadata: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
+                    getMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                // AccountInfo not provided here as the replicateMetadata request should do it
+                                objMD = objectMDWithUpdatedAccountInfo(data, null);
+                                return next();
+                            },
+                        ),
+                    replicateMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                    accountId: '888888888888', // Vault v1 differentiate InvalidAccountId from NoSuchEntity
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMD,
+                            },
+                            next,
+                        ),
                 },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                // AccountInfo not provided here as the replicateMetadata request should do it
-                objMD = objectMDWithUpdatedAccountInfo(data, null);
-                return next();
-            }),
-            replicateMetadata: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
-                    accountId: '888888888888', // Vault v1 differentiate InvalidAccountId from NoSuchEntity
+                err => {
+                    assert.strictEqual(err.code, process.env.S3_END_TO_END ? 'NoSuchEntity' : 'AccountNotFound');
+                    return done();
                 },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMD,
-            }, next),
-        }, err => {
-            assert.strictEqual(err.code, process.env.S3_END_TO_END ? 'NoSuchEntity' : 'AccountNotFound');
-            return done();
+            );
         });
-    });
 
-    it('should successfully replicate multiple versions and keep original order', done => {
-        let objMDCurrent, objMDNonCurrent;
-        let versionIdCurrent, versionIdNonCurrent;
+        it('should successfully replicate multiple versions and keep original order', done => {
+            let objMDCurrent, objMDNonCurrent;
+            let versionIdCurrent, versionIdNonCurrent;
 
-        async.series({
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
+            async.series(
+                {
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
 
-            putObjectNonCurrent: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => {
-                versionIdNonCurrent = data.VersionId;
-                return next(null, data);
-            }).catch(err => next(err)),
+                    putObjectNonCurrent: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                versionIdNonCurrent = data.VersionId;
+                                return next(null, data);
+                            })
+                            .catch(err => next(err)),
 
-            putObjectCurrent: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => {
-                versionIdCurrent = data.VersionId;
-                return next(null, data);
-            }).catch(err => next(err)),
+                    putObjectCurrent: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                versionIdCurrent = data.VersionId;
+                                return next(null, data);
+                            })
+                            .catch(err => next(err)),
 
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
 
-            getMetadataNonCurrent: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: versionIdNonCurrent,
+                    getMetadataNonCurrent: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: versionIdNonCurrent,
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMDNonCurrent = objectMDWithUpdatedAccountInfo(
+                                    data,
+                                    src === dst ? null : dstAccountInfo,
+                                );
+                                return next();
+                            },
+                        ),
+                    getMetadataCurrent: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: versionIdCurrent,
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMDCurrent = objectMDWithUpdatedAccountInfo(
+                                    data,
+                                    src === dst ? null : dstAccountInfo,
+                                );
+                                return next();
+                            },
+                        ),
+                    // replicating the objects in the reverse order
+                    replicateMetadataCurrent: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: versionIdCurrent,
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMDCurrent,
+                            },
+                            next,
+                        ),
+                    replicateMetadataNonCurrent: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: versionIdNonCurrent,
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMDNonCurrent,
+                            },
+                            next,
+                        ),
+                    listObjectVersions: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
                 },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMDNonCurrent = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            getMetadataCurrent: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: versionIdCurrent,
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const listObjectVersionsRes = results.listObjectVersions;
+                    const { Versions } = listObjectVersionsRes;
+                    assert.strictEqual(Versions.length, 2);
+
+                    const [currentVersion, nonCurrentVersion] = Versions;
+
+                    assert.strictEqual(currentVersion.IsLatest, true);
+                    assert.strictEqual(currentVersion.VersionId, versionIdCurrent);
+
+                    assert.strictEqual(nonCurrentVersion.IsLatest, false);
+                    assert.strictEqual(nonCurrentVersion.VersionId, versionIdNonCurrent);
+
+                    return done();
                 },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMDCurrent = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            // replicating the objects in the reverse order
-            replicateMetadataCurrent: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: versionIdCurrent,
-                },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMDCurrent,
-            }, next),
-            replicateMetadataNonCurrent: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: versionIdNonCurrent,
-                },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMDNonCurrent,
-            }, next),
-            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination
-            })).then(data => next(null, data)).catch(err => next(err)),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
-
-            const listObjectVersionsRes = results.listObjectVersions;
-            const { Versions } = listObjectVersionsRes;
-            assert.strictEqual(Versions.length, 2);
-
-            const [currentVersion, nonCurrentVersion] = Versions;
-
-            assert.strictEqual(currentVersion.IsLatest, true);
-            assert.strictEqual(currentVersion.VersionId, versionIdCurrent);
-
-            assert.strictEqual(nonCurrentVersion.IsLatest, false);
-            assert.strictEqual(nonCurrentVersion.VersionId, versionIdNonCurrent);
-
-            return done();
+            );
         });
-    });
 
-    it('should successfully replicate a delete marker', done => {
-        let objMDVersion, objMDDeleteMarker;
-        let versionIdVersion, versionIdDeleteMarker;
+        it('should successfully replicate a delete marker', done => {
+            let objMDVersion, objMDDeleteMarker;
+            let versionIdVersion, versionIdDeleteMarker;
 
-        async.series({
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
+            async.series(
+                {
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
 
-            putObject: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => {
-                versionIdVersion = data.VersionId;
-                return next(null, data);
-            }).catch(err => next(err)),
+                    putObject: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                versionIdVersion = data.VersionId;
+                                return next(null, data);
+                            })
+                            .catch(err => next(err)),
 
-            deleteObject: next => srcS3.send(new DeleteObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName
-            })).then(data => {
-                versionIdDeleteMarker = data.VersionId;
-                return next(null, data);
-            }).catch(err => next(err)),
+                    deleteObject: next =>
+                        srcS3
+                            .send(
+                                new DeleteObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                }),
+                            )
+                            .then(data => {
+                                versionIdDeleteMarker = data.VersionId;
+                                return next(null, data);
+                            })
+                            .catch(err => next(err)),
 
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
 
-            getMetadataVersion: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: versionIdVersion,
+                    getMetadataVersion: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: versionIdVersion,
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMDVersion = objectMDWithUpdatedAccountInfo(
+                                    data,
+                                    src === dst ? null : dstAccountInfo,
+                                );
+                                return next();
+                            },
+                        ),
+                    replicateMetadataVersion: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: versionIdVersion,
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMDVersion,
+                            },
+                            next,
+                        ),
+                    getMetadataDeleteMarker: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: versionIdDeleteMarker,
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMDDeleteMarker = objectMDWithUpdatedAccountInfo(
+                                    data,
+                                    src === dst ? null : dstAccountInfo,
+                                );
+                                return next();
+                            },
+                        ),
+                    replicateMetadataDeleteMarker: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: versionIdDeleteMarker,
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMDDeleteMarker,
+                            },
+                            next,
+                        ),
+                    listObjectVersions: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
                 },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMDVersion = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            replicateMetadataVersion: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: versionIdVersion,
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const listObjectVersionsRes = results.listObjectVersions;
+                    const { Versions, DeleteMarkers } = listObjectVersionsRes;
+
+                    assert.strictEqual(Versions.length, 1);
+                    assert.strictEqual(DeleteMarkers.length, 1);
+
+                    assert.strictEqual(Versions[0].IsLatest, false);
+                    assert.strictEqual(Versions[0].VersionId, versionIdVersion);
+
+                    assert.strictEqual(DeleteMarkers[0].IsLatest, true);
+                    assert.strictEqual(DeleteMarkers[0].VersionId, versionIdDeleteMarker);
+
+                    return done();
                 },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMDVersion,
-            }, next),
-            getMetadataDeleteMarker: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: versionIdDeleteMarker,
-                },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMDDeleteMarker = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            replicateMetadataDeleteMarker: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: versionIdDeleteMarker,
-                },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMDDeleteMarker,
-            }, next),
-            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination
-            })).then(data => next(null, data)).catch(err => next(err)),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
-
-            const listObjectVersionsRes = results.listObjectVersions;
-            const { Versions, DeleteMarkers } = listObjectVersionsRes;
-
-            assert.strictEqual(Versions.length, 1);
-            assert.strictEqual(DeleteMarkers.length, 1);
-
-            assert.strictEqual(Versions[0].IsLatest, false);
-            assert.strictEqual(Versions[0].VersionId, versionIdVersion);
-
-            assert.strictEqual(DeleteMarkers[0].IsLatest, true);
-            assert.strictEqual(DeleteMarkers[0].VersionId, versionIdDeleteMarker);
-
-            return done();
+            );
         });
-    });
 
-    it('should successfully replicate a null version', done => {
-        let objMD;
+        it('should successfully replicate a null version', done => {
+            let objMD;
 
-        async.series({
-            putObject: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => next(null, data)).catch(err => next(err)),
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-            getMetadata: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: 'null',
+            async.series(
+                {
+                    putObject: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    getMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
+                                return next();
+                            },
+                        ),
+                    replicateMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMD,
+                            },
+                            next,
+                        ),
+                    headObject: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: 'null',
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    listObjectVersions: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
                 },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            replicateMetadata: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: 'null',
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const headObjectRes = results.headObject;
+                    assert.strictEqual(headObjectRes.VersionId, 'null');
+
+                    const listObjectVersionsRes = results.listObjectVersions;
+                    const { Versions } = listObjectVersionsRes;
+
+                    assert.strictEqual(Versions.length, 1);
+
+                    const [currentVersion] = Versions;
+                    assert.strictEqual(currentVersion.IsLatest, true);
+                    assert.strictEqual(currentVersion.VersionId, 'null');
+
+                    return done();
                 },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMD,
-            }, next),
-            headObject: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: 'null'
-            })).then(data => next(null, data)).catch(err => next(err)),
-            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination
-            })).then(data => next(null, data)).catch(err => next(err)),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
-
-            const headObjectRes = results.headObject;
-            assert.strictEqual(headObjectRes.VersionId, 'null');
-
-            const listObjectVersionsRes = results.listObjectVersions;
-            const { Versions } = listObjectVersionsRes;
-
-            assert.strictEqual(Versions.length, 1);
-
-            const [currentVersion] = Versions;
-            assert.strictEqual(currentVersion.IsLatest, true);
-            assert.strictEqual(currentVersion.VersionId, 'null');
-
-            return done();
+            );
         });
-    });
 
-    it('should successfully replicate a suspended null version', done => {
-        let objMD;
+        it('should successfully replicate a suspended null version', done => {
+            let objMD;
 
-        async.series({
-            suspendVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Suspended' }
-            })).then(data => next(null, data)).catch(err => next(err)),
+            async.series(
+                {
+                    suspendVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Suspended' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
 
-            putObject: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => next(null, data)).catch(err => next(err)),
+                    putObject: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
 
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
 
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
 
-            getMetadata: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: 'null',
+                    getMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
+                                return next();
+                            },
+                        ),
+                    replicateMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMD,
+                            },
+                            next,
+                        ),
+                    headObject: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: 'null',
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    listObjectVersions: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
                 },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            replicateMetadata: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: 'null',
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const headObjectRes = results.headObject;
+                    assert.strictEqual(headObjectRes.VersionId, 'null');
+
+                    const listObjectVersionsRes = results.listObjectVersions;
+                    const { Versions } = listObjectVersionsRes;
+
+                    assert.strictEqual(Versions.length, 1);
+
+                    const [currentVersion] = Versions;
+                    assert.strictEqual(currentVersion.IsLatest, true);
+                    assert.strictEqual(currentVersion.VersionId, 'null');
+
+                    return done();
                 },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMD,
-            }, next),
-            headObject: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: 'null'
-            })).then(data => next(null, data)).catch(err => next(err)),
-            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination
-            })).then(data => next(null, data)).catch(err => next(err)),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
-
-            const headObjectRes = results.headObject;
-            assert.strictEqual(headObjectRes.VersionId, 'null');
-
-            const listObjectVersionsRes = results.listObjectVersions;
-            const { Versions } = listObjectVersionsRes;
-
-            assert.strictEqual(Versions.length, 1);
-
-            const [currentVersion] = Versions;
-            assert.strictEqual(currentVersion.IsLatest, true);
-            assert.strictEqual(currentVersion.VersionId, 'null');
-
-            return done();
+            );
         });
-    });
 
-    it('should successfully replicate a null version and update it', done => {
-        let objMD;
+        it('should successfully replicate a null version and update it', done => {
+            let objMD;
 
-        async.series({
-            putObject: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => next(null, data)).catch(err => next(err)),
+            async.series(
+                {
+                    putObject: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
 
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
 
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
 
-            getMetadata: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: 'null',
-                },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            replicateMetadata: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: 'null',
-                },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMD,
-            }, next),
-            updateMetadata: next => {
-                const { result, error } = ObjectMD.createFromBlob(objMD);
-                if (error) {
-                    return next(error);
-                }
-                result.setAmzStorageClass(storageClass);
-                return makeBackbeatRequest({
-                    method: 'PUT',
-                    resourceType: 'metadata',
-                    bucket: bucketDestination,
-                    objectKey: keyName,
-                    queryObj: {
-                        versionId: 'null',
+                    getMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
+                                return next();
+                            },
+                        ),
+                    replicateMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMD,
+                            },
+                            next,
+                        ),
+                    updateMetadata: next => {
+                        const { result, error } = ObjectMD.createFromBlob(objMD);
+                        if (error) {
+                            return next(error);
+                        }
+                        result.setAmzStorageClass(storageClass);
+                        return makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: result.getSerialized(),
+                            },
+                            next,
+                        );
                     },
-                    authCredentials: destinationAuthCredentials,
-                    requestBody: result.getSerialized(),
-                }, next);
-            },
-            headObject: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: 'null'
-            })).then(data => next(null, data)).catch(err => next(err)),
-            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination
-            })).then(data => next(null, data)).catch(err => next(err)),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
+                    headObject: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: 'null',
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    listObjectVersions: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                },
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
 
-            const headObjectRes = results.headObject;
-            assert.strictEqual(headObjectRes.VersionId, 'null');
-            assert.strictEqual(headObjectRes.StorageClass, storageClass);
+                    const headObjectRes = results.headObject;
+                    assert.strictEqual(headObjectRes.VersionId, 'null');
+                    assert.strictEqual(headObjectRes.StorageClass, storageClass);
 
-            const listObjectVersionsRes = results.listObjectVersions;
-            const { Versions } = listObjectVersionsRes;
+                    const listObjectVersionsRes = results.listObjectVersions;
+                    const { Versions } = listObjectVersionsRes;
 
-            assert.strictEqual(Versions.length, 1);
+                    assert.strictEqual(Versions.length, 1);
 
-            const [currentVersion] = Versions;
-            assert.strictEqual(currentVersion.IsLatest, true);
-            assert.strictEqual(currentVersion.VersionId, 'null');
-            assert.strictEqual(currentVersion.StorageClass, storageClass);
+                    const [currentVersion] = Versions;
+                    assert.strictEqual(currentVersion.IsLatest, true);
+                    assert.strictEqual(currentVersion.VersionId, 'null');
+                    assert.strictEqual(currentVersion.StorageClass, storageClass);
 
-            return done();
+                    return done();
+                },
+            );
+        });
+
+        it('should successfully put object after replicating a null version', done => {
+            let objMD;
+            let expectedVersionId;
+
+            async.series(
+                {
+                    putObjectSource: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    getMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
+                                return next();
+                            },
+                        ),
+                    replicateMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMD,
+                            },
+                            next,
+                        ),
+                    putObjectDestination: next =>
+                        dstS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                expectedVersionId = data.VersionId;
+                                return next(null, data);
+                            })
+                            .catch(err => next(err)),
+                    headObject: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: 'null',
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    listObjectVersions: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                },
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const headObjectRes = results.headObject;
+                    assert.strictEqual(headObjectRes.VersionId, 'null');
+
+                    const listObjectVersionsRes = results.listObjectVersions;
+                    const { Versions } = listObjectVersionsRes;
+
+                    assert.strictEqual(Versions.length, 2);
+
+                    const [currentVersion, nonCurrentVersion] = Versions;
+                    assert.strictEqual(currentVersion.VersionId, expectedVersionId);
+                    assert.strictEqual(nonCurrentVersion.VersionId, 'null');
+
+                    return done();
+                },
+            );
+        });
+
+        it('should replicate/put metadata to a destination that has a version', done => {
+            let objMD;
+            let firstVersionId;
+            let secondVersionId;
+
+            async.series(
+                {
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    putObjectDestination: next =>
+                        dstS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                firstVersionId = data.VersionId;
+                                return next(null, data);
+                            })
+                            .catch(err => next(err)),
+
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    putObjectSource: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                secondVersionId = data.VersionId;
+                                return next(null, data);
+                            })
+                            .catch(err => next(err)),
+
+                    getMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: secondVersionId,
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
+                                return next();
+                            },
+                        ),
+                    replicateMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: secondVersionId,
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMD,
+                            },
+                            next,
+                        ),
+                    headObjectFirstVersion: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: firstVersionId,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    headObjectSecondVersion: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: secondVersionId,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    listObjectVersions: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                },
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const firstHeadObjectRes = results.headObjectFirstVersion;
+                    assert.strictEqual(firstHeadObjectRes.VersionId, firstVersionId);
+
+                    const secondHeadObjectRes = results.headObjectSecondVersion;
+                    assert.strictEqual(secondHeadObjectRes.VersionId, secondVersionId);
+
+                    const listObjectVersionsRes = results.listObjectVersions;
+                    const { Versions } = listObjectVersionsRes;
+
+                    assert.strictEqual(Versions.length, 2);
+                    const [currentVersion, nonCurrentVersion] = Versions;
+
+                    assert.strictEqual(currentVersion.VersionId, secondVersionId);
+                    assert.strictEqual(currentVersion.IsLatest, true);
+
+                    assert.strictEqual(nonCurrentVersion.VersionId, firstVersionId);
+                    assert.strictEqual(nonCurrentVersion.IsLatest, false);
+
+                    return done();
+                },
+            );
+        });
+
+        it('should replicate/put metadata to a destination that has a null version', done => {
+            let objMD;
+            let versionId;
+
+            async.series(
+                {
+                    putObjectDestinationInitial: next =>
+                        dstS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    putObjectSource: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                versionId = data.VersionId;
+                                return next(null, data);
+                            })
+                            .catch(err => next(err)),
+
+                    getMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+
+                                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
+                                return next();
+                            },
+                        ),
+                    replicateMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMD,
+                            },
+                            next,
+                        ),
+                    headObjectNullVersion: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: 'null',
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    listObjectVersions: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                },
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const headObjectRes = results.headObjectNullVersion;
+                    assert.strictEqual(headObjectRes.VersionId, 'null');
+
+                    const listObjectVersionsRes = results.listObjectVersions;
+                    const { Versions } = listObjectVersionsRes;
+
+                    assert.strictEqual(Versions.length, 2);
+                    const [currentVersion, nonCurrentVersion] = Versions;
+
+                    assert.strictEqual(currentVersion.VersionId, versionId);
+                    assert.strictEqual(currentVersion.IsLatest, true);
+
+                    assert.strictEqual(nonCurrentVersion.VersionId, 'null');
+                    assert.strictEqual(nonCurrentVersion.IsLatest, false);
+
+                    return done();
+                },
+            );
+        });
+
+        it('should replicate/put metadata to a destination that has a suspended null version', done => {
+            let objMD;
+            let versionId;
+
+            async.series(
+                {
+                    suspendVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Suspended' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    putObjectDestinationInitial: next =>
+                        dstS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    putObjectSource: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                versionId = data.VersionId;
+                                return next(null, data);
+                            })
+                            .catch(err => next(err)),
+
+                    getMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
+                                return next();
+                            },
+                        ),
+
+                    replicateMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMD,
+                            },
+                            next,
+                        ),
+
+                    headObjectNullVersion: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: 'null',
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    listObjectVersions: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                },
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const headObjectRes = results.headObjectNullVersion;
+                    assert.strictEqual(headObjectRes.VersionId, 'null');
+
+                    const listObjectVersionsRes = results.listObjectVersions;
+                    const { Versions } = listObjectVersionsRes;
+
+                    assert.strictEqual(Versions.length, 2);
+                    const [currentVersion, nonCurrentVersion] = Versions;
+
+                    assert.strictEqual(currentVersion.VersionId, versionId);
+                    assert.strictEqual(currentVersion.IsLatest, true);
+
+                    assert.strictEqual(nonCurrentVersion.VersionId, 'null');
+                    assert.strictEqual(nonCurrentVersion.IsLatest, false);
+
+                    return done();
+                },
+            );
+        });
+
+        it('should replicate/put metadata to a destination that has a previously updated null version', done => {
+            let objMD;
+            let objMDNull;
+            let versionId;
+
+            async.series(
+                {
+                    putObjectDestinationInitial: next =>
+                        dstS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    getMetadataNullVersion: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
+                                },
+                                authCredentials: destinationAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMDNull = JSON.parse(data.body).Body;
+                                return next();
+                            },
+                        ),
+                    updateMetadataNullVersion: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMDNull,
+                            },
+                            next,
+                        ),
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    putObjectSource: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                versionId = data.VersionId;
+                                return next(null, data);
+                            })
+                            .catch(err => next(err)),
+                    getMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
+                                return next();
+                            },
+                        ),
+                    replicateMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMD,
+                            },
+                            next,
+                        ),
+                    headObjectNullVersion: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: 'null',
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    listObjectVersions: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                },
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const headObjectRes = results.headObjectNullVersion;
+                    assert.strictEqual(headObjectRes.VersionId, 'null');
+
+                    const listObjectVersionsRes = results.listObjectVersions;
+                    const { Versions } = listObjectVersionsRes;
+
+                    assert.strictEqual(Versions.length, 2);
+                    const [currentVersion, nonCurrentVersion] = Versions;
+
+                    assert.strictEqual(currentVersion.VersionId, versionId);
+                    assert.strictEqual(currentVersion.IsLatest, true);
+
+                    assert.strictEqual(nonCurrentVersion.VersionId, 'null');
+                    assert.strictEqual(nonCurrentVersion.IsLatest, false);
+
+                    return done();
+                },
+            );
+        });
+
+        it('should replicate/put metadata to a destination that has a suspended null version with internal version', done => {
+            const tagSet = [
+                {
+                    Key: 'key1',
+                    Value: 'value1',
+                },
+            ];
+            let objMD;
+            let versionId;
+
+            async.series(
+                {
+                    suspendVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Suspended' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    putObjectDestinationInitial: next =>
+                        dstS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    putObjectTagging: next =>
+                        dstS3
+                            .send(
+                                new PutObjectTaggingCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    Tagging: { TagSet: tagSet },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    putObjectSource: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                versionId = data.VersionId;
+                                next(null, data);
+                            })
+                            .catch(err => next(err)),
+                    getMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
+                                return next();
+                            },
+                        ),
+                    replicateMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMD,
+                            },
+                            next,
+                        ),
+                    headObjectNullVersion: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: 'null',
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    getObjectTaggingNullVersion: next =>
+                        dstS3
+                            .send(
+                                new GetObjectTaggingCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: 'null',
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    listObjectVersions: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                },
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const headObjectRes = results.headObjectNullVersion;
+                    assert.strictEqual(headObjectRes.VersionId, 'null');
+
+                    const getObjectTaggingRes = results.getObjectTaggingNullVersion;
+                    assert.deepStrictEqual(getObjectTaggingRes.TagSet, tagSet);
+
+                    const listObjectVersionsRes = results.listObjectVersions;
+                    const { Versions } = listObjectVersionsRes;
+
+                    assert.strictEqual(Versions.length, 2);
+                    const [currentVersion, nonCurrentVersion] = Versions;
+
+                    assert.strictEqual(currentVersion.VersionId, versionId);
+                    assert.strictEqual(currentVersion.IsLatest, true);
+
+                    assert.strictEqual(nonCurrentVersion.VersionId, 'null');
+                    assert.strictEqual(nonCurrentVersion.IsLatest, false);
+
+                    return done();
+                },
+            );
+        });
+
+        it('should mimic null version replication by crrExistingObjects, then replicate version', done => {
+            let objMDNull;
+            let objMDNullReplicated;
+            let objMDVersion;
+            let versionId;
+
+            async.series(
+                {
+                    createNullSoloMasterKey: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    simulateCrrExistingObjectsGetMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMDNull = JSON.parse(data.body).Body;
+                                assert.strictEqual(JSON.parse(objMDNull).versionId, undefined);
+                                return next();
+                            },
+                        ),
+                    simulateCrrExistingObjectsPutMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
+                                },
+                                authCredentials: sourceAuthCredentials,
+                                requestBody: objMDNull,
+                            },
+                            next,
+                        ),
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    replicateNullVersion: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMDNullReplicated = objectMDWithUpdatedAccountInfo(
+                                    data,
+                                    src === dst ? null : dstAccountInfo,
+                                );
+                                return next();
+                            },
+                        ),
+                    putReplicatedNullVersion: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMDNullReplicated,
+                            },
+                            next,
+                        ),
+                    putNewVersionSource: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                versionId = data.VersionId;
+                                return next(null, data);
+                            })
+                            .catch(err => next(err)),
+                    simulateMetadataReplicationVersion: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMDVersion = objectMDWithUpdatedAccountInfo(
+                                    data,
+                                    src === dst ? null : dstAccountInfo,
+                                );
+                                return next();
+                            },
+                        ),
+                    listObjectVersionsBeforeReplicate: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    putReplicatedVersion: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId,
+                                },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMDVersion,
+                            },
+                            next,
+                        ),
+                    checkReplicatedNullVersion: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: 'null',
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    checkReplicatedVersion: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: versionId,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    listObjectVersionsAfterReplicate: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                },
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const headObjectNullVersionRes = results.checkReplicatedNullVersion;
+                    assert.strictEqual(headObjectNullVersionRes.VersionId, 'null');
+
+                    const headObjectVersionRes = results.checkReplicatedVersion;
+                    assert.strictEqual(headObjectVersionRes.VersionId, versionId);
+
+                    const listObjectVersionsRes = results.listObjectVersionsAfterReplicate;
+                    const { Versions } = listObjectVersionsRes;
+
+                    assert.strictEqual(Versions.length, 2);
+
+                    const [currentVersion, nonCurrentVersion] = Versions;
+
+                    assert.strictEqual(currentVersion.VersionId, versionId);
+                    assert.strictEqual(currentVersion.IsLatest, true);
+
+                    assert.strictEqual(nonCurrentVersion.VersionId, 'null');
+                    assert.strictEqual(nonCurrentVersion.IsLatest, false);
+
+                    return done();
+                },
+            );
+        });
+
+        // TODO: CLDSRV-739 unskip once flaky afterEach cleanup is fixed
+        const itSkipS3CV0 = process.env.S3_END_TO_END && process.env.DEFAULT_BUCKET_KEY_FORMAT === 'v0' ? it.skip : it;
+        itSkipS3CV0('should replicate/put NULL metadata to a destination that has a version', done => {
+            let objMD;
+            let versionId;
+
+            async.series(
+                {
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    putObjectDestination: next =>
+                        dstS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                versionId = data.VersionId;
+                                return next(null, data);
+                            })
+                            .catch(err => next(err)),
+
+                    putObjectSource: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    getMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: { versionId: 'null' },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
+                                return next();
+                            },
+                        ),
+                    replicateMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: { versionId: 'null' },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMD,
+                            },
+                            next,
+                        ),
+                    headObjectByVersionId: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: versionId,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    headObjectByNullVersionId: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: 'null',
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    listObjectVersions: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                },
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const firstHeadObjectRes = results.headObjectByVersionId;
+                    assert.strictEqual(firstHeadObjectRes.VersionId, versionId);
+
+                    const secondHeadObjectRes = results.headObjectByNullVersionId;
+                    assert.strictEqual(secondHeadObjectRes.VersionId, 'null');
+
+                    const listObjectVersionsRes = results.listObjectVersions;
+                    const { Versions } = listObjectVersionsRes;
+
+                    assert.strictEqual(Versions.length, 2);
+                    const [currentVersion, nonCurrentVersion] = Versions;
+
+                    assert.strictEqual(currentVersion.VersionId, 'null');
+                    assert.strictEqual(currentVersion.IsLatest, true);
+
+                    assert.strictEqual(nonCurrentVersion.VersionId, versionId);
+                    assert.strictEqual(nonCurrentVersion.IsLatest, false);
+
+                    return done();
+                },
+            );
+        });
+
+        it('should replicate/put NULL metadata to a destination that has a null version', done => {
+            let objMD;
+
+            async.series(
+                {
+                    putObjectDestinationInitial: next =>
+                        dstS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    putObjectSource: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    putObjectTaggingSource: next =>
+                        srcS3
+                            .send(
+                                new PutObjectTaggingCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    VersionId: 'null',
+                                    Tagging: { TagSet: [{ Key: 'key1', Value: 'value1' }] },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    getMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: { versionId: 'null' },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
+                                return next();
+                            },
+                        ),
+                    replicateMetadata: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: { versionId: 'null' },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMD,
+                            },
+                            next,
+                        ),
+                    headObjectNullVersion: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: 'null',
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    getObjectTaggingNullVersion: next =>
+                        dstS3
+                            .send(
+                                new GetObjectTaggingCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: 'null',
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    listObjectVersions: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                },
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    const headObjectRes = results.headObjectNullVersion;
+                    assert.strictEqual(headObjectRes.VersionId, 'null');
+
+                    const getObjectTaggingRes = results.getObjectTaggingNullVersion;
+                    assert.deepStrictEqual(getObjectTaggingRes.TagSet, [{ Key: 'key1', Value: 'value1' }]);
+
+                    const listObjectVersionsRes = results.listObjectVersions;
+                    const { Versions } = listObjectVersionsRes;
+
+                    assert.strictEqual(Versions.length, 1);
+                    const [currentVersion] = Versions;
+
+                    assert.strictEqual(currentVersion.VersionId, 'null');
+                    assert.strictEqual(currentVersion.IsLatest, true);
+
+                    return done();
+                },
+            );
+        });
+
+        itSkipS3CV0('should replicate/put a lifecycled NULL metadata to a destination that has a version', done => {
+            let objMDUpdated;
+            let objMDReplicated;
+            let versionId;
+
+            async.series(
+                {
+                    enableVersioningDestination: next =>
+                        dstS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketDestination,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    putObjectDestination: next =>
+                        dstS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => {
+                                versionId = data.VersionId;
+                                return next(null, data);
+                            })
+                            .catch(err => next(err)),
+
+                    putObjectSource: next =>
+                        srcS3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketSource,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+
+                    enableVersioningSource: next =>
+                        srcS3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketSource,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    // === LIFECYCLE SIMULATION PHASE ===
+                    // Lifecycle Simulation: GET current null version metadata
+                    getSourceNullVersionForLifecycle: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: { versionId: 'null' },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMDUpdated = JSON.parse(data.body).Body;
+                                return next(null, data);
+                            },
+                        ),
+                    // Lifecycle Simulation: Apply lifecycle changes to null version metadata
+                    // Lifecycle changes can consist of:
+                    // - storage class transitions (STANDARD -> IA -> GLACIER)
+                    // - data location changes (different storage backend)
+                    // Here metadata is unchanged for the simulation
+                    applyLifecycleToSourceNullVersion: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: { versionId: 'null' },
+                                authCredentials: sourceAuthCredentials,
+                                requestBody: objMDUpdated,
+                            },
+                            next,
+                        ),
+                    // === REPLICATION PHASE ===
+                    // Replication: GET lifecycled metadata from source for replication
+                    getSourceLifecycledNullVersionForReplication: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket: bucketSource,
+                                objectKey: keyName,
+                                queryObj: { versionId: 'null' },
+                                authCredentials: sourceAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                objMDReplicated = objectMDWithUpdatedAccountInfo(
+                                    data,
+                                    src === dst ? null : dstAccountInfo,
+                                );
+                                return next(null, data);
+                            },
+                        ),
+                    // Replication: PUT lifecycled null version to destination
+                    replicateLifecycledNullVersionToDestination: next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket: bucketDestination,
+                                objectKey: keyName,
+                                queryObj: { versionId: 'null' },
+                                authCredentials: destinationAuthCredentials,
+                                requestBody: objMDReplicated,
+                            },
+                            next,
+                        ),
+                    headObjectByVersionId: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: versionId,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    headObjectByNullVersion: next =>
+                        dstS3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucketDestination,
+                                    Key: keyName,
+                                    VersionId: 'null',
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                    listObjectVersionsDestination: next =>
+                        dstS3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucketDestination,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(err => next(err)),
+                },
+                (err, results) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    const firstHeadObjectRes = results.headObjectByVersionId;
+                    assert.strictEqual(firstHeadObjectRes.VersionId, versionId);
+
+                    const secondHeadObjectRes = results.headObjectByNullVersion;
+                    assert.strictEqual(secondHeadObjectRes.VersionId, 'null');
+
+                    const listObjectVersionsRes = results.listObjectVersionsDestination;
+                    const { Versions } = listObjectVersionsRes;
+
+                    assert.strictEqual(Versions.length, 2);
+                    const [currentVersion, nonCurrentVersion] = Versions;
+
+                    assert.strictEqual(currentVersion.VersionId, 'null');
+                    assert.strictEqual(currentVersion.IsLatest, true);
+
+                    assert.strictEqual(nonCurrentVersion.VersionId, versionId);
+                    assert.strictEqual(nonCurrentVersion.IsLatest, false);
+
+                    return done();
+                },
+            );
         });
     });
-
-    it('should successfully put object after replicating a null version', done => {
-        let objMD;
-        let expectedVersionId;
-
-        async.series({
-            putObjectSource: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            getMetadata: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: 'null',
-                },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            replicateMetadata: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: 'null',
-                },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMD,
-            }, next),
-            putObjectDestination: next => dstS3.send(new PutObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => {
-                expectedVersionId = data.VersionId;
-                return next(null, data);
-            }).catch(err => next(err)),
-            headObject: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: 'null'
-            })).then(data => next(null, data)).catch(err => next(err)),
-            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination
-            })).then(data => next(null, data)).catch(err => next(err)),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
-
-            const headObjectRes = results.headObject;
-            assert.strictEqual(headObjectRes.VersionId, 'null');
-
-            const listObjectVersionsRes = results.listObjectVersions;
-            const { Versions } = listObjectVersionsRes;
-
-            assert.strictEqual(Versions.length, 2);
-
-            const [currentVersion, nonCurrentVersion] = Versions;
-            assert.strictEqual(currentVersion.VersionId, expectedVersionId);
-            assert.strictEqual(nonCurrentVersion.VersionId, 'null');
-
-            return done();
-        });
-    });
-
-    it('should replicate/put metadata to a destination that has a version', done => {
-        let objMD;
-        let firstVersionId;
-        let secondVersionId;
-
-        async.series({
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            putObjectDestination: next => dstS3.send(new PutObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => {
-                firstVersionId = data.VersionId;
-                return next(null, data);
-            }).catch(err => next(err)),
-
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            putObjectSource: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => {
-                secondVersionId = data.VersionId;
-                return next(null, data);
-            }).catch(err => next(err)),
-
-            getMetadata: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: secondVersionId,
-                },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            replicateMetadata: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: secondVersionId,
-                },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMD,
-            }, next),
-            headObjectFirstVersion: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: firstVersionId
-            })).then(data => next(null, data)).catch(err => next(err)),
-            headObjectSecondVersion: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: secondVersionId
-            })).then(data => next(null, data)).catch(err => next(err)),
-            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination
-            })).then(data => next(null, data)).catch(err => next(err)),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
-
-            const firstHeadObjectRes = results.headObjectFirstVersion;
-            assert.strictEqual(firstHeadObjectRes.VersionId, firstVersionId);
-
-            const secondHeadObjectRes = results.headObjectSecondVersion;
-            assert.strictEqual(secondHeadObjectRes.VersionId, secondVersionId);
-
-            const listObjectVersionsRes = results.listObjectVersions;
-            const { Versions } = listObjectVersionsRes;
-
-            assert.strictEqual(Versions.length, 2);
-            const [currentVersion, nonCurrentVersion] = Versions;
-
-            assert.strictEqual(currentVersion.VersionId, secondVersionId);
-            assert.strictEqual(currentVersion.IsLatest, true);
-
-            assert.strictEqual(nonCurrentVersion.VersionId, firstVersionId);
-            assert.strictEqual(nonCurrentVersion.IsLatest, false);
-
-            return done();
-        });
-    });
-
-    it('should replicate/put metadata to a destination that has a null version', done => {
-        let objMD;
-        let versionId;
-
-        async.series({
-            putObjectDestinationInitial: next => dstS3.send(new PutObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            putObjectSource: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => {
-                versionId = data.VersionId;
-                return next(null, data);
-            }).catch(err => next(err)),
-
-            getMetadata: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
-                },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-
-                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            replicateMetadata: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
-                },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMD,
-            }, next),
-            headObjectNullVersion: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: 'null'
-            })).then(data => next(null, data)).catch(err => next(err)),
-            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination
-            })).then(data => next(null, data)).catch(err => next(err)),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
-
-            const headObjectRes = results.headObjectNullVersion;
-            assert.strictEqual(headObjectRes.VersionId, 'null');
-
-            const listObjectVersionsRes = results.listObjectVersions;
-            const { Versions } = listObjectVersionsRes;
-
-            assert.strictEqual(Versions.length, 2);
-            const [currentVersion, nonCurrentVersion] = Versions;
-
-            assert.strictEqual(currentVersion.VersionId, versionId);
-            assert.strictEqual(currentVersion.IsLatest, true);
-
-            assert.strictEqual(nonCurrentVersion.VersionId, 'null');
-            assert.strictEqual(nonCurrentVersion.IsLatest, false);
-
-            return done();
-        });
-    });
-
-    it('should replicate/put metadata to a destination that has a suspended null version', done => {
-    let objMD;
-    let versionId;
-
-    async.series({
-        suspendVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-            Bucket: bucketDestination,
-            VersioningConfiguration: { Status: 'Suspended' }
-        })).then(data => next(null, data)).catch(err => next(err)),
-
-        putObjectDestinationInitial: next => dstS3.send(new PutObjectCommand({
-            Bucket: bucketDestination,
-            Key: keyName,
-            Body: Buffer.from(testData)
-        })).then(data => next(null, data)).catch(err => next(err)),
-
-        enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-            Bucket: bucketDestination,
-            VersioningConfiguration: { Status: 'Enabled' }
-        })).then(data => next(null, data)).catch(err => next(err)),
-
-        enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-            Bucket: bucketSource,
-            VersioningConfiguration: { Status: 'Enabled' }
-        })).then(data => next(null, data)).catch(err => next(err)),
-
-        putObjectSource: next => srcS3.send(new PutObjectCommand({
-            Bucket: bucketSource,
-            Key: keyName,
-            Body: Buffer.from(testData)
-        })).then(data => {
-            versionId = data.VersionId;
-            return next(null, data);
-        }).catch(err => next(err)),
-
-        getMetadata: next => makeBackbeatRequest({
-            method: 'GET',
-            resourceType: 'metadata',
-            bucket: bucketSource,
-            objectKey: keyName,
-            queryObj: {
-                versionId,
-            },
-            authCredentials: sourceAuthCredentials,
-        }, (err, data) => {
-            if (err) {
-                return next(err);
-            }
-            objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-            return next();
-        }),
-        
-        replicateMetadata: next => makeBackbeatRequest({
-            method: 'PUT',
-            resourceType: 'metadata',
-            bucket: bucketDestination,
-            objectKey: keyName,
-            queryObj: {
-                versionId,
-            },
-            authCredentials: destinationAuthCredentials,
-            requestBody: objMD,
-        }, next),
-        
-        headObjectNullVersion: next => dstS3.send(new HeadObjectCommand({
-            Bucket: bucketDestination,
-            Key: keyName,
-            VersionId: 'null'
-        })).then(data => next(null, data)).catch(err => next(err)),
-        
-        listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
-            Bucket: bucketDestination
-        })).then(data => next(null, data)).catch(err => next(err)),
-    }, (err, results) => {
-        if (err) {
-            return done(err);
-        }
-
-        const headObjectRes = results.headObjectNullVersion;
-        assert.strictEqual(headObjectRes.VersionId, 'null');
-
-        const listObjectVersionsRes = results.listObjectVersions;
-        const { Versions } = listObjectVersionsRes;
-
-        assert.strictEqual(Versions.length, 2);
-        const [currentVersion, nonCurrentVersion] = Versions;
-
-        assert.strictEqual(currentVersion.VersionId, versionId);
-        assert.strictEqual(currentVersion.IsLatest, true);
-
-        assert.strictEqual(nonCurrentVersion.VersionId, 'null');
-        assert.strictEqual(nonCurrentVersion.IsLatest, false);
-
-        return done();
-    });
-    });
-
-    it('should replicate/put metadata to a destination that has a previously updated null version', done => {
-        let objMD;
-        let objMDNull;
-        let versionId;
-
-        async.series({
-            putObjectDestinationInitial: next => dstS3.send(new PutObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                Body: Buffer.from(testData),
-            })).then(data => next(null, data)).catch(err => next(err)),
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' },
-            })).then(data => next(null, data)).catch(err => next(err)),
-            getMetadataNullVersion: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: 'null',
-                },
-                authCredentials: destinationAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMDNull = JSON.parse(data.body).Body;
-                return next();
-            }),
-            updateMetadataNullVersion: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: 'null',
-                },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMDNull,
-            }, next),
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' },
-            })).then(data => next(null, data)).catch(err => next(err)),
-            putObjectSource: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData),
-            })).then(data => {
-                versionId = data.VersionId;
-                return next(null, data);
-            }).catch(err => next(err)),
-            getMetadata: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
-                },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            replicateMetadata: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
-                },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMD,
-            }, next),
-            headObjectNullVersion: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: 'null',
-            })).then(data => next(null, data)).catch(err => next(err)),
-            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination,
-            })).then(data => next(null, data)).catch(err => next(err)),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
-
-            const headObjectRes = results.headObjectNullVersion;
-            assert.strictEqual(headObjectRes.VersionId, 'null');
-
-            const listObjectVersionsRes = results.listObjectVersions;
-            const { Versions } = listObjectVersionsRes;
-
-            assert.strictEqual(Versions.length, 2);
-            const [currentVersion, nonCurrentVersion] = Versions;
-
-            assert.strictEqual(currentVersion.VersionId, versionId);
-            assert.strictEqual(currentVersion.IsLatest, true);
-
-            assert.strictEqual(nonCurrentVersion.VersionId, 'null');
-            assert.strictEqual(nonCurrentVersion.IsLatest, false);
-
-            return done();
-        });
-    });
-
-    it(
-        'should replicate/put metadata to a destination that has a suspended null version with internal version',
-    done => {
-        const tagSet = [
-            {
-                Key: 'key1',
-                Value: 'value1',
-            },
-        ];
-        let objMD;
-        let versionId;
-
-        async.series({
-            suspendVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Suspended' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            putObjectDestinationInitial: next => dstS3.send(new PutObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            putObjectTagging: next => dstS3.send(new PutObjectTaggingCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                Tagging: { TagSet: tagSet }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            putObjectSource: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => {
-                versionId = data.VersionId;
-                next(null, data);
-            }).catch(err => next(err)),
-            getMetadata: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
-                },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            replicateMetadata: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
-                },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMD,
-            }, next),
-            headObjectNullVersion: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: 'null'
-            })).then(data => next(null, data)).catch(err => next(err)),
-            getObjectTaggingNullVersion: next => dstS3.send(new GetObjectTaggingCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: 'null'
-            })).then(data => next(null, data)).catch(err => next(err)),
-            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination
-            })).then(data => next(null, data)).catch(err => next(err)),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
-
-            const headObjectRes = results.headObjectNullVersion;
-            assert.strictEqual(headObjectRes.VersionId, 'null');
-
-            const getObjectTaggingRes = results.getObjectTaggingNullVersion;
-            assert.deepStrictEqual(getObjectTaggingRes.TagSet, tagSet);
-
-            const listObjectVersionsRes = results.listObjectVersions;
-            const { Versions } = listObjectVersionsRes;
-
-            assert.strictEqual(Versions.length, 2);
-            const [currentVersion, nonCurrentVersion] = Versions;
-
-            assert.strictEqual(currentVersion.VersionId, versionId);
-            assert.strictEqual(currentVersion.IsLatest, true);
-
-            assert.strictEqual(nonCurrentVersion.VersionId, 'null');
-            assert.strictEqual(nonCurrentVersion.IsLatest, false);
-
-            return done();
-        });
-    });
-
-    it('should mimic null version replication by crrExistingObjects, then replicate version', done => {
-        let objMDNull;
-        let objMDNullReplicated;
-        let objMDVersion;
-        let versionId;
-
-        async.series({
-            createNullSoloMasterKey: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            simulateCrrExistingObjectsGetMetadata: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: 'null',
-                },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMDNull = JSON.parse(data.body).Body;
-                assert.strictEqual(JSON.parse(objMDNull).versionId, undefined);
-                return next();
-            }),
-            simulateCrrExistingObjectsPutMetadata: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: 'null',
-                },
-                authCredentials: sourceAuthCredentials,
-                requestBody: objMDNull,
-            }, next),
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-            replicateNullVersion: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: 'null',
-                },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMDNullReplicated = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            putReplicatedNullVersion: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId: 'null',
-                },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMDNullReplicated,
-            }, next),
-            putNewVersionSource: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => {
-                versionId = data.VersionId;
-                return next(null, data);
-            }).catch(err => next(err)),
-            simulateMetadataReplicationVersion: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
-                },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMDVersion = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            listObjectVersionsBeforeReplicate: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination
-            })).then(data => next(null, data)).catch(err => next(err)),
-            putReplicatedVersion: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: {
-                    versionId,
-                },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMDVersion,
-            }, next),
-            checkReplicatedNullVersion: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: 'null'
-            })).then(data => next(null, data)).catch(err => next(err)),
-            checkReplicatedVersion: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: versionId
-            })).then(data => next(null, data)).catch(err => next(err)),
-            listObjectVersionsAfterReplicate: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination
-            })).then(data => next(null, data)).catch(err => next(err)),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
-
-            const headObjectNullVersionRes = results.checkReplicatedNullVersion;
-            assert.strictEqual(headObjectNullVersionRes.VersionId, 'null');
-
-            const headObjectVersionRes = results.checkReplicatedVersion;
-            assert.strictEqual(headObjectVersionRes.VersionId, versionId);
-
-            const listObjectVersionsRes = results.listObjectVersionsAfterReplicate;
-            const { Versions } = listObjectVersionsRes;
-
-            assert.strictEqual(Versions.length, 2);
-
-            const [currentVersion, nonCurrentVersion] = Versions;
-
-            assert.strictEqual(currentVersion.VersionId, versionId);
-            assert.strictEqual(currentVersion.IsLatest, true);
-
-            assert.strictEqual(nonCurrentVersion.VersionId, 'null');
-            assert.strictEqual(nonCurrentVersion.IsLatest, false);
-
-            return done();
-        });
-    });
-
-    // TODO: CLDSRV-739 unskip once flaky afterEach cleanup is fixed
-    const itSkipS3CV0 = (process.env.S3_END_TO_END && process.env.DEFAULT_BUCKET_KEY_FORMAT === 'v0') ? it.skip : it;
-    itSkipS3CV0('should replicate/put NULL metadata to a destination that has a version', done => {
-        let objMD;
-        let versionId;
-
-        async.series({
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            putObjectDestination: next => dstS3.send(new PutObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data =>{
-                versionId = data.VersionId;
-                return next(null, data);
-            }).catch(err => next(err)),
-
-            putObjectSource: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            getMetadata: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: { versionId: 'null' },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            replicateMetadata: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: { versionId: 'null' },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMD,
-            }, next),
-            headObjectByVersionId: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: versionId
-            })).then(data => next(null, data)).catch(err => next(err)),
-            headObjectByNullVersionId: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: 'null'
-            })).then(data => next(null, data)).catch(err => next(err)),
-            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination
-            })).then(data => next(null, data)).catch(err => next(err)),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
-
-            const firstHeadObjectRes = results.headObjectByVersionId;
-            assert.strictEqual(firstHeadObjectRes.VersionId, versionId);
-
-            const secondHeadObjectRes = results.headObjectByNullVersionId;
-            assert.strictEqual(secondHeadObjectRes.VersionId, 'null');
-
-            const listObjectVersionsRes = results.listObjectVersions;
-            const { Versions } = listObjectVersionsRes;
-
-            assert.strictEqual(Versions.length, 2);
-            const [currentVersion, nonCurrentVersion] = Versions;
-
-            assert.strictEqual(currentVersion.VersionId, 'null');
-            assert.strictEqual(currentVersion.IsLatest, true);
-
-            assert.strictEqual(nonCurrentVersion.VersionId, versionId);
-            assert.strictEqual(nonCurrentVersion.IsLatest, false);
-
-            return done();
-        });
-    });
-
-    it('should replicate/put NULL metadata to a destination that has a null version', done => {
-        let objMD;
-
-        async.series({
-            putObjectDestinationInitial: next => dstS3.send(new PutObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            putObjectSource: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            putObjectTaggingSource: next => srcS3.send(new PutObjectTaggingCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                VersionId: 'null',
-                Tagging: { TagSet: [{ Key: 'key1', Value: 'value1' }] }
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            getMetadata: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: { versionId: 'null' },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next();
-            }),
-            replicateMetadata: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: { versionId: 'null' },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMD,
-            }, next),
-            headObjectNullVersion: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: 'null'
-            })).then(data => next(null, data)).catch(err => next(err)),
-            getObjectTaggingNullVersion: next => dstS3.send(new GetObjectTaggingCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: 'null'
-            })).then(data => next(null, data)).catch(err => next(err)),
-            listObjectVersions: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination
-            })).then(data => next(null, data)).catch(err => next(err)),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
-
-            const headObjectRes = results.headObjectNullVersion;
-            assert.strictEqual(headObjectRes.VersionId, 'null');
-
-            const getObjectTaggingRes = results.getObjectTaggingNullVersion;
-            assert.deepStrictEqual(getObjectTaggingRes.TagSet, [{ Key: 'key1', Value: 'value1' }]);
-
-            const listObjectVersionsRes = results.listObjectVersions;
-            const { Versions } = listObjectVersionsRes;
-
-            assert.strictEqual(Versions.length, 1);
-            const [currentVersion] = Versions;
-
-            assert.strictEqual(currentVersion.VersionId, 'null');
-            assert.strictEqual(currentVersion.IsLatest, true);
-
-            return done();
-        });
-    });
-
-    itSkipS3CV0('should replicate/put a lifecycled NULL metadata to a destination that has a version', done => {
-        let objMDUpdated;
-        let objMDReplicated;
-        let versionId;
-
-        async.series({
-            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketDestination,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-            putObjectDestination: next => dstS3.send(new PutObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => {
-                versionId = data.VersionId;
-                return next(null, data);
-            }).catch(err => next(err)),
-
-            putObjectSource: next => srcS3.send(new PutObjectCommand({
-                Bucket: bucketSource,
-                Key: keyName,
-                Body: Buffer.from(testData)
-            })).then(data => next(null, data)).catch(err => next(err)),
-
-            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
-                Bucket: bucketSource,
-                VersioningConfiguration: { Status: 'Enabled' }
-            })).then(data => next(null, data)).catch(err => next(err)),
-            // === LIFECYCLE SIMULATION PHASE ===
-            // Lifecycle Simulation: GET current null version metadata
-            getSourceNullVersionForLifecycle: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: { versionId: 'null' },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMDUpdated = JSON.parse(data.body).Body;
-                return next(null, data);
-            }),
-            // Lifecycle Simulation: Apply lifecycle changes to null version metadata
-            // Lifecycle changes can consist of:
-            // - storage class transitions (STANDARD -> IA -> GLACIER)
-            // - data location changes (different storage backend)
-            // Here metadata is unchanged for the simulation
-            applyLifecycleToSourceNullVersion: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: { versionId: 'null' },
-                authCredentials: sourceAuthCredentials,
-                requestBody: objMDUpdated,
-            }, next),
-            // === REPLICATION PHASE ===
-            // Replication: GET lifecycled metadata from source for replication
-            getSourceLifecycledNullVersionForReplication: next => makeBackbeatRequest({
-                method: 'GET',
-                resourceType: 'metadata',
-                bucket: bucketSource,
-                objectKey: keyName,
-                queryObj: { versionId: 'null' },
-                authCredentials: sourceAuthCredentials,
-            }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                objMDReplicated = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
-                return next(null, data);
-            }),
-            // Replication: PUT lifecycled null version to destination
-            replicateLifecycledNullVersionToDestination: next => makeBackbeatRequest({
-                method: 'PUT',
-                resourceType: 'metadata',
-                bucket: bucketDestination,
-                objectKey: keyName,
-                queryObj: { versionId: 'null' },
-                authCredentials: destinationAuthCredentials,
-                requestBody: objMDReplicated,
-            }, next),
-            headObjectByVersionId: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: versionId
-            })).then(data => next(null, data)).catch(err => next(err)),
-            headObjectByNullVersion: next => dstS3.send(new HeadObjectCommand({
-                Bucket: bucketDestination,
-                Key: keyName,
-                VersionId: 'null'
-            })).then(data => next(null, data)).catch(err => next(err)),
-            listObjectVersionsDestination: next => dstS3.send(new ListObjectVersionsCommand({
-                Bucket: bucketDestination
-            })).then(data => next(null, data)).catch(err => next(err)),
-        }, (err, results) => {
-            if (err) {
-                return done(err);
-            }
-            const firstHeadObjectRes = results.headObjectByVersionId;
-            assert.strictEqual(firstHeadObjectRes.VersionId, versionId);
-
-            const secondHeadObjectRes = results.headObjectByNullVersion;
-            assert.strictEqual(secondHeadObjectRes.VersionId, 'null');
-
-            const listObjectVersionsRes = results.listObjectVersionsDestination;
-            const { Versions } = listObjectVersionsRes;
-
-            assert.strictEqual(Versions.length, 2);
-            const [currentVersion, nonCurrentVersion] = Versions;
-
-            assert.strictEqual(currentVersion.VersionId, 'null');
-            assert.strictEqual(currentVersion.IsLatest, true);
-
-            assert.strictEqual(nonCurrentVersion.VersionId, versionId);
-            assert.strictEqual(nonCurrentVersion.IsLatest, false);
-
-            return done();
-        });
-    });
-});
 });

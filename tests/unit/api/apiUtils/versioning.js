@@ -6,11 +6,13 @@ const INF_VID = versioning.VersionID.getInfVid(config.replicationGroupId);
 const { scaledMsPerDay } = config.getTimeOptions();
 const sinon = require('sinon');
 
-const { processVersioningState, getMasterState,
-        getVersionSpecificMetadataOptions,
-        preprocessingVersioningDelete,
-        overwritingVersioning } =
-      require('../../../../lib/api/apiUtils/object/versioning');
+const {
+    processVersioningState,
+    getMasterState,
+    getVersionSpecificMetadataOptions,
+    preprocessingVersioningDelete,
+    overwritingVersioning,
+} = require('../../../../lib/api/apiUtils/object/versioning');
 
 describe('versioning helpers', () => {
     describe('getMasterState+processVersioningState', () => {
@@ -518,17 +520,22 @@ describe('versioning helpers', () => {
             },
         ].forEach(testCase =>
             [false, true].forEach(nullVersionCompatMode =>
-                ['Enabled', 'Suspended'].forEach(versioningStatus => it(
-                `${testCase.description}${nullVersionCompatMode ? ' (null compat)' : ''}` +
-                `, versioning Status=${versioningStatus}`,
-                () => {
-                    const mst = getMasterState(testCase.objMD);
-                    const res = processVersioningState(mst, versioningStatus, nullVersionCompatMode);
-                    const resultName = `versioning${versioningStatus}` +
-                          `${nullVersionCompatMode ? 'Compat' : ''}ExpectedRes`;
-                    const expectedRes = testCase[resultName];
-                    assert.deepStrictEqual(res, expectedRes);
-                }))));
+                ['Enabled', 'Suspended'].forEach(versioningStatus =>
+                    it(
+                        `${testCase.description}${nullVersionCompatMode ? ' (null compat)' : ''}` +
+                            `, versioning Status=${versioningStatus}`,
+                        () => {
+                            const mst = getMasterState(testCase.objMD);
+                            const res = processVersioningState(mst, versioningStatus, nullVersionCompatMode);
+                            const resultName =
+                                `versioning${versioningStatus}` + `${nullVersionCompatMode ? 'Compat' : ''}ExpectedRes`;
+                            const expectedRes = testCase[resultName];
+                            assert.deepStrictEqual(res, expectedRes);
+                        },
+                    ),
+                ),
+            ),
+        );
     });
 
     describe('getVersionSpecificMetadataOptions', () => {
@@ -583,14 +590,13 @@ describe('versioning helpers', () => {
             },
         ].forEach(testCase =>
             [false, true].forEach(nullVersionCompatMode =>
-                it(`${testCase.description}${nullVersionCompatMode ? ' (null compat)' : ''}`,
-                () => {
-                    const options = getVersionSpecificMetadataOptions(
-                        testCase.objMD, nullVersionCompatMode);
-                    const expectedResAttr = nullVersionCompatMode ?
-                          'expectedResCompat' : 'expectedRes';
+                it(`${testCase.description}${nullVersionCompatMode ? ' (null compat)' : ''}`, () => {
+                    const options = getVersionSpecificMetadataOptions(testCase.objMD, nullVersionCompatMode);
+                    const expectedResAttr = nullVersionCompatMode ? 'expectedResCompat' : 'expectedRes';
                     assert.deepStrictEqual(options, testCase[expectedResAttr]);
-                })));
+                }),
+            ),
+        );
     });
 
     describe('preprocessingVersioningDelete', () => {
@@ -669,24 +675,28 @@ describe('versioning helpers', () => {
             },
         ].forEach(testCase =>
             [false, true].forEach(nullVersionCompatMode =>
-                it(`${testCase.description}${nullVersionCompatMode ? ' (null compat)' : ''}`,
-                () => {
+                it(`${testCase.description}${nullVersionCompatMode ? ' (null compat)' : ''}`, () => {
                     const mockBucketMD = {
                         getVersioningConfiguration: () => ({ Status: 'Enabled' }),
                     };
                     const options = preprocessingVersioningDelete(
-                        'foobucket', mockBucketMD, testCase.objMD, testCase.reqVersionId,
-                        nullVersionCompatMode);
-                    const expectedResAttr = nullVersionCompatMode ?
-                          'expectedResCompat' : 'expectedRes';
+                        'foobucket',
+                        mockBucketMD,
+                        testCase.objMD,
+                        testCase.reqVersionId,
+                        nullVersionCompatMode,
+                    );
+                    const expectedResAttr = nullVersionCompatMode ? 'expectedResCompat' : 'expectedRes';
                     assert.deepStrictEqual(options, testCase[expectedResAttr]);
-                })));
+                }),
+            ),
+        );
     });
 
     describe('overwritingVersioning', () => {
         const days = 3;
         const archiveInfo = {
-            'archiveID': '126783123678',
+            archiveID: '126783123678',
         };
         const now = Date.now();
         let clock;
@@ -702,70 +712,70 @@ describe('versioning helpers', () => {
         [
             {
                 description: 'Should update archive with restore infos',
-                    objMD: {
-                    'versionId': '2345678',
+                objMD: {
+                    versionId: '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    'originOp': 's3:PutObject',
+                    originOp: 's3:PutObject',
                     'x-amz-storage-class': 'cold-location',
-                    'archive': {
-                        'restoreRequestedDays': days,
-                        'restoreRequestedAt': now,
-                        archiveInfo
-                    }
+                    archive: {
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        archiveInfo,
+                    },
                 },
                 expectedRes: {
-                    'creationTime': now,
-                    'lastModifiedDate': now,
-                    'updateMicroVersionId': true,
-                    'originOp': 's3:ObjectRestore:Completed',
-                    'taggingCopy': undefined,
-                    'amzStorageClass': 'cold-location',
-                    'archive': {
+                    creationTime: now,
+                    lastModifiedDate: now,
+                    updateMicroVersionId: true,
+                    originOp: 's3:ObjectRestore:Completed',
+                    taggingCopy: undefined,
+                    amzStorageClass: 'cold-location',
+                    archive: {
                         archiveInfo,
-                        'restoreRequestedDays': 3,
-                        'restoreRequestedAt': now,
-                        'restoreCompletedAt': new Date(now),
-                        'restoreWillExpireAt': new Date(now + (days * scaledMsPerDay)),
-                    }
-                }
+                        restoreRequestedDays: 3,
+                        restoreRequestedAt: now,
+                        restoreCompletedAt: new Date(now),
+                        restoreWillExpireAt: new Date(now + days * scaledMsPerDay),
+                    },
+                },
             },
             {
                 description: 'Should keep user mds and tags',
                 hasUserMD: true,
                 objMD: {
-                    'versionId': '2345678',
+                    versionId: '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    'originOp': 's3:PutObject',
+                    originOp: 's3:PutObject',
                     'x-amz-meta-test': 'test',
                     'x-amz-meta-test2': 'test2',
-                    'tags': { 'testtag': 'testtag', 'testtag2': 'testtag2' },
+                    tags: { testtag: 'testtag', testtag2: 'testtag2' },
                     'x-amz-storage-class': 'cold-location',
-                    'archive': {
-                        'restoreRequestedDays': days,
-                        'restoreRequestedAt': now,
-                        archiveInfo
-                    }
+                    archive: {
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        archiveInfo,
+                    },
                 },
                 expectedRes: {
-                    'creationTime': now,
-                    'lastModifiedDate': now,
-                    'updateMicroVersionId': true,
-                    'originOp': 's3:ObjectRestore:Completed',
-                    'metaHeaders': {
+                    creationTime: now,
+                    lastModifiedDate: now,
+                    updateMicroVersionId: true,
+                    originOp: 's3:ObjectRestore:Completed',
+                    metaHeaders: {
                         'x-amz-meta-test': 'test',
                         'x-amz-meta-test2': 'test2',
                     },
-                    'taggingCopy': { 'testtag': 'testtag', 'testtag2': 'testtag2' },
-                    'amzStorageClass': 'cold-location',
-                    'archive': {
+                    taggingCopy: { testtag: 'testtag', testtag2: 'testtag2' },
+                    amzStorageClass: 'cold-location',
+                    archive: {
                         archiveInfo,
-                        'restoreRequestedDays': days,
-                        'restoreRequestedAt': now,
-                        'restoreCompletedAt': new Date(now),
-                        'restoreWillExpireAt': new Date(now + (days * scaledMsPerDay)),
-                    }
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        restoreCompletedAt: new Date(now),
+                        restoreWillExpireAt: new Date(now + days * scaledMsPerDay),
+                    },
                 },
             },
             {
@@ -773,257 +783,243 @@ describe('versioning helpers', () => {
                 objMD: {
                     'creation-time': now,
                     'last-modified': now,
-                    'originOp': 's3:PutObject',
-                    'nullVersionId': 'vnull',
-                    'isNull': true,
+                    originOp: 's3:PutObject',
+                    nullVersionId: 'vnull',
+                    isNull: true,
                     'x-amz-storage-class': 'cold-location',
-                    'archive': {
-                        'restoreRequestedDays': days,
-                        'restoreRequestedAt': now,
-                        archiveInfo
-                    }
+                    archive: {
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        archiveInfo,
+                    },
                 },
                 expectedRes: {
-                    'creationTime': now,
-                    'lastModifiedDate': now,
-                    'updateMicroVersionId': true,
-                    'originOp': 's3:ObjectRestore:Completed',
-                    'amzStorageClass': 'cold-location',
-                    'taggingCopy': undefined,
-                    'archive': {
+                    creationTime: now,
+                    lastModifiedDate: now,
+                    updateMicroVersionId: true,
+                    originOp: 's3:ObjectRestore:Completed',
+                    amzStorageClass: 'cold-location',
+                    taggingCopy: undefined,
+                    archive: {
                         archiveInfo,
-                        'restoreRequestedDays': 3,
-                        'restoreRequestedAt': now,
-                        'restoreCompletedAt': new Date(now),
-                        'restoreWillExpireAt': new Date(now + (days * scaledMsPerDay)),
-                    }
-                }
+                        restoreRequestedDays: 3,
+                        restoreRequestedAt: now,
+                        restoreCompletedAt: new Date(now),
+                        restoreWillExpireAt: new Date(now + days * scaledMsPerDay),
+                    },
+                },
             },
             {
                 description: 'Should not keep x-amz-meta-scal-s3-restore-attempt user MD',
                 hasUserMD: true,
                 objMD: {
-                    'versionId': '2345678',
+                    versionId: '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    'originOp': 's3:PutObject',
+                    originOp: 's3:PutObject',
                     'x-amz-meta-test': 'test',
                     'x-amz-meta-scal-s3-restore-attempt': 14,
                     'x-amz-storage-class': 'cold-location',
-                    'archive': {
-                        'restoreRequestedDays': days,
-                        'restoreRequestedAt': now,
-                        archiveInfo
-                    }
+                    archive: {
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        archiveInfo,
+                    },
                 },
                 expectedRes: {
-                    'creationTime': now,
-                    'lastModifiedDate': now,
-                    'updateMicroVersionId': true,
-                    'originOp': 's3:ObjectRestore:Completed',
-                    'metaHeaders': {
+                    creationTime: now,
+                    lastModifiedDate: now,
+                    updateMicroVersionId: true,
+                    originOp: 's3:ObjectRestore:Completed',
+                    metaHeaders: {
                         'x-amz-meta-test': 'test',
                     },
-                    'taggingCopy': undefined,
-                    'amzStorageClass': 'cold-location',
-                    'archive': {
+                    taggingCopy: undefined,
+                    amzStorageClass: 'cold-location',
+                    archive: {
                         archiveInfo,
-                        'restoreRequestedDays': 3,
-                        'restoreRequestedAt': now,
-                        'restoreCompletedAt': new Date(now),
-                        'restoreWillExpireAt': new Date(now + (days * scaledMsPerDay)),
-                    }
-                }
+                        restoreRequestedDays: 3,
+                        restoreRequestedAt: now,
+                        restoreCompletedAt: new Date(now),
+                        restoreWillExpireAt: new Date(now + days * scaledMsPerDay),
+                    },
+                },
             },
             {
                 description: 'Should keep replication infos',
                 objMD: {
-                'versionId': '2345678',
-                'creation-time': now,
-                'last-modified': now,
-                'originOp': 's3:PutObject',
-                'x-amz-storage-class': 'cold-location',
-                'replicationInfo': {
-                    'status': 'COMPLETED',
-                    'backends': [
-                        {
-                            'site': 'azure-blob',
-                            'status': 'COMPLETED',
-                            'dataStoreVersionId': ''
-                        }
-                    ],
-                    'content': [
-                            'DATA',
-                            'METADATA'
-                    ],
-                    'destination': 'arn:aws:s3:::replicate-cold',
-                    'storageClass': 'azure-blob',
-                    'role': 'arn:aws:iam::root:role/s3-replication-role',
-                    'storageType': 'azure',
-                    'dataStoreVersionId': '',
-                },
-                archive: {
-                    'restoreRequestedDays': days,
-                    'restoreRequestedAt': now,
-                    archiveInfo
-                    }
+                    versionId: '2345678',
+                    'creation-time': now,
+                    'last-modified': now,
+                    originOp: 's3:PutObject',
+                    'x-amz-storage-class': 'cold-location',
+                    replicationInfo: {
+                        status: 'COMPLETED',
+                        backends: [
+                            {
+                                site: 'azure-blob',
+                                status: 'COMPLETED',
+                                dataStoreVersionId: '',
+                            },
+                        ],
+                        content: ['DATA', 'METADATA'],
+                        destination: 'arn:aws:s3:::replicate-cold',
+                        storageClass: 'azure-blob',
+                        role: 'arn:aws:iam::root:role/s3-replication-role',
+                        storageType: 'azure',
+                        dataStoreVersionId: '',
+                    },
+                    archive: {
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        archiveInfo,
+                    },
                 },
                 expectedRes: {
-                    'creationTime': now,
-                    'lastModifiedDate': now,
-                    'updateMicroVersionId': true,
-                    'originOp': 's3:ObjectRestore:Completed',
-                    'amzStorageClass': 'cold-location',
-                    'replicationInfo': {
-                        'status': 'COMPLETED',
-                        'backends': [
+                    creationTime: now,
+                    lastModifiedDate: now,
+                    updateMicroVersionId: true,
+                    originOp: 's3:ObjectRestore:Completed',
+                    amzStorageClass: 'cold-location',
+                    replicationInfo: {
+                        status: 'COMPLETED',
+                        backends: [
                             {
-                                'site': 'azure-blob',
-                                'status': 'COMPLETED',
-                                'dataStoreVersionId': ''
-                            }
+                                site: 'azure-blob',
+                                status: 'COMPLETED',
+                                dataStoreVersionId: '',
+                            },
                         ],
-                        'content': [
-                                'DATA',
-                                'METADATA'
-                        ],
-                        'destination': 'arn:aws:s3:::replicate-cold',
-                        'storageClass': 'azure-blob',
-                        'role': 'arn:aws:iam::root:role/s3-replication-role',
-                        'storageType': 'azure',
-                        'dataStoreVersionId': '',
+                        content: ['DATA', 'METADATA'],
+                        destination: 'arn:aws:s3:::replicate-cold',
+                        storageClass: 'azure-blob',
+                        role: 'arn:aws:iam::root:role/s3-replication-role',
+                        storageType: 'azure',
+                        dataStoreVersionId: '',
                     },
-                    'taggingCopy': undefined,
+                    taggingCopy: undefined,
                     archive: {
                         archiveInfo,
-                        'restoreRequestedDays': 3,
-                        'restoreRequestedAt': now,
-                        'restoreCompletedAt': new Date(now),
-                        'restoreWillExpireAt': new Date(now + (days * scaledMsPerDay)),
-                    }
-                }
+                        restoreRequestedDays: 3,
+                        restoreRequestedAt: now,
+                        restoreCompletedAt: new Date(now),
+                        restoreWillExpireAt: new Date(now + days * scaledMsPerDay),
+                    },
+                },
             },
             {
                 description: 'Should keep legalHold',
                 objMD: {
-                'versionId': '2345678',
-                'creation-time': now,
-                'last-modified': now,
-                'originOp': 's3:PutObject',
-                'legalHold': true,
-                'x-amz-storage-class': 'cold-location',
-                'archive': {
-                    'restoreRequestedDays': days,
-                    'restoreRequestedAt': now,
-                    archiveInfo
-                    }
+                    versionId: '2345678',
+                    'creation-time': now,
+                    'last-modified': now,
+                    originOp: 's3:PutObject',
+                    legalHold: true,
+                    'x-amz-storage-class': 'cold-location',
+                    archive: {
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        archiveInfo,
+                    },
                 },
                 expectedRes: {
-                    'creationTime': now,
-                    'lastModifiedDate': now,
-                    'updateMicroVersionId': true,
-                    'originOp': 's3:ObjectRestore:Completed',
-                    'legalHold': true,
-                    'amzStorageClass': 'cold-location',
-                    'taggingCopy': undefined,
-                    'archive': {
+                    creationTime: now,
+                    lastModifiedDate: now,
+                    updateMicroVersionId: true,
+                    originOp: 's3:ObjectRestore:Completed',
+                    legalHold: true,
+                    amzStorageClass: 'cold-location',
+                    taggingCopy: undefined,
+                    archive: {
                         archiveInfo,
-                        'restoreRequestedDays': 3,
-                        'restoreRequestedAt': now,
-                        'restoreCompletedAt': new Date(now),
-                        'restoreWillExpireAt': new Date(now + (days * scaledMsPerDay)),
-                    }
-                }
+                        restoreRequestedDays: 3,
+                        restoreRequestedAt: now,
+                        restoreCompletedAt: new Date(now),
+                        restoreWillExpireAt: new Date(now + days * scaledMsPerDay),
+                    },
+                },
             },
             {
                 description: 'Should keep ACLs',
                 objMD: {
-                'versionId': '2345678',
-                'creation-time': now,
-                'last-modified': now,
-                'originOp': 's3:PutObject',
-                'x-amz-storage-class': 'cold-location',
-                'acl': {
-                    'Canned': '',
-                    'FULL_CONTROL': [
-                            '872c04772893deae2b48365752362cd92672eb80eb3deea50d89e834a10ce185'
-                    ],
-                    'WRITE_ACP': [],
-                    'READ': [
-                            'http://acs.amazonaws.com/groups/global/AllUsers'
-                    ],
-                    'READ_ACP': []
-                },
-                'archive': {
-                    'restoreRequestedDays': days,
-                    'restoreRequestedAt': now,
-                    archiveInfo
-                    }
-                },
-                expectedRes: {
-                    'creationTime': now,
-                    'lastModifiedDate': now,
-                    'updateMicroVersionId': true,
-                    'originOp': 's3:ObjectRestore:Completed',
-                    'acl': {
-                        'Canned': '',
-                        'FULL_CONTROL': [
-                                '872c04772893deae2b48365752362cd92672eb80eb3deea50d89e834a10ce185'
-                        ],
-                        'WRITE_ACP': [],
-                        'READ': [
-                                'http://acs.amazonaws.com/groups/global/AllUsers'
-                        ],
-                        'READ_ACP': []
-                    },
-                    'taggingCopy': undefined,
-                    'amzStorageClass': 'cold-location',
-                    'archive': {
-                        archiveInfo,
-                        'restoreRequestedDays': 3,
-                        'restoreRequestedAt': now,
-                        'restoreCompletedAt': new Date(now),
-                        'restoreWillExpireAt': new Date(now + (days * scaledMsPerDay)),
-                    }
-                },
-            },
-                {
-                    description: 'Should keep contentMD5 of the original object',
-                    objMD: {
-                    'versionId': '2345678',
+                    versionId: '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    'originOp': 's3:PutObject',
+                    originOp: 's3:PutObject',
+                    'x-amz-storage-class': 'cold-location',
+                    acl: {
+                        Canned: '',
+                        FULL_CONTROL: ['872c04772893deae2b48365752362cd92672eb80eb3deea50d89e834a10ce185'],
+                        WRITE_ACP: [],
+                        READ: ['http://acs.amazonaws.com/groups/global/AllUsers'],
+                        READ_ACP: [],
+                    },
+                    archive: {
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        archiveInfo,
+                    },
+                },
+                expectedRes: {
+                    creationTime: now,
+                    lastModifiedDate: now,
+                    updateMicroVersionId: true,
+                    originOp: 's3:ObjectRestore:Completed',
+                    acl: {
+                        Canned: '',
+                        FULL_CONTROL: ['872c04772893deae2b48365752362cd92672eb80eb3deea50d89e834a10ce185'],
+                        WRITE_ACP: [],
+                        READ: ['http://acs.amazonaws.com/groups/global/AllUsers'],
+                        READ_ACP: [],
+                    },
+                    taggingCopy: undefined,
+                    amzStorageClass: 'cold-location',
+                    archive: {
+                        archiveInfo,
+                        restoreRequestedDays: 3,
+                        restoreRequestedAt: now,
+                        restoreCompletedAt: new Date(now),
+                        restoreWillExpireAt: new Date(now + days * scaledMsPerDay),
+                    },
+                },
+            },
+            {
+                description: 'Should keep contentMD5 of the original object',
+                objMD: {
+                    versionId: '2345678',
+                    'creation-time': now,
+                    'last-modified': now,
+                    originOp: 's3:PutObject',
                     'x-amz-storage-class': 'cold-location',
                     'content-md5': '123456789-5',
-                    'acl': {},
-                    'archive': {
-                        'restoreRequestedDays': days,
-                        'restoreRequestedAt': now,
-                        archiveInfo
-                        }
+                    acl: {},
+                    archive: {
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        archiveInfo,
                     },
-                    metadataStoreParams: {
-                        'contentMD5': '987654321-3',
+                },
+                metadataStoreParams: {
+                    contentMD5: '987654321-3',
+                },
+                expectedRes: {
+                    creationTime: now,
+                    lastModifiedDate: now,
+                    updateMicroVersionId: true,
+                    originOp: 's3:ObjectRestore:Completed',
+                    contentMD5: '123456789-5',
+                    restoredEtag: '987654321-3',
+                    acl: {},
+                    taggingCopy: undefined,
+                    amzStorageClass: 'cold-location',
+                    archive: {
+                        archiveInfo,
+                        restoreRequestedDays: 3,
+                        restoreRequestedAt: now,
+                        restoreCompletedAt: new Date(now),
+                        restoreWillExpireAt: new Date(now + days * scaledMsPerDay),
                     },
-                    expectedRes: {
-                        'creationTime': now,
-                        'lastModifiedDate': now,
-                        'updateMicroVersionId': true,
-                        'originOp': 's3:ObjectRestore:Completed',
-                        'contentMD5': '123456789-5',
-                        'restoredEtag': '987654321-3',
-                        'acl': {},
-                        'taggingCopy': undefined,
-                        'amzStorageClass': 'cold-location',
-                        'archive': {
-                            archiveInfo,
-                            'restoreRequestedDays': 3,
-                            'restoreRequestedAt': now,
-                            'restoreCompletedAt': new Date(now),
-                            'restoreWillExpireAt': new Date(now + (days * scaledMsPerDay)),
-                        }
-                    }
+                },
             },
         ].forEach(testCase => {
             it(testCase.description, () => {

@@ -34,7 +34,7 @@ class HttpRequestAuthV4NoSHA256SignedHeader extends HttpRequestAuthV4 {
 
         const urlObj = new url.URL(this._url);
         const signedHeaders = {
-            'host': urlObj.host,
+            host: urlObj.host,
             'x-amz-date': this._timestamp,
         };
         const httpHeaders = Object.assign({}, this._httpParams.headers);
@@ -44,48 +44,63 @@ class HttpRequestAuthV4NoSHA256SignedHeader extends HttpRequestAuthV4 {
                 signedHeaders[lowerHeader] = httpHeaders[header];
             }
         });
-        httpHeaders.Authorization = 
-            this.getAuthorizationHeader(urlObj, signedHeaders, httpHeaders['x-amz-content-sha256']);
+        httpHeaders.Authorization = this.getAuthorizationHeader(
+            urlObj,
+            signedHeaders,
+            httpHeaders['x-amz-content-sha256'],
+        );
         return Object.assign(httpHeaders, signedHeaders);
     }
 }
 
 describe('unsigned x-amz-content-sha256 header in AuthV4 requests:', () => {
     before(done => {
-        makeS3Request({
-            method: 'PUT',
-            authCredentials,
-            bucket,
-        }, err => {
-            assert.ifError(err);
-            done();
-        });
+        makeS3Request(
+            {
+                method: 'PUT',
+                authCredentials,
+                bucket,
+            },
+            err => {
+                assert.ifError(err);
+                done();
+            },
+        );
     });
 
     after(done => {
-        async.series([
-            next => makeS3Request({
-                method: 'DELETE',
-                authCredentials,
-                bucket,
-                objectKey,
-            }, next),
-            next => makeS3Request({
-                method: 'DELETE',
-                authCredentials,
-                bucket,
-            }, next),
-        ], err => {
-            assert.ifError(err);
-            done();
-        });
+        async.series(
+            [
+                next =>
+                    makeS3Request(
+                        {
+                            method: 'DELETE',
+                            authCredentials,
+                            bucket,
+                            objectKey,
+                        },
+                        next,
+                    ),
+                next =>
+                    makeS3Request(
+                        {
+                            method: 'DELETE',
+                            authCredentials,
+                            bucket,
+                        },
+                        next,
+                    ),
+            ],
+            err => {
+                assert.ifError(err);
+                done();
+            },
+        );
     });
 
     it('should accept x-amz-content-sha256 header not in SignedHeaders list', done => {
         // Calculate the SHA256 hash of the data
-        const contentSha256 = crypto.createHash('sha256')
-            .update(objData)
-            .digest('hex');
+        const contentSha256 = crypto.createHash('sha256').update(objData).digest('hex');
 
         const req = new HttpRequestAuthV4NoSHA256SignedHeader(
             `http://localhost:8000/${bucket}/${objectKey}`,
@@ -97,7 +112,7 @@ describe('unsigned x-amz-content-sha256 header in AuthV4 requests:', () => {
                         'x-amz-content-sha256': contentSha256,
                     },
                 },
-                authCredentials
+                authCredentials,
             ),
             res => {
                 let body = '';
@@ -106,11 +121,14 @@ describe('unsigned x-amz-content-sha256 header in AuthV4 requests:', () => {
                 });
                 res.on('end', () => {
                     assert.strictEqual(body, '', 'expected empty body');
-                    assert.strictEqual(res.statusCode, 200,
-                        'Request should succeed even when x-amz-content-sha256 is not signed');
+                    assert.strictEqual(
+                        res.statusCode,
+                        200,
+                        'Request should succeed even when x-amz-content-sha256 is not signed',
+                    );
                     done();
                 });
-            }
+            },
         );
 
         req.on('error', err => {

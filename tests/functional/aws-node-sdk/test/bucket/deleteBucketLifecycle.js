@@ -1,11 +1,13 @@
 const assert = require('assert');
 const { errors } = require('arsenal');
-const { S3Client,
+const {
+    S3Client,
     CreateBucketCommand,
     DeleteBucketCommand,
     DeleteBucketLifecycleCommand,
     PutBucketLifecycleConfigurationCommand,
-    GetBucketLifecycleConfigurationCommand } = require('@aws-sdk/client-s3');
+    GetBucketLifecycleConfigurationCommand,
+} = require('@aws-sdk/client-s3');
 
 const getConfig = require('../support/config');
 
@@ -24,11 +26,16 @@ function assertError(err, expectedErr) {
     if (expectedErr === null) {
         assert.strictEqual(err, null, `expected no error but got '${err}'`);
     } else {
-        assert.strictEqual(err.name, expectedErr, 'incorrect error response ' +
-            `code: should be '${expectedErr}' but got '${err.Code}'`);
-        assert.strictEqual(err.$metadata.httpStatusCode, errors[expectedErr].code,
-            'incorrect error status code: should be 400 but got ' +
-            `'${err.$metadata.httpStatusCode}'`);
+        assert.strictEqual(
+            err.name,
+            expectedErr,
+            'incorrect error response ' + `code: should be '${expectedErr}' but got '${err.Code}'`,
+        );
+        assert.strictEqual(
+            err.$metadata.httpStatusCode,
+            errors[expectedErr].code,
+            'incorrect error status code: should be 400 but got ' + `'${err.$metadata.httpStatusCode}'`,
+        );
     }
 }
 
@@ -67,12 +74,11 @@ describe('aws-sdk test delete bucket lifecycle', () => {
             }
         });
 
-        it('should return no error if no lifecycle config on bucket', () => s3.send(new
-            DeleteBucketLifecycleCommand({ Bucket: bucket })));
+        it('should return no error if no lifecycle config on bucket', () =>
+            s3.send(new DeleteBucketLifecycleCommand({ Bucket: bucket })));
 
         it('should delete lifecycle configuration from bucket', async () => {
-            const params = { Bucket: bucket,
-                LifecycleConfiguration: { Rules: [basicRule] } };
+            const params = { Bucket: bucket, LifecycleConfiguration: { Rules: [basicRule] } };
             await s3.send(new PutBucketLifecycleConfigurationCommand(params));
             await s3.send(new DeleteBucketLifecycleCommand({ Bucket: bucket }));
             try {
