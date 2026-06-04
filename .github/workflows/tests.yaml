@@ -629,6 +629,10 @@ jobs:
         run: |-
           set -o pipefail;
           yarn run ft_healthchecks | tee /tmp/artifacts/${{ matrix.job-name }}/ft_healthchecks.log
+      - name: Run scripts tests
+        run: |-
+          set -o pipefail;
+          yarn run ft_scripts | tee /tmp/artifacts/${{ matrix.job-name }}/ft_scripts.log
       - name: Teardown CI services
         run: docker compose down redis sproxyd metadata-standalone vault cloudserver-sse-before-migration
         working-directory: .github/docker
