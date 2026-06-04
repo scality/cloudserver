@@ -16,6 +16,7 @@ const {
     PutUserPolicyCommand,
     ListAccessKeysCommand,
     CreateAccessKeyCommand,
+    NoSuchEntityException,
 } = require('@aws-sdk/client-iam');
 const { version } = require('../package.json');
 
@@ -181,7 +182,7 @@ function collectResource(v, done) {
     v.collect()
         .then(res => done(null, res))
         .catch((err) => {
-            if (err.name === 'NoSuchEntity') {
+            if (err instanceof NoSuchEntityException) {
                 return done();
             }
 
