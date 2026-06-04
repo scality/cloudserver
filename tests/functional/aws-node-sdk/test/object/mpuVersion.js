@@ -6,6 +6,8 @@ const {
     CreateMultipartUploadCommand,
     UploadPartCommand,
     CompleteMultipartUploadCommand,
+    ListMultipartUploadsCommand,
+    AbortMultipartUploadCommand,
     PutObjectCommand,
     PutBucketVersioningCommand,
     DeleteObjectCommand,
@@ -25,9 +27,7 @@ const checkError = require('../../lib/utility/checkError');
 const { getMetadata, fakeMetadataArchive, isNullKeyMetadataV1 } = require('../utils/init');
 const { hasColdStorage } = require('../../lib/utility/test-utils');
 
-const {
-    LOCATION_NAME_DMF,
-} = require('../../../../constants');
+const { LOCATION_NAME_DMF } = require('../../../../constants');
 
 const log = new DummyRequestLogger();
 
@@ -59,11 +59,11 @@ async function putMPUVersion(s3, bucketName, objectName, vId) {
                 args.request.headers['x-scal-s3-version-id'] = vId;
                 return next(args);
             },
-            { step: 'build' }
+            { step: 'build' },
         );
     }
     const resCreation = await s3.send(command);
-    
+
     const uploadId = resCreation.UploadId;
     const uploadParams = {
         Body: 'okok',
@@ -80,11 +80,11 @@ async function putMPUVersion(s3, bucketName, objectName, vId) {
                 args.request.headers['x-scal-s3-version-id'] = vId;
                 return next(args);
             },
-            { step: 'build' }
+            { step: 'build' },
         );
     }
     const uploadRes = await s3.send(uploadCommand);
-    
+
     const completeParams = {
         Bucket: bucketName,
         Key: objectName,
@@ -92,9 +92,9 @@ async function putMPUVersion(s3, bucketName, objectName, vId) {
             Parts: [
                 {
                     ETag: uploadRes.ETag,
-                    PartNumber: 1
+                    PartNumber: 1,
                 },
-            ]
+            ],
         },
         UploadId: uploadId,
     };
@@ -106,7 +106,7 @@ async function putMPUVersion(s3, bucketName, objectName, vId) {
                 args.request.headers['x-scal-s3-version-id'] = vId;
                 return next(args);
             },
-            { step: 'build' }
+            { step: 'build' },
         );
     }
     return await s3.send(completeCommand);
@@ -116,6 +116,26 @@ async function putMPU(s3, bucketName, objectName) {
     return putMPUVersion(s3, bucketName, objectName, undefined);
 }
 
+// Error-handling cases initiate MPUs that intentionally fail to complete,
+// leaving an in-progress upload behind. bucketUtil.empty only removes object
+// versions, so without aborting these uploads the per-bucket mpuShadowBucket
+// survives bucket deletion and pollutes the shared metadata bucket list.
+async function abortAllMPUs(s3, bucketName) {
+    const { Uploads } = await s3.send(new ListMultipartUploadsCommand({ Bucket: bucketName }));
+    if (!Uploads) {
+        return;
+    }
+    for (const upload of Uploads) {
+        await s3.send(
+            new AbortMultipartUploadCommand({
+                Bucket: bucketName,
+                Key: upload.Key,
+                UploadId: upload.UploadId,
+            }),
+        );
+    }
+}
+
 function checkVersionsAndUpdate(versionsBefore, versionsAfter, indexes) {
     indexes.forEach(i => {
         assert.notStrictEqual(versionsAfter[i].value.Size, versionsBefore[i].value.Size);
@@ -123,8 +143,11 @@ function checkVersionsAndUpdate(versionsBefore, versionsAfter, indexes) {
         /* eslint-disable no-param-reassign */
         versionsBefore[i].value.Size = versionsAfter[i].value.Size;
         // Also update uploadId if it exists and is different since now aws sdk returns it as well
-        if (versionsAfter[i].value.uploadId && versionsBefore[i].value.uploadId &&
-            versionsAfter[i].value.uploadId !== versionsBefore[i].value.uploadId) {
+        if (
+            versionsAfter[i].value.uploadId &&
+            versionsBefore[i].value.uploadId &&
+            versionsAfter[i].value.uploadId !== versionsBefore[i].value.uploadId
+        ) {
             versionsBefore[i].value.uploadId = versionsAfter[i].value.uploadId;
         }
         /* eslint-enable no-param-reassign */
@@ -171,16 +194,20 @@ describe('MPU with x-scal-s3-version-id header', () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             await new Promise((resolve, reject) => {
-                metadata.setup(err => err ? reject(err) : resolve());
+                metadata.setup(err => (err ? reject(err) : resolve()));
             });
             await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
-            await s3.send(new CreateBucketCommand({ 
-                Bucket: bucketNameMD, 
-                ObjectLockEnabledForBucket: true 
-            }));
+            await s3.send(
+                new CreateBucketCommand({
+                    Bucket: bucketNameMD,
+                    ObjectLockEnabledForBucket: true,
+                }),
+            );
         });
 
         afterEach(async () => {
+            await abortAllMPUs(s3, bucketName);
+            await abortAllMPUs(s3, bucketNameMD);
             await bucketUtil.emptyMany([bucketName, bucketNameMD]);
             await bucketUtil.deleteMany([bucketName, bucketNameMD]);
         });
@@ -191,14 +218,14 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',
-                    }
+                    },
                 };
                 const params = { Bucket: bucketName, Key: objectName };
 
                 try {
                     await s3.send(new PutBucketVersioningCommand(vParams));
                     await s3.send(new PutObjectCommand(params));
-                    
+
                     try {
                         await putMPUVersion(s3, bucketName, objectName, 'aJLWKz4Ko9IjBBgXKj5KQT.G9UHv0g7P');
                         throw new Error('Expected InvalidArgument error');
@@ -227,17 +254,21 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',
-                    }
+                    },
                 };
                 const params = { Bucket: bucketName, Key: objectName };
 
                 try {
                     await s3.send(new PutBucketVersioningCommand(vParams));
                     await s3.send(new PutObjectCommand(params));
-                    
+
                     try {
-                        await putMPUVersion(s3, bucketName, objectName, 
-                            '393833343735313131383832343239393939393952473030312020313031');
+                        await putMPUVersion(
+                            s3,
+                            bucketName,
+                            objectName,
+                            '393833343735313131383832343239393939393952473030312020313031',
+                        );
                         throw new Error('Expected NoSuchVersion error');
                     } catch (err) {
                         checkError(err, 'NoSuchVersion', 404);
@@ -255,7 +286,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
 
                 try {
                     await s3.send(new PutObjectCommand(params));
-                    
+
                     try {
                         await putMPUVersion(s3, bucketName, objectName, '');
                         throw new Error('Expected InvalidObjectState error');
@@ -276,7 +307,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',
-                    }
+                    },
                 };
                 let vId;
 
@@ -286,12 +317,14 @@ describe('MPU with x-scal-s3-version-id header', () => {
 
                     const deleteRes = await s3.send(new DeleteObjectCommand(params));
                     vId = deleteRes.VersionId;
-                    
-                    putMPUVersion(s3, bucketName, objectName, vId).then(() => {
-                        throw new Error('Expected MethodNotAllowed error');
-                    }).catch(err => {
-                        checkError(err, 'MethodNotAllowed', 405);
-                    });
+
+                    putMPUVersion(s3, bucketName, objectName, vId)
+                        .then(() => {
+                            throw new Error('Expected MethodNotAllowed error');
+                        })
+                        .catch(err => {
+                            checkError(err, 'MethodNotAllowed', 405);
+                        });
                 } catch (err) {
                     if (err.message === 'Expected MethodNotAllowed error') {
                         throw err;
@@ -309,28 +342,34 @@ describe('MPU with x-scal-s3-version-id header', () => {
 
                 try {
                     await putMPU(s3, bucketName, objectName);
-                    
+
                     await fakeMetadataArchivePromise(bucketName, objectName, undefined, archive);
-                    
+
                     objMDBefore = await getMetadataPromise(bucketName, objectName, undefined);
-                    
+
                     const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
                     versionsBefore = versionRes1.Versions;
 
                     await putMPUVersion(s3, bucketName, objectName, '');
-                    
+
                     objMDAfter = await getMetadataPromise(bucketName, objectName, undefined);
-                    
+
                     const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
                     const versionsAfter = versionRes2.Versions;
-                    
+
                     clearUploadIdAndRestoreStatusFromVersions(versionsBefore);
                     clearUploadIdAndRestoreStatusFromVersions(versionsAfter);
-                    
+
                     assert.deepStrictEqual(versionsAfter, versionsBefore);
-                    checkObjMdAndUpdate(objMDBefore, objMDAfter,
-                        ['location', 'uploadId', 'microVersionId', 'x-amz-restore',
-                        'archive', 'dataStoreName', 'originOp']);
+                    checkObjMdAndUpdate(objMDBefore, objMDAfter, [
+                        'location',
+                        'uploadId',
+                        'microVersionId',
+                        'x-amz-restore',
+                        'archive',
+                        'dataStoreName',
+                        'originOp',
+                    ]);
 
                     assert.deepStrictEqual(objMDAfter, objMDBefore);
                 } catch (err) {
@@ -339,33 +378,40 @@ describe('MPU with x-scal-s3-version-id header', () => {
             });
 
             it('should overwrite an object', async () => {
-                    const params = { Bucket: bucketName, Key: objectName };
+                const params = { Bucket: bucketName, Key: objectName };
 
-                    await s3.send(new PutObjectCommand(params));
+                await s3.send(new PutObjectCommand(params));
 
-                    await fakeMetadataArchivePromise(bucketName, objectName, undefined, archive);
-                    
-                    const objMDBefore = await getMetadataPromise(bucketName, objectName, undefined);
-                    
-                    const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                    const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
+                await fakeMetadataArchivePromise(bucketName, objectName, undefined, archive);
 
-                    await putMPUVersion(s3, bucketName, objectName, '');
+                const objMDBefore = await getMetadataPromise(bucketName, objectName, undefined);
 
-                    const objMDAfter = await getMetadataPromise(bucketName, objectName, undefined);
+                const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
 
-                    const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
-                    const versionsAfter = clearUploadIdAndRestoreStatusFromVersions(versionRes2.Versions);
+                await putMPUVersion(s3, bucketName, objectName, '');
 
-                    checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
+                const objMDAfter = await getMetadataPromise(bucketName, objectName, undefined);
 
-                    assert.deepStrictEqual(versionsAfter, versionsBefore);
+                const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
+                const versionsAfter = clearUploadIdAndRestoreStatusFromVersions(versionRes2.Versions);
 
-                    checkObjMdAndUpdate(objMDBefore, objMDAfter,
-                        ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
-                        'x-amz-restore', 'archive', 'dataStoreName']);
-                
-                    assert.deepStrictEqual(objMDAfter, objMDBefore);
+                checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
+
+                assert.deepStrictEqual(versionsAfter, versionsBefore);
+
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, [
+                    'location',
+                    'content-length',
+                    'originOp',
+                    'uploadId',
+                    'microVersionId',
+                    'x-amz-restore',
+                    'archive',
+                    'dataStoreName',
+                ]);
+
+                assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
 
             it('should overwrite a version', async () => {
@@ -373,17 +419,17 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',
-                    }
+                    },
                 };
                 const params = { Bucket: bucketName, Key: objectName };
 
                 await s3.send(new PutBucketVersioningCommand(vParams));
-                
+
                 const putRes = await s3.send(new PutObjectCommand(params));
                 const vId = putRes.VersionId;
 
                 await fakeMetadataArchivePromise(bucketName, objectName, vId, archive);
-                
+
                 const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
                 const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
 
@@ -392,16 +438,23 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 await putMPUVersion(s3, bucketName, objectName, vId);
 
                 const objMDAfter = await getMetadataPromise(bucketName, objectName, vId);
-                
+
                 const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
                 const versionsAfter = clearUploadIdAndRestoreStatusFromVersions(versionRes2.Versions);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter,
-                    ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive', 'dataStoreName']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, [
+                    'location',
+                    'content-length',
+                    'originOp',
+                    'uploadId',
+                    'microVersionId',
+                    'x-amz-restore',
+                    'archive',
+                    'dataStoreName',
+                ]);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
 
@@ -410,17 +463,17 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',
-                    }
+                    },
                 };
                 const params = { Bucket: bucketName, Key: objectName };
 
                 await s3.send(new PutBucketVersioningCommand(vParams));
-                
+
                 const putRes = await s3.send(new PutObjectCommand(params));
                 const vId = putRes.VersionId;
 
                 await fakeMetadataArchivePromise(bucketName, objectName, vId, archive);
-                
+
                 const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
                 const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
 
@@ -429,16 +482,23 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 await putMPUVersion(s3, bucketName, objectName, '');
 
                 const objMDAfter = await getMetadataPromise(bucketName, objectName, vId);
-                
+
                 const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
                 const versionsAfter = clearUploadIdAndRestoreStatusFromVersions(versionRes2.Versions);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter,
-                    ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive', 'dataStoreName']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, [
+                    'location',
+                    'content-length',
+                    'originOp',
+                    'uploadId',
+                    'microVersionId',
+                    'x-amz-restore',
+                    'archive',
+                    'dataStoreName',
+                ]);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
 
@@ -447,14 +507,14 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',
-                    }
+                    },
                 };
                 const params = { Bucket: bucketName, Key: objectName };
-                
+
                 await s3.send(new PutObjectCommand(params));
                 await s3.send(new PutBucketVersioningCommand(vParams));
                 await s3.send(new PutObjectCommand(params));
-                
+
                 await fakeMetadataArchivePromise(bucketName, objectName, 'null', archive);
                 const objMDBefore = await getMetadataPromise(bucketName, objectName, 'null');
 
@@ -471,9 +531,16 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [1]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter,
-                    ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive', 'dataStoreName']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, [
+                    'location',
+                    'content-length',
+                    'originOp',
+                    'uploadId',
+                    'microVersionId',
+                    'x-amz-restore',
+                    'archive',
+                    'dataStoreName',
+                ]);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
 
@@ -482,13 +549,13 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',
-                    }
+                    },
                 };
                 const params = { Bucket: bucketName, Key: objectName };
-                
+
                 await s3.send(new PutObjectCommand(params));
                 await s3.send(new PutBucketVersioningCommand(vParams));
-                
+
                 const putRes = await s3.send(new PutObjectCommand(params));
                 const vId = putRes.VersionId;
 
@@ -509,9 +576,16 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter,
-                    ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive', 'dataStoreName']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, [
+                    'location',
+                    'content-length',
+                    'originOp',
+                    'uploadId',
+                    'microVersionId',
+                    'x-amz-restore',
+                    'archive',
+                    'dataStoreName',
+                ]);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
 
@@ -520,21 +594,21 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',
-                    }
+                    },
                 };
                 const sParams = {
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Suspended',
-                    }
+                    },
                 };
                 const params = { Bucket: bucketName, Key: objectName };
-                
+
                 await s3.send(new PutBucketVersioningCommand(vParams));
                 await s3.send(new PutObjectCommand(params));
                 await s3.send(new PutBucketVersioningCommand(sParams));
                 await s3.send(new PutObjectCommand(params));
-                
+
                 await fakeMetadataArchivePromise(bucketName, objectName, undefined, archive);
 
                 const objMDBefore = await getMetadataPromise(bucketName, objectName, undefined);
@@ -552,9 +626,16 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter,
-                    ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive', 'dataStoreName']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, [
+                    'location',
+                    'content-length',
+                    'originOp',
+                    'uploadId',
+                    'microVersionId',
+                    'x-amz-restore',
+                    'archive',
+                    'dataStoreName',
+                ]);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
 
@@ -563,22 +644,22 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',
-                    }
+                    },
                 };
                 const params = { Bucket: bucketName, Key: objectName };
-            
+
                 await s3.send(new PutBucketVersioningCommand(vParams));
                 await s3.send(new PutObjectCommand(params));
-                
+
                 const putRes = await s3.send(new PutObjectCommand(params));
                 const vId = putRes.VersionId;
 
                 await s3.send(new PutObjectCommand(params));
-                
+
                 await fakeMetadataArchivePromise(bucketName, objectName, vId, archive);
 
                 const objMDBefore = await getMetadataPromise(bucketName, objectName, vId);
-                
+
                 const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
                 const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
 
@@ -592,9 +673,16 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [1]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter,
-                    ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive', 'dataStoreName']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, [
+                    'location',
+                    'content-length',
+                    'originOp',
+                    'uploadId',
+                    'microVersionId',
+                    'x-amz-restore',
+                    'archive',
+                    'dataStoreName',
+                ]);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
 
@@ -603,18 +691,18 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',
-                    }
+                    },
                 };
                 const params = { Bucket: bucketName, Key: objectName };
 
                 await s3.send(new PutBucketVersioningCommand(vParams));
                 await s3.send(new PutObjectCommand(params));
-                
+
                 const putRes = await s3.send(new PutObjectCommand(params));
                 const vId = putRes.VersionId;
 
                 await fakeMetadataArchivePromise(bucketName, objectName, vId, archive);
-                
+
                 const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
                 const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
 
@@ -623,16 +711,23 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 await putMPUVersion(s3, bucketName, objectName, vId);
 
                 const objMDAfter = await getMetadataPromise(bucketName, objectName, vId);
-                
+
                 const versionRes2 = await metadataListObjectPromise(bucketName, mdListingParams, log);
                 const versionsAfter = clearUploadIdAndRestoreStatusFromVersions(versionRes2.Versions);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter,
-                    ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive', 'dataStoreName']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, [
+                    'location',
+                    'content-length',
+                    'originOp',
+                    'uploadId',
+                    'microVersionId',
+                    'x-amz-restore',
+                    'archive',
+                    'dataStoreName',
+                ]);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
 
@@ -641,31 +736,31 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',
-                    }
+                    },
                 };
                 const sParams = {
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Suspended',
-                    }
+                    },
                 };
                 const params = { Bucket: bucketName, Key: objectName };
 
                 await s3.send(new PutBucketVersioningCommand(vParams));
                 await s3.send(new PutObjectCommand(params));
-                
+
                 const putRes = await s3.send(new PutObjectCommand(params));
                 const vId = putRes.VersionId;
 
                 await fakeMetadataArchivePromise(bucketName, objectName, vId, archive);
-                
+
                 const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
                 const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
 
                 const objMDBefore = await getMetadataPromise(bucketName, objectName, vId);
-                
+
                 await s3.send(new PutBucketVersioningCommand(sParams));
-                
+
                 await putMPUVersion(s3, bucketName, objectName, vId);
 
                 const objMDAfter = await getMetadataPromise(bucketName, objectName, vId);
@@ -676,9 +771,16 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter,
-                    ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive', 'dataStoreName']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, [
+                    'location',
+                    'content-length',
+                    'originOp',
+                    'uploadId',
+                    'microVersionId',
+                    'x-amz-restore',
+                    'archive',
+                    'dataStoreName',
+                ]);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
             });
 
@@ -687,21 +789,21 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',
-                    }
+                    },
                 };
                 const params = { Bucket: bucketName, Key: objectName };
 
                 await s3.send(new PutObjectCommand(params));
-                
+
                 await fakeMetadataArchivePromise(bucketName, objectName, undefined, archive);
-                
+
                 const versionRes1 = await metadataListObjectPromise(bucketName, mdListingParams, log);
                 const versionsBefore = clearUploadIdAndRestoreStatusFromVersions(versionRes1.Versions);
-                
+
                 const objMDBefore = await getMetadataPromise(bucketName, objectName, undefined);
-                
+
                 await s3.send(new PutBucketVersioningCommand(vParams));
-                
+
                 await putMPUVersion(s3, bucketName, objectName, 'null');
 
                 const objMDAfter = await getMetadataPromise(bucketName, objectName, undefined);
@@ -712,9 +814,16 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter,
-                    ['location', 'content-length', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive', 'dataStoreName']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, [
+                    'location',
+                    'content-length',
+                    'originOp',
+                    'uploadId',
+                    'microVersionId',
+                    'x-amz-restore',
+                    'archive',
+                    'dataStoreName',
+                ]);
 
                 assert(isDeepStrictEqual(objMDAfter, objMDBefore), 'Objects should be deeply equal');
             });
@@ -726,12 +835,12 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     restoreRequestedAt: new Date(0),
                     restoreRequestedDays: 5,
                     restoreCompletedAt: new Date(10),
-                    restoreWillExpireAt: new Date(10 + (5 * 24 * 60 * 60 * 1000)),
+                    restoreWillExpireAt: new Date(10 + 5 * 24 * 60 * 60 * 1000),
                 };
                 await s3.send(new PutObjectCommand(params));
-                
+
                 await fakeMetadataArchivePromise(bucketName, objectName, undefined, archiveCompleted);
-                
+
                 try {
                     await putMPUVersion(s3, bucketName, objectName, '');
                     throw new Error('Expected InvalidObjectState error');
@@ -740,45 +849,45 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 }
             });
 
-            [
-                'non versioned',
-                'versioned',
-                'suspended'
-            ].forEach(versioning => {
+            ['non versioned', 'versioned', 'suspended'].forEach(versioning => {
                 it(`should update restore metadata while keeping storage class (${versioning})`, async () => {
                     const params = { Bucket: bucketName, Key: objectName };
 
                     if (versioning === 'versioned') {
-                        await s3.send(new PutBucketVersioningCommand({
-                            Bucket: bucketName,
-                            VersioningConfiguration: { Status: 'Enabled' }
-                        }));
+                        await s3.send(
+                            new PutBucketVersioningCommand({
+                                Bucket: bucketName,
+                                VersioningConfiguration: { Status: 'Enabled' },
+                            }),
+                        );
                     } else if (versioning === 'suspended') {
-                        await s3.send(new PutBucketVersioningCommand({
-                            Bucket: bucketName,
-                            VersioningConfiguration: { Status: 'Suspended' }
-                        }));
+                        await s3.send(
+                            new PutBucketVersioningCommand({
+                                Bucket: bucketName,
+                                VersioningConfiguration: { Status: 'Suspended' },
+                            }),
+                        );
                     }
-                    
+
                     await s3.send(new PutObjectCommand(params));
-                    
+
                     await fakeMetadataArchivePromise(bucketName, objectName, undefined, archive);
 
                     const objMDBefore = await getMetadataPromise(bucketName, objectName, undefined);
 
                     await metadataListObjectPromise(bucketName, mdListingParams, log);
-                    
+
                     await putMPUVersion(s3, bucketName, objectName, '');
 
                     const objMDAfter = await getMetadataPromise(bucketName, objectName, undefined);
-                    
+
                     const listRes = await s3.send(new ListObjectsCommand({ Bucket: bucketName }));
                     assert.strictEqual(listRes.Contents.length, 1);
                     assert.strictEqual(listRes.Contents[0].StorageClass, LOCATION_NAME_DMF);
-                    
+
                     const headRes = await s3.send(new HeadObjectCommand(params));
                     assert.strictEqual(headRes.StorageClass, LOCATION_NAME_DMF);
-                    
+
                     const getRes = await s3.send(new GetObjectCommand(params));
                     assert.strictEqual(getRes.StorageClass, LOCATION_NAME_DMF);
 
@@ -786,10 +895,14 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     assert.deepStrictEqual(objMDAfter.dataStoreName, 'us-east-1');
 
                     assert.deepStrictEqual(objMDAfter.archive.archiveInfo, objMDBefore.archive.archiveInfo);
-                    assert.deepStrictEqual(objMDAfter.archive.restoreRequestedAt,
-                        objMDBefore.archive.restoreRequestedAt);
-                    assert.deepStrictEqual(objMDAfter.archive.restoreRequestedDays,
-                        objMDBefore.archive.restoreRequestedDays);
+                    assert.deepStrictEqual(
+                        objMDAfter.archive.restoreRequestedAt,
+                        objMDBefore.archive.restoreRequestedAt,
+                    );
+                    assert.deepStrictEqual(
+                        objMDAfter.archive.restoreRequestedDays,
+                        objMDBefore.archive.restoreRequestedDays,
+                    );
                     assert.deepStrictEqual(objMDAfter['x-amz-restore']['ongoing-request'], false);
 
                     assert(objMDAfter.archive.restoreCompletedAt);
@@ -798,18 +911,17 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 });
             });
 
-
             it('should "copy" all but non data-related metadata (data encryption, data size...)', async () => {
                 const params = {
                     Bucket: bucketNameMD,
-                    Key: objectName
+                    Key: objectName,
                 };
                 const putParams = {
                     ...params,
                     Metadata: {
                         'custom-user-md': 'custom-md',
                     },
-                    WebsiteRedirectLocation: 'http://custom-redirect'
+                    WebsiteRedirectLocation: 'http://custom-redirect',
                 };
                 const aclParams = {
                     ...params,
@@ -819,51 +931,51 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 const tagParams = {
                     ...params,
                     Tagging: {
-                        TagSet: [{
-                        Key: 'tag1',
-                        Value: 'value1'
-                        }, {
-                            Key: 'tag2',
-                            Value: 'value2'
-                        }]
-                    }
+                        TagSet: [
+                            {
+                                Key: 'tag1',
+                                Value: 'value1',
+                            },
+                            {
+                                Key: 'tag2',
+                                Value: 'value2',
+                            },
+                        ],
+                    },
                 };
                 const legalHoldParams = {
                     ...params,
                     LegalHold: {
-                        Status: 'ON'
+                        Status: 'ON',
                     },
                 };
                 const acl = {
-                    'Canned': '',
-                    'FULL_CONTROL': [
+                    Canned: '',
+                    FULL_CONTROL: [
                         // canonicalID of user Bart
                         '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
                     ],
-                    'WRITE_ACP': [],
-                    'READ': [],
-                    'READ_ACP': [],
+                    WRITE_ACP: [],
+                    READ: [],
+                    READ_ACP: [],
                 };
                 const tags = { tag1: 'value1', tag2: 'value2' };
                 const replicationInfo = {
-                    'status': 'COMPLETED',
-                    'backends': [
-                            {
-                                    'site': 'azure-normal',
-                                    'status': 'COMPLETED',
-                                    'dataStoreVersionId': '',
-                            },
+                    status: 'COMPLETED',
+                    backends: [
+                        {
+                            site: 'azure-normal',
+                            status: 'COMPLETED',
+                            dataStoreVersionId: '',
+                        },
                     ],
-                    'content': [
-                            'DATA',
-                            'METADATA',
-                    ],
-                    'destination': 'arn:aws:s3:::versioned',
-                    'storageClass': 'azure-normal',
-                    'role': 'arn:aws:iam::root:role/s3-replication-role',
-                    'storageType': 'azure',
-                    'dataStoreVersionId': '',
-                    'isNFS': null,
+                    content: ['DATA', 'METADATA'],
+                    destination: 'arn:aws:s3:::versioned',
+                    storageClass: 'azure-normal',
+                    role: 'arn:aws:iam::root:role/s3-replication-role',
+                    storageType: 'azure',
+                    dataStoreVersionId: '',
+                    isNFS: null,
                 };
                 await s3.send(new PutObjectCommand(putParams));
                 await s3.send(new PutObjectAclCommand(aclParams));
@@ -882,7 +994,6 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 objMD['content-encoding'] = 'testencoding';
                 objMD['x-amz-server-side-encryption'] = 'aws:kms';
 
-                
                 await metadataPutObjectMDPromise(bucketNameMD, objectName, objMD, undefined, log);
 
                 await putMPUVersion(s3, bucketNameMD, objectName, '');
@@ -903,7 +1014,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 // data's etag inside x-amz-restore
                 assert.strictEqual(finalObjMD['content-md5'], 'testmd5');
                 assert.strictEqual(typeof finalObjMD['x-amz-restore']['content-md5'], 'string');
-                
+
                 // removing legal hold to be able to clean the bucket after the test
                 legalHoldParams.LegalHold.Status = 'OFF';
                 await s3.send(new PutObjectLegalHoldCommand(legalHoldParams));
