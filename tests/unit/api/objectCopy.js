@@ -784,10 +784,9 @@ describe('objectCopy source size limit', () => {
         constants.maximumAllowedUploadSize = sourceSize - 1;
         config.bypassMaxPutObjectSize = true;
         const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
-        objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
-            undefined, log, err => {
-                assert.ifError(err);
-                done();
-            });
+        objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+            assert.ifError(err);
+            done();
+        });
     });
 });
