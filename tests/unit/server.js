@@ -8,6 +8,7 @@ const arsenal = require('arsenal');
 const uuid = require('uuid');
 const logger = require('../../lib/utilities/logger');
 const { config: defaultConfig } = require('../../lib/Config');
+const tracing = require('arsenal/build/lib/tracing');
 const { S3Server } = require('../../lib/server');
 
 describe('S3Server', () => {
@@ -26,7 +27,7 @@ describe('S3Server', () => {
             internalPort: undefined,
             internalListenOn: [],
             metricsListenOn: [],
-            metricsPort: 8002
+            metricsPort: 8002,
         };
         server = new S3Server(config);
 
@@ -38,14 +39,15 @@ describe('S3Server', () => {
         sinon.restore();
     });
 
-    const waitReady = () => new Promise(resolve => {
-        const interval = setInterval(() => {
-            if (server.started) {
-                clearInterval(interval);
-                resolve();
-            }
-        }, 100);
-    });
+    const waitReady = () =>
+        new Promise(resolve => {
+            const interval = setInterval(() => {
+                if (server.started) {
+                    clearInterval(interval);
+                    resolve();
+                }
+            }, 100);
+        });
 
     describe('initiateStartup', () => {
         beforeEach(() => {
@@ -56,12 +58,13 @@ describe('S3Server', () => {
 
         // `sinon` matcher to match when the callback argument actually invokes the expected
         // function
-        const wrapperFor = expected => sinon.match(actual => {
-            const req = uuid.v4();
-            const res = uuid.v4();
-            actual(req, res);
-            return expected.calledWith(req, res);
-        });
+        const wrapperFor = expected =>
+            sinon.match(actual => {
+                const req = uuid.v4();
+                const res = uuid.v4();
+                actual(req, res);
+                return expected.calledWith(req, res);
+            });
 
         it('should start API server with default port if no listenOn is provided', async () => {
             config.port = 8000;
@@ -73,13 +76,12 @@ describe('S3Server', () => {
             assert.strictEqual(startServerStub.callCount, 2);
             assert(startServerStub.calledWith(wrapperFor(server.routeRequest), 8000));
             assert(startServerStub.calledWith(wrapperFor(server.routeAdminRequest)));
-
         });
-        
+
         it('should start API servers from listenOn array', async () => {
             config.listenOn = [
                 { port: 8000, ip: '127.0.0.1' },
-                { port: 8001, ip: '0.0.0.0' }
+                { port: 8001, ip: '0.0.0.0' },
             ];
             config.port = 9999; // Should be ignored since listenOn is provided
 
@@ -93,7 +95,7 @@ describe('S3Server', () => {
             assert(startServerStub.calledWith(wrapperFor(server.routeAdminRequest)));
             assert.strictEqual(startServerStub.neverCalledWith(sinon.any, 9999), true);
         });
-        
+
         it('should start internal API server with internalPort if no internalListenOn is provided', async () => {
             config.internalPort = 9000;
 
@@ -104,11 +106,11 @@ describe('S3Server', () => {
             assert.strictEqual(startServerStub.callCount, 2);
             assert(startServerStub.calledWith(wrapperFor(server.internalRouteRequest), 9000));
         });
-        
+
         it('should start internal API servers from internalListenOn array', async () => {
             config.internalListenOn = [
                 { port: 9000, ip: '127.0.0.1' },
-                { port: 9001, ip: '0.0.0.0' }
+                { port: 9001, ip: '0.0.0.0' },
             ];
             config.internalPort = 9999; // Should be ignored since internalListenOn is provided
 
@@ -122,29 +124,29 @@ describe('S3Server', () => {
             assert(startServerStub.calledWith(wrapperFor(server.routeAdminRequest)));
             assert.strictEqual(startServerStub.neverCalledWith(sinon.any, 9999), true);
         });
-        
+
         it('should start metrics server with metricsPort if no metricsListenOn is provided', async () => {
             config.metricsPort = 8012;
 
             server.initiateStartup(log);
 
             await waitReady();
-            
+
             assert.strictEqual(startServerStub.callCount, 1);
             assert(startServerStub.calledWith(wrapperFor(server.routeAdminRequest), 8012));
         });
-        
+
         it('should start metrics servers from metricsListenOn array', async () => {
             config.metricsListenOn = [
                 { port: 8002, ip: '127.0.0.1' },
-                { port: 8003, ip: '0.0.0.0' }
+                { port: 8003, ip: '0.0.0.0' },
             ];
             config.metricsPort = 9999; // Should be ignored since metricsListenOn is provided
 
             server.initiateStartup(log);
 
             await waitReady();
-            
+
             assert.strictEqual(startServerStub.callCount, 2);
             assert(startServerStub.calledWith(wrapperFor(server.routeAdminRequest), 8002, '127.0.0.1'));
             assert(startServerStub.calledWith(wrapperFor(server.routeAdminRequest), 8003, '0.0.0.0'));
@@ -169,10 +171,10 @@ describe('S3Server', () => {
 
     describe('internalRouteRequest', () => {
         const resp = {
-            on: () => { },
-            setHeader: () => { },
-            writeHead: () => { },
-            end: () => { },
+            on: () => {},
+            setHeader: () => {},
+            writeHead: () => {},
+            end: () => {},
         };
 
         let req;
@@ -181,7 +183,7 @@ describe('S3Server', () => {
             req = {
                 headers: {},
                 socket: {
-                    setNoDelay: () => { },
+                    setNoDelay: () => {},
                 },
                 url: 'http://localhost:8000',
             };
@@ -219,7 +221,7 @@ describe('S3Server request timeout', () => {
 
     beforeEach(() => {
         sandbox = sinon.createSandbox();
-        
+
         // Create a mock server to capture the requestTimeout setting
         mockServer = {
             requestTimeout: null,
@@ -227,7 +229,7 @@ describe('S3Server request timeout', () => {
             listen: sandbox.stub(),
             address: sandbox.stub().returns({ address: '127.0.0.1', port: 8000 }),
         };
-        
+
         // Mock server creation to return our mock
         sandbox.stub(http, 'createServer').returns(mockServer);
         sandbox.stub(https, 'createServer').returns(mockServer);
@@ -240,13 +242,93 @@ describe('S3Server request timeout', () => {
     it('should set server.requestTimeout to 0 when starting server', () => {
         const server = new S3Server({
             ...defaultConfig,
-            https: false
+            https: false,
         });
-        
+
         // Call _startServer which should set requestTimeout = 0
         server._startServer(() => {}, 8000, '127.0.0.1');
-        
+
         // Verify that requestTimeout was set to 0
         assert.strictEqual(mockServer.requestTimeout, 0);
+    });
+});
+
+describe('S3Server shutdown', () => {
+    let server;
+    let tracingCloseStub;
+    let exitStub;
+
+    beforeEach(() => {
+        server = new S3Server({
+            ...defaultConfig,
+            port: undefined,
+            listenOn: [],
+            internalPort: undefined,
+            internalListenOn: [],
+            metricsListenOn: [],
+            metricsPort: 8002,
+        });
+        // S3Server.cleanUp iterates this.servers and closes each — empty
+        // array makes the Promise.all in cleanUp resolve immediately.
+        server.servers = [];
+        // Avoid touching the rateLimiting refill-job teardown path.
+        server.config = { ...server.config, rateLimiting: { enabled: false } };
+
+        tracingCloseStub = sinon.stub(tracing, 'close').resolves();
+        exitStub = sinon.stub(process, 'exit');
+    });
+
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    it('should flush OTEL via tracing.close before process.exit(0) on cleanUp', async () => {
+        await server.cleanUp();
+        sinon.assert.callOrder(tracingCloseStub, exitStub);
+        assert.strictEqual(tracingCloseStub.callCount, 1);
+        assert.strictEqual(exitStub.callCount, 1);
+        assert.strictEqual(exitStub.firstCall.args[0], 0);
+    });
+
+    it('should flush OTEL on cleanUp even when a server.close errors', async () => {
+        const erroringServer = {
+            close(cb) {
+                cb(new Error('socket already closed'));
+            },
+        };
+        server.servers = [erroringServer];
+        await assert.rejects(() => server.cleanUp(), /socket already closed/);
+        assert.strictEqual(tracingCloseStub.callCount, 1);
+        assert.strictEqual(exitStub.callCount, 1);
+        assert.strictEqual(exitStub.firstCall.args[0], 0);
+    });
+
+    it('should still exit(0) on cleanUp even if tracing.close rejects', async () => {
+        tracingCloseStub.rejects(new Error('flush failed'));
+        await assert.rejects(() => server.cleanUp(), /flush failed/);
+        assert.strictEqual(tracingCloseStub.callCount, 1);
+        assert.strictEqual(exitStub.firstCall.args[0], 0);
+    });
+
+    it('should flush OTEL before process.exit(1) on caughtExceptionShutdown (non-cluster)', async () => {
+        server.cluster = false;
+        await server.caughtExceptionShutdown();
+        sinon.assert.callOrder(tracingCloseStub, exitStub);
+        assert.strictEqual(tracingCloseStub.callCount, 1);
+        assert.strictEqual(exitStub.firstCall.args[0], 1);
+    });
+
+    it('should flush OTEL before worker.kill on caughtExceptionShutdown (cluster worker)', async () => {
+        const killStub = sinon.stub();
+        server.cluster = true;
+        server.worker = { id: 1, process: { pid: 12345 }, kill: killStub };
+
+        await server.caughtExceptionShutdown();
+
+        sinon.assert.callOrder(tracingCloseStub, killStub);
+        assert.strictEqual(tracingCloseStub.callCount, 1);
+        assert.strictEqual(killStub.callCount, 1);
+        // The non-cluster process.exit branch is skipped in this path.
+        assert.strictEqual(exitStub.callCount, 0);
     });
 });
