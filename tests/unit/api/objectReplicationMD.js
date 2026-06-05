@@ -1,6 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
+const { promisify } = require('util');
 
 const BucketInfo = require('arsenal').models.BucketInfo;
 
@@ -72,28 +73,16 @@ const emptyReplicationMD = {
     status: '',
     backends: [],
     content: [],
-    destination: '',
-    storageClass: '',
-    role: '',
-    storageType: '',
-    dataStoreVersionId: '',
-    isNFS: undefined,
-};
-const expectedEmptyReplicationMD = {
-    status: '',
-    backends: [],
-    content: [],
-    destination: '',
-    storageClass: '',
-    role: '',
-    storageType: '',
-    dataStoreVersionId: '',
 };
 
 // Check that the object key has the expected replication information.
+// Normalizes via JSON round-trip to drop undefined-valued keys so that
+// expectations don't need to know whether the MD path went through a
+// metadata read (which JSON-serializes and drops undefined fields).
 function checkObjectReplicationInfo(key, expected) {
     const objectMD = metadata.keyMaps.get(bucketName).get(key);
-    assert.deepStrictEqual(objectMD.replicationInfo, expected);
+    const actual = JSON.parse(JSON.stringify(objectMD.replicationInfo));
+    assert.deepStrictEqual(actual, expected);
 }
 
 // Put the object key and check the replication information.
@@ -240,7 +229,7 @@ describe('Replication object MD without bucket replication config', () => {
                 if (err) {
                     return done(err);
                 }
-                checkObjectReplicationInfo(keyA, expectedEmptyReplicationMD);
+                checkObjectReplicationInfo(keyA, emptyReplicationMD);
                 return done();
             },
         ));
@@ -257,7 +246,7 @@ describe('Replication object MD without bucket replication config', () => {
         );
 
         it('should not update object metadata if putting tag', done => {
-            checkObjectReplicationInfo(keyA, expectedEmptyReplicationMD);
+            checkObjectReplicationInfo(keyA, emptyReplicationMD);
             return done();
         });
 
@@ -272,7 +261,7 @@ describe('Replication object MD without bucket replication config', () => {
                     if (err) {
                         return done(err);
                     }
-                    checkObjectReplicationInfo(keyA, expectedEmptyReplicationMD);
+                    checkObjectReplicationInfo(keyA, emptyReplicationMD);
                     return done();
                 },
             ));
@@ -282,7 +271,7 @@ describe('Replication object MD without bucket replication config', () => {
                 if (err) {
                     return done(err);
                 }
-                checkObjectReplicationInfo(keyA, expectedEmptyReplicationMD);
+                checkObjectReplicationInfo(keyA, emptyReplicationMD);
                 return done();
             }));
 
@@ -309,19 +298,14 @@ describe('Replication object MD without bucket replication config', () => {
                         site: 'zenko',
                         status: 'PENDING',
                         dataStoreVersionId: '',
+                        destination: bucketARN,
+                        role: 'arn:aws:iam::account-id:role/dest-resource',
                     },
                 ],
                 content: ['DATA', 'METADATA'],
-                destination: bucketARN,
-                storageClass: 'zenko',
-                role: 'arn:aws:iam::account-id:role/src-resource,' + 'arn:aws:iam::account-id:role/dest-resource',
-                storageType: '',
-                dataStoreVersionId: '',
-                isNFS: undefined,
+                role: 'arn:aws:iam::account-id:role/src-resource',
             };
-            const newReplicationMD = hasStorageClass
-                ? Object.assign(replicationMD, { storageClass: storageClassType })
-                : replicationMD;
+            const newReplicationMD = replicationMD;
             const replicateMetadataOnly = Object.assign({}, newReplicationMD, { content: ['METADATA'] });
 
             beforeEach(() => {
@@ -407,7 +391,16 @@ describe('Replication object MD without bucket replication config', () => {
                     type: 'aws_s3',
                 };
 
-                const replicationMD = { ...newReplicationMD, storageType: 'aws_s3' };
+                const replicationMD = {
+                    ...newReplicationMD,
+                    backends: [
+                        {
+                            site: 'zenko',
+                            status: 'PENDING',
+                            dataStoreVersionId: '',
+                        },
+                    ],
+                };
 
                 let completedReplicationInfo;
                 async.series(
@@ -584,29 +577,17 @@ describe('Replication object MD without bucket replication config', () => {
             });
 
             ['awsbackend', 'azurebackend', 'gcpbackend', 'awsbackend,azurebackend'].forEach(backend => {
-                const storageTypeMap = {
-                    awsbackend: 'aws_s3',
-                    azurebackend: 'azure',
-                    gcpbackend: 'gcp',
-                    'awsbackend,azurebackend': 'aws_s3,azure',
-                };
-                const storageType = storageTypeMap[backend];
                 const backends = backend.split(',').map(site => ({
                     site,
                     status: 'PENDING',
                     dataStoreVersionId: '',
                 }));
-                describe('Object metadata replicationInfo storageType value', () => {
+                describe('Object metadata replicationInfo for cloud backends', () => {
                     const expectedReplicationInfo = {
                         status: 'PENDING',
                         backends,
                         content: ['DATA', 'METADATA'],
-                        destination: 'arn:aws:s3:::destination-bucket',
-                        storageClass: backend,
                         role: 'arn:aws:iam::account-id:role/resource',
-                        storageType,
-                        dataStoreVersionId: '',
-                        isNFS: undefined,
                     };
 
                     // Expected for a metadata-only replication operation (for
@@ -618,8 +599,7 @@ describe('Replication object MD without bucket replication config', () => {
                     beforeEach(() =>
                         // We have already created the bucket, so update the
                         // replication configuration to include a location
-                        // constraint for the `storageClass`. This results in a
-                        // `storageType` of 'aws_s3', for example.
+                        // constraint for the storage class.
                         Object.assign(metadata.buckets.get(bucketName), {
                             _replicationConfiguration: {
                                 role: 'arn:aws:iam::account-id:role/resource',
@@ -749,4 +729,159 @@ describe('Replication object MD without bucket replication config', () => {
             });
         },
     );
+});
+
+describe('Replication object MD with CRR and cloud destinations on the same object', () => {
+    const crrSite = 'crr-site';
+    const cloudSite = 'awsbackend';
+    const crrRule = {
+        id: 'rule-crr',
+        prefix: keyA,
+        enabled: true,
+        priority: 1,
+        storageClass: crrSite,
+        destination: 'arn:aws:s3:::crr-bucket',
+    };
+    const cloudRule = {
+        id: 'rule-cloud',
+        prefix: keyA,
+        enabled: true,
+        priority: 2,
+        storageClass: cloudSite,
+        destination: 'arn:aws:s3:::aws-bucket',
+    };
+
+    function setupBucket(rules) {
+        cleanup();
+        createBucket();
+        config.locationConstraints[crrSite] = { type: '' };
+        config.locationConstraints[cloudSite] = { type: 'aws_s3' };
+        Object.assign(metadata.buckets.get(bucketName), {
+            _versioningConfiguration: { status: 'Enabled' },
+            _replicationConfiguration: {
+                role: 'arn:aws:iam::account-id:role/src-role,' + 'arn:aws:iam::account-id:role/dst-role',
+                rules,
+            },
+        });
+    }
+
+    function completeAllBackends() {
+        const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+        objectMD.replicationInfo.status = 'COMPLETED';
+        objectMD.replicationInfo.backends.forEach(b => {
+            // eslint-disable-next-line no-param-reassign
+            b.status = 'COMPLETED';
+        });
+    }
+
+    afterEach(() => {
+        cleanup();
+        delete config.locationConstraints[crrSite];
+        delete config.locationConstraints[cloudSite];
+    });
+
+    it(
+        'should reset only the CRR backend to PENDING on putObjectACL, ' +
+            'preserving the completed status of the cloud backend',
+        done => {
+            setupBucket([crrRule, cloudRule]);
+            async.series(
+                [
+                    next => objectPut(authInfo, getObjectPutReq(keyA, true), undefined, log, next),
+                    next => {
+                        completeAllBackends();
+                        return objectPutACL(authInfo, objectACLReq, log, next);
+                    },
+                ],
+                err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+                    const crrBackend = objectMD.replicationInfo.backends.find(b => b.site === crrSite);
+                    const cloudBackend = objectMD.replicationInfo.backends.find(b => b.site === cloudSite);
+                    // CRR backend is re-kicked: status reset to PENDING with the
+                    // resolved destination role stamped on the entry.
+                    assert.strictEqual(crrBackend.status, 'PENDING');
+                    assert.strictEqual(crrBackend.role, 'arn:aws:iam::account-id:role/dst-role');
+                    assert.strictEqual(crrBackend.destination, 'arn:aws:s3:::crr-bucket');
+                    // Cloud backend is left alone: no ACL replication for cloud,
+                    // and no resolved role/destination on the entry.
+                    assert.strictEqual(cloudBackend.status, 'COMPLETED');
+                    assert.strictEqual(cloudBackend.role, undefined);
+                    assert.strictEqual(cloudBackend.destination, undefined);
+                    return done();
+                },
+            );
+        },
+    );
+
+    it('should not touch replicationInfo when no CRR backend is present', done => {
+        setupBucket([cloudRule]);
+        async.series(
+            [
+                next => objectPut(authInfo, getObjectPutReq(keyA, true), undefined, log, next),
+                next => {
+                    completeAllBackends();
+                    return objectPutACL(authInfo, objectACLReq, log, next);
+                },
+            ],
+            err => {
+                if (err) {
+                    return done(err);
+                }
+                const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+                // Status untouched because nothing to ACL-replicate.
+                assert.strictEqual(objectMD.replicationInfo.status, 'COMPLETED');
+                objectMD.replicationInfo.backends.forEach(b => {
+                    assert.strictEqual(b.status, 'COMPLETED');
+                });
+                return done();
+            },
+        );
+    });
+
+    it('should add a newly configured CRR destination to backends on ' + 'putObjectACL', done => {
+        setupBucket([cloudRule]);
+        async.series(
+            [
+                next => objectPut(authInfo, getObjectPutReq(keyA, true), undefined, log, next),
+                next => {
+                    completeAllBackends();
+                    // Operator adds a CRR destination after the object was
+                    // already replicated to cloud.
+                    metadata.buckets.get(bucketName)._replicationConfiguration.rules.unshift(crrRule);
+                    return objectPutACL(authInfo, objectACLReq, log, next);
+                },
+            ],
+            err => {
+                if (err) {
+                    return done(err);
+                }
+                const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+                const crrBackend = objectMD.replicationInfo.backends.find(b => b.site === crrSite);
+                const cloudBackend = objectMD.replicationInfo.backends.find(b => b.site === cloudSite);
+                assert.ok(crrBackend, 'new CRR backend should be added');
+                assert.strictEqual(crrBackend.status, 'PENDING');
+                assert.strictEqual(cloudBackend.status, 'COMPLETED');
+                return done();
+            },
+        );
+    });
+
+    it('should not add a newly configured cloud destination to backends on putObjectACL', async () => {
+        setupBucket([crrRule]);
+        await promisify(objectPut)(authInfo, getObjectPutReq(keyA, true), undefined, log);
+        completeAllBackends();
+
+        metadata.buckets.get(bucketName)._replicationConfiguration.rules.push(cloudRule);
+        await promisify(objectPutACL)(authInfo, objectACLReq, log);
+
+        const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+        const crrBackend = objectMD.replicationInfo.backends.find(b => b.site === crrSite);
+        const cloudBackend = objectMD.replicationInfo.backends.find(b => b.site === cloudSite);
+
+        assert.strictEqual(crrBackend.status, 'PENDING');
+        assert.strictEqual(cloudBackend, undefined, 'new cloud backend should not be added');
+    });
 });
