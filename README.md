@@ -5,11 +5,6 @@
 [![Docker Pulls][badgedocker]](https://hub.docker.com/r/zenko/cloudserver)
 [![Docker Pulls][badgetwitter]](https://twitter.com/zenko)
 
-## Build Status
-
-![Public Build Status][badgepub]
-![Private Build Status][badgepriv]
-
 ## Overview
 
 CloudServer (formerly S3 Server) is an open-source Amazon S3-compatible
@@ -169,5 +164,3 @@ This starts a Zenko CloudServer using Vault for user management.
 
 [badgetwitter]: https://img.shields.io/twitter/follow/zenko.svg?style=social&label=Follow
 [badgedocker]: https://img.shields.io/docker/pulls/scality/s3server.svg
-[badgepub]: https://circleci.com/gh/scality/S3.svg?style=svg
-[badgepriv]: http://ci.ironmann.io/gh/scality/S3.svg?style=svg&circle-token=1f105b7518b53853b5b7cf72302a3f75d8c598ae
