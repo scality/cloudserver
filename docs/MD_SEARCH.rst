@@ -103,14 +103,14 @@ Performing Metadata Searches with Zenko
 You can perform metadata searches by:
 
 + Using the :code:`search_bucket` tool in the
-  `Scality/S3 <https://github.com/scality/S3>`_ GitHub repository.
+  `Scality/cloudserver <https://github.com/scality/cloudserver>`_ GitHub repository.
 + Creating a signed HTTP request to Zenko in your preferred programming
   language.
 
 Using the S3 Tool
 +++++++++++++++++
 
-After cloning the `Scality/S3 <https://github.com/scality/S3>`_ GitHub repository
+After cloning the `Scality/cloudserver <https://github.com/scality/cloudserver>`_ GitHub repository
 and installing the necessary dependencies, run the following command in the S3
 project’s root directory to access the search tool:
 
