@@ -1,5 +1,6 @@
 const assert = require('assert');
 const async = require('async');
+const crypto = require('crypto');
 const { Readable } = require('stream');
 const { storage, versioning } = require('arsenal');
 const sinon = require('sinon');
@@ -972,6 +973,25 @@ describe('objectCopy checksum recompute', () => {
                     }
                 }));
         }, done);
+    });
+
+    it('should store a part-prefixed dataStoreETag on the recomputed destination location', done => {
+        // The recompute path writes the destination through data.put, which
+        // does not return a dataStoreETag; it must be filled in from the MD5
+        // of the streamed bytes, prefixed like createAndStoreObject does.
+        const expectedMD5 = crypto.createHash('md5').update(objData[0]).digest('hex');
+        const req = _createObjectCopyRequest(destBucketName, {
+            'x-amz-checksum-algorithm': 'SHA256',
+        });
+        objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
+            assert.ifError(err);
+            metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
+                assert.ifError(err);
+                assert.strictEqual(md.location[0].dataStoreETag, `1:${expectedMD5}`,
+                    'recomputed destination location should carry a 1:-prefixed MD5 dataStoreETag');
+                done();
+            });
+        });
     });
 
     it('should reject an unknown x-amz-checksum-algorithm value with InvalidRequest', done => {
