@@ -3431,17 +3431,6 @@ describe('objectPutPart checksum response headers', () => {
             done();
         });
     });
-
-    it('should return x-amz-checksum-crc64nvme response header when no checksum header is provided', done => {
-        const expectedCrc64nvme = '5evlCr2wyO4=';
-        const partRequest = _createPutPartRequest(testUploadId, '1', postBody);
-
-        objectPutPart(authInfo, partRequest, undefined, log, (err, _hexDigest, resHeaders) => {
-            assert.ifError(err);
-            assert.strictEqual(resHeaders['x-amz-checksum-crc64nvme'], expectedCrc64nvme);
-            done();
-        });
-    });
 });
 
 describe('initiateMultipartUpload checksum headers', () => {

@@ -298,4 +298,62 @@ describe('objectPutPart checksum validation', () => {
             });
         });
     });
+
+    describe('response checksum header', () => {
+        const algos = Object.keys(algorithms);
+
+        it('should not return a checksum header on a default MPU when none is sent', done => {
+            initiateMPU({}, (err, uploadId) => {
+                assert.ifError(err);
+                const request = makePutPartRequest(uploadId, 1, partBody);
+                objectPutPart(authInfo, request, undefined, log, (err, hexDigest, corsHeaders) => {
+                    assert.ifError(err);
+                    algos.forEach(algo => {
+                        assert.strictEqual(corsHeaders[`x-amz-checksum-${algo}`], undefined);
+                    });
+                    // The part checksum is still stored so CompleteMPU can
+                    // compute the final object checksum.
+                    const partMD = getPartMetadata(uploadId);
+                    assert(partMD);
+                    assert.strictEqual(partMD.checksumAlgorithm, 'crc64nvme');
+                    assert(partMD.checksumValue);
+                    done();
+                });
+            });
+        });
+
+        algos.forEach(algo => {
+            it(`should echo a client-supplied ${algo} checksum on a default MPU`, done => {
+                initiateMPU({}, (err, uploadId) => {
+                    assert.ifError(err);
+                    Promise.resolve(algorithms[algo].digest(partBody)).then(digest => {
+                        const request = makePutPartRequest(uploadId, 1, partBody, {
+                            [`x-amz-checksum-${algo}`]: digest,
+                        });
+                        objectPutPart(authInfo, request, undefined, log, (err, hexDigest, corsHeaders) => {
+                            assert.ifError(err);
+                            assert.strictEqual(corsHeaders[`x-amz-checksum-${algo}`], digest);
+                            done();
+                        });
+                    }).catch(done);
+                });
+            });
+
+            it(`should echo the ${algo} checksum on an explicit ${algo} MPU`, done => {
+                initiateMPU({ 'x-amz-checksum-algorithm': algo }, (err, uploadId) => {
+                    assert.ifError(err);
+                    Promise.resolve(algorithms[algo].digest(partBody)).then(digest => {
+                        const request = makePutPartRequest(uploadId, 1, partBody, {
+                            [`x-amz-checksum-${algo}`]: digest,
+                        });
+                        objectPutPart(authInfo, request, undefined, log, (err, hexDigest, corsHeaders) => {
+                            assert.ifError(err);
+                            assert.strictEqual(corsHeaders[`x-amz-checksum-${algo}`], digest);
+                            done();
+                        });
+                    }).catch(done);
+                });
+            });
+        });
+    });
 });

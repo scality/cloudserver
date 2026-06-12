@@ -175,12 +175,23 @@ describe('UploadPart checksum validation', () =>
                 });
             });
 
-            it('should accept part with no checksum header', async () => {
-                const res = await s3.send(new UploadPartCommand({
+            it('should return no per-part checksum when none is sent', async () => {
+                // WHEN_REQUIRED so the SDK does not auto-attach a crc32: the
+                // part is genuinely uploaded with no checksum.
+                const noCksumS3 = new BucketUtility('default', {
+                    ...sigCfg,
+                    requestChecksumCalculation: 'WHEN_REQUIRED',
+                    responseChecksumValidation: 'WHEN_REQUIRED',
+                }).s3;
+                const res = await noCksumS3.send(new UploadPartCommand({
                     Bucket: bucket, Key: key, UploadId: uploadId,
                     PartNumber: 2 * allAlgos.length + 1, Body: partBody,
                 }));
                 assert(res.ETag);
+                const present = ['ChecksumCRC32', 'ChecksumCRC32C', 'ChecksumCRC64NVME',
+                    'ChecksumSHA1', 'ChecksumSHA256'].filter(f => res[f] !== undefined);
+                assert.deepStrictEqual(present, [],
+                    `default MPU UploadPart should return no checksum, got: ${present.join(', ')}`);
             });
         });
     })

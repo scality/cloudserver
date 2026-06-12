@@ -184,6 +184,65 @@ describe('CompleteMultipartUpload final-object checksum', () =>
             assert.strictEqual(head.ChecksumType, 'FULL_OBJECT');
         });
 
+        describe('SDK-style checksum forwarding', () => {
+            let fwdS3;
+            const checksumFields = [
+                'ChecksumCRC32', 'ChecksumCRC32C', 'ChecksumCRC64NVME',
+                'ChecksumSHA1', 'ChecksumSHA256',
+            ];
+            // explicit algorithms + the no-algorithm default (null)
+            const configs = ['CRC32', 'CRC32C', 'CRC64NVME', 'SHA1', 'SHA256', null];
+
+            before(() => {
+                // WHEN_REQUIRED: the SDK sends a per-part checksum only when we
+                // explicitly provide one, and nothing for the default MPU.
+                fwdS3 = new BucketUtility('default', {
+                    ...sigCfg,
+                    requestChecksumCalculation: 'WHEN_REQUIRED',
+                    responseChecksumValidation: 'WHEN_REQUIRED',
+                }).s3;
+            });
+
+            configs.forEach(algo => {
+                const label = algo || 'no algorithm (default)';
+                it(`should forward the UploadPart checksum and complete (${label})`, async () => {
+                    const key = `complete-forward-${(algo || 'default').toLowerCase()}-${Date.now()}`;
+                    const create = await fwdS3.send(new CreateMultipartUploadCommand({
+                        Bucket: bucket, Key: key,
+                        ...(algo ? { ChecksumAlgorithm: algo } : {}),
+                    }));
+
+                    const uploadParams = {
+                        Bucket: bucket, Key: key, UploadId: create.UploadId,
+                        PartNumber: 1, Body: partBody,
+                    };
+                    // Explicit-algo MPUs require the matching per-part checksum.
+                    if (algo) {
+                        uploadParams[tagField(algo)] = await algorithms[algo.toLowerCase()].digest(partBody);
+                    }
+                    const uploadPart = await fwdS3.send(new UploadPartCommand(uploadParams));
+
+                    // Forward whatever checksum the UploadPart response surfaced.
+                    const completedPart = { PartNumber: 1, ETag: uploadPart.ETag };
+                    checksumFields.forEach(f => {
+                        if (uploadPart[f] !== undefined) {
+                            completedPart[f] = uploadPart[f];
+                        }
+                    });
+
+                    const complete = await fwdS3.send(new CompleteMultipartUploadCommand({
+                        Bucket: bucket, Key: key, UploadId: create.UploadId,
+                        MultipartUpload: { Parts: [completedPart] },
+                    }));
+                    const expectedField = algo ? tagField(algo) : 'ChecksumCRC64NVME';
+                    assert(
+                        complete[expectedField],
+                        `expected ${expectedField} on CompleteMPU response, got: ${JSON.stringify(complete)}`,
+                    );
+                });
+            });
+        });
+
         // AWS S3 rejects any per-part
         // Checksum<X> field on a default MPU (one created without an
         // explicit ChecksumAlgorithm) with InvalidPart — even when the

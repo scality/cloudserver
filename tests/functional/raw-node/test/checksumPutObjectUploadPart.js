@@ -154,7 +154,7 @@ let crc64nvmeOfTrailerContent;
 
 // Create the common protocol-scenario tests for a given URL factory.
 // urlFn() is called lazily at test runtime so that uploadId is available.
-function makeScenarioTests(urlFn) {
+function makeScenarioTests(urlFn, { expectsImplicitChecksum = true } = {}) {
     before(async () => {
         if (!crc64nvmeOfTestContent2) {
             crc64nvmeOfTestContent2 = await algorithms.crc64nvme.digest(testContent2);
@@ -164,6 +164,18 @@ function makeScenarioTests(urlFn) {
         }
     });
 
+    // When no client checksum is sent, PutObject echoes the server-computed
+    // default crc64nvme, but a default-MPU UploadPart does not (matching AWS).
+    function assertImplicitChecksum(res, expected) {
+        if (expectsImplicitChecksum) {
+            assert.strictEqual(res.headers['x-amz-checksum-crc64nvme'], expected,
+                `expected x-amz-checksum-crc64nvme: ${expected}`);
+        } else {
+            assert.strictEqual(res.headers['x-amz-checksum-crc64nvme'], undefined,
+                'default-MPU UploadPart should not echo an implicit checksum');
+        }
+    }
+
     itSkipIfAWS(
         'should return 200 for signed sha256 in x-amz-content-sha256, no x-amz-checksum header',
         done => {
@@ -172,8 +184,7 @@ function makeScenarioTests(urlFn) {
                 'content-length': testContent2.length,
             }, testContent2, (err, res) => {
                 assertStatus(200)(err, res, () => {
-                    assert.strictEqual(res.headers['x-amz-checksum-crc64nvme'], crc64nvmeOfTestContent2,
-                        `expected x-amz-checksum-crc64nvme: ${crc64nvmeOfTestContent2}`);
+                    assertImplicitChecksum(res, crc64nvmeOfTestContent2);
                     done();
                 });
             });
@@ -459,8 +470,7 @@ function makeScenarioTests(urlFn) {
                 'content-length': Buffer.byteLength(body),
             }, body, (err, res) => {
                 assertStatus(200)(err, res, () => {
-                    assert.strictEqual(res.headers['x-amz-checksum-crc64nvme'], crc64nvmeOfTrailerContent,
-                        `expected x-amz-checksum-crc64nvme: ${crc64nvmeOfTrailerContent}`);
+                    assertImplicitChecksum(res, crc64nvmeOfTrailerContent);
                     done();
                 });
             });
@@ -479,8 +489,7 @@ function makeScenarioTests(urlFn) {
                 'content-length': Buffer.byteLength(body),
             }, body, (err, res) => {
                 assertStatus(200)(err, res, () => {
-                    assert.strictEqual(res.headers['x-amz-checksum-crc64nvme'], crc64nvmeOfTrailerContent,
-                        `expected x-amz-checksum-crc64nvme: ${crc64nvmeOfTrailerContent}`);
+                    assertImplicitChecksum(res, crc64nvmeOfTrailerContent);
                     done();
                 });
             });
@@ -731,7 +740,8 @@ describe('UploadPart: trailer and checksum protocol scenarios', () => {
     });
 
     makeScenarioTests(
-        () => `http://localhost:8000/${bucket}/${objectKey}?partNumber=1&uploadId=${uploadId2}`
+        () => `http://localhost:8000/${bucket}/${objectKey}?partNumber=1&uploadId=${uploadId2}`,
+        { expectsImplicitChecksum: false },
     );
 });
 
