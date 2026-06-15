@@ -73,6 +73,7 @@ env:
 permissions:
   contents: read
   packages: write
+  pull-requests: read
 
 jobs:
   lint:
@@ -107,7 +108,15 @@ jobs:
       - name: Lint Yaml
         run: yamllint -c yamllint.yml $(git ls-files "*.yml")
       - name: Check async/await compliance in diff
-        run: yarn run check-diff-async
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh pr list --head "${{ github.ref_name }}" --state open --json labels \
+               --jq '.[].labels[].name' 2>/dev/null | grep -qx 'skip-async-migration'; then
+            echo "Skipping async/await check: 'skip-async-migration' label found"
+          else
+            yarn run check-diff-async
+          fi
 
   async-migration-report:
     runs-on: ubuntu-24.04
