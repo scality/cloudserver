@@ -59,6 +59,8 @@ const dst = {
 
 const testData = 'testkey data';
 
+const isNullVersionCompatMode = process.env.ENABLE_NULL_VERSION_COMPAT_MODE === 'true';
+
 // Generate unique bucket name function
 function generateUniqueBucketName(prefix) {
     return `${prefix}-${uuidv4().substring(0, 8)}`;
@@ -1174,6 +1176,115 @@ describe(`backbeat routes for replication (${name})`, () => {
 
             assert.strictEqual(nonCurrentVersion.VersionId, 'null');
             assert.strictEqual(nonCurrentVersion.IsLatest, false);
+
+            return done();
+        });
+    });
+
+    // CLDSRV-922: when replicating a version on top of a pre-existing null
+    // version, the new master must reference the null version via nullVersionId
+    // only in null-version compatibility mode. In null-key mode the null version
+    // is stored under the null key, and a master carrying nullVersionId leads the
+    // metadata backend to orphan the null key on a later version-specific delete
+    // (causing BucketNotEmpty).
+    it('should set nullVersionId on the master when replicating a version ' +
+        'over a null version only in compat mode', done => {
+        let objMD;
+        let versionId;
+
+        async.series({
+            putObjectDestinationInitial: next => dstS3.send(new PutObjectCommand({
+                Bucket: bucketDestination,
+                Key: keyName,
+                Body: Buffer.from(testData),
+            })).then(data => next(null, data)).catch(err => next(err)),
+
+            enableVersioningDestination: next => dstS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketDestination,
+                VersioningConfiguration: { Status: 'Enabled' }
+            })).then(data => next(null, data)).catch(err => next(err)),
+
+            enableVersioningSource: next => srcS3.send(new PutBucketVersioningCommand({
+                Bucket: bucketSource,
+                VersioningConfiguration: { Status: 'Enabled' }
+            })).then(data => next(null, data)).catch(err => next(err)),
+
+            putObjectSource: next => srcS3.send(new PutObjectCommand({
+                Bucket: bucketSource,
+                Key: keyName,
+                Body: Buffer.from(testData)
+            })).then(data => {
+                versionId = data.VersionId;
+                return next(null, data);
+            }).catch(err => next(err)),
+
+            getMetadata: next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketSource,
+                objectKey: keyName,
+                queryObj: {
+                    versionId,
+                },
+                authCredentials: sourceAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+
+                objMD = objectMDWithUpdatedAccountInfo(data, src === dst ? null : dstAccountInfo);
+                return next();
+            }),
+            replicateMetadata: next => makeBackbeatRequest({
+                method: 'PUT',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                queryObj: {
+                    versionId,
+                },
+                authCredentials: destinationAuthCredentials,
+                requestBody: objMD,
+            }, next),
+            // GET with no versionId returns the master metadata.
+            getMasterMetadata: next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                authCredentials: destinationAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                return next(null, data);
+            }),
+            // The user-visible symptom of the bug is a null key orphaned on
+            // delete, leaving the bucket non-empty: emptying it here exercises
+            // the version-specific delete of the null version.
+            emptyDestination: next => dstBucketUtil.empty(bucketDestination)
+                .then(() => next()).catch(err => next(err)),
+            listAfterEmpty: next => dstS3.send(new ListObjectVersionsCommand({
+                Bucket: bucketDestination,
+            })).then(data => next(null, data)).catch(err => next(err)),
+        }, (err, results) => {
+            if (err) {
+                return done(err);
+            }
+
+            const masterMD = objectMDFromRequestBody(results.getMasterMetadata);
+            if (isNullVersionCompatMode) {
+                // compat mode references the null version from the master
+                assert.notStrictEqual(masterMD.getNullVersionId(), undefined);
+            } else {
+                // null-key mode: the master must not reference the null version
+                assert.strictEqual(masterMD.getNullVersionId(), undefined);
+            }
+
+            // no orphaned null key must survive: the bucket is fully empty
+            const listAfterEmpty = results.listAfterEmpty;
+            assert.strictEqual((listAfterEmpty.Versions || []).length, 0);
+            assert.strictEqual((listAfterEmpty.DeleteMarkers || []).length, 0);
 
             return done();
         });

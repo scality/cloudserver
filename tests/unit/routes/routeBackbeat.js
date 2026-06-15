@@ -610,9 +610,9 @@ describe('routeBackbeat', () => {
                 metadataPutObjectMDStub.secondCall, // Create the new object
                 'bucket0',
                 'key0',
-                sinon.match({
-                    nullVersionId: '99999999999999999999RG001  ',
-                }),
+                // CLDSRV-922: in null-key mode the master must not reference the
+                // null version via nullVersionId (only compat mode does).
+                sinon.match(omVal => omVal.nullVersionId === undefined, 'omVal without nullVersionId'),
                 sinon.match({ versioning: true, isNull: false }),
                 log,
             );
