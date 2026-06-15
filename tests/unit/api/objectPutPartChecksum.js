@@ -123,10 +123,27 @@ describe('objectPutPart checksum validation', () => {
             });
         });
 
-        it('should accept part with no checksum on non-default MPU', done => {
+        it('should reject part with no checksum on a COMPOSITE MPU', done => {
+            // sha256 is COMPOSITE-only; a COMPOSITE MPU's final checksum is
+            // composed from the per-part checksums, so every part must carry
+            // one and AWS rejects a part sent without it.
             initiateMPU({ 'x-amz-checksum-algorithm': 'sha256' }, (err, uploadId) => {
                 assert.ifError(err);
                 // No checksum header sent
+                const request = makePutPartRequest(uploadId, 1, partBody);
+                objectPutPart(authInfo, request, undefined, log, err => {
+                    assert(err, 'Expected an error');
+                    assert.strictEqual(err.message, 'InvalidRequest');
+                    done();
+                });
+            });
+        });
+
+        it('should accept part with no checksum on a FULL_OBJECT MPU', done => {
+            // crc64nvme is FULL_OBJECT-only; the server computes the
+            // full-object checksum, so a missing per-part checksum is allowed.
+            initiateMPU({ 'x-amz-checksum-algorithm': 'crc64nvme' }, (err, uploadId) => {
+                assert.ifError(err);
                 const request = makePutPartRequest(uploadId, 1, partBody);
                 objectPutPart(authInfo, request, undefined, log, err => {
                     assert.ifError(err);

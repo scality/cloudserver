@@ -129,7 +129,15 @@ describe('UploadPart checksum validation', () =>
                                 PartNumber: 3 + idx, Body: partBody,
                                 [checksumField[otherAlgo]]: correctDigest[otherAlgo],
                             })),
-                            { name: 'InvalidRequest' },
+                            err => {
+                                assert.strictEqual(err.name, 'InvalidRequest',
+                                    `expected InvalidRequest, got ${err.name}: ${err.message}`);
+                                // AWS names the expected (MPU) and actual (sent) algorithms.
+                                assert.match(err.message, new RegExp(
+                                    `expected checksum Type: ${mpuAlgo.toLowerCase()}, ` +
+                                    `actual checksum Type: ${otherAlgo.toLowerCase()}`));
+                                return true;
+                            },
                         );
                     });
                 });
@@ -192,6 +200,68 @@ describe('UploadPart checksum validation', () =>
                     'ChecksumSHA1', 'ChecksumSHA256'].filter(f => res[f] !== undefined);
                 assert.deepStrictEqual(present, [],
                     `default MPU UploadPart should return no checksum, got: ${present.join(', ')}`);
+            });
+        });
+
+        describe('per-part checksum requirement by checksum type', () => {
+            // WHEN_REQUIRED so the SDK does not auto-attach a checksum, letting
+            // us upload a genuinely checksum-less part.
+            let noCksumS3;
+            const openUploads = [];
+
+            before(() => {
+                noCksumS3 = new BucketUtility('default', {
+                    ...sigCfg,
+                    requestChecksumCalculation: 'WHEN_REQUIRED',
+                    responseChecksumValidation: 'WHEN_REQUIRED',
+                }).s3;
+            });
+
+            after(async () => {
+                await Promise.all(openUploads.map(uploadId =>
+                    noCksumS3.send(new AbortMultipartUploadCommand({
+                        Bucket: bucket, Key: key, UploadId: uploadId,
+                    })).catch(() => undefined)));
+            });
+
+            async function createMpu(algo, type) {
+                const res = await noCksumS3.send(new CreateMultipartUploadCommand({
+                    Bucket: bucket, Key: key, ChecksumAlgorithm: algo, ChecksumType: type,
+                }));
+                openUploads.push(res.UploadId);
+                return res.UploadId;
+            }
+
+            ['CRC32', 'CRC32C', 'SHA1', 'SHA256'].forEach(algo => {
+                it(`should reject UploadPart with no checksum on a ${algo}/COMPOSITE MPU`, async () => {
+                    const uploadId = await createMpu(algo, 'COMPOSITE');
+                    await assert.rejects(
+                        noCksumS3.send(new UploadPartCommand({
+                            Bucket: bucket, Key: key, UploadId: uploadId,
+                            PartNumber: 1, Body: partBody,
+                        })),
+                        err => {
+                            assert.strictEqual(err.name, 'InvalidRequest',
+                                `expected InvalidRequest, got ${err.name}: ${err.message}`);
+                            assert.match(err.message,
+                                new RegExp(`expected checksum Type: ${algo.toLowerCase()}`));
+                            return true;
+                        },
+                    );
+                });
+            });
+
+            ['CRC32', 'CRC32C', 'CRC64NVME'].forEach(algo => {
+                it(`should accept UploadPart with no checksum on a ${algo}/FULL_OBJECT MPU`, async () => {
+                    const uploadId = await createMpu(algo, 'FULL_OBJECT');
+                    const res = await noCksumS3.send(new UploadPartCommand({
+                        Bucket: bucket, Key: key, UploadId: uploadId,
+                        PartNumber: 1, Body: partBody,
+                    }));
+                    assert(res.ETag);
+                    assert(res[`Checksum${algo}`],
+                        `expected Checksum${algo} echoed, got: ${JSON.stringify(res)}`);
+                });
             });
         });
     })
