@@ -24,19 +24,22 @@ const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');
 const log = new DummyRequestLogger();
 
 function prepareDummyRequest(headers = {}, body = '') {
-    const request = new DummyRequest({
-        hostname: 'localhost',
-        method: 'PUT',
-        url: '/_/backbeat/metadata/bucket0/key0',
-        port: 80,
-        headers,
-        socket: {
-            remoteAddress: '0.0.0.0',
-            destroy: () => {},
-            on: () => {},
-            removeListener: () => {},
+    const request = new DummyRequest(
+        {
+            hostname: 'localhost',
+            method: 'PUT',
+            url: '/_/backbeat/metadata/bucket0/key0',
+            port: 80,
+            headers,
+            socket: {
+                remoteAddress: '0.0.0.0',
+                destroy: () => {},
+                on: () => {},
+                removeListener: () => {},
+            },
         },
-    }, body || '{"replicationInfo":"{}"}');
+        body || '{"replicationInfo":"{}"}',
+    );
     return request;
 }
 
@@ -52,7 +55,9 @@ describe('routeBackbeat', () => {
         sandbox = sinon.createSandbox();
 
         // create a Promise that resolves when response.end is called
-        endPromise = new Promise(resolve => { resolveEnd = resolve; });
+        endPromise = new Promise(resolve => {
+            resolveEnd = resolve;
+        });
 
         mockResponse = {
             statusCode: null,
@@ -114,7 +119,7 @@ describe('routeBackbeat', () => {
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
 
-            void await endPromise;
+            void (await endPromise);
 
             assert.strictEqual(mockResponse.statusCode, 409);
             assert.strictEqual(mockResponse.body.code, 'InvalidBucketState');
@@ -134,7 +139,7 @@ describe('routeBackbeat', () => {
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
 
-        void await endPromise;
+        void (await endPromise);
 
         assert.strictEqual(mockResponse.statusCode, 200);
         assert.deepStrictEqual(mockResponse.body, { Body: '{}' });
@@ -161,14 +166,15 @@ describe('routeBackbeat', () => {
             const objMd = {};
             callback(null, bucketInfo, objMd);
         });
-        storeObject.dataStore.callsFake((objectContext, cipherBundle, stream, size,
-            streamingV4Params, backendInfo, checksums, log, callback) => {
-            callback(null, {}, md5);
-        });
+        storeObject.dataStore.callsFake(
+            (objectContext, cipherBundle, stream, size, streamingV4Params, backendInfo, checksums, log, callback) => {
+                callback(null, {}, md5);
+            },
+        );
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
 
-        void await endPromise;
+        void (await endPromise);
 
         assert.strictEqual(mockResponse.statusCode, 200);
         assert.deepStrictEqual(mockResponse.body, [{}]);
@@ -182,15 +188,18 @@ describe('routeBackbeat', () => {
         let dataDeleteSpy;
 
         function preparePutMetadataRequest(body = {}) {
-            const req = prepareDummyRequest({
-                'x-scal-versioning-required': 'true',
-            }, JSON.stringify({
-                replicationInfo: {},
-                ...body,
-            }));
+            const req = prepareDummyRequest(
+                {
+                    'x-scal-versioning-required': 'true',
+                },
+                JSON.stringify({
+                    replicationInfo: {},
+                    ...body,
+                }),
+            );
             req.method = 'PUT';
             req.url = '/_/backbeat/metadata/bucket0/key0';
-            req.destroy = () => { };
+            req.destroy = () => {};
             return req;
         }
 
@@ -210,7 +219,7 @@ describe('routeBackbeat', () => {
             });
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
             assert.strictEqual(mockResponse.statusCode, 200);
             assert.deepStrictEqual(mockResponse.body, {});
         });
@@ -221,7 +230,7 @@ describe('routeBackbeat', () => {
             });
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
 
             assert.strictEqual(mockResponse.statusCode, 200);
             assert.deepStrictEqual(mockResponse.body, {});
@@ -230,18 +239,20 @@ describe('routeBackbeat', () => {
         it('should put metadata after updating account info', async () => {
             mockRequest.url = '/_/backbeat/metadata/bucket0/key0?accountId=123456789012';
             const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
-            putObjectMDStub.onCall(0).callsFake(
-                (_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {})
-            );
+            putObjectMDStub
+                .onCall(0)
+                .callsFake((_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {}));
             putObjectMDStub.onCall(1).callsFake((_bucketName, _objectKey, omVal, _options, _logParam, cb) => {
                 assert.strictEqual(omVal['owner-display-name'], 'Bart');
-                assert.strictEqual(omVal['owner-id'],
-                    '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be');
+                assert.strictEqual(
+                    omVal['owner-id'],
+                    '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
+                );
                 cb(null, {});
             });
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
 
             assert.strictEqual(mockResponse.statusCode, 200);
             assert.deepStrictEqual(mockResponse.body, {});
@@ -251,14 +262,15 @@ describe('routeBackbeat', () => {
             mockRequest.url = '/_/backbeat/metadata/bucket0/key0?accountId=invalid';
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
 
             assert.strictEqual(mockResponse.statusCode, 404);
             assert.deepStrictEqual(mockResponse.body.code, 'AccountNotFound');
         });
 
         it('should repair master when putting metadata of a new version', async () => {
-            mockRequest.url = '/_/backbeat/metadata/bucket0/key0' +
+            mockRequest.url =
+                '/_/backbeat/metadata/bucket0/key0' +
                 '?accountId=123456789012&versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
             const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
@@ -276,14 +288,15 @@ describe('routeBackbeat', () => {
             });
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
 
             assert.strictEqual(mockResponse.statusCode, 200);
             assert.deepStrictEqual(mockResponse.body, {});
         });
 
         it('should not repair master when updating metadata of an existing version', async () => {
-            mockRequest.url = '/_/backbeat/metadata/bucket0/key0' +
+            mockRequest.url =
+                '/_/backbeat/metadata/bucket0/key0' +
                 '?accountId=123456789012&versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
             sandbox.stub(metadata, 'putObjectMD').callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
@@ -292,7 +305,7 @@ describe('routeBackbeat', () => {
             });
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
             assert.strictEqual(mockResponse.statusCode, 200);
             assert.deepStrictEqual(mockResponse.body, {});
         });
@@ -304,7 +317,7 @@ describe('routeBackbeat', () => {
             });
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
 
             assert.strictEqual(mockResponse.statusCode, 500);
         });
@@ -313,26 +326,28 @@ describe('routeBackbeat', () => {
             mockRequest.url = '/_/backbeat/metadata/bucket0';
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
             assert.strictEqual(mockResponse.statusCode, 405);
         });
 
         it('should delete data when replacing with empty object', async () => {
             const existingMd = {
-                location: [{
-                    key: 'key0',
-                    dataStoreName: 'location1',
-                    size: 100,
-                }],
+                location: [
+                    {
+                        key: 'key0',
+                        dataStoreName: 'location1',
+                        size: 100,
+                    },
+                ],
             };
             metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
                 callback(null, bucketInfo, existingMd);
             });
 
             const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
-            putObjectMDStub.onCall(0).callsFake(
-                (_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {})
-            );
+            putObjectMDStub
+                .onCall(0)
+                .callsFake((_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {}));
             putObjectMDStub.onCall(1).callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
                 assert.deepStrictEqual(omVal.location, undefined);
                 cb(null, {});
@@ -344,7 +359,7 @@ describe('routeBackbeat', () => {
             mockRequest.url += '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
 
             assert.strictEqual(mockResponse.statusCode, 200);
             assert.deepStrictEqual(mockResponse.body, {});
@@ -353,11 +368,13 @@ describe('routeBackbeat', () => {
         });
 
         it('should preserve existing locations when x-scal-replication-content is METADATA', async () => {
-            const existingLocations = [{
-                key: 'key0',
-                dataStoreName: 'location1',
-                size: 100,
-            }];
+            const existingLocations = [
+                {
+                    key: 'key0',
+                    dataStoreName: 'location1',
+                    size: 100,
+                },
+            ];
             metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
                 callback(null, bucketInfo, {
                     location: existingLocations,
@@ -383,7 +400,7 @@ describe('routeBackbeat', () => {
             mockRequest.url += '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
 
             assert.strictEqual(mockResponse.statusCode, 200);
             assert.deepStrictEqual(mockResponse.body, {});
@@ -392,20 +409,22 @@ describe('routeBackbeat', () => {
 
         it('should delete data when no more locations', async () => {
             const existingMd = {
-                location: [{
-                    key: 'key0',
-                    dataStoreName: 'location1',
-                    size: 100,
-                }],
+                location: [
+                    {
+                        key: 'key0',
+                        dataStoreName: 'location1',
+                        size: 100,
+                    },
+                ],
             };
             metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
                 callback(null, bucketInfo, existingMd);
             });
 
             const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
-            putObjectMDStub.onCall(0).callsFake(
-                (_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {})
-            );
+            putObjectMDStub
+                .onCall(0)
+                .callsFake((_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {}));
             putObjectMDStub.onCall(1).callsFake((_bucketName, _objectKey, omVal, _options, _logParam, cb) => {
                 // Verify that the location array is empty, indicating data deletion
                 assert.deepStrictEqual(omVal.location, []);
@@ -416,7 +435,7 @@ describe('routeBackbeat', () => {
             mockRequest.url += '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
 
             assert.strictEqual(mockResponse.statusCode, 200);
             assert.deepStrictEqual(mockResponse.body, {});
@@ -426,11 +445,13 @@ describe('routeBackbeat', () => {
 
         it('should delete data when locations change', async () => {
             const existingMd = {
-                location: [{
-                    key: 'key0',
-                    dataStoreName: 'location1',
-                    size: 100,
-                }],
+                location: [
+                    {
+                        key: 'key0',
+                        dataStoreName: 'location1',
+                        size: 100,
+                    },
+                ],
                 'content-length': 100,
             };
             metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
@@ -439,20 +460,22 @@ describe('routeBackbeat', () => {
 
             // New metadata has different locations
             const reqBody = {
-                location: [{
-                    key: 'key1',
-                    dataStoreName: 'location1',
-                    size: 100,
-                }],
+                location: [
+                    {
+                        key: 'key1',
+                        dataStoreName: 'location1',
+                        size: 100,
+                    },
+                ],
                 'content-length': 100,
             };
             mockRequest = preparePutMetadataRequest(reqBody);
             mockRequest.url += '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
             const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
-            putObjectMDStub.onCall(0).callsFake(
-                (_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {})
-            );
+            putObjectMDStub
+                .onCall(0)
+                .callsFake((_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {}));
             putObjectMDStub.onCall(1).callsFake((_bucketName, __objectKey, omVal, _options, _logParam, cb) => {
                 // Verify that the location array contains the new location
                 assert.deepStrictEqual(omVal.location, reqBody.location);
@@ -460,7 +483,7 @@ describe('routeBackbeat', () => {
             });
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
 
             assert.strictEqual(mockResponse.statusCode, 200);
             assert.deepStrictEqual(mockResponse.body, {});
@@ -470,15 +493,18 @@ describe('routeBackbeat', () => {
 
         it('should not delete data when some keys are still used', async () => {
             const existingMd = {
-                location: [{
-                    key: 'key0',
-                    dataStoreName: 'location1',
-                    size: 100,
-                }, {
-                    key: 'key1',
-                    dataStoreName: 'location1',
-                    size: 100,
-                }],
+                location: [
+                    {
+                        key: 'key0',
+                        dataStoreName: 'location1',
+                        size: 100,
+                    },
+                    {
+                        key: 'key1',
+                        dataStoreName: 'location1',
+                        size: 100,
+                    },
+                ],
                 'content-length': 100,
             };
             metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
@@ -487,24 +513,27 @@ describe('routeBackbeat', () => {
 
             // New metadata has different locations
             const reqBody = {
-                location: [{
-                    key: 'key1',
-                    dataStoreName: 'location1',
-                    size: 100,
-                }, {
-                    key: 'key2',
-                    dataStoreName: 'location1',
-                    size: 100,
-                }],
+                location: [
+                    {
+                        key: 'key1',
+                        dataStoreName: 'location1',
+                        size: 100,
+                    },
+                    {
+                        key: 'key2',
+                        dataStoreName: 'location1',
+                        size: 100,
+                    },
+                ],
                 'content-length': 100,
             };
             mockRequest = preparePutMetadataRequest(reqBody);
             mockRequest.url += '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
             const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
-            putObjectMDStub.onCall(0).callsFake(
-                (_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {})
-            );
+            putObjectMDStub
+                .onCall(0)
+                .callsFake((_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {}));
             putObjectMDStub.onCall(1).callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
                 // Verify that the location array contains the new location
                 assert.deepStrictEqual(omVal.location, reqBody.location);
@@ -512,7 +541,7 @@ describe('routeBackbeat', () => {
             });
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
 
             assert.strictEqual(mockResponse.statusCode, 200);
             assert.deepStrictEqual(mockResponse.body, {});
@@ -521,11 +550,13 @@ describe('routeBackbeat', () => {
 
         it('should not delete data when object is archived', async () => {
             const existingMd = {
-                location: [{
-                    key: 'key0',
-                    dataStoreName: 'location1',
-                    size: 100,
-                }],
+                location: [
+                    {
+                        key: 'key0',
+                        dataStoreName: 'location1',
+                        size: 100,
+                    },
+                ],
                 'content-length': 100,
             };
             metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
@@ -533,17 +564,20 @@ describe('routeBackbeat', () => {
             });
 
             // New metadata has empty location array but keeps content-length (cold storage case)
-            mockRequest = prepareDummyRequest(mockRequest.headers, JSON.stringify({
-                location: undefined,
-                'content-length': 100,
-                replicationInfo: {},
-            }));
+            mockRequest = prepareDummyRequest(
+                mockRequest.headers,
+                JSON.stringify({
+                    location: undefined,
+                    'content-length': 100,
+                    replicationInfo: {},
+                }),
+            );
             mockRequest.url += '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
             const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
-            putObjectMDStub.onCall(0).callsFake(
-                (_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {})
-            );
+            putObjectMDStub
+                .onCall(0)
+                .callsFake((_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {}));
             putObjectMDStub.onCall(1).callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
                 // Verify that the location array is empty
                 assert.deepStrictEqual(omVal.location, undefined);
@@ -553,73 +587,79 @@ describe('routeBackbeat', () => {
             });
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
 
             assert.strictEqual(mockResponse.statusCode, 200);
             assert.deepStrictEqual(mockResponse.body, {});
             assert.strictEqual(dataDeleteSpy.called, false);
         });
 
-        it('should transform a non-versioned object to a versioned' +
-          ' one and create a new object if the bucket is versioned', async () => {
-            const bucketInfo = {
-                getVersioningConfiguration: () => ({ Status: 'Enabled' }),
-                isVersioningEnabled: () => true,
-            };
-            const notFoundObject = undefined;
-            const nonVersionedObject = {
-                'content-length': 100,
-            };
+        it(
+            'should transform a non-versioned object to a versioned' +
+                ' one and create a new object if the bucket is versioned',
+            async () => {
+                const bucketInfo = {
+                    getVersioningConfiguration: () => ({ Status: 'Enabled' }),
+                    isVersioningEnabled: () => true,
+                };
+                const notFoundObject = undefined;
+                const nonVersionedObject = {
+                    'content-length': 100,
+                };
 
-            const metadataGetObjectMDPromisedStub = sandbox.stub(metadata, 'getObjectMDPromised');
-            metadataGetObjectMDPromisedStub.callsFake(() => Promise.resolve({
-                    data: nonVersionedObject,
-                }));
-            const metadataPutObjectMDStub = sandbox.stub(metadata, 'putObjectMD')
-                .callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
-                    cb(null, {});
+                const metadataGetObjectMDPromisedStub = sandbox.stub(metadata, 'getObjectMDPromised');
+                metadataGetObjectMDPromisedStub.callsFake(() =>
+                    Promise.resolve({
+                        data: nonVersionedObject,
+                    }),
+                );
+                const metadataPutObjectMDStub = sandbox
+                    .stub(metadata, 'putObjectMD')
+                    .callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
+                        cb(null, {});
+                    });
+
+                mockRequest = prepareDummyRequest();
+                mockRequest.method = 'PUT';
+                mockRequest.url = '/_/backbeat/metadata/bucket0/key0';
+
+                metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
+                    callback(null, bucketInfo, notFoundObject);
                 });
 
-            mockRequest = prepareDummyRequest();
-            mockRequest.method = 'PUT';
-            mockRequest.url = '/_/backbeat/metadata/bucket0/key0';
+                routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+                await endPromise;
 
-            metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
-                callback(null, bucketInfo, notFoundObject);
-            });
+                sinon.assert.calledOnce(metadataGetObjectMDPromisedStub);
+                sinon.assert.calledTwice(metadataPutObjectMDStub);
+                sinon.assert.calledWith(
+                    metadataPutObjectMDStub.firstCall, // Transform the non versioned object to a versioned one
+                    'bucket0',
+                    'key0',
+                    sinon.match({
+                        data: nonVersionedObject,
+                        versionId: '99999999999999999999RG001  ',
+                        isNull: true,
+                        isNull2: true,
+                    }),
+                    sinon.match({ versionId: 'null' }),
+                    log,
+                );
+                sinon.assert.calledWith(
+                    metadataPutObjectMDStub.secondCall, // Create the new object
+                    'bucket0',
+                    'key0',
+                    // CLDSRV-922: in null-key mode the master must not reference the
+                    // null version via nullVersionId (only compat mode does).
+                    sinon.match(omVal => omVal.nullVersionId === undefined, 'omVal without nullVersionId'),
+                    sinon.match({ versioning: true, isNull: false }),
+                    log,
+                );
 
-            routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            await endPromise;
-
-            sinon.assert.calledOnce(metadataGetObjectMDPromisedStub);
-            sinon.assert.calledTwice(metadataPutObjectMDStub);
-            sinon.assert.calledWith(
-                metadataPutObjectMDStub.firstCall, // Transform the non versioned object to a versioned one
-                'bucket0',
-                'key0',
-                sinon.match({
-                    data: nonVersionedObject,
-                    versionId: '99999999999999999999RG001  ',
-                    isNull: true,
-                    isNull2: true
-                }),
-                sinon.match({ versionId: 'null' }),
-                log,
-            );
-            sinon.assert.calledWith(
-                metadataPutObjectMDStub.secondCall, // Create the new object
-                'bucket0',
-                'key0',
-                sinon.match({
-                    nullVersionId: '99999999999999999999RG001  ',
-                }),
-                sinon.match({ versioning: true, isNull: false }),
-                log,
-            );
-
-            assert.strictEqual(mockResponse.statusCode, 200);
-            assert.deepStrictEqual(mockResponse.body, {});
-        });
+                assert.strictEqual(mockResponse.statusCode, 200);
+                assert.deepStrictEqual(mockResponse.body, {});
+            },
+        );
     });
 
     describe('batchDelete', () => {
@@ -627,18 +667,23 @@ describe('routeBackbeat', () => {
         let validateQuotasSpy;
 
         const prepareBatchDeleteRequest = (locations = undefined) => {
-            const mockRequest = prepareDummyRequest({
-                'x-scal-versioning-required': 'true'
-            }, JSON.stringify({
-                Locations: locations || [{
-                    key: 'key0',
-                    bucket: 'bucket0',
-                    size: 100,
-                }],
-            }));
+            const mockRequest = prepareDummyRequest(
+                {
+                    'x-scal-versioning-required': 'true',
+                },
+                JSON.stringify({
+                    Locations: locations || [
+                        {
+                            key: 'key0',
+                            bucket: 'bucket0',
+                            size: 100,
+                        },
+                    ],
+                }),
+            );
             mockRequest.method = 'POST';
             mockRequest.url = '/_/backbeat/batchdelete/bucket0/key0';
-            mockRequest.destroy = () => { };
+            mockRequest.destroy = () => {};
             return mockRequest;
         };
 
@@ -661,7 +706,7 @@ describe('routeBackbeat', () => {
             doAuthStub.callThrough();
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
             assert.strictEqual(mockResponse.statusCode, 403);
         });
 
@@ -677,7 +722,8 @@ describe('routeBackbeat', () => {
             await endPromise;
 
             sinon.assert.calledOnce(validateQuotasSpy);
-            sinon.assert.calledWith(validateQuotasSpy,
+            sinon.assert.calledWith(
+                validateQuotasSpy,
                 mockRequest,
                 bucketMD,
                 mockRequest.accountQuotas,
@@ -698,7 +744,7 @@ describe('routeBackbeat', () => {
             mockRequest.url = '/_/backbeat/batchdelete';
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
 
             assert(!validateQuotasSpy.called);
 
@@ -710,7 +756,7 @@ describe('routeBackbeat', () => {
             sandbox.stub(config, 'isQuotaEnabled').returns(false);
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
 
             assert(!validateQuotasSpy.called);
 
@@ -720,14 +766,16 @@ describe('routeBackbeat', () => {
 
         it('should skip quota updates when content length is 0', async () => {
             sandbox.stub(config, 'isQuotaEnabled').returns(true);
-            mockRequest = prepareBatchDeleteRequest([{
-                key: 'key0',
-                bucket: 'bucket0',
-                size: 0,
-            }]);
+            mockRequest = prepareBatchDeleteRequest([
+                {
+                    key: 'key0',
+                    bucket: 'bucket0',
+                    size: 0,
+                },
+            ]);
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-            void await endPromise;
+            void (await endPromise);
 
             assert(!validateQuotasSpy.called);
 
@@ -743,99 +791,109 @@ describe('routeBackbeat', () => {
             };
 
             routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-        void await endPromise;
-        assert.strictEqual(mockResponse.statusCode, 200);
-        assert.deepStrictEqual(mockResponse.body, {});
-    });
+            void (await endPromise);
+            assert.strictEqual(mockResponse.statusCode, 200);
+            assert.deepStrictEqual(mockResponse.body, {});
+        });
 
-    it('should not batchDelete with conditions if "if-unmodified-since" header unset', async () => {
-        mockRequest.headers = {
-            'x-scal-versioning-required': 'true',
-            'x-scal-storage-class': 'azurebackend',
-        };
+        it('should not batchDelete with conditions if "if-unmodified-since" header unset', async () => {
+            mockRequest.headers = {
+                'x-scal-versioning-required': 'true',
+                'x-scal-storage-class': 'azurebackend',
+            };
 
-        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-        void await endPromise;
+            routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+            void (await endPromise);
 
-        assert.strictEqual(mockResponse.statusCode, 200);
-    });
+            assert.strictEqual(mockResponse.statusCode, 200);
+        });
 
-    it('should batchDelete with conditions and non-azure location', async () => {
-        const putRequest = prepareDummyRequest({
-            'x-scal-versioning-required': 'true',
-        }, JSON.stringify({
-            Locations: [
+        it('should batchDelete with conditions and non-azure location', async () => {
+            const putRequest = prepareDummyRequest(
                 {
-                    key: 'key0',
-                    bucket: 'bucket0',
-                    lastModified: '2020-01-01T00:00:00.000Z',
+                    'x-scal-versioning-required': 'true',
                 },
-            ],
-        }));
-        await promisify(dataWrapper.client.put)(putRequest, 91, 1, 'reqUids');
+                JSON.stringify({
+                    Locations: [
+                        {
+                            key: 'key0',
+                            bucket: 'bucket0',
+                            lastModified: '2020-01-01T00:00:00.000Z',
+                        },
+                    ],
+                }),
+            );
+            await promisify(dataWrapper.client.put)(putRequest, 91, 1, 'reqUids');
 
-        mockRequest = prepareBatchDeleteRequest([{
-            key: '1',
-            bucket: 'bucket0',
-        }]);
-        mockRequest.headers = {
-            'if-unmodified-since': '2000-01-01T00:00:00.000Z',
-            'x-scal-versioning-required': 'true',
-            'x-scal-storage-class': 'gcpbackend',
-            'x-scal-tags': JSON.stringify({ key: 'value' }),
-        };
+            mockRequest = prepareBatchDeleteRequest([
+                {
+                    key: '1',
+                    bucket: 'bucket0',
+                },
+            ]);
+            mockRequest.headers = {
+                'if-unmodified-since': '2000-01-01T00:00:00.000Z',
+                'x-scal-versioning-required': 'true',
+                'x-scal-storage-class': 'gcpbackend',
+                'x-scal-tags': JSON.stringify({ key: 'value' }),
+            };
 
-        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-        void await endPromise;
+            routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+            void (await endPromise);
 
-        assert.strictEqual(mockResponse.statusCode, 200);
-        assert.deepStrictEqual(mockResponse.body, null);
-    });
+            assert.strictEqual(mockResponse.statusCode, 200);
+            assert.deepStrictEqual(mockResponse.body, null);
+        });
 
-    it('should handle raftSessionId parameter from metadata.getBucket', async () => {
-        sandbox.stub(config, 'isQuotaEnabled').returns(true);
-        const testRaftSessionId = 12345;
-        const bucketMD = {
-            getName: () => 'bucket0',
-            getQuota: () => 0n,
-        };
+        it('should handle raftSessionId parameter from metadata.getBucket', async () => {
+            sandbox.stub(config, 'isQuotaEnabled').returns(true);
+            const testRaftSessionId = 12345;
+            const bucketMD = {
+                getName: () => 'bucket0',
+                getQuota: () => 0n,
+            };
 
-        const getBucketStub = sandbox.stub(metadata, 'getBucket')
-            .callsFake((bucket, log, cb) => cb(null, bucketMD, testRaftSessionId));
+            const getBucketStub = sandbox
+                .stub(metadata, 'getBucket')
+                .callsFake((bucket, log, cb) => cb(null, bucketMD, testRaftSessionId));
 
-        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-        void await endPromise;
+            routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+            void (await endPromise);
 
-        sinon.assert.calledOnce(getBucketStub);
+            sinon.assert.calledOnce(getBucketStub);
 
-        sinon.assert.calledOnce(validateQuotasSpy);
-        sinon.assert.calledWith(validateQuotasSpy,
-            mockRequest,
-            bucketMD,
-            mockRequest.accountQuotas,
-            ['objectDelete'],
-            'objectDelete',
-            -100,
-            false,
-            log,
-            sinon.match.any,
-        );
+            sinon.assert.calledOnce(validateQuotasSpy);
+            sinon.assert.calledWith(
+                validateQuotasSpy,
+                mockRequest,
+                bucketMD,
+                mockRequest.accountQuotas,
+                ['objectDelete'],
+                'objectDelete',
+                -100,
+                false,
+                log,
+                sinon.match.any,
+            );
 
-        assert.strictEqual(mockResponse.statusCode, 200);
-        assert.deepStrictEqual(mockResponse.body, null);
-    });
+            assert.strictEqual(mockResponse.statusCode, 200);
+            assert.deepStrictEqual(mockResponse.body, null);
+        });
     });
 
     describe('routeBackbeatAPIProxy', () => {
         let mockBackbeat;
 
-        const request = new DummyRequest({
-            method: 'POST',
-            url: '/_/backbeat/api/ingestion/pause',
-            socket: {
-                remoteAddress: '127.0.0.1',
+        const request = new DummyRequest(
+            {
+                method: 'POST',
+                url: '/_/backbeat/api/ingestion/pause',
+                socket: {
+                    remoteAddress: '127.0.0.1',
+                },
             },
-        }, Buffer.from(''));
+            Buffer.from(''),
+        );
 
         beforeEach(() => {
             mockBackbeat = http.createServer((req, res) => {
@@ -851,12 +909,20 @@ describe('routeBackbeat', () => {
         });
 
         it('should correctly proxy the request to the backbeat API', async () => {
-            sinon.stub(auth.server, 'doAuth').yields(null, new AuthInfo({
-                canonicalID: 'abcdef/lifecycle',
-                accountDisplayName: 'Lifecycle Service Account',
-            }), undefined, undefined, undefined);
+            sinon.stub(auth.server, 'doAuth').yields(
+                null,
+                new AuthInfo({
+                    canonicalID: 'abcdef/lifecycle',
+                    accountDisplayName: 'Lifecycle Service Account',
+                }),
+                undefined,
+                undefined,
+                undefined,
+            );
 
-            endPromise = new Promise(resolve => { resolveEnd = resolve; });
+            endPromise = new Promise(resolve => {
+                resolveEnd = resolve;
+            });
             const response = {
                 on: sinon.stub(),
                 once: sinon.stub(),
@@ -864,12 +930,12 @@ describe('routeBackbeat', () => {
                 setHeader: sinon.stub(),
                 end: sinon.stub().callsFake(() => {
                     resolveEnd();
-                })
+                }),
             };
 
             routeBackbeat('127.0.0.1', request, response, log);
 
-            void await endPromise;
+            void (await endPromise);
 
             const proxyReq = response.emit.getCall(0).args[1].req;
             assert.strictEqual(proxyReq.method, 'POST');
@@ -892,30 +958,35 @@ describe('routeBackbeat authorization', () => {
         bucketName,
         namespace,
         headers: {
-            'host': `${bucketName}.s3.amazonaws.com`,
+            host: `${bucketName}.s3.amazonaws.com`,
         },
         url: `/${bucketName}`,
         actionImplicitDenies: false,
     };
 
-    const testObject = new DummyRequest({
-        bucketName,
-        namespace,
-        objectKey: objectName,
-        headers: {
-            'x-amz-meta-test': 'some metadata',
-            'content-length': '12',
+    const testObject = new DummyRequest(
+        {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                'x-amz-meta-test': 'some metadata',
+                'content-length': '12',
+            },
+            parsedContentLength: 12,
+            url: `/${bucketName}/${objectName}`,
         },
-        parsedContentLength: 12,
-        url: `/${bucketName}/${objectName}`,
-    }, Buffer.from('I am a body', 'utf8'));
+        Buffer.from('I am a body', 'utf8'),
+    );
 
     let request;
     let response;
 
     beforeEach(() => {
         // create a Promise that resolves when response.end is called
-        endPromise = new Promise(resolve => { resolveEnd = resolve; });
+        endPromise = new Promise(resolve => {
+            resolveEnd = resolve;
+        });
 
         request = new DummyRequest(
             {
@@ -923,7 +994,7 @@ describe('routeBackbeat authorization', () => {
                 headers: { 'content-length': '123' },
                 url: '/_/backbeat/multiplebackendmetadata/bucketName/objectKey?operation=putobject',
             },
-            'body'
+            'body',
         );
         response = {
             setHeader: sinon.stub(),
@@ -931,7 +1002,7 @@ describe('routeBackbeat authorization', () => {
             end: sinon.stub().callsFake((body, encoding, callback) => {
                 resolveEnd();
                 callback();
-            })
+            }),
         };
     });
 
@@ -1099,7 +1170,7 @@ describe('routeBackbeat authorization', () => {
             operation: 'delete',
             versionId: false,
             expect: errors.NotImplemented,
-        }
+        },
     ].forEach(testCase => {
         describe(`${testCase.method} ${testCase.resourceType}`, () => {
             let versionIdParsed = null;
@@ -1115,53 +1186,65 @@ describe('routeBackbeat authorization', () => {
                     hasQuery = true;
                 }
 
-                const enableVersioningRequest =
-                    versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
+                const enableVersioningRequest = versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
 
-                return async.series([
-                    next => bucketPut(authInfo, testBucket, log, next),
-                    next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
-                    next => objectPut(authInfo, testObject, undefined, log, (err, res) => {
-                        if (!err && res) {
-                            versionIdParsed = res['x-amz-version-id'];
-                            if (testCase.versionId) {
-                                request.url += `${(hasQuery ? '&' : '?')}&versionId=${versionIdParsed}`;
-                            }
-                        }
-                        next(err);
-                    }),
-                ], done);
+                return async.series(
+                    [
+                        next => bucketPut(authInfo, testBucket, log, next),
+                        next => bucketPutVersioning(authInfo, enableVersioningRequest, log, next),
+                        next =>
+                            objectPut(authInfo, testObject, undefined, log, (err, res) => {
+                                if (!err && res) {
+                                    versionIdParsed = res['x-amz-version-id'];
+                                    if (testCase.versionId) {
+                                        request.url += `${hasQuery ? '&' : '?'}&versionId=${versionIdParsed}`;
+                                    }
+                                }
+                                next(err);
+                            }),
+                    ],
+                    done,
+                );
             });
 
             afterEach(done => {
-                async.series([
-                    next => {
-                        const deleteRequest = {
-                            bucketName,
-                            objectKey: objectName,
-                            headers: {},
-                            query: versionIdParsed ? { versionId: versionIdParsed } : {},
-                        };
-                        objectDelete(authInfo, deleteRequest, log, next);
-                    },
-                    next => {
-                        bucketDelete(authInfo, testBucket, log, next);
-                    }
-                ], done);
+                async.series(
+                    [
+                        next => {
+                            const deleteRequest = {
+                                bucketName,
+                                objectKey: objectName,
+                                headers: {},
+                                query: versionIdParsed ? { versionId: versionIdParsed } : {},
+                            };
+                            objectDelete(authInfo, deleteRequest, log, next);
+                        },
+                        next => {
+                            bucketDelete(authInfo, testBucket, log, next);
+                        },
+                    ],
+                    done,
+                );
             });
 
             it('should call method successfully', async () => {
                 // Mock auth server to ignore auth in this test
-                sinon.stub(auth.server, 'doAuth').yields(null, new AuthInfo({
-                    canonicalID: 'abcdef/lifecycle',
-                    accountDisplayName: 'Lifecycle Service Account',
-                }), undefined, undefined, {
-                    accountQuota: 1000,
-                });
+                sinon.stub(auth.server, 'doAuth').yields(
+                    null,
+                    new AuthInfo({
+                        canonicalID: 'abcdef/lifecycle',
+                        accountDisplayName: 'Lifecycle Service Account',
+                    }),
+                    undefined,
+                    undefined,
+                    {
+                        accountQuota: 1000,
+                    },
+                );
 
                 routeBackbeat('127.0.0.1', request, response, log);
 
-                void await endPromise;
+                void (await endPromise);
 
                 if (testCase.expect) {
                     const errCode = response.writeHead.getCall(0).args[0];
@@ -1174,18 +1257,26 @@ describe('routeBackbeat authorization', () => {
             });
 
             it('should return access denied user is not authorized', async () => {
-                sinon.stub(auth.server, 'doAuth').yields(null, new AuthInfo({
-                    canonicalID: '123456789',
-                    accountDisplayName: 'user1',
-                }), [{
-                    isAllowed: false,
-                    implicitDeny: true,
-                    action: 'objectReplicate',
-                }], undefined, undefined);
+                sinon.stub(auth.server, 'doAuth').yields(
+                    null,
+                    new AuthInfo({
+                        canonicalID: '123456789',
+                        accountDisplayName: 'user1',
+                    }),
+                    [
+                        {
+                            isAllowed: false,
+                            implicitDeny: true,
+                            action: 'objectReplicate',
+                        },
+                    ],
+                    undefined,
+                    undefined,
+                );
 
                 routeBackbeat('127.0.0.1', request, response, log);
 
-                void await endPromise;
+                void (await endPromise);
 
                 const err = JSON.parse(response.end.getCall(0).args[0]);
                 assert.strictEqual(err.code, 'AccessDenied');
@@ -1198,20 +1289,22 @@ describe('routeBackbeat authorization', () => {
                 }
                 it(`should ${bypass ? '' : 'not '}bypass bucket policy evaluation`, async () => {
                     const policyRequest = {
-                    bucketName,
-                    headers: {
-                        host: `${bucketName}.s3.amazonaws.com`,
-                    },
-                    post: JSON.stringify({
-                        Version: '2012-10-17',
-                        Statement: [{
-                            Effect: 'Deny',
-                            Principal: '*',
-                            Action: '*',
-                            Resource: `arn:aws:s3:::${bucketName}/*`,
-                        }],
-                    }),
-                    actionImplicitDenies: false,
+                        bucketName,
+                        headers: {
+                            host: `${bucketName}.s3.amazonaws.com`,
+                        },
+                        post: JSON.stringify({
+                            Version: '2012-10-17',
+                            Statement: [
+                                {
+                                    Effect: 'Deny',
+                                    Principal: '*',
+                                    Action: '*',
+                                    Resource: `arn:aws:s3:::${bucketName}/*`,
+                                },
+                            ],
+                        }),
+                        actionImplicitDenies: false,
                     };
                     await bucketPutPolicyPromise(authInfo, policyRequest, log);
 
@@ -1222,17 +1315,25 @@ describe('routeBackbeat authorization', () => {
                         accountDisplayName: authInfo.getAccountDisplayName(),
                     });
 
-                    sinon.stub(auth.server, 'doAuth').yields(null, sessionAuthInfo, [{
-                        isAllowed: true,
-                        implicitDeny: false,
-                        action: 'objectReplicate',
-                    }], undefined, undefined);
+                    sinon.stub(auth.server, 'doAuth').yields(
+                        null,
+                        sessionAuthInfo,
+                        [
+                            {
+                                isAllowed: true,
+                                implicitDeny: false,
+                                action: 'objectReplicate',
+                            },
+                        ],
+                        undefined,
+                        undefined,
+                    );
 
                     request.bypassUserBucketPolicies = bypass;
 
                     routeBackbeat('127.0.0.1', request, response, log);
 
-                    void await endPromise;
+                    void (await endPromise);
 
                     if (bypass) {
                         const errCode = response.writeHead.getCall(0).args[0];
