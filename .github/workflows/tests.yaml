@@ -110,8 +110,9 @@ jobs:
       - name: Check async/await compliance in diff
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ github.ref_name }}
         run: |
-          if gh pr list --head "${{ github.ref_name }}" --state open --json labels \
+          if gh pr list --head "$BRANCH_NAME" --state open --json labels \
                --jq '.[].labels[].name' 2>/dev/null | grep -qx 'skip-async-migration'; then
             echo "Skipping async/await check: 'skip-async-migration' label found"
           else
