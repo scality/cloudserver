@@ -337,6 +337,10 @@ jobs:
   mongo-v0-ft-tests:
     runs-on: ubuntu-24.04
     needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     env:
       S3BACKEND: mem
       MPU_TESTING: 'yes'
@@ -346,7 +350,7 @@ jobs:
       DEFAULT_BUCKET_KEY_FORMAT: v0
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
-      JOB_NAME: ${{ github.job }}
+      JOB_NAME: ${{ github.job }}-${{ matrix.run }}
       S3_SERVER_ACCESS_LOGS_MODE: ENABLED
     steps:
       - name: Checkout
@@ -367,7 +371,7 @@ jobs:
         run: |-
           set -o pipefail;
           bash wait_for_local_port.bash 8000 40
-          yarn run ft_test | tee /tmp/artifacts/${{ github.job }}/tests.log
+          yarn run ft_test | tee /tmp/artifacts/${{ env.JOB_NAME }}/tests.log
         env:
           S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
       - name: Cleanup and upload coverage
@@ -396,6 +400,10 @@ jobs:
   mongo-v1-ft-tests:
     runs-on: ubuntu-24.04
     needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     env:
       S3BACKEND: mem
       MPU_TESTING: 'yes'
@@ -407,7 +415,7 @@ jobs:
       METADATA_MAX_CACHED_BUCKETS: 1
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
-      JOB_NAME: ${{ github.job }}
+      JOB_NAME: ${{ github.job }}-${{ matrix.run }}
       S3_SERVER_ACCESS_LOGS_MODE: ENABLED
     steps:
       - name: Checkout
@@ -428,8 +436,8 @@ jobs:
         run: |-
           set -o pipefail;
           bash wait_for_local_port.bash 8000 40
-          yarn run ft_test | tee /tmp/artifacts/${{ github.job }}/tests.log
-          yarn run ft_mixed_bucket_format_version | tee /tmp/artifacts/${{ github.job }}/mixed-tests.log
+          yarn run ft_test | tee /tmp/artifacts/${{ env.JOB_NAME }}/tests.log
+          yarn run ft_mixed_bucket_format_version | tee /tmp/artifacts/${{ env.JOB_NAME }}/mixed-tests.log
         env:
           S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
       - name: Cleanup and upload coverage
