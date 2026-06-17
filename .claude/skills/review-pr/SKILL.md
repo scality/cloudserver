@@ -1,15 +1,15 @@
 ---
 name: review-pr
 description: >-
-  Review a PR on cloudserver (S3-compatible object
-  storage server in Node.js)
+    Review a PR on cloudserver (S3-compatible object
+    storage server in Node.js)
 argument-hint: <pr-number-or-url>
 disable-model-invocation: true
 allowed-tools: >-
-  Bash(gh repo view *), Bash(gh pr view *),
-  Bash(gh pr diff *), Bash(gh pr comment *),
-  Bash(gh api *), Bash(git diff *),
-  Bash(git log *), Bash(git show *)
+    Bash(gh repo view *), Bash(gh pr view *),
+    Bash(gh pr diff *), Bash(gh pr comment *),
+    Bash(gh api *), Bash(git diff *),
+    Bash(git log *), Bash(git show *)
 ---
 
 # Review GitHub PR
@@ -48,7 +48,6 @@ Parse `$ARGUMENTS` to extract the repo and PR number:
    change (not just the diff hunks).
 
 3. **Analyze the changes** against these criteria:
-
     - **Async error handling** — uncaught promise rejections, missing
       error callbacks, swallowed errors in streams. Double callbacks
       in try/catch blocks (callback called in try then again in catch).
@@ -81,6 +80,15 @@ Parse `$ARGUMENTS` to extract the repo and PR number:
       at top of file (never inside `describe` or functions).
     - **Test prefix** — Name of tests using the `it()` Mocha test function
       should start with `should`. Only raise this criteria once per file.
+    - **Prefer assert.match** — Where possible in tests prefer
+      `assert.match` over `includes` to test that a string contains a
+      substring. That way we get a diff and more details when the test
+      fails.
+    - **Prefer asserting error messages** — When testing errors prefer
+      comparing the error message
+      `assert.strictEqual(err.message, 'InvalidRequest');`, instead of
+      using `.is` like `assert.strictEqual(err.is.InvalidRequest, true);`,
+      so a failure shows the actual error name.
 
 4. **Deliver your review:**
 
@@ -113,23 +121,23 @@ Each inline comment must:
 - When the fix is a concrete line change (not architectural), include
   a GitHub suggestion block so the author can apply it in one click:
 
-  ````text
-  ```suggestion
-  corrected-line-here
-  ```
-  ````
+    ````text
+    ```suggestion
+    corrected-line-here
+    ```
+    ````
 
-  Only suggest when you can show the exact replacement. For
-  architectural or design issues, just describe the problem.
-  Example with a suggestion block:
+    Only suggest when you can show the exact replacement. For
+    architectural or design issues, just describe the problem.
+    Example with a suggestion block:
 
-  ```bash
-  gh api ... -f body=$'Missing the update.\
-  <br><br>\n```suggestion\n\
-  /plugin update shared-guidelines@hub\n\
-  /plugin update scality-skills@hub\n\
-  ```\n<br><br>— Claude Code' ...
-  ```
+    ````bash
+    gh api ... -f body=$'Missing the update.\
+    <br><br>\n```suggestion\n\
+    /plugin update shared-guidelines@hub\n\
+    /plugin update scality-skills@hub\n\
+    ```\n<br><br>— Claude Code' ...
+    ````
 
 - When the comment contains a suggestion block, use `$'...'` quoting
   with `\n` for code fence boundaries. Escape single quotes as `\'`
