@@ -11,21 +11,17 @@ const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');
 const objectPut = require('../../../lib/api/objectPut');
 const objectCopy = require('../../../lib/api/objectCopy');
 const DummyRequest = require('../DummyRequest');
-const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
-    = require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils } = require('../helpers');
 const mpuUtils = require('../utils/mpuUtils');
 const metadata = require('../metadataswitch');
 const { data } = require('../../../lib/data/wrapper');
 const kms = require('../../../lib/kms/wrapper');
 const { objectLocationConstraintHeader } = require('../../../constants');
-const { algorithms } =
-    require('../../../lib/api/apiUtils/integrity/validateChecksums');
+const { algorithms } = require('../../../lib/api/apiUtils/integrity/validateChecksums');
 const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
 const { config } = require('../../../lib/Config');
 
-const {
-    LOCATION_NAME_CRR,
-} = require('../../constants');
+const { LOCATION_NAME_CRR } = require('../../constants');
 
 const any = sinon.match.any;
 
@@ -63,50 +59,41 @@ function _createObjectCopyRequest(destBucketName, headers = {}) {
 
 const putDestBucketRequest = _createBucketPutRequest(destBucketName);
 const putSourceBucketRequest = _createBucketPutRequest(sourceBucketName);
-const enableVersioningRequest = versioningTestUtils
-    .createBucketPutVersioningReq(destBucketName, 'Enabled');
-const suspendVersioningRequest = versioningTestUtils
-    .createBucketPutVersioningReq(destBucketName, 'Suspended');
-const objData = ['foo0', 'foo1', 'foo2'].map(str =>
-    Buffer.from(str, 'utf8'));
-
+const enableVersioningRequest = versioningTestUtils.createBucketPutVersioningReq(destBucketName, 'Enabled');
+const suspendVersioningRequest = versioningTestUtils.createBucketPutVersioningReq(destBucketName, 'Suspended');
+const objData = ['foo0', 'foo1', 'foo2'].map(str => Buffer.from(str, 'utf8'));
 
 describe('objectCopy with versioning', () => {
-    const testPutObjectRequests = objData.slice(0, 2).map(data =>
-        versioningTestUtils.createPutObjectRequest(destBucketName, objectKey,
-            data));
-    testPutObjectRequests.push(versioningTestUtils
-        .createPutObjectRequest(sourceBucketName, objectKey, objData[2]));
+    const testPutObjectRequests = objData
+        .slice(0, 2)
+        .map(data => versioningTestUtils.createPutObjectRequest(destBucketName, objectKey, data));
+    testPutObjectRequests.push(versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[2]));
 
     before(done => {
         cleanup();
         sinon.spy(metadata, 'putObjectMD');
-        async.series([
-            callback => bucketPut(authInfo, putDestBucketRequest, log,
-                callback),
-            callback => bucketPut(authInfo, putSourceBucketRequest, log,
-                callback),
-            // putting null version: put obj before versioning configured
-            // in dest bucket
-            callback => objectPut(authInfo, testPutObjectRequests[0],
-                undefined, log, callback),
-            callback => bucketPutVersioning(authInfo,
-                enableVersioningRequest, log, callback),
-            // put another version in dest bucket:
-            callback => objectPut(authInfo, testPutObjectRequests[1],
-                undefined, log, callback),
-            callback => bucketPutVersioning(authInfo,
-                suspendVersioningRequest, log, callback),
-            // put source object in source bucket
-            callback => objectPut(authInfo, testPutObjectRequests[2],
-                undefined, log, callback),
-        ], err => {
-            if (err) {
-                return done(err);
-            }
-            versioningTestUtils.assertDataStoreValues(ds, objData);
-            return done();
-        });
+        async.series(
+            [
+                callback => bucketPut(authInfo, putDestBucketRequest, log, callback),
+                callback => bucketPut(authInfo, putSourceBucketRequest, log, callback),
+                // putting null version: put obj before versioning configured
+                // in dest bucket
+                callback => objectPut(authInfo, testPutObjectRequests[0], undefined, log, callback),
+                callback => bucketPutVersioning(authInfo, enableVersioningRequest, log, callback),
+                // put another version in dest bucket:
+                callback => objectPut(authInfo, testPutObjectRequests[1], undefined, log, callback),
+                callback => bucketPutVersioning(authInfo, suspendVersioningRequest, log, callback),
+                // put source object in source bucket
+                callback => objectPut(authInfo, testPutObjectRequests[2], undefined, log, callback),
+            ],
+            err => {
+                if (err) {
+                    return done(err);
+                }
+                versioningTestUtils.assertDataStoreValues(ds, objData);
+                return done();
+            },
+        );
     });
 
     after(() => {
@@ -114,13 +101,14 @@ describe('objectCopy with versioning', () => {
         cleanup();
     });
 
-    it('should delete null version when creating new null version, ' +
-    'even when null version is not the latest version', done => {
-        // will have another copy of last object in datastore after objectCopy
-        const expectedValues = [undefined, objData[1], objData[2], objData[2]];
-        const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
-        objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
-            undefined, log, err => {
+    it(
+        'should delete null version when creating new null version, ' +
+            'even when null version is not the latest version',
+        done => {
+            // will have another copy of last object in datastore after objectCopy
+            const expectedValues = [undefined, objData[1], objData[2], objData[2]];
+            const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
+            objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
                 assert.ifError(err, `Unexpected err: ${err}`);
                 sinon.assert.calledWith(
                     metadata.putObjectMD.lastCall,
@@ -129,44 +117,42 @@ describe('objectCopy with versioning', () => {
                     sinon.match({ _data: { originOp: 's3:ObjectCreated:Copy' } }),
                     sinon.match.any,
                     sinon.match.any,
-                    sinon.match.any
+                    sinon.match.any,
                 );
                 setImmediate(() => {
-                    versioningTestUtils
-                        .assertDataStoreValues(ds, expectedValues);
+                    versioningTestUtils.assertDataStoreValues(ds, expectedValues);
                     done();
                 });
             });
-    });
+        },
+    );
 
     it('should not copy object with storage-class header not equal to STANDARD', done => {
         const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
         testObjectCopyRequest.headers['x-amz-storage-class'] = 'COLD';
-        objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
-            undefined, log, err => {
-                setImmediate(() => {
-                    assert.strictEqual(err.is.InvalidStorageClass, true);
-                    done();
-                });
+        objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+            setImmediate(() => {
+                assert.strictEqual(err.is.InvalidStorageClass, true);
+                done();
             });
+        });
     });
 
     it('should not set bucketOwnerId if requesting account owns dest bucket', done => {
         const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
-        objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
-            undefined, log, err => {
-                assert.ifError(err);
-                sinon.assert.calledWith(
-                    metadata.putObjectMD.lastCall,
-                    destBucketName,
-                    objectKey,
-                    sinon.match({ _data: { bucketOwnerId: sinon.match.typeOf('undefined') } }),
-                    sinon.match.any,
-                    sinon.match.any,
-                    sinon.match.any
-                );
-                done();
-            });
+        objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+            assert.ifError(err);
+            sinon.assert.calledWith(
+                metadata.putObjectMD.lastCall,
+                destBucketName,
+                objectKey,
+                sinon.match({ _data: { bucketOwnerId: sinon.match.typeOf('undefined') } }),
+                sinon.match.any,
+                sinon.match.any,
+                sinon.match.any,
+            );
+            done();
+        });
     });
 
     // TODO: S3C-9965
@@ -189,9 +175,7 @@ describe('objectCopy with versioning', () => {
                         Effect: 'Allow',
                         Principal: { AWS: `arn:aws:iam::${authInfo2.shortid}:root` },
                         Action: ['s3:GetObject'],
-                        Resource: [
-                            `arn:aws:s3:::${sourceBucketName}/*`,
-                        ],
+                        Resource: [`arn:aws:s3:::${sourceBucketName}/*`],
                     },
                 ],
             }),
@@ -210,9 +194,7 @@ describe('objectCopy with versioning', () => {
                         Effect: 'Allow',
                         Principal: { AWS: `arn:aws:iam::${authInfo2.shortid}:root` },
                         Action: ['s3:PutObject'],
-                        Resource: [
-                            `arn:aws:s3:::${destBucketName}/*`,
-                        ],
+                        Resource: [`arn:aws:s3:::${destBucketName}/*`],
                     },
                 ],
             }),
@@ -221,51 +203,47 @@ describe('objectCopy with versioning', () => {
             assert.ifError(err);
             bucketPutPolicy(authInfo, testPutDestPolicyRequest, log, err => {
                 assert.ifError(err);
-                objectCopy(authInfo2, testObjectCopyRequest, sourceBucketName, objectKey,
-                    undefined, log, err => {
-                        sinon.assert.calledWith(
-                            metadata.putObjectMD.lastCall,
-                            destBucketName,
-                            objectKey,
-                            sinon.match({ _data: { bucketOwnerId: authInfo.canonicalID } }),
-                            sinon.match.any,
-                            sinon.match.any,
-                            sinon.match.any
-                        );
-                        assert.ifError(err);
-                        done();
-                    });
+                objectCopy(authInfo2, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        destBucketName,
+                        objectKey,
+                        sinon.match({ _data: { bucketOwnerId: authInfo.canonicalID } }),
+                        sinon.match.any,
+                        sinon.match.any,
+                        sinon.match.any,
+                    );
+                    assert.ifError(err);
+                    done();
+                });
             });
         });
     });
 });
 
 describe('non-versioned objectCopy', () => {
-    const testPutObjectRequest = versioningTestUtils
-        .createPutObjectRequest(sourceBucketName, objectKey, objData[0]);
-    const testPutDestObjectRequest = versioningTestUtils
-        .createPutObjectRequest(destBucketName, objectKey, objData[1]);
+    const testPutObjectRequest = versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]);
+    const testPutDestObjectRequest = versioningTestUtils.createPutObjectRequest(destBucketName, objectKey, objData[1]);
 
     before(done => {
         cleanup();
-        sinon.stub(metadata, 'putObjectMD')
-            .callsFake(originalputObjectMD);
+        sinon.stub(metadata, 'putObjectMD').callsFake(originalputObjectMD);
 
-        async.series([
-            callback => bucketPut(authInfo, putDestBucketRequest, log,
-                callback),
-            callback => bucketPut(authInfo, putSourceBucketRequest, log,
-                callback),
-            // put source object in source bucket
-            callback => objectPut(authInfo, testPutObjectRequest,
-                undefined, log, callback),
-        ], err => {
-            if (err) {
-                return done(err);
-            }
-            versioningTestUtils.assertDataStoreValues(ds, objData.slice(0, 1));
-            return done();
-        });
+        async.series(
+            [
+                callback => bucketPut(authInfo, putDestBucketRequest, log, callback),
+                callback => bucketPut(authInfo, putSourceBucketRequest, log, callback),
+                // put source object in source bucket
+                callback => objectPut(authInfo, testPutObjectRequest, undefined, log, callback),
+            ],
+            err => {
+                if (err) {
+                    return done(err);
+                }
+                versioningTestUtils.assertDataStoreValues(ds, objData.slice(0, 1));
+                return done();
+            },
+        );
     });
 
     after(() => {
@@ -276,91 +254,132 @@ describe('non-versioned objectCopy', () => {
     const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
 
     it('should not leave orphans in data when overwriting a multipart upload', done => {
-        mpuUtils.createMPU(namespace, destBucketName, objectKey, log,
-        (err, testUploadId) => {
+        mpuUtils.createMPU(namespace, destBucketName, objectKey, log, (err, testUploadId) => {
             assert.ifError(err);
-            objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
-                undefined, log, err => {
-                    assert.ifError(err);
-                    sinon.assert.calledWith(metadata.putObjectMD,
-                        any, any, any, sinon.match({ oldReplayId: testUploadId }), any, any);
-                    done();
-                });
+            objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+                assert.ifError(err);
+                sinon.assert.calledWith(
+                    metadata.putObjectMD,
+                    any,
+                    any,
+                    any,
+                    sinon.match({ oldReplayId: testUploadId }),
+                    any,
+                    any,
+                );
+                done();
+            });
         });
     });
 
     it('should not pass needOplogUpdate when creating object', done => {
-        async.series([
-            next => objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
-                undefined, log, next),
-            async () => {
-                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                    destBucketName, objectKey, sinon.match({
-                        _data: { originOp: 's3:ObjectCreated:Copy' },
-                    }), sinon.match({
-                        needOplogUpdate: undefined,
-                        originOp: undefined,
-                    }), any, any);
-            },
-        ], done);
+        async.series(
+            [
+                next => objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, next),
+                async () => {
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        destBucketName,
+                        objectKey,
+                        sinon.match({
+                            _data: { originOp: 's3:ObjectCreated:Copy' },
+                        }),
+                        sinon.match({
+                            needOplogUpdate: undefined,
+                            originOp: undefined,
+                        }),
+                        any,
+                        any,
+                    );
+                },
+            ],
+            done,
+        );
     });
 
     it('should not pass needOplogUpdate when replacing object', done => {
-        async.series([
-            next => objectPut(authInfo, testPutDestObjectRequest, undefined, log, next),
-            next => objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
-                undefined, log, next),
-            async () => {
-                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                    destBucketName, objectKey, sinon.match({
-                        _data: { originOp: 's3:ObjectCreated:Copy' },
-                    }), sinon.match({
-                        needOplogUpdate: undefined,
-                        originOp: undefined,
-                    }), any, any);
-            },
-        ], done);
+        async.series(
+            [
+                next => objectPut(authInfo, testPutDestObjectRequest, undefined, log, next),
+                next => objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, next),
+                async () => {
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        destBucketName,
+                        objectKey,
+                        sinon.match({
+                            _data: { originOp: 's3:ObjectCreated:Copy' },
+                        }),
+                        sinon.match({
+                            needOplogUpdate: undefined,
+                            originOp: undefined,
+                        }),
+                        any,
+                        any,
+                    );
+                },
+            ],
+            done,
+        );
     });
 
     it('should pass needOplogUpdate to metadata when replacing archived object', done => {
         const archived = {
-            archiveInfo: { foo: 0, bar: 'stuff' }
+            archiveInfo: { foo: 0, bar: 'stuff' },
         };
 
-        async.series([
-            next => objectPut(authInfo, testPutDestObjectRequest, undefined, log, next),
-            next => fakeMetadataArchive(destBucketName, objectKey, undefined, archived, next),
-            next => objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
-                undefined, log, next),
-            async () => {
-                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                    destBucketName, objectKey, any, sinon.match({
-                        needOplogUpdate: true,
-                        originOp: 's3:ReplaceArchivedObject',
-                    }), any, any);
-            },
-        ], done);
+        async.series(
+            [
+                next => objectPut(authInfo, testPutDestObjectRequest, undefined, log, next),
+                next => fakeMetadataArchive(destBucketName, objectKey, undefined, archived, next),
+                next => objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, next),
+                async () => {
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        destBucketName,
+                        objectKey,
+                        any,
+                        sinon.match({
+                            needOplogUpdate: true,
+                            originOp: 's3:ReplaceArchivedObject',
+                        }),
+                        any,
+                        any,
+                    );
+                },
+            ],
+            done,
+        );
     });
 
     it('should pass needOplogUpdate to metadata when replacing archived object in version suspended bucket', done => {
         const archived = {
-            archiveInfo: { foo: 0, bar: 'stuff' }
+            archiveInfo: { foo: 0, bar: 'stuff' },
         };
 
-        async.series([
-            next => bucketPutVersioning(authInfo, suspendVersioningRequest, log, next),
-            next => objectPut(authInfo, testPutDestObjectRequest, undefined, log, next),
-            next => fakeMetadataArchive(destBucketName, objectKey, undefined, archived, next),
-            next => objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
-                undefined, log, next),
-            async () => {
-                sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                    destBucketName, objectKey, any, sinon.match({
-                        needOplogUpdate: true,
-                        originOp: 's3:ReplaceArchivedObject',
-                    }), any, any);
-            },
-        ], done);
+        async.series(
+            [
+                next => bucketPutVersioning(authInfo, suspendVersioningRequest, log, next),
+                next => objectPut(authInfo, testPutDestObjectRequest, undefined, log, next),
+                next => fakeMetadataArchive(destBucketName, objectKey, undefined, archived, next),
+                next => objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, next),
+                async () => {
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        destBucketName,
+                        objectKey,
+                        any,
+                        sinon.match({
+                            needOplogUpdate: true,
+                            originOp: 's3:ReplaceArchivedObject',
+                        }),
+                        any,
+                        any,
+                    );
+                },
+            ],
+            done,
+        );
     });
 
     it('should fail to copy object when setting a crr location as the locationConstraint', done => {
@@ -369,14 +388,16 @@ describe('non-versioned objectCopy', () => {
             [objectLocationConstraintHeader]: LOCATION_NAME_CRR,
         });
 
-        async.series([
-            next => objectPut(authInfo, testPutDestObjectRequest, undefined, log, next),
-            next => objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
-                undefined, log, next),
-        ], err => {
-            assert(err.is.InvalidArgument);
-            done();
-        });
+        async.series(
+            [
+                next => objectPut(authInfo, testPutDestObjectRequest, undefined, log, next),
+                next => objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, next),
+            ],
+            err => {
+                assert(err.is.InvalidArgument);
+                done();
+            },
+        );
     });
 });
 
@@ -384,10 +405,13 @@ describe('objectCopy overheadField', () => {
     beforeEach(done => {
         cleanup();
         sinon.stub(metadata, 'putObjectMD').callsFake(originalputObjectMD);
-        async.series([
-            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
-            next => bucketPut(authInfo, putDestBucketRequest, log, next),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+                next => bucketPut(authInfo, putDestBucketRequest, log, next),
+            ],
+            done,
+        );
     });
 
     afterEach(() => {
@@ -396,62 +420,82 @@ describe('objectCopy overheadField', () => {
     });
 
     it('should pass overheadField to metadata.putObjectMD for a non-versioned request', done => {
-        const testPutObjectRequest =
-            versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]);
+        const testPutObjectRequest = versioningTestUtils.createPutObjectRequest(
+            sourceBucketName,
+            objectKey,
+            objData[0],
+        );
         const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
         objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
             assert.ifError(err);
-            objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log,
-                err => {
-                    assert.ifError(err);
-                    sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                        destBucketName, objectKey, any, sinon.match({ overheadField: sinon.match.array }), any, any);
-                    done();
-                }
-            );
+            objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+                assert.ifError(err);
+                sinon.assert.calledWith(
+                    metadata.putObjectMD.lastCall,
+                    destBucketName,
+                    objectKey,
+                    any,
+                    sinon.match({ overheadField: sinon.match.array }),
+                    any,
+                    any,
+                );
+                done();
+            });
         });
     });
 
     it('should pass overheadField to metadata.putObjectMD for a versioned request', done => {
-        const testPutObjectRequest =
-            versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]);
+        const testPutObjectRequest = versioningTestUtils.createPutObjectRequest(
+            sourceBucketName,
+            objectKey,
+            objData[0],
+        );
         const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
         objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
             assert.ifError(err);
             bucketPutVersioning(authInfo, enableVersioningRequest, log, err => {
                 assert.ifError(err);
-                objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log,
-                    err => {
-                        assert.ifError(err);
-                        sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                            destBucketName, objectKey, any,
-                            sinon.match({ overheadField: sinon.match.array }), any, any
-                        );
-                        done();
-                    }
-                );
+                objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+                    assert.ifError(err);
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        destBucketName,
+                        objectKey,
+                        any,
+                        sinon.match({ overheadField: sinon.match.array }),
+                        any,
+                        any,
+                    );
+                    done();
+                });
             });
         });
     });
 
     it('should pass overheadField to metadata.putObjectMD for a version-suspended request', done => {
-        const testPutObjectRequest =
-            versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]);
+        const testPutObjectRequest = versioningTestUtils.createPutObjectRequest(
+            sourceBucketName,
+            objectKey,
+            objData[0],
+        );
         const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
         objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
             assert.ifError(err);
             bucketPutVersioning(authInfo, suspendVersioningRequest, log, err => {
                 assert.ifError(err);
-                objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log,
-                    err => {
-                        assert.ifError(err);
-                        sinon.assert.calledWith(metadata.putObjectMD.lastCall,
-                            destBucketName, objectKey, any,
-                            sinon.match({ overheadField: sinon.match.array }), any, any
-                        );
-                        done();
-                    }
-                );
+                objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+                    assert.ifError(err);
+                    sinon.assert.calledWith(
+                        metadata.putObjectMD.lastCall,
+                        destBucketName,
+                        objectKey,
+                        any,
+                        sinon.match({ overheadField: sinon.match.array }),
+                        any,
+                        any,
+                    );
+                    done();
+                });
             });
         });
     });
@@ -466,10 +510,16 @@ describe('objectCopy in ingestion bucket', () => {
 
     before(() => {
         // Setup multi-backend, this is required for ingestion
-        data.switch(new storage.data.MultipleBackendGateway({
-            'us-east-1': dataClient,
-            'us-east-2': dataClient,
-        }, metadata, data.locStorageCheckFn));
+        data.switch(
+            new storage.data.MultipleBackendGateway(
+                {
+                    'us-east-1': dataClient,
+                    'us-east-2': dataClient,
+                },
+                metadata,
+                data.locStorageCheckFn,
+            ),
+        );
         data.implName = 'multipleBackends';
 
         // "mock" the data location, simulating a backend supporting server-side copy
@@ -502,19 +552,20 @@ describe('objectCopy in ingestion bucket', () => {
         sinon.restore();
     });
 
-    const newPutIngestBucketRequest = location => new DummyRequest({
-        bucketName: destBucketName,
-        namespace,
-        headers: { host: `${destBucketName}.s3.amazonaws.com` },
-        url: '/',
-        post: '<?xml version="1.0" encoding="UTF-8"?>' +
-            '<CreateBucketConfiguration ' +
-            'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-            `<LocationConstraint>${location}</LocationConstraint>` +
-            '</CreateBucketConfiguration>',
-    });
-    const putSourceObjectRequest = versioningTestUtils.createPutObjectRequest(
-        sourceBucketName, objectKey, objData[0]);
+    const newPutIngestBucketRequest = location =>
+        new DummyRequest({
+            bucketName: destBucketName,
+            namespace,
+            headers: { host: `${destBucketName}.s3.amazonaws.com` },
+            url: '/',
+            post:
+                '<?xml version="1.0" encoding="UTF-8"?>' +
+                '<CreateBucketConfiguration ' +
+                'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+                `<LocationConstraint>${location}</LocationConstraint>` +
+                '</CreateBucketConfiguration>',
+        });
+    const putSourceObjectRequest = versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]);
     const newPutObjectRequest = params => {
         const { location } = params || {};
         const r = _createObjectCopyRequest(destBucketName);
@@ -531,17 +582,28 @@ describe('objectCopy in ingestion bucket', () => {
         const versionID = versioning.VersionID.encode(versioning.VersionID.generateVersionId('0', ''));
         dataClient.copyObject = sinon.stub().yields(null, objectKey, versionID);
 
-        async.series([
-            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
-            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
-            next => objectPut(authInfo, putSourceObjectRequest, undefined, log, next),
-            next => objectCopy(authInfo, newPutObjectRequest(), sourceBucketName, objectKey, undefined, log,
-                (err, xml, headers) => {
-                    assert.ifError(err);
-                    assert.strictEqual(headers['x-amz-version-id'], versionID);
-                    next();
-                }),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+                next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+                next => objectPut(authInfo, putSourceObjectRequest, undefined, log, next),
+                next =>
+                    objectCopy(
+                        authInfo,
+                        newPutObjectRequest(),
+                        sourceBucketName,
+                        objectKey,
+                        undefined,
+                        log,
+                        (err, xml, headers) => {
+                            assert.ifError(err);
+                            assert.strictEqual(headers['x-amz-version-id'], versionID);
+                            next();
+                        },
+                    ),
+            ],
+            done,
+        );
     });
 
     it('should not use the versionID from the backend when writing in another location', done => {
@@ -549,34 +611,56 @@ describe('objectCopy in ingestion bucket', () => {
         dataClient.copyObject = sinon.stub().yields(null, objectKey, versionID);
 
         const copyObjectRequest = newPutObjectRequest({ location: 'us-east-2' });
-        async.series([
-            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
-            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
-            next => objectPut(authInfo, putSourceObjectRequest, undefined, log, next),
-            next => objectCopy(authInfo, copyObjectRequest, sourceBucketName, objectKey, undefined, log,
-                (err, xml, headers) => {
-                    assert.ifError(err);
-                    assert.notEqual(headers['x-amz-version-id'], versionID);
-                    next();
-                }),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+                next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+                next => objectPut(authInfo, putSourceObjectRequest, undefined, log, next),
+                next =>
+                    objectCopy(
+                        authInfo,
+                        copyObjectRequest,
+                        sourceBucketName,
+                        objectKey,
+                        undefined,
+                        log,
+                        (err, xml, headers) => {
+                            assert.ifError(err);
+                            assert.notEqual(headers['x-amz-version-id'], versionID);
+                            next();
+                        },
+                    ),
+            ],
+            done,
+        );
     });
 
     it('should not use the versionID from the backend when it is not a valid versionID', done => {
         const versionID = undefined;
         dataClient.copyObject = sinon.stub().yields(null, objectKey, versionID);
 
-        async.series([
-            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
-            next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
-            next => objectPut(authInfo, putSourceObjectRequest, undefined, log, next),
-            next => objectCopy(authInfo, newPutObjectRequest(), sourceBucketName, objectKey, undefined, log,
-                (err, xml, headers) => {
-                    assert.ifError(err);
-                    assert.notEqual(headers['x-amz-version-id'], versionID);
-                    next();
-                }),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+                next => bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log, next),
+                next => objectPut(authInfo, putSourceObjectRequest, undefined, log, next),
+                next =>
+                    objectCopy(
+                        authInfo,
+                        newPutObjectRequest(),
+                        sourceBucketName,
+                        objectKey,
+                        undefined,
+                        log,
+                        (err, xml, headers) => {
+                            assert.ifError(err);
+                            assert.notEqual(headers['x-amz-version-id'], versionID);
+                            next();
+                        },
+                    ),
+            ],
+            done,
+        );
     });
 });
 
@@ -585,12 +669,21 @@ describe('objectCopy with objectKeyByteLimit', () => {
 
     beforeEach(done => {
         cleanup();
-        async.series([
-            next => bucketPut(authInfo, putDestBucketRequest, log, next),
-            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
-            next => objectPut(authInfo, versioningTestUtils.createPutObjectRequest(
-                sourceBucketName, objectKey, objData[0]), undefined, log, next),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, putDestBucketRequest, log, next),
+                next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+                next =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]),
+                        undefined,
+                        log,
+                        next,
+                    ),
+            ],
+            done,
+        );
     });
 
     afterEach(() => {
@@ -603,13 +696,12 @@ describe('objectCopy with objectKeyByteLimit', () => {
         testCopyObjectRequest.objectKey = longDestKey;
         testCopyObjectRequest.url = `/${destBucketName}/${longDestKey}`;
 
-        objectCopy(authInfo, testCopyObjectRequest, sourceBucketName, objectKey,
-            undefined, log, err => {
-                assert(err);
-                assert.strictEqual(err.KeyTooLong, true);
-                assert.match(err.description, /915/);
-                done();
-            });
+        objectCopy(authInfo, testCopyObjectRequest, sourceBucketName, objectKey, undefined, log, err => {
+            assert(err);
+            assert.strictEqual(err.KeyTooLong, true);
+            assert.match(err.description, /915/);
+            done();
+        });
     });
 
     it('should accept destination object key longer than 915 bytes with objectKeyByteLimit', done => {
@@ -620,12 +712,11 @@ describe('objectCopy with objectKeyByteLimit', () => {
         testCopyObjectRequest.objectKey = longDestKey;
         testCopyObjectRequest.url = `/${destBucketName}/${longDestKey}`;
 
-        objectCopy(authInfo, testCopyObjectRequest, sourceBucketName, objectKey,
-            undefined, log, (err, xml) => {
-                assert.ifError(err);
-                assert(xml);
-                done();
-            });
+        objectCopy(authInfo, testCopyObjectRequest, sourceBucketName, objectKey, undefined, log, (err, xml) => {
+            assert.ifError(err);
+            assert(xml);
+            done();
+        });
     });
 
     it('should reject destination object key exceeding objectKeyByteLimit', done => {
@@ -636,13 +727,12 @@ describe('objectCopy with objectKeyByteLimit', () => {
         testCopyObjectRequest.objectKey = longDestKey;
         testCopyObjectRequest.url = `/${destBucketName}/${longDestKey}`;
 
-        objectCopy(authInfo, testCopyObjectRequest, sourceBucketName, objectKey,
-            undefined, log, err => {
-                assert(err);
-                assert.strictEqual(err.KeyTooLong, true);
-                assert.match(err.description, /1024/);
-                done();
-            });
+        objectCopy(authInfo, testCopyObjectRequest, sourceBucketName, objectKey, undefined, log, err => {
+            assert(err);
+            assert.strictEqual(err.KeyTooLong, true);
+            assert.match(err.description, /1024/);
+            done();
+        });
     });
 });
 
@@ -689,10 +779,16 @@ function assertXmlContains(xml, substr, message) {
 function assertRecomputed(algo, xmlTag, expectedDigest, done) {
     return (err, xml) => {
         assert.ifError(err);
-        assertXmlContains(xml, `<${xmlTag}>${expectedDigest}</${xmlTag}>`,
-            `XML should contain ${xmlTag}=${expectedDigest}`);
-        assertXmlContains(xml, '<ChecksumType>FULL_OBJECT</ChecksumType>',
-            'XML should contain ChecksumType FULL_OBJECT');
+        assertXmlContains(
+            xml,
+            `<${xmlTag}>${expectedDigest}</${xmlTag}>`,
+            `XML should contain ${xmlTag}=${expectedDigest}`,
+        );
+        assertXmlContains(
+            xml,
+            '<ChecksumType>FULL_OBJECT</ChecksumType>',
+            'XML should contain ChecksumType FULL_OBJECT',
+        );
         metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
             assert.ifError(err);
             assert(md.checksum, 'destination should have a checksum');
@@ -707,12 +803,21 @@ function assertRecomputed(algo, xmlTag, expectedDigest, done) {
 describe('objectCopy checksum propagation', () => {
     beforeEach(done => {
         cleanup();
-        async.series([
-            next => bucketPut(authInfo, putDestBucketRequest, log, next),
-            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
-            next => objectPut(authInfo, versioningTestUtils.createPutObjectRequest(
-                sourceBucketName, objectKey, objData[0]), undefined, log, next),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, putDestBucketRequest, log, next),
+                next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+                next =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]),
+                        undefined,
+                        log,
+                        next,
+                    ),
+            ],
+            done,
+        );
     });
 
     afterEach(() => {
@@ -726,8 +831,10 @@ describe('objectCopy checksum propagation', () => {
         { algo: 'crc64nvme', header: 'CRC64NVME', xmlTag: 'ChecksumCRC64NVME', value: 'AAAAAAAAAAA=' },
         { algo: 'sha1', header: 'SHA1', xmlTag: 'ChecksumSHA1', value: 'AAAAAAAAAAAAAAAAAAAAAAAAAAA=' },
         {
-            algo: 'sha256', header: 'SHA256', xmlTag: 'ChecksumSHA256',
-            value: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+            algo: 'sha256',
+            header: 'SHA256',
+            xmlTag: 'ChecksumSHA256',
+            value: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
         },
     ];
 
@@ -741,44 +848,39 @@ describe('objectCopy checksum propagation', () => {
         function assertPropagated(xml, cb) {
             assertXmlContains(xml, `<${xmlTag}>${value}</${xmlTag}>`, `XML should contain ${xmlTag}`);
             assertXmlContains(xml, '<ChecksumType>FULL_OBJECT</ChecksumType>', 'XML should contain ChecksumType');
-            metadata.getObjectMD(destBucketName, objectKey, {}, log,
-                (err, md) => {
-                    assert.ifError(err);
-                    assert(md.checksum, 'destination should have a checksum');
-                    assert.strictEqual(md.checksum.checksumAlgorithm, algo);
-                    assert.strictEqual(md.checksum.checksumValue, value);
-                    assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
-                    cb();
-                });
+            metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
+                assert.ifError(err);
+                assert(md.checksum, 'destination should have a checksum');
+                assert.strictEqual(md.checksum.checksumAlgorithm, algo);
+                assert.strictEqual(md.checksum.checksumValue, value);
+                assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
+                cb();
+            });
         }
 
-        it(`should propagate a FULL_OBJECT ${algo} checksum from source to destination`,
-            done => {
-                setSourceChecksum(sourceChecksum, err => {
+        it(`should propagate a FULL_OBJECT ${algo} checksum from source to destination`, done => {
+            setSourceChecksum(sourceChecksum, err => {
+                assert.ifError(err);
+                const req = _createObjectCopyRequest(destBucketName);
+                objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
                     assert.ifError(err);
-                    const req = _createObjectCopyRequest(destBucketName);
-                    objectCopy(authInfo, req, sourceBucketName, objectKey,
-                        undefined, log, (err, xml) => {
-                            assert.ifError(err);
-                            assertPropagated(xml, done);
-                        });
+                    assertPropagated(xml, done);
                 });
             });
+        });
 
-        it(`should propagate when x-amz-checksum-algorithm matches source ${algo} algorithm`,
-            done => {
-                setSourceChecksum(sourceChecksum, err => {
+        it(`should propagate when x-amz-checksum-algorithm matches source ${algo} algorithm`, done => {
+            setSourceChecksum(sourceChecksum, err => {
+                assert.ifError(err);
+                const req = _createObjectCopyRequest(destBucketName, {
+                    'x-amz-checksum-algorithm': header,
+                });
+                objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
                     assert.ifError(err);
-                    const req = _createObjectCopyRequest(destBucketName, {
-                        'x-amz-checksum-algorithm': header,
-                    });
-                    objectCopy(authInfo, req, sourceBucketName, objectKey,
-                        undefined, log, (err, xml) => {
-                            assert.ifError(err);
-                            assertPropagated(xml, done);
-                        });
+                    assertPropagated(xml, done);
                 });
             });
+        });
     });
 
     it('should default to CRC64NVME when source has no checksum and no algorithm is requested', done => {
@@ -788,9 +890,15 @@ describe('objectCopy checksum propagation', () => {
             }
             return Promise.resolve(algorithms.crc64nvme.digest(objData[0])).then(expectedDigest => {
                 const req = _createObjectCopyRequest(destBucketName);
-                objectCopy(authInfo, req, sourceBucketName, objectKey,
-                    undefined, log,
-                    assertRecomputed('crc64nvme', 'ChecksumCRC64NVME', expectedDigest, done));
+                objectCopy(
+                    authInfo,
+                    req,
+                    sourceBucketName,
+                    objectKey,
+                    undefined,
+                    log,
+                    assertRecomputed('crc64nvme', 'ChecksumCRC64NVME', expectedDigest, done),
+                );
             }, done);
         });
     });
@@ -799,12 +907,21 @@ describe('objectCopy checksum propagation', () => {
 describe('objectCopy checksum recompute', () => {
     beforeEach(done => {
         cleanup();
-        async.series([
-            next => bucketPut(authInfo, putDestBucketRequest, log, next),
-            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
-            next => objectPut(authInfo, versioningTestUtils.createPutObjectRequest(
-                sourceBucketName, objectKey, objData[0]), undefined, log, next),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, putDestBucketRequest, log, next),
+                next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+                next =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]),
+                        undefined,
+                        log,
+                        next,
+                    ),
+            ],
+            done,
+        );
     });
 
     afterEach(() => {
@@ -825,61 +942,14 @@ describe('objectCopy checksum recompute', () => {
             // Seed source with a different algorithm so the request forces a recompute.
             // crc32 ↔ sha256 swap covers both pivots.
             const sourceAlgo = algo === 'crc32' ? 'sha256' : 'crc32';
-            const sourceValue = sourceAlgo === 'crc32'
-                ? 'AAAAAA=='
-                : '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=';
-            setSourceChecksum({
-                checksumAlgorithm: sourceAlgo,
-                checksumValue: sourceValue,
-                checksumType: 'FULL_OBJECT',
-            }, err => {
-                if (err) {
-                    return done(err);
-                }
-                return Promise.resolve(algorithms[algo].digest(objData[0])).then(expectedDigest => {
-                    const req = _createObjectCopyRequest(destBucketName, {
-                        'x-amz-checksum-algorithm': header,
-                    });
-                    objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
-                        assertRecomputed(algo, xmlTag, expectedDigest, done));
-                }, done);
-            });
-        });
-
-        // CRC64NVME cannot be used as COMPOSITE (AWS rejects it at MPU init); only test
-        // the COMPOSITE-source path for the four other algorithms.
-        if (algo !== 'crc64nvme') {
-            it(`should recompute ${algo} when source is COMPOSITE and no algorithm requested`, done => {
-                setSourceChecksum({
-                    checksumAlgorithm: algo,
-                    // valid-shape placeholder; the test does not depend on the source value
-                    // matching the body — only on the destination digest being recomputed.
-                    checksumValue: 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBA=',
-                    checksumType: 'COMPOSITE',
-                }, err => {
-                    if (err) {
-                        return done(err);
-                    }
-                    return Promise.resolve(algorithms[algo].digest(objData[0])).then(expectedDigest => {
-                        const req = _createObjectCopyRequest(destBucketName);
-                        objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
-                            assertRecomputed(algo, xmlTag, expectedDigest, done));
-                    }, done);
-                });
-            });
-
-            it(`should recompute ${algo} when source is COMPOSITE and different algorithm requested`, done => {
-                // Force a recompute by both source-type (COMPOSITE) and algo mismatch.
-                // Seed source with sha256 COMPOSITE so the requested algo always differs.
-                const sourceAlgo = algo === 'sha256' ? 'sha1' : 'sha256';
-                const sourceValue = sourceAlgo === 'sha1'
-                    ? 'AAAAAAAAAAAAAAAAAAAAAAAAAAA='
-                    : '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=';
-                setSourceChecksum({
+            const sourceValue = sourceAlgo === 'crc32' ? 'AAAAAA==' : '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=';
+            setSourceChecksum(
+                {
                     checksumAlgorithm: sourceAlgo,
                     checksumValue: sourceValue,
-                    checksumType: 'COMPOSITE',
-                }, err => {
+                    checksumType: 'FULL_OBJECT',
+                },
+                err => {
                     if (err) {
                         return done(err);
                     }
@@ -887,10 +957,86 @@ describe('objectCopy checksum recompute', () => {
                         const req = _createObjectCopyRequest(destBucketName, {
                             'x-amz-checksum-algorithm': header,
                         });
-                        objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
-                            assertRecomputed(algo, xmlTag, expectedDigest, done));
+                        objectCopy(
+                            authInfo,
+                            req,
+                            sourceBucketName,
+                            objectKey,
+                            undefined,
+                            log,
+                            assertRecomputed(algo, xmlTag, expectedDigest, done),
+                        );
                     }, done);
-                });
+                },
+            );
+        });
+
+        // CRC64NVME cannot be used as COMPOSITE (AWS rejects it at MPU init); only test
+        // the COMPOSITE-source path for the four other algorithms.
+        if (algo !== 'crc64nvme') {
+            it(`should recompute ${algo} when source is COMPOSITE and no algorithm requested`, done => {
+                setSourceChecksum(
+                    {
+                        checksumAlgorithm: algo,
+                        // valid-shape placeholder; the test does not depend on the source value
+                        // matching the body — only on the destination digest being recomputed.
+                        checksumValue: 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBA=',
+                        checksumType: 'COMPOSITE',
+                    },
+                    err => {
+                        if (err) {
+                            return done(err);
+                        }
+                        return Promise.resolve(algorithms[algo].digest(objData[0])).then(expectedDigest => {
+                            const req = _createObjectCopyRequest(destBucketName);
+                            objectCopy(
+                                authInfo,
+                                req,
+                                sourceBucketName,
+                                objectKey,
+                                undefined,
+                                log,
+                                assertRecomputed(algo, xmlTag, expectedDigest, done),
+                            );
+                        }, done);
+                    },
+                );
+            });
+
+            it(`should recompute ${algo} when source is COMPOSITE and different algorithm requested`, done => {
+                // Force a recompute by both source-type (COMPOSITE) and algo mismatch.
+                // Seed source with sha256 COMPOSITE so the requested algo always differs.
+                const sourceAlgo = algo === 'sha256' ? 'sha1' : 'sha256';
+                const sourceValue =
+                    sourceAlgo === 'sha1'
+                        ? 'AAAAAAAAAAAAAAAAAAAAAAAAAAA='
+                        : '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=';
+                setSourceChecksum(
+                    {
+                        checksumAlgorithm: sourceAlgo,
+                        checksumValue: sourceValue,
+                        checksumType: 'COMPOSITE',
+                    },
+                    err => {
+                        if (err) {
+                            return done(err);
+                        }
+                        return Promise.resolve(algorithms[algo].digest(objData[0])).then(expectedDigest => {
+                            const req = _createObjectCopyRequest(destBucketName, {
+                                'x-amz-checksum-algorithm': header,
+                            });
+                            objectCopy(
+                                authInfo,
+                                req,
+                                sourceBucketName,
+                                objectKey,
+                                undefined,
+                                log,
+                                assertRecomputed(algo, xmlTag, expectedDigest, done),
+                            );
+                        }, done);
+                    },
+                );
             });
         }
 
@@ -903,8 +1049,15 @@ describe('objectCopy checksum recompute', () => {
                     const req = _createObjectCopyRequest(destBucketName, {
                         'x-amz-checksum-algorithm': header,
                     });
-                    objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
-                        assertRecomputed(algo, xmlTag, expectedDigest, done));
+                    objectCopy(
+                        authInfo,
+                        req,
+                        sourceBucketName,
+                        objectKey,
+                        undefined,
+                        log,
+                        assertRecomputed(algo, xmlTag, expectedDigest, done),
+                    );
                 }, done);
             });
         });
@@ -930,17 +1083,19 @@ describe('objectCopy checksum recompute', () => {
             md['content-length'] = fullBody.length;
             metadata.putObjectMD(sourceBucketName, objectKey, md, {}, log, err => {
                 assert.ifError(err);
-                Promise.resolve(algorithms.sha256.digest(fullBody)).then(expectedDigest => {
-                    const req = _createObjectCopyRequest(destBucketName, {
-                        'x-amz-checksum-algorithm': 'SHA256',
-                    });
-                    objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
-                        (err, xml) => {
+                Promise.resolve(algorithms.sha256.digest(fullBody)).then(
+                    expectedDigest => {
+                        const req = _createObjectCopyRequest(destBucketName, {
+                            'x-amz-checksum-algorithm': 'SHA256',
+                        });
+                        objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
                             assertRecomputed('sha256', 'ChecksumSHA256', expectedDigest, done)(err, xml);
                         });
-                }, err => {
-                    done(err);
-                });
+                    },
+                    err => {
+                        done(err);
+                    },
+                );
             });
         });
     });
@@ -956,29 +1111,32 @@ describe('objectCopy checksum recompute', () => {
                 'x-amz-checksum-algorithm': 'SHA256',
                 'x-amz-server-side-encryption': 'AES256',
             });
-            objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
+            objectCopy(
+                authInfo,
+                req,
+                sourceBucketName,
+                objectKey,
+                undefined,
+                log,
                 assertRecomputed('sha256', 'ChecksumSHA256', expectedDigest, err => {
                     if (err) {
                         return done(err);
                     }
                     try {
-                        assert(cipherBundleSpy.calledOnce,
-                            'kms.createCipherBundle should be called once');
+                        assert(cipherBundleSpy.calledOnce, 'kms.createCipherBundle should be called once');
                         const sseConfig = cipherBundleSpy.firstCall.args[0];
                         assert.strictEqual(sseConfig.algorithm, 'AES256');
                         // The data.put call that consumed the checksum stream
                         // (size > 0) should have received a non-null cipherBundle.
-                        const recomputePut = dataPutSpy.getCalls()
-                            .find(call => call.args[1] !== null);
-                        assert(recomputePut,
-                            'expected at least one data.put with a real stream');
-                        assert(recomputePut.args[0],
-                            'cipherBundle should be non-null for SSE recompute');
+                        const recomputePut = dataPutSpy.getCalls().find(call => call.args[1] !== null);
+                        assert(recomputePut, 'expected at least one data.put with a real stream');
+                        assert(recomputePut.args[0], 'cipherBundle should be non-null for SSE recompute');
                         return done();
                     } catch (e) {
                         return done(e);
                     }
-                }));
+                }),
+            );
         }, done);
     });
 
@@ -994,8 +1152,11 @@ describe('objectCopy checksum recompute', () => {
             assert.ifError(err);
             metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
                 assert.ifError(err);
-                assert.strictEqual(md.location[0].dataStoreETag, `1:${expectedMD5}`,
-                    'recomputed destination location should carry a 1:-prefixed MD5 dataStoreETag');
+                assert.strictEqual(
+                    md.location[0].dataStoreETag,
+                    `1:${expectedMD5}`,
+                    'recomputed destination location should carry a 1:-prefixed MD5 dataStoreETag',
+                );
                 done();
             });
         });
@@ -1036,17 +1197,19 @@ describe('objectCopy checksum recompute', () => {
             md.location = [{ ...md.location[0], dataStoreType: 'azure' }];
             metadata.putObjectMD(sourceBucketName, objectKey, md, {}, log, err => {
                 assert.ifError(err);
-                Promise.resolve(algorithms.sha256.digest(objData[0])).then(expectedDigest => {
-                    const req = _createObjectCopyRequest(destBucketName, {
-                        'x-amz-checksum-algorithm': 'SHA256',
-                    });
-                    objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
-                        (err, xml) => {
+                Promise.resolve(algorithms.sha256.digest(objData[0])).then(
+                    expectedDigest => {
+                        const req = _createObjectCopyRequest(destBucketName, {
+                            'x-amz-checksum-algorithm': 'SHA256',
+                        });
+                        objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
                             assertRecomputed('sha256', 'ChecksumSHA256', expectedDigest, done)(err, xml);
                         });
-                }, err => {
-                    done(err);
-                });
+                    },
+                    err => {
+                        done(err);
+                    },
+                );
             });
         });
     });
@@ -1082,14 +1245,18 @@ describe('objectCopy checksum recompute', () => {
                         assert.ifError(err);
                         assert(!dataPutSpy.called, 'data.put should NOT be called');
                         assert(!batchDeleteSpy.called, 'data.batchDelete should NOT be called');
-                        assertXmlContains(xml, `<${xmlTag}>${expectedDigest}</${xmlTag}>`,
-                            'response XML should carry the new checksum');
+                        assertXmlContains(
+                            xml,
+                            `<${xmlTag}>${expectedDigest}</${xmlTag}>`,
+                            'response XML should carry the new checksum',
+                        );
                         metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, md) => {
                             assert.ifError(err);
                             assert.deepStrictEqual(
                                 md.location.map(l => l.key),
                                 sourceLocation.map(l => l.key),
-                                'data location keys should be reused');
+                                'data location keys should be reused',
+                            );
                             assert.strictEqual(md.checksum.checksumAlgorithm, algo);
                             assert.strictEqual(md.checksum.checksumValue, expectedDigest);
                             assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
@@ -1115,50 +1282,64 @@ describe('objectCopy checksum recompute', () => {
             // reusing the data location.
             const dataPutSpy = sinon.spy(data, 'put');
             const batchDeleteSpy = sinon.spy(data, 'batchDelete');
-            setSourceChecksum({
-                checksumAlgorithm: algo,
-                // placeholder COMPOSITE value, distinct from the FULL_OBJECT digest
-                checksumValue: 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBA=',
-                checksumType: 'COMPOSITE',
-            }, err => {
-                assert.ifError(err);
-                Promise.resolve(algorithms[algo].digest(objData[0])).then(expectedDigest => {
-                    const req = new DummyRequest({
-                        bucketName: sourceBucketName,
-                        namespace,
-                        objectKey,
-                        headers: { 'x-amz-metadata-directive': 'REPLACE' },
-                        url: `/${sourceBucketName}/${objectKey}`,
-                        socket: {},
-                    });
-                    objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
-                        assert.ifError(err);
-                        assert(!dataPutSpy.called, 'data.put should NOT be called (location reused)');
-                        assert(!batchDeleteSpy.called, 'data.batchDelete should NOT be called');
-                        assertXmlContains(xml, `<${xmlTag}>${expectedDigest}</${xmlTag}>`,
-                            'response XML should carry the recomputed FULL_OBJECT digest');
-                        assertXmlContains(xml, '<ChecksumType>FULL_OBJECT</ChecksumType>',
-                            'response XML must say FULL_OBJECT, never COMPOSITE');
-                        metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, md) => {
-                            assert.ifError(err);
-                            assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT',
-                                'stored checksum must be FULL_OBJECT, never COMPOSITE');
-                            assert.strictEqual(md.checksum.checksumAlgorithm, algo);
-                            assert.strictEqual(md.checksum.checksumValue, expectedDigest,
-                                'value must be the recomputed FULL_OBJECT digest, not the source COMPOSITE value');
-                            done();
+            setSourceChecksum(
+                {
+                    checksumAlgorithm: algo,
+                    // placeholder COMPOSITE value, distinct from the FULL_OBJECT digest
+                    checksumValue: 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBA=',
+                    checksumType: 'COMPOSITE',
+                },
+                err => {
+                    assert.ifError(err);
+                    Promise.resolve(algorithms[algo].digest(objData[0])).then(expectedDigest => {
+                        const req = new DummyRequest({
+                            bucketName: sourceBucketName,
+                            namespace,
+                            objectKey,
+                            headers: { 'x-amz-metadata-directive': 'REPLACE' },
+                            url: `/${sourceBucketName}/${objectKey}`,
+                            socket: {},
                         });
-                    });
-                }, done);
-            });
+                        objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
+                            assert.ifError(err);
+                            assert(!dataPutSpy.called, 'data.put should NOT be called (location reused)');
+                            assert(!batchDeleteSpy.called, 'data.batchDelete should NOT be called');
+                            assertXmlContains(
+                                xml,
+                                `<${xmlTag}>${expectedDigest}</${xmlTag}>`,
+                                'response XML should carry the recomputed FULL_OBJECT digest',
+                            );
+                            assertXmlContains(
+                                xml,
+                                '<ChecksumType>FULL_OBJECT</ChecksumType>',
+                                'response XML must say FULL_OBJECT, never COMPOSITE',
+                            );
+                            metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, md) => {
+                                assert.ifError(err);
+                                assert.strictEqual(
+                                    md.checksum.checksumType,
+                                    'FULL_OBJECT',
+                                    'stored checksum must be FULL_OBJECT, never COMPOSITE',
+                                );
+                                assert.strictEqual(md.checksum.checksumAlgorithm, algo);
+                                assert.strictEqual(
+                                    md.checksum.checksumValue,
+                                    expectedDigest,
+                                    'value must be the recomputed FULL_OBJECT digest, not the source COMPOSITE value',
+                                );
+                                done();
+                            });
+                        });
+                    }, done);
+                },
+            );
         });
     });
 
     it('should still PUT on copy-to-self when versioning is enabled (no metadata-only shortcut)', done => {
         // Versioned copies produce a new version-id; the metadata-only path
         // is skipped so the new version gets its own data write.
-        const enableVersioning = versioningTestUtils
-            .createBucketPutVersioningReq(sourceBucketName, 'Enabled');
+        const enableVersioning = versioningTestUtils.createBucketPutVersioningReq(sourceBucketName, 'Enabled');
         bucketPutVersioning(authInfo, enableVersioning, log, err => {
             assert.ifError(err);
             const dataPutSpy = sinon.spy(data, 'put');
@@ -1175,8 +1356,7 @@ describe('objectCopy checksum recompute', () => {
             });
             objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
                 assert.ifError(err);
-                assert(dataPutSpy.called,
-                    'data.put should be called because versioning forces a new version write');
+                assert(dataPutSpy.called, 'data.put should be called because versioning forces a new version write');
                 done();
             });
         });
@@ -1201,12 +1381,21 @@ describe('objectCopy checksum recompute on external backends', () => {
 
     beforeEach(done => {
         cleanup();
-        async.series([
-            next => bucketPut(authInfo, putDestBucketRequest, log, next),
-            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
-            next => objectPut(authInfo, versioningTestUtils.createPutObjectRequest(
-                sourceBucketName, objectKey, objData[0]), undefined, log, next),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, putDestBucketRequest, log, next),
+                next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+                next =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]),
+                        undefined,
+                        log,
+                        next,
+                    ),
+            ],
+            done,
+        );
     });
 
     afterEach(() => {
@@ -1224,10 +1413,12 @@ describe('objectCopy checksum recompute on external backends', () => {
             });
             objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
                 assert.ifError(err);
-                assert(!copyObjectSpy.called,
-                    'data.copyObject should NOT be called (recompute streams instead)');
-                assertXmlContains(xml, `<ChecksumSHA256>${expectedDigest}</ChecksumSHA256>`,
-                    'response XML should carry the recomputed checksum');
+                assert(!copyObjectSpy.called, 'data.copyObject should NOT be called (recompute streams instead)');
+                assertXmlContains(
+                    xml,
+                    `<ChecksumSHA256>${expectedDigest}</ChecksumSHA256>`,
+                    'response XML should carry the recomputed checksum',
+                );
                 metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
                     assert.ifError(err);
                     assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
@@ -1250,10 +1441,12 @@ describe('objectCopy checksum recompute on external backends', () => {
             });
             objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
                 assert.ifError(err);
-                assert(!copyObjectSpy.called,
-                    'data.copyObject should NOT be called (recompute streams instead)');
-                assertXmlContains(xml, `<ChecksumSHA256>${expectedDigest}</ChecksumSHA256>`,
-                    'response XML should carry the recomputed checksum');
+                assert(!copyObjectSpy.called, 'data.copyObject should NOT be called (recompute streams instead)');
+                assertXmlContains(
+                    xml,
+                    `<ChecksumSHA256>${expectedDigest}</ChecksumSHA256>`,
+                    'response XML should carry the recomputed checksum',
+                );
                 done();
             });
         }, done);
@@ -1280,8 +1473,11 @@ describe('objectCopy checksum recompute on external backends', () => {
                 assert.ifError(err);
                 assert(!copyObjectSpy.called, 'data.copyObject should NOT be called (location reused)');
                 assert(!dataPutSpy.called, 'data.put should NOT be called (location reused)');
-                assertXmlContains(xml, `<ChecksumSHA256>${expectedDigest}</ChecksumSHA256>`,
-                    'response XML should carry the recomputed checksum');
+                assertXmlContains(
+                    xml,
+                    `<ChecksumSHA256>${expectedDigest}</ChecksumSHA256>`,
+                    'response XML should carry the recomputed checksum',
+                );
                 metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, md) => {
                     assert.ifError(err);
                     assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
@@ -1296,15 +1492,24 @@ describe('objectCopy checksum recompute on external backends', () => {
 describe('objectCopy checksum recompute on 0-byte source', () => {
     beforeEach(done => {
         cleanup();
-        async.series([
-            next => bucketPut(authInfo, putDestBucketRequest, log, next),
-            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
-            next => objectPut(authInfo, versioningTestUtils.createPutObjectRequest(
-                sourceBucketName, objectKey, objData[0]), undefined, log, next),
-            // Truncate the source to 0 bytes (no data location, content-length 0).
-            // Matches the AWS behavior we're exercising: empty source + recompute.
-            next => setSourceEmptyBody(next),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, putDestBucketRequest, log, next),
+                next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+                next =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]),
+                        undefined,
+                        log,
+                        next,
+                    ),
+                // Truncate the source to 0 bytes (no data location, content-length 0).
+                // Matches the AWS behavior we're exercising: empty source + recompute.
+                next => setSourceEmptyBody(next),
+            ],
+            done,
+        );
     });
 
     afterEach(() => {
@@ -1330,8 +1535,15 @@ describe('objectCopy checksum recompute on 0-byte source', () => {
                     const req = _createObjectCopyRequest(destBucketName, {
                         'x-amz-checksum-algorithm': header,
                     });
-                    objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
-                        assertRecomputed(algo, xmlTag, expectedDigest, done));
+                    objectCopy(
+                        authInfo,
+                        req,
+                        sourceBucketName,
+                        objectKey,
+                        undefined,
+                        log,
+                        assertRecomputed(algo, xmlTag, expectedDigest, done),
+                    );
                 }, done);
             });
         });
@@ -1340,42 +1552,55 @@ describe('objectCopy checksum recompute on 0-byte source', () => {
     it('should recompute empty-bytes digest on COMPOSITE 0-byte source (no algo header)', done => {
         // COMPOSITE source forces recompute even with no algorithm header.
         // Use sha256 placeholder; the dest digest will be the empty-bytes sha256.
-        setSourceChecksum({
-            checksumAlgorithm: 'sha256',
-            checksumValue: '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=',
-            checksumType: 'COMPOSITE',
-        }, err => {
-            assert.ifError(err);
-            Promise.resolve(algorithms.sha256.digest(Buffer.alloc(0))).then(expectedDigest => {
-                const req = _createObjectCopyRequest(destBucketName);
-                objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
-                    assertRecomputed('sha256', 'ChecksumSHA256', expectedDigest, done));
-            }, done);
-        });
+        setSourceChecksum(
+            {
+                checksumAlgorithm: 'sha256',
+                checksumValue: '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=',
+                checksumType: 'COMPOSITE',
+            },
+            err => {
+                assert.ifError(err);
+                Promise.resolve(algorithms.sha256.digest(Buffer.alloc(0))).then(expectedDigest => {
+                    const req = _createObjectCopyRequest(destBucketName);
+                    objectCopy(
+                        authInfo,
+                        req,
+                        sourceBucketName,
+                        objectKey,
+                        undefined,
+                        log,
+                        assertRecomputed('sha256', 'ChecksumSHA256', expectedDigest, done),
+                    );
+                }, done);
+            },
+        );
     });
 
     it('should propagate FULL_OBJECT checksum on 0-byte source (no algo header)', done => {
         // The 0-byte recompute path must not override propagation set by _prepMetadata.
-        setSourceChecksum({
-            checksumAlgorithm: 'crc32',
-            checksumValue: 'AAAAAA==',
-            checksumType: 'FULL_OBJECT',
-        }, err => {
-            assert.ifError(err);
-            const req = _createObjectCopyRequest(destBucketName);
-            objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
+        setSourceChecksum(
+            {
+                checksumAlgorithm: 'crc32',
+                checksumValue: 'AAAAAA==',
+                checksumType: 'FULL_OBJECT',
+            },
+            err => {
                 assert.ifError(err);
-                assertXmlContains(xml, '<ChecksumCRC32>AAAAAA==</ChecksumCRC32>');
-                assertXmlContains(xml, '<ChecksumType>FULL_OBJECT</ChecksumType>');
-                metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
+                const req = _createObjectCopyRequest(destBucketName);
+                objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
                     assert.ifError(err);
-                    assert.strictEqual(md.checksum.checksumAlgorithm, 'crc32');
-                    assert.strictEqual(md.checksum.checksumValue, 'AAAAAA==');
-                    assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
-                    done();
+                    assertXmlContains(xml, '<ChecksumCRC32>AAAAAA==</ChecksumCRC32>');
+                    assertXmlContains(xml, '<ChecksumType>FULL_OBJECT</ChecksumType>');
+                    metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
+                        assert.ifError(err);
+                        assert.strictEqual(md.checksum.checksumAlgorithm, 'crc32');
+                        assert.strictEqual(md.checksum.checksumValue, 'AAAAAA==');
+                        assert.strictEqual(md.checksum.checksumType, 'FULL_OBJECT');
+                        done();
+                    });
                 });
-            });
-        });
+            },
+        );
     });
 
     it('should compute empty-bytes CRC64NVME on 0-byte source with no source checksum and no algo header', done => {
@@ -1385,8 +1610,15 @@ describe('objectCopy checksum recompute on 0-byte source', () => {
             }
             return Promise.resolve(algorithms.crc64nvme.digest(Buffer.alloc(0))).then(expectedDigest => {
                 const req = _createObjectCopyRequest(destBucketName);
-                objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
-                    assertRecomputed('crc64nvme', 'ChecksumCRC64NVME', expectedDigest, done));
+                objectCopy(
+                    authInfo,
+                    req,
+                    sourceBucketName,
+                    objectKey,
+                    undefined,
+                    log,
+                    assertRecomputed('crc64nvme', 'ChecksumCRC64NVME', expectedDigest, done),
+                );
             }, done);
         });
     });
@@ -1411,11 +1643,20 @@ describe('objectCopy data orphan cleanup on cross-backend copy-to-self', () => {
 
     beforeEach(done => {
         cleanup();
-        async.series([
-            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
-            next => objectPut(authInfo, versioningTestUtils.createPutObjectRequest(
-                sourceBucketName, objectKey, objData[0]), undefined, log, next),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+                next =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]),
+                        undefined,
+                        log,
+                        next,
+                    ),
+            ],
+            done,
+        );
     });
 
     afterEach(() => {
@@ -1429,9 +1670,11 @@ describe('objectCopy data orphan cleanup on cross-backend copy-to-self', () => {
         // location-constraint). The old key is no longer referenced and must
         // be batchDeleted — guards against a pre-existing orphan bug.
         const batchDeleteSpy = sinon.spy(data, 'batchDelete');
-        sinon.stub(data, 'copyObject').callsFake(
-            (req, srcLoc, sMP, dataLocator, ctx, backendInfo, srcBM, dstBM, sse, l, cb) =>
-                cb(null, [{ key: 'new-backend-key', dataStoreName: 'us-east-2', size: objData[0].length, start: 0 }]));
+        sinon
+            .stub(data, 'copyObject')
+            .callsFake((req, srcLoc, sMP, dataLocator, ctx, backendInfo, srcBM, dstBM, sse, l, cb) =>
+                cb(null, [{ key: 'new-backend-key', dataStoreName: 'us-east-2', size: objData[0].length, start: 0 }]),
+            );
         metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, srcMd) => {
             assert.ifError(err);
             const oldKeys = srcMd.location.map(l => l.key);
@@ -1448,12 +1691,14 @@ describe('objectCopy data orphan cleanup on cross-backend copy-to-self', () => {
             });
             objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
                 assert.ifError(err);
-                assert(batchDeleteSpy.calledOnce,
-                    'data.batchDelete should reclaim the old data location');
+                assert(batchDeleteSpy.calledOnce, 'data.batchDelete should reclaim the old data location');
                 const reclaimed = batchDeleteSpy.firstCall.args[0];
                 const reclaimedKeys = reclaimed.map(l => l.key);
-                assert.deepStrictEqual(reclaimedKeys, oldKeys,
-                    'batchDelete should target the old source key, not the new backend key');
+                assert.deepStrictEqual(
+                    reclaimedKeys,
+                    oldKeys,
+                    'batchDelete should target the old source key, not the new backend key',
+                );
                 done();
             });
         });
@@ -1468,10 +1713,11 @@ describe('objectCopy data orphan cleanup on cross-backend copy-to-self', () => {
         metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, srcMd) => {
             assert.ifError(err);
             const oldLoc = srcMd.location[0];
-            sinon.stub(data, 'copyObject').callsFake(
-                (req, srcLoc, sMP, dataLocator, ctx, backendInfo, srcBM, dstBM, sse, l, cb) =>
-                    cb(null, [{ key: oldLoc.key, dataStoreName: 'us-east-2',
-                        size: objData[0].length, start: 0 }]));
+            sinon
+                .stub(data, 'copyObject')
+                .callsFake((req, srcLoc, sMP, dataLocator, ctx, backendInfo, srcBM, dstBM, sse, l, cb) =>
+                    cb(null, [{ key: oldLoc.key, dataStoreName: 'us-east-2', size: objData[0].length, start: 0 }]),
+                );
             const req = new DummyRequest({
                 bucketName: sourceBucketName,
                 namespace,
@@ -1485,12 +1731,17 @@ describe('objectCopy data orphan cleanup on cross-backend copy-to-self', () => {
             });
             objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
                 assert.ifError(err);
-                assert(batchDeleteSpy.calledOnce,
-                    'data.batchDelete should reclaim the old slot even when the backend key matches');
+                assert(
+                    batchDeleteSpy.calledOnce,
+                    'data.batchDelete should reclaim the old slot even when the backend key matches',
+                );
                 const reclaimed = batchDeleteSpy.firstCall.args[0];
                 assert.strictEqual(reclaimed.length, 1);
-                assert.strictEqual(reclaimed[0].dataStoreName, oldLoc.dataStoreName,
-                    'batchDelete must target the old dataStoreName, not the new one');
+                assert.strictEqual(
+                    reclaimed[0].dataStoreName,
+                    oldLoc.dataStoreName,
+                    'batchDelete must target the old dataStoreName, not the new one',
+                );
                 assert.strictEqual(reclaimed[0].key, oldLoc.key);
                 done();
             });
@@ -1501,11 +1752,20 @@ describe('objectCopy data orphan cleanup on cross-backend copy-to-self', () => {
 describe('objectCopy legacy string-location copy-to-self', () => {
     beforeEach(done => {
         cleanup();
-        async.series([
-            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
-            next => objectPut(authInfo, versioningTestUtils.createPutObjectRequest(
-                sourceBucketName, objectKey, objData[0]), undefined, log, next),
-        ], done);
+        async.series(
+            [
+                next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+                next =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]),
+                        undefined,
+                        log,
+                        next,
+                    ),
+            ],
+            done,
+        );
     });
 
     afterEach(() => {
@@ -1540,8 +1800,10 @@ describe('objectCopy legacy string-location copy-to-self', () => {
                 });
                 objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
                     assert.ifError(err);
-                    assert(batchDeleteSpy.notCalled,
-                        'the reused legacy string location must not be treated as an orphan');
+                    assert(
+                        batchDeleteSpy.notCalled,
+                        'the reused legacy string location must not be treated as an orphan',
+                    );
                     done();
                 });
             });
@@ -1582,8 +1844,7 @@ describe('_orphanedDataLocations', () => {
     it('should return only the subset of prior locations that are orphaned', () => {
         const reused = { dataStoreName: 'l1', key: 'keep' };
         const orphan = { dataStoreName: 'l1', key: 'gone' };
-        assert.deepStrictEqual(
-            orphanedDataLocations([reused, orphan], [reused]), [orphan]);
+        assert.deepStrictEqual(orphanedDataLocations([reused, orphan], [reused]), [orphan]);
     });
 
     it('should not flag a key referenced by any of several new locations', () => {
@@ -1597,12 +1858,10 @@ describe('_orphanedDataLocations', () => {
 
     it('should normalize a reused legacy string location (not an orphan)', () => {
         // pre-md-model-version-2 string location reused as { key } by goGetData
-        assert.strictEqual(
-            orphanedDataLocations(['legacyKey'], [{ key: 'legacyKey' }]), null);
+        assert.strictEqual(orphanedDataLocations(['legacyKey'], [{ key: 'legacyKey' }]), null);
     });
 
     it('should flag a legacy string location that is no longer referenced', () => {
-        assert.deepStrictEqual(
-            orphanedDataLocations(['oldKey'], [{ key: 'newKey' }]), ['oldKey']);
+        assert.deepStrictEqual(orphanedDataLocations(['oldKey'], [{ key: 'newKey' }]), ['oldKey']);
     });
 });
