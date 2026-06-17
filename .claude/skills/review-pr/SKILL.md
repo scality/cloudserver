@@ -81,6 +81,15 @@ Parse `$ARGUMENTS` to extract the repo and PR number:
       at top of file (never inside `describe` or functions).
     - **Test prefix** — Name of tests using the `it()` Mocha test function
       should start with `should`. Only raise this criteria once per file.
+    - **Prefer assert.match** — Where possible in tests prefer
+      `assert.match` over `includes` to test that a string contains a
+      substring. That way we get a diff and more details when the test
+      fails.
+    - **Prefer asserting error messages** — When testing errors prefer
+      comparing the error message
+      `assert.strictEqual(err.message, 'InvalidRequest');`, instead of
+      using `.is` like `assert.strictEqual(err.is.InvalidRequest, true);`,
+      so a failure shows the actual error name.
 
 4. **Deliver your review:**
 
