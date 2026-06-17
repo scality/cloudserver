@@ -679,14 +679,19 @@ function setSourceEmptyBody(cb) {
     });
 }
 
+const escapeRegExp = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function assertXmlContains(xml, substr, message) {
+    assert.match(xml, new RegExp(escapeRegExp(substr)), message);
+}
+
 // Builds the objectCopy callback that asserts a successful FULL_OBJECT recompute:
 // response XML and destination metadata both carry the expected algo and digest.
 function assertRecomputed(algo, xmlTag, expectedDigest, done) {
     return (err, xml) => {
         assert.ifError(err);
-        assert(xml.includes(`<${xmlTag}>${expectedDigest}</${xmlTag}>`),
+        assertXmlContains(xml, `<${xmlTag}>${expectedDigest}</${xmlTag}>`,
             `XML should contain ${xmlTag}=${expectedDigest}`);
-        assert(xml.includes('<ChecksumType>FULL_OBJECT</ChecksumType>'),
+        assertXmlContains(xml, '<ChecksumType>FULL_OBJECT</ChecksumType>',
             'XML should contain ChecksumType FULL_OBJECT');
         metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
             assert.ifError(err);
@@ -710,7 +715,10 @@ describe('objectCopy checksum propagation', () => {
         ], done);
     });
 
-    afterEach(() => cleanup());
+    afterEach(() => {
+        sinon.restore();
+        cleanup();
+    });
 
     const algorithmFixtures = [
         { algo: 'crc32', header: 'CRC32', xmlTag: 'ChecksumCRC32', value: 'AAAAAA==' },
@@ -731,8 +739,8 @@ describe('objectCopy checksum propagation', () => {
         };
 
         function assertPropagated(xml, cb) {
-            assert(xml.includes(`<${xmlTag}>${value}</${xmlTag}>`), `XML should contain ${xmlTag}`);
-            assert(xml.includes('<ChecksumType>FULL_OBJECT</ChecksumType>'), 'XML should contain ChecksumType');
+            assertXmlContains(xml, `<${xmlTag}>${value}</${xmlTag}>`, `XML should contain ${xmlTag}`);
+            assertXmlContains(xml, '<ChecksumType>FULL_OBJECT</ChecksumType>', 'XML should contain ChecksumType');
             metadata.getObjectMD(destBucketName, objectKey, {}, log,
                 (err, md) => {
                     assert.ifError(err);
@@ -799,7 +807,10 @@ describe('objectCopy checksum recompute', () => {
         ], done);
     });
 
-    afterEach(() => cleanup());
+    afterEach(() => {
+        sinon.restore();
+        cleanup();
+    });
 
     const recomputeFixtures = [
         { algo: 'crc32', header: 'CRC32', xmlTag: 'ChecksumCRC32' },
@@ -904,7 +915,7 @@ describe('objectCopy checksum recompute', () => {
         const partB = Buffer.from('part-b-bytes-longer', 'utf8');
         const fullBody = Buffer.concat([partA, partB]);
         const parts = { 'mpart-a': partA, 'mpart-b': partB };
-        const dataGetStub = sinon.stub(data, 'get').callsFake((info, _response, _l, cb) => {
+        sinon.stub(data, 'get').callsFake((info, _response, _l, cb) => {
             const buf = parts[info.key];
             return cb(null, Readable.from(buf));
         });
@@ -925,11 +936,9 @@ describe('objectCopy checksum recompute', () => {
                     });
                     objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
                         (err, xml) => {
-                            dataGetStub.restore();
                             assertRecomputed('sha256', 'ChecksumSHA256', expectedDigest, done)(err, xml);
                         });
                 }, err => {
-                    dataGetStub.restore();
                     done(err);
                 });
             });
@@ -949,8 +958,6 @@ describe('objectCopy checksum recompute', () => {
             });
             objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
                 assertRecomputed('sha256', 'ChecksumSHA256', expectedDigest, err => {
-                    cipherBundleSpy.restore();
-                    dataPutSpy.restore();
                     if (err) {
                         return done(err);
                     }
@@ -1000,7 +1007,7 @@ describe('objectCopy checksum recompute', () => {
         });
         objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
             assert(err);
-            assert.strictEqual(err.is.InvalidRequest, true);
+            assert.strictEqual(err.message, 'InvalidRequest');
             done();
         });
     });
@@ -1010,7 +1017,7 @@ describe('objectCopy checksum recompute', () => {
         // Azure-flagged parts so the test exercises the Azure branch end-to-end
         // without a real Azure backend.
         const originalGet = data.get;
-        const dataGetStub = sinon.stub(data, 'get').callsFake((info, response, l, cb) => {
+        sinon.stub(data, 'get').callsFake((info, response, l, cb) => {
             if (info?.dataStoreType === 'azure') {
                 // Simulate Azure: write the (already-known) source bytes to the
                 // provided writable, end it, and signal completion.
@@ -1035,11 +1042,9 @@ describe('objectCopy checksum recompute', () => {
                     });
                     objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log,
                         (err, xml) => {
-                            dataGetStub.restore();
                             assertRecomputed('sha256', 'ChecksumSHA256', expectedDigest, done)(err, xml);
                         });
                 }, err => {
-                    dataGetStub.restore();
                     done(err);
                 });
             });
@@ -1074,12 +1079,10 @@ describe('objectCopy checksum recompute', () => {
                         socket: {},
                     });
                     objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
-                        dataPutSpy.restore();
-                        batchDeleteSpy.restore();
                         assert.ifError(err);
                         assert(!dataPutSpy.called, 'data.put should NOT be called');
                         assert(!batchDeleteSpy.called, 'data.batchDelete should NOT be called');
-                        assert(xml.includes(`<${xmlTag}>${expectedDigest}</${xmlTag}>`),
+                        assertXmlContains(xml, `<${xmlTag}>${expectedDigest}</${xmlTag}>`,
                             'response XML should carry the new checksum');
                         metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, md) => {
                             assert.ifError(err);
@@ -1129,14 +1132,12 @@ describe('objectCopy checksum recompute', () => {
                         socket: {},
                     });
                     objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
-                        dataPutSpy.restore();
-                        batchDeleteSpy.restore();
                         assert.ifError(err);
                         assert(!dataPutSpy.called, 'data.put should NOT be called (location reused)');
                         assert(!batchDeleteSpy.called, 'data.batchDelete should NOT be called');
-                        assert(xml.includes(`<${xmlTag}>${expectedDigest}</${xmlTag}>`),
+                        assertXmlContains(xml, `<${xmlTag}>${expectedDigest}</${xmlTag}>`,
                             'response XML should carry the recomputed FULL_OBJECT digest');
-                        assert(xml.includes('<ChecksumType>FULL_OBJECT</ChecksumType>'),
+                        assertXmlContains(xml, '<ChecksumType>FULL_OBJECT</ChecksumType>',
                             'response XML must say FULL_OBJECT, never COMPOSITE');
                         metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, md) => {
                             assert.ifError(err);
@@ -1173,7 +1174,6 @@ describe('objectCopy checksum recompute', () => {
                 socket: {},
             });
             objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
-                dataPutSpy.restore();
                 assert.ifError(err);
                 assert(dataPutSpy.called,
                     'data.put should be called because versioning forces a new version write');
@@ -1209,7 +1209,10 @@ describe('objectCopy checksum recompute on external backends', () => {
         ], done);
     });
 
-    afterEach(() => cleanup());
+    afterEach(() => {
+        sinon.restore();
+        cleanup();
+    });
 
     it('should recompute the checksum on a cross-key copy on an external backend', done => {
         // A recompute streams the source through CloudServer (GET + PUT) and
@@ -1220,11 +1223,10 @@ describe('objectCopy checksum recompute on external backends', () => {
                 'x-amz-checksum-algorithm': 'SHA256',
             });
             objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
-                copyObjectSpy.restore();
                 assert.ifError(err);
                 assert(!copyObjectSpy.called,
                     'data.copyObject should NOT be called (recompute streams instead)');
-                assert(xml.includes(`<ChecksumSHA256>${expectedDigest}</ChecksumSHA256>`),
+                assertXmlContains(xml, `<ChecksumSHA256>${expectedDigest}</ChecksumSHA256>`,
                     'response XML should carry the recomputed checksum');
                 metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
                     assert.ifError(err);
@@ -1247,11 +1249,10 @@ describe('objectCopy checksum recompute on external backends', () => {
                 'x-amz-meta-scal-location-constraint': 'us-east-2',
             });
             objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
-                copyObjectSpy.restore();
                 assert.ifError(err);
                 assert(!copyObjectSpy.called,
                     'data.copyObject should NOT be called (recompute streams instead)');
-                assert(xml.includes(`<ChecksumSHA256>${expectedDigest}</ChecksumSHA256>`),
+                assertXmlContains(xml, `<ChecksumSHA256>${expectedDigest}</ChecksumSHA256>`,
                     'response XML should carry the recomputed checksum');
                 done();
             });
@@ -1276,12 +1277,10 @@ describe('objectCopy checksum recompute on external backends', () => {
                 socket: {},
             });
             objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
-                copyObjectSpy.restore();
-                dataPutSpy.restore();
                 assert.ifError(err);
                 assert(!copyObjectSpy.called, 'data.copyObject should NOT be called (location reused)');
                 assert(!dataPutSpy.called, 'data.put should NOT be called (location reused)');
-                assert(xml.includes(`<ChecksumSHA256>${expectedDigest}</ChecksumSHA256>`),
+                assertXmlContains(xml, `<ChecksumSHA256>${expectedDigest}</ChecksumSHA256>`,
                     'response XML should carry the recomputed checksum');
                 metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, md) => {
                     assert.ifError(err);
@@ -1308,7 +1307,10 @@ describe('objectCopy checksum recompute on 0-byte source', () => {
         ], done);
     });
 
-    afterEach(() => cleanup());
+    afterEach(() => {
+        sinon.restore();
+        cleanup();
+    });
 
     const recomputeFixtures = [
         { algo: 'crc32', header: 'CRC32', xmlTag: 'ChecksumCRC32' },
@@ -1363,8 +1365,8 @@ describe('objectCopy checksum recompute on 0-byte source', () => {
             const req = _createObjectCopyRequest(destBucketName);
             objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
                 assert.ifError(err);
-                assert(xml.includes('<ChecksumCRC32>AAAAAA==</ChecksumCRC32>'));
-                assert(xml.includes('<ChecksumType>FULL_OBJECT</ChecksumType>'));
+                assertXmlContains(xml, '<ChecksumCRC32>AAAAAA==</ChecksumCRC32>');
+                assertXmlContains(xml, '<ChecksumType>FULL_OBJECT</ChecksumType>');
                 metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
                     assert.ifError(err);
                     assert.strictEqual(md.checksum.checksumAlgorithm, 'crc32');
@@ -1416,7 +1418,10 @@ describe('objectCopy data orphan cleanup on cross-backend copy-to-self', () => {
         ], done);
     });
 
-    afterEach(() => cleanup());
+    afterEach(() => {
+        sinon.restore();
+        cleanup();
+    });
 
     it('should reclaim the old location on copy-to-self that lands at a different backend key', done => {
         // Copy-to-self where the new metadata points to a different data key
@@ -1424,7 +1429,7 @@ describe('objectCopy data orphan cleanup on cross-backend copy-to-self', () => {
         // location-constraint). The old key is no longer referenced and must
         // be batchDeleted — guards against a pre-existing orphan bug.
         const batchDeleteSpy = sinon.spy(data, 'batchDelete');
-        const copyObjectStub = sinon.stub(data, 'copyObject').callsFake(
+        sinon.stub(data, 'copyObject').callsFake(
             (req, srcLoc, sMP, dataLocator, ctx, backendInfo, srcBM, dstBM, sse, l, cb) =>
                 cb(null, [{ key: 'new-backend-key', dataStoreName: 'us-east-2', size: objData[0].length, start: 0 }]));
         metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, srcMd) => {
@@ -1442,8 +1447,6 @@ describe('objectCopy data orphan cleanup on cross-backend copy-to-self', () => {
                 socket: {},
             });
             objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
-                batchDeleteSpy.restore();
-                copyObjectStub.restore();
                 assert.ifError(err);
                 assert(batchDeleteSpy.calledOnce,
                     'data.batchDelete should reclaim the old data location');
@@ -1465,7 +1468,7 @@ describe('objectCopy data orphan cleanup on cross-backend copy-to-self', () => {
         metadata.getObjectMD(sourceBucketName, objectKey, {}, log, (err, srcMd) => {
             assert.ifError(err);
             const oldLoc = srcMd.location[0];
-            const copyObjectStub = sinon.stub(data, 'copyObject').callsFake(
+            sinon.stub(data, 'copyObject').callsFake(
                 (req, srcLoc, sMP, dataLocator, ctx, backendInfo, srcBM, dstBM, sse, l, cb) =>
                     cb(null, [{ key: oldLoc.key, dataStoreName: 'us-east-2',
                         size: objData[0].length, start: 0 }]));
@@ -1481,8 +1484,6 @@ describe('objectCopy data orphan cleanup on cross-backend copy-to-self', () => {
                 socket: {},
             });
             objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
-                batchDeleteSpy.restore();
-                copyObjectStub.restore();
                 assert.ifError(err);
                 assert(batchDeleteSpy.calledOnce,
                     'data.batchDelete should reclaim the old slot even when the backend key matches');
@@ -1507,7 +1508,10 @@ describe('objectCopy legacy string-location copy-to-self', () => {
         ], done);
     });
 
-    afterEach(() => cleanup());
+    afterEach(() => {
+        sinon.restore();
+        cleanup();
+    });
 
     it('should not delete the reused location on copy-to-self with a legacy string location', done => {
         // Pre-md-model-version-2 objects store `location` as a bare string;
@@ -1535,7 +1539,6 @@ describe('objectCopy legacy string-location copy-to-self', () => {
                     socket: {},
                 });
                 objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
-                    batchDeleteSpy.restore();
                     assert.ifError(err);
                     assert(batchDeleteSpy.notCalled,
                         'the reused legacy string location must not be treated as an orphan');
