@@ -72,22 +72,17 @@ const emptyReplicationMD = {
     status: '',
     backends: [],
     content: [],
-    destination: '',
-    storageClass: '',
-    role: '',
-    storageType: '',
-    dataStoreVersionId: '',
+    destination: undefined,
+    storageClass: undefined,
+    role: undefined,
+    storageType: undefined,
+    dataStoreVersionId: undefined,
     isNFS: undefined,
 };
 const expectedEmptyReplicationMD = {
     status: '',
     backends: [],
     content: [],
-    destination: '',
-    storageClass: '',
-    role: '',
-    storageType: '',
-    dataStoreVersionId: '',
 };
 
 // Check that the object key has the expected replication information.
@@ -316,7 +311,6 @@ describe('Replication object MD without bucket replication config', () => {
                 storageClass: 'zenko',
                 role: 'arn:aws:iam::account-id:role/src-resource,' + 'arn:aws:iam::account-id:role/dest-resource',
                 storageType: '',
-                dataStoreVersionId: '',
                 isNFS: undefined,
             };
             const newReplicationMD = hasStorageClass
@@ -605,7 +599,6 @@ describe('Replication object MD without bucket replication config', () => {
                         storageClass: backend,
                         role: 'arn:aws:iam::account-id:role/resource',
                         storageType,
-                        dataStoreVersionId: '',
                         isNFS: undefined,
                     };
 

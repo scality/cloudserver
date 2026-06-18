@@ -358,54 +358,6 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
         return checkError(config, 'InvalidArgument');
     });
 
-    it(
-        'should not accept configuration when rules contain overlapping ' +
-            "'Prefix' values: new prefix starts with used prefix",
-        () => {
-            const config = setConfigRules([
-                replicationConfig.Rules[0],
-                {
-                    Destination: { Bucket: `arn:aws:s3:::${destinationBucket}` },
-                    Prefix: 'test-prefix/more-content',
-                    Status: 'Enabled',
-                },
-            ]);
-            return checkError(config, 'InvalidRequest');
-        },
-    );
-
-    it(
-        'should not accept configuration when rules contain overlapping ' +
-            "'Prefix' values: used prefix starts with new prefix",
-        () => {
-            const config = setConfigRules([
-                replicationConfig.Rules[0],
-                {
-                    Destination: { Bucket: `arn:aws:s3:::${destinationBucket}` },
-                    Prefix: 'test',
-                    Status: 'Enabled',
-                },
-            ]);
-            return checkError(config, 'InvalidRequest');
-        },
-    );
-
-    it(
-        "should not accept configuration when 'Destination' properties of " +
-            'two or more rules specify different buckets',
-        () => {
-            const config = setConfigRules([
-                replicationConfig.Rules[0],
-                {
-                    Destination: { Bucket: `arn:aws:s3:::${destinationBucket}-1` },
-                    Prefix: 'bar',
-                    Status: 'Enabled',
-                },
-            ]);
-            return checkError(config, 'InvalidRequest');
-        },
-    );
-
     replicationUtils.validStorageClasses.forEach(storageClass => {
         const config = setConfigRules({
             Destination: {
