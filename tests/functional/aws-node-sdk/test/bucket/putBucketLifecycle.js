@@ -5,6 +5,7 @@ const {
     CreateBucketCommand,
     DeleteBucketCommand,
     PutBucketLifecycleConfigurationCommand,
+    GetBucketLifecycleConfigurationCommand,
 } = require('@aws-sdk/client-s3');
 
 const getConfig = require('../support/config');
@@ -96,6 +97,75 @@ describe('aws-sdk test put bucket lifecycle', () => {
         it('should put lifecycle configuration on bucket', async () => {
             const params = getLifecycleParams();
             await s3.send(new PutBucketLifecycleConfigurationCommand(params));
+        });
+
+        it('should allow Expiration Days=0 (explicit bucket-emptying intent) ' + 'and round-trip it', async () => {
+            const params = getLifecycleParams({ key: 'Expiration', value: { Days: 0 } });
+            await s3.send(new PutBucketLifecycleConfigurationCommand(params));
+            const got = await s3.send(new GetBucketLifecycleConfigurationCommand({ Bucket: bucket }));
+            assert.strictEqual(got.Rules[0].Expiration.Days, 0);
+        });
+
+        it('should not allow negative Expiration Days', async () => {
+            const params = getLifecycleParams({ key: 'Expiration', value: { Days: -1 } });
+            try {
+                await s3.send(new PutBucketLifecycleConfigurationCommand(params));
+                throw new Error('Expected InvalidArgument error');
+            } catch (err) {
+                assert.strictEqual(err.name, 'InvalidArgument');
+                assert.strictEqual(err.message, "'Days' for Expiration action must be a positive integer");
+            }
+        });
+
+        it(`should not allow Expiration Days exceeding ${MAX_DAYS}`, async () => {
+            const params = getLifecycleParams({
+                key: 'Expiration',
+                value: { Days: MAX_DAYS + 1 },
+            });
+            try {
+                await s3.send(new PutBucketLifecycleConfigurationCommand(params));
+                throw new Error('Expected MalformedXML error');
+            } catch (err) {
+                assert.strictEqual(err.name, 'MalformedXML');
+            }
+        });
+
+        it('should allow NoncurrentVersionExpiration NoncurrentDays=0', async () => {
+            const params = {
+                Bucket: bucket,
+                LifecycleConfiguration: {
+                    Rules: [
+                        {
+                            ID: 'test-id',
+                            Status: 'Enabled',
+                            Prefix: '',
+                            NoncurrentVersionExpiration: { NoncurrentDays: 0 },
+                        },
+                    ],
+                },
+            };
+            await s3.send(new PutBucketLifecycleConfigurationCommand(params));
+            const got = await s3.send(new GetBucketLifecycleConfigurationCommand({ Bucket: bucket }));
+            assert.strictEqual(got.Rules[0].NoncurrentVersionExpiration.NoncurrentDays, 0);
+        });
+
+        it('should allow AbortIncompleteMultipartUpload DaysAfterInitiation=0', async () => {
+            const params = {
+                Bucket: bucket,
+                LifecycleConfiguration: {
+                    Rules: [
+                        {
+                            ID: 'test-id',
+                            Status: 'Enabled',
+                            Prefix: '',
+                            AbortIncompleteMultipartUpload: { DaysAfterInitiation: 0 },
+                        },
+                    ],
+                },
+            };
+            await s3.send(new PutBucketLifecycleConfigurationCommand(params));
+            const got = await s3.send(new GetBucketLifecycleConfigurationCommand({ Bucket: bucket }));
+            assert.strictEqual(got.Rules[0].AbortIncompleteMultipartUpload.DaysAfterInitiation, 0);
         });
 
         it(
@@ -479,7 +549,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     assert.strictEqual(err.name, 'InvalidArgument');
                     assert.strictEqual(
                         err.message,
-                        "'NoncurrentDays' in NoncurrentVersionExpiration " + 'action must be nonnegative',
+                        "'NoncurrentDays' for NoncurrentVersionExpiration action must be a positive integer",
                     );
                 }
             });
