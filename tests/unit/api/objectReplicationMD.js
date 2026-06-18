@@ -4,16 +4,14 @@ const crypto = require('crypto');
 
 const BucketInfo = require('arsenal').models.BucketInfo;
 
-const { cleanup, DummyRequestLogger, makeAuthInfo, TaggingConfigTester } =
-    require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo, TaggingConfigTester } = require('../helpers');
 const constants = require('../../../constants');
 const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const DummyRequest = require('../DummyRequest');
 const { objectDelete } = require('../../../lib/api/objectDelete');
 const objectPut = require('../../../lib/api/objectPut');
 const objectCopy = require('../../../lib/api/objectCopy');
-const completeMultipartUpload =
-    require('../../../lib/api/completeMultipartUpload');
+const completeMultipartUpload = require('../../../lib/api/completeMultipartUpload');
 const objectPutACL = require('../../../lib/api/objectPutACL');
 const objectPutTagging = require('../../../lib/api/objectPutTagging');
 const objectDeleteTagging = require('../../../lib/api/objectDeleteTagging');
@@ -55,19 +53,20 @@ const objectACLReq = {
 // Get an object request with the given key.
 function getObjectPutReq(key, hasContent) {
     const bodyContent = hasContent ? 'body content' : '';
-    return new DummyRequest({
-        bucketName,
-        namespace,
-        objectKey: key,
-        headers: {},
-        url: `/${bucketName}/${key}`,
-    }, Buffer.from(bodyContent, 'utf8'));
+    return new DummyRequest(
+        {
+            bucketName,
+            namespace,
+            objectKey: key,
+            headers: {},
+            url: `/${bucketName}/${key}`,
+        },
+        Buffer.from(bodyContent, 'utf8'),
+    );
 }
 
-const taggingPutReq = new TaggingConfigTester()
-    .createObjectTaggingRequest('PUT', bucketName, keyA);
-const taggingDeleteReq = new TaggingConfigTester()
-    .createObjectTaggingRequest('DELETE', bucketName, keyA);
+const taggingPutReq = new TaggingConfigTester().createObjectTaggingRequest('PUT', bucketName, keyA);
+const taggingDeleteReq = new TaggingConfigTester().createObjectTaggingRequest('DELETE', bucketName, keyA);
 
 const emptyReplicationMD = {
     status: '',
@@ -99,35 +98,34 @@ function checkObjectReplicationInfo(key, expected) {
 
 // Put the object key and check the replication information.
 function putObjectAndCheckMD(key, expected, cb) {
-    return objectPut(authInfo, getObjectPutReq(key, true), undefined, log,
-        err => {
-            if (err) {
-                return cb(err);
-            }
-            checkObjectReplicationInfo(key, expected);
-            return cb();
-        });
+    return objectPut(authInfo, getObjectPutReq(key, true), undefined, log, err => {
+        if (err) {
+            return cb(err);
+        }
+        checkObjectReplicationInfo(key, expected);
+        return cb();
+    });
 }
 
 // Create the bucket in metadata.
 function createBucket() {
-    metadata
-        .buckets.set(bucketName, new BucketInfo(bucketName, ownerID, '', ''));
-    metadata.keyMaps.set(bucketName, new Map);
+    metadata.buckets.set(bucketName, new BucketInfo(bucketName, ownerID, '', ''));
+    metadata.keyMaps.set(bucketName, new Map());
 }
 
 // Create the bucket in metadata with versioning and a replication config.
 function createBucketWithReplication(hasStorageClass) {
     createBucket();
     const config = {
-        role: 'arn:aws:iam::account-id:role/src-resource,' +
-            'arn:aws:iam::account-id:role/dest-resource',
+        role: 'arn:aws:iam::account-id:role/src-resource,' + 'arn:aws:iam::account-id:role/dest-resource',
         destination: 'arn:aws:s3:::source-bucket',
-        rules: [{
-            prefix: keyA,
-            enabled: true,
-            id: 'test-id',
-        }],
+        rules: [
+            {
+                prefix: keyA,
+                enabled: true,
+                id: 'test-id',
+            },
+        ],
     };
     if (hasStorageClass) {
         config.rules[0].storageClass = storageClassType;
@@ -140,22 +138,21 @@ function createBucketWithReplication(hasStorageClass) {
 
 // Create the shadow bucket in metadata for MPUs with a recent model number.
 function createShadowBucket(key, uploadId) {
-    const overviewKey = `overview${constants.splitter}` +
-        `${key}${constants.splitter}${uploadId}`;
-    metadata.buckets
-        .set(mpuShadowBucket, new BucketInfo(mpuShadowBucket, ownerID, '', ''));
-     // Set modelVersion to use the most recent splitter.
+    const overviewKey = `overview${constants.splitter}` + `${key}${constants.splitter}${uploadId}`;
+    metadata.buckets.set(mpuShadowBucket, new BucketInfo(mpuShadowBucket, ownerID, '', ''));
+    // Set modelVersion to use the most recent splitter.
     Object.assign(metadata.buckets.get(mpuShadowBucket), {
         _mdBucketModelVersion: 5,
     });
-    metadata.keyMaps.set(mpuShadowBucket, new Map);
-    metadata.keyMaps.get(mpuShadowBucket).set(overviewKey, new Map);
+    metadata.keyMaps.set(mpuShadowBucket, new Map());
+    metadata.keyMaps.get(mpuShadowBucket).set(overviewKey, new Map());
     Object.assign(metadata.keyMaps.get(mpuShadowBucket).get(overviewKey), {
         id: uploadId,
         eventualStorageBucket: bucketName,
         initiator: {
             DisplayName: 'accessKey1displayName',
-            ID: ownerID },
+            ID: ownerID,
+        },
         key,
         uploadId,
     });
@@ -170,24 +167,26 @@ function putMPU(key, body, cb) {
     const calculatedHash = md5Hash.digest('hex');
     const partKey = `${uploadId}${constants.splitter}00001`;
     const obj = {
-        partLocations: [{
-            key: 1,
-            dataStoreName: 'scality-internal-mem',
-            dataStoreETag: `1:${calculatedHash}`,
-        }],
+        partLocations: [
+            {
+                key: 1,
+                dataStoreName: 'scality-internal-mem',
+                dataStoreETag: `1:${calculatedHash}`,
+            },
+        ],
         key: partKey,
     };
     obj['content-md5'] = calculatedHash;
     obj['content-length'] = body.length;
-    metadata.keyMaps.get(mpuShadowBucket).set(partKey, new Map);
+    metadata.keyMaps.get(mpuShadowBucket).set(partKey, new Map());
     const partMap = metadata.keyMaps.get(mpuShadowBucket).get(partKey);
     Object.assign(partMap, obj);
     const postBody =
         '<CompleteMultipartUpload>' +
-            '<Part>' +
-                '<PartNumber>1</PartNumber>' +
-                `<ETag>"${calculatedHash}"</ETag>` +
-            '</Part>' +
+        '<Part>' +
+        '<PartNumber>1</PartNumber>' +
+        `<ETag>"${calculatedHash}"</ETag>` +
+        '</Part>' +
         '</CompleteMultipartUpload>';
     const req = {
         bucketName,
@@ -217,8 +216,7 @@ function copyObject(sourceObjectKey, copyObjectKey, hasContent, cb) {
             headers: {},
             url: `/${bucketName}/${sourceObjectKey}`,
         });
-        return objectCopy(authInfo, req, bucketName, sourceObjectKey, undefined,
-            log, cb);
+        return objectCopy(authInfo, req, bucketName, sourceObjectKey, undefined, log, cb);
     });
 }
 
@@ -230,26 +228,33 @@ describe('Replication object MD without bucket replication config', () => {
 
     afterEach(() => cleanup());
 
-    it('should not update object metadata', done =>
-        putObjectAndCheckMD(keyA, emptyReplicationMD, done));
+    it('should not update object metadata', done => putObjectAndCheckMD(keyA, emptyReplicationMD, done));
 
     it('should not update object metadata if putting object ACL', done =>
-        async.series([
-            next => putObjectAndCheckMD(keyA, emptyReplicationMD, next),
-            next => objectPutACL(authInfo, objectACLReq, log, next),
-        ], err => {
-            if (err) {
-                return done(err);
-            }
-            checkObjectReplicationInfo(keyA, expectedEmptyReplicationMD);
-            return done();
-        }));
+        async.series(
+            [
+                next => putObjectAndCheckMD(keyA, emptyReplicationMD, next),
+                next => objectPutACL(authInfo, objectACLReq, log, next),
+            ],
+            err => {
+                if (err) {
+                    return done(err);
+                }
+                checkObjectReplicationInfo(keyA, expectedEmptyReplicationMD);
+                return done();
+            },
+        ));
 
     describe('Object tagging', () => {
-        beforeEach(done => async.series([
-            next => putObjectAndCheckMD(keyA, emptyReplicationMD, next),
-            next => objectPutTagging(authInfo, taggingPutReq, log, next),
-        ], err => done(err)));
+        beforeEach(done =>
+            async.series(
+                [
+                    next => putObjectAndCheckMD(keyA, emptyReplicationMD, next),
+                    next => objectPutTagging(authInfo, taggingPutReq, log, next),
+                ],
+                err => done(err),
+            ),
+        );
 
         it('should not update object metadata if putting tag', done => {
             checkObjectReplicationInfo(keyA, expectedEmptyReplicationMD);
@@ -257,18 +262,20 @@ describe('Replication object MD without bucket replication config', () => {
         });
 
         it('should not update object metadata if deleting tag', done =>
-            async.series([
-                // Put a new version to update replication MD content array.
-                next => putObjectAndCheckMD(keyA, emptyReplicationMD, next),
-                next => objectDeleteTagging(authInfo, taggingDeleteReq, log,
-                    next),
-            ], err => {
-                if (err) {
-                    return done(err);
-                }
-                checkObjectReplicationInfo(keyA, expectedEmptyReplicationMD);
-                return done();
-            }));
+            async.series(
+                [
+                    // Put a new version to update replication MD content array.
+                    next => putObjectAndCheckMD(keyA, emptyReplicationMD, next),
+                    next => objectDeleteTagging(authInfo, taggingDeleteReq, log, next),
+                ],
+                err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    checkObjectReplicationInfo(keyA, expectedEmptyReplicationMD);
+                    return done();
+                },
+            ));
 
         it('should not update object metadata if completing MPU', done =>
             putMPU(keyA, 'content', err => {
@@ -291,250 +298,280 @@ describe('Replication object MD without bucket replication config', () => {
 });
 
 [true, false].forEach(hasStorageClass => {
-    describe('Replication object MD with bucket replication config ' +
-    `${hasStorageClass ? 'with' : 'without'} storage class`, () => {
-        const replicationMD = {
-            status: 'PENDING',
-            backends: [{
-                site: 'zenko',
+    describe(
+        'Replication object MD with bucket replication config ' +
+            `${hasStorageClass ? 'with' : 'without'} storage class`,
+        () => {
+            const replicationMD = {
                 status: 'PENDING',
+                backends: [
+                    {
+                        site: 'zenko',
+                        status: 'PENDING',
+                        dataStoreVersionId: '',
+                    },
+                ],
+                content: ['DATA', 'METADATA'],
+                destination: bucketARN,
+                storageClass: 'zenko',
+                role: 'arn:aws:iam::account-id:role/src-resource,' + 'arn:aws:iam::account-id:role/dest-resource',
+                storageType: '',
                 dataStoreVersionId: '',
-            }],
-            content: ['DATA', 'METADATA'],
-            destination: bucketARN,
-            storageClass: 'zenko',
-            role: 'arn:aws:iam::account-id:role/src-resource,' +
-                'arn:aws:iam::account-id:role/dest-resource',
-            storageType: '',
-            dataStoreVersionId: '',
-            isNFS: undefined,
-        };
-        const newReplicationMD = hasStorageClass ? Object.assign(replicationMD,
-            { storageClass: storageClassType }) : replicationMD;
-        const replicateMetadataOnly = Object.assign({}, newReplicationMD,
-            { content: ['METADATA'] });
+                isNFS: undefined,
+            };
+            const newReplicationMD = hasStorageClass
+                ? Object.assign(replicationMD, { storageClass: storageClassType })
+                : replicationMD;
+            const replicateMetadataOnly = Object.assign({}, newReplicationMD, { content: ['METADATA'] });
 
-        beforeEach(() => {
-            cleanup();
-            createBucketWithReplication(hasStorageClass);
-        });
+            beforeEach(() => {
+                cleanup();
+                createBucketWithReplication(hasStorageClass);
+            });
 
-        afterEach(() => {
-            cleanup();
-            delete config.locationConstraints['zenko'];
-        });
+            afterEach(() => {
+                cleanup();
+                delete config.locationConstraints['zenko'];
+            });
 
-        it('should update metadata when replication config prefix matches ' +
-        'an object key', done =>
-            putObjectAndCheckMD(keyA, newReplicationMD, done));
+            it('should update metadata when replication config prefix matches ' + 'an object key', done =>
+                putObjectAndCheckMD(keyA, newReplicationMD, done),
+            );
 
-        it('should update metadata when replication config prefix matches ' +
-        'the start of an object key', done =>
-            putObjectAndCheckMD(`${keyA}abc`, newReplicationMD, done));
+            it('should update metadata when replication config prefix matches ' + 'the start of an object key', done =>
+                putObjectAndCheckMD(`${keyA}abc`, newReplicationMD, done),
+            );
 
-        it('should not update metadata when replication config prefix does ' +
-        'not match the start of an object key', done =>
-            putObjectAndCheckMD(`abc${keyA}`, emptyReplicationMD, done));
+            it(
+                'should not update metadata when replication config prefix does ' +
+                    'not match the start of an object key',
+                done => putObjectAndCheckMD(`abc${keyA}`, emptyReplicationMD, done),
+            );
 
-        it('should not update metadata when replication config prefix does ' +
-        'not apply', done =>
-            putObjectAndCheckMD(keyB, emptyReplicationMD, done));
+            it('should not update metadata when replication config prefix does ' + 'not apply', done =>
+                putObjectAndCheckMD(keyB, emptyReplicationMD, done),
+            );
 
-        it("should update status to 'PENDING' if putting a new version", done =>
-            putObjectAndCheckMD(keyA, newReplicationMD, err => {
-                if (err) {
-                    return done(err);
-                }
-                const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
-                // Update metadata to a status after replication has occurred.
-                objectMD.replicationInfo.status = 'COMPLETED';
-                return putObjectAndCheckMD(keyA, newReplicationMD, done);
-            }));
+            it("should update status to 'PENDING' if putting a new version", done =>
+                putObjectAndCheckMD(keyA, newReplicationMD, err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+                    // Update metadata to a status after replication has occurred.
+                    objectMD.replicationInfo.status = 'COMPLETED';
+                    return putObjectAndCheckMD(keyA, newReplicationMD, done);
+                }));
 
-        it("should update status to 'PENDING' and content to '['METADATA']' " +
-            'if putting 0 byte object', done =>
-            objectPut(authInfo, getObjectPutReq(keyA, false), undefined, log,
-                err => {
+            it("should update status to 'PENDING' and content to '['METADATA']' " + 'if putting 0 byte object', done =>
+                objectPut(authInfo, getObjectPutReq(keyA, false), undefined, log, err => {
                     if (err) {
                         return done(err);
                     }
                     checkObjectReplicationInfo(keyA, replicateMetadataOnly);
                     return done();
-                }));
-
-        it('should update metadata if putting object ACL and CRR replication', done => {
-            // Set 'zenko' as a typical CRR location (i.e. no type)
-            config.locationConstraints['zenko'] = {
-                ...config.locationConstraints['zenko'],
-                type: '',
-            };
-
-            async.series([
-                next => putObjectAndCheckMD(keyA, newReplicationMD, next),
-                next => {
-                    const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
-                    // Update metadata to a status after replication has occurred.
-                    objectMD.replicationInfo.status = 'COMPLETED';
-                    objectPutACL(authInfo, objectACLReq, log, next);
-                },
-            ], err => {
-                if (err) {
-                    return done(err);
-                }
-                checkObjectReplicationInfo(keyA, replicateMetadataOnly);
-                return done();
-            });
-        });
-
-        it('should not update metadata if putting object ACL and cloud replication', done => {
-            // Set 'zenko' as a typical cloud location (i.e.  type)
-            config.locationConstraints['zenko'] = {
-                ...config.locationConstraints['zenko'],
-                type: 'aws_s3',
-            };
-
-            const replicationMD = { ...newReplicationMD, storageType: 'aws_s3' };
-
-            let completedReplicationInfo;
-            async.series([
-                next => putObjectAndCheckMD(keyA, replicationMD, next),
-                next => {
-                    const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
-                    // Update metadata to a status after replication has occurred.
-                    objectMD.replicationInfo.status = 'COMPLETED';
-                    completedReplicationInfo = JSON.parse(
-                        JSON.stringify(objectMD.replicationInfo));
-                    objectPutACL(authInfo, objectACLReq, log, next);
-                },
-            ], err => {
-                if (err) {
-                    return done(err);
-                }
-                checkObjectReplicationInfo(keyA, completedReplicationInfo);
-                return done();
-            });
-        });
-
-        it('should update metadata if putting a delete marker', done =>
-            async.series([
-                next => putObjectAndCheckMD(keyA, newReplicationMD, err => {
-                    if (err) {
-                        return next(err);
-                    }
-                    const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
-                    // Set metadata to a status after replication has occurred.
-                    objectMD.replicationInfo.status = 'COMPLETED';
-                    return next();
                 }),
-                next => objectDelete(authInfo, deleteReq, log, next),
-            ], err => {
-                if (err) {
-                    return done(err);
-                }
-                const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
-                assert.strictEqual(objectMD.isDeleteMarker, true);
-                checkObjectReplicationInfo(keyA, replicateMetadataOnly);
-                return done();
-            }));
+            );
 
-        it('should not update metadata if putting a delete marker owned by ' +
-        'Lifecycle service account', done =>
-            async.series([
-                next => putObjectAndCheckMD(keyA, newReplicationMD, next),
-                next => objectDelete(authInfoLifecycleService, deleteReq,
-                                     log, next),
-            ], err => {
-                if (err) {
-                    return done(err);
-                }
-                const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
-                assert.strictEqual(objectMD.isDeleteMarker, true);
-                checkObjectReplicationInfo(keyA, emptyReplicationMD);
-                return done();
-            }));
+            it('should update metadata if putting object ACL and CRR replication', done => {
+                // Set 'zenko' as a typical CRR location (i.e. no type)
+                config.locationConstraints['zenko'] = {
+                    ...config.locationConstraints['zenko'],
+                    type: '',
+                };
 
-        describe('Object tagging', () => {
-            beforeEach(done => async.series([
-                next => putObjectAndCheckMD(keyA, newReplicationMD, next),
-                next => objectPutTagging(authInfo, taggingPutReq, log, next),
-            ], err => done(err)));
-
-            it("should update status to 'PENDING' and content to " +
-                "'['METADATA']'if putting tag", done => {
-                checkObjectReplicationInfo(keyA, replicateMetadataOnly);
-                return done();
+                async.series(
+                    [
+                        next => putObjectAndCheckMD(keyA, newReplicationMD, next),
+                        next => {
+                            const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+                            // Update metadata to a status after replication has occurred.
+                            objectMD.replicationInfo.status = 'COMPLETED';
+                            objectPutACL(authInfo, objectACLReq, log, next);
+                        },
+                    ],
+                    err => {
+                        if (err) {
+                            return done(err);
+                        }
+                        checkObjectReplicationInfo(keyA, replicateMetadataOnly);
+                        return done();
+                    },
+                );
             });
 
-            it("should update status to 'PENDING' and content to " +
-                "'['METADATA']' if deleting tag", done =>
-                async.series([
-                    // Put a new version to update replication MD content array.
-                    next => putObjectAndCheckMD(keyA, newReplicationMD, next),
-                    next => objectDeleteTagging(authInfo, taggingDeleteReq, log,
-                        next),
-                ], err => {
-                    if (err) {
-                        return done(err);
-                    }
+            it('should not update metadata if putting object ACL and cloud replication', done => {
+                // Set 'zenko' as a typical cloud location (i.e.  type)
+                config.locationConstraints['zenko'] = {
+                    ...config.locationConstraints['zenko'],
+                    type: 'aws_s3',
+                };
+
+                const replicationMD = { ...newReplicationMD, storageType: 'aws_s3' };
+
+                let completedReplicationInfo;
+                async.series(
+                    [
+                        next => putObjectAndCheckMD(keyA, replicationMD, next),
+                        next => {
+                            const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+                            // Update metadata to a status after replication has occurred.
+                            objectMD.replicationInfo.status = 'COMPLETED';
+                            completedReplicationInfo = JSON.parse(JSON.stringify(objectMD.replicationInfo));
+                            objectPutACL(authInfo, objectACLReq, log, next);
+                        },
+                    ],
+                    err => {
+                        if (err) {
+                            return done(err);
+                        }
+                        checkObjectReplicationInfo(keyA, completedReplicationInfo);
+                        return done();
+                    },
+                );
+            });
+
+            it('should update metadata if putting a delete marker', done =>
+                async.series(
+                    [
+                        next =>
+                            putObjectAndCheckMD(keyA, newReplicationMD, err => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+                                // Set metadata to a status after replication has occurred.
+                                objectMD.replicationInfo.status = 'COMPLETED';
+                                return next();
+                            }),
+                        next => objectDelete(authInfo, deleteReq, log, next),
+                    ],
+                    err => {
+                        if (err) {
+                            return done(err);
+                        }
+                        const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+                        assert.strictEqual(objectMD.isDeleteMarker, true);
+                        checkObjectReplicationInfo(keyA, replicateMetadataOnly);
+                        return done();
+                    },
+                ));
+
+            it('should not update metadata if putting a delete marker owned by ' + 'Lifecycle service account', done =>
+                async.series(
+                    [
+                        next => putObjectAndCheckMD(keyA, newReplicationMD, next),
+                        next => objectDelete(authInfoLifecycleService, deleteReq, log, next),
+                    ],
+                    err => {
+                        if (err) {
+                            return done(err);
+                        }
+                        const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+                        assert.strictEqual(objectMD.isDeleteMarker, true);
+                        checkObjectReplicationInfo(keyA, emptyReplicationMD);
+                        return done();
+                    },
+                ),
+            );
+
+            describe('Object tagging', () => {
+                beforeEach(done =>
+                    async.series(
+                        [
+                            next => putObjectAndCheckMD(keyA, newReplicationMD, next),
+                            next => objectPutTagging(authInfo, taggingPutReq, log, next),
+                        ],
+                        err => done(err),
+                    ),
+                );
+
+                it("should update status to 'PENDING' and content to " + "'['METADATA']'if putting tag", done => {
                     checkObjectReplicationInfo(keyA, replicateMetadataOnly);
                     return done();
-                }));
-        });
+                });
 
-        describe('Complete MPU', () => {
-            it("should update status to 'PENDING' and content to " +
-                "'['DATA, METADATA']' if completing MPU", done =>
-                putMPU(keyA, 'content', err => {
-                    if (err) {
-                        return done(err);
-                    }
-                    checkObjectReplicationInfo(keyA, newReplicationMD);
-                    return done();
-                }));
+                it("should update status to 'PENDING' and content to " + "'['METADATA']' if deleting tag", done =>
+                    async.series(
+                        [
+                            // Put a new version to update replication MD content array.
+                            next => putObjectAndCheckMD(keyA, newReplicationMD, next),
+                            next => objectDeleteTagging(authInfo, taggingDeleteReq, log, next),
+                        ],
+                        err => {
+                            if (err) {
+                                return done(err);
+                            }
+                            checkObjectReplicationInfo(keyA, replicateMetadataOnly);
+                            return done();
+                        },
+                    ),
+                );
+            });
 
-            it("should update status to 'PENDING' and content to " +
-                "'['METADATA']' if completing MPU with 0 bytes", done =>
-                putMPU(keyA, '', err => {
-                    if (err) {
-                        return done(err);
-                    }
-                    checkObjectReplicationInfo(keyA, replicateMetadataOnly);
-                    return done();
-                }));
+            describe('Complete MPU', () => {
+                it(
+                    "should update status to 'PENDING' and content to " + "'['DATA, METADATA']' if completing MPU",
+                    done =>
+                        putMPU(keyA, 'content', err => {
+                            if (err) {
+                                return done(err);
+                            }
+                            checkObjectReplicationInfo(keyA, newReplicationMD);
+                            return done();
+                        }),
+                );
 
-            it('should not update replicationInfo if key does not apply',
-                done => putMPU(keyB, 'content', err => {
-                    if (err) {
-                        return done(err);
-                    }
-                    checkObjectReplicationInfo(keyB, emptyReplicationMD);
-                    return done();
-                }));
-        });
+                it(
+                    "should update status to 'PENDING' and content to " +
+                        "'['METADATA']' if completing MPU with 0 bytes",
+                    done =>
+                        putMPU(keyA, '', err => {
+                            if (err) {
+                                return done(err);
+                            }
+                            checkObjectReplicationInfo(keyA, replicateMetadataOnly);
+                            return done();
+                        }),
+                );
 
-        describe('Object copy', () => {
-            it("should update status to 'PENDING' and content to " +
-                "'['DATA, METADATA']' if copying object", done =>
-                copyObject(keyB, keyA, true, err => {
-                    if (err) {
-                        return done(err);
-                    }
-                    checkObjectReplicationInfo(keyA, newReplicationMD);
-                    return done();
-                }));
+                it('should not update replicationInfo if key does not apply', done =>
+                    putMPU(keyB, 'content', err => {
+                        if (err) {
+                            return done(err);
+                        }
+                        checkObjectReplicationInfo(keyB, emptyReplicationMD);
+                        return done();
+                    }));
+            });
 
-            it("should update status to 'PENDING' and content to " +
-                "'['METADATA']' if copying object with 0 bytes", done =>
-                copyObject(keyB, keyA, false, err => {
-                    if (err) {
-                        return done(err);
-                    }
-                    checkObjectReplicationInfo(keyA, replicateMetadataOnly);
-                    return done();
-                }));
+            describe('Object copy', () => {
+                it(
+                    "should update status to 'PENDING' and content to " + "'['DATA, METADATA']' if copying object",
+                    done =>
+                        copyObject(keyB, keyA, true, err => {
+                            if (err) {
+                                return done(err);
+                            }
+                            checkObjectReplicationInfo(keyA, newReplicationMD);
+                            return done();
+                        }),
+                );
 
-            it('should not update replicationInfo if key does not apply',
-                done => {
+                it(
+                    "should update status to 'PENDING' and content to " +
+                        "'['METADATA']' if copying object with 0 bytes",
+                    done =>
+                        copyObject(keyB, keyA, false, err => {
+                            if (err) {
+                                return done(err);
+                            }
+                            checkObjectReplicationInfo(keyA, replicateMetadataOnly);
+                            return done();
+                        }),
+                );
+
+                it('should not update replicationInfo if key does not apply', done => {
                     const copyKey = `foo-${keyA}`;
                     return copyObject(keyB, copyKey, true, err => {
                         if (err) {
@@ -544,177 +581,172 @@ describe('Replication object MD without bucket replication config', () => {
                         return done();
                     });
                 });
-        });
-
-        ['awsbackend',
-        'azurebackend',
-        'gcpbackend',
-        'awsbackend,azurebackend'].forEach(backend => {
-            const storageTypeMap = {
-                'awsbackend': 'aws_s3',
-                'azurebackend': 'azure',
-                'gcpbackend': 'gcp',
-                'awsbackend,azurebackend': 'aws_s3,azure',
-            };
-            const storageType = storageTypeMap[backend];
-            const backends = backend.split(',').map(site => ({
-                site,
-                status: 'PENDING',
-                dataStoreVersionId: '',
-            }));
-            describe('Object metadata replicationInfo storageType value',
-            () => {
-                const expectedReplicationInfo = {
-                    status: 'PENDING',
-                    backends,
-                    content: ['DATA', 'METADATA'],
-                    destination: 'arn:aws:s3:::destination-bucket',
-                    storageClass: backend,
-                    role: 'arn:aws:iam::account-id:role/resource',
-                    storageType,
-                    dataStoreVersionId: '',
-                    isNFS: undefined,
-                };
-
-                // Expected for a metadata-only replication operation (for
-                // example, putting object tags).
-                const expectedReplicationInfoMD = Object.assign({},
-                    expectedReplicationInfo, { content: ['METADATA'] });
-
-                beforeEach(() =>
-                    // We have already created the bucket, so update the
-                    // replication configuration to include a location
-                    // constraint for the `storageClass`. This results in a
-                    // `storageType` of 'aws_s3', for example.
-                    Object.assign(metadata.buckets.get(bucketName), {
-                        _replicationConfiguration: {
-                            role: 'arn:aws:iam::account-id:role/resource',
-                            destination: 'arn:aws:s3:::destination-bucket',
-                            rules: [{
-                                prefix: keyA,
-                                enabled: true,
-                                id: 'test-id',
-                                storageClass: backend,
-                            }],
-                        },
-                    }));
-
-                it('should update on a put object request', done =>
-                    putObjectAndCheckMD(keyA, expectedReplicationInfo, done));
-
-                it('should update on a complete MPU object request', done =>
-                    putMPU(keyA, 'content', err => {
-                        if (err) {
-                            return done(err);
-                        }
-                        const expected =
-                            Object.assign({}, expectedReplicationInfo,
-                            { content: ['DATA', 'METADATA', 'MPU'] });
-                        checkObjectReplicationInfo(keyA, expected);
-                        return done();
-                    }));
-
-                it('should update on a copy object request', done =>
-                    copyObject(keyB, keyA, true, err => {
-                        if (err) {
-                            return done(err);
-                        }
-                        checkObjectReplicationInfo(keyA,
-                            expectedReplicationInfo);
-                        return done();
-                    }));
-
-                it('should update on a put object ACL request', done => {
-                    let completedReplicationInfo;
-                    async.series([
-                        next => putObjectAndCheckMD(keyA,
-                            expectedReplicationInfo, next),
-                        next => {
-                            const objectMD = metadata.keyMaps
-                                  .get(bucketName).get(keyA);
-                            // Update metadata to a status after replication
-                            // has occurred.
-                            objectMD.replicationInfo.status = 'COMPLETED';
-                            completedReplicationInfo = JSON.parse(
-                                JSON.stringify(objectMD.replicationInfo));
-                            objectPutACL(authInfo, objectACLReq, log, next);
-                        },
-                    ], err => {
-                        if (err) {
-                            return done(err);
-                        }
-                        checkObjectReplicationInfo(keyA, completedReplicationInfo);
-                        return done();
-                    });
-                });
-
-                it('should update on a put object tagging request', done =>
-                    async.series([
-                        next => putObjectAndCheckMD(keyA,
-                            expectedReplicationInfo, next),
-                        next => objectPutTagging(authInfo, taggingPutReq, log,
-                            next),
-                    ], err => {
-                        if (err) {
-                            return done(err);
-                        }
-                        const expected = Object.assign({},
-                            expectedReplicationInfo,
-                            { content: ['METADATA', 'PUT_TAGGING'] });
-                        checkObjectReplicationInfo(keyA, expected);
-                        return done();
-                    }));
-
-                it('should update on a delete tagging request', done =>
-                    async.series([
-                        next => putObjectAndCheckMD(keyA,
-                            expectedReplicationInfo, next),
-                        next => objectDeleteTagging(authInfo, taggingDeleteReq,
-                            log, next),
-                    ], err => {
-                        if (err) {
-                            return done(err);
-                        }
-                        const expected = Object.assign({},
-                            expectedReplicationInfo,
-                            { content: ['METADATA', 'DELETE_TAGGING'] });
-                        checkObjectReplicationInfo(keyA, expected);
-                        return done();
-                    }));
-
-                it('should update when putting a delete marker', done =>
-                    async.series([
-                        next => putObjectAndCheckMD(keyA,
-                            expectedReplicationInfo, err => {
-                                if (err) {
-                                    return next(err);
-                                }
-                                // Update metadata to a status indicating that
-                                // replication has occurred for the object.
-                                metadata
-                                    .keyMaps
-                                    .get(bucketName)
-                                    .get(keyA)
-                                    .replicationInfo
-                                    .status = 'COMPLETED';
-                                return next();
-                            }),
-                        next => objectDelete(authInfo, deleteReq, log, next),
-                    ], err => {
-                        if (err) {
-                            return done(err);
-                        }
-                        // Is it, in fact, a delete marker?
-                        assert(metadata
-                            .keyMaps
-                            .get(bucketName)
-                            .get(keyA)
-                            .isDeleteMarker);
-                        checkObjectReplicationInfo(keyA,
-                            expectedReplicationInfoMD);
-                        return done();
-                    }));
             });
-        });
-    });
+
+            ['awsbackend', 'azurebackend', 'gcpbackend', 'awsbackend,azurebackend'].forEach(backend => {
+                const storageTypeMap = {
+                    awsbackend: 'aws_s3',
+                    azurebackend: 'azure',
+                    gcpbackend: 'gcp',
+                    'awsbackend,azurebackend': 'aws_s3,azure',
+                };
+                const storageType = storageTypeMap[backend];
+                const backends = backend.split(',').map(site => ({
+                    site,
+                    status: 'PENDING',
+                    dataStoreVersionId: '',
+                }));
+                describe('Object metadata replicationInfo storageType value', () => {
+                    const expectedReplicationInfo = {
+                        status: 'PENDING',
+                        backends,
+                        content: ['DATA', 'METADATA'],
+                        destination: 'arn:aws:s3:::destination-bucket',
+                        storageClass: backend,
+                        role: 'arn:aws:iam::account-id:role/resource',
+                        storageType,
+                        dataStoreVersionId: '',
+                        isNFS: undefined,
+                    };
+
+                    // Expected for a metadata-only replication operation (for
+                    // example, putting object tags).
+                    const expectedReplicationInfoMD = Object.assign({}, expectedReplicationInfo, {
+                        content: ['METADATA'],
+                    });
+
+                    beforeEach(() =>
+                        // We have already created the bucket, so update the
+                        // replication configuration to include a location
+                        // constraint for the `storageClass`. This results in a
+                        // `storageType` of 'aws_s3', for example.
+                        Object.assign(metadata.buckets.get(bucketName), {
+                            _replicationConfiguration: {
+                                role: 'arn:aws:iam::account-id:role/resource',
+                                destination: 'arn:aws:s3:::destination-bucket',
+                                rules: [
+                                    {
+                                        prefix: keyA,
+                                        enabled: true,
+                                        id: 'test-id',
+                                        storageClass: backend,
+                                    },
+                                ],
+                            },
+                        }),
+                    );
+
+                    it('should update on a put object request', done =>
+                        putObjectAndCheckMD(keyA, expectedReplicationInfo, done));
+
+                    it('should update on a complete MPU object request', done =>
+                        putMPU(keyA, 'content', err => {
+                            if (err) {
+                                return done(err);
+                            }
+                            const expected = Object.assign({}, expectedReplicationInfo, {
+                                content: ['DATA', 'METADATA', 'MPU'],
+                            });
+                            checkObjectReplicationInfo(keyA, expected);
+                            return done();
+                        }));
+
+                    it('should update on a copy object request', done =>
+                        copyObject(keyB, keyA, true, err => {
+                            if (err) {
+                                return done(err);
+                            }
+                            checkObjectReplicationInfo(keyA, expectedReplicationInfo);
+                            return done();
+                        }));
+
+                    it('should update on a put object ACL request', done => {
+                        let completedReplicationInfo;
+                        async.series(
+                            [
+                                next => putObjectAndCheckMD(keyA, expectedReplicationInfo, next),
+                                next => {
+                                    const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+                                    // Update metadata to a status after replication
+                                    // has occurred.
+                                    objectMD.replicationInfo.status = 'COMPLETED';
+                                    completedReplicationInfo = JSON.parse(JSON.stringify(objectMD.replicationInfo));
+                                    objectPutACL(authInfo, objectACLReq, log, next);
+                                },
+                            ],
+                            err => {
+                                if (err) {
+                                    return done(err);
+                                }
+                                checkObjectReplicationInfo(keyA, completedReplicationInfo);
+                                return done();
+                            },
+                        );
+                    });
+
+                    it('should update on a put object tagging request', done =>
+                        async.series(
+                            [
+                                next => putObjectAndCheckMD(keyA, expectedReplicationInfo, next),
+                                next => objectPutTagging(authInfo, taggingPutReq, log, next),
+                            ],
+                            err => {
+                                if (err) {
+                                    return done(err);
+                                }
+                                const expected = Object.assign({}, expectedReplicationInfo, {
+                                    content: ['METADATA', 'PUT_TAGGING'],
+                                });
+                                checkObjectReplicationInfo(keyA, expected);
+                                return done();
+                            },
+                        ));
+
+                    it('should update on a delete tagging request', done =>
+                        async.series(
+                            [
+                                next => putObjectAndCheckMD(keyA, expectedReplicationInfo, next),
+                                next => objectDeleteTagging(authInfo, taggingDeleteReq, log, next),
+                            ],
+                            err => {
+                                if (err) {
+                                    return done(err);
+                                }
+                                const expected = Object.assign({}, expectedReplicationInfo, {
+                                    content: ['METADATA', 'DELETE_TAGGING'],
+                                });
+                                checkObjectReplicationInfo(keyA, expected);
+                                return done();
+                            },
+                        ));
+
+                    it('should update when putting a delete marker', done =>
+                        async.series(
+                            [
+                                next =>
+                                    putObjectAndCheckMD(keyA, expectedReplicationInfo, err => {
+                                        if (err) {
+                                            return next(err);
+                                        }
+                                        // Update metadata to a status indicating that
+                                        // replication has occurred for the object.
+                                        metadata.keyMaps.get(bucketName).get(keyA).replicationInfo.status = 'COMPLETED';
+                                        return next();
+                                    }),
+                                next => objectDelete(authInfo, deleteReq, log, next),
+                            ],
+                            err => {
+                                if (err) {
+                                    return done(err);
+                                }
+                                // Is it, in fact, a delete marker?
+                                assert(metadata.keyMaps.get(bucketName).get(keyA).isDeleteMarker);
+                                checkObjectReplicationInfo(keyA, expectedReplicationInfoMD);
+                                return done();
+                            },
+                        ));
+                });
+            });
+        },
+    );
 });
