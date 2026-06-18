@@ -2135,5 +2135,97 @@ describe('Object Copy checksum behavior', () => {
                 assert.strictEqual(err.message, expected);
             }
         });
+
+        // The AWS-correct way to (re)compute an object's checksum in place is a
+        // self-copy with MetadataDirective=REPLACE (the metadata change is what
+        // makes the self-copy legal); the checksum is then recomputed in place.
+        const selfCopyBody = 'in-place-checksum-change-body';
+        checksumFixtures.forEach(({ algo, header, key }) => {
+            const sourceHeader = header === 'CRC32' ? 'SHA256' : 'CRC32';
+            it(`should change an object's checksum to ${algo} via a self-copy (REPLACE directive)`, async () => {
+                await s3.send(
+                    new PutObjectCommand({
+                        Bucket: sourceBucketName,
+                        Key: sourceObjName,
+                        Body: selfCopyBody,
+                        ChecksumAlgorithm: sourceHeader,
+                    }),
+                );
+                const expectedDigest = await Promise.resolve(algorithms[algo].digest(Buffer.from(selfCopyBody)));
+
+                // Self-copy with MetadataDirective=REPLACE, changing the checksum
+                // algorithm: the metadata change makes it legal and the checksum
+                // is recomputed in place.
+                const copyRes = await s3.send(
+                    new CopyObjectCommand({
+                        Bucket: sourceBucketName,
+                        Key: sourceObjName,
+                        CopySource: `${sourceBucketName}/${sourceObjName}`,
+                        MetadataDirective: 'REPLACE',
+                        ChecksumAlgorithm: header,
+                    }),
+                );
+                assert.strictEqual(copyRes.CopyObjectResult[key], expectedDigest);
+                assert.strictEqual(copyRes.CopyObjectResult.ChecksumType, 'FULL_OBJECT');
+
+                const headRes = await s3.send(
+                    new HeadObjectCommand({
+                        Bucket: sourceBucketName,
+                        Key: sourceObjName,
+                        ChecksumMode: 'ENABLED',
+                    }),
+                );
+                assert.strictEqual(headRes[key], expectedDigest);
+                assert.strictEqual(headRes.ChecksumType, 'FULL_OBJECT');
+            });
+        });
+
+        // A COPY-directive self-copy is illegal even when a checksum algorithm is
+        // requested: the checksum header is not a "change" (matches AWS).
+        it('should reject a self-copy that only requests a checksum (COPY directive)', async () => {
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: sourceBucketName,
+                    Key: sourceObjName,
+                    Body: selfCopyBody,
+                }),
+            );
+            try {
+                await s3.send(
+                    new CopyObjectCommand({
+                        Bucket: sourceBucketName,
+                        Key: sourceObjName,
+                        CopySource: `${sourceBucketName}/${sourceObjName}`,
+                        ChecksumAlgorithm: 'CRC32',
+                    }),
+                );
+                throw new Error('Expected 400 InvalidRequest');
+            } catch (err) {
+                checkError(err, 'InvalidRequest', 400);
+            }
+        });
+
+        // A self-copy with no checksum algorithm and no other change is rejected.
+        it('should reject a no-change self-copy (COPY directive)', async () => {
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: sourceBucketName,
+                    Key: sourceObjName,
+                    Body: selfCopyBody,
+                }),
+            );
+            try {
+                await s3.send(
+                    new CopyObjectCommand({
+                        Bucket: sourceBucketName,
+                        Key: sourceObjName,
+                        CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    }),
+                );
+                throw new Error('Expected 400 InvalidRequest');
+            } catch (err) {
+                checkError(err, 'InvalidRequest', 400);
+            }
+        });
     });
 });
