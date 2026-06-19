@@ -38,7 +38,15 @@ const { LOCATION_NAME_CRR } = require('../../constants');
 const { data } = require('../../../lib/data/wrapper');
 const { metadata } = storage.metadata.inMemory.metadata;
 const metadataBackend = storage.metadata.inMemory.metastore;
+const originalDeleteObject = metadataBackend.deleteObject;
 const { ds } = storage.data.inMemory.datastore;
+
+// Several tests override metadataBackend.deleteObject and restore it only on
+// their success path, so a thrown assertion would leak the override into every
+// later test. Reset it before each test (root hook, runs across all describes).
+beforeEach(() => {
+    metadataBackend.deleteObject = originalDeleteObject;
+});
 
 const log = new DummyRequestLogger();
 
