@@ -6,7 +6,7 @@ const { getMetricToPush } = require('../../../lib/routes/utilities/pushReplicati
 describe('getMetricToPush', () => {
     it('should push metrics when putting a new replica version', () => {
         const prevObjectMD = new ObjectMD().setVersionId('1');
-        const objectMD = new ObjectMD().setVersionId('2').setReplicationStatus('REPLICA');
+        const objectMD = new ObjectMD().setVersionId('2').setReplicationIsReplica(true);
         const result = getMetricToPush(prevObjectMD, objectMD);
         assert.strictEqual(result, 'replicateObject');
     });
@@ -22,7 +22,7 @@ describe('getMetricToPush', () => {
         const prevObjectMD = new ObjectMD().setVersionId('1');
         const objectMD = new ObjectMD()
             .setVersionId('1')
-            .setReplicationStatus('REPLICA')
+            .setReplicationIsReplica(true)
             .setTags({ 'object-tag-key': 'object-tag-value' });
         const result = getMetricToPush(prevObjectMD, objectMD);
         assert.strictEqual(result, 'replicateTags');
@@ -30,7 +30,7 @@ describe('getMetricToPush', () => {
 
     it('should push metrics for replica operations when deleting tagging', () => {
         const prevObjectMD = new ObjectMD().setTags({ 'object-tag-key': 'object-tag-value' });
-        const objectMD = new ObjectMD().setReplicationStatus('REPLICA');
+        const objectMD = new ObjectMD().setReplicationIsReplica(true);
         const result = getMetricToPush(prevObjectMD, objectMD);
         assert.strictEqual(result, 'replicateTags');
     });
@@ -39,7 +39,7 @@ describe('getMetricToPush', () => {
         const prevObjectMD = new ObjectMD().setVersionId('1').setTags({ 'object-tag-key': 'object-tag-value' });
         const objectMD = new ObjectMD()
             .setVersionId('1')
-            .setReplicationStatus('REPLICA')
+            .setReplicationIsReplica(true)
             .setTags({ 'object-tag-key': 'object-tag-value' });
         const result = getMetricToPush(prevObjectMD, objectMD);
         assert.strictEqual(result, null);
@@ -50,7 +50,7 @@ describe('getMetricToPush', () => {
         const objectMD = new ObjectMD();
         const publicACL = objectMD.getAcl();
         publicACL.Canned = 'public-read';
-        objectMD.setReplicationStatus('REPLICA').setAcl(publicACL).setVersionId('1');
+        objectMD.setReplicationIsReplica(true).setAcl(publicACL).setVersionId('1');
         const result = getMetricToPush(prevObjectMD, objectMD);
         assert.strictEqual(result, 'replicateTags');
     });
@@ -59,11 +59,11 @@ describe('getMetricToPush', () => {
         const prevObjectMD = new ObjectMD();
         const publicACL = prevObjectMD.getAcl();
         publicACL.Canned = 'public-read';
-        prevObjectMD.setReplicationStatus('REPLICA').setAcl(publicACL).setVersionId('1');
+        prevObjectMD.setReplicationIsReplica(true).setAcl(publicACL).setVersionId('1');
         const objectMD = new ObjectMD();
         const privateACL = objectMD.getAcl();
         privateACL.Canned = 'private';
-        objectMD.setReplicationStatus('REPLICA').setAcl(privateACL).setVersionId('1');
+        objectMD.setReplicationIsReplica(true).setAcl(privateACL).setVersionId('1');
         const result = getMetricToPush(prevObjectMD, objectMD);
         assert.strictEqual(result, 'replicateTags');
     });
@@ -72,7 +72,7 @@ describe('getMetricToPush', () => {
         const objectMD = new ObjectMD();
         const publicACL = objectMD.getAcl();
         publicACL.Canned = 'public-read';
-        objectMD.setReplicationStatus('REPLICA').setAcl(publicACL).setVersionId('1');
+        objectMD.setReplicationIsReplica(true).setAcl(publicACL).setVersionId('1');
         const prevObjectMD = new ObjectMD().setAcl(publicACL).setVersionId('1');
         const result = getMetricToPush(prevObjectMD, objectMD);
         assert.strictEqual(result, null);
