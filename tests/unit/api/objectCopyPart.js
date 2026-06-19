@@ -304,7 +304,7 @@ describe('objectPutCopyPart checksum storage', () => {
         });
     });
 
-    it('should route an external-backend destination through data.uploadPartCopy, not the one-pass', done => {
+    it('should route an external-backend destination through data.uploadPartCopy and return no checksum', done => {
         _initiateWithHeaders({ 'x-amz-checksum-algorithm': 'CRC32' }, (err, uploadId) => {
             assert.ifError(err);
             metadata.keyMaps.get(sourceBucketName).get(objectKey).checksum =
@@ -317,9 +317,11 @@ describe('objectPutCopyPart checksum storage', () => {
                 return cb(new Error('skip'), 'etag', '2020-01-01T00:00:00.000Z', null, [{ dataStoreETag: 'etag' }]);
             });
             const req = _createObjectCopyPartRequest(destBucketName, uploadId);
-            objectPutCopyPart(authInfo, req, sourceBucketName, objectKey, undefined, log, copyErr => {
+            objectPutCopyPart(authInfo, req, sourceBucketName, objectKey, undefined, log, (copyErr, xml) => {
                 assert.ifError(copyErr);
                 sinon.assert.calledOnce(uploadPartCopyStub);
+                // external backends get no cloudserver checksum (matches UploadPart)
+                assert.doesNotMatch(xml, /Checksum/);
                 done();
             });
         });
