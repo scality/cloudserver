@@ -30,19 +30,27 @@ describe('clientCheck - failure detection logic', () => {
     });
 
     it('should succeed when all backends are healthy', done => {
-        dataStub.callsFake((log, cb) => cb(null, {
-            'sproxyd-loc1': { code: 200, message: 'OK' },
-            'sproxyd-loc2': { code: 200, message: 'OK' },
-        }));
-        metadataStub.callsFake((log, cb) => cb(null, {
-            metadata: { code: 200, message: 'OK' },
-        }));
-        vaultStub.callsFake((log, cb) => cb(null, {
-            vault: { code: 200, message: 'OK' },
-        }));
-        kmsStub.callsFake((log, cb) => cb(null, {
-            kms: { code: 200, message: 'OK' },
-        }));
+        dataStub.callsFake((log, cb) =>
+            cb(null, {
+                'sproxyd-loc1': { code: 200, message: 'OK' },
+                'sproxyd-loc2': { code: 200, message: 'OK' },
+            }),
+        );
+        metadataStub.callsFake((log, cb) =>
+            cb(null, {
+                metadata: { code: 200, message: 'OK' },
+            }),
+        );
+        vaultStub.callsFake((log, cb) =>
+            cb(null, {
+                vault: { code: 200, message: 'OK' },
+            }),
+        );
+        kmsStub.callsFake((log, cb) =>
+            cb(null, {
+                kms: { code: 200, message: 'OK' },
+            }),
+        );
 
         clientCheck(false, log, (err, result) => {
             assert.ifError(err);
@@ -58,19 +66,27 @@ describe('clientCheck - failure detection logic', () => {
     });
 
     it('should fail when ALL backends of data client fail while metadata is healthy', done => {
-        dataStub.callsFake((log, cb) => cb(null, {
-            'sproxyd-loc1': { error: errors.InternalError, code: 500 },
-            'sproxyd-loc2': { error: errors.InternalError, code: 500 },
-        }));
-        metadataStub.callsFake((log, cb) => cb(null, {
-            metadata: { code: 200, message: 'OK' },
-        }));
-        vaultStub.callsFake((log, cb) => cb(null, {
-            vault: { code: 200, message: 'OK' },
-        }));
-        kmsStub.callsFake((log, cb) => cb(null, {
-            kms: { code: 200, message: 'OK' },
-        }));
+        dataStub.callsFake((log, cb) =>
+            cb(null, {
+                'sproxyd-loc1': { error: errors.InternalError, code: 500 },
+                'sproxyd-loc2': { error: errors.InternalError, code: 500 },
+            }),
+        );
+        metadataStub.callsFake((log, cb) =>
+            cb(null, {
+                metadata: { code: 200, message: 'OK' },
+            }),
+        );
+        vaultStub.callsFake((log, cb) =>
+            cb(null, {
+                vault: { code: 200, message: 'OK' },
+            }),
+        );
+        kmsStub.callsFake((log, cb) =>
+            cb(null, {
+                kms: { code: 200, message: 'OK' },
+            }),
+        );
 
         clientCheck(false, log, (err, result) => {
             assert(err);
@@ -87,19 +103,27 @@ describe('clientCheck - failure detection logic', () => {
     });
 
     it('should succeed when ONE data location fails but another is healthy', done => {
-        dataStub.callsFake((log, cb) => cb(null, {
-            'sproxyd-loc1': { error: errors.InternalError, code: 500 },
-            'sproxyd-loc2': { code: 200, message: 'OK' },
-        }));
-        metadataStub.callsFake((log, cb) => cb(null, {
-            metadata: { code: 200, message: 'OK' },
-        }));
-        vaultStub.callsFake((log, cb) => cb(null, {
-            vault: { code: 200, message: 'OK' },
-        }));
-        kmsStub.callsFake((log, cb) => cb(null, {
-            kms: { code: 200, message: 'OK' },
-        }));
+        dataStub.callsFake((log, cb) =>
+            cb(null, {
+                'sproxyd-loc1': { error: errors.InternalError, code: 500 },
+                'sproxyd-loc2': { code: 200, message: 'OK' },
+            }),
+        );
+        metadataStub.callsFake((log, cb) =>
+            cb(null, {
+                metadata: { code: 200, message: 'OK' },
+            }),
+        );
+        vaultStub.callsFake((log, cb) =>
+            cb(null, {
+                vault: { code: 200, message: 'OK' },
+            }),
+        );
+        kmsStub.callsFake((log, cb) =>
+            cb(null, {
+                kms: { code: 200, message: 'OK' },
+            }),
+        );
 
         clientCheck(false, log, (err, result) => {
             assert.ifError(err);
@@ -115,19 +139,27 @@ describe('clientCheck - failure detection logic', () => {
     });
 
     it('should fail when ALL backends of multiple clients fail', done => {
-        dataStub.callsFake((log, cb) => cb(null, {
-            'sproxyd-loc1': { error: errors.InternalError, code: 500 },
-            'sproxyd-loc2': { error: errors.InternalError, code: 500 },
-        }));
-        metadataStub.callsFake((log, cb) => cb(null, {
-            metadata: { error: errors.InternalError, code: 500 },
-        }));
-        vaultStub.callsFake((log, cb) => cb(null, {
-            vault: { code: 200, message: 'OK' },
-        }));
-        kmsStub.callsFake((log, cb) => cb(null, {
-            kms: { code: 200, message: 'OK' },
-        }));
+        dataStub.callsFake((log, cb) =>
+            cb(null, {
+                'sproxyd-loc1': { error: errors.InternalError, code: 500 },
+                'sproxyd-loc2': { error: errors.InternalError, code: 500 },
+            }),
+        );
+        metadataStub.callsFake((log, cb) =>
+            cb(null, {
+                metadata: { error: errors.InternalError, code: 500 },
+            }),
+        );
+        vaultStub.callsFake((log, cb) =>
+            cb(null, {
+                vault: { code: 200, message: 'OK' },
+            }),
+        );
+        kmsStub.callsFake((log, cb) =>
+            cb(null, {
+                kms: { code: 200, message: 'OK' },
+            }),
+        );
 
         clientCheck(false, log, (err, result) => {
             assert(err);
@@ -145,15 +177,21 @@ describe('clientCheck - failure detection logic', () => {
 
     it('should succeed when client returns empty result', done => {
         dataStub.callsFake((log, cb) => cb(null, {}));
-        metadataStub.callsFake((log, cb) => cb(null, {
-            metadata: { code: 200, message: 'OK' },
-        }));
-        vaultStub.callsFake((log, cb) => cb(null, {
-            vault: { code: 200, message: 'OK' },
-        }));
-        kmsStub.callsFake((log, cb) => cb(null, {
-            kms: { code: 200, message: 'OK' },
-        }));
+        metadataStub.callsFake((log, cb) =>
+            cb(null, {
+                metadata: { code: 200, message: 'OK' },
+            }),
+        );
+        vaultStub.callsFake((log, cb) =>
+            cb(null, {
+                vault: { code: 200, message: 'OK' },
+            }),
+        );
+        kmsStub.callsFake((log, cb) =>
+            cb(null, {
+                kms: { code: 200, message: 'OK' },
+            }),
+        );
 
         clientCheck(false, log, (err, result) => {
             assert.ifError(err);
@@ -167,34 +205,44 @@ describe('clientCheck - failure detection logic', () => {
     });
 
     describe('external backend error handling', () => {
-        it('should NOT fail on external backend errors during normal operation ' +
-            '(flightCheckOnStartUp=false)', done => {
-            dataStub.callsFake((log, cb) => cb(null, {
-                's3-backend': { error: errors.InternalError, code: 500, external: true },
-            }));
-            metadataStub.callsFake((log, cb) => cb(null, {
-                metadata: { code: 200, message: 'OK' },
-            }));
-            vaultStub.callsFake((log, cb) => cb(null, {}));
-            kmsStub.callsFake((log, cb) => cb(null, {}));
+        it(
+            'should NOT fail on external backend errors during normal operation ' + '(flightCheckOnStartUp=false)',
+            done => {
+                dataStub.callsFake((log, cb) =>
+                    cb(null, {
+                        's3-backend': { error: errors.InternalError, code: 500, external: true },
+                    }),
+                );
+                metadataStub.callsFake((log, cb) =>
+                    cb(null, {
+                        metadata: { code: 200, message: 'OK' },
+                    }),
+                );
+                vaultStub.callsFake((log, cb) => cb(null, {}));
+                kmsStub.callsFake((log, cb) => cb(null, {}));
 
-            clientCheck(false, log, (err, result) => {
-                assert.ifError(err);
-                assert.deepStrictEqual(result, {
-                    's3-backend': { error: errors.InternalError, code: 500, external: true },
-                    metadata: { code: 200, message: 'OK' },
+                clientCheck(false, log, (err, result) => {
+                    assert.ifError(err);
+                    assert.deepStrictEqual(result, {
+                        's3-backend': { error: errors.InternalError, code: 500, external: true },
+                        metadata: { code: 200, message: 'OK' },
+                    });
+                    done();
                 });
-                done();
-            });
-        });
+            },
+        );
 
         it('should fail on external backend errors during startup (flightCheckOnStartUp=true)', done => {
-            dataStub.callsFake((log, cb) => cb(null, {
-                's3-backend': { error: errors.InternalError, code: 500, external: true },
-            }));
-            metadataStub.callsFake((log, cb) => cb(null, {
-                metadata: { code: 200, message: 'OK' },
-            }));
+            dataStub.callsFake((log, cb) =>
+                cb(null, {
+                    's3-backend': { error: errors.InternalError, code: 500, external: true },
+                }),
+            );
+            metadataStub.callsFake((log, cb) =>
+                cb(null, {
+                    metadata: { code: 200, message: 'OK' },
+                }),
+            );
             vaultStub.callsFake((log, cb) => cb(null, {}));
             kmsStub.callsFake((log, cb) => cb(null, {}));
 
@@ -209,27 +257,34 @@ describe('clientCheck - failure detection logic', () => {
             });
         });
 
-        it('should succeed when external backend fails but internal backend is healthy ' +
-            '(flightCheckOnStartUp=false)', done => {
-            dataStub.callsFake((log, cb) => cb(null, {
-                'sproxyd-loc1': { code: 200, message: 'OK' },
-                's3-backend': { error: errors.InternalError, code: 500, external: true },
-            }));
-            metadataStub.callsFake((log, cb) => cb(null, {
-                metadata: { code: 200, message: 'OK' },
-            }));
-            vaultStub.callsFake((log, cb) => cb(null, {}));
-            kmsStub.callsFake((log, cb) => cb(null, {}));
+        it(
+            'should succeed when external backend fails but internal backend is healthy ' +
+                '(flightCheckOnStartUp=false)',
+            done => {
+                dataStub.callsFake((log, cb) =>
+                    cb(null, {
+                        'sproxyd-loc1': { code: 200, message: 'OK' },
+                        's3-backend': { error: errors.InternalError, code: 500, external: true },
+                    }),
+                );
+                metadataStub.callsFake((log, cb) =>
+                    cb(null, {
+                        metadata: { code: 200, message: 'OK' },
+                    }),
+                );
+                vaultStub.callsFake((log, cb) => cb(null, {}));
+                kmsStub.callsFake((log, cb) => cb(null, {}));
 
-            clientCheck(false, log, (err, result) => {
-                assert.ifError(err);
-                assert.deepStrictEqual(result, {
-                    'sproxyd-loc1': { code: 200, message: 'OK' },
-                    's3-backend': { error: errors.InternalError, code: 500, external: true },
-                    metadata: { code: 200, message: 'OK' },
+                clientCheck(false, log, (err, result) => {
+                    assert.ifError(err);
+                    assert.deepStrictEqual(result, {
+                        'sproxyd-loc1': { code: 200, message: 'OK' },
+                        's3-backend': { error: errors.InternalError, code: 500, external: true },
+                        metadata: { code: 200, message: 'OK' },
+                    });
+                    done();
                 });
-                done();
-            });
-        });
+            },
+        );
     });
 });
