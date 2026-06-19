@@ -241,6 +241,65 @@ describe('services', () => {
         });
     });
 
+    describe('metadataStorePart checksum fields', () => {
+        const mpuBucketName = 'mpu-test-bucket';
+        const baseParams = {
+            partNumber: 1,
+            contentMD5: 'd41d8cd98f00b204e9800998ecf8427e',
+            size: 5,
+            uploadId: 'test-upload-id',
+            splitter: '|',
+            ownerId: 'ownerCanonicalId',
+        };
+
+        let putObjectMDStub;
+
+        beforeEach(() => {
+            putObjectMDStub = sinon
+                .stub(metadata, 'putObjectMD')
+                .callsFake((bucket, key, md, opts, reqLog, cb) => cb(null));
+        });
+
+        it('should persist checksumValue and checksumAlgorithm when both are provided', done => {
+            const params = {
+                ...baseParams,
+                checksumValue: 'NSRBwg==',
+                checksumAlgorithm: 'crc32',
+            };
+
+            services.metadataStorePart(mpuBucketName, [], params, log, err => {
+                assert.ifError(err);
+                sinon.assert.calledOnce(putObjectMDStub);
+                const storedMD = putObjectMDStub.getCall(0).args[2];
+                assert.strictEqual(storedMD.checksumValue, 'NSRBwg==');
+                assert.strictEqual(storedMD.checksumAlgorithm, 'crc32');
+                done();
+            });
+        });
+
+        it('should not persist checksum fields when none are provided', done => {
+            services.metadataStorePart(mpuBucketName, [], { ...baseParams }, log, err => {
+                assert.ifError(err);
+                const storedMD = putObjectMDStub.getCall(0).args[2];
+                assert.strictEqual(storedMD.checksumValue, undefined);
+                assert.strictEqual(storedMD.checksumAlgorithm, undefined);
+                done();
+            });
+        });
+
+        it('should not persist checksum fields when only the value is provided', done => {
+            const params = { ...baseParams, checksumValue: 'NSRBwg==' };
+
+            services.metadataStorePart(mpuBucketName, [], params, log, err => {
+                assert.ifError(err);
+                const storedMD = putObjectMDStub.getCall(0).args[2];
+                assert.strictEqual(storedMD.checksumValue, undefined);
+                assert.strictEqual(storedMD.checksumAlgorithm, undefined);
+                done();
+            });
+        });
+    });
+
     describe('metadataValidateMultipart checksum fields', () => {
         const uploadId = 'test-upload-id';
         const authInfo = makeAuthInfo('accessKey1');
