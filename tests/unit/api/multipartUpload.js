@@ -3315,6 +3315,7 @@ describe('multipart upload in ingestion bucket', () => {
         assert.strictEqual(headers['x-amz-version-id'], versionID);
         assert.strictEqual(dataClient.createMPU.lastCall.args[1]['x-amz-meta-scal-version-id'], undefined);
     });
+
 });
 
 describe('initiateMultipartUpload with objectKeyByteLimit', () => {
@@ -3887,6 +3888,30 @@ describe('validatePerPartChecksums', () => {
             assert.strictEqual(err.message, 'InvalidPart');
         });
     });
+
+    describe('external backend MPU (isExternal=true)', () => {
+        // External parts store no per-part checksum, so the COMPOSITE requirement
+        // is relaxed - but a checksum the client submits is still rejected, since
+        // there is no stored value to verify it against.
+        it('should not require a per-part checksum (external parts store none)', () => {
+            const mpuChecksum = { algorithm: 'crc32', type: 'COMPOSITE', isDefault: false };
+            const stored = [makeStoredPart(1, null)];
+            const jsonList = { Part: [makeJsonPart(1, 'etag1')] };
+            const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum, true);
+            assert.ifError(err);
+        });
+
+        it('should still return InvalidPart for a client-submitted checksum (nothing to verify against)', () => {
+            const mpuChecksum = { algorithm: 'crc32', type: 'FULL_OBJECT', isDefault: false };
+            const stored = [makeStoredPart(1, null)];
+            const jsonList = {
+                Part: [makeJsonPart(1, 'etag1', { ChecksumCRC32: SAMPLE_DIGESTS.crc32[0] })],
+            };
+            const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum, true);
+            assert(err);
+            assert.strictEqual(err.message, 'InvalidPart');
+        });
+    });
 });
 
 describe('CompleteMultipartUpload x-amz-checksum-type header', () => {
@@ -4394,4 +4419,118 @@ describe('CompleteMultipartUpload final-object checksum response', () => {
         assert.strictEqual(headers['x-amz-checksum-crc64nvme'], undefined);
         assert.strictEqual(headers['x-amz-checksum-type'], undefined);
     });
+});
+
+describe('CompleteMultipartUpload per-part validation on external backends', () => {
+    // External backend parts store no per-part checksum, so CompleteMPU relaxes
+    // the COMPOSITE per-part requirement for them - but still rejects any checksum
+    // the client submits, since it can't be verified. The location is flipped via
+    // a getLocationConstraintType stub so only that gate differs.
+    const dataClient = data.client;
+    const prevDataImplName = data.implName;
+    const prevConfigBackendsData = data.config.backends.data;
+    const versionID = versioning.VersionID.encode(
+        versioning.VersionID.generateVersionId('0', ''));
+
+    before(() => {
+        // Simulate a backend that handles the MPU itself, so uploaded parts get
+        // no local shadow checksum and CompleteMPU is backend-driven.
+        data.switch(new storage.data.MultipleBackendGateway(
+            {
+                'us-east-1': dataClient,
+                'us-east-2': dataClient,
+            },
+            metadata,
+            data.locStorageCheckFn,
+        ));
+        data.implName = 'multipleBackends';
+        data.config.backends.data = 'multiple';
+        dataClient.clientType = 'aws_s3';
+    });
+
+    after(() => {
+        data.switch(dataClient);
+        data.implName = prevDataImplName;
+        data.config.backends.data = prevConfigBackendsData;
+        delete dataClient.clientType;
+    });
+
+    beforeEach(() => {
+        cleanup();
+        dataClient.createMPU = sinon.stub().yields(undefined, { uploadId: 'mock-uploadId' });
+        dataClient.uploadPart = sinon.stub().yields(undefined, {
+            dataStoreType: dataClient.clientType,
+            dataStoreETag: 'mock-part-eTag',
+        });
+        dataClient.completeMPU = sinon.stub().yields(undefined, {
+            key: objectKey,
+            eTag: 'mock-eTag',
+            dataStoreVersionId: versionID,
+            contentLength: 12,
+        });
+    });
+
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    const newPutIngestBucketRequest = location =>
+        new DummyRequest({
+            bucketName,
+            namespace,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            url: '/',
+            post:
+                '<?xml version="1.0" encoding="UTF-8"?>' +
+                '<CreateBucketConfiguration ' +
+                'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+                `<LocationConstraint>${location}</LocationConstraint>` +
+                '</CreateBucketConfiguration>',
+        });
+
+    // Create an MPU on the (external) ingest backend and upload one part. The
+    // part is stored without a per-part checksum, as external backends do.
+    async function _initiateExternalMpu({ algo = 'CRC32', type = 'COMPOSITE' } = {}) {
+        await _bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log);
+        const initiate = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-checksum-algorithm': algo,
+                'x-amz-checksum-type': type,
+            },
+            url: `/${objectKey}?uploads`,
+        });
+        const initRes = await util.promisify(initiateMultipartUpload)(authInfo, initiate, log);
+        const uploadId = (await parseStringPromise(initRes)).InitiateMultipartUploadResult.UploadId[0];
+        const partReq = _createPutPartRequest(uploadId, 1, Buffer.from('part body', 'utf8'));
+        const eTag = await util.promisify(objectPutPart)(authInfo, partReq, undefined, log);
+        return { uploadId, eTag };
+    }
+
+    const _complete = completeReq =>
+        util.promisify(cb => completeMultipartUpload(authInfo, completeReq, log, cb))();
+
+    describe('COMPOSITE MPU (no per-part checksum)', () => {
+        it('should reject on a local location', async () => {
+            const { uploadId, eTag } = await _initiateExternalMpu({ type: 'COMPOSITE' });
+            const completeReq = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
+            sinon.stub(config, 'getLocationConstraintType').returns('scality');
+            await assert.rejects(_complete(completeReq), err => {
+                assert.match(err.message, /InvalidRequest/);
+                return true;
+            });
+        });
+
+        it('should complete on an external location', async () => {
+            const { uploadId, eTag } = await _initiateExternalMpu({ type: 'COMPOSITE' });
+            const completeReq = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
+            sinon.stub(config, 'getLocationConstraintType').returns('aws_s3');
+            const result = await _complete(completeReq);
+            assert(result, 'external COMPOSITE MPU should complete without per-part checksums');
+        });
+    });
+
 });
