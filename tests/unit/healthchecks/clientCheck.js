@@ -1,6 +1,7 @@
 const assert = require('assert');
 const sinon = require('sinon');
 const { errors } = require('arsenal');
+const { S3ServiceException } = require('@aws-sdk/client-s3');
 
 const { clientCheck } = require('../../../lib/utilities/healthcheckHandler');
 const { DummyRequestLogger } = require('../helpers');
@@ -10,6 +11,13 @@ const vault = require('../../../lib/auth/vault');
 const kms = require('../../../lib/kms/wrapper');
 
 const log = new DummyRequestLogger();
+
+const serializedInternalError = {
+    InternalError: true,
+    message: 'InternalError',
+    name: 'Error',
+    code: 500,
+};
 
 describe('clientCheck - failure detection logic', () => {
     let dataStub;
@@ -92,8 +100,8 @@ describe('clientCheck - failure detection logic', () => {
             assert(err);
             assert.strictEqual(err.InternalError, true);
             assert.deepStrictEqual(result, {
-                'sproxyd-loc1': { error: errors.InternalError, code: 500 },
-                'sproxyd-loc2': { error: errors.InternalError, code: 500 },
+                'sproxyd-loc1': { error: serializedInternalError, code: 500 },
+                'sproxyd-loc2': { error: serializedInternalError, code: 500 },
                 metadata: { code: 200, message: 'OK' },
                 vault: { code: 200, message: 'OK' },
                 kms: { code: 200, message: 'OK' },
@@ -128,7 +136,7 @@ describe('clientCheck - failure detection logic', () => {
         clientCheck(false, log, (err, result) => {
             assert.ifError(err);
             assert.deepStrictEqual(result, {
-                'sproxyd-loc1': { error: errors.InternalError, code: 500 },
+                'sproxyd-loc1': { error: serializedInternalError, code: 500 },
                 'sproxyd-loc2': { code: 200, message: 'OK' },
                 metadata: { code: 200, message: 'OK' },
                 vault: { code: 200, message: 'OK' },
@@ -165,9 +173,9 @@ describe('clientCheck - failure detection logic', () => {
             assert(err);
             assert.strictEqual(err.InternalError, true);
             assert.deepStrictEqual(result, {
-                'sproxyd-loc1': { error: errors.InternalError, code: 500 },
-                'sproxyd-loc2': { error: errors.InternalError, code: 500 },
-                metadata: { error: errors.InternalError, code: 500 },
+                'sproxyd-loc1': { error: serializedInternalError, code: 500 },
+                'sproxyd-loc2': { error: serializedInternalError, code: 500 },
+                metadata: { error: serializedInternalError, code: 500 },
                 vault: { code: 200, message: 'OK' },
                 kms: { code: 200, message: 'OK' },
             });
@@ -224,7 +232,7 @@ describe('clientCheck - failure detection logic', () => {
                 clientCheck(false, log, (err, result) => {
                     assert.ifError(err);
                     assert.deepStrictEqual(result, {
-                        's3-backend': { error: errors.InternalError, code: 500, external: true },
+                        's3-backend': { error: serializedInternalError, code: 500, external: true },
                         metadata: { code: 200, message: 'OK' },
                     });
                     done();
@@ -250,7 +258,7 @@ describe('clientCheck - failure detection logic', () => {
                 assert(err);
                 assert.strictEqual(err.InternalError, true);
                 assert.deepStrictEqual(result, {
-                    's3-backend': { error: errors.InternalError, code: 500, external: true },
+                    's3-backend': { error: serializedInternalError, code: 500, external: true },
                     metadata: { code: 200, message: 'OK' },
                 });
                 done();
@@ -279,12 +287,46 @@ describe('clientCheck - failure detection logic', () => {
                     assert.ifError(err);
                     assert.deepStrictEqual(result, {
                         'sproxyd-loc1': { code: 200, message: 'OK' },
-                        's3-backend': { error: errors.InternalError, code: 500, external: true },
+                        's3-backend': { error: serializedInternalError, code: 500, external: true },
                         metadata: { code: 200, message: 'OK' },
                     });
                     done();
                 });
             },
         );
+
+        it('should serialize AWS SDK S3ServiceException so message survives JSON.stringify', async () => {
+            const awsErr = new S3ServiceException({
+                name: 'NoSuchBucket',
+                $fault: 'client',
+                $metadata: { httpStatusCode: 404, requestId: 'ABC123' },
+                message: 'The specified bucket does not exist',
+            });
+            assert.strictEqual(JSON.parse(JSON.stringify({ error: awsErr })).error.message, undefined);
+
+            dataStub.callsFake((log, cb) =>
+                cb(null, {
+                    'aws-loc': { error: awsErr, external: true },
+                }),
+            );
+            metadataStub.callsFake((log, cb) =>
+                cb(null, {
+                    metadata: { code: 200, message: 'OK' },
+                }),
+            );
+            vaultStub.callsFake((log, cb) => cb(null, {}));
+            kmsStub.callsFake((log, cb) => cb(null, {}));
+
+            const { err, result } = await new Promise(resolve => {
+                clientCheck(true, log, (err, result) => resolve({ err, result }));
+            });
+            assert(err);
+
+            const roundTripped = JSON.parse(JSON.stringify(result));
+            const loggedError = roundTripped['aws-loc'].error;
+            assert.strictEqual(loggedError.message, 'The specified bucket does not exist');
+            assert.strictEqual(loggedError.name, 'NoSuchBucket');
+            assert.deepStrictEqual(loggedError.$metadata, { httpStatusCode: 404, requestId: 'ABC123' });
+        });
     });
 });
