@@ -330,6 +330,26 @@ describe('listLifecycleNonCurrents', () => {
         });
     });
 
+    it('should return InvalidArgument error if version-id-marker is malformed', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: {
+                'list-type': 'noncurrent',
+                'key-marker': 'key1',
+                'version-id-marker': 'notavalidversionid',
+            },
+            authCredentials: credentials,
+        }, err => {
+            // A non-null, undecodable marker must be rejected with a 400
+            // rather than reaching _encodeVersionId and crashing the worker.
+            assert(err);
+            assert.strictEqual(err.code, 'InvalidArgument');
+            assert.strictEqual(err.statusCode, 400);
+            return done();
+        });
+    });
+
     it('should return error if bucket not versioned', done => {
         makeBackbeatRequest({
             method: 'GET',
@@ -686,6 +706,45 @@ describe('listLifecycleNonCurrents', () => {
             checkContents(contents);
             assert.strictEqual(contents[0].Key, 'key2');
             assert.strictEqual(contents[0].VersionId, expectedKey2VersionIds[1]);
+            return done();
+        });
+    });
+
+    // Regression test: a scan-limit truncation that stops on a "bare master"
+    // (a pre-versioning object with no internal versionId) returns a
+    // version-id-marker equals to 'null'. On the following listing, 
+    // CloudServer should treat it as "no marker" instead of decoding it. 
+    // Decoding it was throwing and crashing the worker.
+    it('should treat a version-id-marker of "null" as no marker without crashing', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: {
+                'list-type': 'noncurrent',
+                'before-date': date,
+                'key-marker': 'key1',
+                'version-id-marker': 'null',
+            },
+            authCredentials: credentials,
+        }, (err, response) => {
+            assert.ifError(err);
+            // Before the fix this request crashed the worker; assert it succeeds.
+            assert.strictEqual(response.statusCode, 200);
+            const data = JSON.parse(response.body);
+
+            assert.strictEqual(data.KeyMarker, 'key1');
+            // 'null' is echoed back unchanged and treated as no marker, so the
+            // listing resumes after key1 and returns key2's noncurrent versions.
+            assert.strictEqual(data.IsTruncated, false);
+            assert(!data.NextKeyMarker);
+
+            const contents = data.Contents;
+            checkContents(contents);
+            assert.strictEqual(contents.length, expectedKey2VersionIds.length);
+            contents.forEach((c, i) => {
+                assert.strictEqual(c.Key, 'key2');
+                assert.strictEqual(c.VersionId, expectedKey2VersionIds[i]);
+            });
             return done();
         });
     });

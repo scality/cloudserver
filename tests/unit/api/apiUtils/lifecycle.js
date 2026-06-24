@@ -1,6 +1,12 @@
 const assert = require('assert');
-const { validateMaxScannedEntries } =
+const { versioning } = require('arsenal');
+const { validateMaxScannedEntries, decodeVersionIdMarker } =
       require('../../../../lib/api/apiUtils/object/lifecycle');
+
+const versionIdUtils = versioning.VersionID;
+// A valid encoded marker that round-trips to this internal version id.
+const validInternalVid = '98765432109876999999PARIS00';
+const validEncodedMarker = versionIdUtils.encode(validInternalVid);
 
 const tests = [
     {
@@ -46,5 +52,25 @@ describe('validateMaxScannedEntries helper', () => {
             const result = validateMaxScannedEntries(t.params, t.config, t.minEntriesToBeScanned);
             assert.deepStrictEqual(result, t.expected);
         });
+    });
+});
+
+describe('decodeVersionIdMarker helper', () => {
+    ['null', '', undefined].forEach(vid => {
+        it(`should treat ${JSON.stringify(vid)} as no marker`, () => {
+            assert.strictEqual(decodeVersionIdMarker(vid), undefined);
+        });
+    });
+
+    it('should decode a valid encoded marker', () => {
+        assert.strictEqual(decodeVersionIdMarker(validEncodedMarker), validInternalVid);
+    });
+
+    it('should return InvalidArgument when decode returns an Error value', () => {
+        // a malformed (non-null) marker that decode rejects by returning an Error
+        const result = decodeVersionIdMarker('@@@bad@@@');
+        assert(result instanceof Error);
+        assert.strictEqual(result.message, 'InvalidArgument');
+        assert.strictEqual(result.description, 'Invalid version id marker specified');
     });
 });
