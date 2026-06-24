@@ -1,7 +1,6 @@
 const assert = require('assert');
 const { versioning } = require('arsenal');
-const { validateMaxScannedEntries, decodeVersionIdMarker } =
-      require('../../../../lib/api/apiUtils/object/lifecycle');
+const { validateMaxScannedEntries, decodeVersionIdMarker } = require('../../../../lib/api/apiUtils/object/lifecycle');
 
 const versionIdUtils = versioning.VersionID;
 // A valid encoded marker that round-trips to this internal version id.
