@@ -5,6 +5,9 @@ const { DummyRequestLogger } = require('../../../helpers');
 const {
     validateChecksumsNoChunking,
     ChecksumError,
+    ContentSHA256Type,
+    parseContentSHA256,
+    validateXAmzContentSHA256,
     validateMethodChecksumNoChunking,
     checksumedMethods,
     getChecksumDataFromHeaders,
@@ -1296,5 +1299,164 @@ describe('getCopyObjectChecksumAlgorithm', () => {
             assert.strictEqual(result.algorithm, null, `expected null algorithm for ${algo}`);
             assert.strictEqual(result.error.error, ChecksumError.CopyChecksumAlgoNotSupported);
         }
+    });
+});
+
+const sigV4Auth = 'AWS4-HMAC-SHA256 Credential=AK/20260101/us-east-1/s3/aws4_request, '
+    + 'SignedHeaders=host, Signature=abc';
+
+describe('parseContentSHA256', () => {
+    // build SigV4 header-auth headers carrying the given x-amz-content-sha256
+    const v4 = value => ({ authorization: sigV4Auth, 'x-amz-content-sha256': value });
+
+    it('should return Skip for non-SigV4 header auth, capturing the value', () => {
+        assert.deepStrictEqual(
+            parseContentSHA256({ authorization: 'AWS AKID:sig', 'x-amz-content-sha256': 'abc' }),
+            { type: ContentSHA256Type.Skip, value: 'abc' });
+    });
+
+    it('should return Skip with null value when there is no auth header', () => {
+        assert.deepStrictEqual(parseContentSHA256({}), { type: ContentSHA256Type.Skip, value: null });
+    });
+
+    it('should return Absent when SigV4 header auth but the header is missing', () => {
+        assert.deepStrictEqual(parseContentSHA256({ authorization: sigV4Auth }),
+            { type: ContentSHA256Type.Absent, value: null });
+    });
+
+    it('should return Unsigned for UNSIGNED-PAYLOAD', () => {
+        assert.deepStrictEqual(parseContentSHA256(v4('UNSIGNED-PAYLOAD')),
+            { type: ContentSHA256Type.Unsigned, value: 'UNSIGNED-PAYLOAD' });
+    });
+
+    it('should return Streaming (supported) for a supported streaming token', () => {
+        const tok = 'STREAMING-AWS4-HMAC-SHA256-PAYLOAD';
+        assert.deepStrictEqual(parseContentSHA256(v4(tok)),
+            { type: ContentSHA256Type.Streaming, value: tok, supported: true });
+    });
+
+    it('should return Streaming (not supported) for an unsupported streaming token', () => {
+        const tok = 'STREAMING-AWS4-ECDSA-P256-SHA256-PAYLOAD';
+        assert.deepStrictEqual(parseContentSHA256(v4(tok)),
+            { type: ContentSHA256Type.Streaming, value: tok, supported: false });
+    });
+
+    it('should return HexSHA256 for a hex sha256, preserving the raw value', () => {
+        const hex = 'a'.repeat(64);
+        assert.deepStrictEqual(parseContentSHA256(v4(hex)),
+            { type: ContentSHA256Type.HexSHA256, value: hex });
+    });
+
+    it('should return HexSHA256 for an uppercase hex sha256', () => {
+        const hex = 'A'.repeat(64);
+        assert.deepStrictEqual(parseContentSHA256(v4(hex)),
+            { type: ContentSHA256Type.HexSHA256, value: hex });
+    });
+
+    it('should return Invalid for a malformed value', () => {
+        assert.deepStrictEqual(parseContentSHA256(v4('xxx')),
+            { type: ContentSHA256Type.Invalid, value: 'xxx' });
+    });
+});
+
+describe('validateXAmzContentSHA256', () => {
+    const body = 'Hello, World!';
+    const correctHex = crypto.createHash('sha256').update(body).digest('hex');
+    const wrongHex = crypto.createHash('sha256').update('other').digest('hex');
+
+    it('should return null when the hash matches the body', () => {
+        assert.ifError(validateXAmzContentSHA256(
+            { authorization: sigV4Auth, 'x-amz-content-sha256': correctHex }, body));
+    });
+
+    it('should return null for an uppercase hash that matches (case-insensitive)', () => {
+        assert.ifError(validateXAmzContentSHA256(
+            { authorization: sigV4Auth, 'x-amz-content-sha256': correctHex.toUpperCase() }, body));
+    });
+
+    it('should return ContentSHA256Mismatch with calculated/expected details on mismatch', () => {
+        const result = validateXAmzContentSHA256(
+            { authorization: sigV4Auth, 'x-amz-content-sha256': wrongHex }, body);
+        assert.strictEqual(result.error, ChecksumError.ContentSHA256Mismatch);
+        assert.strictEqual(result.details.expected, wrongHex);
+        assert.strictEqual(result.details.calculated, correctHex);
+    });
+
+    it('should return ContentSHA256Missing when the header is absent', () => {
+        assert.deepStrictEqual(validateXAmzContentSHA256({ authorization: sigV4Auth }, body),
+            { error: ChecksumError.ContentSHA256Missing });
+    });
+
+    it('should return ContentSHA256Invalid for a malformed value', () => {
+        const result = validateXAmzContentSHA256(
+            { authorization: sigV4Auth, 'x-amz-content-sha256': 'xxx' }, body);
+        assert.strictEqual(result.error, ChecksumError.ContentSHA256Invalid);
+        assert.strictEqual(result.details.value, 'xxx');
+    });
+
+    it('should return null for UNSIGNED-PAYLOAD', () => {
+        assert.ifError(validateXAmzContentSHA256(
+            { authorization: sigV4Auth, 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' }, body));
+    });
+
+    it('should return null for a streaming token', () => {
+        assert.ifError(validateXAmzContentSHA256(
+            { authorization: sigV4Auth, 'x-amz-content-sha256': 'STREAMING-AWS4-HMAC-SHA256-PAYLOAD' }, body));
+    });
+
+    it('should return null (skip) for non-SigV4 auth even with a wrong hash', () => {
+        assert.ifError(validateXAmzContentSHA256(
+            { authorization: 'AWS AKID:sig', 'x-amz-content-sha256': wrongHex }, body));
+    });
+
+    describe('mapped through arsenalErrorFromChecksumError', () => {
+        it('should map mismatch to XAmzContentSHA256Mismatch (400)', () => {
+            const result = validateXAmzContentSHA256(
+                { authorization: sigV4Auth, 'x-amz-content-sha256': wrongHex }, body);
+            const err = arsenalErrorFromChecksumError(result);
+            assert.strictEqual(err.message, 'XAmzContentSHA256Mismatch');
+            assert.strictEqual(err.code, 400);
+        });
+
+        it('should map invalid to InvalidArgument (400)', () => {
+            const result = validateXAmzContentSHA256(
+                { authorization: sigV4Auth, 'x-amz-content-sha256': 'xxx' }, body);
+            const err = arsenalErrorFromChecksumError(result);
+            assert.strictEqual(err.message, 'InvalidArgument');
+            assert.strictEqual(err.code, 400);
+        });
+
+        it('should map missing to InvalidRequest (400)', () => {
+            const result = validateXAmzContentSHA256({ authorization: sigV4Auth }, body);
+            const err = arsenalErrorFromChecksumError(result);
+            assert.strictEqual(err.message, 'InvalidRequest');
+            assert.strictEqual(err.code, 400);
+        });
+    });
+});
+
+describe('validateMethodChecksumNoChunking x-amz-content-sha256', () => {
+    const body = 'Hello, World!';
+    const correctHex = crypto.createHash('sha256').update(body).digest('hex');
+    const correctMd5 = crypto.createHash('md5').update(body).digest('base64');
+
+    it('should reject a wrong x-amz-content-sha256 with XAmzContentSHA256Mismatch', async () => {
+        const wrongHex = crypto.createHash('sha256').update('other').digest('hex');
+        const request = {
+            apiMethod: 'bucketPutCors',
+            headers: { authorization: sigV4Auth, 'x-amz-content-sha256': wrongHex },
+        };
+        const result = await validateMethodChecksumNoChunking(request, body, new DummyRequestLogger());
+        assert.strictEqual(result.message, 'XAmzContentSHA256Mismatch');
+        assert.strictEqual(result.code, 400);
+    });
+
+    it('should accept a matching x-amz-content-sha256', async () => {
+        const request = {
+            apiMethod: 'bucketPutCors',
+            headers: { authorization: sigV4Auth, 'x-amz-content-sha256': correctHex, 'content-md5': correctMd5 },
+        };
+        const result = await validateMethodChecksumNoChunking(request, body, new DummyRequestLogger());
+        assert.ifError(result);
     });
 });

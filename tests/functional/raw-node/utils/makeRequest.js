@@ -139,8 +139,10 @@ function makeRequest(params, callback) {
     // decode path because signing code re-encodes it
     req.path = _decodeURI(encodedPath);
     if (authCredentials && !params.GCP) {
+        // Pass an explicit payload (never undefined) so generateV4Headers signs
+        // the real body for POST instead of falling back to the querystring.
         auth.client.generateV4Headers(req, queryObj || '',
-            authCredentials.accessKey, authCredentials.secretKey, 's3', undefined, undefined, requestBody);
+            authCredentials.accessKey, authCredentials.secretKey, 's3', undefined, undefined, requestBody || '');
     }
     // restore original URL-encoded path
     req.path = savedPath;

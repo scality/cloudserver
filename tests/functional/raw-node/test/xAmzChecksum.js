@@ -1,9 +1,12 @@
 const assert = require('assert');
+const crypto = require('crypto');
 const HttpRequestAuthV4 = require('../utils/HttpRequestAuthV4');
 
 const bucket = 'xxx';
 const objectKey = 'key';
 const objData = Buffer.alloc(1, 'a');
+// SigV4 requires x-amz-content-sha256 to be the hex-encoded sha256 of the body.
+const objDataSha256Hex = crypto.createHash('sha256').update(objData).digest('hex');
 
 const authCredentials = {
     accessKey: 'accessKey1',
@@ -147,7 +150,7 @@ describe('Test x-amz-checksums', () => {
                 {
                     method: method.HTTPMethod,
                     headers: {
-                        'x-amz-content-sha256': 'ypeBEsobvcr6wjGzmiPcTaeG7/gUfE5yuYB3ha/uSLs=',
+                        'x-amz-content-sha256': objDataSha256Hex,
                         'content-length': objData.length,
                         ...headers,
                     },
@@ -283,7 +286,7 @@ describe('Test x-amz-checksums', () => {
                             {
                                 method: method.HTTPMethod,
                                 headers: {
-                                    'x-amz-content-sha256': 'ypeBEsobvcr6wjGzmiPcTaeG7/gUfE5yuYB3ha/uSLs=',
+                                    'x-amz-content-sha256': objDataSha256Hex,
                                     'content-length': objData.length,
                                     'x-amz-sdk-checksum-algorithm': algo.name,
                                     [`x-amz-checksum-${algo.name.toLowerCase()}`]: algo.objDataDigest,
