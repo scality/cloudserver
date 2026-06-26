@@ -27,7 +27,7 @@ runs:
         mkdir -p /tmp/coverage/${JOB_NAME}/;
     - uses: actions/setup-node@v4
       with:
-        node-version: '22'
+        node-version: '22.23.1'
         cache: 'yarn'
     - name: install typescript
       shell: bash
