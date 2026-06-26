@@ -1,14 +1,23 @@
 const assert = require('assert');
+const crypto = require('crypto');
 const { errors } = require('arsenal');
 
 const { prepareStream } = require('../../../../../lib/api/apiUtils/object/prepareStream');
 const ChecksumTransform = require('../../../../../lib/auth/streamingV4/ChecksumTransform');
+const ContentSHA256Transform = require('../../../../../lib/auth/streamingV4/ContentSHA256Transform');
 const { DummyRequestLogger } = require('../../../helpers');
 const DummyRequest = require('../../../DummyRequest');
 const { defaultChecksumData } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
 
 const log = new DummyRequestLogger();
 const defaultChecksums = { primary: defaultChecksumData, secondary: null };
+
+// A literal payload hash is only verified for SigV4 header-authenticated
+// requests, so these tests carry an AWS4 Authorization header.
+const sigV4Auth = 'AWS4-HMAC-SHA256 Credential=AK/20210101/us-east-1/s3/aws4_request, '
+    + 'SignedHeaders=host, Signature=abc';
+const bodyData = 'the streamed body';
+const bodyHex = crypto.createHash('sha256').update(Buffer.from(bodyData)).digest('hex');
 
 function makeRequest(headers, body) {
     return new DummyRequest({ headers }, body != null ? Buffer.from(body) : undefined);
@@ -254,6 +263,72 @@ describe('prepareStream', () => {
                 done();
             });
             result.stream.emit('error', errors.InternalError);
+        });
+    });
+
+    describe('default (literal sha256 payload hash)', () => {
+        it('should return a ContentSHA256Transform for a SigV4 header-auth request with a hex value', () => {
+            const request = makeRequest({ authorization: sigV4Auth, 'x-amz-content-sha256': bodyHex });
+            const result = prepareStream(request, null, defaultChecksums, log, () => {});
+            assert.strictEqual(result.error, null);
+            assert(result.stream instanceof ChecksumTransform);
+            assert(result.contentSHA256Stream instanceof ContentSHA256Transform);
+        });
+
+        it('should return null contentSHA256Stream for UNSIGNED-PAYLOAD', () => {
+            const request = makeRequest({ authorization: sigV4Auth, 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
+            const result = prepareStream(request, null, defaultChecksums, log, () => {});
+            assert.strictEqual(result.contentSHA256Stream, null);
+        });
+
+        it('should return null contentSHA256Stream for non-SigV4 (SigV2) auth even with a hex value', () => {
+            const request = makeRequest({ authorization: 'AWS AKID:sig', 'x-amz-content-sha256': bodyHex });
+            const result = prepareStream(request, null, defaultChecksums, log, () => {});
+            assert.strictEqual(result.contentSHA256Stream, null);
+        });
+
+        it('should return null contentSHA256Stream when there is no authorization header', () => {
+            const request = makeRequest({ 'x-amz-content-sha256': bodyHex });
+            const result = prepareStream(request, null, defaultChecksums, log, () => {});
+            assert.strictEqual(result.contentSHA256Stream, null);
+        });
+
+        it('should accumulate the body sha256 so validateChecksum passes when the hex matches', done => {
+            const request = makeRequest({ authorization: sigV4Auth, 'x-amz-content-sha256': bodyHex }, bodyData);
+            const result = prepareStream(request, null, defaultChecksums, log, done);
+            result.stream.resume();
+            result.stream.on('finish', () => {
+                assert.strictEqual(result.contentSHA256Stream.validateChecksum(), null);
+                done();
+            });
+            result.stream.on('error', done);
+        });
+
+        it('should pipe contentSHA256Stream upstream of a secondary checksum stream', done => {
+            const request = makeRequest({ authorization: sigV4Auth, 'x-amz-content-sha256': bodyHex }, bodyData);
+            const checksums = {
+                primary: { algorithm: 'crc64nvme', isTrailer: false, expected: undefined },
+                secondary: { algorithm: 'crc32', isTrailer: false, expected: undefined },
+            };
+            const result = prepareStream(request, null, checksums, log, done);
+            assert(result.contentSHA256Stream instanceof ContentSHA256Transform);
+            assert(result.secondaryChecksumStream instanceof ChecksumTransform);
+            result.stream.resume();
+            result.stream.on('finish', () => {
+                // the content stream saw the full body even with a secondary present
+                assert.strictEqual(result.contentSHA256Stream.validateChecksum(), null);
+                done();
+            });
+            result.stream.on('error', done);
+        });
+
+        it('should invoke errCb only once when multiple streams error', () => {
+            const request = makeRequest({ authorization: sigV4Auth, 'x-amz-content-sha256': bodyHex });
+            let count = 0;
+            const result = prepareStream(request, null, defaultChecksums, log, () => { count += 1; });
+            result.contentSHA256Stream.emit('error', errors.InternalError);
+            result.stream.emit('error', errors.InternalError);
+            assert.strictEqual(count, 1);
         });
     });
 });

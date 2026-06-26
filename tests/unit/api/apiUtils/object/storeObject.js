@@ -1,4 +1,5 @@
 const assert = require('assert');
+const crypto = require('crypto');
 const sinon = require('sinon');
 const { errors } = require('arsenal');
 
@@ -12,6 +13,13 @@ const log = new DummyRequestLogger();
 const defaultChecksums = { primary: defaultChecksumData, secondary: null };
 
 const fakeDataRetrievalInfo = { key: 'test-key', dataStoreName: 'mem' };
+
+// A literal payload hash is only verified for SigV4 header-authenticated
+// requests, so these tests carry an AWS4 Authorization header.
+const sigV4Auth = 'AWS4-HMAC-SHA256 Credential=AK/20210101/us-east-1/s3/aws4_request, '
+    + 'SignedHeaders=host, Signature=abc';
+const helloWorldHex = crypto.createHash('sha256').update(Buffer.from('hello world')).digest('hex');
+const wrongHex = 'a'.repeat(64);
 
 function makeStream(headers = {}, body = '') {
     return new DummyRequest({ headers }, body ? Buffer.from(body) : undefined);
@@ -271,6 +279,62 @@ describe('dataStore', () => {
             });
             process.nextTick(() => capturedStream.emit('error', errors.InternalError));
         });
+    });
+
+    describe('x-amz-content-sha256 body validation', () => {
+        it('should call cb with XAmzContentSHA256Mismatch and delete stored data when the hash does not match',
+            done => {
+                batchDeleteSucceeds();
+                putSucceeds();
+                const request = makeStream(
+                    { authorization: sigV4Auth, 'x-amz-content-sha256': wrongHex }, 'hello world');
+                dataStore({}, null, request, 0, null, {}, defaultChecksums, log, err => {
+                    assert.strictEqual(err.message, 'XAmzContentSHA256Mismatch');
+                    assert(batchDeleteStub.calledOnce);
+                    done();
+                });
+            });
+
+        it('should not delete stored data when the hash matches the body', done => {
+            putSucceeds();
+            const request = makeStream(
+                { authorization: sigV4Auth, 'x-amz-content-sha256': helloWorldHex }, 'hello world');
+            dataStore({}, null, request, 0, null, {}, defaultChecksums, log, err => {
+                assert.strictEqual(err, null);
+                assert(batchDeleteStub.notCalled);
+                done();
+            });
+        });
+
+        it('should validate x-amz-content-sha256 before the secondary checksum', done => {
+            batchDeleteSucceeds();
+            putSucceeds();
+            const request = makeStream(
+                { authorization: sigV4Auth, 'x-amz-content-sha256': wrongHex }, 'hello world');
+            // The secondary checksum also mismatches, but the content-sha256
+            // error is checked first and takes precedence.
+            const checksums = {
+                primary: { algorithm: 'crc64nvme', isTrailer: false, expected: undefined },
+                secondary: { algorithm: 'crc32', isTrailer: false, expected: 'AAAAAA==' },
+            };
+            dataStore({}, null, request, 0, null, {}, checksums, log, err => {
+                assert.strictEqual(err.message, 'XAmzContentSHA256Mismatch');
+                assert(batchDeleteStub.calledOnce);
+                done();
+            });
+        });
+
+        it('should call cb with XAmzContentSHA256Mismatch when the hash mismatches and batchDelete also fails',
+            done => {
+                batchDeleteStub.callsFake((keys, a, b, log2, cb) => cb(errors.InternalError));
+                putSucceeds();
+                const request = makeStream(
+                    { authorization: sigV4Auth, 'x-amz-content-sha256': wrongHex }, 'hello world');
+                dataStore({}, null, request, 0, null, {}, defaultChecksums, log, err => {
+                    assert.strictEqual(err.message, 'XAmzContentSHA256Mismatch');
+                    done();
+                });
+            });
     });
 
     describe('dual-checksum behaviour', () => {
