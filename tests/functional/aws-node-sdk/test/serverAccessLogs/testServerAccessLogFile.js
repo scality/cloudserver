@@ -23,35 +23,76 @@ function truncateLogFileIfExists(filePath) {
     }
 }
 
-async function waitForLogs(filePath, expectedLines, maxRetries, delayMs) {
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-        const logEntries = fs.readFileSync(filePath, 'utf8');
-        const lines = logEntries
-            .trim()
-            .split('\n')
-            .filter(line => line.length > 0);
-        if (lines.length >= expectedLines) {
-            try {
-                return lines.map(line => JSON.parse(line));
-            } catch (err) {
-                // FIXME(CLDSRV-800): readFileSync may read partial lines making JSON.parse fail, so we need to retry.
-                if (attempt == maxRetries) {
-                    throw new Error(`Failed to read log entries from ${filePath} after ${maxRetries} attempts: ${err}`);
-                }
+function readLogLines(filePath) {
+    return fs
+        .readFileSync(filePath, 'utf8')
+        .trim()
+        .split('\n')
+        .filter(line => line.length > 0);
+}
+
+// Whether a collected log entry satisfies an expected entry's constrained
+// fields (same semantics as validateLogEntry). Lets us ignore unrelated lines
+// from other suites sharing the server's access log file (CLDSRV-923).
+function entryMatchesExpected(entry, properties) {
+    for (const [key, val] of Object.entries(properties)) {
+        if (key === 'unordered') {
+            continue;
+        }
+        if (val === null) {
+            if (key in entry) {
+                return false;
             }
+        } else if (entry[key] !== val) {
+            return false;
+        }
+    }
+    return true;
+}
+
+async function waitForExpectedLogs(filePath, expectedEntries, maxRetries, delayMs) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const lines = readLogLines(filePath);
+        try {
+            const entries = lines.map(line => JSON.parse(line));
+            const available = [...entries];
+            const allFound = expectedEntries.every(exp => {
+                const idx = available.findIndex(entry => entryMatchesExpected(entry, exp));
+                if (idx === -1) {
+                    return false;
+                }
+                available.splice(idx, 1);
+                return true;
+            });
+            if (allFound) {
+                return entries;
+            }
+        } catch {
+            // FIXME(CLDSRV-800): readFileSync may read partial lines making JSON.parse fail, so we need to retry.
         }
         await sleep(delayMs);
     }
-    throw new Error(`Failed to read log entries from ${filePath} after ${maxRetries} attempts`);
+    // Report which expected entries never showed up, to make CI failures diagnosable.
+    const missing = [];
+    try {
+        const available = readLogLines(filePath).map(line => JSON.parse(line));
+        for (const exp of expectedEntries) {
+            const idx = available.findIndex(entry => entryMatchesExpected(entry, exp));
+            if (idx === -1) {
+                missing.push(exp.action || JSON.stringify(exp));
+            } else {
+                available.splice(idx, 1);
+            }
+        }
+    } catch {
+        // ignore parse errors on the diagnostic path
+    }
+    throw new Error(`Missing expected log entries after ${maxRetries} attempts: ${missing.join(', ')} (${filePath})`);
 }
 
 async function waitForAction(filePath, action, maxRetries, delayMs) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
-        const logEntries = fs.readFileSync(filePath, 'utf8');
-        const lines = logEntries
-            .trim()
-            .split('\n')
-            .filter(line => line.length > 0);
+        const lines = readLogLines(filePath);
         for (const line of lines) {
             try {
                 const obj = JSON.parse(line);
@@ -2826,59 +2867,30 @@ describe('Server Access Logs - File Output', async () => {
         for (const operation of operations) {
             it(`should log correct ${operation.methodName} operation with all required fields`, async () => {
                 await operation.method();
-                // Count total expected logs, including unordered entries
-                let totalExpected = 0;
-                for (const exp of operation.expected) {
-                    totalExpected += exp.unordered ? exp.unordered.length : 1;
-                }
-                const logEntries = await waitForLogs(
+                // Flatten unordered groups; each entry is matched independently.
+                const expectedEntries = operation.expected.flatMap(exp => (exp.unordered ? exp.unordered : [exp]));
+                // The access log file is shared across the server process and a
+                // line can be written on a late res 'close', so other suites'
+                // lines can interleave. Match expected entries by field and ignore
+                // the rest instead of asserting an exact count (CLDSRV-923).
+                const logEntries = await waitForExpectedLogs(
                     logFilePath,
-                    totalExpected,
+                    expectedEntries,
                     TEST_CONFIG.MAX_LOG_WAIT_RETRIES,
                     TEST_CONFIG.LOG_POLL_DELAY_MS,
                 );
-                assert.strictEqual(
-                    logEntries.length,
-                    totalExpected,
-                    `Expected ${totalExpected} log entries, got ${logEntries.length}`,
-                );
 
-                let logIdx = 0;
-
-                // Validate entries (ordered or unordered)
-                for (let i = 0; i < operation.expected.length; i++) {
-                    const expected = operation.expected[i];
-
-                    if (expected.unordered) {
-                        // Handle unordered entries
-                        const unorderedLogs = logEntries.slice(logIdx, logIdx + expected.unordered.length);
-                        const remaining = [...expected.unordered];
-
-                        for (const logEntry of unorderedLogs) {
-                            const matchIdx = remaining.findIndex(exp => exp.objectKey === logEntry.objectKey);
-
-                            assert.notStrictEqual(
-                                matchIdx,
-                                -1,
-                                `Unexpected log entry with objectKey: ${logEntry.objectKey}`,
-                            );
-
-                            validateLogEntry(logEntry, remaining[matchIdx]);
-                            remaining.splice(matchIdx, 1);
-                        }
-
-                        assert.strictEqual(
-                            remaining.length,
-                            0,
-                            `Missing expected entries: ${JSON.stringify(remaining)}`,
-                        );
-
-                        logIdx += expected.unordered.length;
-                    } else {
-                        // Handle ordered entry
-                        validateLogEntry(logEntries[logIdx], expected);
-                        logIdx++;
-                    }
+                const available = [...logEntries];
+                for (const expected of expectedEntries) {
+                    const idx = available.findIndex(entry => entryMatchesExpected(entry, expected));
+                    const keyInfo = expected.objectKey ? ` (objectKey ${expected.objectKey})` : '';
+                    assert.notStrictEqual(
+                        idx,
+                        -1,
+                        `Missing expected log entry for action ${expected.action}${keyInfo}`,
+                    );
+                    validateLogEntry(available[idx], expected);
+                    available.splice(idx, 1);
                 }
             });
         }
