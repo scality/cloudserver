@@ -48,38 +48,48 @@ function makeInitiateRequest(extraHeaders = {}) {
 
 function makePutPartRequest(uploadId, partNumber, body, extraHeaders = {}) {
     const md5Hash = crypto.createHash('md5').update(body);
-    return new DummyRequest({
-        bucketName,
-        namespace,
-        objectKey,
-        headers: {
-            host: `${bucketName}.s3.amazonaws.com`,
-            ...extraHeaders,
+    return new DummyRequest(
+        {
+            bucketName,
+            namespace,
+            objectKey,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                ...extraHeaders,
+            },
+            url: `/${objectKey}?partNumber=${partNumber}&uploadId=${uploadId}`,
+            query: { partNumber, uploadId },
+            partHash: md5Hash.digest('hex'),
+            actionImplicitDenies: false,
         },
-        url: `/${objectKey}?partNumber=${partNumber}&uploadId=${uploadId}`,
-        query: { partNumber, uploadId },
-        partHash: md5Hash.digest('hex'),
-        actionImplicitDenies: false,
-    }, body);
+        body,
+    );
 }
 
 function initiateMPU(initiateHeaders, cb) {
-    async.waterfall([
-        next => bucketPut(authInfo, bucketPutRequest, log, next),
-        (corsHeaders, next) => {
-            const req = makeInitiateRequest(initiateHeaders);
-            initiateMultipartUpload(authInfo, req, log, next);
+    async.waterfall(
+        [
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            (corsHeaders, next) => {
+                const req = makeInitiateRequest(initiateHeaders);
+                initiateMultipartUpload(authInfo, req, log, next);
+            },
+            (result, corsHeaders, next) => parseString(result, next),
+        ],
+        (err, json) => {
+            if (err) {
+                return cb(err);
+            }
+            return cb(null, json.InitiateMultipartUploadResult.UploadId[0]);
         },
-        (result, corsHeaders, next) => parseString(result, next),
-    ], (err, json) => {
-        if (err) {return cb(err);}
-        return cb(null, json.InitiateMultipartUploadResult.UploadId[0]);
-    });
+    );
 }
 
 function getPartMetadata(uploadId) {
     const mpuKeys = metadata.keyMaps.get(mpuBucket);
-    if (!mpuKeys) {return null;}
+    if (!mpuKeys) {
+        return null;
+    }
     for (const [key, val] of mpuKeys) {
         if (key.startsWith(uploadId) && !key.startsWith('overview')) {
             return val;
@@ -242,22 +252,24 @@ describe('objectPutPart checksum validation', () => {
                 Promise.all([
                     algorithms.crc32.digestFromHash(crc32Hash),
                     algorithms.crc64nvme.digestFromHash(crc64Hash),
-                ]).then(([crc32Digest, crc64Digest]) => {
-                    const request = makePutPartRequest(uploadId, 1, partBody, {
-                        'x-amz-checksum-crc32': crc32Digest,
-                    });
-                    objectPutPart(authInfo, request, undefined, log, (err, hexDigest, corsHeaders) => {
-                        assert.ifError(err);
-                        // Response header should be the client's algo (crc32)
-                        assert.strictEqual(corsHeaders['x-amz-checksum-crc32'], crc32Digest);
-                        // Stored metadata should be crc64nvme with correct value
-                        const partMD = getPartMetadata(uploadId);
-                        assert(partMD);
-                        assert.strictEqual(partMD.checksumAlgorithm, 'crc64nvme');
-                        assert.strictEqual(partMD.checksumValue, crc64Digest);
-                        done();
-                    });
-                }).catch(done);
+                ])
+                    .then(([crc32Digest, crc64Digest]) => {
+                        const request = makePutPartRequest(uploadId, 1, partBody, {
+                            'x-amz-checksum-crc32': crc32Digest,
+                        });
+                        objectPutPart(authInfo, request, undefined, log, (err, hexDigest, corsHeaders) => {
+                            assert.ifError(err);
+                            // Response header should be the client's algo (crc32)
+                            assert.strictEqual(corsHeaders['x-amz-checksum-crc32'], crc32Digest);
+                            // Stored metadata should be crc64nvme with correct value
+                            const partMD = getPartMetadata(uploadId);
+                            assert(partMD);
+                            assert.strictEqual(partMD.checksumAlgorithm, 'crc64nvme');
+                            assert.strictEqual(partMD.checksumValue, crc64Digest);
+                            done();
+                        });
+                    })
+                    .catch(done);
             });
         });
 
@@ -268,31 +280,31 @@ describe('objectPutPart checksum validation', () => {
                 hash.update(partBody);
                 const crc64Hash = algorithms.crc64nvme.createHash();
                 crc64Hash.update(partBody);
-                Promise.all([
-                    algorithms.sha256.digestFromHash(hash),
-                    algorithms.crc64nvme.digestFromHash(crc64Hash),
-                ]).then(([sha256Digest, crc64Digest]) => {
-                    // Build chunked body with trailing checksum
-                    const hexLen = partBody.length.toString(16);
-                    const chunkedBody = `${hexLen}\r\n${partBody.toString()}\r\n` +
-                        `0\r\nx-amz-checksum-sha256:${sha256Digest}\r\n`;
-                    const request = makePutPartRequest(uploadId, 1, Buffer.from(chunkedBody), {
-                        'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
-                        'x-amz-trailer': 'x-amz-checksum-sha256',
-                    });
-                    request.parsedContentLength = partBody.length;
-                    objectPutPart(authInfo, request, undefined, log, (err, hexDigest, corsHeaders) => {
-                        assert.ifError(err);
-                        // Response should echo the client's sha256
-                        assert.strictEqual(corsHeaders['x-amz-checksum-sha256'], sha256Digest);
-                        // Stored metadata should be crc64nvme with correct value
-                        const partMD = getPartMetadata(uploadId);
-                        assert(partMD);
-                        assert.strictEqual(partMD.checksumAlgorithm, 'crc64nvme');
-                        assert.strictEqual(partMD.checksumValue, crc64Digest);
-                        done();
-                    });
-                }).catch(done);
+                Promise.all([algorithms.sha256.digestFromHash(hash), algorithms.crc64nvme.digestFromHash(crc64Hash)])
+                    .then(([sha256Digest, crc64Digest]) => {
+                        // Build chunked body with trailing checksum
+                        const hexLen = partBody.length.toString(16);
+                        const chunkedBody =
+                            `${hexLen}\r\n${partBody.toString()}\r\n` +
+                            `0\r\nx-amz-checksum-sha256:${sha256Digest}\r\n`;
+                        const request = makePutPartRequest(uploadId, 1, Buffer.from(chunkedBody), {
+                            'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
+                            'x-amz-trailer': 'x-amz-checksum-sha256',
+                        });
+                        request.parsedContentLength = partBody.length;
+                        objectPutPart(authInfo, request, undefined, log, (err, hexDigest, corsHeaders) => {
+                            assert.ifError(err);
+                            // Response should echo the client's sha256
+                            assert.strictEqual(corsHeaders['x-amz-checksum-sha256'], sha256Digest);
+                            // Stored metadata should be crc64nvme with correct value
+                            const partMD = getPartMetadata(uploadId);
+                            assert(partMD);
+                            assert.strictEqual(partMD.checksumAlgorithm, 'crc64nvme');
+                            assert.strictEqual(partMD.checksumValue, crc64Digest);
+                            done();
+                        });
+                    })
+                    .catch(done);
             });
         });
 
@@ -301,17 +313,19 @@ describe('objectPutPart checksum validation', () => {
                 assert.ifError(err);
                 const hash = algorithms.sha256.createHash();
                 hash.update(partBody);
-                Promise.resolve(algorithms.sha256.digestFromHash(hash)).then(digest => {
-                    const request = makePutPartRequest(uploadId, 1, partBody, {
-                        'x-amz-checksum-sha256': digest,
-                    });
-                    objectPutPart(authInfo, request, undefined, log, (err, hexDigest, corsHeaders) => {
-                        assert.ifError(err);
-                        assert.strictEqual(corsHeaders['x-amz-checksum-sha256'], digest);
-                        assert.strictEqual(corsHeaders['x-amz-checksum-crc64nvme'], undefined);
-                        done();
-                    });
-                }).catch(done);
+                Promise.resolve(algorithms.sha256.digestFromHash(hash))
+                    .then(digest => {
+                        const request = makePutPartRequest(uploadId, 1, partBody, {
+                            'x-amz-checksum-sha256': digest,
+                        });
+                        objectPutPart(authInfo, request, undefined, log, (err, hexDigest, corsHeaders) => {
+                            assert.ifError(err);
+                            assert.strictEqual(corsHeaders['x-amz-checksum-sha256'], digest);
+                            assert.strictEqual(corsHeaders['x-amz-checksum-crc64nvme'], undefined);
+                            done();
+                        });
+                    })
+                    .catch(done);
             });
         });
     });
@@ -343,32 +357,36 @@ describe('objectPutPart checksum validation', () => {
             it(`should echo a client-supplied ${algo} checksum on a default MPU`, done => {
                 initiateMPU({}, (err, uploadId) => {
                     assert.ifError(err);
-                    Promise.resolve(algorithms[algo].digest(partBody)).then(digest => {
-                        const request = makePutPartRequest(uploadId, 1, partBody, {
-                            [`x-amz-checksum-${algo}`]: digest,
-                        });
-                        objectPutPart(authInfo, request, undefined, log, (err, hexDigest, corsHeaders) => {
-                            assert.ifError(err);
-                            assert.strictEqual(corsHeaders[`x-amz-checksum-${algo}`], digest);
-                            done();
-                        });
-                    }).catch(done);
+                    Promise.resolve(algorithms[algo].digest(partBody))
+                        .then(digest => {
+                            const request = makePutPartRequest(uploadId, 1, partBody, {
+                                [`x-amz-checksum-${algo}`]: digest,
+                            });
+                            objectPutPart(authInfo, request, undefined, log, (err, hexDigest, corsHeaders) => {
+                                assert.ifError(err);
+                                assert.strictEqual(corsHeaders[`x-amz-checksum-${algo}`], digest);
+                                done();
+                            });
+                        })
+                        .catch(done);
                 });
             });
 
             it(`should echo the ${algo} checksum on an explicit ${algo} MPU`, done => {
                 initiateMPU({ 'x-amz-checksum-algorithm': algo }, (err, uploadId) => {
                     assert.ifError(err);
-                    Promise.resolve(algorithms[algo].digest(partBody)).then(digest => {
-                        const request = makePutPartRequest(uploadId, 1, partBody, {
-                            [`x-amz-checksum-${algo}`]: digest,
-                        });
-                        objectPutPart(authInfo, request, undefined, log, (err, hexDigest, corsHeaders) => {
-                            assert.ifError(err);
-                            assert.strictEqual(corsHeaders[`x-amz-checksum-${algo}`], digest);
-                            done();
-                        });
-                    }).catch(done);
+                    Promise.resolve(algorithms[algo].digest(partBody))
+                        .then(digest => {
+                            const request = makePutPartRequest(uploadId, 1, partBody, {
+                                [`x-amz-checksum-${algo}`]: digest,
+                            });
+                            objectPutPart(authInfo, request, undefined, log, (err, hexDigest, corsHeaders) => {
+                                assert.ifError(err);
+                                assert.strictEqual(corsHeaders[`x-amz-checksum-${algo}`], digest);
+                                done();
+                            });
+                        })
+                        .catch(done);
                 });
             });
         });

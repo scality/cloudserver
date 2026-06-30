@@ -187,8 +187,11 @@ describe('CompleteMultipartUpload final-object checksum', () =>
         describe('SDK-style checksum forwarding', () => {
             let fwdS3;
             const checksumFields = [
-                'ChecksumCRC32', 'ChecksumCRC32C', 'ChecksumCRC64NVME',
-                'ChecksumSHA1', 'ChecksumSHA256',
+                'ChecksumCRC32',
+                'ChecksumCRC32C',
+                'ChecksumCRC64NVME',
+                'ChecksumSHA1',
+                'ChecksumSHA256',
             ];
             // explicit algorithms + the no-algorithm default (null)
             const configs = ['CRC32', 'CRC32C', 'CRC64NVME', 'SHA1', 'SHA256', null];
@@ -207,14 +210,20 @@ describe('CompleteMultipartUpload final-object checksum', () =>
                 const label = algo || 'no algorithm (default)';
                 it(`should forward the UploadPart checksum and complete (${label})`, async () => {
                     const key = `complete-forward-${(algo || 'default').toLowerCase()}-${Date.now()}`;
-                    const create = await fwdS3.send(new CreateMultipartUploadCommand({
-                        Bucket: bucket, Key: key,
-                        ...(algo ? { ChecksumAlgorithm: algo } : {}),
-                    }));
+                    const create = await fwdS3.send(
+                        new CreateMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            ...(algo ? { ChecksumAlgorithm: algo } : {}),
+                        }),
+                    );
 
                     const uploadParams = {
-                        Bucket: bucket, Key: key, UploadId: create.UploadId,
-                        PartNumber: 1, Body: partBody,
+                        Bucket: bucket,
+                        Key: key,
+                        UploadId: create.UploadId,
+                        PartNumber: 1,
+                        Body: partBody,
                     };
                     // Explicit-algo MPUs require the matching per-part checksum.
                     if (algo) {
@@ -230,10 +239,14 @@ describe('CompleteMultipartUpload final-object checksum', () =>
                         }
                     });
 
-                    const complete = await fwdS3.send(new CompleteMultipartUploadCommand({
-                        Bucket: bucket, Key: key, UploadId: create.UploadId,
-                        MultipartUpload: { Parts: [completedPart] },
-                    }));
+                    const complete = await fwdS3.send(
+                        new CompleteMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            UploadId: create.UploadId,
+                            MultipartUpload: { Parts: [completedPart] },
+                        }),
+                    );
                     const expectedField = algo ? tagField(algo) : 'ChecksumCRC64NVME';
                     assert(
                         complete[expectedField],

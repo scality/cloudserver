@@ -6,13 +6,11 @@ const { storage } = require('arsenal');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
 const objectPutCopyPart = require('../../../lib/api/objectPutCopyPart');
-const initiateMultipartUpload
-= require('../../../lib/api/initiateMultipartUpload');
+const initiateMultipartUpload = require('../../../lib/api/initiateMultipartUpload');
 const { metadata } = storage.metadata.inMemory.metadata;
 const metadataswitch = require('../metadataswitch');
 const DummyRequest = require('../DummyRequest');
-const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
-    = require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils } = require('../helpers');
 const { Readable } = require('stream');
 const { algorithms } = require('../../../lib/api/apiUtils/integrity/validateChecksums');
 const { data } = require('../../../lib/data/wrapper');
@@ -71,30 +69,27 @@ const initiateRequest = _createInitiateRequest(destBucketName);
 describe('objectCopyPart', () => {
     let uploadId;
     const objData = Buffer.from('foo', 'utf8');
-    const testPutObjectRequest =
-        versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey,
-            objData);
+    const testPutObjectRequest = versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData);
     before(done => {
         cleanup();
         sinon.spy(metadataswitch, 'putObjectMD');
-        async.waterfall([
-            callback => bucketPut(authInfo, putDestBucketRequest, log,
-                err => callback(err)),
-            callback => bucketPut(authInfo, putSourceBucketRequest, log,
-                err => callback(err)),
-            callback => objectPut(authInfo, testPutObjectRequest,
-                undefined, log, err => callback(err)),
-            callback => initiateMultipartUpload(authInfo, initiateRequest,
-                log, (err, res) => callback(err, res)),
-        ], (err, res) => {
-            if (err) {
-                return done(err);
-            }
-            return parseString(res, (err, json) => {
-                uploadId = json.InitiateMultipartUploadResult.UploadId[0];
-                return done();
-            });
-        });
+        async.waterfall(
+            [
+                callback => bucketPut(authInfo, putDestBucketRequest, log, err => callback(err)),
+                callback => bucketPut(authInfo, putSourceBucketRequest, log, err => callback(err)),
+                callback => objectPut(authInfo, testPutObjectRequest, undefined, log, err => callback(err)),
+                callback => initiateMultipartUpload(authInfo, initiateRequest, log, (err, res) => callback(err, res)),
+            ],
+            (err, res) => {
+                if (err) {
+                    return done(err);
+                }
+                return parseString(res, (err, json) => {
+                    uploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                    return done();
+                });
+            },
+        );
     });
 
     after(() => {
@@ -102,8 +97,7 @@ describe('objectCopyPart', () => {
         cleanup();
     });
 
-    it('should copy part even if legacy metadata without dataStoreName',
-    done => {
+    it('should copy part even if legacy metadata without dataStoreName', done => {
         // force metadata for dataStoreName to be undefined
         metadata.keyMaps.get(sourceBucketName).get(objectKey).dataStoreName = undefined;
         const testObjectCopyRequest = _createObjectCopyPartRequest(destBucketName, uploadId);
@@ -115,17 +109,17 @@ describe('objectCopyPart', () => {
 
     it('should return InvalidArgument error given invalid range', done => {
         const headers = { 'x-amz-copy-source-range': 'bad-range-parameter' };
-        const req =
-            _createObjectCopyPartRequest(destBucketName, uploadId, headers);
-        objectPutCopyPart(
-            authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
-                assert(err.is.InvalidArgument);
-                assert.strictEqual(err.description,
-                    'The x-amz-copy-source-range value must be of the form ' +
+        const req = _createObjectCopyPartRequest(destBucketName, uploadId, headers);
+        objectPutCopyPart(authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
+            assert(err.is.InvalidArgument);
+            assert.strictEqual(
+                err.description,
+                'The x-amz-copy-source-range value must be of the form ' +
                     'bytes=first-last where first and last are the ' +
-                    'zero-based offsets of the first and last bytes to copy');
-                done();
-            });
+                    'zero-based offsets of the first and last bytes to copy',
+            );
+            done();
+        });
     });
 
     it('should pass overheadField', done => {
@@ -139,7 +133,7 @@ describe('objectCopyPart', () => {
                 sinon.match.any,
                 sinon.match({ overheadField: sinon.match.array }),
                 sinon.match.any,
-                sinon.match.any
+                sinon.match.any,
             );
             done();
         });
@@ -156,7 +150,7 @@ describe('objectCopyPart', () => {
                 sinon.match({ 'owner-id': authInfo.canonicalID }),
                 sinon.match.any,
                 sinon.match.any,
-                sinon.match.any
+                sinon.match.any,
             );
             done();
         });
@@ -169,8 +163,10 @@ describe('objectPutCopyPart._shouldRecomputeChecksum', () => {
     const withRange = { headers: { 'x-amz-copy-source-range': 'bytes=0-1' } };
 
     it('should return true when a copy-source-range is requested', () => {
-        assert.strictEqual(_shouldRecomputeChecksum(withRange,
-            { checksumType: 'FULL_OBJECT', checksumAlgorithm: 'crc32' }, 'crc32'), true);
+        assert.strictEqual(
+            _shouldRecomputeChecksum(withRange, { checksumType: 'FULL_OBJECT', checksumAlgorithm: 'crc32' }, 'crc32'),
+            true,
+        );
     });
 
     it('should return true when the source has no checksum', () => {
@@ -181,18 +177,24 @@ describe('objectPutCopyPart._shouldRecomputeChecksum', () => {
         const otherAlgo = algo === 'sha256' ? 'crc32' : 'sha256';
 
         it(`should return false when the source is FULL_OBJECT ${algo} matching the MPU`, () => {
-            assert.strictEqual(_shouldRecomputeChecksum(noRange,
-                { checksumType: 'FULL_OBJECT', checksumAlgorithm: algo }, algo), false);
+            assert.strictEqual(
+                _shouldRecomputeChecksum(noRange, { checksumType: 'FULL_OBJECT', checksumAlgorithm: algo }, algo),
+                false,
+            );
         });
 
         it(`should return true when the source ${otherAlgo} differs from the MPU ${algo}`, () => {
-            assert.strictEqual(_shouldRecomputeChecksum(noRange,
-                { checksumType: 'FULL_OBJECT', checksumAlgorithm: otherAlgo }, algo), true);
+            assert.strictEqual(
+                _shouldRecomputeChecksum(noRange, { checksumType: 'FULL_OBJECT', checksumAlgorithm: otherAlgo }, algo),
+                true,
+            );
         });
 
         it(`should return true when the source ${algo} checksum is COMPOSITE`, () => {
-            assert.strictEqual(_shouldRecomputeChecksum(noRange,
-                { checksumType: 'COMPOSITE', checksumAlgorithm: algo }, algo), true);
+            assert.strictEqual(
+                _shouldRecomputeChecksum(noRange, { checksumType: 'COMPOSITE', checksumAlgorithm: algo }, algo),
+                true,
+            );
         });
     });
 });
@@ -206,8 +208,7 @@ describe('objectPutCopyPart checksum storage', () => {
             if (err) {
                 return cb(err);
             }
-            return parseString(res, (parseErr, json) =>
-                cb(parseErr, json.InitiateMultipartUploadResult.UploadId[0]));
+            return parseString(res, (parseErr, json) => cb(parseErr, json.InitiateMultipartUploadResult.UploadId[0]));
         });
     }
 
@@ -230,8 +231,9 @@ describe('objectPutCopyPart checksum storage', () => {
                     metadata.keyMaps.get(sourceBucketName).get(sourceKey).checksum = sourceChecksum;
                 }
                 const req = _createObjectCopyPartRequest(destBucketName, uploadId, headers);
-                return objectPutCopyPart(authInfo, req, sourceBucketName, sourceKey, undefined, log,
-                    copyErr => (copyErr ? reject(copyErr) : resolve(_storedPartChecksum())));
+                return objectPutCopyPart(authInfo, req, sourceBucketName, sourceKey, undefined, log, copyErr =>
+                    copyErr ? reject(copyErr) : resolve(_storedPartChecksum()),
+                );
             });
         });
     }
@@ -239,12 +241,21 @@ describe('objectPutCopyPart checksum storage', () => {
     beforeEach(done => {
         cleanup();
         sinon.spy(metadataswitch, 'putObjectMD');
-        async.waterfall([
-            cb => bucketPut(authInfo, putDestBucketRequest, log, e => cb(e)),
-            cb => bucketPut(authInfo, putSourceBucketRequest, log, e => cb(e)),
-            cb => objectPut(authInfo, versioningTestUtils.createPutObjectRequest(
-                sourceBucketName, objectKey, objData), undefined, log, e => cb(e)),
-        ], done);
+        async.waterfall(
+            [
+                cb => bucketPut(authInfo, putDestBucketRequest, log, e => cb(e)),
+                cb => bucketPut(authInfo, putSourceBucketRequest, log, e => cb(e)),
+                cb =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData),
+                        undefined,
+                        log,
+                        e => cb(e),
+                    ),
+            ],
+            done,
+        );
     });
 
     afterEach(() => {
@@ -258,42 +269,68 @@ describe('objectPutCopyPart checksum storage', () => {
 
         it(`should recompute the part checksum (${algo}) when the source algorithm differs`, async () => {
             const expected = await algorithms[algo].digest(objData);
-            assert.deepStrictEqual(await _copyPart(algo, { sourceChecksum: mismatch }),
-                { algorithm: algo, value: expected });
+            assert.deepStrictEqual(await _copyPart(algo, { sourceChecksum: mismatch }), {
+                algorithm: algo,
+                value: expected,
+            });
         });
 
         it(`should reuse the source checksum (${algo}) when the algorithm matches`, async () => {
             const sourceValue = await algorithms[algo].digest(objData);
-            assert.deepStrictEqual(await _copyPart(algo, {
-                sourceChecksum: { checksumType: 'FULL_OBJECT', checksumAlgorithm: algo, checksumValue: sourceValue },
-            }), { algorithm: algo, value: sourceValue });
+            assert.deepStrictEqual(
+                await _copyPart(algo, {
+                    sourceChecksum: {
+                        checksumType: 'FULL_OBJECT',
+                        checksumAlgorithm: algo,
+                        checksumValue: sourceValue,
+                    },
+                }),
+                { algorithm: algo, value: sourceValue },
+            );
         });
 
         it(`should recompute over the ranged bytes (${algo}) when a copy-source-range is set`, async () => {
             const expected = await algorithms[algo].digest(Buffer.from('fo'));
-            assert.deepStrictEqual(await _copyPart(algo, {
-                sourceChecksum: { checksumType: 'FULL_OBJECT', checksumAlgorithm: algo,
-                    checksumValue: await algorithms[algo].digest(objData) },
-                headers: { 'x-amz-copy-source-range': 'bytes=0-1' },
-            }), { algorithm: algo, value: expected });
+            assert.deepStrictEqual(
+                await _copyPart(algo, {
+                    sourceChecksum: {
+                        checksumType: 'FULL_OBJECT',
+                        checksumAlgorithm: algo,
+                        checksumValue: await algorithms[algo].digest(objData),
+                    },
+                    headers: { 'x-amz-copy-source-range': 'bytes=0-1' },
+                }),
+                { algorithm: algo, value: expected },
+            );
         });
 
         it(`should store the empty-bytes digest (${algo}) for a 0-byte source`, async () => {
             const expected = await algorithms[algo].digest(Buffer.alloc(0));
             const emptyKey = `empty-source-${algo}`;
-            await new Promise((resolve, reject) => objectPut(authInfo,
-                versioningTestUtils.createPutObjectRequest(sourceBucketName, emptyKey, Buffer.alloc(0)),
-                undefined, log, e => (e ? reject(e) : resolve())));
-            assert.deepStrictEqual(await _copyPart(algo, { sourceKey: emptyKey, sourceChecksum: mismatch }),
-                { algorithm: algo, value: expected });
+            await new Promise((resolve, reject) =>
+                objectPut(
+                    authInfo,
+                    versioningTestUtils.createPutObjectRequest(sourceBucketName, emptyKey, Buffer.alloc(0)),
+                    undefined,
+                    log,
+                    e => (e ? reject(e) : resolve()),
+                ),
+            );
+            assert.deepStrictEqual(await _copyPart(algo, { sourceKey: emptyKey, sourceChecksum: mismatch }), {
+                algorithm: algo,
+                value: expected,
+            });
         });
     });
 
     it('should use the one-pass stream (not data.uploadPartCopy) for a local destination', done => {
         _initiateWithHeaders({ 'x-amz-checksum-algorithm': 'CRC32' }, (err, uploadId) => {
             assert.ifError(err);
-            metadata.keyMaps.get(sourceBucketName).get(objectKey).checksum =
-                { checksumType: 'FULL_OBJECT', checksumAlgorithm: 'sha256', checksumValue: 'unused' };
+            metadata.keyMaps.get(sourceBucketName).get(objectKey).checksum = {
+                checksumType: 'FULL_OBJECT',
+                checksumAlgorithm: 'sha256',
+                checksumValue: 'unused',
+            };
             const uploadPartCopySpy = sinon.spy(data, 'uploadPartCopy');
             const req = _createObjectCopyPartRequest(destBucketName, uploadId);
             objectPutCopyPart(authInfo, req, sourceBucketName, objectKey, undefined, log, copyErr => {
@@ -307,8 +344,11 @@ describe('objectPutCopyPart checksum storage', () => {
     it('should route an external-backend destination through data.uploadPartCopy and return no checksum', done => {
         _initiateWithHeaders({ 'x-amz-checksum-algorithm': 'CRC32' }, (err, uploadId) => {
             assert.ifError(err);
-            metadata.keyMaps.get(sourceBucketName).get(objectKey).checksum =
-                { checksumType: 'FULL_OBJECT', checksumAlgorithm: 'sha256', checksumValue: 'unused' };
+            metadata.keyMaps.get(sourceBucketName).get(objectKey).checksum = {
+                checksumType: 'FULL_OBJECT',
+                checksumAlgorithm: 'sha256',
+                checksumValue: 'unused',
+            };
             // Make the destination look like an external backend (data.put can't store its parts)...
             sinon.stub(config, 'getLocationConstraintType').returns('aws_s3');
             // ...and simulate the backend's native part copy returning the skip sentinel.
@@ -354,19 +394,35 @@ describe('objectPutCopyPart._copyPartStreamingWithChecksum', () => {
 
     function _run(sse, algo) {
         return new Promise((resolve, reject) =>
-            _copyPartStreamingWithChecksum(dataLocator, srcBytes.length, sse, 'us-east-1', {}, algo, log,
-                (err, result) => (err ? reject(err) : resolve(result))));
+            _copyPartStreamingWithChecksum(
+                dataLocator,
+                srcBytes.length,
+                sse,
+                'us-east-1',
+                {},
+                algo,
+                log,
+                (err, result) => (err ? reject(err) : resolve(result)),
+            ),
+        );
     }
 
     checksumAlgos.forEach(algo => {
         it(`should return the part location, eTag and ${algo} checksum for an unencrypted copy`, async () => {
             const result = await _run(null, algo);
-            assert.deepStrictEqual(result.locations, [{
-                key: 'destkey', dataStoreName: 'mem', dataStoreETag: 'fakemd5', size: srcBytes.length,
-            }]);
+            assert.deepStrictEqual(result.locations, [
+                {
+                    key: 'destkey',
+                    dataStoreName: 'mem',
+                    dataStoreETag: 'fakemd5',
+                    size: srcBytes.length,
+                },
+            ]);
             assert.strictEqual(result.totalHash, 'fakemd5');
-            assert.deepStrictEqual(result.checksum,
-                { algorithm: algo, value: await algorithms[algo].digest(srcBytes) });
+            assert.deepStrictEqual(result.checksum, {
+                algorithm: algo,
+                value: await algorithms[algo].digest(srcBytes),
+            });
         });
 
         it(`should add the SSE cipher fields with a ${algo} checksum when the MPU is encrypted`, async () => {
@@ -383,8 +439,10 @@ describe('objectPutCopyPart._copyPartStreamingWithChecksum', () => {
                 sseAlgorithm: 'AES256',
                 sseMasterKeyId: 'mk',
             });
-            assert.deepStrictEqual(result.checksum,
-                { algorithm: algo, value: await algorithms[algo].digest(srcBytes) });
+            assert.deepStrictEqual(result.checksum, {
+                algorithm: algo,
+                value: await algorithms[algo].digest(srcBytes),
+            });
         });
     });
 

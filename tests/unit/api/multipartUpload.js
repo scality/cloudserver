@@ -3323,7 +3323,6 @@ describe('multipart upload in ingestion bucket', () => {
         assert.strictEqual(headers['x-amz-version-id'], versionID);
         assert.strictEqual(dataClient.createMPU.lastCall.args[1]['x-amz-meta-scal-version-id'], undefined);
     });
-
 });
 
 describe('initiateMultipartUpload with objectKeyByteLimit', () => {
@@ -4437,20 +4436,21 @@ describe('CompleteMultipartUpload per-part validation on external backends', () 
     const dataClient = data.client;
     const prevDataImplName = data.implName;
     const prevConfigBackendsData = data.config.backends.data;
-    const versionID = versioning.VersionID.encode(
-        versioning.VersionID.generateVersionId('0', ''));
+    const versionID = versioning.VersionID.encode(versioning.VersionID.generateVersionId('0', ''));
 
     before(() => {
         // Simulate a backend that handles the MPU itself, so uploaded parts get
         // no local shadow checksum and CompleteMPU is backend-driven.
-        data.switch(new storage.data.MultipleBackendGateway(
-            {
-                'us-east-1': dataClient,
-                'us-east-2': dataClient,
-            },
-            metadata,
-            data.locStorageCheckFn,
-        ));
+        data.switch(
+            new storage.data.MultipleBackendGateway(
+                {
+                    'us-east-1': dataClient,
+                    'us-east-2': dataClient,
+                },
+                metadata,
+                data.locStorageCheckFn,
+            ),
+        );
         data.implName = 'multipleBackends';
         data.config.backends.data = 'multiple';
         dataClient.clientType = 'aws_s3';
@@ -4518,8 +4518,7 @@ describe('CompleteMultipartUpload per-part validation on external backends', () 
         return { uploadId, eTag };
     }
 
-    const _complete = completeReq =>
-        util.promisify(cb => completeMultipartUpload(authInfo, completeReq, log, cb))();
+    const _complete = completeReq => util.promisify(cb => completeMultipartUpload(authInfo, completeReq, log, cb))();
 
     describe('COMPOSITE MPU (no per-part checksum)', () => {
         it('should reject on a local location', async () => {
@@ -4540,5 +4539,4 @@ describe('CompleteMultipartUpload per-part validation on external backends', () 
             assert(result, 'external COMPOSITE MPU should complete without per-part checksums');
         });
     });
-
 });

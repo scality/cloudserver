@@ -49,27 +49,46 @@ describe('UploadPartCopy checksums', () =>
         });
 
         after(async () => {
-            await Promise.all(openUploads.map(u =>
-                s3.send(new AbortMultipartUploadCommand({
-                    Bucket: bucket, Key: u.key, UploadId: u.uploadId,
-                })).catch(() => undefined)));
+            await Promise.all(
+                openUploads.map(u =>
+                    s3
+                        .send(
+                            new AbortMultipartUploadCommand({
+                                Bucket: bucket,
+                                Key: u.key,
+                                UploadId: u.uploadId,
+                            }),
+                        )
+                        .catch(() => undefined),
+                ),
+            );
             await bucketUtil.empty(bucket);
             await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
         });
 
         async function createMpu(key, opts = {}) {
-            const res = await s3.send(new CreateMultipartUploadCommand({
-                Bucket: bucket, Key: key, ...opts,
-            }));
+            const res = await s3.send(
+                new CreateMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ...opts,
+                }),
+            );
             openUploads.push({ key, uploadId: res.UploadId });
             return res.UploadId;
         }
 
         function copyPart(key, uploadId, extra = {}) {
-            return s3.send(new UploadPartCopyCommand({
-                Bucket: bucket, Key: key, UploadId: uploadId,
-                PartNumber: 1, CopySource: `${bucket}/${sourceKey}`, ...extra,
-            }));
+            return s3.send(
+                new UploadPartCopyCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    UploadId: uploadId,
+                    PartNumber: 1,
+                    CopySource: `${bucket}/${sourceKey}`,
+                    ...extra,
+                }),
+            );
         }
 
         ['CRC32', 'CRC32C', 'CRC64NVME', 'SHA1', 'SHA256'].forEach(algo => {
@@ -86,16 +105,26 @@ describe('UploadPartCopy checksums', () =>
             const uploadId = await createMpu(key);
             const res = await copyPart(key, uploadId);
             assert(res.CopyPartResult.ETag);
-            allFields.forEach(f => assert.strictEqual(res.CopyPartResult[f], undefined,
-                `default MPU CopyPartResult should not include ${f}`));
+            allFields.forEach(f =>
+                assert.strictEqual(
+                    res.CopyPartResult[f],
+                    undefined,
+                    `default MPU CopyPartResult should not include ${f}`,
+                ),
+            );
         });
 
         it('should recompute in the MPU algorithm when the source has a different one', async () => {
             // Source stored with CRC32; destination MPU is SHA256 -> recompute.
             const srcCrc32 = 'copypart-checksum-source-crc32';
-            await s3.send(new PutObjectCommand({
-                Bucket: bucket, Key: srcCrc32, Body: sourceBody, ChecksumAlgorithm: 'CRC32',
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: srcCrc32,
+                    Body: sourceBody,
+                    ChecksumAlgorithm: 'CRC32',
+                }),
+            );
             const key = 'cpr-mismatch';
             const uploadId = await createMpu(key, { ChecksumAlgorithm: 'SHA256' });
             const res = await copyPart(key, uploadId, { CopySource: `${bucket}/${srcCrc32}` });
@@ -106,8 +135,7 @@ describe('UploadPartCopy checksums', () =>
             const key = 'cpr-range';
             const uploadId = await createMpu(key, { ChecksumAlgorithm: 'CRC32' });
             const res = await copyPart(key, uploadId, { CopySourceRange: 'bytes=0-3' });
-            assert.strictEqual(res.CopyPartResult.ChecksumCRC32,
-                await digest('CRC32', sourceBody.subarray(0, 4)));
+            assert.strictEqual(res.CopyPartResult.ChecksumCRC32, await digest('CRC32', sourceBody.subarray(0, 4)));
         });
 
         it('should checksum a 0-byte copied part', async () => {
@@ -133,21 +161,29 @@ describe('UploadPartCopy checksums', () =>
                 const copy = await copyPart(key, uploadId);
                 const partChecksum = copy.CopyPartResult[field(algo)];
                 assert(partChecksum, `expected ${field(algo)} in CopyPartResult`);
-                const complete = await s3.send(new CompleteMultipartUploadCommand({
-                    Bucket: bucket, Key: key, UploadId: uploadId,
-                    MultipartUpload: {
-                        Parts: [{
-                            PartNumber: 1,
-                            ETag: copy.CopyPartResult.ETag,
-                            [field(algo)]: partChecksum,
-                        }],
-                    },
-                }));
+                const complete = await s3.send(
+                    new CompleteMultipartUploadCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        UploadId: uploadId,
+                        MultipartUpload: {
+                            Parts: [
+                                {
+                                    PartNumber: 1,
+                                    ETag: copy.CopyPartResult.ETag,
+                                    [field(algo)]: partChecksum,
+                                },
+                            ],
+                        },
+                    }),
+                );
                 assert.strictEqual(complete.ChecksumType, type);
                 assert(complete[field(algo)], `expected final ${field(algo)} on CompleteMPU response`);
                 if (type === 'COMPOSITE') {
-                    assert(complete[field(algo)].endsWith('-1'),
-                        `expected -1 suffix for 1-part COMPOSITE, got ${complete[field(algo)]}`);
+                    assert(
+                        complete[field(algo)].endsWith('-1'),
+                        `expected -1 suffix for 1-part COMPOSITE, got ${complete[field(algo)]}`,
+                    );
                 }
             });
         });
@@ -156,10 +192,14 @@ describe('UploadPartCopy checksums', () =>
             const key = 'cmp-default';
             const uploadId = await createMpu(key);
             const copy = await copyPart(key, uploadId);
-            const complete = await s3.send(new CompleteMultipartUploadCommand({
-                Bucket: bucket, Key: key, UploadId: uploadId,
-                MultipartUpload: { Parts: [{ PartNumber: 1, ETag: copy.CopyPartResult.ETag }] },
-            }));
+            const complete = await s3.send(
+                new CompleteMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    UploadId: uploadId,
+                    MultipartUpload: { Parts: [{ PartNumber: 1, ETag: copy.CopyPartResult.ETag }] },
+                }),
+            );
             assert(complete.ChecksumCRC64NVME, 'expected default-MPU final ChecksumCRC64NVME');
             assert.strictEqual(complete.ChecksumType, 'FULL_OBJECT');
         });
@@ -177,8 +217,9 @@ describe('UploadPartCopy checksums', () =>
             const uploadId = await createMpu(key);
             await copyPart(key, uploadId);
             const list = await s3.send(new ListPartsCommand({ Bucket: bucket, Key: key, UploadId: uploadId }));
-            allFields.forEach(f => assert.strictEqual(list.Parts[0][f], undefined,
-                `default MPU ListParts should not include ${f}`));
+            allFields.forEach(f =>
+                assert.strictEqual(list.Parts[0][f], undefined, `default MPU ListParts should not include ${f}`),
+            );
         });
 
         it('should complete a multi-part COMPOSITE MPU of copied parts with the -N suffix', async () => {
@@ -186,16 +227,32 @@ describe('UploadPartCopy checksums', () =>
             const uploadId = await createMpu(key, { ChecksumAlgorithm: 'CRC32', ChecksumType: 'COMPOSITE' });
             const p1 = await copyPart(key, uploadId, { PartNumber: 1, CopySource: `${bucket}/${bigSourceKey}` });
             const p2 = await copyPart(key, uploadId, { PartNumber: 2 });
-            const complete = await s3.send(new CompleteMultipartUploadCommand({
-                Bucket: bucket, Key: key, UploadId: uploadId,
-                MultipartUpload: { Parts: [
-                    { PartNumber: 1, ETag: p1.CopyPartResult.ETag, ChecksumCRC32: p1.CopyPartResult.ChecksumCRC32 },
-                    { PartNumber: 2, ETag: p2.CopyPartResult.ETag, ChecksumCRC32: p2.CopyPartResult.ChecksumCRC32 },
-                ] },
-            }));
+            const complete = await s3.send(
+                new CompleteMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    UploadId: uploadId,
+                    MultipartUpload: {
+                        Parts: [
+                            {
+                                PartNumber: 1,
+                                ETag: p1.CopyPartResult.ETag,
+                                ChecksumCRC32: p1.CopyPartResult.ChecksumCRC32,
+                            },
+                            {
+                                PartNumber: 2,
+                                ETag: p2.CopyPartResult.ETag,
+                                ChecksumCRC32: p2.CopyPartResult.ChecksumCRC32,
+                            },
+                        ],
+                    },
+                }),
+            );
             assert.strictEqual(complete.ChecksumType, 'COMPOSITE');
-            assert(complete.ChecksumCRC32.endsWith('-2'),
-                `expected -2 suffix for a 2-part COMPOSITE, got ${complete.ChecksumCRC32}`);
+            assert(
+                complete.ChecksumCRC32.endsWith('-2'),
+                `expected -2 suffix for a 2-part COMPOSITE, got ${complete.ChecksumCRC32}`,
+            );
         });
 
         it('should complete a multi-part FULL_OBJECT MPU of copied parts with the linear digest', async () => {
@@ -203,23 +260,41 @@ describe('UploadPartCopy checksums', () =>
             const uploadId = await createMpu(key, { ChecksumAlgorithm: 'CRC32', ChecksumType: 'FULL_OBJECT' });
             const p1 = await copyPart(key, uploadId, { PartNumber: 1, CopySource: `${bucket}/${bigSourceKey}` });
             const p2 = await copyPart(key, uploadId, { PartNumber: 2 });
-            const complete = await s3.send(new CompleteMultipartUploadCommand({
-                Bucket: bucket, Key: key, UploadId: uploadId,
-                MultipartUpload: { Parts: [
-                    { PartNumber: 1, ETag: p1.CopyPartResult.ETag, ChecksumCRC32: p1.CopyPartResult.ChecksumCRC32 },
-                    { PartNumber: 2, ETag: p2.CopyPartResult.ETag, ChecksumCRC32: p2.CopyPartResult.ChecksumCRC32 },
-                ] },
-            }));
+            const complete = await s3.send(
+                new CompleteMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    UploadId: uploadId,
+                    MultipartUpload: {
+                        Parts: [
+                            {
+                                PartNumber: 1,
+                                ETag: p1.CopyPartResult.ETag,
+                                ChecksumCRC32: p1.CopyPartResult.ChecksumCRC32,
+                            },
+                            {
+                                PartNumber: 2,
+                                ETag: p2.CopyPartResult.ETag,
+                                ChecksumCRC32: p2.CopyPartResult.ChecksumCRC32,
+                            },
+                        ],
+                    },
+                }),
+            );
             assert.strictEqual(complete.ChecksumType, 'FULL_OBJECT');
-            assert.strictEqual(complete.ChecksumCRC32,
-                await digest('CRC32', Buffer.concat([bigBody, sourceBody])));
+            assert.strictEqual(complete.ChecksumCRC32, await digest('CRC32', Buffer.concat([bigBody, sourceBody])));
         });
 
         it('should reuse a matching source checksum without recomputing', async () => {
             const srcKey = 'copypart-checksum-reuse-src';
-            await s3.send(new PutObjectCommand({
-                Bucket: bucket, Key: srcKey, Body: sourceBody, ChecksumAlgorithm: 'CRC32',
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: srcKey,
+                    Body: sourceBody,
+                    ChecksumAlgorithm: 'CRC32',
+                }),
+            );
             const key = 'cpr-reuse';
             const uploadId = await createMpu(key, { ChecksumAlgorithm: 'CRC32' });
             const res = await copyPart(key, uploadId, { CopySource: `${bucket}/${srcKey}` });
@@ -231,14 +306,37 @@ describe('UploadPartCopy checksums', () =>
             const srcUploadId = await createMpu(srcKey);
             const a = bigBody; // part 1 must be >= 5 MiB to complete the source MPU
             const b = Buffer.from('multipart-source-part-B', 'utf8');
-            const up1 = await s3.send(new UploadPartCommand({
-                Bucket: bucket, Key: srcKey, UploadId: srcUploadId, PartNumber: 1, Body: a }));
-            const up2 = await s3.send(new UploadPartCommand({
-                Bucket: bucket, Key: srcKey, UploadId: srcUploadId, PartNumber: 2, Body: b }));
-            await s3.send(new CompleteMultipartUploadCommand({
-                Bucket: bucket, Key: srcKey, UploadId: srcUploadId,
-                MultipartUpload: { Parts: [{ PartNumber: 1, ETag: up1.ETag }, { PartNumber: 2, ETag: up2.ETag }] },
-            }));
+            const up1 = await s3.send(
+                new UploadPartCommand({
+                    Bucket: bucket,
+                    Key: srcKey,
+                    UploadId: srcUploadId,
+                    PartNumber: 1,
+                    Body: a,
+                }),
+            );
+            const up2 = await s3.send(
+                new UploadPartCommand({
+                    Bucket: bucket,
+                    Key: srcKey,
+                    UploadId: srcUploadId,
+                    PartNumber: 2,
+                    Body: b,
+                }),
+            );
+            await s3.send(
+                new CompleteMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: srcKey,
+                    UploadId: srcUploadId,
+                    MultipartUpload: {
+                        Parts: [
+                            { PartNumber: 1, ETag: up1.ETag },
+                            { PartNumber: 2, ETag: up2.ETag },
+                        ],
+                    },
+                }),
+            );
             const key = 'cpr-mp-source';
             const uploadId = await createMpu(key, { ChecksumAlgorithm: 'CRC32' });
             const res = await copyPart(key, uploadId, { CopySource: `${bucket}/${srcKey}` });
@@ -249,20 +347,36 @@ describe('UploadPartCopy checksums', () =>
             const key = 'cmp-mixed';
             const uploadId = await createMpu(key, { ChecksumAlgorithm: 'CRC32', ChecksumType: 'FULL_OBJECT' });
             const partBody = bigBody; // uploaded part 1 must be >= 5 MiB
-            const up1 = await s3.send(new UploadPartCommand({
-                Bucket: bucket, Key: key, UploadId: uploadId, PartNumber: 1, Body: partBody, ChecksumAlgorithm: 'CRC32',
-            }));
+            const up1 = await s3.send(
+                new UploadPartCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    UploadId: uploadId,
+                    PartNumber: 1,
+                    Body: partBody,
+                    ChecksumAlgorithm: 'CRC32',
+                }),
+            );
             const cp2 = await copyPart(key, uploadId, { PartNumber: 2 });
-            const complete = await s3.send(new CompleteMultipartUploadCommand({
-                Bucket: bucket, Key: key, UploadId: uploadId,
-                MultipartUpload: { Parts: [
-                    { PartNumber: 1, ETag: up1.ETag, ChecksumCRC32: up1.ChecksumCRC32 },
-                    { PartNumber: 2, ETag: cp2.CopyPartResult.ETag, ChecksumCRC32: cp2.CopyPartResult.ChecksumCRC32 },
-                ] },
-            }));
+            const complete = await s3.send(
+                new CompleteMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    UploadId: uploadId,
+                    MultipartUpload: {
+                        Parts: [
+                            { PartNumber: 1, ETag: up1.ETag, ChecksumCRC32: up1.ChecksumCRC32 },
+                            {
+                                PartNumber: 2,
+                                ETag: cp2.CopyPartResult.ETag,
+                                ChecksumCRC32: cp2.CopyPartResult.ChecksumCRC32,
+                            },
+                        ],
+                    },
+                }),
+            );
             assert.strictEqual(complete.ChecksumType, 'FULL_OBJECT');
-            assert.strictEqual(complete.ChecksumCRC32,
-                await digest('CRC32', Buffer.concat([partBody, sourceBody])));
+            assert.strictEqual(complete.ChecksumCRC32, await digest('CRC32', Buffer.concat([partBody, sourceBody])));
         });
 
         it('should reject CompleteMPU on a COMPOSITE MPU when the copied part checksum is omitted', async () => {
@@ -270,14 +384,19 @@ describe('UploadPartCopy checksums', () =>
             const uploadId = await createMpu(key, { ChecksumAlgorithm: 'CRC32', ChecksumType: 'COMPOSITE' });
             const copy = await copyPart(key, uploadId);
             await assert.rejects(
-                s3.send(new CompleteMultipartUploadCommand({
-                    Bucket: bucket, Key: key, UploadId: uploadId,
-                    MultipartUpload: { Parts: [{ PartNumber: 1, ETag: copy.CopyPartResult.ETag }] },
-                })),
+                s3.send(
+                    new CompleteMultipartUploadCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        UploadId: uploadId,
+                        MultipartUpload: { Parts: [{ PartNumber: 1, ETag: copy.CopyPartResult.ETag }] },
+                    }),
+                ),
                 err => {
                     assert.strictEqual(err.name, 'InvalidRequest');
                     return true;
-                });
+                },
+            );
         });
 
         it('should reject CompleteMPU when the copied part checksum is wrong', async () => {
@@ -285,15 +404,20 @@ describe('UploadPartCopy checksums', () =>
             const uploadId = await createMpu(key, { ChecksumAlgorithm: 'CRC32', ChecksumType: 'COMPOSITE' });
             const copy = await copyPart(key, uploadId);
             await assert.rejects(
-                s3.send(new CompleteMultipartUploadCommand({
-                    Bucket: bucket, Key: key, UploadId: uploadId,
-                    MultipartUpload: { Parts: [
-                        { PartNumber: 1, ETag: copy.CopyPartResult.ETag, ChecksumCRC32: 'AAAAAA==' }] },
-                })),
+                s3.send(
+                    new CompleteMultipartUploadCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        UploadId: uploadId,
+                        MultipartUpload: {
+                            Parts: [{ PartNumber: 1, ETag: copy.CopyPartResult.ETag, ChecksumCRC32: 'AAAAAA==' }],
+                        },
+                    }),
+                ),
                 err => {
                     assert.strictEqual(err.name, 'InvalidPart');
                     return true;
-                });
+                },
+            );
         });
-    })
-);
+    }));

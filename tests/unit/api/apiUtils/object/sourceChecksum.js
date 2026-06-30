@@ -35,8 +35,7 @@ function collect(stream, cb) {
 // Promisified computeChecksumFromDataLocator for the async digest assertions.
 function computeChecksum(dataLocator, algorithm) {
     return new Promise((resolve, reject) => {
-        computeChecksumFromDataLocator(dataLocator, algorithm, log, (err, res) =>
-            (err ? reject(err) : resolve(res)));
+        computeChecksumFromDataLocator(dataLocator, algorithm, log, (err, res) => (err ? reject(err) : resolve(res)));
     });
 }
 
