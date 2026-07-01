@@ -513,7 +513,7 @@ jobs:
       S3DATA: scality
       S3METADATA: scality
       S3VAULT: scality
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       MPU_TESTING: "yes"
       DEFAULT_BUCKET_KEY_FORMAT: ${{ matrix.vformat }}
       ENABLE_NULL_VERSION_COMPAT_MODE: ${{ matrix.enable-null-compat }}
