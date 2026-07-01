@@ -9,6 +9,10 @@ inputs:
   codecov-token:
     description: 'Codecov token for uploading reports'
     required: true
+  job-name:
+    description: 'Used to locate coverage dir (/tmp/coverage/<job-name>); pass matrix.job-name for matrix jobs.'
+    required: false
+    default: '${{ github.job }}'
   flags:
     description: 'Flags to identify the coverage report'
     required: false
@@ -35,6 +39,6 @@ runs:
       uses: codecov/codecov-action@v5
       with:
         token: ${{ inputs.codecov-token }}
-        directory: /tmp/coverage/${{ github.job }}
+        directory: /tmp/coverage/${{ inputs.job-name }}
         flags: ${{ inputs.flags }}
       if: ${{ !cancelled() }}
