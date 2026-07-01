@@ -472,6 +472,7 @@ jobs:
       uses: ./.github/actions/cleanup-and-coverage
       with:
         codecov-token: ${{ secrets.CODECOV_TOKEN }}
+        job-name: ${{ matrix.job-name }}
         flags: ${{ matrix.job-name }}
       if: always()
     - name: Upload test results to Codecov
@@ -602,6 +603,7 @@ jobs:
       uses: ./.github/actions/cleanup-and-coverage
       with:
         codecov-token: ${{ secrets.CODECOV_TOKEN }}
+        job-name: ${{ matrix.job-name }}
         flags: ${{ matrix.job-name }}
       if: always()
     - name: Upload test results to Codecov
