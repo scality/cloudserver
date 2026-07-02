@@ -1409,6 +1409,20 @@ describe('validateXAmzContentSHA256', () => {
             { authorization: 'AWS AKID:sig', 'x-amz-content-sha256': wrongHex }, body));
     });
 
+    it('should return null when the hash matches an empty body', () => {
+        const emptyHex = crypto.createHash('sha256').update(Buffer.alloc(0)).digest('hex');
+        assert.ifError(validateXAmzContentSHA256(
+            { authorization: sigV4Auth, 'x-amz-content-sha256': emptyHex }, Buffer.alloc(0)));
+    });
+
+    it('should return ContentSHA256Mismatch for an empty body with a wrong hash', () => {
+        const result = validateXAmzContentSHA256(
+            { authorization: sigV4Auth, 'x-amz-content-sha256': wrongHex }, Buffer.alloc(0));
+        assert.strictEqual(result.error, ChecksumError.ContentSHA256Mismatch);
+        assert.strictEqual(result.details.calculated,
+            crypto.createHash('sha256').update(Buffer.alloc(0)).digest('hex'));
+    });
+
     describe('mapped through arsenalErrorFromChecksumError', () => {
         it('should map mismatch to XAmzContentSHA256Mismatch (400)', () => {
             const result = validateXAmzContentSHA256(

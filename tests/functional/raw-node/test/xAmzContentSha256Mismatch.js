@@ -30,6 +30,8 @@ const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
 
 const objData = Buffer.from('the real request body content');
 const realSha256Hex = crypto.createHash('sha256').update(objData).digest('hex');
+const emptyBody = Buffer.alloc(0);
+const emptySha256Hex = crypto.createHash('sha256').update(emptyBody).digest('hex');
 const wrongSha256Hex = crypto.createHash('sha256')
     .update('completely different content')
     .digest('hex');
@@ -150,6 +152,10 @@ describe('SigV4 x-amz-content-sha256 body checksum validation (S3C-10916)', () =
         });
 
         makeMismatchTests(() => `http://${host}:${port}/${bucket}/${objectKey}`);
+
+        describe('with an empty body (zero-byte path)', () => {
+            makeMismatchTests(() => `http://${host}:${port}/${bucket}/${objectKey}`, emptyBody, emptySha256Hex);
+        });
     });
 
     describe('UploadPart', () => {
@@ -197,6 +203,12 @@ describe('SigV4 x-amz-content-sha256 body checksum validation (S3C-10916)', () =
 
         makeMismatchTests(() =>
             `http://${host}:${port}/${bucket}/${objectKey}?partNumber=1&uploadId=${uploadId}`);
+
+        describe('with an empty body (zero-byte path)', () => {
+            makeMismatchTests(() =>
+                `http://${host}:${port}/${bucket}/${objectKey}?partNumber=1&uploadId=${uploadId}`,
+                emptyBody, emptySha256Hex);
+        });
     });
 
     // Non-streaming (buffered) write path: validation happens in
@@ -231,6 +243,21 @@ describe('SigV4 x-amz-content-sha256 body checksum validation (S3C-10916)', () =
                         `expected XAmzContentSHA256Mismatch in "${res.body}"`);
                     done();
                 });
+            });
+        });
+
+        it('should return 400 XAmzContentSHA256Mismatch for a zero-byte buffered body', done => {
+            const ep = bufferedEndpoints.bucketPutCors;
+            doRequest(ep.method, `http://${host}:${port}/${bucket}${ep.suffix}`, {
+                'x-amz-content-sha256': wrongSha256Hex,
+                'content-length': emptyBody.length,
+            }, emptyBody, (err, res) => {
+                assert.ifError(err);
+                assert.strictEqual(res.statusCode, 400,
+                    `expected 400, got ${res.statusCode}: ${res.body}`);
+                assert.match(res.body, /XAmzContentSHA256Mismatch/,
+                    `expected XAmzContentSHA256Mismatch in "${res.body}"`);
+                done();
             });
         });
 
