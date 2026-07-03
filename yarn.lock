@@ -6595,9 +6595,9 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#8.5.2":
-  version "8.5.2"
-  resolved "git+https://github.com/scality/arsenal#cd9ddfca043b522c9199a0edbf23a73dbc7973fd"
+"arsenal@git+https://github.com/scality/arsenal#8.5.3":
+  version "8.5.3"
+  resolved "git+https://github.com/scality/arsenal#3ea1e99ef7119da9c656935afbaefa2c9b7138eb"
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"
@@ -12844,7 +12844,6 @@ webidl-conversions@^7.0.0:
 
 "werelogs@github:scality/werelogs#8.2.2", werelogs@scality/werelogs#8.2.2:
   version "8.2.2"
-  uid e53bef5145697bf8af940dcbe59408988d64854f
   resolved "https://codeload.github.com/scality/werelogs/tar.gz/e53bef5145697bf8af940dcbe59408988d64854f"
   dependencies:
     fast-safe-stringify "^2.1.1"
@@ -12857,7 +12856,7 @@ werelogs@scality/werelogs#8.2.0:
     fast-safe-stringify "^2.1.1"
     safe-json-stringify "^1.2.0"
 
-"werelogs@scality/werelogs#semver:^8.2.4":
+werelogs@scality/werelogs#8.2.4, "werelogs@scality/werelogs#semver:^8.2.4":
   version "8.2.4"
   resolved "https://codeload.github.com/scality/werelogs/tar.gz/a7bbb5917a08b035d3763b24b070d517483d6982"
   dependencies:
