@@ -1303,7 +1303,7 @@ describe('getCopyObjectChecksumAlgorithm', () => {
 });
 
 const sigV4Auth =
-    'AWS4-HMAC-SHA256 Credential=AK/20260101/us-east-1/s3/aws4_request, ' + 'SignedHeaders=host, Signature=abc';
+    'AWS4-HMAC-SHA256 Credential=AK/20260101/us-east-1/s3/aws4_request, SignedHeaders=host, Signature=abc';
 
 describe('parseContentSHA256', () => {
     // build SigV4 header-auth headers carrying the given x-amz-content-sha256

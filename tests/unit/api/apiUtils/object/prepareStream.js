@@ -15,7 +15,7 @@ const defaultChecksums = { primary: defaultChecksumData, secondary: null };
 // A literal payload hash is only verified for SigV4 header-authenticated
 // requests, so these tests carry an AWS4 Authorization header.
 const sigV4Auth =
-    'AWS4-HMAC-SHA256 Credential=AK/20210101/us-east-1/s3/aws4_request, ' + 'SignedHeaders=host, Signature=abc';
+    'AWS4-HMAC-SHA256 Credential=AK/20210101/us-east-1/s3/aws4_request, SignedHeaders=host, Signature=abc';
 const bodyData = 'the streamed body';
 const bodyHex = crypto.createHash('sha256').update(Buffer.from(bodyData)).digest('hex');
 

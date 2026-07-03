@@ -17,7 +17,7 @@ const fakeDataRetrievalInfo = { key: 'test-key', dataStoreName: 'mem' };
 // A literal payload hash is only verified for SigV4 header-authenticated
 // requests, so these tests carry an AWS4 Authorization header.
 const sigV4Auth =
-    'AWS4-HMAC-SHA256 Credential=AK/20210101/us-east-1/s3/aws4_request, ' + 'SignedHeaders=host, Signature=abc';
+    'AWS4-HMAC-SHA256 Credential=AK/20210101/us-east-1/s3/aws4_request, SignedHeaders=host, Signature=abc';
 const helloWorldHex = crypto.createHash('sha256').update(Buffer.from('hello world')).digest('hex');
 const wrongHex = 'a'.repeat(64);
 
