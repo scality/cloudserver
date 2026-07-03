@@ -14,8 +14,8 @@ const defaultChecksums = { primary: defaultChecksumData, secondary: null };
 
 // A literal payload hash is only verified for SigV4 header-authenticated
 // requests, so these tests carry an AWS4 Authorization header.
-const sigV4Auth = 'AWS4-HMAC-SHA256 Credential=AK/20210101/us-east-1/s3/aws4_request, '
-    + 'SignedHeaders=host, Signature=abc';
+const sigV4Auth =
+    'AWS4-HMAC-SHA256 Credential=AK/20210101/us-east-1/s3/aws4_request, ' + 'SignedHeaders=host, Signature=abc';
 const bodyData = 'the streamed body';
 const bodyHex = crypto.createHash('sha256').update(Buffer.from(bodyData)).digest('hex');
 
@@ -111,10 +111,13 @@ describe('prepareStream', () => {
 
         it('should call setExpectedChecksum on ChecksumTransform when trailer event fires', done => {
             const body = '0\r\nx-amz-checksum-crc32:AAAAAA==\r\n';
-            const request = makeRequest({
-                'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
-                'x-amz-trailer': 'x-amz-checksum-crc32',
-            }, body);
+            const request = makeRequest(
+                {
+                    'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
+                    'x-amz-trailer': 'x-amz-checksum-crc32',
+                },
+                body,
+            );
             const checksums = makeChecksums('crc32', undefined, true);
             const result = prepareStream(request, null, checksums, log, done);
             result.stream.resume();
@@ -128,10 +131,13 @@ describe('prepareStream', () => {
 
         it('should call errCb when TrailingChecksumTransform emits an error', done => {
             // malformed chunked data triggers an error in TrailingChecksumTransform
-            const request = makeRequest({
-                'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
-                'x-amz-trailer': 'x-amz-checksum-crc32',
-            }, 'zz\r\n'); // invalid hex chunk size
+            const request = makeRequest(
+                {
+                    'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
+                    'x-amz-trailer': 'x-amz-checksum-crc32',
+                },
+                'zz\r\n',
+            ); // invalid hex chunk size
             const checksums = makeChecksums('crc32', undefined, true);
             prepareStream(request, null, checksums, log, err => {
                 assert.strictEqual(err.message, 'InvalidArgument');
@@ -215,10 +221,13 @@ describe('prepareStream', () => {
 
         it('should wire trailer to secondaryChecksumStream for STREAMING-UNSIGNED-PAYLOAD-TRAILER', done => {
             const body = '0\r\nx-amz-checksum-sha256:test-value\r\n';
-            const request = makeRequest({
-                'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
-                'x-amz-trailer': 'x-amz-checksum-sha256',
-            }, body);
+            const request = makeRequest(
+                {
+                    'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
+                    'x-amz-trailer': 'x-amz-checksum-sha256',
+                },
+                body,
+            );
             const checksums = {
                 primary: { algorithm: 'crc64nvme', isTrailer: false, expected: undefined },
                 secondary: { algorithm: 'sha256', isTrailer: true, expected: undefined },
@@ -325,7 +334,9 @@ describe('prepareStream', () => {
         it('should invoke errCb only once when multiple streams error', () => {
             const request = makeRequest({ authorization: sigV4Auth, 'x-amz-content-sha256': bodyHex });
             let count = 0;
-            const result = prepareStream(request, null, defaultChecksums, log, () => { count += 1; });
+            const result = prepareStream(request, null, defaultChecksums, log, () => {
+                count += 1;
+            });
             result.contentSHA256Stream.emit('error', errors.InternalError);
             result.stream.emit('error', errors.InternalError);
             assert.strictEqual(count, 1);

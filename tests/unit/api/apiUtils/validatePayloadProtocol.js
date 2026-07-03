@@ -5,8 +5,8 @@ const { unsupportedSignatureChecksums, supportedSignatureChecksums } = require('
 
 // validatePayloadProtocol only validates x-amz-content-sha256 for SigV4
 // header-authenticated requests (Authorization: "AWS4-...").
-const sigV4 = 'AWS4-HMAC-SHA256 Credential=AK/20260101/us-east-1/s3/aws4_request, '
-    + 'SignedHeaders=host, Signature=abc';
+const sigV4 =
+    'AWS4-HMAC-SHA256 Credential=AK/20260101/us-east-1/s3/aws4_request, ' + 'SignedHeaders=host, Signature=abc';
 const sigV2 = 'AWS AKID:signature';
 const validSha256Hex = 'a'.repeat(64);
 
