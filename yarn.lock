@@ -6636,7 +6636,7 @@ arraybuffer.prototype.slice@^1.0.4:
     simple-glob "^0.2.0"
     socket.io "^4.8.0"
     socket.io-client "^4.8.0"
-    sproxydclient "github:scality/sproxydclient#8.1.0"
+    sproxydclient "github:scality/sproxydclient#8.2.1"
     utf8 "^3.0.0"
     uuid "^10.0.0"
     werelogs scality/werelogs#8.2.4
@@ -12080,6 +12080,14 @@ sprintf-js@~1.0.2:
 "sproxydclient@github:scality/sproxydclient#8.1.0":
   version "8.1.0"
   resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/8f26d4e256780aa85c5a6b7f9a358773d22f3193"
+  dependencies:
+    async "^3.2.6"
+    httpagent "github:scality/httpagent#1.1.0"
+    werelogs scality/werelogs#8.2.0
+
+"sproxydclient@github:scality/sproxydclient#8.2.1":
+  version "8.2.1"
+  resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/501829f5521787e7e946de6792f5806ffa6ec437"
   dependencies:
     async "^3.2.6"
     httpagent "github:scality/httpagent#1.1.0"
