@@ -85,10 +85,7 @@ describe('fetchCapacityMetrics', () => {
         error500.response = { status: 500 };
         utilizationStub.callsArgWith(4, error500);
 
-        await assert.rejects(
-            fetchCapacityMetrics(bucketMd, request, log),
-            err => err === error500,
-        );
+        await assert.rejects(fetchCapacityMetrics(bucketMd, request, log), err => err === error500);
 
         assert(logErrorSpy.calledOnce);
         assert.strictEqual(logErrorSpy.getCall(0).args[1].bucket, 'test-bucket');
@@ -101,10 +98,7 @@ describe('fetchCapacityMetrics', () => {
         connError.code = 'ECONNREFUSED';
         utilizationStub.callsArgWith(4, connError);
 
-        await assert.rejects(
-            fetchCapacityMetrics(bucketMd, request, log),
-            err => err === connError,
-        );
+        await assert.rejects(fetchCapacityMetrics(bucketMd, request, log), err => err === connError);
 
         assert(logErrorSpy.calledOnce);
         assert.strictEqual(logErrorSpy.getCall(0).args[1].statusCode, 'ECONNREFUSED');
