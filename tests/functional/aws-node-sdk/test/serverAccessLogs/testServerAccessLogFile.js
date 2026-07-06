@@ -23,29 +23,76 @@ function truncateLogFileIfExists(filePath) {
     }
 }
 
-async function waitForLogs(filePath, expectedLines, maxRetries, delayMs) {
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-        const logEntries = fs.readFileSync(filePath, 'utf8');
-        const lines = logEntries.trim().split('\n').filter(line => line.length > 0);
-        if (lines.length >= expectedLines) {
-            try {
-                return lines.map(line => JSON.parse(line));
-            } catch (err) {
-                // FIXME(CLDSRV-800): readFileSync may read partial lines making JSON.parse fail, so we need to retry.
-                if (attempt == maxRetries) {
-                    throw new Error(`Failed to read log entries from ${filePath} after ${maxRetries} attempts: ${err}`);
-                }
+function readLogLines(filePath) {
+    return fs
+        .readFileSync(filePath, 'utf8')
+        .trim()
+        .split('\n')
+        .filter(line => line.length > 0);
+}
+
+// Whether a collected log entry satisfies an expected entry's constrained
+// fields (same semantics as validateLogEntry). Lets us ignore unrelated lines
+// from other suites sharing the server's access log file (CLDSRV-923).
+function entryMatchesExpected(entry, properties) {
+    for (const [key, val] of Object.entries(properties)) {
+        if (key === 'unordered') {
+            continue;
+        }
+        if (val === null) {
+            if (key in entry) {
+                return false;
             }
+        } else if (entry[key] !== val) {
+            return false;
+        }
+    }
+    return true;
+}
+
+async function waitForExpectedLogs(filePath, expectedEntries, maxRetries, delayMs) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const lines = readLogLines(filePath);
+        try {
+            const entries = lines.map(line => JSON.parse(line));
+            const available = [...entries];
+            const allFound = expectedEntries.every(exp => {
+                const idx = available.findIndex(entry => entryMatchesExpected(entry, exp));
+                if (idx === -1) {
+                    return false;
+                }
+                available.splice(idx, 1);
+                return true;
+            });
+            if (allFound) {
+                return entries;
+            }
+        } catch {
+            // FIXME(CLDSRV-800): readFileSync may read partial lines making JSON.parse fail, so we need to retry.
         }
         await sleep(delayMs);
     }
-    throw new Error(`Failed to read log entries from ${filePath} after ${maxRetries} attempts`);
+    // Report which expected entries never showed up, to make CI failures diagnosable.
+    const missing = [];
+    try {
+        const available = readLogLines(filePath).map(line => JSON.parse(line));
+        for (const exp of expectedEntries) {
+            const idx = available.findIndex(entry => entryMatchesExpected(entry, exp));
+            if (idx === -1) {
+                missing.push(exp.action || JSON.stringify(exp));
+            } else {
+                available.splice(idx, 1);
+            }
+        }
+    } catch {
+        // ignore parse errors on the diagnostic path
+    }
+    throw new Error(`Missing expected log entries after ${maxRetries} attempts: ${missing.join(', ')} (${filePath})`);
 }
 
 async function waitForAction(filePath, action, maxRetries, delayMs) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
-        const logEntries = fs.readFileSync(filePath, 'utf8');
-        const lines = logEntries.trim().split('\n').filter(line => line.length > 0);
+        const lines = readLogLines(filePath);
         for (const line of lines) {
             try {
                 const obj = JSON.parse(line);
@@ -105,13 +152,15 @@ async function cleanupBuckets(s3) {
     for (const bucket of bucketsResponse.Buckets) {
         const listMPUResponse = await s3.listMultipartUploads({ Bucket: bucket.Name });
         if (listMPUResponse.Uploads && listMPUResponse.Uploads.length > 0) {
-            await Promise.all(listMPUResponse.Uploads.map(upload =>
-                s3.abortMultipartUpload({
-                    Bucket: bucket.Name,
-                    Key: upload.Key,
-                    UploadId: upload.UploadId,
-                }),
-            ));
+            await Promise.all(
+                listMPUResponse.Uploads.map(upload =>
+                    s3.abortMultipartUpload({
+                        Bucket: bucket.Name,
+                        Key: upload.Key,
+                        UploadId: upload.UploadId,
+                    }),
+                ),
+            );
         }
 
         await emptyBucket(s3, bucket.Name, true);
@@ -150,11 +199,11 @@ describe('Server Access Logs - File Output', async () => {
             // 'time': '', // UNKNOWN
             // 'hostname': '', // UNKNOWN
             // 'pid': '', // UNKNOWN
-            'action': 'REQUIRED', // DYNAMIC
-            'accountName': 'Bart', // STATIC
-            'userName': null, // TODO: Add test with IAM user to get a non null userName.
+            action: 'REQUIRED', // DYNAMIC
+            accountName: 'Bart', // STATIC
+            userName: null, // TODO: Add test with IAM user to get a non null userName.
             // 'clientPort': '', // UNKNOWN
-            'httpMethod': 'REQUIRED', // DYNAMIC
+            httpMethod: 'REQUIRED', // DYNAMIC
             // 'bytesDeleted': '', // TODO
             // 'bytesReceived': '', // TODO
             // 'bodyLength': '', // TODO
@@ -162,35 +211,35 @@ describe('Server Access Logs - File Output', async () => {
             // 'elapsed_ms': '', // UNKNOWN
             // 'httpURL': '', // TODO
             // 'startTime': '', // UNKNOWN
-            'requester': '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be', // STATIC
-            'operation': 'REQUIRED', // DYNAMIC
+            requester: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be', // STATIC
+            operation: 'REQUIRED', // DYNAMIC
             // 'requestURI': '', // TODO
-            'errorCode': null,  // DYNAMIC
+            errorCode: null, // DYNAMIC
             // 'objectSize': '', // TODO
             // 'totalTime': '', // UNKNOWN
             // 'turnAroundTime': '', // UNKNOWN
-            'referer': null, // TODO: Add test that sets the referer.
+            referer: null, // TODO: Add test that sets the referer.
             // 'userAgent': // UNKNOWN
             // 'versionID': '', // UNKNOWN
-            'signatureVersion': 'SigV4', // STATIC
-            'cipherSuite': null, // TODO: Add https tests.
-            'authenticationType': 'AuthHeader', // STATIC
+            signatureVersion: 'SigV4', // STATIC
+            cipherSuite: null, // TODO: Add https tests.
+            authenticationType: 'AuthHeader', // STATIC
             // 'hostHeader': '', // UNKNOWN
-            'tlsVersion': null, // TODO: Add https tests.
-            'aclRequired': null, // DYNAMIC (absent for owner, "Yes" when ACL is consulted)
-            'bucketOwner': '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be', // DYNAMIC
+            tlsVersion: null, // TODO: Add https tests.
+            aclRequired: null, // DYNAMIC (absent for owner, "Yes" when ACL is consulted)
+            bucketOwner: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be', // DYNAMIC
             bucketName, // DYNAMIC
             // 'req_id': '', // UNKNOWN
             // 'bytesSent': '', // TODO
             // 'clientIP': '', // UNKNOWN
-            'httpCode': 200, // DYNAMIC
-            'objectKey': null, // DYNAMIC
-            'logFormatVersion': '0', // STATIC
-            'loggingEnabled': false, // DYNAMIC
-            'loggingTargetBucket': null, // DYNAMIC
-            'loggingTargetPrefix': null, // DYNAMIC
-            'awsAccessKeyID': 'accessKey1', // STATIC
-            'raftSessionID': null, // UNKNOWN but available with scality backend, null otherwise
+            httpCode: 200, // DYNAMIC
+            objectKey: null, // DYNAMIC
+            logFormatVersion: '0', // STATIC
+            loggingEnabled: false, // DYNAMIC
+            loggingTargetBucket: null, // DYNAMIC
+            loggingTargetPrefix: null, // DYNAMIC
+            awsAccessKeyID: 'accessKey1', // STATIC
+            raftSessionID: null, // UNKNOWN but available with scality backend, null otherwise
         };
 
         const operations = [
@@ -217,7 +266,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'DeleteBucket',
                             httpCode: 204,
                             httpMethod: 'DELETE',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -230,12 +279,14 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.putBucketCors({
                         Bucket: bucketName,
                         CORSConfiguration: {
-                            CORSRules: [{
-                                AllowedHeaders: ['*'],
-                                AllowedMethods: ['GET', 'PUT'],
-                                AllowedOrigins: ['*'],
-                            }]
-                        }
+                            CORSRules: [
+                                {
+                                    AllowedHeaders: ['*'],
+                                    AllowedMethods: ['GET', 'PUT'],
+                                    AllowedOrigins: ['*'],
+                                },
+                            ],
+                        },
                     });
                     await s3.deleteBucketCors({ Bucket: bucketName });
                 };
@@ -262,7 +313,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'DeleteBucketCors',
                             httpCode: 204,
                             httpMethod: 'DELETE',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -279,10 +330,10 @@ describe('Server Access Logs - File Output', async () => {
                                 {
                                     ApplyServerSideEncryptionByDefault: {
                                         SSEAlgorithm: 'AES256',
-                                    }
-                                }
-                            ]
-                        }
+                                    },
+                                },
+                            ],
+                        },
                     });
                     await s3.deleteBucketEncryption({ Bucket: bucketName });
                 };
@@ -309,7 +360,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'DeleteBucketEncryption',
                             httpCode: 204,
                             httpMethod: 'DELETE',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -352,7 +403,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'DeleteBucketWebsite',
                             httpCode: 204,
                             httpMethod: 'DELETE',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -388,7 +439,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.GET.BUCKET',
                             action: 'ListObjectsV2',
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -424,7 +475,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.GET.BUCKET',
                             action: 'ListObjects',
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -451,7 +502,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.GET.ACL',
                             action: 'GetBucketAcl',
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -464,8 +515,8 @@ describe('Server Access Logs - File Output', async () => {
                         {
                             AllowedOrigins: ['*'],
                             AllowedMethods: ['GET', 'POST'],
-                        }
-                    ]
+                        },
+                    ],
                 };
                 const method = async () => {
                     await s3.createBucket({ Bucket: bucketName });
@@ -494,7 +545,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.GET.CORS',
                             action: 'GetBucketCors',
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -523,7 +574,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.GET.OBJECT',
                             action: 'GetObjectLockConfiguration',
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -549,7 +600,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.GET.VERSIONING',
                             action: 'GetBucketVersioning',
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -587,7 +638,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.GET.WEBSITE',
                             action: 'GetBucketWebsite',
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -613,7 +664,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.GET.LOCATION',
                             action: 'GetBucketLocation',
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -628,10 +679,10 @@ describe('Server Access Logs - File Output', async () => {
                                 {
                                     ApplyServerSideEncryptionByDefault: {
                                         SSEAlgorithm: 'AES256',
-                                    }
-                                }
-                            ]
-                        }
+                                    },
+                                },
+                            ],
+                        },
                     });
                     await s3.getBucketEncryption({ Bucket: bucketName });
                 };
@@ -657,7 +708,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.GET.ENCRYPTION',
                             action: 'GetBucketEncryption',
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -683,7 +734,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.HEAD.BUCKET',
                             action: 'HeadBucket',
                             httpMethod: 'HEAD',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -702,7 +753,7 @@ describe('Server Access Logs - File Output', async () => {
                             bucketOwner: null,
                             action: 'CreateBucket',
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -728,7 +779,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.PUT.ACL',
                             action: 'PutBucketAcl',
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -739,12 +790,14 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.putBucketCors({
                         Bucket: bucketName,
                         CORSConfiguration: {
-                            CORSRules: [{
-                                AllowedHeaders: ['*'],
-                                AllowedMethods: ['GET', 'PUT'],
-                                AllowedOrigins: ['*'],
-                            }]
-                        }
+                            CORSRules: [
+                                {
+                                    AllowedHeaders: ['*'],
+                                    AllowedMethods: ['GET', 'PUT'],
+                                    AllowedOrigins: ['*'],
+                                },
+                            ],
+                        },
                     });
                 };
                 return {
@@ -763,7 +816,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.PUT.CORS',
                             action: 'PutBucketCors',
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -772,7 +825,8 @@ describe('Server Access Logs - File Output', async () => {
                 const method = async () => {
                     await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketVersioning({
-                        Bucket: bucketName, VersioningConfiguration: { Status: 'Enabled' },
+                        Bucket: bucketName,
+                        VersioningConfiguration: { Status: 'Enabled' },
                     });
                 };
                 return {
@@ -791,7 +845,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.PUT.VERSIONING',
                             action: 'PutBucketVersioning',
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -802,8 +856,8 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.putBucketTagging({
                         Bucket: bucketName,
                         Tagging: {
-                            TagSet: [{ Key: 'testKey', Value: 'testValue' }]
-                        }
+                            TagSet: [{ Key: 'testKey', Value: 'testValue' }],
+                        },
                     });
                 };
                 return {
@@ -822,7 +876,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.PUT.TAGGING',
                             action: 'PutBucketTagging',
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -833,8 +887,8 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.putBucketTagging({
                         Bucket: bucketName,
                         Tagging: {
-                            TagSet: [{ Key: 'testKey', Value: 'testValue' }]
-                        }
+                            TagSet: [{ Key: 'testKey', Value: 'testValue' }],
+                        },
                     });
                     await s3.deleteBucketTagging({ Bucket: bucketName });
                 };
@@ -861,7 +915,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'DeleteBucketTagging',
                             httpCode: 204,
                             httpMethod: 'DELETE',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -872,8 +926,8 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.putBucketTagging({
                         Bucket: bucketName,
                         Tagging: {
-                            TagSet: [{ Key: 'testKey', Value: 'testValue' }]
-                        }
+                            TagSet: [{ Key: 'testKey', Value: 'testValue' }],
+                        },
                     });
                     await s3.getBucketTagging({ Bucket: bucketName });
                 };
@@ -899,7 +953,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.GET.TAGGING',
                             action: 'GetBucketTagging',
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -908,22 +962,25 @@ describe('Server Access Logs - File Output', async () => {
                 const method = async () => {
                     await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketVersioning({
-                        Bucket: bucketName, VersioningConfiguration: { Status: 'Enabled' },
+                        Bucket: bucketName,
+                        VersioningConfiguration: { Status: 'Enabled' },
                     });
                     await s3.putBucketReplication({
                         Bucket: bucketName,
                         ReplicationConfiguration: {
                             Role: 'arn:aws:iam::123456789012:role/src-role,arn:aws:iam::123456789012:role/dest-role',
-                            Rules: [{
-                                ID: 'rule1',
-                                Status: 'Enabled',
-                                Priority: 1,
-                                Filter: { Prefix: '' },
-                                Destination: {
-                                    Bucket: 'arn:aws:s3:::destination-bucket'
-                                }
-                            }]
-                        }
+                            Rules: [
+                                {
+                                    ID: 'rule1',
+                                    Status: 'Enabled',
+                                    Priority: 1,
+                                    Filter: { Prefix: '' },
+                                    Destination: {
+                                        Bucket: 'arn:aws:s3:::destination-bucket',
+                                    },
+                                },
+                            ],
+                        },
                     });
                 };
                 return {
@@ -948,7 +1005,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.PUT.REPLICATION',
                             action: 'PutBucketReplication',
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -957,22 +1014,25 @@ describe('Server Access Logs - File Output', async () => {
                 const method = async () => {
                     await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketVersioning({
-                        Bucket: bucketName, VersioningConfiguration: { Status: 'Enabled' },
+                        Bucket: bucketName,
+                        VersioningConfiguration: { Status: 'Enabled' },
                     });
                     await s3.putBucketReplication({
                         Bucket: bucketName,
                         ReplicationConfiguration: {
                             Role: 'arn:aws:iam::123456789012:role/src-role,arn:aws:iam::123456789012:role/dest-role',
-                            Rules: [{
-                                ID: 'rule1',
-                                Status: 'Enabled',
-                                Priority: 1,
-                                Filter: { Prefix: '' },
-                                Destination: {
-                                    Bucket: 'arn:aws:s3:::destination-bucket'
-                                }
-                            }]
-                        }
+                            Rules: [
+                                {
+                                    ID: 'rule1',
+                                    Status: 'Enabled',
+                                    Priority: 1,
+                                    Filter: { Prefix: '' },
+                                    Destination: {
+                                        Bucket: 'arn:aws:s3:::destination-bucket',
+                                    },
+                                },
+                            ],
+                        },
                     });
                     await s3.getBucketReplication({ Bucket: bucketName });
                 };
@@ -1004,7 +1064,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.GET.REPLICATION',
                             action: 'GetBucketReplication',
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1013,22 +1073,25 @@ describe('Server Access Logs - File Output', async () => {
                 const method = async () => {
                     await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketVersioning({
-                        Bucket: bucketName, VersioningConfiguration: { Status: 'Enabled' },
+                        Bucket: bucketName,
+                        VersioningConfiguration: { Status: 'Enabled' },
                     });
                     await s3.putBucketReplication({
                         Bucket: bucketName,
                         ReplicationConfiguration: {
                             Role: 'arn:aws:iam::123456789012:role/src-role,arn:aws:iam::123456789012:role/dest-role',
-                            Rules: [{
-                                ID: 'rule1',
-                                Status: 'Enabled',
-                                Priority: 1,
-                                Filter: { Prefix: '' },
-                                Destination: {
-                                    Bucket: 'arn:aws:s3:::destination-bucket'
-                                }
-                            }]
-                        }
+                            Rules: [
+                                {
+                                    ID: 'rule1',
+                                    Status: 'Enabled',
+                                    Priority: 1,
+                                    Filter: { Prefix: '' },
+                                    Destination: {
+                                        Bucket: 'arn:aws:s3:::destination-bucket',
+                                    },
+                                },
+                            ],
+                        },
                     });
                     await s3.deleteBucketReplication({ Bucket: bucketName });
                 };
@@ -1061,7 +1124,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'DeleteBucketReplication',
                             httpCode: 204,
                             httpMethod: 'DELETE',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1072,13 +1135,15 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.putBucketLifecycleConfiguration({
                         Bucket: bucketName,
                         LifecycleConfiguration: {
-                            Rules: [{
-                                ID: 'rule1',
-                                Status: 'Enabled',
-                                Filter: { Prefix: 'documents/' },
-                                Expiration: { Days: 365 }
-                            }]
-                        }
+                            Rules: [
+                                {
+                                    ID: 'rule1',
+                                    Status: 'Enabled',
+                                    Filter: { Prefix: 'documents/' },
+                                    Expiration: { Days: 365 },
+                                },
+                            ],
+                        },
                     });
                 };
                 return {
@@ -1097,7 +1162,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.PUT.LIFECYCLE',
                             action: 'PutBucketLifecycleConfiguration',
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1108,13 +1173,15 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.putBucketLifecycleConfiguration({
                         Bucket: bucketName,
                         LifecycleConfiguration: {
-                            Rules: [{
-                                ID: 'rule1',
-                                Status: 'Enabled',
-                                Filter: { Prefix: 'documents/' },
-                                Expiration: { Days: 365 }
-                            }]
-                        }
+                            Rules: [
+                                {
+                                    ID: 'rule1',
+                                    Status: 'Enabled',
+                                    Filter: { Prefix: 'documents/' },
+                                    Expiration: { Days: 365 },
+                                },
+                            ],
+                        },
                     });
                     await s3.getBucketLifecycleConfiguration({ Bucket: bucketName });
                 };
@@ -1140,7 +1207,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.GET.LIFECYCLE',
                             action: 'GetBucketLifecycleConfiguration',
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1151,13 +1218,15 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.putBucketLifecycleConfiguration({
                         Bucket: bucketName,
                         LifecycleConfiguration: {
-                            Rules: [{
-                                ID: 'rule1',
-                                Status: 'Enabled',
-                                Filter: { Prefix: 'documents/' },
-                                Expiration: { Days: 365 }
-                            }]
-                        }
+                            Rules: [
+                                {
+                                    ID: 'rule1',
+                                    Status: 'Enabled',
+                                    Filter: { Prefix: 'documents/' },
+                                    Expiration: { Days: 365 },
+                                },
+                            ],
+                        },
                     });
                     await s3.deleteBucketLifecycle({ Bucket: bucketName });
                 };
@@ -1184,7 +1253,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'DeleteBucketLifecycle',
                             httpCode: 204,
                             httpMethod: 'DELETE',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1196,13 +1265,15 @@ describe('Server Access Logs - File Output', async () => {
                         Bucket: bucketName,
                         Policy: JSON.stringify({
                             Version: '2012-10-17',
-                            Statement: [{
-                                Effect: 'Allow',
-                                Principal: '*',
-                                Action: 's3:GetObject',
-                                Resource: `arn:aws:s3:::${bucketName}/*`
-                            }]
-                        })
+                            Statement: [
+                                {
+                                    Effect: 'Allow',
+                                    Principal: '*',
+                                    Action: 's3:GetObject',
+                                    Resource: `arn:aws:s3:::${bucketName}/*`,
+                                },
+                            ],
+                        }),
                     });
                 };
                 return {
@@ -1221,7 +1292,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.PUT.BUCKETPOLICY',
                             action: 'PutBucketPolicy',
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1233,13 +1304,15 @@ describe('Server Access Logs - File Output', async () => {
                         Bucket: bucketName,
                         Policy: JSON.stringify({
                             Version: '2012-10-17',
-                            Statement: [{
-                                Effect: 'Allow',
-                                Principal: '*',
-                                Action: 's3:GetObject',
-                                Resource: `arn:aws:s3:::${bucketName}/*`
-                            }]
-                        })
+                            Statement: [
+                                {
+                                    Effect: 'Allow',
+                                    Principal: '*',
+                                    Action: 's3:GetObject',
+                                    Resource: `arn:aws:s3:::${bucketName}/*`,
+                                },
+                            ],
+                        }),
                     });
                     await s3.getBucketPolicy({ Bucket: bucketName });
                 };
@@ -1265,7 +1338,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.GET.BUCKETPOLICY',
                             action: 'GetBucketPolicy',
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1277,13 +1350,15 @@ describe('Server Access Logs - File Output', async () => {
                         Bucket: bucketName,
                         Policy: JSON.stringify({
                             Version: '2012-10-17',
-                            Statement: [{
-                                Effect: 'Allow',
-                                Principal: '*',
-                                Action: 's3:GetObject',
-                                Resource: `arn:aws:s3:::${bucketName}/*`
-                            }]
-                        })
+                            Statement: [
+                                {
+                                    Effect: 'Allow',
+                                    Principal: '*',
+                                    Action: 's3:GetObject',
+                                    Resource: `arn:aws:s3:::${bucketName}/*`,
+                                },
+                            ],
+                        }),
                     });
                     await s3.deleteBucketPolicy({ Bucket: bucketName });
                 };
@@ -1310,7 +1385,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'DeleteBucketPolicy',
                             httpCode: 204,
                             httpMethod: 'DELETE',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1328,10 +1403,10 @@ describe('Server Access Logs - File Output', async () => {
                             Rule: {
                                 DefaultRetention: {
                                     Mode: 'GOVERNANCE',
-                                    Days: 1
-                                }
-                            }
-                        }
+                                    Days: 1,
+                                },
+                            },
+                        },
                     });
                 };
                 return {
@@ -1350,7 +1425,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.PUT.OBJECT',
                             action: 'PutObjectLockConfiguration',
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1360,7 +1435,7 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketNotificationConfiguration({
                         Bucket: bucketName,
-                        NotificationConfiguration: {}
+                        NotificationConfiguration: {},
                     });
                 };
                 return {
@@ -1379,7 +1454,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.PUT.NOTIFICATION',
                             action: 'PutBucketNotification',
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1405,7 +1480,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.GET.NOTIFICATION',
                             action: 'GetBucketNotification',
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1420,10 +1495,10 @@ describe('Server Access Logs - File Output', async () => {
                                 {
                                     ApplyServerSideEncryptionByDefault: {
                                         SSEAlgorithm: 'AES256',
-                                    }
-                                }
-                            ]
-                        }
+                                    },
+                                },
+                            ],
+                        },
                     });
                 };
                 return {
@@ -1442,7 +1517,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.PUT.ENCRYPTION',
                             action: 'PutBucketEncryption',
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1452,7 +1527,7 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.createBucket({ Bucket: bucketName });
                     await s3.putBucketLogging({
                         Bucket: bucketName,
-                        BucketLoggingStatus: {}
+                        BucketLoggingStatus: {},
                     });
                 };
                 return {
@@ -1471,7 +1546,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.PUT.LOGGING_STATUS',
                             action: 'PutBucketLogging',
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1488,7 +1563,7 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.getBucketLogging({ Bucket: bucketName });
                     await s3.putBucketLogging({
                         Bucket: bucketName,
-                        BucketLoggingStatus: {}
+                        BucketLoggingStatus: {},
                     });
                 };
                 return {
@@ -1525,7 +1600,7 @@ describe('Server Access Logs - File Output', async () => {
                             loggingTargetBucket: bucketName,
                             loggingTargetPrefix: 'prefix',
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1533,25 +1608,26 @@ describe('Server Access Logs - File Output', async () => {
                 // This operation tests completing a multipart upload.
                 const method = async () => {
                     await s3.createBucket({ Bucket: bucketName });
-                    const uploadId =
-                        (await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey })).UploadId;
+                    const uploadId = (await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey })).UploadId;
                     const uploadPartResponse = await s3.uploadPart({
                         Bucket: bucketName,
                         Key: objectKey,
                         PartNumber: 1,
                         UploadId: uploadId,
-                        Body: 'test data'
+                        Body: 'test data',
                     });
                     await s3.completeMultipartUpload({
                         Bucket: bucketName,
                         Key: objectKey,
                         UploadId: uploadId,
                         MultipartUpload: {
-                            Parts: [{
-                                ETag: uploadPartResponse.ETag,
-                                PartNumber: 1
-                            }]
-                        }
+                            Parts: [
+                                {
+                                    ETag: uploadPartResponse.ETag,
+                                    PartNumber: 1,
+                                },
+                            ],
+                        },
                     });
                 };
                 return {
@@ -1585,7 +1661,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'CompleteMultipartUpload',
                             objectKey,
                             httpMethod: 'POST',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1612,7 +1688,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'CreateMultipartUpload',
                             objectKey,
                             httpMethod: 'POST',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1646,7 +1722,7 @@ describe('Server Access Logs - File Output', async () => {
                             operation: 'REST.GET.UPLOADS',
                             action: 'ListMultipartUploads',
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1654,14 +1730,13 @@ describe('Server Access Logs - File Output', async () => {
                 // This operation tests listing parts of a multipart upload.
                 const method = async () => {
                     await s3.createBucket({ Bucket: bucketName });
-                    const uploadId =
-                        (await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey })).UploadId;
+                    const uploadId = (await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey })).UploadId;
                     await s3.uploadPart({
                         Bucket: bucketName,
                         Key: objectKey,
                         PartNumber: 1,
                         UploadId: uploadId,
-                        Body: 'test data'
+                        Body: 'test data',
                     });
                     await s3.listParts({ Bucket: bucketName, Key: objectKey, UploadId: uploadId });
                 };
@@ -1696,7 +1771,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'ListParts',
                             objectKey,
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1712,9 +1787,9 @@ describe('Server Access Logs - File Output', async () => {
                             Objects: [
                                 { Key: objectKey },
                                 { Key: `${objectKey}2` },
-                                { Key: `${objectKey}-non-existent` }
-                            ]
-                        }
+                                { Key: `${objectKey}-non-existent` },
+                            ],
+                        },
                     });
                 };
                 return {
@@ -1784,7 +1859,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'DeleteObjects',
                             httpMethod: 'POST',
                             objectKey: null,
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1792,8 +1867,7 @@ describe('Server Access Logs - File Output', async () => {
                 // This operation tests aborting a multipart upload.
                 const method = async () => {
                     await s3.createBucket({ Bucket: bucketName });
-                    const uploadId =
-                        (await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey })).UploadId;
+                    const uploadId = (await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey })).UploadId;
                     await s3.abortMultipartUpload({ Bucket: bucketName, Key: objectKey, UploadId: uploadId });
                 };
                 return {
@@ -1821,7 +1895,7 @@ describe('Server Access Logs - File Output', async () => {
                             httpCode: 204,
                             objectKey,
                             httpMethod: 'DELETE',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1857,7 +1931,7 @@ describe('Server Access Logs - File Output', async () => {
                             httpCode: 204,
                             objectKey,
                             httpMethod: 'DELETE',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1870,8 +1944,8 @@ describe('Server Access Logs - File Output', async () => {
                         Bucket: bucketName,
                         Key: objectKey,
                         Tagging: {
-                            TagSet: [{ Key: 'testKey', Value: 'testValue' }]
-                        }
+                            TagSet: [{ Key: 'testKey', Value: 'testValue' }],
+                        },
                     });
                     await s3.deleteObjectTagging({ Bucket: bucketName, Key: objectKey });
                 };
@@ -1907,7 +1981,7 @@ describe('Server Access Logs - File Output', async () => {
                             httpCode: 204,
                             objectKey,
                             httpMethod: 'DELETE',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1942,7 +2016,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'GetObject',
                             objectKey,
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -1977,7 +2051,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'GetObjectAttributes',
                             objectKey,
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -2012,7 +2086,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'GetObjectAcl',
                             objectKey,
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -2027,13 +2101,13 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.putObjectLegalHold({
                         Bucket: bucketName,
                         Key: objectKey,
-                        LegalHold: { Status: 'ON' }
+                        LegalHold: { Status: 'ON' },
                     });
                     await s3.getObjectLegalHold({ Bucket: bucketName, Key: objectKey });
                     await s3.putObjectLegalHold({
                         Bucket: bucketName,
                         Key: objectKey,
-                        LegalHold: { Status: 'OFF' }
+                        LegalHold: { Status: 'OFF' },
                     });
                 };
                 return {
@@ -2074,7 +2148,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'PutObjectLegalHold',
                             objectKey,
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -2093,8 +2167,8 @@ describe('Server Access Logs - File Output', async () => {
                         Key: objectKey,
                         Retention: {
                             Mode: 'GOVERNANCE',
-                            RetainUntilDate: retainUntilDate
-                        }
+                            RetainUntilDate: retainUntilDate,
+                        },
                     });
                     await s3.getObjectRetention({ Bucket: bucketName, Key: objectKey });
                 };
@@ -2129,7 +2203,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'GetObjectRetention',
                             objectKey,
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -2164,7 +2238,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'GetObjectTagging',
                             objectKey,
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -2176,7 +2250,7 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.copyObject({
                         Bucket: bucketName,
                         CopySource: `${bucketName}/${objectKey}`,
-                        Key: `${objectKey}-copy`
+                        Key: `${objectKey}-copy`,
                     });
                 };
                 return {
@@ -2215,7 +2289,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'CopyObject',
                             objectKey: `${objectKey}-copy`,
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -2250,7 +2324,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'PutObjectAcl',
                             objectKey,
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -2265,12 +2339,12 @@ describe('Server Access Logs - File Output', async () => {
                     await s3.putObjectLegalHold({
                         Bucket: bucketName,
                         Key: objectKey,
-                        LegalHold: { Status: 'ON' }
+                        LegalHold: { Status: 'ON' },
                     });
                     await s3.putObjectLegalHold({
                         Bucket: bucketName,
                         Key: objectKey,
-                        LegalHold: { Status: 'OFF' }
+                        LegalHold: { Status: 'OFF' },
                     });
                 };
                 return {
@@ -2304,7 +2378,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'PutObjectLegalHold',
                             objectKey,
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -2317,8 +2391,8 @@ describe('Server Access Logs - File Output', async () => {
                         Bucket: bucketName,
                         Key: objectKey,
                         Tagging: {
-                            TagSet: [{ Key: 'testKey', Value: 'testValue' }]
-                        }
+                            TagSet: [{ Key: 'testKey', Value: 'testValue' }],
+                        },
                     });
                 };
                 return {
@@ -2345,7 +2419,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'PutObjectTagging',
                             objectKey,
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -2353,14 +2427,13 @@ describe('Server Access Logs - File Output', async () => {
                 // This operation tests uploading a part in a multipart upload.
                 const method = async () => {
                     await s3.createBucket({ Bucket: bucketName });
-                    const uploadId =
-                        (await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey })).UploadId;
+                    const uploadId = (await s3.createMultipartUpload({ Bucket: bucketName, Key: objectKey })).UploadId;
                     await s3.uploadPart({
                         Bucket: bucketName,
                         Key: objectKey,
                         PartNumber: 1,
                         UploadId: uploadId,
-                        Body: 'test data'
+                        Body: 'test data',
                     });
                 };
                 return {
@@ -2387,7 +2460,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'UploadPart',
                             objectKey,
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -2396,15 +2469,14 @@ describe('Server Access Logs - File Output', async () => {
                 const method = async () => {
                     await s3.createBucket({ Bucket: bucketName });
                     await s3.putObject({ Bucket: bucketName, Key: objectKey, Body: 'test data for copy' });
-                    const uploadId =
-                        (await s3.createMultipartUpload({ Bucket: bucketName, Key: `${objectKey}-mpu` }))
-                            .UploadId;
+                    const uploadId = (await s3.createMultipartUpload({ Bucket: bucketName, Key: `${objectKey}-mpu` }))
+                        .UploadId;
                     await s3.uploadPartCopy({
                         Bucket: bucketName,
                         Key: `${objectKey}-mpu`,
                         PartNumber: 1,
                         UploadId: uploadId,
-                        CopySource: `${bucketName}/${objectKey}`
+                        CopySource: `${bucketName}/${objectKey}`,
                     });
                 };
                 return {
@@ -2450,7 +2522,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'UploadPartCopy',
                             objectKey: `${objectKey}-mpu`,
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -2469,8 +2541,8 @@ describe('Server Access Logs - File Output', async () => {
                         Key: objectKey,
                         Retention: {
                             Mode: 'GOVERNANCE',
-                            RetainUntilDate: retainUntilDate
-                        }
+                            RetainUntilDate: retainUntilDate,
+                        },
                     });
                 };
                 return {
@@ -2497,11 +2569,11 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'PutObjectRetention',
                             objectKey,
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
-            // Note: objectRestore can only be called on objects in GLACIER, DEEP_ARCHIVE, or 
+            // Note: objectRestore can only be called on objects in GLACIER, DEEP_ARCHIVE, or
             // GLACIER_IR storage classes. Since CloudServer only supports STANDARD storage class
             // by default, this operation returns "InvalidObjectState" error and cannot be tested.
             // This test is commented out until archive storage class support is added.
@@ -2509,9 +2581,9 @@ describe('Server Access Logs - File Output', async () => {
             //     // This operation tests the restore object API call.
             //     const method = async () => {
             //         await s3.createBucket({ Bucket: bucketName });
-            //         await s3.putObject({ 
-            //             Bucket: bucketName, 
-            //             Key: objectKey, 
+            //         await s3.putObject({
+            //             Bucket: bucketName,
+            //             Key: objectKey,
             //             Body: 'test data',
             //             StorageClass: 'GLACIER'  // Not supported in CloudServer
             //         });
@@ -2549,7 +2621,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'PutObject',
                             objectKey,
                             httpMethod: 'PUT',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -2584,7 +2656,7 @@ describe('Server Access Logs - File Output', async () => {
                             action: 'HeadObject',
                             objectKey,
                             httpMethod: 'HEAD',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -2612,7 +2684,7 @@ describe('Server Access Logs - File Output', async () => {
                             bucketOwner: null,
                             bucketName: null,
                             httpMethod: 'GET',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -2620,7 +2692,7 @@ describe('Server Access Logs - File Output', async () => {
                 // Test errorCode is set.
                 const method = async () => {
                     try {
-                        await s3.deleteBucket({ Bucket: 'xxx'});
+                        await s3.deleteBucket({ Bucket: 'xxx' });
                     } catch {
                         return;
                     }
@@ -2638,7 +2710,7 @@ describe('Server Access Logs - File Output', async () => {
                             bucketOwner: null,
                             bucketName: 'xxx',
                             httpMethod: 'DELETE',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -2665,7 +2737,7 @@ describe('Server Access Logs - File Output', async () => {
                             bucketName: 'xxx',
                             httpMethod: 'PUT',
                             objectKey: 'key',
-                        }
+                        },
                     ],
                 };
             })(),
@@ -2692,10 +2764,10 @@ describe('Server Access Logs - File Output', async () => {
                             bucketName: 'xxx',
                             httpMethod: 'GET',
                             objectKey: 'key',
-                        }
+                        },
                     ],
                 };
-            })()
+            })(),
             // TODO: CLDSRV-799
             // (() => {
             //     // Test errorCode is set.
@@ -2747,80 +2819,78 @@ describe('Server Access Logs - File Output', async () => {
 
         afterEach(async () => {
             const lastAction = await cleanupBuckets(s3, bucketName);
-            await waitForAction(logFilePath, lastAction,
-                TEST_CONFIG.MAX_LOG_WAIT_RETRIES, TEST_CONFIG.LOG_POLL_DELAY_MS);
+            await waitForAction(
+                logFilePath,
+                lastAction,
+                TEST_CONFIG.MAX_LOG_WAIT_RETRIES,
+                TEST_CONFIG.LOG_POLL_DELAY_MS,
+            );
             truncateLogFileIfExists(logFilePath);
         });
 
         // Helper function to validate a log entry against expected properties
         const validateLogEntry = (logEntry, properties) => {
             const result = tv4.validateResult(logEntry, schema);
-            assert.strictEqual(result.valid, true,
-                `Log entry should match schema: ${JSON.stringify(result.error)}`);
+            assert.strictEqual(result.valid, true, `Log entry should match schema: ${JSON.stringify(result.error)}`);
 
             for (const [key, val] of Object.entries(properties)) {
                 if (val === null) {
-                    assert.strictEqual(key in logEntry, false,
-                        `Field ${key} should be omitted when null, action ${properties.action}`);
+                    assert.strictEqual(
+                        key in logEntry,
+                        false,
+                        `Field ${key} should be omitted when null, action ${properties.action}`,
+                    );
                 } else {
-                    assert.strictEqual(logEntry[key], val,
-                        `Invalid value for ${key}, action ${properties.action}`);
+                    assert.strictEqual(logEntry[key], val, `Invalid value for ${key}, action ${properties.action}`);
                 }
             }
 
             if (config.backends.metadata === 'scality') {
-                assert.strictEqual('raftSessionID' in logEntry, true,
-                    `raftSessionID should be present for action ${properties.action}`);
-                assert.strictEqual(typeof logEntry.raftSessionID, 'string',
-                    `raftSessionID should be a string for action ${properties.action}`);
-                assert.strictEqual(logEntry.raftSessionID.length > 0, true,
-                    `raftSessionID should not be empty for action ${properties.action}`);
+                assert.strictEqual(
+                    'raftSessionID' in logEntry,
+                    true,
+                    `raftSessionID should be present for action ${properties.action}`,
+                );
+                assert.strictEqual(
+                    typeof logEntry.raftSessionID,
+                    'string',
+                    `raftSessionID should be a string for action ${properties.action}`,
+                );
+                assert.strictEqual(
+                    logEntry.raftSessionID.length > 0,
+                    true,
+                    `raftSessionID should not be empty for action ${properties.action}`,
+                );
             }
         };
 
         for (const operation of operations) {
             it(`should log correct ${operation.methodName} operation with all required fields`, async () => {
                 await operation.method();
-                // Count total expected logs, including unordered entries
-                let totalExpected = 0;
-                for (const exp of operation.expected) {
-                    totalExpected += exp.unordered ? exp.unordered.length : 1;
-                }
-                const logEntries = await waitForLogs(logFilePath, totalExpected,
-                    TEST_CONFIG.MAX_LOG_WAIT_RETRIES, TEST_CONFIG.LOG_POLL_DELAY_MS);
-                assert.strictEqual(logEntries.length, totalExpected,
-                    `Expected ${totalExpected} log entries, got ${logEntries.length}`);
+                // Flatten unordered groups; each entry is matched independently.
+                const expectedEntries = operation.expected.flatMap(exp => (exp.unordered ? exp.unordered : [exp]));
+                // The access log file is shared across the server process and a
+                // line can be written on a late res 'close', so other suites'
+                // lines can interleave. Match expected entries by field and ignore
+                // the rest instead of asserting an exact count (CLDSRV-923).
+                const logEntries = await waitForExpectedLogs(
+                    logFilePath,
+                    expectedEntries,
+                    TEST_CONFIG.MAX_LOG_WAIT_RETRIES,
+                    TEST_CONFIG.LOG_POLL_DELAY_MS,
+                );
 
-                let logIdx = 0;
-
-                // Validate entries (ordered or unordered)
-                for (let i = 0; i < operation.expected.length; i++) {
-                    const expected = operation.expected[i];
-
-                    if (expected.unordered) {
-                        // Handle unordered entries
-                        const unorderedLogs = logEntries.slice(logIdx, logIdx + expected.unordered.length);
-                        const remaining = [...expected.unordered];
-
-                        for (const logEntry of unorderedLogs) {
-                            const matchIdx = remaining.findIndex(exp => exp.objectKey === logEntry.objectKey);
-
-                            assert.notStrictEqual(matchIdx, -1,
-                                `Unexpected log entry with objectKey: ${logEntry.objectKey}`);
-
-                            validateLogEntry(logEntry, remaining[matchIdx]);
-                            remaining.splice(matchIdx, 1);
-                        }
-
-                        assert.strictEqual(remaining.length, 0,
-                            `Missing expected entries: ${JSON.stringify(remaining)}`);
-
-                        logIdx += expected.unordered.length;
-                    } else {
-                        // Handle ordered entry
-                        validateLogEntry(logEntries[logIdx], expected);
-                        logIdx++;
-                    }
+                const available = [...logEntries];
+                for (const expected of expectedEntries) {
+                    const idx = available.findIndex(entry => entryMatchesExpected(entry, expected));
+                    const keyInfo = expected.objectKey ? ` (objectKey ${expected.objectKey})` : '';
+                    assert.notStrictEqual(
+                        idx,
+                        -1,
+                        `Missing expected log entry for action ${expected.action}${keyInfo}`,
+                    );
+                    validateLogEntry(available[idx], expected);
+                    available.splice(idx, 1);
                 }
             });
         }
