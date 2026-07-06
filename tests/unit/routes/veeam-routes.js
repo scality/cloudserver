@@ -105,7 +105,7 @@ describe('Veeam routes - comprehensive unit tests', () => {
     it('should handle 404 error from UtilizationService and return 200', async () => {
         const error404 = new Error('Not Found');
         error404.response = { status: 404 };
-        utilizationStub.callsArgWith(5, error404);
+        utilizationStub.rejects(error404);
 
         const request = createRequest();
         const response = createResponse();
@@ -124,7 +124,7 @@ describe('Veeam routes - comprehensive unit tests', () => {
     it('should handle 500 error from UtilizationService and return 500', async () => {
         const error500 = new Error('Internal Server Error');
         error500.response = { status: 500 };
-        utilizationStub.callsArgWith(5, error500);
+        utilizationStub.rejects(error500);
 
         const request = createRequest();
         const response = createResponse();
@@ -140,7 +140,7 @@ describe('Veeam routes - comprehensive unit tests', () => {
     it('should handle connection error from UtilizationService and return 500', async () => {
         const errorConn = new Error('Connection refused');
         errorConn.code = 'ECONNREFUSED';
-        utilizationStub.callsArgWith(5, errorConn);
+        utilizationStub.rejects(errorConn);
 
         const request = createRequest();
         const response = createResponse();
@@ -159,7 +159,7 @@ describe('Veeam routes - comprehensive unit tests', () => {
             bytesTotal: 123456789,
             date: metricsDate,
         };
-        utilizationStub.callsArgWith(5, null, bucketMetrics);
+        utilizationStub.resolves(bucketMetrics);
 
         const request = createRequest();
         const response = createResponse();
@@ -211,7 +211,7 @@ describe('Veeam routes - comprehensive unit tests', () => {
         // because no metrics are available yet
         const error404 = new Error('Not Found');
         error404.response = { status: 404 };
-        utilizationStub.callsArgWith(5, error404);
+        utilizationStub.rejects(error404);
 
         const request = createRequest();
         const response = createResponse();
@@ -352,7 +352,7 @@ describe('Veeam routes - HEAD request UtilizationService error handling', () => 
 
     it('should call UtilizationService for capacity.xml and use metrics date', async () => {
         const metricsDate = '2026-03-26T19:00:08.996Z';
-        utilizationStub.callsArgWith(5, null, { bytesTotal: 123456789, date: metricsDate });
+        utilizationStub.resolves({ bytesTotal: 123456789, date: metricsDate });
 
         const request = createRequest('.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml');
         const response = createResponse();
@@ -375,7 +375,7 @@ describe('Veeam routes - HEAD request UtilizationService error handling', () => 
     it('should handle 404 from UtilizationService on HEAD and return 200', async () => {
         const error404 = new Error('Not Found');
         error404.response = { status: 404 };
-        utilizationStub.callsArgWith(5, error404);
+        utilizationStub.rejects(error404);
 
         const request = createRequest('.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml');
         const response = createResponse();
@@ -392,7 +392,7 @@ describe('Veeam routes - HEAD request UtilizationService error handling', () => 
     it('should handle non-404 error from UtilizationService on HEAD and return 500', async () => {
         const error500 = new Error('Internal Server Error');
         error500.response = { status: 500 };
-        utilizationStub.callsArgWith(5, error500);
+        utilizationStub.rejects(error500);
 
         const request = createRequest('.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml');
         const response = createResponse();
@@ -408,7 +408,7 @@ describe('Veeam routes - HEAD request UtilizationService error handling', () => 
             _capabilities: {},
         };
         metadataStub.callsArgWith(2, null, bucketMdWithoutVeeam);
-        utilizationStub.callsArgWith(5, null, {});
+        utilizationStub.resolves({});
 
         const request = createRequest();
         const response = createResponse();
@@ -507,7 +507,7 @@ describe('Veeam routes - LIST request handling', () => {
 
     it('should list both system.xml and capacity.xml when both are present', async () => {
         const metricsDate = '2026-03-26T19:00:08.996Z';
-        utilizationStub.callsArgWith(5, null, { bytesTotal: 123456789, date: metricsDate });
+        utilizationStub.resolves({ bytesTotal: 123456789, date: metricsDate });
 
         const request = createRequest();
         const response = createResponse();
@@ -520,7 +520,7 @@ describe('Veeam routes - LIST request handling', () => {
     });
 
     it('should emit LastModified in ISO 8601 format in XML body', async () => {
-        utilizationStub.callsArgWith(5, null, { bytesTotal: 0, date: new Date().toISOString() });
+        utilizationStub.resolves({ bytesTotal: 0, date: new Date().toISOString() });
 
         const request = createRequest();
         const response = createResponse();
@@ -556,7 +556,7 @@ describe('Veeam routes - LIST request handling', () => {
     it('should handle 404 from UtilizationService on LIST and return 200', async () => {
         const error404 = new Error('Not Found');
         error404.response = { status: 404 };
-        utilizationStub.callsArgWith(5, error404);
+        utilizationStub.rejects(error404);
 
         const request = createRequest();
         const response = createResponse();
@@ -573,7 +573,7 @@ describe('Veeam routes - LIST request handling', () => {
     it('should handle non-404 error from UtilizationService on LIST and return 500', async () => {
         const error500 = new Error('Internal Server Error');
         error500.response = { status: 500 };
-        utilizationStub.callsArgWith(5, error500);
+        utilizationStub.rejects(error500);
 
         const request = createRequest();
         const response = createResponse();
@@ -584,7 +584,7 @@ describe('Veeam routes - LIST request handling', () => {
     });
 
     it('should handle versions query parameter', async () => {
-        utilizationStub.callsArgWith(5, null, { bytesTotal: 0, date: new Date().toISOString() });
+        utilizationStub.resolves({ bytesTotal: 0, date: new Date().toISOString() });
         const request = createRequest({ versions: '' });
         const response = createResponse();
 

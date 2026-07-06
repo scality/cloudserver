@@ -8,6 +8,7 @@ const {
 } = require('../../../../../lib/api/apiUtils/quotas/quotaUtils');
 const QuotaService = require('../../../../../lib/utilization/instance');
 const BucketInfo = require('arsenal').models.BucketInfo;
+const { default: ScubaClient } = require('scubaclient');
 
 const mockLog = {
     warn: sinon.stub(),
@@ -27,6 +28,8 @@ const mockBucketNoQuota = {
 };
 
 describe('validateQuotas (buckets)', () => {
+    let getLatestMetricsStub;
+
     const request = {
         getQuota: () => 100n,
     };
@@ -42,7 +45,7 @@ describe('validateQuotas (buckets)', () => {
         };
         sinon.stub(config, 'isQuotaEnabled').returns(true);
         QuotaService.enabled = true;
-        QuotaService._getLatestMetricsCallback = sinon.stub().resolves({});
+        getLatestMetricsStub = sinon.stub(ScubaClient.prototype, 'getLatestMetrics').resolves({});
         request.finalizerHooks = [];
     });
 
@@ -53,7 +56,7 @@ describe('validateQuotas (buckets)', () => {
     it('should return null if quota is <= 0', done => {
         validateQuotas(request, mockBucketNoQuota, {}, [], '', false, false, mockLog, err => {
             assert.ifError(err);
-            assert.strictEqual(QuotaService._getLatestMetricsCallback.called, false);
+            assert.strictEqual(getLatestMetricsStub.called, false);
             done();
         });
     });
@@ -62,7 +65,7 @@ describe('validateQuotas (buckets)', () => {
         QuotaService.enabled = false;
         validateQuotas(request, mockBucket, {}, [], '', false, false, mockLog, err => {
             assert.ifError(err);
-            assert.strictEqual(QuotaService._getLatestMetricsCallback.called, false);
+            assert.strictEqual(getLatestMetricsStub.called, false);
             done();
         });
     });
@@ -70,13 +73,13 @@ describe('validateQuotas (buckets)', () => {
     it('should return null if metrics retrieval fails', done => {
         QuotaService.enabled = true;
         const error = new Error('Failed to get metrics');
-        QuotaService._getLatestMetricsCallback.yields(error);
+        getLatestMetricsStub.rejects(error);
 
         validateQuotas(request, mockBucket, {}, ['objectPut', 'getObject'], 'objectPut', 1, false, mockLog, err => {
             assert.ifError(err);
-            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+            assert.strictEqual(getLatestMetricsStub.calledOnce, true);
             assert.strictEqual(
-                QuotaService._getLatestMetricsCallback.calledWith('bucket', 'bucketName_1640995200000', null, {
+                getLatestMetricsStub.calledWith('bucket', 'bucketName_1640995200000', null, {
                     action: 'objectPut',
                     inflight: 1,
                 }),
@@ -93,15 +96,15 @@ describe('validateQuotas (buckets)', () => {
         const result2 = {
             bytesTotal: BigInt(120),
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
-        QuotaService._getLatestMetricsCallback.yields(null, result2);
+        getLatestMetricsStub.resolves(result1);
+        getLatestMetricsStub.resolves(result2);
 
         validateQuotas(request, mockBucket, {}, ['objectPut', 'getObject'], 'objectPut', 1, false, mockLog, err => {
             assert.strictEqual(err.is.QuotaExceeded, true);
-            assert.strictEqual(QuotaService._getLatestMetricsCallback.callCount, 1);
+            assert.strictEqual(getLatestMetricsStub.callCount, 1);
             assert.strictEqual(request.finalizerHooks.length, 1);
             assert.strictEqual(
-                QuotaService._getLatestMetricsCallback.calledWith('bucket', 'bucketName_1640995200000', null, {
+                getLatestMetricsStub.calledWith('bucket', 'bucketName_1640995200000', null, {
                     action: 'objectPut',
                     inflight: 1,
                 }),
@@ -118,14 +121,14 @@ describe('validateQuotas (buckets)', () => {
         const result2 = {
             bytesTotal: BigInt(120),
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
-        QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
+        getLatestMetricsStub.resolves(result1);
+        getLatestMetricsStub.onCall(1).resolves(result2);
 
         validateQuotas(request, mockBucket, {}, ['objectDelete'], 'objectDelete', 0, false, mockLog, err => {
             assert.ifError(err);
-            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+            assert.strictEqual(getLatestMetricsStub.calledOnce, true);
             assert.strictEqual(
-                QuotaService._getLatestMetricsCallback.calledWith('bucket', 'bucketName_1640995200000', null, {
+                getLatestMetricsStub.calledWith('bucket', 'bucketName_1640995200000', null, {
                     action: 'objectDelete',
                     inflight: 0,
                 }),
@@ -142,14 +145,14 @@ describe('validateQuotas (buckets)', () => {
         const result2 = {
             bytesTotal: BigInt(120),
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
-        QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
+        getLatestMetricsStub.resolves(result1);
+        getLatestMetricsStub.onCall(1).resolves(result2);
 
         validateQuotas(request, mockBucket, {}, ['objectDelete'], 'objectDelete', -50, false, mockLog, err => {
             assert.ifError(err);
-            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+            assert.strictEqual(getLatestMetricsStub.calledOnce, true);
             assert.strictEqual(
-                QuotaService._getLatestMetricsCallback.calledWith('bucket', 'bucketName_1640995200000', null, {
+                getLatestMetricsStub.calledWith('bucket', 'bucketName_1640995200000', null, {
                     action: 'objectDelete',
                     inflight: -50,
                 }),
@@ -166,14 +169,14 @@ describe('validateQuotas (buckets)', () => {
         const result2 = {
             bytesTotal: BigInt(120),
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
-        QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
+        getLatestMetricsStub.resolves(result1);
+        getLatestMetricsStub.onCall(1).resolves(result2);
 
         validateQuotas(request, mockBucket, {}, ['objectDelete'], 'objectDeleteVersion', -50, false, mockLog, err => {
             assert.ifError(err);
-            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+            assert.strictEqual(getLatestMetricsStub.calledOnce, true);
             assert.strictEqual(
-                QuotaService._getLatestMetricsCallback.calledWith('bucket', 'bucketName_1640995200000', null, {
+                getLatestMetricsStub.calledWith('bucket', 'bucketName_1640995200000', null, {
                     action: 'objectDelete',
                     inflight: -50,
                 }),
@@ -190,14 +193,14 @@ describe('validateQuotas (buckets)', () => {
         const result2 = {
             bytesTotal: BigInt(120),
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
-        QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
+        getLatestMetricsStub.resolves(result1);
+        getLatestMetricsStub.onCall(1).resolves(result2);
 
         validateQuotas(request, mockBucket, {}, ['objectDelete'], 'objectDelete', -5000, false, mockLog, err => {
             assert.ifError(err);
-            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+            assert.strictEqual(getLatestMetricsStub.calledOnce, true);
             assert.strictEqual(
-                QuotaService._getLatestMetricsCallback.calledWith('bucket', 'bucketName_1640995200000', null, {
+                getLatestMetricsStub.calledWith('bucket', 'bucketName_1640995200000', null, {
                     action: 'objectDelete',
                     inflight: -5000,
                 }),
@@ -214,8 +217,8 @@ describe('validateQuotas (buckets)', () => {
         const result2 = {
             bytesTotal: BigInt(90),
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
-        QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
+        getLatestMetricsStub.resolves(result1);
+        getLatestMetricsStub.onCall(1).resolves(result2);
 
         validateQuotas(
             request,
@@ -228,9 +231,9 @@ describe('validateQuotas (buckets)', () => {
             mockLog,
             err => {
                 assert.ifError(err);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.calledTwice, true);
+                assert.strictEqual(getLatestMetricsStub.calledTwice, true);
                 assert.strictEqual(
-                    QuotaService._getLatestMetricsCallback.calledWith('bucket', 'bucketName_1640995200000', null, {
+                    getLatestMetricsStub.calledWith('bucket', 'bucketName_1640995200000', null, {
                         action: 'objectRestore',
                         inflight: true,
                     }),
@@ -249,8 +252,8 @@ describe('validateQuotas (buckets)', () => {
         const result2 = {
             bytesTotal: BigInt(90),
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
-        QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
+        getLatestMetricsStub.resolves(result1);
+        getLatestMetricsStub.onCall(1).resolves(result2);
 
         validateQuotas(
             request,
@@ -263,9 +266,9 @@ describe('validateQuotas (buckets)', () => {
             mockLog,
             err => {
                 assert.ifError(err);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.calledTwice, true);
+                assert.strictEqual(getLatestMetricsStub.calledTwice, true);
                 assert.strictEqual(
-                    QuotaService._getLatestMetricsCallback.calledWith('bucket', 'bucketName_1640995200000', null, {
+                    getLatestMetricsStub.calledWith('bucket', 'bucketName_1640995200000', null, {
                         action: 'objectRestore',
                         inflight: undefined,
                     }),
@@ -283,14 +286,14 @@ describe('validateQuotas (buckets)', () => {
         const result2 = {
             bytesTotal: BigInt(90),
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
-        QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
+        getLatestMetricsStub.resolves(result1);
+        getLatestMetricsStub.onCall(1).resolves(result2);
 
         validateQuotas(request, mockBucket, {}, ['objectPut'], 'objectPut', true, true, mockLog, err => {
             assert.ifError(err);
-            assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+            assert.strictEqual(getLatestMetricsStub.calledOnce, true);
             assert.strictEqual(
-                QuotaService._getLatestMetricsCallback.calledWith('bucket', 'bucketName_1640995200000', null, {
+                getLatestMetricsStub.calledWith('bucket', 'bucketName_1640995200000', null, {
                     action: 'objectPut',
                     inflight: 0,
                 }),
@@ -305,7 +308,7 @@ describe('validateQuotas (buckets)', () => {
         const result1 = {
             bytesTotal: largeNumber,
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
+        getLatestMetricsStub.resolves(result1);
 
         validateQuotas(
             request,
@@ -321,9 +324,9 @@ describe('validateQuotas (buckets)', () => {
             mockLog,
             err => {
                 assert.ifError(err);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+                assert.strictEqual(getLatestMetricsStub.calledOnce, true);
                 assert.strictEqual(
-                    QuotaService._getLatestMetricsCallback.calledWith('bucket', 'bucketName_1640995200000', null, {
+                    getLatestMetricsStub.calledWith('bucket', 'bucketName_1640995200000', null, {
                         action: 'objectPut',
                         inflight: 1,
                     }),
@@ -339,7 +342,7 @@ describe('validateQuotas (buckets)', () => {
         const result1 = {
             bytesTotal: largeNumber,
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
+        getLatestMetricsStub.resolves(result1);
 
         validateQuotas(
             request,
@@ -355,7 +358,7 @@ describe('validateQuotas (buckets)', () => {
             mockLog,
             err => {
                 assert.strictEqual(err.is.QuotaExceeded, true);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+                assert.strictEqual(getLatestMetricsStub.calledOnce, true);
                 assert.strictEqual(request.finalizerHooks.length, 1);
                 done();
             },
@@ -368,7 +371,7 @@ describe('validateQuotas (buckets)', () => {
         const result1 = {
             bytesTotal: largeNumber,
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
+        getLatestMetricsStub.resolves(result1);
 
         validateQuotas(
             request,
@@ -384,9 +387,9 @@ describe('validateQuotas (buckets)', () => {
             mockLog,
             err => {
                 assert.ifError(err);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+                assert.strictEqual(getLatestMetricsStub.calledOnce, true);
                 assert.strictEqual(
-                    QuotaService._getLatestMetricsCallback.calledWith('bucket', 'bucketName_1640995200000', null, {
+                    getLatestMetricsStub.calledWith('bucket', 'bucketName_1640995200000', null, {
                         action: 'objectPut',
                         inflight: undefined,
                     }),
@@ -399,6 +402,8 @@ describe('validateQuotas (buckets)', () => {
 });
 
 describe('validateQuotas (with accounts)', () => {
+    let getLatestMetricsStub;
+
     const request = {
         getQuota: () => 100n,
     };
@@ -415,7 +420,7 @@ describe('validateQuotas (with accounts)', () => {
         request.finalizerHooks = [];
         sinon.stub(config, 'isQuotaEnabled').returns(true);
         QuotaService.enabled = true;
-        QuotaService._getLatestMetricsCallback = sinon.stub().resolves({});
+        getLatestMetricsStub = sinon.stub(ScubaClient.prototype, 'getLatestMetrics').resolves({});
     });
 
     afterEach(() => {
@@ -437,7 +442,7 @@ describe('validateQuotas (with accounts)', () => {
             mockLog,
             err => {
                 assert.ifError(err);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.called, false);
+                assert.strictEqual(getLatestMetricsStub.called, false);
                 done();
             },
         );
@@ -458,7 +463,7 @@ describe('validateQuotas (with accounts)', () => {
             mockLog,
             err => {
                 assert.ifError(err);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.called, false);
+                assert.strictEqual(getLatestMetricsStub.called, false);
                 done();
             },
         );
@@ -480,7 +485,7 @@ describe('validateQuotas (with accounts)', () => {
             mockLog,
             err => {
                 assert.ifError(err);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.called, false);
+                assert.strictEqual(getLatestMetricsStub.called, false);
                 done();
             },
         );
@@ -489,7 +494,7 @@ describe('validateQuotas (with accounts)', () => {
     it('should return null if metrics retrieval fails', done => {
         QuotaService.enabled = true;
         const error = new Error('Failed to get metrics');
-        QuotaService._getLatestMetricsCallback.yields(error);
+        getLatestMetricsStub.rejects(error);
 
         validateQuotas(
             request,
@@ -505,9 +510,10 @@ describe('validateQuotas (with accounts)', () => {
             mockLog,
             err => {
                 assert.ifError(err);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+                // Scuba resolves async in production, so the account branch runs even when the bucket branch errors.
+                assert.strictEqual(getLatestMetricsStub.calledTwice, true);
                 assert.strictEqual(
-                    QuotaService._getLatestMetricsCallback.calledWith('bucket', 'bucketName_1640995200000', null, {
+                    getLatestMetricsStub.calledWith('bucket', 'bucketName_1640995200000', null, {
                         action: 'objectPut',
                         inflight: 1,
                     }),
@@ -525,8 +531,8 @@ describe('validateQuotas (with accounts)', () => {
         const result2 = {
             bytesTotal: BigInt(120),
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
-        QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
+        getLatestMetricsStub.resolves(result1);
+        getLatestMetricsStub.onCall(1).resolves(result2);
 
         validateQuotas(
             request,
@@ -542,10 +548,10 @@ describe('validateQuotas (with accounts)', () => {
             mockLog,
             err => {
                 assert.strictEqual(err.is.QuotaExceeded, true);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.callCount, 1);
+                assert.strictEqual(getLatestMetricsStub.callCount, 1);
                 assert.strictEqual(request.finalizerHooks.length, 1);
                 assert.strictEqual(
-                    QuotaService._getLatestMetricsCallback.calledWith('account', 'test_1', null, {
+                    getLatestMetricsStub.calledWith('account', 'test_1', null, {
                         action: 'objectPut',
                         inflight: 1,
                     }),
@@ -563,8 +569,8 @@ describe('validateQuotas (with accounts)', () => {
         const result2 = {
             bytesTotal: BigInt(120),
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
-        QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
+        getLatestMetricsStub.resolves(result1);
+        getLatestMetricsStub.onCall(1).resolves(result2);
 
         validateQuotas(
             request,
@@ -580,9 +586,9 @@ describe('validateQuotas (with accounts)', () => {
             mockLog,
             err => {
                 assert.ifError(err);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.callCount, 1);
+                assert.strictEqual(getLatestMetricsStub.callCount, 1);
                 assert.strictEqual(
-                    QuotaService._getLatestMetricsCallback.calledWith('account', 'test_1', null, {
+                    getLatestMetricsStub.calledWith('account', 'test_1', null, {
                         action: 'objectDelete',
                         inflight: -50,
                     }),
@@ -600,8 +606,8 @@ describe('validateQuotas (with accounts)', () => {
         const result2 = {
             bytesTotal: BigInt(120),
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
-        QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
+        getLatestMetricsStub.resolves(result1);
+        getLatestMetricsStub.onCall(1).resolves(result2);
 
         validateQuotas(
             request,
@@ -617,9 +623,9 @@ describe('validateQuotas (with accounts)', () => {
             mockLog,
             err => {
                 assert.ifError(err);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.callCount, 1);
+                assert.strictEqual(getLatestMetricsStub.callCount, 1);
                 assert.strictEqual(
-                    QuotaService._getLatestMetricsCallback.calledWith('account', 'test_1', null, {
+                    getLatestMetricsStub.calledWith('account', 'test_1', null, {
                         action: 'objectDelete',
                         inflight: -5000,
                     }),
@@ -637,8 +643,8 @@ describe('validateQuotas (with accounts)', () => {
         const result2 = {
             bytesTotal: BigInt(90),
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
-        QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
+        getLatestMetricsStub.resolves(result1);
+        getLatestMetricsStub.onCall(1).resolves(result2);
 
         validateQuotas(
             request,
@@ -654,9 +660,9 @@ describe('validateQuotas (with accounts)', () => {
             mockLog,
             err => {
                 assert.ifError(err);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.callCount, 4);
+                assert.strictEqual(getLatestMetricsStub.callCount, 4);
                 assert.strictEqual(
-                    QuotaService._getLatestMetricsCallback.calledWith('account', 'test_1', null, {
+                    getLatestMetricsStub.calledWith('account', 'test_1', null, {
                         action: 'objectRestore',
                         inflight: true,
                     }),
@@ -674,8 +680,8 @@ describe('validateQuotas (with accounts)', () => {
         const result2 = {
             bytesTotal: BigInt(120),
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
-        QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
+        getLatestMetricsStub.resolves(result1);
+        getLatestMetricsStub.onCall(1).resolves(result2);
 
         validateQuotas(
             request,
@@ -691,7 +697,7 @@ describe('validateQuotas (with accounts)', () => {
             mockLog,
             err => {
                 assert.strictEqual(err.is.QuotaExceeded, true);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.callCount, 2);
+                assert.strictEqual(getLatestMetricsStub.callCount, 2);
                 assert.strictEqual(request.finalizerHooks.length, 1);
                 done();
             },
@@ -705,8 +711,8 @@ describe('validateQuotas (with accounts)', () => {
         const result2 = {
             bytesTotal: BigInt(90),
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
-        QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
+        getLatestMetricsStub.resolves(result1);
+        getLatestMetricsStub.onCall(1).resolves(result2);
 
         validateQuotas(
             request,
@@ -722,9 +728,9 @@ describe('validateQuotas (with accounts)', () => {
             mockLog,
             err => {
                 assert.ifError(err);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.callCount, 4);
+                assert.strictEqual(getLatestMetricsStub.callCount, 4);
                 assert.strictEqual(
-                    QuotaService._getLatestMetricsCallback.calledWith('account', 'test_1', null, {
+                    getLatestMetricsStub.calledWith('account', 'test_1', null, {
                         action: 'objectRestore',
                         inflight: true,
                     }),
@@ -742,8 +748,8 @@ describe('validateQuotas (with accounts)', () => {
         const result2 = {
             bytesTotal: BigInt(90),
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
-        QuotaService._getLatestMetricsCallback.onCall(1).yields(null, result2);
+        getLatestMetricsStub.resolves(result1);
+        getLatestMetricsStub.onCall(1).resolves(result2);
 
         validateQuotas(
             request,
@@ -759,9 +765,9 @@ describe('validateQuotas (with accounts)', () => {
             mockLog,
             err => {
                 assert.ifError(err);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.calledTwice, true);
+                assert.strictEqual(getLatestMetricsStub.calledTwice, true);
                 assert.strictEqual(
-                    QuotaService._getLatestMetricsCallback.calledWith('account', 'test_1', null, {
+                    getLatestMetricsStub.calledWith('account', 'test_1', null, {
                         action: 'objectPut',
                         inflight: 0,
                     }),
@@ -777,7 +783,7 @@ describe('validateQuotas (with accounts)', () => {
         const result1 = {
             bytesTotal: largeNumber,
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
+        getLatestMetricsStub.resolves(result1);
 
         validateQuotas(
             request,
@@ -793,9 +799,9 @@ describe('validateQuotas (with accounts)', () => {
             mockLog,
             err => {
                 assert.ifError(err);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+                assert.strictEqual(getLatestMetricsStub.calledOnce, true);
                 assert.strictEqual(
-                    QuotaService._getLatestMetricsCallback.calledWith('account', 'test_1', null, {
+                    getLatestMetricsStub.calledWith('account', 'test_1', null, {
                         action: 'objectPut',
                         inflight: 1,
                     }),
@@ -811,7 +817,7 @@ describe('validateQuotas (with accounts)', () => {
         const result1 = {
             bytesTotal: largeNumber,
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
+        getLatestMetricsStub.resolves(result1);
 
         validateQuotas(
             request,
@@ -827,7 +833,7 @@ describe('validateQuotas (with accounts)', () => {
             mockLog,
             err => {
                 assert.strictEqual(err.is.QuotaExceeded, true);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+                assert.strictEqual(getLatestMetricsStub.calledOnce, true);
                 assert.strictEqual(request.finalizerHooks.length, 1);
                 done();
             },
@@ -840,7 +846,7 @@ describe('validateQuotas (with accounts)', () => {
         const result1 = {
             bytesTotal: largeNumber,
         };
-        QuotaService._getLatestMetricsCallback.yields(null, result1);
+        getLatestMetricsStub.resolves(result1);
 
         validateQuotas(
             request,
@@ -856,9 +862,9 @@ describe('validateQuotas (with accounts)', () => {
             mockLog,
             err => {
                 assert.ifError(err);
-                assert.strictEqual(QuotaService._getLatestMetricsCallback.calledOnce, true);
+                assert.strictEqual(getLatestMetricsStub.calledOnce, true);
                 assert.strictEqual(
-                    QuotaService._getLatestMetricsCallback.calledWith('account', 'test_1', null, {
+                    getLatestMetricsStub.calledWith('account', 'test_1', null, {
                         action: 'objectPut',
                         inflight: undefined,
                     }),
