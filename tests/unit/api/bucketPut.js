@@ -904,3 +904,50 @@ describe('bucketPut API with SSE Configurations', () => {
         });
     });
 });
+
+describe('bucketPut API quota metric seeding', () => {
+    afterEach(() => {
+        sinon.restore();
+        cleanup();
+    });
+
+    it('should seed a zero-value quota metric on bucket creation when quotas are enabled', done => {
+        sinon.stub(config, 'isQuotaEnabled').returns(true);
+        const initStub = sinon
+            .stub(metadata, 'initializeBucketCapacity')
+            .callsFake((name, creationDate, l, cb) => cb(null));
+        bucketPut(authInfo, testRequest, log, err => {
+            assert.ifError(err);
+            assert(initStub.calledOnce, 'expected initializeBucketCapacity to be called once');
+            assert.strictEqual(initStub.firstCall.args[0], bucketName);
+            done();
+        });
+    });
+
+    it('should still create the bucket if seeding the quota metric fails', done => {
+        sinon.stub(config, 'isQuotaEnabled').returns(true);
+        sinon
+            .stub(metadata, 'initializeBucketCapacity')
+            .callsFake((name, creationDate, l, cb) => cb(errors.InternalError));
+        bucketPut(authInfo, testRequest, log, err => {
+            assert.ifError(err);
+            return metadata.getBucket(bucketName, log, (getErr, md) => {
+                assert.ifError(getErr);
+                assert.strictEqual(md.getName(), bucketName);
+                done();
+            });
+        });
+    });
+
+    it('should not seed a quota metric when quotas are disabled', done => {
+        sinon.stub(config, 'isQuotaEnabled').returns(false);
+        const initStub = sinon
+            .stub(metadata, 'initializeBucketCapacity')
+            .callsFake((name, creationDate, l, cb) => cb(null));
+        bucketPut(authInfo, testRequest, log, err => {
+            assert.ifError(err);
+            assert(initStub.notCalled, 'expected no seeding when quotas are disabled');
+            done();
+        });
+    });
+});
