@@ -12,10 +12,7 @@ const metadata = require('../metadataswitch');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const originalLCs = Object.assign({}, config.locationConstraints);
 
-const {
-    LOCATION_NAME_DMF,
-    LOCATION_NAME_CRR,
-} = require('../../constants');
+const { LOCATION_NAME_DMF, LOCATION_NAME_CRR } = require('../../constants');
 
 const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
@@ -100,27 +97,27 @@ describe('checkLocationConstraint function', () => {
         config.backends.data = initialConfigData;
     });
     testChecks.forEach(testCheck => {
-        const returnText = testCheck.isError ? `${testCheck.expectedError} error`
-        : 'the appropriate location constraint';
-        it(`with data backend: "${testCheck.data}", ` +
-        `location: "${testCheck.locationSent}",` +
-        ` and host: "${testCheck.parsedHost}", should return ${returnText} `,
-        done => {
-            config.backends.data = testCheck.data;
-            request.parsedHost = testCheck.parsedHost;
-            const checkLocation = checkLocationConstraint(request,
-              testCheck.locationSent, log);
-            if (testCheck.isError) {
-                assert.notEqual(checkLocation.error, null,
-                  'Expected failure but got success');
-                assert(checkLocation.error.is[testCheck.expectedError]);
-            } else {
-                assert.ifError(checkLocation.error);
-                assert.strictEqual(checkLocation.locationConstraint,
-                  testCheck.locationReturn);
-            }
-            done();
-        });
+        const returnText = testCheck.isError
+            ? `${testCheck.expectedError} error`
+            : 'the appropriate location constraint';
+        it(
+            `with data backend: "${testCheck.data}", ` +
+                `location: "${testCheck.locationSent}",` +
+                ` and host: "${testCheck.parsedHost}", should return ${returnText} `,
+            done => {
+                config.backends.data = testCheck.data;
+                request.parsedHost = testCheck.parsedHost;
+                const checkLocation = checkLocationConstraint(request, testCheck.locationSent, log);
+                if (testCheck.isError) {
+                    assert.notEqual(checkLocation.error, null, 'Expected failure but got success');
+                    assert(checkLocation.error.is[testCheck.expectedError]);
+                } else {
+                    assert.ifError(checkLocation.error);
+                    assert.strictEqual(checkLocation.locationConstraint, testCheck.locationReturn);
+                }
+                done();
+            },
+        );
     });
 });
 
@@ -132,11 +129,10 @@ describe('bucketPut API', () => {
     it('should return an error if bucket already exists', done => {
         const otherAuthInfo = makeAuthInfo('accessKey2');
         bucketPut(authInfo, testRequest, log, () => {
-            bucketPut(otherAuthInfo, testRequest,
-                log, err => {
-                    assert.strictEqual(err.is.BucketAlreadyExists, true);
-                    done();
-                });
+            bucketPut(otherAuthInfo, testRequest, log, err => {
+                assert.strictEqual(err.is.BucketAlreadyExists, true);
+                done();
+            });
         });
     });
 
@@ -149,12 +145,10 @@ describe('bucketPut API', () => {
                 assert.strictEqual(md.getName(), bucketName);
                 assert.strictEqual(md.getOwner(), canonicalID);
                 const prefix = `${canonicalID}${splitter}`;
-                metadata.listObject(usersBucket, { prefix },
-                    log, (err, listResponse) => {
-                        assert.strictEqual(listResponse.Contents[0].key,
-                            `${canonicalID}${splitter}${bucketName}`);
-                        done();
-                    });
+                metadata.listObject(usersBucket, { prefix }, log, (err, listResponse) => {
+                    assert.strictEqual(listResponse.Contents[0].key, `${canonicalID}${splitter}${bucketName}`);
+                    done();
+                });
             });
         });
     });
@@ -165,7 +159,7 @@ describe('bucketPut API', () => {
         url: '/',
         post: '',
         headers: {
-            'host': `${bucketName}.s3.amazonaws.com`,
+            host: `${bucketName}.s3.amazonaws.com`,
             'x-amz-bucket-object-lock-enabled': `${status}`,
         },
     });
@@ -202,16 +196,13 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should return an error if ACL set in header ' +
-       'with an invalid group URI', done => {
+    it('should return an error if ACL set in header ' + 'with an invalid group URI', done => {
         const testRequest = {
             bucketName,
             namespace,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
-                'x-amz-grant-full-control':
-                    'uri="http://acs.amazonaws.com/groups/' +
-                    'global/NOTAVALIDGROUP"',
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-grant-full-control': 'uri="http://acs.amazonaws.com/groups/' + 'global/NOTAVALIDGROUP"',
             },
             url: '/',
             post: '',
@@ -225,13 +216,12 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should return an error if ACL set in header ' +
-       'with an invalid canned ACL', done => {
+    it('should return an error if ACL set in header ' + 'with an invalid canned ACL', done => {
         const testRequest = {
             bucketName,
             namespace,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'not-valid-option',
             },
             url: '/',
@@ -246,15 +236,13 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should return an error if ACL set in header ' +
-       'with an invalid email address', done => {
+    it('should return an error if ACL set in header ' + 'with an invalid email address', done => {
         const testRequest = {
             bucketName,
             namespace,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
-                'x-amz-grant-read':
-                    'emailaddress="fake@faking.com"',
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-grant-read': 'emailaddress="fake@faking.com"',
             },
             url: '/',
             post: '',
@@ -268,15 +256,13 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should set a canned ACL while creating bucket' +
-        ' if option set out in header', done => {
+    it('should set a canned ACL while creating bucket' + ' if option set out in header', done => {
         const testRequest = {
             bucketName,
             namespace,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
-                'x-amz-acl':
-                    'public-read',
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'public-read',
             },
             url: '/',
             post: '',
@@ -291,45 +277,33 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should set specific ACL grants while creating bucket' +
-        ' if options set out in header', done => {
+    it('should set specific ACL grants while creating bucket' + ' if options set out in header', done => {
         const testRequest = {
             bucketName,
             namespace,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
-                    'emailaddress="sampleaccount1@sampling.com"' +
-                    ',emailaddress="sampleaccount2@sampling.com"',
+                    'emailaddress="sampleaccount1@sampling.com"' + ',emailaddress="sampleaccount2@sampling.com"',
                 'x-amz-grant-read': `uri=${constants.logId}`,
                 'x-amz-grant-write': `uri=${constants.publicId}`,
-                'x-amz-grant-read-acp':
-                    'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2be',
-                'x-amz-grant-write-acp':
-                    'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2bf',
+                'x-amz-grant-read-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2be',
+                'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2bf',
             },
             url: '/',
             post: '',
         };
-        const canonicalIDforSample1 =
-            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
-        const canonicalIDforSample2 =
-            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
+        const canonicalIDforSample1 = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
+        const canonicalIDforSample2 = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
         bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, null, 'Error creating bucket');
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(md.getAcl().READ[0], constants.logId);
                 assert.strictEqual(md.getAcl().WRITE[0], constants.publicId);
-                assert(md.getAcl()
-                       .FULL_CONTROL.indexOf(canonicalIDforSample1) > -1);
-                assert(md.getAcl()
-                       .FULL_CONTROL.indexOf(canonicalIDforSample2) > -1);
-                assert(md.getAcl()
-                       .READ_ACP.indexOf(canonicalIDforSample1) > -1);
-                assert(md.getAcl()
-                       .WRITE_ACP.indexOf(canonicalIDforSample2) > -1);
+                assert(md.getAcl().FULL_CONTROL.indexOf(canonicalIDforSample1) > -1);
+                assert(md.getAcl().FULL_CONTROL.indexOf(canonicalIDforSample2) > -1);
+                assert(md.getAcl().READ_ACP.indexOf(canonicalIDforSample1) > -1);
+                assert(md.getAcl().WRITE_ACP.indexOf(canonicalIDforSample2) > -1);
                 done();
             });
         });
@@ -361,8 +335,7 @@ describe('bucketPut API', () => {
             assert.deepStrictEqual(err, null);
             metadata.getBucket(bucketName, log, (err, bucketInfo) => {
                 assert.deepStrictEqual(err, null);
-                assert.deepStrictEqual(newLocation,
-                    bucketInfo.getLocationConstraint());
+                assert.deepStrictEqual(newLocation, bucketInfo.getLocationConstraint());
                 done();
             });
         });
@@ -427,21 +400,25 @@ describe('bucketPut API', () => {
         const newLCs = Object.assign({}, config.locationConstraints, newLC);
         const req = Object.assign({}, testRequest, {
             bucketName,
-            post: '<?xml version="1.0" encoding="UTF-8"?>' +
+            post:
+                '<?xml version="1.0" encoding="UTF-8"?>' +
                 '<CreateBucketConfiguration ' +
                 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-                    `<LocationConstraint>${newLCKey}</LocationConstraint>` +
+                `<LocationConstraint>${newLCKey}</LocationConstraint>` +
                 '</CreateBucketConfiguration>',
         });
 
         afterEach(() => config.setLocationConstraints(originalLCs));
 
-        it('should return error if location constraint config is not updated',
-            done => bucketPut(authInfo, req, log, err => {
+        it('should return error if location constraint config is not updated', done =>
+            bucketPut(authInfo, req, log, err => {
                 assert.strictEqual(err.is.InvalidLocationConstraint, true);
-                assert.strictEqual(err.description, 'value of the location you are ' +
-                    `attempting to set - ${newLCKey} - is not listed in the ` +
-                    'locationConstraint config');
+                assert.strictEqual(
+                    err.description,
+                    'value of the location you are ' +
+                        `attempting to set - ${newLCKey} - is not listed in the ` +
+                        'locationConstraint config',
+                );
                 done();
             }));
 
@@ -472,12 +449,7 @@ describe('bucketPut API', () => {
             {
                 description: 'many allowed auth',
                 error: undefined,
-                results: [
-                    { isAllowed: true },
-                    { isAllowed: true },
-                    { isAllowed: true },
-                    { isAllowed: true },
-                ],
+                results: [{ isAllowed: true }, { isAllowed: true }, { isAllowed: true }, { isAllowed: true }],
                 calledWith: [null, constraint],
             },
             {
@@ -511,20 +483,17 @@ describe('bucketPut API', () => {
             {
                 description: 'one not allowed auth of many',
                 error: undefined,
-                results: [
-                    { isAllowed: true },
-                    { isAllowed: true },
-                    { isAllowed: false },
-                    { isAllowed: true },
-                ],
+                results: [{ isAllowed: true }, { isAllowed: true }, { isAllowed: false }, { isAllowed: true }],
                 calledWith: [errors.AccessDenied],
             },
-        ].forEach(tc => it(tc.description, () => {
-            const cb = sinon.fake();
-            const handler = _handleAuthResults(constraint, log, cb);
-            handler(tc.error, tc.results);
-            assert.deepStrictEqual(cb.getCalls()[0].args, tc.calledWith);
-        }));
+        ].forEach(tc =>
+            it(tc.description, () => {
+                const cb = sinon.fake();
+                const handler = _handleAuthResults(constraint, log, cb);
+                handler(tc.error, tc.results);
+                assert.deepStrictEqual(cb.getCalls()[0].args, tc.calledWith);
+            }),
+        );
     });
 });
 
@@ -544,7 +513,7 @@ describe('bucketPut API with bucket-level encryption', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'AES256',
             },
         };
@@ -568,7 +537,7 @@ describe('bucketPut API with bucket-level encryption', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'aws:kms',
             },
         };
@@ -593,7 +562,7 @@ describe('bucketPut API with bucket-level encryption', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'aws:kms',
                 'x-amz-scal-server-side-encryption-aws-kms-key-id': keyId,
             },
@@ -622,7 +591,7 @@ describe('bucketPut API with bucket-level encryption', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'AES256',
                 'x-amz-scal-server-side-encryption-aws-kms-key-id': keyId,
             },
@@ -652,7 +621,7 @@ describe('bucketPut API with account level encryption', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'AES256',
             },
         };
@@ -677,7 +646,7 @@ describe('bucketPut API with account level encryption', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'aws:kms',
             },
         };
@@ -703,7 +672,7 @@ describe('bucketPut API with account level encryption', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'aws:kms',
                 'x-amz-scal-server-side-encryption-aws-kms-key-id': keyId,
             },
@@ -739,7 +708,7 @@ describe('bucketPut API with failed encryption service', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'AES256',
             },
         };
@@ -753,8 +722,9 @@ describe('bucketPut API with failed encryption service', () => {
 describe('bucketPut API with failed vault service', () => {
     beforeEach(() => {
         sinon.stub(inMemory, 'supportsDefaultKeyPerAccount').value(true);
-        sinon.stub(vault, 'getOrCreateEncryptionKeyId').callsFake((accountCanonicalId, log, cb) =>
-            cb(errors.ServiceFailure));
+        sinon
+            .stub(vault, 'getOrCreateEncryptionKeyId')
+            .callsFake((accountCanonicalId, log, cb) => cb(errors.ServiceFailure));
     });
 
     afterEach(() => {
@@ -766,7 +736,7 @@ describe('bucketPut API with failed vault service', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
+                host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'AES256',
             },
         };
