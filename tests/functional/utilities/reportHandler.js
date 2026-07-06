@@ -131,11 +131,13 @@ function requestFailHandler(req, res) {
 function requestHandler(req, res) {
     const { url } = req;
     if (url.startsWith('/_/metrics/crr/')) {
+        assert.strictEqual(req.headers['x-scal-request-uids'], 'dummy:Serialized:Uids');
         const site = url.split('/_/metrics/crr/')[1] || '';
         if (crrRequestResults[site]) {
             res.write(JSON.stringify(crrRequestResults[site]));
         }
     } else if (url.startsWith('/_/metrics/ingestion/')) {
+        assert.strictEqual(req.headers['x-scal-request-uids'], 'dummy:Serialized:Uids');
         const site = url.split('/_/metrics/ingestion/')[1] || '';
         if (ingestionRequestResults[site]) {
             res.write(JSON.stringify(ingestionRequestResults[site]));
@@ -144,10 +146,12 @@ function requestHandler(req, res) {
         switch (req.url) {
             case '/_/crr/status':
             case '/_/ingestion/status':
+                assert.strictEqual(req.headers['x-scal-request-uids'], 'dummy:Serialized:Uids');
                 res.write(JSON.stringify(expectedStatusResults));
                 break;
             case '/_/crr/resume/all':
             case '/_/ingestion/resume/all':
+                assert.strictEqual(req.headers['x-scal-request-uids'], 'dummy:Serialized:Uids');
                 res.write(JSON.stringify(expectedScheduleResults));
                 break;
             default:
