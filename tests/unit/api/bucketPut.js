@@ -920,7 +920,15 @@ describe('bucketPut API quota metric seeding', () => {
             assert.ifError(err);
             assert(initStub.calledOnce, 'expected initializeBucketCapacity to be called once');
             assert.strictEqual(initStub.firstCall.args[0], bucketName);
-            done();
+            return metadata.getBucket(bucketName, log, (getErr, md) => {
+                assert.ifError(getErr);
+                assert.strictEqual(
+                    initStub.firstCall.args[1],
+                    md.getCreationDate(),
+                    'must seed with the metastore creationDate used by quota lookups',
+                );
+                done();
+            });
         });
     });
 
@@ -947,6 +955,57 @@ describe('bucketPut API quota metric seeding', () => {
         bucketPut(authInfo, testRequest, log, err => {
             assert.ifError(err);
             assert(initStub.notCalled, 'expected no seeding when quotas are disabled');
+            done();
+        });
+    });
+
+    it('should seed on the transient/deleted cleanup path with the new creationDate', done => {
+        sinon.stub(config, 'isQuotaEnabled').returns(true);
+        const initStub = sinon
+            .stub(metadata, 'initializeBucketCapacity')
+            .callsFake((name, creationDate, l, cb) => cb(null));
+        // Create the bucket, then mark it transient so the next PUT takes the
+        // cleanUpBucket re-creation path.
+        bucketPut(authInfo, testRequest, log, err => {
+            assert.ifError(err);
+            return metadata.getBucket(bucketName, log, (getErr, md) => {
+                assert.ifError(getErr);
+                md.addTransientFlag();
+                return metadata.updateBucket(bucketName, md, log, updErr => {
+                    assert.ifError(updErr);
+                    initStub.resetHistory();
+                    return bucketPut(authInfo, testRequest, log, err2 => {
+                        assert.ifError(err2);
+                        assert(initStub.calledOnce, 'expected seeding on the cleanup path');
+                        return metadata.getBucket(bucketName, log, (getErr2, md2) => {
+                            assert.ifError(getErr2);
+                            assert.strictEqual(
+                                initStub.firstCall.args[1],
+                                md2.getCreationDate(),
+                                'cleanup path must seed with the re-created bucket metastore creationDate',
+                            );
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+    });
+
+    it('should seed the metric before clearing the transient/deleted flag', done => {
+        sinon.stub(config, 'isQuotaEnabled').returns(true);
+        const initStub = sinon
+            .stub(metadata, 'initializeBucketCapacity')
+            .callsFake((name, creationDate, l, cb) => cb(null));
+        const updateSpy = sinon.spy(metadata, 'updateBucket');
+        bucketPut(authInfo, testRequest, log, err => {
+            assert.ifError(err);
+            assert(initStub.calledOnce, 'expected seeding');
+            assert(updateSpy.called, 'expected the transient/deleted flag to be cleared via updateBucket');
+            assert(
+                initStub.calledBefore(updateSpy),
+                'metric must be seeded before the transient/deleted flag is cleared',
+            );
             done();
         });
     });

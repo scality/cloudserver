@@ -67,7 +67,15 @@ describe('bucketUpdateQuota API quota metric seeding', () => {
                 assert.ifError(err);
                 assert(initStub.calledOnce, 'expected seeding for an empty bucket');
                 assert.strictEqual(initStub.firstCall.args[0], bucketName);
-                done();
+                return metadata.getBucket(bucketName, log, (getErr, md) => {
+                    assert.ifError(getErr);
+                    assert.strictEqual(
+                        initStub.firstCall.args[1],
+                        md.getCreationDate(),
+                        'must seed with the metastore creationDate used by quota lookups',
+                    );
+                    done();
+                });
             });
         });
     });
@@ -98,6 +106,54 @@ describe('bucketUpdateQuota API quota metric seeding', () => {
                 .callsFake((name, creationDate, l, cb) => process.nextTick(() => cb(errors.InternalError)));
             return bucketUpdateQuota(authInfo, updateQuotaRequest, log, err => {
                 assert.ifError(err);
+                return metadata.getBucket(bucketName, log, (getErr, bucket) => {
+                    assert.ifError(getErr);
+                    assert.strictEqual(bucket.getQuota(), 1000n, 'quota must be updated even if seeding fails');
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should still update the quota if listing the bucket fails', done => {
+        const initStub = sinon
+            .stub(metadata, 'initializeBucketCapacity')
+            .callsFake((name, creationDate, l, cb) => process.nextTick(() => cb(null)));
+        bucketPut(authInfo, bucketPutRequest, log, err => {
+            assert.ifError(err);
+            initStub.resetHistory();
+            sinon
+                .stub(metadata, 'listObject')
+                .callsFake((name, params, l, cb) => process.nextTick(() => cb(errors.InternalError)));
+            return bucketUpdateQuota(authInfo, updateQuotaRequest, log, err => {
+                assert.ifError(err);
+                assert(initStub.notCalled, 'expected no seeding when the listing fails');
+                return metadata.getBucket(bucketName, log, (getErr, bucket) => {
+                    assert.ifError(getErr);
+                    assert.strictEqual(bucket.getQuota(), 1000n, 'quota must be updated even if listing fails');
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should not seed a metric when the bucket has an in-progress multipart upload', done => {
+        const initStub = sinon
+            .stub(metadata, 'initializeBucketCapacity')
+            .callsFake((name, creationDate, l, cb) => process.nextTick(() => cb(null)));
+        bucketPut(authInfo, bucketPutRequest, log, err => {
+            assert.ifError(err);
+            initStub.resetHistory();
+            // empty object listing, but an overview key in the MPU shadow bucket
+            sinon.stub(metadata, 'listObject').callsFake((name, params, l, cb) => {
+                if (params && params.prefix === 'overview') {
+                    return process.nextTick(() => cb(null, { Contents: [{ key: 'ongoing' }] }));
+                }
+                return process.nextTick(() => cb(null, { Versions: [], DeleteMarkers: [] }));
+            });
+            return bucketUpdateQuota(authInfo, updateQuotaRequest, log, err => {
+                assert.ifError(err);
+                assert(initStub.notCalled, 'expected no seeding while an MPU is in progress');
                 done();
             });
         });
