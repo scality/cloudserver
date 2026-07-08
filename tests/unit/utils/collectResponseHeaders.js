@@ -8,12 +8,46 @@ describe('Middleware: Collect Response Headers', () => {
         assert.deepStrictEqual(headers['x-amz-replication-status'], 'REPLICA');
     });
 
-    it('should set REPLICA header from isReplica even when status is PENDING', () => {
+    it('should mark a replica with x-amz-meta-scal-replica', () => {
         const objectMD = {
-            replicationInfo: { status: 'PENDING', isReplica: true },
+            replicationInfo: { status: 'REPLICA', isReplica: true },
         };
         const headers = collectResponseHeaders(objectMD);
         assert.deepStrictEqual(headers['x-amz-replication-status'], 'REPLICA');
+        assert.deepStrictEqual(headers['x-amz-meta-scal-replica'], 'true');
+    });
+
+    it('should default to REPLICA when isReplica is true and status is absent', () => {
+        const objectMD = { replicationInfo: { isReplica: true } };
+        const headers = collectResponseHeaders(objectMD);
+        assert.deepStrictEqual(headers['x-amz-replication-status'], 'REPLICA');
+        assert.deepStrictEqual(headers['x-amz-meta-scal-replica'], 'true');
+    });
+
+    ['PENDING', 'PROCESSING', 'FAILED'].forEach(status => {
+        it(`should expose onward status ${status} on a cascaded replica`, () => {
+            const objectMD = { replicationInfo: { status, isReplica: true } };
+            const headers = collectResponseHeaders(objectMD);
+            assert.deepStrictEqual(headers['x-amz-replication-status'], status);
+            assert.deepStrictEqual(headers['x-amz-meta-scal-replica'], 'true');
+        });
+    });
+
+    it('should report REPLICA once onward replication is COMPLETED', () => {
+        const objectMD = {
+            replicationInfo: { status: 'COMPLETED', isReplica: true },
+        };
+        const headers = collectResponseHeaders(objectMD);
+        assert.deepStrictEqual(headers['x-amz-replication-status'], 'REPLICA');
+        assert.deepStrictEqual(headers['x-amz-meta-scal-replica'], 'true');
+    });
+
+    it('should not mark x-amz-meta-scal-replica when not a replica', () => {
+        const objectMD = {
+            replicationInfo: { status: 'PENDING', isReplica: false },
+        };
+        const headers = collectResponseHeaders(objectMD);
+        assert.deepStrictEqual(headers['x-amz-meta-scal-replica'], undefined);
     });
 
     it('should use replicationInfo.status when isReplica is false', () => {
