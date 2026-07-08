@@ -1,6 +1,7 @@
 const sinon = require('sinon');
 const { errors, auth } = require('arsenal');
 const api = require('../../../lib/api/api');
+const rateLimitCache = require('../../../lib/api/apiUtils/rateLimit/cache');
 const DummyRequest = require('../DummyRequest');
 const { default: AuthInfo } = require('arsenal/build/lib/auth/AuthInfo');
 const assert = require('assert');
@@ -146,6 +147,47 @@ describe('api.callApiMethod', () => {
                 assert.ifError(err);
                 done();
             });
+        });
+    });
+
+    describe('cross-account rate limiting target account', () => {
+        afterEach(() => {
+            rateLimitCache.bucketOwnerCache.clear();
+        });
+
+        it('should pass the cached bucket owner to doAuth as targetAccount', done => {
+            request.bucketName = 'rl-bucket';
+            rateLimitCache.setCachedBucketOwner('rl-bucket', 'owner-canonical-id', 30000);
+            // Reset the default callsArgWith behavior so only the fake runs
+            authServer.doAuth.resetBehavior();
+            authServer.doAuth.callsFake((req, log, cb, awsService, requestContexts, authOptions) => {
+                assert.strictEqual(authOptions.targetAccount, 'owner-canonical-id');
+                assert.strictEqual(request.rateLimitTargetAccount, 'owner-canonical-id');
+                done();
+            });
+            api.callApiMethod('bucketGet', request, response, log);
+        });
+
+        it('should not set targetAccount when no bucket owner is cached', done => {
+            request.bucketName = 'rl-bucket';
+            authServer.doAuth.resetBehavior();
+            authServer.doAuth.callsFake((req, log, cb, awsService, requestContexts, authOptions) => {
+                assert.deepStrictEqual(authOptions, {});
+                assert.strictEqual(request.rateLimitTargetAccount, undefined);
+                done();
+            });
+            api.callApiMethod('bucketGet', request, response, log);
+        });
+
+        it('should not set targetAccount when the request has no bucket name', done => {
+            rateLimitCache.setCachedBucketOwner('rl-bucket', 'owner-canonical-id', 30000);
+            authServer.doAuth.resetBehavior();
+            authServer.doAuth.callsFake((req, log, cb, awsService, requestContexts, authOptions) => {
+                assert.deepStrictEqual(authOptions, {});
+                assert.strictEqual(request.rateLimitTargetAccount, undefined);
+                done();
+            });
+            api.callApiMethod('bucketGet', request, response, log);
         });
     });
 
