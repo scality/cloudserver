@@ -26,16 +26,29 @@ runs:
         set -exu;
         mkdir -p /tmp/coverage/${JOB_NAME}/;
     - uses: actions/setup-node@v4
+      id: node
       with:
         node-version: '22.23.1'
-        cache: 'yarn'
+    # Cache node_modules directly (not the yarn download cache) so the git
+    # dependencies' TypeScript compilation and relink are skipped on a hit.
+    # Key includes runner.os and the resolved Node version because node_modules
+    # can hold native addons compiled for a specific OS/Node; the Node version
+    # is taken from the setup-node output rather than hardcoded.
+    - name: Cache node_modules
+      id: cache-node-modules
+      uses: actions/cache@v6
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-node-${{ steps.node.outputs.node-version }}-modules-${{ hashFiles('yarn.lock') }}
     - name: install typescript
       shell: bash
+      if: steps.cache-node-modules.outputs.cache-hit != 'true'
       run: yarn global add typescript@4.9.5
     - name: install dependencies
       shell: bash
+      if: steps.cache-node-modules.outputs.cache-hit != 'true'
       run: yarn install --ignore-engines --frozen-lockfile --network-concurrency 1
-    - uses: actions/cache@v3
+    - uses: actions/cache@v6
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip
