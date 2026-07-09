@@ -55,7 +55,7 @@
         "utf-8-validate": "^6.0.5",
         "utf8": "^3.0.0",
         "uuid": "^11.0.3",
-        "vaultclient": "scality/vaultclient#8.5.3",
+        "vaultclient": "scality/vaultclient#8.5.7",
         "werelogs": "scality/werelogs#semver:^8.2.4",
         "ws": "^8.18.0",
         "xml2js": "^0.6.2"
