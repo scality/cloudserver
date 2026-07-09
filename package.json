@@ -19,8 +19,6 @@
     },
     "homepage": "https://github.com/scality/S3#readme",
     "dependencies": {
-        "@aws-crypto/crc32": "^5.2.0",
-        "@aws-crypto/crc32c": "^5.2.0",
         "@aws-sdk/client-iam": "^3.930.0",
         "@aws-sdk/client-s3": "^3.1013.0",
         "@aws-sdk/client-sts": "^3.930.0",
@@ -39,6 +37,7 @@
         "@smithy/node-http-handler": "^3.0.0",
         "arsenal": "git+https://github.com/scality/arsenal#8.5.6",
         "async": "2.6.4",
+        "aws-crt": "^1.24.0",
         "bucketclient": "scality/bucketclient#8.2.7",
         "bufferutil": "^4.0.8",
         "commander": "^12.1.0",
