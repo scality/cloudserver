@@ -183,7 +183,61 @@ jobs:
           source: artifacts
         if: always()
 
-  build:
+  # cloudserver builds the production image then the testcoverage image, which
+  # is FROM production. Building them in the same job (sharing the cloudserver
+  # cache scope) lets testcoverage reuse the production layers instead of
+  # rebuilding them, with no cache-to race since they run sequentially.
+  build-cloudserver:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+
+      - name: Build and push cloudserver image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          context: .
+          target: production
+          provenance: false
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          labels: |
+            git.repository=${{ github.repository }}
+            git.commit-sha=${{ github.sha }}
+          cache-from: type=gha,scope=cloudserver
+          cache-to: type=gha,mode=max,scope=cloudserver
+
+      - name: Build and push cloudserver image test coverage
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          context: .
+          target: testcoverage
+          provenance: false
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
+          labels: |
+            git.repository=${{ github.repository }}
+            git.commit-sha=${{ github.sha }}
+          cache-from: type=gha,scope=cloudserver
+          cache-to: type=gha,mode=max,scope=cloudserver
+
+  # pykmip and ci-mongodb are standalone images; build them in parallel.
+  build-images:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -191,34 +245,14 @@ jobs:
     strategy:
       matrix:
         include:
-          # Image url and tags are preserved exactly via matrix.name/matrix.tags.
-          # cloudserver builds production then testcoverage (target2) in the same
-          # entry: testcoverage is FROM production, so building it right after -
-          # sharing the cloudserver cache scope - lets it reuse the production
-          # layers (a few seconds) instead of rebuilding them. Sequential within
-          # one job, so there is no cache-to race on scope=cloudserver.
-          - name: cloudserver
-            context: .
-            target: production
-            tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
-            cache-from: type=gha,scope=cloudserver
-            cache-to: type=gha,mode=max,scope=cloudserver
-            target2: testcoverage
-            tags2: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
           - name: pykmip
             context: .github/pykmip
-            target: ''
             tags: ghcr.io/${{ github.repository }}/pykmip:${{ github.sha }}
-            cache-from: type=gha,scope=pykmip
-            cache-to: type=gha,mode=max,scope=pykmip
-            target2: ''
+            cache-scope: pykmip
           - name: ci-mongodb
             context: .github/docker/mongodb
-            target: ''
             tags: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
-            cache-from: type=gha,scope=mongodb
-            cache-to: type=gha,mode=max,scope=mongodb
-            target2: ''
+            cache-scope: mongodb
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -238,38 +272,20 @@ jobs:
         with:
           push: true
           context: ${{ matrix.context }}
-          target: ${{ matrix.target }}
           provenance: false
           tags: ${{ matrix.tags }}
           labels: |
             git.repository=${{ github.repository }}
             git.commit-sha=${{ github.sha }}
-          cache-from: ${{ matrix.cache-from }}
-          cache-to: ${{ matrix.cache-to }}
-
-      # Second build for the cloudserver entry only: testcoverage reuses the
-      # production layers just built (same cloudserver cache scope).
-      - name: Build and push cloudserver testcoverage image
-        if: matrix.target2 != ''
-        uses: docker/build-push-action@v5
-        with:
-          push: true
-          context: ${{ matrix.context }}
-          target: ${{ matrix.target2 }}
-          provenance: false
-          tags: ${{ matrix.tags2 }}
-          labels: |
-            git.repository=${{ github.repository }}
-            git.commit-sha=${{ github.sha }}
-          cache-from: type=gha,scope=cloudserver
-          cache-to: type=gha,mode=max,scope=cloudserver
+          cache-from: type=gha,scope=${{ matrix.cache-scope }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.cache-scope }}
 
   # Federation depends on the pushed cloudserver production image and is not
   # consumed by any test job, so it (and the dashboards push) runs in parallel
   # with the tests instead of blocking them.
   build-federation:
     runs-on: ubuntu-latest
-    needs: build
+    needs: build-cloudserver
     permissions:
       contents: read
       packages: write
@@ -319,7 +335,7 @@ jobs:
 
   multiple-backend:
     runs-on: ubuntu-24.04
-    needs: build
+    needs: [build-cloudserver, build-images]
     env:
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
@@ -378,7 +394,7 @@ jobs:
 
   mongo-v0-ft-tests:
     runs-on: ubuntu-24.04
-    needs: build
+    needs: [build-cloudserver, build-images]
     env:
       S3BACKEND: mem
       MPU_TESTING: 'yes'
@@ -437,7 +453,7 @@ jobs:
 
   mongo-v1-ft-tests:
     runs-on: ubuntu-24.04
-    needs: build
+    needs: [build-cloudserver, build-images]
     env:
       S3BACKEND: mem
       MPU_TESTING: 'yes'
@@ -509,7 +525,7 @@ jobs:
             job-name: file-ft-tests-null-compat
     name: ${{ matrix.job-name }}
     runs-on: ubuntu-24.04
-    needs: build
+    needs: [build-cloudserver, build-images]
     env:
       S3BACKEND: file
       S3VAULT: mem
@@ -584,7 +600,7 @@ jobs:
             job-name: s3c-ft-tests-v1
     name: ${{ matrix.job-name }}
     runs-on: ubuntu-24.04
-    needs: build
+    needs: [build-cloudserver, build-images]
     env:
       S3BACKEND: file
       S3DATA: scality
@@ -705,7 +721,7 @@ jobs:
 
   utapi-v2-tests:
     runs-on: ubuntu-24.04
-    needs: build
+    needs: [build-cloudserver, build-images]
     if: always()
     env:
       ENABLE_UTAPI_V2: t
@@ -751,7 +767,7 @@ jobs:
 
   sur-tests:
     runs-on: ubuntu-24.04
-    needs: build
+    needs: [build-cloudserver, build-images]
     strategy:
       matrix:
         inflights:
@@ -809,7 +825,7 @@ jobs:
 
   kmip-ft-tests:
     runs-on: ubuntu-24.04
-    needs: build
+    needs: [build-cloudserver, build-images]
     env:
       S3BACKEND: file
       S3VAULT: mem
@@ -869,7 +885,7 @@ jobs:
 
   kmip-cluster-ft-tests:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build-cloudserver, build-images]
     env:
       S3BACKEND: file
       S3VAULT: mem
@@ -959,7 +975,7 @@ jobs:
         matrix.opts.globalEncryptionEnabled && '-global' || ''
       }}
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build-cloudserver, build-images]
     env:
       S3BACKEND: file
       S3VAULT: scality
