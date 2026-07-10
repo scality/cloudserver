@@ -202,6 +202,24 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
 
+      # Persist the Dockerfile builder's yarn cache mount across runs. The mount
+      # (holding downloaded + compiled git deps) is not part of the image layer
+      # cache, so buildkit-cache-dance saves/restores it via actions/cache.
+      - name: Restore Docker yarn cache
+        id: docker-yarn-cache
+        uses: actions/cache@v4
+        with:
+          path: docker-yarn-cache
+          key: ${{ runner.os }}-docker-yarn-cache-${{ hashFiles('yarn.lock') }}
+      - name: Inject yarn cache into buildx
+        uses: reproducible-containers/buildkit-cache-dance@v3.1.2
+        with:
+          cache-map: |
+            {
+              "docker-yarn-cache": "/root/.yarn-cache"
+            }
+          skip-extraction: ${{ steps.docker-yarn-cache.outputs.cache-hit }}
+
       - name: Build and push cloudserver image
         uses: docker/build-push-action@v5
         with:

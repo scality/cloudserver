@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 ARG NODE_VERSION=22.14.0-bookworm-slim
 
 FROM node:${NODE_VERSION} AS builder
@@ -22,12 +24,20 @@ RUN apt-get update \
     && ssh-keyscan -H github.com > /root/ssh/known_hosts
 
 ENV PYTHON=python3
+# Persist yarn's cache in a fixed location so it can be mounted as a BuildKit
+# cache below; this cache also holds the compiled git dependencies (e.g.
+# arsenal's tsc output), so a warm cache skips the re-clone and re-compile.
+ENV YARN_CACHE_FOLDER=/root/.yarn-cache
 RUN npm install -g \
     node-gyp \
     typescript@4.9.5
 COPY package.json yarn.lock /usr/src/app/
 
-RUN yarn install --production --ignore-optional --frozen-lockfile --ignore-engines --network-concurrency 1
+# BuildKit cache mount: even when this layer misses (e.g. yarn.lock changed),
+# yarn reuses already-downloaded and already-built packages from the mount
+# instead of re-cloning and re-running tsc for the git dependencies.
+RUN --mount=type=cache,target=/root/.yarn-cache,sharing=locked \
+    yarn install --production --ignore-optional --frozen-lockfile --ignore-engines --network-concurrency 1
 
 ################################################################################
 FROM node:${NODE_VERSION} AS production
