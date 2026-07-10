@@ -192,35 +192,33 @@ jobs:
       matrix:
         include:
           # Image url and tags are preserved exactly via matrix.name/matrix.tags.
+          # cloudserver builds production then testcoverage (target2) in the same
+          # entry: testcoverage is FROM production, so building it right after -
+          # sharing the cloudserver cache scope - lets it reuse the production
+          # layers (a few seconds) instead of rebuilding them. Sequential within
+          # one job, so there is no cache-to race on scope=cloudserver.
           - name: cloudserver
             context: .
             target: production
             tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
             cache-from: type=gha,scope=cloudserver
             cache-to: type=gha,mode=max,scope=cloudserver
-          # testcoverage is FROM production; it writes to its own cache scope to
-          # avoid racing the production build's cache-to on scope=cloudserver,
-          # while still reading the production scope for layer reuse.
-          - name: cloudserver-testcoverage
-            context: .
-            target: testcoverage
-            tags: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
-            cache-from: |
-              type=gha,scope=cloudserver-testcoverage
-              type=gha,scope=cloudserver
-            cache-to: type=gha,mode=max,scope=cloudserver-testcoverage
+            target2: testcoverage
+            tags2: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
           - name: pykmip
             context: .github/pykmip
             target: ''
             tags: ghcr.io/${{ github.repository }}/pykmip:${{ github.sha }}
             cache-from: type=gha,scope=pykmip
             cache-to: type=gha,mode=max,scope=pykmip
+            target2: ''
           - name: ci-mongodb
             context: .github/docker/mongodb
             target: ''
             tags: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
             cache-from: type=gha,scope=mongodb
             cache-to: type=gha,mode=max,scope=mongodb
+            target2: ''
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -248,6 +246,23 @@ jobs:
             git.commit-sha=${{ github.sha }}
           cache-from: ${{ matrix.cache-from }}
           cache-to: ${{ matrix.cache-to }}
+
+      # Second build for the cloudserver entry only: testcoverage reuses the
+      # production layers just built (same cloudserver cache scope).
+      - name: Build and push cloudserver testcoverage image
+        if: matrix.target2 != ''
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          context: ${{ matrix.context }}
+          target: ${{ matrix.target2 }}
+          provenance: false
+          tags: ${{ matrix.tags2 }}
+          labels: |
+            git.repository=${{ github.repository }}
+            git.commit-sha=${{ github.sha }}
+          cache-from: type=gha,scope=cloudserver
+          cache-to: type=gha,mode=max,scope=cloudserver
 
   # Federation depends on the pushed cloudserver production image and is not
   # consumed by any test job, so it (and the dashboards push) runs in parallel
