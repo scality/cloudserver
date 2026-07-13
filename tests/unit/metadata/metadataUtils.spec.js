@@ -10,8 +10,7 @@ const authInfo = makeAuthInfo('accessKey');
 const otherAuthInfo = makeAuthInfo('otherAccessKey');
 const ownerCanonicalId = authInfo.getCanonicalID();
 
-const bucket = new BucketInfo('niftyBucket', ownerCanonicalId,
-    authInfo.getAccountDisplayName(), creationDate);
+const bucket = new BucketInfo('niftyBucket', ownerCanonicalId, authInfo.getAccountDisplayName(), creationDate);
 const log = new DummyRequestLogger();
 
 const {
@@ -29,38 +28,58 @@ const tokenBucket = require('../../../lib/api/apiUtils/rateLimit/tokenBucket');
 
 describe('validateBucket', () => {
     it('action bucketPutPolicy by bucket owner', () => {
-        const validationResult = validateBucket(bucket, {
-            authInfo,
-            requestType: 'bucketPutPolicy',
-            request: null,
-        }, log, false);
+        const validationResult = validateBucket(
+            bucket,
+            {
+                authInfo,
+                requestType: 'bucketPutPolicy',
+                request: null,
+            },
+            log,
+            false,
+        );
         assert.ifError(validationResult);
     });
     it('action bucketPutPolicy by other than bucket owner', () => {
-        const validationResult = validateBucket(bucket, {
-            authInfo: otherAuthInfo,
-            requestType: 'bucketPutPolicy',
-            request: null,
-        }, log, false);
+        const validationResult = validateBucket(
+            bucket,
+            {
+                authInfo: otherAuthInfo,
+                requestType: 'bucketPutPolicy',
+                request: null,
+            },
+            log,
+            false,
+        );
         assert(validationResult);
         assert(validationResult.is.MethodNotAllowed);
     });
 
     it('action bucketGet by bucket owner', () => {
-        const validationResult = validateBucket(bucket, {
-            authInfo,
-            requestType: 'bucketGet',
-            request: null,
-        }, log, false);
+        const validationResult = validateBucket(
+            bucket,
+            {
+                authInfo,
+                requestType: 'bucketGet',
+                request: null,
+            },
+            log,
+            false,
+        );
         assert.ifError(validationResult);
     });
 
     it('action bucketGet by other than bucket owner', () => {
-        const validationResult = validateBucket(bucket, {
-            authInfo: otherAuthInfo,
-            requestType: 'bucketGet',
-            request: null,
-        }, log, false);
+        const validationResult = validateBucket(
+            bucket,
+            {
+                authInfo: otherAuthInfo,
+                requestType: 'bucketGet',
+                request: null,
+            },
+            log,
+            false,
+        );
         assert(validationResult);
         assert(validationResult.is.AccessDenied);
     });
@@ -124,7 +143,8 @@ describe('metadataGetObject', () => {
     it('should return the cached document if provided', done => {
         const cachedDoc = {
             [objectKey.inPlay.key]: {
-                key: 'objectKey1', versionId: 'versionId1',
+                key: 'objectKey1',
+                versionId: 'versionId1',
             },
         };
         metadataGetObject('bucketName', objectKey.inPlay.key, objectKey.versionId, cachedDoc, log, (err, result) => {
@@ -231,12 +251,17 @@ describe('checkRateLimitIfNeeded cross-account rate limiting', () => {
     // still get AccessDenied from validateBucket afterwards; these tests
     // assert on the rate limit side effects, not the final auth outcome.
     function validateBucketRequest(requesterAuthInfo, cb) {
-        standardMetadataValidateBucket({
-            authInfo: requesterAuthInfo,
-            bucketName: bucket.getName(),
-            requestType: 'bucketGet',
-            request,
-        }, false, log, cb);
+        standardMetadataValidateBucket(
+            {
+                authInfo: requesterAuthInfo,
+                bucketName: bucket.getName(),
+                requestType: 'bucketGet',
+                request,
+            },
+            false,
+            log,
+            cb,
+        );
     }
 
     it('should cache the bucket owner even when the bucket config was already checked', done => {
@@ -269,7 +294,8 @@ describe('checkRateLimitIfNeeded cross-account rate limiting', () => {
             assert(rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId));
             assert.strictEqual(
                 rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, otherCanonicalId),
-                undefined);
+                undefined,
+            );
             assert(tokenBucket.getAllTokenBuckets().has(`account:${ownerCanonicalId}:rps`));
             assert(!tokenBucket.getAllTokenBuckets().has(`account:${otherCanonicalId}:rps`));
             done();
@@ -280,7 +306,12 @@ describe('checkRateLimitIfNeeded cross-account rate limiting', () => {
         request.accountLimits = { RequestsPerSecond: { Limit: 100 } };
         request.rateLimitTargetAccount = ownerCanonicalId;
         const ownerBucket = tokenBucket.getTokenBucket(
-            'account', ownerCanonicalId, 'rps', { limit: 100, burstCapacity: 1000 }, log);
+            'account',
+            ownerCanonicalId,
+            'rps',
+            { limit: 100, burstCapacity: 1000 },
+            log,
+        );
         ownerBucket.tokens = 0;
         validateBucketRequest(otherAuthInfo, err => {
             assert(err);
@@ -292,7 +323,12 @@ describe('checkRateLimitIfNeeded cross-account rate limiting', () => {
     it('should rate limit against the requester account when no target account is present', done => {
         request.accountLimits = { RequestsPerSecond: { Limit: 100 } };
         const ownerBucket = tokenBucket.getTokenBucket(
-            'account', ownerCanonicalId, 'rps', { limit: 100, burstCapacity: 1000 }, log);
+            'account',
+            ownerCanonicalId,
+            'rps',
+            { limit: 100, burstCapacity: 1000 },
+            log,
+        );
         ownerBucket.tokens = 0;
         validateBucketRequest(otherAuthInfo, err => {
             // The exhausted owner account bucket must not affect the request:
@@ -310,7 +346,8 @@ describe('checkRateLimitIfNeeded cross-account rate limiting', () => {
             assert.strictEqual(request.rateLimitAccountAlreadyChecked, undefined);
             assert.strictEqual(
                 rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, constants.publicId),
-                undefined);
+                undefined,
+            );
             // The bucket owner is still cached for later cross-account attribution
             assert.strictEqual(rateLimitCache.getCachedBucketOwner(bucket.getName()), ownerCanonicalId);
             done();
@@ -325,7 +362,8 @@ describe('checkRateLimitIfNeeded cross-account rate limiting', () => {
             assert.strictEqual(request.rateLimitAccountAlreadyChecked, undefined);
             assert.strictEqual(
                 rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId),
-                undefined);
+                undefined,
+            );
             done();
         });
     });
