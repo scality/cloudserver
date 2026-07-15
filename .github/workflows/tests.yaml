@@ -84,13 +84,21 @@ jobs:
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v4
+        id: node
         with:
           node-version: '22.23.1'
-          cache: yarn
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v6
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ steps.node.outputs.node-version }}-modules-${{ hashFiles('yarn.lock') }}
       - name: install typescript
         shell: bash
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: yarn global add typescript@4.9.5
       - name: install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile --network-concurrency 1
       - uses: actions/setup-python@v5
         with:
@@ -125,10 +133,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+        id: node
         with:
           node-version: '22.23.1'
-          cache: yarn
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v6
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ steps.node.outputs.node-version }}-modules-${{ hashFiles('yarn.lock') }}
       - name: install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile --network-concurrency 1
       - name: Count async/await migration progress
         run: yarn run count-async
@@ -139,13 +154,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+        id: node
         with:
           node-version: '22.23.1'
-          cache: yarn
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v6
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ steps.node.outputs.node-version }}-modules-${{ hashFiles('yarn.lock') }}
       - name: install typescript
         shell: bash
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: yarn global add typescript@4.9.5
       - name: install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile --network-concurrency 1
       - name: Unit Coverage
         run: |
@@ -1087,10 +1110,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+        id: node
         with:
           node-version: '22.23.1'
-          cache: yarn
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v6
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ steps.node.outputs.node-version }}-modules-${{ hashFiles('yarn.lock') }}
       - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile --network-concurrency 1
       - name: Delete stale GCP CI buckets
         run: yarn run cleanup_gcp_buckets
