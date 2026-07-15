@@ -289,6 +289,51 @@ describe('putMetadata : microVersionId conditional updates (no replication conte
             },
         );
     });
+
+    it('should allow first write to pre-cascade object then reject the same microVersionId', async () => {
+        const key = 'putmetadata-cond-pre-cascade';
+
+        // Step 1: write a pre-cascade object : no microVersionId in body, no header
+        await backbeatClient.send(
+            new PutMetadataCommand({
+                Bucket: TEST_BUCKET,
+                Key: key,
+                Body: buildMetadataBody({}),
+            }),
+        );
+        const { Body: beforeBody } = await backbeatClient.send(
+            new GetMetadataCommand({ Bucket: TEST_BUCKET, Key: key }),
+        );
+        assert.strictEqual(
+            new ObjectMD(JSON.parse(beforeBody)).getMicroVersionId(),
+            undefined,
+            'pre-cascade object should have no microVersionId',
+        );
+
+        // Step 2: first putMetadata with a microVersionId : $exists: false arm passes
+        const mvId = makeMicroVersionId();
+        await putMetadata(key, mvId);
+        const { Body: afterFirst } = await backbeatClient.send(
+            new GetMetadataCommand({ Bucket: TEST_BUCKET, Key: key }),
+        );
+        assert.strictEqual(
+            new ObjectMD(JSON.parse(afterFirst)).getMicroVersionId(),
+            mvId.raw,
+            'first write should store the microVersionId',
+        );
+
+        // Step 3: second write with the same microVersionId : already stored, should be rejected
+        await assert.rejects(
+            () => putMetadata(key, mvId),
+            err => {
+                assert.ok(
+                    err instanceof MicroVersionIdAlreadyStoredException,
+                    `expected MicroVersionIdAlreadyStoredException, got ${err.constructor.name}`,
+                );
+                return true;
+            },
+        );
+    });
 });
 
 // These tests send x-scal-replication-content to simulate backbeat replication writes.

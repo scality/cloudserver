@@ -395,6 +395,120 @@ describe('routeBackbeat', () => {
             assert.deepStrictEqual(mockResponse.body, {});
         });
 
+        it('should set an atomic microVersionId condition when updating an existing version', async () => {
+            // reverse-chronological ordering: sorted ascending, the newer revision (incoming) sorts first
+            const [incomingRaw, storedRaw] = [
+                versioning.VersionID.generateVersionId('test', 'RG001'),
+                versioning.VersionID.generateVersionId('test', 'RG001'),
+            ].sort();
+
+            mockRequest = preparePutMetadataRequest({ microVersionId: incomingRaw });
+            mockRequest.headers['x-scal-micro-version-id'] = versioning.VersionID.encode(incomingRaw);
+            mockRequest.url =
+                '/_/backbeat/metadata/bucket0/key0' +
+                '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
+
+            metadataUtils.standardMetadataValidateBucketAndObj.callsFake((_params, _denies, _log, callback) => {
+                callback(null, bucketInfo, { microVersionId: storedRaw });
+            });
+
+            const putObjectMDStub = sandbox
+                .stub(metadata, 'putObjectMD')
+                .callsFake((_bucketName, _objectKey, _omVal, options, _logParam, cb) => {
+                    assert.deepStrictEqual(options.conditions, {
+                        $or: [{ microVersionId: { $exists: false } }, { microVersionId: { $gt: incomingRaw } }],
+                    });
+                    cb(null, {});
+                });
+
+            routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+            void (await endPromise);
+
+            sinon.assert.called(putObjectMDStub);
+            assert.strictEqual(mockResponse.statusCode, 200);
+        });
+
+        it('should return 409 without writing when the incoming microVersionId is already stored', async () => {
+            const incomingRaw = versioning.VersionID.generateVersionId('test', 'RG001');
+
+            mockRequest = preparePutMetadataRequest({ microVersionId: incomingRaw });
+            mockRequest.headers['x-scal-micro-version-id'] = versioning.VersionID.encode(incomingRaw);
+            mockRequest.url =
+                '/_/backbeat/metadata/bucket0/key0' +
+                '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
+
+            metadataUtils.standardMetadataValidateBucketAndObj.callsFake((_params, _denies, _log, callback) => {
+                callback(null, bucketInfo, { microVersionId: incomingRaw });
+            });
+
+            const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
+
+            routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+            void (await endPromise);
+
+            sinon.assert.notCalled(putObjectMDStub);
+            assert.strictEqual(mockResponse.statusCode, 409);
+            assert.strictEqual(mockResponse.body.code, 'MicroVersionIdAlreadyStoredException');
+        });
+
+        it('should set an atomic microVersionId condition even when the stored revision has none ' +
+            '(pre-cascade object)', async () => {
+            const incomingRaw = versioning.VersionID.generateVersionId('test', 'RG001');
+
+            mockRequest = preparePutMetadataRequest({ microVersionId: incomingRaw });
+            mockRequest.headers['x-scal-micro-version-id'] = versioning.VersionID.encode(incomingRaw);
+            mockRequest.url =
+                '/_/backbeat/metadata/bucket0/key0' +
+                '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
+
+            metadataUtils.standardMetadataValidateBucketAndObj.callsFake((_params, _denies, _log, callback) => {
+                callback(null, bucketInfo, {});
+            });
+
+            const putObjectMDStub = sandbox
+                .stub(metadata, 'putObjectMD')
+                .callsFake((_bucketName, _objectKey, _omVal, options, _logParam, cb) => {
+                    assert.deepStrictEqual(options.conditions, {
+                        $or: [{ microVersionId: { $exists: false } }, { microVersionId: { $gt: incomingRaw } }],
+                    });
+                    cb(null, {});
+                });
+
+            routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+            void (await endPromise);
+
+            sinon.assert.called(putObjectMDStub);
+            assert.strictEqual(mockResponse.statusCode, 200);
+        });
+
+        it('should return 409 when the metadata write rejects a stale microVersionId', async () => {
+            const [incomingRaw, storedRaw] = [
+                versioning.VersionID.generateVersionId('test', 'RG001'),
+                versioning.VersionID.generateVersionId('test', 'RG001'),
+            ].sort();
+
+            mockRequest = preparePutMetadataRequest({ microVersionId: incomingRaw });
+            mockRequest.headers['x-scal-micro-version-id'] = versioning.VersionID.encode(incomingRaw);
+            mockRequest.url =
+                '/_/backbeat/metadata/bucket0/key0' +
+                '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
+
+            metadataUtils.standardMetadataValidateBucketAndObj.callsFake((_params, _denies, _log, callback) => {
+                callback(null, bucketInfo, { microVersionId: storedRaw });
+            });
+
+            sandbox
+                .stub(metadata, 'putObjectMD')
+                .callsFake((_bucketName, _objectKey, _omVal, _options, _logParam, cb) => {
+                    cb(errors.PreconditionFailed);
+                });
+
+            routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+            void (await endPromise);
+
+            assert.strictEqual(mockResponse.statusCode, 409);
+        });
+
         it('should handle error when putting metadata', async () => {
             const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
             putObjectMDStub.onCall(0).callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
