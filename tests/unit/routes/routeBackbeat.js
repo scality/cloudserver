@@ -198,27 +198,33 @@ describe('routeBackbeat', () => {
         mockRequest.url = '/_/backbeat/data/bucket0/key0';
         mockRequest.destroy = () => {};
 
-        metadataUtils.standardMetadataValidateBucketAndObj.callsFake(
-            (params, denies, log, callback) => {
-                callback(null, {
+        metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
+            callback(
+                null,
+                {
                     getVersioningConfiguration: () => ({ Status: 'Enabled' }),
                     isVersioningEnabled: () => true,
                     getLocationConstraint: () => undefined,
-                }, {
+                },
+                {
                     versionId: rawVersionId,
                     // no microVersionId — old-format object
-                });
-            });
+                },
+            );
+        });
 
         routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
-        void await endPromise;
+        void (await endPromise);
 
         sinon.assert.notCalled(storeObject.dataStore);
         assert.strictEqual(mockResponse.statusCode, 409);
         assert.strictEqual(mockResponse.body.code, 'VersionIdCollisionException');
         const [, responseHeaders] = mockResponse.writeHead.firstCall.args;
-        assert.strictEqual(responseHeaders['x-scal-micro-version-id'], '',
-            'should have empty x-scal-micro-version-id header for old-format objects');
+        assert.strictEqual(
+            responseHeaders['x-scal-micro-version-id'],
+            '',
+            'should have empty x-scal-micro-version-id header for old-format objects',
+        );
     });
 
     describe('putMetadata', () => {

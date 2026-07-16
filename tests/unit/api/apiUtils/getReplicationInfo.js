@@ -630,10 +630,31 @@ describe('getReplicationInfo helper', () => {
                 destination: 'tosomewhere',
             };
             const info = getReplicationInfo(
-                configWithRing, 'fookey',
-                new BucketInfo('b', 'id', 'name', new Date().toJSON(),
-                    null, null, null, null, null, null, null, null, null, replicationConfig),
-                true, 123, null, null, null, [RING_TYPE]);
+                configWithRing,
+                'fookey',
+                new BucketInfo(
+                    'b',
+                    'id',
+                    'name',
+                    new Date().toJSON(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    replicationConfig,
+                ),
+                true,
+                123,
+                null,
+                null,
+                null,
+                [RING_TYPE],
+            );
             assert.strictEqual(info.backends.length, 1);
             assert.strictEqual(info.backends[0].site, 'awsbackend');
         });
@@ -645,10 +666,31 @@ describe('getReplicationInfo helper', () => {
                 destination: 'tosomewhere',
             };
             const info = getReplicationInfo(
-                configWithRing, 'fookey',
-                new BucketInfo('b', 'id', 'name', new Date().toJSON(),
-                    null, null, null, null, null, null, null, null, null, replicationConfig),
-                true, 123, null, null, null, [RING_TYPE]);
+                configWithRing,
+                'fookey',
+                new BucketInfo(
+                    'b',
+                    'id',
+                    'name',
+                    new Date().toJSON(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    replicationConfig,
+                ),
+                true,
+                123,
+                null,
+                null,
+                null,
+                [RING_TYPE],
+            );
             assert.strictEqual(info, undefined);
         });
     });

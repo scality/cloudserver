@@ -3,21 +3,13 @@
 const assert = require('assert');
 const { createHash } = require('crypto');
 const { v4: uuidv4 } = require('uuid');
-const {
-    CreateBucketCommand,
-    PutBucketVersioningCommand,
-    PutObjectCommand,
-} = require('@aws-sdk/client-s3');
+const { CreateBucketCommand, PutBucketVersioningCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 
 const { versioning } = require('arsenal');
 const { ExternalNullVersionId } = versioning.VersioningConstants;
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 
-const {
-    BackbeatRoutesClient,
-    PutDataCommand,
-    VersionIdCollisionException,
-} = require('@scality/cloudserverclient');
+const { BackbeatRoutesClient, PutDataCommand, VersionIdCollisionException } = require('@scality/cloudserverclient');
 
 const { generateVersionId, encode: encodeVersionId } = versioning.VersionID;
 
@@ -31,15 +23,17 @@ const s3 = bucketUtil.s3;
 let backbeatClient;
 
 async function putData(key, { versionId } = {}) {
-    return backbeatClient.send(new PutDataCommand({
-        Bucket: TEST_BUCKET,
-        Key: key,
-        ContentMD5: OBJECT_MD5_HEX,
-        CanonicalID: CANONICAL_ID,
-        VersioningRequired: true,
-        VersionId: versionId || undefined,
-        Body: Buffer.from(OBJECT_BODY),
-    }));
+    return backbeatClient.send(
+        new PutDataCommand({
+            Bucket: TEST_BUCKET,
+            Key: key,
+            ContentMD5: OBJECT_MD5_HEX,
+            CanonicalID: CANONICAL_ID,
+            VersioningRequired: true,
+            VersionId: versionId || undefined,
+            Body: Buffer.from(OBJECT_BODY),
+        }),
+    );
 }
 
 before(async () => {
@@ -55,22 +49,25 @@ before(async () => {
     });
 
     await s3.send(new CreateBucketCommand({ Bucket: TEST_BUCKET }));
-    await s3.send(new PutBucketVersioningCommand({
-        Bucket: TEST_BUCKET,
-        VersioningConfiguration: { Status: 'Enabled' },
-    }));
+    await s3.send(
+        new PutBucketVersioningCommand({
+            Bucket: TEST_BUCKET,
+            VersioningConfiguration: { Status: 'Enabled' },
+        }),
+    );
 });
 
 describe('putData : VersionId collision detection', () => {
-    it('should throw VersionIdCollisionException with microVersionId when versionId matches current master',
-        async () => {
+    it('should throw VersionIdCollisionException with microVersionId when versionId matches master', async () => {
         const key = 'putdata-collision';
-        const putResult = await s3.send(new PutObjectCommand({
-            Bucket: TEST_BUCKET,
-            Key: key,
-            Body: Buffer.from(OBJECT_BODY),
-            ContentType: 'text/plain',
-        }));
+        const putResult = await s3.send(
+            new PutObjectCommand({
+                Bucket: TEST_BUCKET,
+                Key: key,
+                Body: Buffer.from(OBJECT_BODY),
+                ContentType: 'text/plain',
+            }),
+        );
         const encodedVersionId = putResult.VersionId;
         assert.ok(encodedVersionId, 'PutObject should return a VersionId');
 
@@ -78,25 +75,32 @@ describe('putData : VersionId collision detection', () => {
             await putData(key, { versionId: encodedVersionId });
             assert.fail('expected VersionIdCollisionException');
         } catch (err) {
-            assert.ok(err instanceof VersionIdCollisionException,
-                `expected VersionIdCollisionException, got ${err.constructor.name}`);
+            assert.ok(
+                err instanceof VersionIdCollisionException,
+                `expected VersionIdCollisionException, got ${err.constructor.name}`,
+            );
             // microVersionId in the error lets backbeat decide whether to proceed
             // with metadata-only replication or skip entirely (loop/stale detection).
             // '' signals the existing object has no microVersionId (original write state).
-            assert.strictEqual(err.microVersionId, '',
-                'microVersionId in exception should be empty when object has no microVersionId');
+            assert.strictEqual(
+                err.microVersionId,
+                '',
+                'microVersionId in exception should be empty when object has no microVersionId',
+            );
         }
     });
 
     it('should write data normally when VersionId does not match the current master', async () => {
         const key = 'putdata-no-collision';
 
-        await s3.send(new PutObjectCommand({
-            Bucket: TEST_BUCKET,
-            Key: key,
-            Body: Buffer.from(OBJECT_BODY),
-            ContentType: 'text/plain',
-        }));
+        await s3.send(
+            new PutObjectCommand({
+                Bucket: TEST_BUCKET,
+                Key: key,
+                Body: Buffer.from(OBJECT_BODY),
+                ContentType: 'text/plain',
+            }),
+        );
 
         const differentVersionId = encodeVersionId(generateVersionId('different-instance', 'RG001'));
         const output = await putData(key, { versionId: differentVersionId });
@@ -109,15 +113,17 @@ describe('putData : null-version objects (ExternalNullVersionId)', () => {
     // getEncodedVersionId() returns 'null' as-is (no base62 encoding), and objMd.versionId is
     // undefined in metadata : collision detection is not possible, so putData must write normally.
     it('should write normally when VersionId is "null" (ExternalNullVersionId)', async () => {
-        const output = await backbeatClient.send(new PutDataCommand({
-            Bucket: TEST_BUCKET,
-            Key: 'putdata-null-version',
-            ContentMD5: OBJECT_MD5_HEX,
-            CanonicalID: CANONICAL_ID,
-            VersioningRequired: true,
-            VersionId: ExternalNullVersionId,
-            Body: Buffer.from(OBJECT_BODY),
-        }));
+        const output = await backbeatClient.send(
+            new PutDataCommand({
+                Bucket: TEST_BUCKET,
+                Key: 'putdata-null-version',
+                ContentMD5: OBJECT_MD5_HEX,
+                CanonicalID: CANONICAL_ID,
+                VersioningRequired: true,
+                VersionId: ExternalNullVersionId,
+                Body: Buffer.from(OBJECT_BODY),
+            }),
+        );
         assert.ok(output.Location, 'putData with null-version versionId should write normally');
     });
 });
@@ -131,15 +137,16 @@ describe('putData : baseline (no cascade headers)', () => {
 
     it('should succeed when putData is sent without Expect: 100-continue (old-client compat)', async () => {
         const key = 'putdata-baseline-no-expect-continue';
-        const output = await backbeatClient.send(new PutDataCommand({
-            Bucket: TEST_BUCKET,
-            Key: key,
-            ContentMD5: OBJECT_MD5_HEX,
-            CanonicalID: CANONICAL_ID,
-            VersioningRequired: true,
-            Body: Buffer.from(OBJECT_BODY),
-        }));
-        assert.ok(output.Location,
-            'putData without Expect: 100-continue should return a Location');
+        const output = await backbeatClient.send(
+            new PutDataCommand({
+                Bucket: TEST_BUCKET,
+                Key: key,
+                ContentMD5: OBJECT_MD5_HEX,
+                CanonicalID: CANONICAL_ID,
+                VersioningRequired: true,
+                Body: Buffer.from(OBJECT_BODY),
+            }),
+        );
+        assert.ok(output.Location, 'putData without Expect: 100-continue should return a Location');
     });
 });

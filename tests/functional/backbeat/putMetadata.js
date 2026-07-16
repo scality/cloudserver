@@ -42,38 +42,43 @@ function makeMicroVersionId() {
 }
 
 function buildMetadataBody(overrides) {
-    const obj = Object.assign({
-        'content-length': Buffer.byteLength(OBJECT_BODY),
-        'content-type': 'text/plain',
-        'last-modified': new Date().toISOString(),
-        'x-amz-version-id': 'null',
-        'owner-id': CANONICAL_ID,
-        'owner-display-name': 'test',
-        'content-md5': OBJECT_MD5_HEX,
-        replicationInfo: {
-            status: 'REPLICA',
-            isReplica: true,
-            backends: [],
-            content: [],
-            destination: '',
-            storageClass: '',
-            role: '',
-            storageType: '',
-            dataStoreVersionId: '',
+    const obj = Object.assign(
+        {
+            'content-length': Buffer.byteLength(OBJECT_BODY),
+            'content-type': 'text/plain',
+            'last-modified': new Date().toISOString(),
+            'x-amz-version-id': 'null',
+            'owner-id': CANONICAL_ID,
+            'owner-display-name': 'test',
+            'content-md5': OBJECT_MD5_HEX,
+            replicationInfo: {
+                status: 'REPLICA',
+                isReplica: true,
+                backends: [],
+                content: [],
+                destination: '',
+                storageClass: '',
+                role: '',
+                storageType: '',
+                dataStoreVersionId: '',
+            },
         },
-    }, overrides || {});
+        overrides || {},
+    );
     return Buffer.from(JSON.stringify(obj));
 }
 
 // putMetadata without x-scal-replication-content — tests pure conditional update semantics
 async function putMetadata(key, mvId) {
     const bodyOverrides = mvId ? { microVersionId: mvId.raw } : {};
-    return backbeatClient.send(new PutMetadataCommand({
-        Bucket: TEST_BUCKET,
-        Key: key,
-        MicroVersionId: mvId ? mvId.encoded : undefined,
-        Body: buildMetadataBody(bodyOverrides),
-    }));
+    return backbeatClient.send(
+        new PutMetadataCommand({
+            Bucket: TEST_BUCKET,
+            Key: key,
+            MicroVersionId: mvId ? mvId.encoded : undefined,
+            Body: buildMetadataBody(bodyOverrides),
+        }),
+    );
 }
 
 before(async () => {
@@ -89,37 +94,46 @@ before(async () => {
     });
 
     await s3.send(new CreateBucketCommand({ Bucket: TEST_BUCKET }));
-    await s3.send(new PutBucketVersioningCommand({
-        Bucket: TEST_BUCKET,
-        VersioningConfiguration: { Status: 'Enabled' },
-    }));
+    await s3.send(
+        new PutBucketVersioningCommand({
+            Bucket: TEST_BUCKET,
+            VersioningConfiguration: { Status: 'Enabled' },
+        }),
+    );
 
     await s3.send(new CreateBucketCommand({ Bucket: DEST_BUCKET }));
-    await s3.send(new PutBucketVersioningCommand({
-        Bucket: DEST_BUCKET,
-        VersioningConfiguration: { Status: 'Enabled' },
-    }));
+    await s3.send(
+        new PutBucketVersioningCommand({
+            Bucket: DEST_BUCKET,
+            VersioningConfiguration: { Status: 'Enabled' },
+        }),
+    );
 
     await s3.send(new CreateBucketCommand({ Bucket: TEST_BUCKET_CRR }));
-    await s3.send(new PutBucketVersioningCommand({
-        Bucket: TEST_BUCKET_CRR,
-        VersioningConfiguration: { Status: 'Enabled' },
-    }));
-    await s3.send(new PutBucketReplicationCommand({
-        Bucket: TEST_BUCKET_CRR,
-        ReplicationConfiguration: {
-            Role: 'arn:aws:iam::account-id:role/src-resource,' +
-                'arn:aws:iam::account-id:role/dest-resource',
-            Rules: [{
-                Status: 'Enabled',
-                Prefix: '',
-                Destination: {
-                    Bucket: `arn:aws:s3:::${DEST_BUCKET}`,
-                    StorageClass: 'zenko',
-                },
-            }],
-        },
-    }));
+    await s3.send(
+        new PutBucketVersioningCommand({
+            Bucket: TEST_BUCKET_CRR,
+            VersioningConfiguration: { Status: 'Enabled' },
+        }),
+    );
+    await s3.send(
+        new PutBucketReplicationCommand({
+            Bucket: TEST_BUCKET_CRR,
+            ReplicationConfiguration: {
+                Role: 'arn:aws:iam::account-id:role/src-resource,' + 'arn:aws:iam::account-id:role/dest-resource',
+                Rules: [
+                    {
+                        Status: 'Enabled',
+                        Prefix: '',
+                        Destination: {
+                            Bucket: `arn:aws:s3:::${DEST_BUCKET}`,
+                            StorageClass: 'zenko',
+                        },
+                    },
+                ],
+            },
+        }),
+    );
 });
 
 // These tests send no x-scal-replication-content header — microVersionId is used
@@ -129,36 +143,40 @@ describe('putMetadata : microVersionId conditional updates (no replication conte
         const key = 'putmetadata-cond-first-write';
         const mvId = makeMicroVersionId();
         await putMetadata(key, mvId);
-        const { Body } = await backbeatClient.send(
-            new GetMetadataCommand({ Bucket: TEST_BUCKET, Key: key }));
+        const { Body } = await backbeatClient.send(new GetMetadataCommand({ Bucket: TEST_BUCKET, Key: key }));
         assert.strictEqual(new ObjectMD(JSON.parse(Body)).getMicroVersionId(), mvId.raw);
     });
 
     it('should succeed on first write when source has no microVersionId (putObject replication)', async () => {
         const key = 'putmetadata-cond-first-write-null-mvid';
         // '' = source has no microVersionId (putObject state): must not be treated as a loop
-        await backbeatClient.send(new PutMetadataCommand({
-            Bucket: TEST_BUCKET,
-            Key: key,
-            MicroVersionId: '',
-            Body: buildMetadataBody({}),
-        }));
-        const { Body } = await backbeatClient.send(
-            new GetMetadataCommand({ Bucket: TEST_BUCKET, Key: key }));
-        assert.strictEqual(new ObjectMD(JSON.parse(Body)).getMicroVersionId(), undefined,
-            'stored object should have no microVersionId when source had none');
+        await backbeatClient.send(
+            new PutMetadataCommand({
+                Bucket: TEST_BUCKET,
+                Key: key,
+                MicroVersionId: '',
+                Body: buildMetadataBody({}),
+            }),
+        );
+        const { Body } = await backbeatClient.send(new GetMetadataCommand({ Bucket: TEST_BUCKET, Key: key }));
+        assert.strictEqual(
+            new ObjectMD(JSON.parse(Body)).getMicroVersionId(),
+            undefined,
+            'stored object should have no microVersionId when source had none',
+        );
     });
 
-    it('should throw MicroVersionIdAlreadyStoredException on second write with the same microVersionId',
-        async () => {
+    it('should throw MicroVersionIdAlreadyStoredException on second write with the same microVersionId', async () => {
         const key = 'putmetadata-cond-loop';
         const mvId = makeMicroVersionId();
         await putMetadata(key, mvId);
         await assert.rejects(
             () => putMetadata(key, mvId),
             err => {
-                assert.ok(err instanceof MicroVersionIdAlreadyStoredException,
-                    'second write with same id should throw MicroVersionIdAlreadyStoredException');
+                assert.ok(
+                    err instanceof MicroVersionIdAlreadyStoredException,
+                    'second write with same id should throw MicroVersionIdAlreadyStoredException',
+                );
                 return true;
             },
         );
@@ -172,8 +190,10 @@ describe('putMetadata : microVersionId conditional updates (no replication conte
         await assert.rejects(
             () => putMetadata(key, olderMvId),
             err => {
-                assert.ok(err instanceof StaleMicroVersionIdException,
-                    `expected StaleMicroVersionIdException, got ${err.constructor.name}`);
+                assert.ok(
+                    err instanceof StaleMicroVersionIdException,
+                    `expected StaleMicroVersionIdException, got ${err.constructor.name}`,
+                );
                 return true;
             },
         );
@@ -185,10 +205,12 @@ describe('putMetadata : microVersionId conditional updates (no replication conte
         const newerMvId = makeMicroVersionId();
         await putMetadata(key, olderMvId);
         await putMetadata(key, newerMvId);
-        const { Body } = await backbeatClient.send(
-            new GetMetadataCommand({ Bucket: TEST_BUCKET, Key: key }));
-        assert.strictEqual(new ObjectMD(JSON.parse(Body)).getMicroVersionId(), newerMvId.raw,
-            'stored microVersionId should be the newer one');
+        const { Body } = await backbeatClient.send(new GetMetadataCommand({ Bucket: TEST_BUCKET, Key: key }));
+        assert.strictEqual(
+            new ObjectMD(JSON.parse(Body)).getMicroVersionId(),
+            newerMvId.raw,
+            'stored microVersionId should be the newer one',
+        );
     });
 
     it('should return 400 when MicroVersionId header does not match body microVersionId', async () => {
@@ -200,54 +222,69 @@ describe('putMetadata : microVersionId conditional updates (no replication conte
         const headerMvId = makeMicroVersionId();
         const bodyMvId = makeMicroVersionId();
         await assert.rejects(
-            () => backbeatClient.send(new PutMetadataCommand({
-                Bucket: TEST_BUCKET,
-                Key: key,
-                MicroVersionId: headerMvId.encoded,
-                Body: buildMetadataBody({ microVersionId: bodyMvId.raw }),
-            })),
+            () =>
+                backbeatClient.send(
+                    new PutMetadataCommand({
+                        Bucket: TEST_BUCKET,
+                        Key: key,
+                        MicroVersionId: headerMvId.encoded,
+                        Body: buildMetadataBody({ microVersionId: bodyMvId.raw }),
+                    }),
+                ),
             err => {
-                assert.strictEqual(err.$metadata.httpStatusCode, 400,
-                    'mismatched header and body microVersionId should return 400');
+                assert.strictEqual(
+                    err.$metadata.httpStatusCode,
+                    400,
+                    'mismatched header and body microVersionId should return 400',
+                );
                 return true;
             },
         );
     });
 
-    it('should throw StaleMicroVersionIdException after objectPutTagging bumped microVersionId',
-        async () => {
+    it('should throw StaleMicroVersionIdException after objectPutTagging bumped microVersionId', async () => {
         const key = 'putmetadata-cond-stale-tagging';
 
-        await s3.send(new PutObjectCommand({
-            Bucket: TEST_BUCKET_CRR,
-            Key: key,
-            Body: Buffer.from(OBJECT_BODY),
-            ContentType: 'text/plain',
-        }));
+        await s3.send(
+            new PutObjectCommand({
+                Bucket: TEST_BUCKET_CRR,
+                Key: key,
+                Body: Buffer.from(OBJECT_BODY),
+                ContentType: 'text/plain',
+            }),
+        );
 
         const olderMvId = makeMicroVersionId();
 
-        await s3.send(new PutObjectTaggingCommand({
-            Bucket: TEST_BUCKET_CRR,
-            Key: key,
-            Tagging: { TagSet: [{ Key: 'crr', Value: 'cascade' }] },
-        }));
-
-        const { Body } = await backbeatClient.send(
-            new GetMetadataCommand({ Bucket: TEST_BUCKET_CRR, Key: key }));
-        assert.ok(new ObjectMD(JSON.parse(Body)).getMicroVersionId(),
-            'objectPutTagging should have set a microVersionId');
-
-        await assert.rejects(
-            () => backbeatClient.send(new PutMetadataCommand({
+        await s3.send(
+            new PutObjectTaggingCommand({
                 Bucket: TEST_BUCKET_CRR,
                 Key: key,
-                MicroVersionId: olderMvId.encoded,
-                Body: buildMetadataBody({ microVersionId: olderMvId.raw }),
-            })),
+                Tagging: { TagSet: [{ Key: 'crr', Value: 'cascade' }] },
+            }),
+        );
+
+        const { Body } = await backbeatClient.send(new GetMetadataCommand({ Bucket: TEST_BUCKET_CRR, Key: key }));
+        assert.ok(
+            new ObjectMD(JSON.parse(Body)).getMicroVersionId(),
+            'objectPutTagging should have set a microVersionId',
+        );
+
+        await assert.rejects(
+            () =>
+                backbeatClient.send(
+                    new PutMetadataCommand({
+                        Bucket: TEST_BUCKET_CRR,
+                        Key: key,
+                        MicroVersionId: olderMvId.encoded,
+                        Body: buildMetadataBody({ microVersionId: olderMvId.raw }),
+                    }),
+                ),
             err => {
-                assert.ok(err instanceof StaleMicroVersionIdException,
-                    `expected StaleMicroVersionIdException, got ${err.constructor.name}`);
+                assert.ok(
+                    err instanceof StaleMicroVersionIdException,
+                    `expected StaleMicroVersionIdException, got ${err.constructor.name}`,
+                );
                 return true;
             },
         );
@@ -259,36 +296,44 @@ describe('putMetadata : microVersionId conditional updates (no replication conte
 describe('putMetadata : cascade replication behavior (with replication content)', () => {
     it('should succeed on first write of a zero-byte object without replication content', async () => {
         const key = 'putmetadata-crr-zero-byte';
-        await backbeatClient.send(new PutMetadataCommand({
-            Bucket: TEST_BUCKET,
-            Key: key,
-            MicroVersionId: '',
-            Body: buildMetadataBody({ 'content-length': 0, location: null }),
-        }));
-        const { Body } = await backbeatClient.send(
-            new GetMetadataCommand({ Bucket: TEST_BUCKET, Key: key }));
-        assert.strictEqual(new ObjectMD(JSON.parse(Body)).getContentLength(), 0,
-            'zero-byte object should be stored correctly');
+        await backbeatClient.send(
+            new PutMetadataCommand({
+                Bucket: TEST_BUCKET,
+                Key: key,
+                MicroVersionId: '',
+                Body: buildMetadataBody({ 'content-length': 0, location: null }),
+            }),
+        );
+        const { Body } = await backbeatClient.send(new GetMetadataCommand({ Bucket: TEST_BUCKET, Key: key }));
+        assert.strictEqual(
+            new ObjectMD(JSON.parse(Body)).getContentLength(),
+            0,
+            'zero-byte object should be stored correctly',
+        );
     });
 
-    it('should throw MicroVersionIdAlreadyStoredException on loop even with replication content',
-        async () => {
+    it('should throw MicroVersionIdAlreadyStoredException on loop even with replication content', async () => {
         // Verifies that microVersionId loop detection fires regardless of whether
         // x-scal-replication-content is set
         const key = 'putmetadata-crr-loop';
         const mvId = makeMicroVersionId();
         await putMetadata(key, mvId);
         await assert.rejects(
-            () => backbeatClient.send(new PutMetadataCommand({
-                Bucket: TEST_BUCKET,
-                Key: key,
-                MicroVersionId: mvId.encoded,
-                ReplicationContent: 'METADATA',
-                Body: buildMetadataBody({ microVersionId: mvId.raw }),
-            })),
+            () =>
+                backbeatClient.send(
+                    new PutMetadataCommand({
+                        Bucket: TEST_BUCKET,
+                        Key: key,
+                        MicroVersionId: mvId.encoded,
+                        ReplicationContent: 'METADATA',
+                        Body: buildMetadataBody({ microVersionId: mvId.raw }),
+                    }),
+                ),
             err => {
-                assert.ok(err instanceof MicroVersionIdAlreadyStoredException,
-                    'loop detection should fire even with x-scal-replication-content set');
+                assert.ok(
+                    err instanceof MicroVersionIdAlreadyStoredException,
+                    'loop detection should fire even with x-scal-replication-content set',
+                );
                 return true;
             },
         );
@@ -300,16 +345,21 @@ describe('putMetadata : cascade replication behavior (with replication content)'
         const newerMvId = makeMicroVersionId();
         await putMetadata(key, newerMvId);
         await assert.rejects(
-            () => backbeatClient.send(new PutMetadataCommand({
-                Bucket: TEST_BUCKET,
-                Key: key,
-                MicroVersionId: olderMvId.encoded,
-                ReplicationContent: 'METADATA',
-                Body: buildMetadataBody({ microVersionId: olderMvId.raw }),
-            })),
+            () =>
+                backbeatClient.send(
+                    new PutMetadataCommand({
+                        Bucket: TEST_BUCKET,
+                        Key: key,
+                        MicroVersionId: olderMvId.encoded,
+                        ReplicationContent: 'METADATA',
+                        Body: buildMetadataBody({ microVersionId: olderMvId.raw }),
+                    }),
+                ),
             err => {
-                assert.ok(err instanceof StaleMicroVersionIdException,
-                    'stale detection should fire even with x-scal-replication-content set');
+                assert.ok(
+                    err instanceof StaleMicroVersionIdException,
+                    'stale detection should fire even with x-scal-replication-content set',
+                );
                 return true;
             },
         );
@@ -322,55 +372,78 @@ describe('putMetadata : cascade replication behavior (with replication content)'
         // First write creates the object (required before METADATA-content writes).
         await putMetadata(key, olderMvId);
         // Second write with x-scal-replication-content triggers the cascade block.
-        await backbeatClient.send(new PutMetadataCommand({
-            Bucket: TEST_BUCKET,
-            Key: key,
-            MicroVersionId: newerMvId.encoded,
-            ReplicationContent: 'METADATA',
-            Body: buildMetadataBody({ microVersionId: newerMvId.raw }),
-        }));
-        const { Body } = await backbeatClient.send(
-            new GetMetadataCommand({ Bucket: TEST_BUCKET, Key: key }));
+        await backbeatClient.send(
+            new PutMetadataCommand({
+                Bucket: TEST_BUCKET,
+                Key: key,
+                MicroVersionId: newerMvId.encoded,
+                ReplicationContent: 'METADATA',
+                Body: buildMetadataBody({ microVersionId: newerMvId.raw }),
+            }),
+        );
+        const { Body } = await backbeatClient.send(new GetMetadataCommand({ Bucket: TEST_BUCKET, Key: key }));
         const storedMd = new ObjectMD(JSON.parse(Body));
-        assert.strictEqual(storedMd.getReplicationStatus(), '',
-            'replication status should be cleared when no CRR rules match');
-        assert.deepStrictEqual(storedMd.getReplicationBackends(), [],
-            'replication backends should be empty when no CRR rules match');
-        assert.strictEqual(storedMd.getReplicationIsReplica(), true,
-            'isReplica should be preserved regardless of cascade triggering');
+        assert.strictEqual(
+            storedMd.getReplicationStatus(),
+            '',
+            'replication status should be cleared when no CRR rules match',
+        );
+        assert.deepStrictEqual(
+            storedMd.getReplicationBackends(),
+            [],
+            'replication backends should be empty when no CRR rules match',
+        );
+        assert.strictEqual(
+            storedMd.getReplicationIsReplica(),
+            true,
+            'isReplica should be preserved regardless of cascade triggering',
+        );
     });
 
-    it('should set replication status to PENDING and preserve isReplica when bucket has CRR rules',
-        async () => {
+    it('should set replication status to PENDING and preserve isReplica when bucket has CRR rules', async () => {
         const key = 'putmetadata-crr-next-hop';
         const olderMvId = makeMicroVersionId();
         const newerMvId = makeMicroVersionId();
 
-        await backbeatClient.send(new PutMetadataCommand({
-            Bucket: TEST_BUCKET_CRR,
-            Key: key,
-            MicroVersionId: olderMvId.encoded,
-            Body: buildMetadataBody({ microVersionId: olderMvId.raw }),
-        }));
-        await backbeatClient.send(new PutMetadataCommand({
-            Bucket: TEST_BUCKET_CRR,
-            Key: key,
-            MicroVersionId: newerMvId.encoded,
-            ReplicationContent: 'METADATA',
-            Body: buildMetadataBody({ microVersionId: newerMvId.raw }),
-        }));
+        await backbeatClient.send(
+            new PutMetadataCommand({
+                Bucket: TEST_BUCKET_CRR,
+                Key: key,
+                MicroVersionId: olderMvId.encoded,
+                Body: buildMetadataBody({ microVersionId: olderMvId.raw }),
+            }),
+        );
+        await backbeatClient.send(
+            new PutMetadataCommand({
+                Bucket: TEST_BUCKET_CRR,
+                Key: key,
+                MicroVersionId: newerMvId.encoded,
+                ReplicationContent: 'METADATA',
+                Body: buildMetadataBody({ microVersionId: newerMvId.raw }),
+            }),
+        );
 
-        const { Body } = await backbeatClient.send(
-            new GetMetadataCommand({ Bucket: TEST_BUCKET_CRR, Key: key }));
+        const { Body } = await backbeatClient.send(new GetMetadataCommand({ Bucket: TEST_BUCKET_CRR, Key: key }));
         const storedMd = new ObjectMD(JSON.parse(Body));
-        assert.strictEqual(storedMd.getMicroVersionId(), newerMvId.raw,
-            'stored microVersionId should be the newer one');
-        assert.strictEqual(storedMd.getReplicationStatus(), 'PENDING',
-            'replication status should be PENDING when a CRR rule matches');
-        assert.ok(storedMd.getReplicationBackends().length > 0,
-            'replication backends should be populated when a CRR rule matches');
-        assert.strictEqual(storedMd.getReplicationIsReplica(), true,
-            'isReplica should be preserved regardless of cascade triggering');
+        assert.strictEqual(
+            storedMd.getMicroVersionId(),
+            newerMvId.raw,
+            'stored microVersionId should be the newer one',
+        );
+        assert.strictEqual(
+            storedMd.getReplicationStatus(),
+            'PENDING',
+            'replication status should be PENDING when a CRR rule matches',
+        );
+        assert.ok(
+            storedMd.getReplicationBackends().length > 0,
+            'replication backends should be populated when a CRR rule matches',
+        );
+        assert.strictEqual(
+            storedMd.getReplicationIsReplica(),
+            true,
+            'isReplica should be preserved regardless of cascade triggering',
+        );
     });
 });
 
@@ -382,14 +455,18 @@ describe('putMetadata : baseline (no cascade headers)', () => {
 
     it('should not set a microVersionId on a regular S3 PutObject', async () => {
         const key = 'putmetadata-baseline-s3put';
-        await s3.send(new PutObjectCommand({
-            Bucket: TEST_BUCKET,
-            Key: key,
-            Body: Buffer.from(OBJECT_BODY),
-        }));
-        const { Body } = await backbeatClient.send(
-            new GetMetadataCommand({ Bucket: TEST_BUCKET, Key: key }));
-        assert.strictEqual(new ObjectMD(JSON.parse(Body)).getMicroVersionId(), undefined,
-            'a regular S3 PutObject should not set a microVersionId');
+        await s3.send(
+            new PutObjectCommand({
+                Bucket: TEST_BUCKET,
+                Key: key,
+                Body: Buffer.from(OBJECT_BODY),
+            }),
+        );
+        const { Body } = await backbeatClient.send(new GetMetadataCommand({ Bucket: TEST_BUCKET, Key: key }));
+        assert.strictEqual(
+            new ObjectMD(JSON.parse(Body)).getMicroVersionId(),
+            undefined,
+            'a regular S3 PutObject should not set a microVersionId',
+        );
     });
 });
