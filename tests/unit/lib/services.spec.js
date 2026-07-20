@@ -94,8 +94,12 @@ describe('services', () => {
                 IsTruncated: false,
             });
 
-            services.findObjectVersionByUploadId(bucketName, objectKey, 'non-existent-upload-id',
-                log, (err, foundVersion) => {
+            services.findObjectVersionByUploadId(
+                bucketName,
+                objectKey,
+                'non-existent-upload-id',
+                log,
+                (err, foundVersion) => {
                     assert.ifError(err);
                     sinon.assert.calledTwice(getObjectListingStub);
 
@@ -104,7 +108,8 @@ describe('services', () => {
                     assert.strictEqual(secondCallParams.versionIdMarker, 'version-marker');
                     assert.strictEqual(foundVersion, null);
                     done();
-                });
+                },
+            );
         });
 
         it('should find a version on the first page of many and stop listing', done => {
