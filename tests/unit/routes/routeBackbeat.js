@@ -229,10 +229,9 @@ describe('routeBackbeat', () => {
             'content-md5': '1234',
             'content-length': '0',
             'x-scal-versioning-required': 'true',
-            'x-scal-version-id': encodedVersionId,
         });
         mockRequest.method = 'PUT';
-        mockRequest.url = '/_/backbeat/data/bucket0/key0';
+        mockRequest.url = `/_/backbeat/data/bucket0/key0?versionId=${encodedVersionId}`;
         mockRequest.destroy = () => {};
 
         metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {

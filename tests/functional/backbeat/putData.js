@@ -14,6 +14,7 @@ const { BackbeatRoutesClient, PutDataCommand, VersionIdCollisionException } = re
 const { generateVersionId, encode: encodeVersionId } = versioning.VersionID;
 
 const TEST_BUCKET = `bucket-putdata-${uuidv4().split('-')[0]}`;
+const TEST_BUCKET_UNVERSIONED = `bucket-putdata-unver-${uuidv4().split('-')[0]}`;
 const OBJECT_BODY = 'imAboutToBeCascadedWitNoParachuteInMyBack';
 const OBJECT_MD5_HEX = createHash('md5').update(OBJECT_BODY).digest('hex');
 const CANONICAL_ID = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
@@ -55,6 +56,8 @@ before(async () => {
             VersioningConfiguration: { Status: 'Enabled' },
         }),
     );
+
+    await s3.send(new CreateBucketCommand({ Bucket: TEST_BUCKET_UNVERSIONED }));
 });
 
 describe('putData : VersionId collision detection', () => {
@@ -106,17 +109,63 @@ describe('putData : VersionId collision detection', () => {
         const output = await putData(key, { versionId: differentVersionId });
         assert.ok(output.Location, 'should return a Location when data is written normally');
     });
+
+    it('should throw VersionIdCollisionException when a non-current version already exists', async () => {
+        const key = 'putdata-non-current-collision';
+
+        const v1Result = await s3.send(
+            new PutObjectCommand({
+                Bucket: TEST_BUCKET,
+                Key: key,
+                Body: Buffer.from(OBJECT_BODY),
+                ContentType: 'text/plain',
+            }),
+        );
+        const v1VersionId = v1Result.VersionId;
+        assert.ok(v1VersionId, 'first PutObject should return a VersionId');
+
+        const v2Result = await s3.send(
+            new PutObjectCommand({
+                Bucket: TEST_BUCKET,
+                Key: key,
+                Body: Buffer.from(OBJECT_BODY),
+                ContentType: 'text/plain',
+            }),
+        );
+        assert.ok(v2Result.VersionId, 'second PutObject should return a VersionId');
+
+        // putData on v1 (non-current) must detect the collision, not just compare against master
+        try {
+            await putData(key, { versionId: v1VersionId });
+            assert.fail('expected VersionIdCollisionException');
+        } catch (err) {
+            assert.ok(
+                err instanceof VersionIdCollisionException,
+                `expected VersionIdCollisionException, got ${err.constructor.name}`,
+            );
+            assert.strictEqual(err.microVersionId, '', 'microVersionId should be empty for original write state');
+        }
+    });
 });
 
 describe('putData : null-version objects (ExternalNullVersionId)', () => {
-    // Null-version objects created before versioning was enabled use Arsenal constant ExternalNullVersionId = 'null'
-    // getEncodedVersionId() returns 'null' as-is (no base62 encoding), and objMd.versionId is
-    // undefined in metadata : collision detection is not possible, so putData must write normally.
-    it('should write normally when VersionId is "null" (ExternalNullVersionId)', async () => {
+    it('should write normally when VersionId is "null" and destination has no null version', async () => {
+        // Versioned bucket: existing object has a real versionId, not a null version.
+        // Fetching with ExternalNullVersionId returns no objMd => no collision => write normally.
+        const key = 'putdata-null-version-no-collision';
+        await s3.send(
+            new PutObjectCommand({
+                Bucket: TEST_BUCKET,
+                Key: key,
+                Body: Buffer.from(OBJECT_BODY),
+                ContentType: 'text/plain',
+            }),
+        );
+
         const output = await backbeatClient.send(
             new PutDataCommand({
                 Bucket: TEST_BUCKET,
-                Key: 'putdata-null-version',
+                Key: key,
                 ContentMD5: OBJECT_MD5_HEX,
                 CanonicalID: CANONICAL_ID,
                 VersioningRequired: true,
@@ -126,10 +175,44 @@ describe('putData : null-version objects (ExternalNullVersionId)', () => {
         );
         assert.ok(output.Location, 'putData with null-version versionId should write normally');
     });
+
+    it('should throw VersionIdCollisionException when a null version already exists at destination', async () => {
+        // Unversioned bucket: objects have no versionId in metadata (they are null versions).
+        // putData with ExternalNullVersionId must detect the collision.
+        const key = 'putdata-null-version-collision';
+        await s3.send(
+            new PutObjectCommand({
+                Bucket: TEST_BUCKET_UNVERSIONED,
+                Key: key,
+                Body: Buffer.from(OBJECT_BODY),
+                ContentType: 'text/plain',
+            }),
+        );
+
+        try {
+            await backbeatClient.send(
+                new PutDataCommand({
+                    Bucket: TEST_BUCKET_UNVERSIONED,
+                    Key: key,
+                    ContentMD5: OBJECT_MD5_HEX,
+                    CanonicalID: CANONICAL_ID,
+                    VersionId: ExternalNullVersionId,
+                    Body: Buffer.from(OBJECT_BODY),
+                }),
+            );
+            assert.fail('expected VersionIdCollisionException');
+        } catch (err) {
+            assert.ok(
+                err instanceof VersionIdCollisionException,
+                `expected VersionIdCollisionException, got ${err.constructor.name}`,
+            );
+            assert.strictEqual(err.microVersionId, '', 'microVersionId should be empty for null-version collision');
+        }
+    });
 });
 
-describe('putData : baseline (no cascade headers)', () => {
-    it('should succeed normally when putData has no VersionId header', async () => {
+describe('putData : baseline', () => {
+    it('should succeed normally when putData has no VersionId query param', async () => {
         const key = 'putdata-baseline-no-version-id';
         const output = await putData(key);
         assert.ok(output.Location, 'putData without VersionId should return a Location');
