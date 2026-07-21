@@ -1,6 +1,7 @@
 const assert = require('assert');
 const sinon = require('sinon');
 const { ScubaClientImpl } = require('../../../../lib/utilization/scuba/wrapper');
+const { default: ScubaClient } = require('scubaclient');
 
 describe('ScubaClientImpl', () => {
     let client;
@@ -44,7 +45,7 @@ describe('ScubaClientImpl', () => {
         });
 
         it('should disable Scuba if health check returns non-stale data', async () => {
-            sinon.stub(client, 'healthCheck').resolves({ date: Date.now() - (12 * 60 * 60 * 1000) });
+            sinon.stub(client, 'healthCheck').resolves({ date: Date.now() - 12 * 60 * 60 * 1000 });
 
             await client._healthCheck();
 
@@ -52,7 +53,7 @@ describe('ScubaClientImpl', () => {
         });
 
         it('should disable Scuba if health check returns stale data', async () => {
-            sinon.stub(client, 'healthCheck').resolves({ date: Date.now() - (48 * 60 * 60 * 1000) });
+            sinon.stub(client, 'healthCheck').resolves({ date: Date.now() - 48 * 60 * 60 * 1000 });
 
             await client._healthCheck();
 
@@ -97,6 +98,46 @@ describe('ScubaClientImpl', () => {
             assert(healthCheckStub.calledOnce);
             assert(setIntervalStub.calledOnce);
             assert(clearIntervalStub.calledOnceWith(123));
+        });
+    });
+
+    describe('getUtilizationMetrics', () => {
+        it('should forward the werelogs req_id chain as the X-Scal-Request-Uids header', async () => {
+            const metricsStub = sinon.stub(ScubaClient.prototype, 'getLatestMetrics').resolves({ bytesTotal: 0 });
+            const reqLog = { getSerializedUids: () => 'req1:req2' };
+
+            const data = await client.getUtilizationMetrics(
+                'bucket',
+                'k',
+                null,
+                { action: 'objectPut', inflight: 1 },
+                reqLog,
+            );
+
+            assert.deepStrictEqual(data, { bytesTotal: 0 });
+            const forwardedOptions = metricsStub.getCall(0).args[2];
+            assert.strictEqual(forwardedOptions.headers['X-Scal-Request-Uids'], 'req1:req2');
+        });
+
+        it('should not set X-Scal-Request-Uids when log lacks getSerializedUids', async () => {
+            const metricsStub = sinon.stub(ScubaClient.prototype, 'getLatestMetrics').resolves({});
+
+            await client.getUtilizationMetrics('bucket', 'k', null, { action: 'objectPut', inflight: 1 }, {});
+
+            const forwardedOptions = metricsStub.getCall(0).args[2];
+            assert.strictEqual(forwardedOptions, null);
+        });
+
+        it('should merge X-Scal-Request-Uids with existing options headers', async () => {
+            const metricsStub = sinon.stub(ScubaClient.prototype, 'getLatestMetrics').resolves({ bytesTotal: 0 });
+            const reqLog = { getSerializedUids: () => 'req1:req2' };
+            const options = { headers: { 'X-Existing': 'v' } };
+
+            await client.getUtilizationMetrics('bucket', 'k', options, { action: 'objectPut', inflight: 1 }, reqLog);
+
+            const forwardedOptions = metricsStub.getCall(0).args[2];
+            assert.strictEqual(forwardedOptions.headers['X-Existing'], 'v');
+            assert.strictEqual(forwardedOptions.headers['X-Scal-Request-Uids'], 'req1:req2');
         });
     });
 });

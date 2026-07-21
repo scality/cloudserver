@@ -35,7 +35,7 @@ describe('fetchCapacityMetrics', () => {
     });
 
     it('should call UtilizationService with the correct bucket key', async () => {
-        utilizationStub.callsArgWith(4, null, {});
+        utilizationStub.resolves({});
 
         await fetchCapacityMetrics(bucketMd, request, log);
 
@@ -46,7 +46,7 @@ describe('fetchCapacityMetrics', () => {
 
     it('should resolve with metrics on success', async () => {
         const bucketMetrics = { bytesTotal: 42, date: '2026-03-26T19:00:08.996Z' };
-        utilizationStub.callsArgWith(4, null, bucketMetrics);
+        utilizationStub.resolves(bucketMetrics);
 
         const metrics = await fetchCapacityMetrics(bucketMd, request, log);
 
@@ -58,7 +58,7 @@ describe('fetchCapacityMetrics', () => {
     it('should resolve with no error and a default date on 404', async () => {
         const error404 = new Error('Not Found');
         error404.response = { status: 404 };
-        utilizationStub.callsArgWith(4, error404);
+        utilizationStub.rejects(error404);
 
         const metrics = await fetchCapacityMetrics(bucketMd, request, log);
 
@@ -72,7 +72,7 @@ describe('fetchCapacityMetrics', () => {
     it('should also handle 404 via statusCode property', async () => {
         const error404 = new Error('Not Found');
         error404.statusCode = 404;
-        utilizationStub.callsArgWith(4, error404);
+        utilizationStub.rejects(error404);
 
         const metrics = await fetchCapacityMetrics(bucketMd, request, log);
 
@@ -83,12 +83,9 @@ describe('fetchCapacityMetrics', () => {
     it('should reject with error on non-404 failures', async () => {
         const error500 = new Error('Internal Server Error');
         error500.response = { status: 500 };
-        utilizationStub.callsArgWith(4, error500);
+        utilizationStub.rejects(error500);
 
-        await assert.rejects(
-            fetchCapacityMetrics(bucketMd, request, log),
-            err => err === error500,
-        );
+        await assert.rejects(fetchCapacityMetrics(bucketMd, request, log), err => err === error500);
 
         assert(logErrorSpy.calledOnce);
         assert.strictEqual(logErrorSpy.getCall(0).args[1].bucket, 'test-bucket');
@@ -99,12 +96,9 @@ describe('fetchCapacityMetrics', () => {
     it('should reject with error on connection errors', async () => {
         const connError = new Error('Connection refused');
         connError.code = 'ECONNREFUSED';
-        utilizationStub.callsArgWith(4, connError);
+        utilizationStub.rejects(connError);
 
-        await assert.rejects(
-            fetchCapacityMetrics(bucketMd, request, log),
-            err => err === connError,
-        );
+        await assert.rejects(fetchCapacityMetrics(bucketMd, request, log), err => err === connError);
 
         assert(logErrorSpy.calledOnce);
         assert.strictEqual(logErrorSpy.getCall(0).args[1].statusCode, 'ECONNREFUSED');
@@ -190,7 +184,7 @@ describe('buildVeeamFileData', () => {
         metadataStub.callsArgWith(2, null, bucketMd);
         const error500 = new Error('Internal Server Error');
         error500.response = { status: 500 };
-        utilizationStub.callsArgWith(4, error500);
+        utilizationStub.rejects(error500);
 
         await assert.rejects(
             buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log),
@@ -201,7 +195,7 @@ describe('buildVeeamFileData', () => {
     it('should build capacity.xml with SUR metrics date and applied Used/Available', async () => {
         const metricsDate = new Date('2026-03-26T19:00:08.996Z');
         metadataStub.callsArgWith(2, null, bucketMd);
-        utilizationStub.callsArgWith(4, null, { date: metricsDate, bytesTotal: 100 });
+        utilizationStub.resolves({ date: metricsDate, bytesTotal: 100 });
 
         const result = await buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log);
 
@@ -219,7 +213,7 @@ describe('buildVeeamFileData', () => {
         metadataStub.callsArgWith(2, null, bucketMd);
         const error404 = new Error('Not Found');
         error404.response = { status: 404 };
-        utilizationStub.callsArgWith(4, error404);
+        utilizationStub.rejects(error404);
 
         const result = await buildVeeamFileData(createRequest(capacityObjectKey), bucketMd, log);
 
@@ -257,7 +251,7 @@ describe('buildVeeamFileData', () => {
             },
         };
         metadataStub.callsArgWith(2, null, bucketMdWithUsed);
-        utilizationStub.callsArgWith(4, null, { date: new Date(), bytesTotal: 999 });
+        utilizationStub.resolves({ date: new Date(), bytesTotal: 999 });
 
         const result = await buildVeeamFileData(createRequest(capacityObjectKey), bucketMdWithUsed, log);
 
