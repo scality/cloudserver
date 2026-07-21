@@ -21,7 +21,14 @@ function _getObjectReplicationInfo(s3config, replicationConfig, key, objectMD) {
         null,
         replicationConfig,
     );
-    return getReplicationInfo(s3config, key || 'fookey', bucketInfo, true, 123, null, objectMD || null);
+    return getReplicationInfo({
+        s3config,
+        objKey: key || 'fookey',
+        bucketMD: bucketInfo,
+        isMD: true,
+        objSize: 123,
+        objectMD: objectMD || null,
+    });
 }
 
 const TEST_CONFIG = {
@@ -238,16 +245,14 @@ describe('getReplicationInfo helper', () => {
                 canonicalID: 'abcdef/lifecycle',
                 accountDisplayName: 'Lifecycle Service Account',
             });
-            const replicationInfo = getReplicationInfo(
-                TEST_CONFIG,
-                'fookey',
-                bucketInfo,
-                true,
-                123,
-                null,
-                null,
+            const replicationInfo = getReplicationInfo({
+                s3config: TEST_CONFIG,
+                objKey: 'fookey',
+                bucketMD: bucketInfo,
+                isMD: true,
+                objSize: 123,
                 authInfo,
-            );
+            });
             assert.deepStrictEqual(replicationInfo, undefined);
         });
 
@@ -283,16 +288,14 @@ describe('getReplicationInfo helper', () => {
                 canonicalID: 'abcdef/md-ingestion',
                 accountDisplayName: 'Metadata Ingestion Service Account',
             });
-            const replicationInfo = getReplicationInfo(
-                TEST_CONFIG,
-                'fookey',
-                bucketInfo,
-                true,
-                123,
-                null,
-                null,
+            const replicationInfo = getReplicationInfo({
+                s3config: TEST_CONFIG,
+                objKey: 'fookey',
+                bucketMD: bucketInfo,
+                isMD: true,
+                objSize: 123,
                 authInfo,
-            );
+            });
             assert.deepStrictEqual(replicationInfo, {
                 status: 'PENDING',
                 backends: [
@@ -629,10 +632,10 @@ describe('getReplicationInfo helper', () => {
                 ],
                 destination: 'tosomewhere',
             };
-            const info = getReplicationInfo(
-                configWithRing,
-                'fookey',
-                new BucketInfo(
+            const info = getReplicationInfo({
+                s3config: configWithRing,
+                objKey: 'fookey',
+                bucketMD: new BucketInfo(
                     'b',
                     'id',
                     'name',
@@ -648,13 +651,10 @@ describe('getReplicationInfo helper', () => {
                     null,
                     replicationConfig,
                 ),
-                true,
-                123,
-                null,
-                null,
-                null,
-                [RING_TYPE],
-            );
+                isMD: true,
+                objSize: 123,
+                blockedSiteTypes: [RING_TYPE],
+            });
             assert.strictEqual(info.backends.length, 1);
             assert.strictEqual(info.backends[0].site, 'awsbackend');
         });
@@ -665,10 +665,10 @@ describe('getReplicationInfo helper', () => {
                 rules: [{ prefix: '', enabled: true, storageClass: 'ring-site' }],
                 destination: 'tosomewhere',
             };
-            const info = getReplicationInfo(
-                configWithRing,
-                'fookey',
-                new BucketInfo(
+            const info = getReplicationInfo({
+                s3config: configWithRing,
+                objKey: 'fookey',
+                bucketMD: new BucketInfo(
                     'b',
                     'id',
                     'name',
@@ -684,13 +684,10 @@ describe('getReplicationInfo helper', () => {
                     null,
                     replicationConfig,
                 ),
-                true,
-                123,
-                null,
-                null,
-                null,
-                [RING_TYPE],
-            );
+                isMD: true,
+                objSize: 123,
+                blockedSiteTypes: [RING_TYPE],
+            });
             assert.strictEqual(info, undefined);
         });
     });
