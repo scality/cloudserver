@@ -1,6 +1,7 @@
 const sinon = require('sinon');
 const { errors, auth } = require('arsenal');
 const api = require('../../../lib/api/api');
+const rateLimitCache = require('../../../lib/api/apiUtils/rateLimit/cache');
 const DummyRequest = require('../DummyRequest');
 const { default: AuthInfo } = require('arsenal/build/lib/auth/AuthInfo');
 const assert = require('assert');
@@ -24,23 +25,32 @@ describe('api.callApiMethod', () => {
 
         response = {
             write: sandbox.stub(),
-            end: sandbox.stub()
+            end: sandbox.stub(),
         };
 
         log = {
             addDefaultFields: sandbox.stub(),
             trace: sandbox.stub(),
             error: sandbox.stub(),
-            debug: sandbox.stub()
+            debug: sandbox.stub(),
         };
 
         authServer = {
-            doAuth: sandbox.stub().callsArgWith(2, null, new AuthInfo({}), [{
-                isAllowed: true,
-                isImplicit: false,
-            }], null, {
-                accountQuota: 5000,
-            }),
+            doAuth: sandbox.stub().callsArgWith(
+                2,
+                null,
+                new AuthInfo({}),
+                [
+                    {
+                        isAllowed: true,
+                        isImplicit: false,
+                    },
+                ],
+                null,
+                {
+                    accountQuota: 5000,
+                },
+            ),
         };
 
         sandbox.stub(auth, 'server').value(authServer);
@@ -49,7 +59,6 @@ describe('api.callApiMethod', () => {
     afterEach(() => {
         sandbox.restore();
     });
-
 
     it('should attach apiMethod to request', done => {
         const testMethod = 'bucketGet';
@@ -100,8 +109,7 @@ describe('api.callApiMethod', () => {
             assert.strictEqual(requestContexts[0]._needQuota, true);
             done();
         });
-        sandbox.stub(api, 'completeMultipartUpload').callsFake(
-            (userInfo, _request, streamingV4Params, log, cb) => cb);
+        sandbox.stub(api, 'completeMultipartUpload').callsFake((userInfo, _request, streamingV4Params, log, cb) => cb);
         api.callApiMethod('completeMultipartUpload', request, response, log);
     });
 
@@ -110,21 +118,19 @@ describe('api.callApiMethod', () => {
             assert.strictEqual(requestContexts[0]._needQuota, true);
             done();
         });
-        sandbox.stub(api, 'multipartDelete').callsFake(
-            (userInfo, _request, streamingV4Params, log, cb) => cb);
+        sandbox.stub(api, 'multipartDelete').callsFake((userInfo, _request, streamingV4Params, log, cb) => cb);
         api.callApiMethod('multipartDelete', request, response, log);
     });
 
     ['objectPut', 'objectPutPart'].forEach(method => {
         it(`should set startTurnAroundTime on request end for ${method}`, done => {
-            sandbox.stub(api, method).callsFake(
-                (userInfo, _request, streamingV4Params, _log, cb) => {
-                    request.on('end', () => {
-                        assert.strictEqual(typeof request.serverAccessLog.startTurnAroundTime, 'bigint');
-                        cb();
-                    });
-                    request.resume();
+            sandbox.stub(api, method).callsFake((userInfo, _request, streamingV4Params, _log, cb) => {
+                request.on('end', () => {
+                    assert.strictEqual(typeof request.serverAccessLog.startTurnAroundTime, 'bigint');
+                    cb();
                 });
+                request.resume();
+            });
             request.objectKey = 'testobject';
             request.serverAccessLog = {};
             api.callApiMethod(method, request, response, log, err => {
@@ -134,11 +140,10 @@ describe('api.callApiMethod', () => {
         });
 
         it(`should set startTurnAroundTime synchronously for 0-byte ${method}`, done => {
-            sandbox.stub(api, method).callsFake(
-                (userInfo, _request, streamingV4Params, _log, cb) => {
-                    assert.strictEqual(typeof request.serverAccessLog.startTurnAroundTime, 'bigint');
-                    cb();
-                });
+            sandbox.stub(api, method).callsFake((userInfo, _request, streamingV4Params, _log, cb) => {
+                assert.strictEqual(typeof request.serverAccessLog.startTurnAroundTime, 'bigint');
+                cb();
+            });
             request.objectKey = 'testobject';
             request.serverAccessLog = {};
             request.headers = Object.assign({}, request.headers, { 'content-length': '0' });
@@ -149,10 +154,51 @@ describe('api.callApiMethod', () => {
         });
     });
 
+    describe('cross-account rate limiting target account', () => {
+        afterEach(() => {
+            rateLimitCache.bucketOwnerCache.clear();
+        });
+
+        it('should pass the cached bucket owner to doAuth as targetAccount', done => {
+            request.bucketName = 'rl-bucket';
+            rateLimitCache.setCachedBucketOwner('rl-bucket', 'owner-canonical-id', 30000);
+            // Reset the default callsArgWith behavior so only the fake runs
+            authServer.doAuth.resetBehavior();
+            authServer.doAuth.callsFake((req, log, cb, awsService, requestContexts, authOptions) => {
+                assert.strictEqual(authOptions.targetAccount, 'owner-canonical-id');
+                assert.strictEqual(request.rateLimitTargetAccount, 'owner-canonical-id');
+                done();
+            });
+            api.callApiMethod('bucketGet', request, response, log);
+        });
+
+        it('should not set targetAccount when no bucket owner is cached', done => {
+            request.bucketName = 'rl-bucket';
+            authServer.doAuth.resetBehavior();
+            authServer.doAuth.callsFake((req, log, cb, awsService, requestContexts, authOptions) => {
+                assert.deepStrictEqual(authOptions, {});
+                assert.strictEqual(request.rateLimitTargetAccount, undefined);
+                done();
+            });
+            api.callApiMethod('bucketGet', request, response, log);
+        });
+
+        it('should not set targetAccount when the request has no bucket name', done => {
+            rateLimitCache.setCachedBucketOwner('rl-bucket', 'owner-canonical-id', 30000);
+            authServer.doAuth.resetBehavior();
+            authServer.doAuth.callsFake((req, log, cb, awsService, requestContexts, authOptions) => {
+                assert.deepStrictEqual(authOptions, {});
+                assert.strictEqual(request.rateLimitTargetAccount, undefined);
+                done();
+            });
+            api.callApiMethod('bucketGet', request, response, log);
+        });
+    });
+
     describe('MD5 checksum validation', () => {
         const methodsWithChecksumValidation = [
             'bucketPutACL',
-            'bucketPutCors', 
+            'bucketPutCors',
             'bucketPutEncryption',
             'bucketPutLifecycle',
             'bucketPutNotification',
@@ -165,7 +211,7 @@ describe('api.callApiMethod', () => {
             'objectPutACL',
             'objectPutLegalHold',
             'objectPutTagging',
-            'objectPutRetention'
+            'objectPutRetention',
         ];
 
         methodsWithChecksumValidation.forEach(method => {
@@ -173,15 +219,18 @@ describe('api.callApiMethod', () => {
                 const body = '<xml></xml>';
                 const headers = {
                     'content-md5': 'badchecksum123=', // Invalid MD5
-                    'content-length': body.length.toString()
+                    'content-length': body.length.toString(),
                 };
-                
-                const requestWithBody = new DummyRequest({
-                    headers,
-                    query: {},
-                    socket: { remoteAddress: '127.0.0.1', destroy: sandbox.stub() }
-                }, body);
-                
+
+                const requestWithBody = new DummyRequest(
+                    {
+                        headers,
+                        query: {},
+                        socket: { remoteAddress: '127.0.0.1', destroy: sandbox.stub() },
+                    },
+                    body,
+                );
+
                 sandbox.stub(api, method).callsFake(() => {
                     done(new Error(`${method} was called despite bad checksum`));
                 });
@@ -200,15 +249,18 @@ describe('api.callApiMethod', () => {
                 const correctMd5 = crypto.createHash('md5').update(body).digest('base64');
                 const headers = {
                     'content-md5': correctMd5,
-                    'content-length': body.length.toString()
+                    'content-length': body.length.toString(),
                 };
-                
-                const requestWithBody = new DummyRequest({
-                    headers,
-                    query: {},
-                    socket: { remoteAddress: '127.0.0.1', destroy: sandbox.stub() }
-                }, body);
-                
+
+                const requestWithBody = new DummyRequest(
+                    {
+                        headers,
+                        query: {},
+                        socket: { remoteAddress: '127.0.0.1', destroy: sandbox.stub() },
+                    },
+                    body,
+                );
+
                 sandbox.stub(api, method).callsFake((userInfo, _request, log, cb) => {
                     cb();
                 });
@@ -225,15 +277,18 @@ describe('api.callApiMethod', () => {
                 const body = '<xml></xml>';
                 const headers = {
                     'content-md5': '',
-                    'content-length': body.length.toString()
+                    'content-length': body.length.toString(),
                 };
-                
-                const requestWithBody = new DummyRequest({
-                    headers,
-                    query: {},
-                    socket: { remoteAddress: '127.0.0.1', destroy: sandbox.stub() }
-                }, body);
-                
+
+                const requestWithBody = new DummyRequest(
+                    {
+                        headers,
+                        query: {},
+                        socket: { remoteAddress: '127.0.0.1', destroy: sandbox.stub() },
+                    },
+                    body,
+                );
+
                 sandbox.stub(api, method).callsFake((userInfo, _request, log, cb) => {
                     cb();
                 });
