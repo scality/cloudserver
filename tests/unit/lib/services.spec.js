@@ -1,6 +1,7 @@
 const assert = require('assert');
 const sinon = require('sinon');
-const { versioning } = require('arsenal');
+const { versioning, errors } = require('arsenal');
+const BucketInfo = require('arsenal').models.BucketInfo;
 
 const services = require('../../../lib/services');
 const metadata = require('../../../lib/metadata/wrapper');
@@ -414,6 +415,57 @@ describe('services', () => {
                 assert.ifError(err);
                 const storedMD = metadata.putObjectMD.firstCall.args[2];
                 assert.strictEqual(storedMD.getMicroVersionId(), undefined);
+                done();
+            });
+        });
+    });
+
+    describe('getMPUBucket', () => {
+        const destinationBucket = new BucketInfo('dest-bucket', 'owner', 'ownerDisplay', new Date().toJSON());
+        let getBucketStub;
+        let createBucketStub;
+
+        beforeEach(() => {
+            getBucketStub = sinon.stub(metadata, 'getBucket');
+            createBucketStub = sinon.stub(metadata, 'createBucket');
+        });
+
+        it('should return local MPU bucket when createBucket races', done => {
+            const mpuBucketName = `${constants.mpuBucketPrefix}${bucketName}`;
+            getBucketStub.yields(errors.NoSuchBucket);
+            createBucketStub.yields(errors.BucketAlreadyExists);
+
+            services.getMPUBucket(destinationBucket, bucketName, log, (err, bucket) => {
+                assert.ifError(err);
+                assert.strictEqual(bucket.getName(), mpuBucketName);
+                assert.strictEqual(bucket.getOwner(), destinationBucket.getOwner());
+                sinon.assert.calledOnce(getBucketStub);
+                sinon.assert.calledOnce(createBucketStub);
+                done();
+            });
+        });
+
+        it('should create MPU bucket when it does not exist', done => {
+            getBucketStub.yields(errors.NoSuchBucket);
+            createBucketStub.yields(null);
+
+            services.getMPUBucket(destinationBucket, bucketName, log, (err, bucket) => {
+                assert.ifError(err);
+                assert.strictEqual(bucket.getName(), `${constants.mpuBucketPrefix}${bucketName}`);
+                sinon.assert.calledOnce(createBucketStub);
+                done();
+            });
+        });
+
+        it('should return error when createBucket fails after NoSuchBucket', done => {
+            const testError = errors.InternalError;
+            getBucketStub.yields(errors.NoSuchBucket);
+            createBucketStub.yields(testError);
+
+            services.getMPUBucket(destinationBucket, bucketName, log, err => {
+                assert.strictEqual(err, testError);
+                sinon.assert.calledOnce(getBucketStub);
+                sinon.assert.calledOnce(createBucketStub);
                 done();
             });
         });
