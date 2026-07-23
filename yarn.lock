@@ -19,7 +19,7 @@
     "@aws-sdk/types" "^3.222.0"
     tslib "^1.11.1"
 
-"@aws-crypto/crc32@5.2.0", "@aws-crypto/crc32@^5.2.0":
+"@aws-crypto/crc32@5.2.0":
   version "5.2.0"
   resolved "https://registry.yarnpkg.com/@aws-crypto/crc32/-/crc32-5.2.0.tgz#cfcc22570949c98c6689cfcbd2d693d36cdae2e1"
   integrity sha512-nLbCWqQNgUiwwtFsen1AdzAtvuLRsQS8rYgMuxCrdKf9kOssamGLuPwyTY9wyYblNr9+1XM8v6zoDTPPSIeANg==
@@ -28,7 +28,7 @@
     "@aws-sdk/types" "^3.222.0"
     tslib "^2.6.2"
 
-"@aws-crypto/crc32c@5.2.0", "@aws-crypto/crc32c@^5.2.0":
+"@aws-crypto/crc32c@5.2.0":
   version "5.2.0"
   resolved "https://registry.yarnpkg.com/@aws-crypto/crc32c/-/crc32c-5.2.0.tgz#4e34aab7f419307821509a98b9b08e84e0c1917e"
   integrity sha512-+iWb8qaHLYKrNvGRbiYRHSdKRWhto5XlZUEBwDjYNf+ly5SVYG6zEoYIdxvf5R3zyeP16w4PLBn3rH1xc74Rag==
@@ -6596,9 +6596,9 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#8.5.6":
-  version "8.5.6"
-  resolved "git+https://github.com/scality/arsenal#0db557930c7d13204167188a7503e6e00d154df5"
+"arsenal@git+https://github.com/scality/arsenal#8.5.12":
+  version "8.5.12"
+  resolved "git+https://github.com/scality/arsenal#fd1354baedadbff1ff6ba6c61c04df1795aca7c7"
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"
@@ -12824,6 +12824,17 @@ vary@^1, vary@~1.1.2:
 vaultclient@scality/vaultclient#8.5.3:
   version "8.5.3"
   resolved "https://codeload.github.com/scality/vaultclient/tar.gz/24e33cfe2a98cc4545ddc615371bfd8d2f2e98d1"
+  dependencies:
+    "@aws-crypto/sha256-universal" "^5.2.0"
+    "@smithy/signature-v4" "^4.1.0"
+    commander "^11.0.0"
+    httpagent "git+https://github.com/scality/httpagent#1.1.0"
+    werelogs scality/werelogs#8.2.0
+    xml2js "^0.6.2"
+
+vaultclient@scality/vaultclient#8.5.7:
+  version "8.5.7"
+  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/f1022abcaa164c5d6046371491a1a310bb13bf4d"
   dependencies:
     "@aws-crypto/sha256-universal" "^5.2.0"
     "@smithy/signature-v4" "^4.1.0"
