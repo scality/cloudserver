@@ -1,8 +1,10 @@
 const assert = require('assert');
+const crypto = require('crypto');
 const sinon = require('sinon');
+const { Readable } = require('stream');
 const UtilizationService = require('../../../lib/utilization/instance');
 const metadata = require('../../../lib/metadata/wrapper');
-const { fetchCapacityMetrics, buildVeeamFileData } = require('../../../lib/routes/veeam/utils');
+const { fetchCapacityMetrics, buildVeeamFileData, receiveData } = require('../../../lib/routes/veeam/utils');
 const { DummyRequestLogger } = require('../helpers');
 
 describe('fetchCapacityMetrics', () => {
@@ -256,5 +258,131 @@ describe('buildVeeamFileData', () => {
         const result = await buildVeeamFileData(createRequest(capacityObjectKey), bucketMdWithUsed, log);
 
         assert(result.xmlContent.includes('<Used>400</Used>'), 'should keep existing Used value');
+    });
+});
+
+describe('receiveData', () => {
+    let log;
+
+    const payload = '0123456789abcdef0123456789abcdef';
+    const payloadSha256 = crypto.createHash('sha256').update(payload).digest('base64');
+    // crc64nvme of the payload, base64-encoded (same value as in the
+    // functional trailing checksum tests)
+    const payloadCrc64 = 'skQv82y5rgE=';
+    const chunkedBody = digest =>
+        '10\r\n0123456789abcdef\r\n' + '10\r\n0123456789abcdef\r\n' + `0\r\nx-amz-checksum-crc64nvme:${digest}\r\n\r\n`;
+
+    const makeRequest = (body, headers, parsedContentLength, streamingV4Params) => {
+        const request = new Readable({ read() {} });
+        request.headers = headers;
+        request.parsedContentLength = parsedContentLength;
+        request.streamingV4Params = streamingV4Params;
+        process.nextTick(() => {
+            request.push(Buffer.from(body));
+            request.push(null);
+        });
+        return request;
+    };
+
+    beforeEach(() => {
+        log = new DummyRequestLogger();
+    });
+
+    it('should return the body of a plain request', async () => {
+        const request = makeRequest(payload, { 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' }, payload.length);
+        const data = await receiveData(request, log);
+        assert.strictEqual(data, payload);
+    });
+
+    it('should validate a matching x-amz-checksum header', async () => {
+        const request = makeRequest(
+            payload,
+            {
+                'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
+                'x-amz-checksum-sha256': payloadSha256,
+            },
+            payload.length,
+        );
+        const data = await receiveData(request, log);
+        assert.strictEqual(data, payload);
+    });
+
+    it('should return BadDigest on x-amz-checksum header mismatch', async () => {
+        const request = makeRequest(
+            payload,
+            {
+                'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
+                'x-amz-checksum-sha256': crypto.createHash('sha256').update('other').digest('base64'),
+            },
+            payload.length,
+        );
+        await assert.rejects(receiveData(request, log), err => err.is.BadDigest);
+    });
+
+    it('should decode an unsigned payload with trailing checksum', async () => {
+        const body = chunkedBody(payloadCrc64);
+        const request = makeRequest(
+            body,
+            {
+                'content-length': `${body.length}`,
+                'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
+                'x-amz-trailer': 'x-amz-checksum-crc64nvme',
+                'x-amz-decoded-content-length': `${payload.length}`,
+            },
+            payload.length,
+        );
+        const data = await receiveData(request, log);
+        assert.strictEqual(data, payload);
+    });
+
+    it('should return BadDigest on trailing checksum mismatch', async () => {
+        const body = chunkedBody('AAAAAAAAAAA=');
+        const request = makeRequest(
+            body,
+            {
+                'content-length': `${body.length}`,
+                'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
+                'x-amz-trailer': 'x-amz-checksum-crc64nvme',
+                'x-amz-decoded-content-length': `${payload.length}`,
+            },
+            payload.length,
+        );
+        await assert.rejects(receiveData(request, log), err => err.is.BadDigest);
+    });
+
+    it('should reject an unsupported trailing checksum algorithm', async () => {
+        const request = makeRequest(
+            payload,
+            {
+                'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
+                'x-amz-trailer': 'x-amz-checksum-foo',
+                'x-amz-decoded-content-length': `${payload.length}`,
+            },
+            payload.length,
+        );
+        await assert.rejects(receiveData(request, log), err => err.is.InvalidRequest);
+    });
+
+    it('should reject a body exceeding the announced content-length', async () => {
+        const request = makeRequest(payload, { 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' }, 10);
+        await assert.rejects(receiveData(request, log), err => err.is.InvalidRequest);
+    });
+
+    it('should reject a content-length over the allowed threshold', async () => {
+        const request = makeRequest(payload, { 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' }, 2 * 1024 * 1024);
+        await assert.rejects(receiveData(request, log), err => err.is.InvalidInput);
+    });
+
+    it('should reject a signed streaming request without v4 params', async () => {
+        const request = makeRequest(
+            payload,
+            {
+                'x-amz-content-sha256': 'STREAMING-AWS4-HMAC-SHA256-PAYLOAD',
+                'x-amz-decoded-content-length': `${payload.length}`,
+            },
+            payload.length,
+            null,
+        );
+        await assert.rejects(receiveData(request, log), err => err.is.InvalidArgument);
     });
 });

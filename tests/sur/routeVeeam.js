@@ -5,9 +5,21 @@ const { Scuba: MockScuba } = require('../utilities/mock/Scuba');
 const { CreateBucketCommand, DeleteBucketCommand } = require('@aws-sdk/client-s3');
 
 const { makeRequest } = require('../functional/raw-node/utils/makeRequest');
+const HttpRequestAuthV4 = require('../functional/raw-node/utils/HttpRequestAuthV4');
 const BucketUtility = require('../functional/aws-node-sdk/lib/utility/bucket-util');
+const { algorithms } = require('../../lib/api/apiUtils/integrity/validateChecksums');
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
+
+// The Veeam route strips the internal '/_/veeam' routing prefix from the URL
+// before verifying the V4 signature, so requests must be signed on the
+// un-prefixed path while being sent to the prefixed one.
+class VeeamHttpRequestAuthV4 extends HttpRequestAuthV4 {
+    getCanonicalRequest(urlObj, signedHeaders, contentSha256) {
+        const signUrlObj = new URL(urlObj.href.replace('/_/veeam', ''));
+        return super.getCanonicalRequest(signUrlObj, signedHeaders, contentSha256);
+    }
+}
 
 const veeamAuthCredentials = {
     accessKey: 'accessKey1',
@@ -248,6 +260,90 @@ function makeVeeamRequest(params, callback) {
                         return done();
                     },
                 ));
+        });
+
+        describe('streaming uploads with trailing checksum:', () => {
+            const capacityKey = '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml';
+            let trailerDigest;
+
+            const buildChunkedBody = digest =>
+                `${testCapacity.length.toString(16)}\r\n${testCapacity}\r\n` +
+                `0\r\nx-amz-checksum-crc64nvme:${digest}\r\n\r\n`;
+
+            const makeStreamingVeeamRequest = (digest, done, callback) => {
+                const requestBody = buildChunkedBody(digest);
+                const req = new VeeamHttpRequestAuthV4(
+                    `http://${ipAddress}:8000/_/veeam/${TEST_BUCKET}/${capacityKey}`,
+                    Object.assign(
+                        {
+                            method: 'PUT',
+                            headers: {
+                                'content-length': requestBody.length,
+                                'x-amz-decoded-content-length': testCapacity.length,
+                                'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
+                                'x-amz-trailer': 'x-amz-checksum-crc64nvme',
+                                'x-scal-canonical-id': testArn,
+                            },
+                        },
+                        veeamAuthCredentials,
+                    ),
+                    res => callback(res),
+                );
+                req.on('error', done);
+                req.end(requestBody);
+            };
+
+            before(async () => {
+                trailerDigest = await algorithms.crc64nvme.digest(Buffer.from(testCapacity));
+            });
+
+            it('should PUT capacity.xml with unsigned trailing checksum', done => {
+                makeStreamingVeeamRequest(trailerDigest, done, res => {
+                    assert.strictEqual(res.statusCode, 200);
+                    res.on('data', () => {});
+                    res.on('end', done);
+                });
+            });
+
+            it('should return BadDigest for PUT capacity.xml with a wrong trailing checksum', done => {
+                makeStreamingVeeamRequest('AAAAAAAAAAA=', done, res => {
+                    assert.strictEqual(res.statusCode, 400);
+                    const chunks = [];
+                    res.on('data', chunk => chunks.push(chunk));
+                    res.on('end', () => {
+                        assert.match(chunks.join(''), /BadDigest/);
+                        done();
+                    });
+                });
+            });
+
+            // Without a pre-set x-amz-content-sha256 header, the request
+            // helper switches to signed streaming
+            // (STREAMING-AWS4-HMAC-SHA256-PAYLOAD) and signs each chunk.
+            it('should PUT capacity.xml with signed streaming (aws-chunked)', done => {
+                const req = new VeeamHttpRequestAuthV4(
+                    `http://${ipAddress}:8000/_/veeam/${TEST_BUCKET}/${capacityKey}`,
+                    Object.assign(
+                        {
+                            method: 'PUT',
+                            headers: {
+                                'content-length': testCapacity.length,
+                                'x-scal-canonical-id': testArn,
+                            },
+                        },
+                        veeamAuthCredentials,
+                    ),
+                    res => {
+                        assert.strictEqual(res.statusCode, 200);
+                        res.on('data', () => {});
+                        res.on('end', done);
+                    },
+                );
+                req.on('error', done);
+                // end() (rather than write() alone) is needed to send the
+                // terminating zero-length signed chunk once 'finish' fires.
+                req.end(testCapacity);
+            });
         });
     });
 
