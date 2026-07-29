@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const assert = require('assert');
-const { errors, storage } = require('arsenal');
+const { auth, errors, storage } = require('arsenal');
 
 const { decodeObjectVersion, getObjMetadataAndDelete, initializeMultiObjectDeleteWithBatchingSupport }
     = require('../../../lib/api/multiObjectDelete');
@@ -28,6 +28,7 @@ const objectKey1 = 'objectName1';
 const objectKey2 = 'objectName2';
 const metadataUtils = require('../../../lib/metadata/metadataUtils');
 const services = require('../../../lib/services');
+const vault = require('../../../lib/auth/vault');
 const { BucketInfo } = require('arsenal/build/lib/models');
 const testBucketPutRequest = new DummyRequest({
     bucketName,
@@ -452,6 +453,62 @@ describe('multiObjectDelete function', () => {
                 res.includes('<Error><Key>objectname</Key><Code>AccessDenied</Code>'),
                 true
             );
+            done();
+        });
+    });
+});
+
+describe('multiObjectDelete checkPolicies request context', () => {
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    it('should forward auth params unswapped to vault, including a zero signatureAge', done => {
+        const post = '<Delete><Object><Key>objectname</Key></Object></Delete>';
+        const request = new DummyRequest({
+            bucketName: 'bucketname',
+            objectKey: 'objectname',
+            parsedHost: 'localhost',
+            headers: {
+                'content-md5': crypto.createHash('md5').update(post, 'utf8').digest('base64'),
+            },
+            post,
+            socket: {
+                remoteAddress: '127.0.0.1',
+            },
+            url: '/bucketname',
+        });
+        // IAM user so that the request goes through the checkPolicies path
+        const userAuthInfo = makeAuthInfo('accessKey1', 'testuser');
+
+        sinon.stub(metadataWrapper, 'getBucket').callsFake((bucketName, log, cb) =>
+            cb(null, new BucketInfo(
+                'bucketname',
+                userAuthInfo.getCanonicalID(),
+                'accountA',
+                new Date().toISOString(),
+                15,
+            ), undefined));
+        sinon.stub(auth.server, 'extractParams').returns({
+            params: {
+                version: 4,
+                data: {
+                    signatureVersion: 'AWS4-HMAC-SHA256',
+                    authType: 'REST-HEADER',
+                    signatureAge: 0,
+                },
+            },
+        });
+        const checkPoliciesStub = sinon.stub(vault, 'checkPolicies')
+            .callsFake((requestContextParams, arn, log, cb) => cb(errors.AccessDenied));
+
+        multiObjectDelete.multiObjectDelete(userAuthInfo, request, log, err => {
+            assert.strictEqual(err, null);
+            sinon.assert.calledOnce(checkPoliciesStub);
+            const { constantParams } = checkPoliciesStub.getCall(0).args[0];
+            assert.strictEqual(constantParams.signatureVersion, 'AWS4-HMAC-SHA256');
+            assert.strictEqual(constantParams.authType, 'REST-HEADER');
+            assert.strictEqual(constantParams.signatureAge, 0);
             done();
         });
     });
