@@ -5,6 +5,8 @@ const { errors } = require('arsenal');
 const { prepareStream } = require('../../../../../lib/api/apiUtils/object/prepareStream');
 const ChecksumTransform = require('../../../../../lib/auth/streamingV4/ChecksumTransform');
 const ContentSHA256Transform = require('../../../../../lib/auth/streamingV4/ContentSHA256Transform');
+const V4Transform = require('../../../../../lib/auth/streamingV4/V4Transform');
+const TrailingChecksumTransform = require('../../../../../lib/auth/streamingV4/trailingChecksumTransform');
 const { DummyRequestLogger } = require('../../../helpers');
 const DummyRequest = require('../../../DummyRequest');
 const { defaultChecksumData } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
@@ -43,6 +45,12 @@ describe('prepareStream', () => {
             const result = prepareStream(request, null, defaultChecksums, log, () => {});
             assert.strictEqual(result.error, null);
             assert(result.stream instanceof ChecksumTransform);
+        });
+
+        it('should return the primary ChecksumTransform as the last stream of the pipeline', () => {
+            const request = makeRequest({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
+            const result = prepareStream(request, null, defaultChecksums, log, () => {});
+            assert.strictEqual(result.primaryChecksumStream, result.stream);
         });
 
         it('should return { error: BadRequest, stream: null } for unsupported x-amz-content-sha256', () => {
@@ -244,6 +252,74 @@ describe('prepareStream', () => {
                 done();
             });
             result.stream.on('error', done);
+        });
+    });
+
+    describe('no checksum requested', () => {
+        [null, undefined, {}, { primary: null, secondary: null }].forEach(checksums => {
+            it(`should not create any ChecksumTransform with ${JSON.stringify(checksums)}`, () => {
+                const request = makeRequest({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
+                const result = prepareStream(request, null, checksums, log, () => {});
+                assert.strictEqual(result.error, null);
+                assert.strictEqual(result.stream, request);
+                assert.strictEqual(result.primaryChecksumStream, null);
+                assert.strictEqual(result.secondaryChecksumStream, null);
+                assert.strictEqual(result.contentSHA256Stream, null);
+            });
+        });
+
+        it('should return the request itself when there is no x-amz-content-sha256 header', () => {
+            const request = makeRequest({});
+            const result = prepareStream(request, null, null, log, () => {});
+            assert.strictEqual(result.error, null);
+            assert.strictEqual(result.stream, request);
+            assert.strictEqual(result.primaryChecksumStream, null);
+            assert.strictEqual(result.secondaryChecksumStream, null);
+            assert.strictEqual(result.contentSHA256Stream, null);
+        });
+
+        it('should still validate a literal x-amz-content-sha256 payload hash', done => {
+            const request = makeRequest({ authorization: sigV4Auth, 'x-amz-content-sha256': bodyHex }, bodyData);
+            const result = prepareStream(request, null, null, log, done);
+            assert.strictEqual(result.primaryChecksumStream, null);
+            assert.strictEqual(result.secondaryChecksumStream, null);
+            assert(result.contentSHA256Stream instanceof ContentSHA256Transform);
+            assert.strictEqual(result.stream, result.contentSHA256Stream);
+            result.stream.resume();
+            result.stream.on('finish', () => {
+                assert.strictEqual(result.contentSHA256Stream.validateChecksum(), null);
+                done();
+            });
+            result.stream.on('error', done);
+        });
+
+        it('should return the V4Transform for STREAMING-AWS4-HMAC-SHA256-PAYLOAD', () => {
+            const request = makeRequest({ 'x-amz-content-sha256': 'STREAMING-AWS4-HMAC-SHA256-PAYLOAD' });
+            const result = prepareStream(request, mockV4Params, null, log, () => {});
+            assert.strictEqual(result.error, null);
+            assert(result.stream instanceof V4Transform);
+            assert.strictEqual(result.primaryChecksumStream, null);
+            assert.strictEqual(result.secondaryChecksumStream, null);
+            assert.strictEqual(result.contentSHA256Stream, null);
+        });
+
+        it('should return the TrailingChecksumTransform for STREAMING-UNSIGNED-PAYLOAD-TRAILER', () => {
+            const request = makeRequest({ 'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER' });
+            const result = prepareStream(request, null, null, log, () => {});
+            assert.strictEqual(result.error, null);
+            assert(result.stream instanceof TrailingChecksumTransform);
+            assert.strictEqual(result.primaryChecksumStream, null);
+            assert.strictEqual(result.secondaryChecksumStream, null);
+            assert.strictEqual(result.contentSHA256Stream, null);
+        });
+
+        it('should still reject an unsupported x-amz-content-sha256', () => {
+            const request = makeRequest({
+                'x-amz-content-sha256': 'STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER',
+            });
+            const result = prepareStream(request, null, null, log, () => {});
+            assert.strictEqual(result.error.message, 'BadRequest');
+            assert.strictEqual(result.stream, null);
         });
     });
 

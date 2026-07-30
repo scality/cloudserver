@@ -290,6 +290,79 @@ describe('dataStore', () => {
         });
     });
 
+    describe('no checksum requested', () => {
+        function putSucceedsSync(completedHash = null) {
+            putStub.callsFake((cipher, stream, size, ctx, backend, log2, cb) => {
+                stream.resume();
+                cb(null, fakeDataRetrievalInfo, { completedHash });
+            });
+        }
+
+        it('should call data.put with the request itself, without any transform', done => {
+            putSucceedsSync();
+            const request = makeStream({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' }, 'hello world');
+            dataStore({}, null, request, 0, null, {}, null, log, err => {
+                assert.strictEqual(err, null);
+                assert.strictEqual(putStub.firstCall.args[1], request);
+                done();
+            });
+        });
+
+        it('should call cb without any checksum', done => {
+            putSucceedsSync('abc123');
+            const request = makeStream({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' }, 'hello world');
+            dataStore({}, null, request, 0, null, {}, null, log, (err, dataInfo, completedHash, checksum) => {
+                assert.strictEqual(err, null);
+                assert.strictEqual(dataInfo, fakeDataRetrievalInfo);
+                assert.strictEqual(completedHash, 'abc123');
+                assert.strictEqual(checksum, undefined);
+                done();
+            });
+        });
+
+        it('should still call cb with BadDigest and delete stored data when content-md5 does not match', done => {
+            batchDeleteSucceeds();
+            putSucceedsSync('correct-md5');
+            const request = makeStream({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' }, 'hello world');
+            request.contentMD5 = 'wrong-md5';
+            dataStore({}, null, request, 0, null, {}, null, log, err => {
+                assert.deepStrictEqual(err, errors.BadDigest);
+                assert(batchDeleteStub.calledOnce);
+                done();
+            });
+        });
+
+        it('should ignore x-amz-checksum-* headers', done => {
+            putSucceedsSync();
+            // A checksum header that does not match the body: checksums come
+            // from the caller, headers are never parsed here.
+            const request = makeStream(
+                {
+                    'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
+                    'x-amz-checksum-crc32': 'AAAAAA==',
+                },
+                'hello world',
+            );
+            dataStore({}, null, request, 0, null, {}, null, log, (err, dataInfo, completedHash, checksum) => {
+                assert.strictEqual(err, null);
+                assert.strictEqual(checksum, undefined);
+                assert(batchDeleteStub.notCalled);
+                done();
+            });
+        });
+
+        it('should still validate x-amz-content-sha256 against the body', done => {
+            batchDeleteSucceeds();
+            putSucceeds();
+            const request = makeStream({ authorization: sigV4Auth, 'x-amz-content-sha256': wrongHex }, 'hello world');
+            dataStore({}, null, request, 0, null, {}, null, log, err => {
+                assert.strictEqual(err.message, 'XAmzContentSHA256Mismatch');
+                assert(batchDeleteStub.calledOnce);
+                done();
+            });
+        });
+    });
+
     describe('x-amz-content-sha256 body validation', () => {
         // eslint-disable-next-line max-len
         it('should call cb with XAmzContentSHA256Mismatch and delete stored data when the hash does not match', done => {
