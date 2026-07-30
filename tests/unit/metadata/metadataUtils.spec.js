@@ -25,6 +25,7 @@ const { config } = require('../../../lib/Config');
 const constants = require('../../../constants');
 const rateLimitCache = require('../../../lib/api/apiUtils/rateLimit/cache');
 const tokenBucket = require('../../../lib/api/apiUtils/rateLimit/tokenBucket');
+const vault = require('../../../lib/auth/vault');
 
 describe('validateBucket', () => {
     it('action bucketPutPolicy by bucket owner', () => {
@@ -212,11 +213,15 @@ describe('storeServerAccessLogInfo - copySource aclRequired', () => {
 describe('checkRateLimitIfNeeded cross-account rate limiting', () => {
     let sandbox;
     let request;
+    let vaultStub;
 
     const otherCanonicalId = otherAuthInfo.getCanonicalID();
 
     beforeEach(() => {
         sandbox = sinon.createSandbox();
+        // Vault is consulted for the bucket owner's limits whenever they could
+        // not have been returned by the request's own authentication.
+        vaultStub = sandbox.stub(vault, 'getAccountLimitsByCanonicalId').yields(null, undefined);
         sandbox.stub(config, 'rateLimiting').value({
             enabled: true,
             serviceUserArn: 'arn:aws:iam::000000000000:user/rate-limit-service-user',
@@ -273,8 +278,8 @@ describe('checkRateLimitIfNeeded cross-account rate limiting', () => {
         });
     });
 
-    it('should key the account rate limit under the requester canonical ID by default', done => {
-        request.accountLimits = { RequestsPerSecond: { Limit: 100 } };
+    it('should key the account rate limit under the bucket owner for a same-account request', done => {
+        request.rateLimitTargetAccountLimits = { RequestsPerSecond: { Limit: 100 } };
         validateBucketRequest(authInfo, err => {
             assert.ifError(err);
             const cached = rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId);
@@ -283,12 +288,14 @@ describe('checkRateLimitIfNeeded cross-account rate limiting', () => {
             });
             assert(tokenBucket.getAllTokenBuckets().has(`account:${ownerCanonicalId}:rps`));
             assert.strictEqual(request.rateLimitAccountAlreadyChecked, true);
+            // The requester is the owner, so their own auth already returned the limits
+            assert.strictEqual(vaultStub.called, false);
             done();
         });
     });
 
     it('should key the account rate limit under the target account when the request carries one', done => {
-        request.accountLimits = { RequestsPerSecond: { Limit: 100 } };
+        request.rateLimitTargetAccountLimits = { RequestsPerSecond: { Limit: 100 } };
         request.rateLimitTargetAccount = ownerCanonicalId;
         validateBucketRequest(otherAuthInfo, () => {
             assert(rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId));
@@ -298,12 +305,13 @@ describe('checkRateLimitIfNeeded cross-account rate limiting', () => {
             );
             assert(tokenBucket.getAllTokenBuckets().has(`account:${ownerCanonicalId}:rps`));
             assert(!tokenBucket.getAllTokenBuckets().has(`account:${otherCanonicalId}:rps`));
+            assert.strictEqual(vaultStub.called, false);
             done();
         });
     });
 
     it('should deny a cross-account request when the target account limit is exhausted', done => {
-        request.accountLimits = { RequestsPerSecond: { Limit: 100 } };
+        request.rateLimitTargetAccountLimits = { RequestsPerSecond: { Limit: 100 } };
         request.rateLimitTargetAccount = ownerCanonicalId;
         const ownerBucket = tokenBucket.getTokenBucket(
             'account',
@@ -320,8 +328,25 @@ describe('checkRateLimitIfNeeded cross-account rate limiting', () => {
         });
     });
 
-    it('should rate limit against the requester account when no target account is present', done => {
-        request.accountLimits = { RequestsPerSecond: { Limit: 100 } };
+    it('should fetch the owner limits from Vault when no target account is present', done => {
+        // Cross-account request with a bucket owner cache miss: the requester's
+        // own auth returned their limits, not the owner's, so Vault is asked.
+        vaultStub.yields(null, { RequestsPerSecond: { Limit: 100 } });
+        validateBucketRequest(otherAuthInfo, () => {
+            assert.strictEqual(vaultStub.calledOnce, true);
+            assert.strictEqual(vaultStub.firstCall.args[0], ownerCanonicalId);
+            assert.deepStrictEqual(
+                rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId),
+                { RequestsPerSecond: { BurstCapacity: 1, Limit: 100, source: 'resource' } },
+            );
+            assert(tokenBucket.getAllTokenBuckets().has(`account:${ownerCanonicalId}:rps`));
+            assert(!tokenBucket.getAllTokenBuckets().has(`account:${otherCanonicalId}:rps`));
+            done();
+        });
+    });
+
+    it('should rate limit a cross-account request against the owner, not the requester', done => {
+        vaultStub.yields(null, { RequestsPerSecond: { Limit: 100 } });
         const ownerBucket = tokenBucket.getTokenBucket(
             'account',
             ownerCanonicalId,
@@ -331,35 +356,99 @@ describe('checkRateLimitIfNeeded cross-account rate limiting', () => {
         );
         ownerBucket.tokens = 0;
         validateBucketRequest(otherAuthInfo, err => {
-            // The exhausted owner account bucket must not affect the request:
-            // the requester is limited against their own account.
-            assert(!err || !err.is.SlowDown);
-            assert(tokenBucket.getAllTokenBuckets().has(`account:${otherCanonicalId}:rps`));
+            assert(err);
+            assert(err.is.SlowDown);
             done();
         });
     });
 
-    it('should skip the account rate limit check for public requesters', done => {
+    it('should rate limit public requesters against the bucket owner', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
-        request.accountLimits = { RequestsPerSecond: { Limit: 100 } };
+        vaultStub.yields(null, { RequestsPerSecond: { Limit: 100 } });
         validateBucketRequest(publicAuthInfo, () => {
-            assert.strictEqual(request.rateLimitAccountAlreadyChecked, undefined);
+            // Anonymous requests never authenticate an account, so the owner's
+            // limits always come from Vault.
+            assert.strictEqual(vaultStub.calledOnce, true);
+            assert.strictEqual(vaultStub.firstCall.args[0], ownerCanonicalId);
+            assert.strictEqual(request.rateLimitAccountAlreadyChecked, true);
+            assert.deepStrictEqual(
+                rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId),
+                { RequestsPerSecond: { BurstCapacity: 1, Limit: 100, source: 'resource' } },
+            );
             assert.strictEqual(
                 rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, constants.publicId),
                 undefined,
             );
-            // The bucket owner is still cached for later cross-account attribution
+            assert(tokenBucket.getAllTokenBuckets().has(`account:${ownerCanonicalId}:rps`));
+            assert(!tokenBucket.getAllTokenBuckets().has(`account:${constants.publicId}:rps`));
             assert.strictEqual(rateLimitCache.getCachedBucketOwner(bucket.getName()), ownerCanonicalId);
             done();
         });
     });
 
-    it('should skip the account rate limit check for public requesters even with a target account', done => {
+    it('should deny a public request when the bucket owner limit is exhausted', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
-        request.accountLimits = { RequestsPerSecond: { Limit: 100 } };
+        vaultStub.yields(null, { RequestsPerSecond: { Limit: 100 } });
+        const ownerBucket = tokenBucket.getTokenBucket(
+            'account',
+            ownerCanonicalId,
+            'rps',
+            { limit: 100, burstCapacity: 1000 },
+            log,
+        );
+        ownerBucket.tokens = 0;
+        validateBucketRequest(publicAuthInfo, err => {
+            assert(err);
+            assert(err.is.SlowDown);
+            done();
+        });
+    });
+
+    it('should refetch the owner limits for a public requester even with a target account', done => {
+        // The cached bucket owner made doAuth return the owner's limits, but an
+        // anonymous request has no account auth, so Vault is still consulted.
+        const publicAuthInfo = makeAuthInfo(constants.publicId);
         request.rateLimitTargetAccount = ownerCanonicalId;
+        request.rateLimitTargetAccountLimits = { RequestsPerSecond: { Limit: 5 } };
+        vaultStub.yields(null, { RequestsPerSecond: { Limit: 100 } });
         validateBucketRequest(publicAuthInfo, () => {
-            assert.strictEqual(request.rateLimitAccountAlreadyChecked, undefined);
+            assert.strictEqual(vaultStub.calledOnce, true);
+            assert.deepStrictEqual(
+                rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId),
+                { RequestsPerSecond: { BurstCapacity: 1, Limit: 100, source: 'resource' } },
+            );
+            done();
+        });
+    });
+
+    it('should fall back to the global account defaults when Vault returns no limits', done => {
+        const publicAuthInfo = makeAuthInfo(constants.publicId);
+        vaultStub.yields(null, undefined);
+        validateBucketRequest(publicAuthInfo, () => {
+            assert.deepStrictEqual(
+                rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId),
+                { RequestsPerSecond: { BurstCapacity: 1, source: 'global' } },
+            );
+            // No Limit in the global defaults, so no token bucket is created
+            assert(!tokenBucket.getAllTokenBuckets().has(`account:${ownerCanonicalId}:rps`));
+            done();
+        });
+    });
+
+    it('should propagate a Vault error to the callback', done => {
+        vaultStub.yields(errors.InternalError);
+        validateBucketRequest(otherAuthInfo, err => {
+            assert(err);
+            assert(err.is.InternalError);
+            done();
+        });
+    });
+
+    it('should still cache the bucket owner when the account config was already checked', done => {
+        request.rateLimitAccountAlreadyChecked = true;
+        validateBucketRequest(authInfo, err => {
+            assert.ifError(err);
+            assert.strictEqual(rateLimitCache.getCachedBucketOwner(bucket.getName()), ownerCanonicalId);
             assert.strictEqual(
                 rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId),
                 undefined,

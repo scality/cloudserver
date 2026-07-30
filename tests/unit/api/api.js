@@ -1,6 +1,7 @@
 const sinon = require('sinon');
 const { errors, auth } = require('arsenal');
 const api = require('../../../lib/api/api');
+const { config } = require('../../../lib/Config');
 const rateLimitCache = require('../../../lib/api/apiUtils/rateLimit/cache');
 const DummyRequest = require('../DummyRequest');
 const { default: AuthInfo } = require('arsenal/build/lib/auth/AuthInfo');
@@ -155,8 +156,28 @@ describe('api.callApiMethod', () => {
     });
 
     describe('cross-account rate limiting target account', () => {
+        beforeEach(() => {
+            sandbox.stub(config, 'rateLimiting').value({
+                enabled: true,
+                serviceUserArn: 'arn:aws:iam::000000000000:user/rate-limit-service-user',
+                nodes: 1,
+                tokenBucketBufferSize: 50,
+                tokenBucketRefillThreshold: 20,
+                error: errors.SlowDown,
+                bucket: {
+                    configCacheTTL: 30000,
+                    defaultConfig: { RequestsPerSecond: { BurstCapacity: 1 } },
+                },
+                account: {
+                    configCacheTTL: 30000,
+                    defaultConfig: { RequestsPerSecond: { BurstCapacity: 1 } },
+                },
+            });
+        });
+
         afterEach(() => {
             rateLimitCache.bucketOwnerCache.clear();
+            rateLimitCache.configCache.clear();
         });
 
         it('should pass the cached bucket owner to doAuth as targetAccount', done => {
@@ -192,6 +213,54 @@ describe('api.callApiMethod', () => {
                 done();
             });
             api.callApiMethod('bucketGet', request, response, log);
+        });
+
+        it('should not set targetAccount when rate limiting is disabled', done => {
+            sandbox.stub(config, 'rateLimiting').value({ enabled: false });
+            request.bucketName = 'rl-bucket';
+            rateLimitCache.setCachedBucketOwner('rl-bucket', 'owner-canonical-id', 30000);
+            authServer.doAuth.resetBehavior();
+            authServer.doAuth.callsFake((req, log, cb, awsService, requestContexts, authOptions) => {
+                assert.deepStrictEqual(authOptions, {});
+                assert.strictEqual(request.rateLimitTargetAccount, undefined);
+                done();
+            });
+            api.callApiMethod('bucketGet', request, response, log);
+        });
+
+        it('should set targetAccount from the cached owner even when the account config is cached', done => {
+            request.bucketName = 'rl-bucket';
+            rateLimitCache.setCachedBucketOwner('rl-bucket', 'owner-canonical-id', 30000);
+            rateLimitCache.setCachedConfig(
+                rateLimitCache.namespace.account,
+                'owner-canonical-id',
+                { RequestsPerSecond: { Limit: 100, BurstCapacity: 1, source: 'resource' } },
+                30000,
+            );
+            authServer.doAuth.resetBehavior();
+            authServer.doAuth.callsFake((req, log, cb, awsService, requestContexts, authOptions) => {
+                assert.strictEqual(authOptions.targetAccount, 'owner-canonical-id');
+                assert.strictEqual(request.rateLimitAccountAlreadyChecked, true);
+                done();
+            });
+            api.callApiMethod('bucketGet', request, response, log);
+        });
+
+        it('should store the limits returned by doAuth as the target account limits', done => {
+            request.bucketName = 'rl-bucket';
+            const limits = { RequestsPerSecond: { Limit: 250 } };
+            authServer.doAuth.resetBehavior();
+            authServer.doAuth.callsArgWith(2, null, new AuthInfo({}), [{ isAllowed: true, isImplicit: false }], null, {
+                accountQuota: 5000,
+                limits,
+            });
+            sandbox.stub(api, 'bucketGet').callsFake((userInfo, _request, log, cb) => cb());
+            api.callApiMethod('bucketGet', request, response, log, err => {
+                assert.ifError(err);
+                assert.strictEqual(request.rateLimitTargetAccountLimits, limits);
+                assert.strictEqual(request.accountLimits, undefined);
+                done();
+            });
         });
     });
 

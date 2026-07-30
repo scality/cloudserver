@@ -1,6 +1,9 @@
 const assert = require('assert');
 const sinon = require('sinon');
+const { errors } = require('arsenal');
+const constants = require('../../../../../constants');
 const { config } = require('../../../../../lib/Config');
+const vault = require('../../../../../lib/auth/vault');
 const cache = require('../../../../../lib/api/apiUtils/rateLimit/cache');
 const helpers = require('../../../../../lib/api/apiUtils/rateLimit/helpers');
 const tokenBucket = require('../../../../../lib/api/apiUtils/rateLimit/tokenBucket');
@@ -396,7 +399,27 @@ describe('Rate limit helpers', () => {
         });
     });
 
-    describe('extractRateLimitConfigFromRequest', () => {
+    describe('resolveRateLimitConfig', () => {
+        const ownerId = 'owner-canonical-id';
+        let vaultStub;
+
+        function makeBucket(rpsData) {
+            return {
+                getName: () => 'test-bucket',
+                getOwner: () => ownerId,
+                getRateLimitConfiguration: () => (rpsData === undefined
+                    ? null
+                    : { getData: () => ({ RequestsPerSecond: rpsData }) }),
+            };
+        }
+
+        function makeAuthInfo(canonicalId, isPublic = false) {
+            return {
+                getCanonicalID: () => canonicalId,
+                isRequesterPublicUser: () => isPublic,
+            };
+        }
+
         beforeEach(() => {
             sandbox.stub(config, 'rateLimiting').value({
                 enabled: true,
@@ -414,28 +437,18 @@ describe('Rate limit helpers', () => {
                     },
                 },
             });
+            vaultStub = sandbox.stub(vault, 'getAccountLimitsByCanonicalId');
         });
 
-        it('should return both bucket and account configs', () => {
-            const mockBucket = {
-                getName: () => 'test-bucket',
-                getRateLimitConfiguration: () => ({
-                    getData: () => ({
-                        RequestsPerSecond: { Limit: 200 },
-                    }),
-                }),
-            };
-            const mockAuthInfo = {
-                getCanonicalID: () => 'account-123',
-            };
+        it('should return both bucket and account configs', async () => {
             const request = {
-                accountLimits: {
+                rateLimitTargetAccountLimits: {
                     RequestsPerSecond: { Limit: 500 },
                 },
             };
 
-            const result = helpers.extractRateLimitConfigFromRequest(
-                request, mockAuthInfo, mockBucket, mockLog);
+            const result = await helpers.resolveRateLimitConfig(
+                request, makeAuthInfo(ownerId), makeBucket({ Limit: 200 }), mockLog);
 
             assert.deepStrictEqual(result.bucket, {
                 RequestsPerSecond: { BurstCapacity: 1, Limit: 200, source: 'resource' },
@@ -443,20 +456,12 @@ describe('Rate limit helpers', () => {
             assert.deepStrictEqual(result.account, {
                 RequestsPerSecond: { BurstCapacity: 2, Limit: 500, source: 'resource' },
             });
+            assert.strictEqual(vaultStub.called, false);
         });
 
-        it('should use global defaults when no per-resource configs exist', () => {
-            const mockBucket = {
-                getName: () => 'test-bucket',
-                getRateLimitConfiguration: () => null,
-            };
-            const mockAuthInfo = {
-                getCanonicalID: () => 'account-123',
-            };
-            const request = {};
-
-            const result = helpers.extractRateLimitConfigFromRequest(
-                request, mockAuthInfo, mockBucket, mockLog);
+        it('should use global defaults when no per-resource configs exist', async () => {
+            const result = await helpers.resolveRateLimitConfig(
+                {}, makeAuthInfo(ownerId), makeBucket(undefined), mockLog);
 
             assert.deepStrictEqual(result.bucket, {
                 RequestsPerSecond: { BurstCapacity: 1, source: 'global' },
@@ -466,48 +471,145 @@ describe('Rate limit helpers', () => {
             });
         });
 
-        it('should extract per-account config with resource source', () => {
-            const mockBucket = {
-                getName: () => 'test-bucket',
-                getRateLimitConfiguration: () => null,
-            };
-            const mockAuthInfo = {
-                getCanonicalID: () => 'account-123',
-            };
+        it('should extract per-account config with resource source', async () => {
             const request = {
-                accountLimits: {
+                rateLimitTargetAccountLimits: {
                     RequestsPerSecond: { Limit: 300, BurstCapacity: 5 },
                 },
             };
 
-            const result = helpers.extractRateLimitConfigFromRequest(
-                request, mockAuthInfo, mockBucket, mockLog);
+            const result = await helpers.resolveRateLimitConfig(
+                request, makeAuthInfo(ownerId), makeBucket(undefined), mockLog);
 
             assert.deepStrictEqual(result.account, {
                 RequestsPerSecond: { BurstCapacity: 5, Limit: 300, source: 'resource' },
             });
         });
 
-        it('should use global source when accountLimits has no RequestsPerSecond', () => {
-            const mockBucket = {
-                getName: () => 'test-bucket',
-                getRateLimitConfiguration: () => null,
-            };
-            const mockAuthInfo = {
-                getCanonicalID: () => 'account-123',
-            };
+        it('should use global source when target account limits have no RequestsPerSecond', async () => {
             const request = {
-                accountLimits: {
+                rateLimitTargetAccountLimits: {
                     RequestsPerSecond: undefined,
                 },
             };
 
-            const result = helpers.extractRateLimitConfigFromRequest(
-                request, mockAuthInfo, mockBucket, mockLog);
+            const result = await helpers.resolveRateLimitConfig(
+                request, makeAuthInfo(ownerId), makeBucket(undefined), mockLog);
 
             assert.deepStrictEqual(result.account, {
                 RequestsPerSecond: { BurstCapacity: 2, source: 'global' },
             });
+        });
+
+        it('should reuse the limits from the request on a cross-account cache hit', async () => {
+            // The bucket owner was cached, so doAuth was already given the
+            // target account and returned the owner's limits.
+            const request = {
+                rateLimitTargetAccount: ownerId,
+                rateLimitTargetAccountLimits: {
+                    RequestsPerSecond: { Limit: 400 },
+                },
+            };
+
+            const result = await helpers.resolveRateLimitConfig(
+                request, makeAuthInfo('other-canonical-id'), makeBucket(undefined), mockLog);
+
+            assert.deepStrictEqual(result.account, {
+                RequestsPerSecond: { BurstCapacity: 2, Limit: 400, source: 'resource' },
+            });
+            assert.strictEqual(vaultStub.called, false);
+        });
+
+        it('should fetch the owner limits from Vault on a cross-account cache miss', async () => {
+            vaultStub.yields(null, { RequestsPerSecond: { Limit: 750 } });
+            // No rateLimitTargetAccount: the bucket owner was not cached, so
+            // doAuth returned the requester's limits, not the owner's.
+            const request = {
+                rateLimitTargetAccountLimits: {
+                    RequestsPerSecond: { Limit: 1 },
+                },
+            };
+
+            const result = await helpers.resolveRateLimitConfig(
+                request, makeAuthInfo('other-canonical-id'), makeBucket(undefined), mockLog);
+
+            assert.strictEqual(vaultStub.calledOnce, true);
+            assert.strictEqual(vaultStub.firstCall.args[0], ownerId);
+            assert.deepStrictEqual(result.account, {
+                RequestsPerSecond: { BurstCapacity: 2, Limit: 750, source: 'resource' },
+            });
+        });
+
+        it('should fetch the owner limits from Vault for an anonymous requester', async () => {
+            vaultStub.yields(null, { RequestsPerSecond: { Limit: 60 } });
+
+            const result = await helpers.resolveRateLimitConfig(
+                {}, makeAuthInfo(constants.publicId, true), makeBucket(undefined), mockLog);
+
+            assert.strictEqual(vaultStub.calledOnce, true);
+            assert.strictEqual(vaultStub.firstCall.args[0], ownerId);
+            assert.deepStrictEqual(result.account, {
+                RequestsPerSecond: { BurstCapacity: 2, Limit: 60, source: 'resource' },
+            });
+        });
+
+        it('should fetch the owner limits for an anonymous requester on their own bucket', async () => {
+            // An anonymous request never went through account auth, so even
+            // when the canonical IDs match there are no limits on the request.
+            vaultStub.yields(null, { RequestsPerSecond: { Limit: 60 } });
+            const ownerBucket = makeBucket(undefined);
+            sandbox.stub(ownerBucket, 'getOwner').value(() => constants.publicId);
+
+            await helpers.resolveRateLimitConfig(
+                {}, makeAuthInfo(constants.publicId, true), ownerBucket, mockLog);
+
+            assert.strictEqual(vaultStub.calledOnce, true);
+            assert.strictEqual(vaultStub.firstCall.args[0], constants.publicId);
+        });
+
+        it('should not fetch from Vault for a same-account request', async () => {
+            const result = await helpers.resolveRateLimitConfig(
+                {}, makeAuthInfo(ownerId), makeBucket(undefined), mockLog);
+
+            assert.strictEqual(vaultStub.called, false);
+            assert.deepStrictEqual(result.account, {
+                RequestsPerSecond: { BurstCapacity: 2, source: 'global' },
+            });
+        });
+
+        it('should fall back to global defaults when Vault returns no limits', async () => {
+            vaultStub.yields(null, undefined);
+
+            const result = await helpers.resolveRateLimitConfig(
+                {}, makeAuthInfo('other-canonical-id'), makeBucket(undefined), mockLog);
+
+            assert.strictEqual(vaultStub.calledOnce, true);
+            assert.deepStrictEqual(result.account, {
+                RequestsPerSecond: { BurstCapacity: 2, source: 'global' },
+            });
+        });
+
+        it('should reject when Vault returns an error', async () => {
+            vaultStub.yields(errors.InternalError);
+
+            await assert.rejects(
+                helpers.resolveRateLimitConfig(
+                    {}, makeAuthInfo('other-canonical-id'), makeBucket(undefined), mockLog),
+                err => err.is.InternalError,
+            );
+        });
+
+        it('should key the account config under the bucket owner, not the requester', async () => {
+            vaultStub.yields(null, { RequestsPerSecond: { Limit: 10 } });
+
+            await helpers.resolveRateLimitConfig(
+                {}, makeAuthInfo('other-canonical-id'), makeBucket(undefined), mockLog);
+
+            const debugCall = mockLog.debug.getCalls().find(
+                call => call.args[0] === 'Extracted per-account rate limit config'
+            );
+            assert(debugCall, 'Should have logged the per-account config');
+            assert.strictEqual(debugCall.args[1].canonicalId, ownerId);
         });
     });
 
@@ -646,14 +748,16 @@ describe('Rate limit helpers', () => {
             assert.strictEqual(result.bucketOwner, 'owner-123');
         });
 
-        it('should not return account config when bucket owner is cached but account config is not', () => {
+        it('should return the bucket owner without an account config when only the owner is cached', () => {
+            // The owner is reported even without a cached account config so the
+            // caller can still pass it to Vault as the rate limit target account.
             cache.setCachedBucketOwner('test-bucket', 'owner-123', 30000);
 
             const request = { bucketName: 'test-bucket' };
             const result = helpers.getCachedRateLimitConfig(request);
 
             assert.strictEqual(result.account, undefined);
-            assert.strictEqual(result.bucketOwner, undefined);
+            assert.strictEqual(result.bucketOwner, 'owner-123');
         });
 
         it('should not return account config when bucket owner is not cached', () => {
