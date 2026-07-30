@@ -3639,14 +3639,24 @@ describe('backbeat routes', () => {
         });
     });
 
-    describe('checksum validation', () => {
+    describe('checksums', () => {
         const testDataSha256B64 = crypto.createHash('sha256')
             .update(testData, 'utf-8').digest('base64');
         // A valid-length but wrong sha256 digest (44 base64 chars).
         const wrongSha256B64 = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+        // Checksum of the source object, as replicated by backbeat in the
+        // object metadata.
+        const sourceChecksum = {
+            checksumAlgorithm: 'sha256',
+            checksumValue: testDataSha256B64,
+            checksumType: 'FULL_OBJECT',
+        };
 
-        describe('putData', () => {
-            it('should return 400 BadDigest when x-amz-checksum-sha256 does not match body', done => {
+        describe('data route integrity check', () => {
+            // Backbeat only sends content-md5: x-amz-checksum-* headers are not
+            // parsed at all by the backbeat routes, so a mismatching one must
+            // not fail the request.
+            it('should ignore a mismatching x-amz-checksum-sha256 header', done => {
                 makeBackbeatRequest({
                     method: 'PUT',
                     resourceType: 'data',
@@ -3660,25 +3670,28 @@ describe('backbeat routes', () => {
                     },
                     requestBody: testData,
                     authCredentials: backbeatAuthCredentials,
-                }, err => {
-                    assert(err, 'expected an error response');
-                    assert.strictEqual(err.statusCode, 400);
-                    assert.strictEqual(err.code, 'BadDigest');
+                }, (err, data) => {
+                    assert.ifError(err);
+                    assert.strictEqual(data.statusCode, 200);
                     done();
                 });
             });
 
-            it('should return 200 when x-amz-checksum-sha256 matches body', done => {
+            itIfLocationAws('should ignore a mismatching x-amz-checksum-sha256 header (multiplebackenddata)',
+            done => {
                 makeBackbeatRequest({
                     method: 'PUT',
-                    resourceType: 'data',
+                    resourceType: 'multiplebackenddata',
                     bucket: TEST_BUCKET,
                     objectKey: TEST_KEY,
+                    queryObj: { operation: 'putobject' },
                     headers: {
                         'x-scal-canonical-id': testMd['owner-id'],
+                        'x-scal-storage-type': 'aws_s3',
+                        'x-scal-storage-class': awsLocation,
                         'content-md5': testDataMd5,
                         'content-length': testData.length,
-                        'x-amz-checksum-sha256': testDataSha256B64,
+                        'x-amz-checksum-sha256': wrongSha256B64,
                     },
                     requestBody: testData,
                     authCredentials: backbeatAuthCredentials,
@@ -3690,54 +3703,143 @@ describe('backbeat routes', () => {
             });
         });
 
-        describe('putObject (multiplebackenddata)', () => {
-            itIfLocationAws('should return 400 BadDigest when x-amz-checksum-sha256 does not match body', done => {
-                makeBackbeatRequest({
-                    method: 'PUT',
-                    resourceType: 'multiplebackenddata',
-                    bucket: TEST_BUCKET,
-                    objectKey: TEST_KEY,
-                    queryObj: { operation: 'putobject' },
-                    headers: {
-                        'x-scal-canonical-id': testMd['owner-id'],
-                        'x-scal-storage-type': 'aws_s3',
-                        'x-scal-storage-class': awsLocation,
-                        'content-md5': testDataMd5,
-                        'content-length': testData.length,
-                        'x-amz-checksum-sha256': wrongSha256B64,
+        describe('checksum replication', () => {
+            // The destination checksum is the one carried in the replicated
+            // metadata: nothing is recomputed by the data route.
+            it('should replicate the source object checksum (versioned bucket)', done => {
+                const objectKey = 'checksum-replication-key';
+                async.waterfall([
+                    next => makeBackbeatRequest({
+                        method: 'PUT',
+                        bucket: TEST_BUCKET,
+                        objectKey,
+                        resourceType: 'data',
+                        queryObj: { v2: '' },
+                        headers: {
+                            'content-length': testData.length,
+                            'content-md5': testDataMd5,
+                            'x-scal-canonical-id': testArn,
+                        },
+                        authCredentials: backbeatAuthCredentials,
+                        requestBody: testData,
+                    }, next),
+                    (response, next) => {
+                        assert.strictEqual(response.statusCode, 200);
+                        const newMd = getMetadataToPut(response);
+                        newMd.checksum = sourceChecksum;
+                        makeBackbeatRequest({
+                            method: 'PUT',
+                            bucket: TEST_BUCKET,
+                            objectKey,
+                            resourceType: 'metadata',
+                            authCredentials: backbeatAuthCredentials,
+                            requestBody: JSON.stringify(newMd),
+                        }, next);
                     },
-                    requestBody: testData,
-                    authCredentials: backbeatAuthCredentials,
-                }, err => {
-                    assert(err, 'expected an error response');
-                    assert.strictEqual(err.statusCode, 400);
-                    assert.strictEqual(err.code, 'BadDigest');
-                    done();
-                });
+                    (response, next) => {
+                        assert.strictEqual(response.statusCode, 200);
+                        s3.send(new HeadObjectCommand({
+                            Bucket: TEST_BUCKET,
+                            Key: objectKey,
+                            ChecksumMode: 'ENABLED',
+                        })).then(result => {
+                            assert.strictEqual(result.ChecksumSHA256, testDataSha256B64);
+                            assert.strictEqual(result.ChecksumType, 'FULL_OBJECT');
+                            next();
+                        }, next);
+                    },
+                ], done);
             });
 
-            itIfLocationAws('should return 200 when x-amz-checksum-sha256 matches body', done => {
-                makeBackbeatRequest({
-                    method: 'PUT',
-                    resourceType: 'multiplebackenddata',
-                    bucket: TEST_BUCKET,
-                    objectKey: TEST_KEY,
-                    queryObj: { operation: 'putobject' },
-                    headers: {
-                        'x-scal-canonical-id': testMd['owner-id'],
-                        'x-scal-storage-type': 'aws_s3',
-                        'x-scal-storage-class': awsLocation,
-                        'content-md5': testDataMd5,
-                        'content-length': testData.length,
-                        'x-amz-checksum-sha256': testDataSha256B64,
+            it('should replicate the source object checksum (non-versioned bucket)', done => {
+                const objectKey = 'checksum-replication-key-non-versioned';
+                async.waterfall([
+                    next => makeBackbeatRequest({
+                        method: 'PUT',
+                        bucket: NONVERSIONED_BUCKET,
+                        objectKey,
+                        resourceType: 'data',
+                        queryObj: { v2: '' },
+                        headers: {
+                            'content-length': testData.length,
+                            'content-md5': testDataMd5,
+                            'x-scal-canonical-id': testArn,
+                        },
+                        authCredentials: backbeatAuthCredentials,
+                        requestBody: testData,
+                    }, next),
+                    (response, next) => {
+                        assert.strictEqual(response.statusCode, 200);
+                        const newMd = Object.assign({}, nonVersionedTestMd, {
+                            location: JSON.parse(response.body),
+                            checksum: sourceChecksum,
+                        });
+                        makeBackbeatRequest({
+                            method: 'PUT',
+                            bucket: NONVERSIONED_BUCKET,
+                            objectKey,
+                            resourceType: 'metadata',
+                            authCredentials: backbeatAuthCredentials,
+                            requestBody: JSON.stringify(newMd),
+                        }, next);
                     },
-                    requestBody: testData,
-                    authCredentials: backbeatAuthCredentials,
-                }, (err, data) => {
-                    assert.ifError(err);
-                    assert.strictEqual(data.statusCode, 200);
-                    done();
-                });
+                    (response, next) => {
+                        assert.strictEqual(response.statusCode, 200);
+                        s3.send(new HeadObjectCommand({
+                            Bucket: NONVERSIONED_BUCKET,
+                            Key: objectKey,
+                            ChecksumMode: 'ENABLED',
+                        })).then(result => {
+                            assert.strictEqual(result.ChecksumSHA256, testDataSha256B64);
+                            assert.strictEqual(result.ChecksumType, 'FULL_OBJECT');
+                            next();
+                        }, next);
+                    },
+                ], done);
+            });
+
+            it('should not store a checksum when the replicated metadata has none', done => {
+                const objectKey = 'checksum-replication-key-none';
+                async.waterfall([
+                    next => makeBackbeatRequest({
+                        method: 'PUT',
+                        bucket: TEST_BUCKET,
+                        objectKey,
+                        resourceType: 'data',
+                        queryObj: { v2: '' },
+                        headers: {
+                            'content-length': testData.length,
+                            'content-md5': testDataMd5,
+                            'x-scal-canonical-id': testArn,
+                        },
+                        authCredentials: backbeatAuthCredentials,
+                        requestBody: testData,
+                    }, next),
+                    (response, next) => {
+                        assert.strictEqual(response.statusCode, 200);
+                        makeBackbeatRequest({
+                            method: 'PUT',
+                            bucket: TEST_BUCKET,
+                            objectKey,
+                            resourceType: 'metadata',
+                            authCredentials: backbeatAuthCredentials,
+                            requestBody: JSON.stringify(getMetadataToPut(response)),
+                        }, next);
+                    },
+                    (response, next) => {
+                        assert.strictEqual(response.statusCode, 200);
+                        s3.send(new HeadObjectCommand({
+                            Bucket: TEST_BUCKET,
+                            Key: objectKey,
+                            ChecksumMode: 'ENABLED',
+                        })).then(result => {
+                            assert.strictEqual(result.ChecksumSHA256, undefined);
+                            assert.strictEqual(result.ChecksumCRC64NVME, undefined);
+                            assert.strictEqual(result.ChecksumType, undefined);
+                            next();
+                        }, next);
+                    },
+                ], done);
             });
         });
     });

@@ -178,6 +178,43 @@ describe('routeBackbeat', () => {
 
         assert.strictEqual(mockResponse.statusCode, 200);
         assert.deepStrictEqual(mockResponse.body, [{}]);
+        // Backbeat relies on content-md5: no checksum is computed over the data.
+        assert.strictEqual(storeObject.dataStore.firstCall.args[6], null);
+    });
+
+    it('should reject CRR destination requests (putData) when content-md5 does not match the data', async () => {
+        // content-md5 is the only integrity check on this route.
+        mockRequest.method = 'PUT';
+        mockRequest.url = '/_/backbeat/data/bucket0/key0';
+        mockRequest.headers = {
+            'x-scal-canonical-id': 'id',
+            'content-md5': '1234',
+            'content-length': '0',
+            'x-scal-versioning-required': 'true',
+        };
+        mockRequest.destroy = () => {};
+
+        metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
+            const bucketInfo = {
+                getVersioningConfiguration: () => ({ Status: 'Enabled' }),
+                isVersioningEnabled: () => true,
+                getLocationConstraint: () => undefined,
+            };
+            const objMd = {};
+            callback(null, bucketInfo, objMd);
+        });
+        storeObject.dataStore.callsFake(
+            (objectContext, cipherBundle, stream, size, streamingV4Params, backendInfo, checksums, log, callback) => {
+                callback(null, {}, 'a-different-md5');
+            },
+        );
+
+        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+
+        void (await endPromise);
+
+        assert.strictEqual(mockResponse.statusCode, 400);
+        assert.strictEqual(mockResponse.body.code, 'BadDigest');
     });
 
     it('should return 409 VersionIdCollisionException when versionId matches master, no microVersionId', async () => {
