@@ -10,9 +10,7 @@ const {
     ConfigObject,
 } = require('../../lib/Config');
 
-const {
-    LOCATION_NAME_DMF,
-} = require('../constants');
+const { LOCATION_NAME_DMF } = require('../constants');
 const constants = require('../../constants');
 
 const { ValidLifecycleRules: supportedLifecycleRules } = require('arsenal').models;
@@ -24,15 +22,23 @@ describe('Config', () => {
     const setEnv = (key, value) => {
         if (key in process.env) {
             const v = process.env[key];
-            envToRestore.push(() => { process.env[key] = v; });
+            envToRestore.push(() => {
+                process.env[key] = v;
+            });
         } else {
-            envToRestore.push(() => { delete process.env[key]; });
+            envToRestore.push(() => {
+                delete process.env[key];
+            });
         }
         process.env[key] = value;
     };
 
-    beforeEach(() => { envToRestore.length = 0; });
-    afterEach(() => { envToRestore.reverse().forEach(cb => cb()); });
+    beforeEach(() => {
+        envToRestore.length = 0;
+    });
+    afterEach(() => {
+        envToRestore.reverse().forEach(cb => cb());
+    });
 
     it('should load default config.json without errors', done => {
         require('../../lib/Config');
@@ -55,7 +61,7 @@ describe('Config', () => {
     describe('azureGetStorageAccountName', () => {
         it('should return the azureStorageAccountName', done => {
             const accountName = azureGetStorageAccountName('us-west-1', {
-                azureStorageAccountName: 'someaccount'
+                azureStorageAccountName: 'someaccount',
             });
             assert.deepStrictEqual(accountName, 'someaccount');
             return done();
@@ -65,7 +71,7 @@ describe('Config', () => {
             setEnv('us-west-1_AZURE_STORAGE_ACCOUNT_NAME', 'other');
             setEnv('fr-east-2_AZURE_STORAGE_ACCOUNT_NAME', 'wrong');
             const accountName = azureGetStorageAccountName('us-west-1', {
-                azureStorageAccountName: 'someaccount'
+                azureStorageAccountName: 'someaccount',
             });
             assert.deepStrictEqual(accountName, 'other');
             return done();
@@ -108,7 +114,7 @@ describe('Config', () => {
         it('should return shared-key credentials with authMethod from details', () => {
             const creds = azureGetLocationCredentials('us-west-1', {
                 authMode: 'shared-key',
-                ...locationDetails
+                ...locationDetails,
             });
             assert.deepStrictEqual(creds, {
                 authMethod: 'shared-key',
@@ -149,7 +155,7 @@ describe('Config', () => {
         it('should return shared-access-signature-token credentials with authMethod from details', () => {
             const creds = azureGetLocationCredentials('us-west-1', {
                 authMethod: 'shared-access-signature',
-                ...locationDetails
+                ...locationDetails,
             });
             assert.deepStrictEqual(creds, {
                 authMethod: 'shared-access-signature',
@@ -196,7 +202,7 @@ describe('Config', () => {
         it('should return client-secret credentials with authMethod from details', () => {
             const creds = azureGetLocationCredentials('us-west-1', {
                 authMethod: 'client-secret',
-                ...locationDetails
+                ...locationDetails,
             });
             assert.deepStrictEqual(creds, {
                 authMethod: 'client-secret',
@@ -222,69 +228,54 @@ describe('Config', () => {
         it('should return account name from config', () => {
             setEnv('azurebackend_AZURE_STORAGE_ACCOUNT_NAME', '');
             const config = new ConfigObject();
-            assert.deepStrictEqual(
-                config.getAzureStorageAccountName('azurebackend'),
-                'fakeaccountname'
-            );
+            assert.deepStrictEqual(config.getAzureStorageAccountName('azurebackend'), 'fakeaccountname');
         });
 
         it('should return account name from env', () => {
             setEnv('azurebackend_AZURE_STORAGE_ACCOUNT_NAME', 'foooo');
             const config = new ConfigObject();
-            assert.deepStrictEqual(
-                config.getAzureStorageAccountName('azurebackend'),
-                'foooo'
-            );
+            assert.deepStrictEqual(config.getAzureStorageAccountName('azurebackend'), 'foooo');
         });
 
         it('should return account name from shared-access-signature auth', () => {
             setEnv('S3_LOCATION_FILE', 'tests/locationConfig/locationConfigTests.json');
             const config = new ConfigObject();
-            assert.deepStrictEqual(
-                config.getAzureStorageAccountName('azurebackend3'),
-                'fakeaccountname3'
-            );
+            assert.deepStrictEqual(config.getAzureStorageAccountName('azurebackend3'), 'fakeaccountname3');
         });
 
         it('should return account name from client-secret auth', () => {
             setEnv('S3_LOCATION_FILE', 'tests/locationConfig/locationConfigTests.json');
             const config = new ConfigObject();
-            assert.deepStrictEqual(
-                config.getAzureStorageAccountName('azurebackend4'),
-                'fakeaccountname4',
-            );
+            assert.deepStrictEqual(config.getAzureStorageAccountName('azurebackend4'), 'fakeaccountname4');
         });
 
         it('should return account name from endpoint', () => {
             setEnv('S3_LOCATION_FILE', 'tests/locationConfig/locationConfigTests.json');
             const config = new ConfigObject();
-            assert.deepStrictEqual(
-                config.getAzureStorageAccountName('azuritebackend'),
-                'myfakeaccount',
-            );
+            assert.deepStrictEqual(config.getAzureStorageAccountName('azuritebackend'), 'myfakeaccount');
         });
     });
 
     describe('locationConstraintAssert', () => {
         const memLocation = {
-            'details': {},
-            'isCold': false,
-            'isTransient': false,
-            'legacyAwsBehavior': false,
-            'locationType': 'location-mem-v1',
-            'objectId': 'a9d9b632-5fa5-11ef-8715-b21941dbc3ea',
-            'type': 'mem',
+            details: {},
+            isCold: false,
+            isTransient: false,
+            legacyAwsBehavior: false,
+            locationType: 'location-mem-v1',
+            objectId: 'a9d9b632-5fa5-11ef-8715-b21941dbc3ea',
+            type: 'mem',
         };
 
         it('should parse tlp location', () => {
             const locationConstraints = {
                 'dmf-1': {
-                    'details': {},
-                    'isCold': true,
-                    'legacyAwsBehavior': false,
-                    'locationType': LOCATION_NAME_DMF,
-                    'objectId': 'b9d9b632-5fa5-11ef-8715-b21941dbc3ea',
-                    'type': 'tlp'
+                    details: {},
+                    isCold: true,
+                    legacyAwsBehavior: false,
+                    locationType: LOCATION_NAME_DMF,
+                    objectId: 'b9d9b632-5fa5-11ef-8715-b21941dbc3ea',
+                    type: 'tlp',
                 },
                 'us-east-1': memLocation,
             };
@@ -294,12 +285,12 @@ describe('Config', () => {
         it('should fail tlp location is not cold', () => {
             const locationConstraints = {
                 'dmf-1': {
-                    'details': {},
-                    'isCold': false,
-                    'legacyAwsBehavior': false,
-                    'locationType': LOCATION_NAME_DMF,
-                    'objectId': 'b9d9b632-5fa5-11ef-8715-b21941dbc3ea',
-                    'type': 'tlp'
+                    details: {},
+                    isCold: false,
+                    legacyAwsBehavior: false,
+                    locationType: LOCATION_NAME_DMF,
+                    objectId: 'b9d9b632-5fa5-11ef-8715-b21941dbc3ea',
+                    type: 'tlp',
                 },
                 'us-east-1': memLocation,
             };
@@ -309,14 +300,14 @@ describe('Config', () => {
         it('should fail if tlp location has details', () => {
             const locationConstraints = {
                 'dmf-1': {
-                    'details': {
-                        'endpoint': 'http://localhost:8000',
+                    details: {
+                        endpoint: 'http://localhost:8000',
                     },
-                    'isCold': true,
-                    'legacyAwsBehavior': false,
-                    'locationType': LOCATION_NAME_DMF,
-                    'objectId': 'b9d9b632-5fa5-11ef-8715-b21941dbc3ea',
-                    'type': 'tlp'
+                    isCold: true,
+                    legacyAwsBehavior: false,
+                    locationType: LOCATION_NAME_DMF,
+                    objectId: 'b9d9b632-5fa5-11ef-8715-b21941dbc3ea',
+                    type: 'tlp',
                 },
                 'us-east-1': memLocation,
             };
@@ -512,8 +503,7 @@ describe('Config', () => {
 
         before(() => {
             oldConfig = process.env.S3_CONFIG_FILE;
-            process.env.S3_CONFIG_FILE =
-                'tests/unit/testConfigs/allOptsConfig/config.json';
+            process.env.S3_CONFIG_FILE = 'tests/unit/testConfigs/allOptsConfig/config.json';
         });
 
         after(() => {
@@ -523,13 +513,10 @@ describe('Config', () => {
         it('should set up scuba', () => {
             const config = new ConfigObject();
 
-            assert.deepStrictEqual(
-                config.scuba,
-                {
-                    host: 'localhost',
-                    port: 8100,
-                },
-            );
+            assert.deepStrictEqual(config.scuba, {
+                host: 'localhost',
+                port: 8100,
+            });
         });
 
         it('should use environment variables for scuba', () => {
@@ -538,13 +525,10 @@ describe('Config', () => {
 
             const config = new ConfigObject();
 
-            assert.deepStrictEqual(
-                config.scuba,
-                {
-                    host: 'scubahost',
-                    port: 1234,
-                },
-            );
+            assert.deepStrictEqual(config.scuba, {
+                host: 'scubahost',
+                port: 1234,
+            });
         });
     });
 
@@ -553,8 +537,7 @@ describe('Config', () => {
 
         before(() => {
             oldConfig = process.env.S3_CONFIG_FILE;
-            process.env.S3_CONFIG_FILE =
-                'tests/unit/testConfigs/allOptsConfig/config.json';
+            process.env.S3_CONFIG_FILE = 'tests/unit/testConfigs/allOptsConfig/config.json';
         });
 
         after(() => {
@@ -564,13 +547,10 @@ describe('Config', () => {
         it('should set up quota', () => {
             const config = new ConfigObject();
 
-            assert.deepStrictEqual(
-                config.quota,
-                {
-                    maxStaleness: 24 * 60 * 60 * 1000,
-                    enableInflights: false,
-                },
-            );
+            assert.deepStrictEqual(config.quota, {
+                maxStaleness: 24 * 60 * 60 * 1000,
+                enableInflights: false,
+            });
         });
 
         it('should use environment variables for scuba', () => {
@@ -579,13 +559,10 @@ describe('Config', () => {
 
             const config = new ConfigObject();
 
-            assert.deepStrictEqual(
-                config.quota,
-                {
-                    maxStaleness: 1234,
-                    enableInflights: true,
-                },
-            );
+            assert.deepStrictEqual(config.quota, {
+                maxStaleness: 1234,
+                enableInflights: true,
+            });
         });
 
         it('should use the default if the maxStaleness is not a number', () => {
@@ -594,13 +571,10 @@ describe('Config', () => {
 
             const config = new ConfigObject();
 
-            assert.deepStrictEqual(
-                config.quota,
-                {
-                    maxStaleness: 24 * 60 * 60 * 1000,
-                    enableInflights: true,
-                },
-            );
+            assert.deepStrictEqual(config.quota, {
+                maxStaleness: 24 * 60 * 60 * 1000,
+                enableInflights: true,
+            });
         });
     });
 
@@ -609,8 +583,7 @@ describe('Config', () => {
 
         before(() => {
             oldConfig = process.env.S3_CONFIG_FILE;
-            process.env.S3_CONFIG_FILE =
-                'tests/unit/testConfigs/allOptsConfig/config.json';
+            process.env.S3_CONFIG_FILE = 'tests/unit/testConfigs/allOptsConfig/config.json';
         });
 
         after(() => {
@@ -620,35 +593,29 @@ describe('Config', () => {
         it('should set up utapi local cache', () => {
             const config = new ConfigObject();
 
-            assert.deepStrictEqual(
-                config.localCache,
-                { name: 'zenko', sentinels: [{ host: 'localhost', port: 6379 }] },
-            );
-            assert.deepStrictEqual(
-                config.utapi.localCache,
-                config.localCache,
-            );
+            assert.deepStrictEqual(config.localCache, {
+                name: 'zenko',
+                sentinels: [{ host: 'localhost', port: 6379 }],
+            });
+            assert.deepStrictEqual(config.utapi.localCache, config.localCache);
         });
 
         it('should set up utapi redis', () => {
             const config = new ConfigObject();
 
-            assert.deepStrictEqual(
-                config.utapi.redis,
-                {
-                    host: 'localhost',
-                    port: 6379,
-                    retry: {
-                        connectBackoff: {
-                            min: 10,
-                            max: 1000,
-                            factor: 1.5,
-                            jitter: 0.1,
-                            deadline: 10000,
-                        },
+            assert.deepStrictEqual(config.utapi.redis, {
+                host: 'localhost',
+                port: 6379,
+                retry: {
+                    connectBackoff: {
+                        min: 10,
+                        max: 1000,
+                        factor: 1.5,
+                        jitter: 0.1,
+                        deadline: 10000,
                     },
                 },
-            );
+            });
         });
     });
 
@@ -673,11 +640,7 @@ describe('Config', () => {
         });
 
         it('should return the rules provided when they are valid', () => {
-            const rules = [
-                'Expiration',
-                'NoncurrentVersionExpiration',
-                'AbortIncompleteMultipartUpload',
-            ];
+            const rules = ['Expiration', 'NoncurrentVersionExpiration', 'AbortIncompleteMultipartUpload'];
             const parsedRules = parseSupportedLifecycleRules(rules);
             assert.deepStrictEqual(parsedRules, rules);
         });
@@ -836,8 +799,7 @@ describe('Config', () => {
                 .withArgs(sinon.match(/\/config\.json$/))
                 .returns(JSON.stringify({ ...defaultConfig, instanceId: 'test' }));
             // For all other files, use the original readFileSync
-            readFileSyncStub
-                .callsFake((filePath, ...args) => originalReadFileSync(filePath, ...args));
+            readFileSyncStub.callsFake((filePath, ...args) => originalReadFileSync(filePath, ...args));
             // Create a new ConfigObject instance
             const config = new ConfigObject();
             assert.strictEqual(config.instanceId, 'test');
@@ -852,8 +814,7 @@ describe('Config', () => {
                 .withArgs(sinon.match(/\/config\.json$/))
                 .returns(JSON.stringify({ ...defaultConfig, instanceId: 1234 }));
             // For all other files, use the original readFileSync
-            readFileSyncStub
-                .callsFake((filePath, ...args) => originalReadFileSync(filePath, ...args));
+            readFileSyncStub.callsFake((filePath, ...args) => originalReadFileSync(filePath, ...args));
             // Create a new ConfigObject instance
             assert.throws(() => new ConfigObject());
         });
@@ -893,14 +854,14 @@ describe('Config', () => {
             const multiObjectDeleteSize = 42;
             const modifiedConfig = {
                 ...defaultConfig,
-                apiBodySizeLimits: { 'multiObjectDelete': multiObjectDeleteSize },
+                apiBodySizeLimits: { multiObjectDelete: multiObjectDeleteSize },
             };
             readFileStub.withArgs(sinon.match(/config.json$/)).returns(JSON.stringify(modifiedConfig));
             const config = new ConfigObject();
 
             assert.deepStrictEqual(config.apiBodySizeLimits, {
-                'multiObjectDelete': multiObjectDeleteSize, // Configured: overwrites default
-                'bucketPutPolicy': constants.defaultApiBodySizeLimits['bucketPutPolicy'], // Not configured: default
+                multiObjectDelete: multiObjectDeleteSize, // Configured: overwrites default
+                bucketPutPolicy: constants.defaultApiBodySizeLimits['bucketPutPolicy'], // Not configured: default
             });
         });
 
@@ -913,7 +874,7 @@ describe('Config', () => {
 
             assert.throws(
                 () => new ConfigObject(),
-                /bad config: apiBodySizeLimits for "anApiNotSetInConstants.js" cannot be configured/
+                /bad config: apiBodySizeLimits for "anApiNotSetInConstants.js" cannot be configured/,
             );
         });
     });
