@@ -17,7 +17,6 @@ const {
     getCopyObjectChecksumAlgorithm,
 } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
 const { errors: ArsenalErrors } = require('arsenal');
-const { config } = require('../../../../../lib/Config');
 
 describe('validateChecksumsNoChunking MD5', () => {
     describe('with valid Content-MD5 header', () => {
@@ -329,16 +328,6 @@ describe('validateChecksumsNoChunking CRC32, CRC32C, SHA1, SHA256, CRC64NVME', (
 });
 
 describe('validateMethodChecksumNoChunking', () => {
-    let originalIntegrityChecks;
-
-    beforeEach(() => {
-        originalIntegrityChecks = { ...config.integrityChecks };
-    });
-
-    afterEach(() => {
-        config.integrityChecks = originalIntegrityChecks;
-    });
-
     describe('when checksum mismatches', () => {
         Object.keys(checksumedMethods).forEach(method => {
             it(`should return BadDigest error for ${method} when checksum mismatch`, async () => {
@@ -405,28 +394,6 @@ describe('validateMethodChecksumNoChunking', () => {
                     apiMethod: method,
                     headers: {
                         'content-md5': correctMd5,
-                    },
-                };
-                const log = new DummyRequestLogger();
-
-                const result = await validateMethodChecksumNoChunking(request, body, log);
-
-                assert.ifError(result);
-            });
-        });
-    });
-
-    describe('when method is disabled in config', () => {
-        Object.keys(checksumedMethods).forEach(method => {
-            it(`should return null for ${method} when disabled, even with checksum mismatch`, async () => {
-                config.integrityChecks[method] = false;
-
-                const body = 'Hello, World!';
-                const wrongMd5 = 'wrongchecksum123=';
-                const request = {
-                    apiMethod: method,
-                    headers: {
-                        'content-md5': wrongMd5,
                     },
                 };
                 const log = new DummyRequestLogger();
