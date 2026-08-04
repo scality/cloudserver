@@ -30,6 +30,14 @@ const DEFAULT_GLOBAL_OPTIONS = {
 // timeout.
 const REQUEST_TIMEOUT = 30000;
 
+// Idle timeout for pooled keep-alive sockets, kept below the server's 5s
+// keep-alive so the client retires a socket before the server closes it.
+// A value is required: Node clamps this against the server's advertised
+// `Keep-Alive` hint, but only ever downwards from a non-zero timeout
+// (`agentTimeout = this.options.timeout || 0`), so leaving it unset means
+// pooled sockets never expire. See CLDSRV-968.
+const AGENT_IDLE_TIMEOUT = 4000;
+
 const DEFAULT_MEM_OPTIONS = {
     endpoint: `${transport}://127.0.0.1:8000`,
     port: 8000,
@@ -43,6 +51,7 @@ const DEFAULT_MEM_OPTIONS = {
             maxSockets: 200,
             keepAlive: true,
             keepAliveMsecs: 1000,
+            timeout: AGENT_IDLE_TIMEOUT,
         }),
     }),
 };
@@ -57,6 +66,7 @@ const DEFAULT_AWS_OPTIONS = {
             maxSockets: 200,
             keepAlive: true,
             keepAliveMsecs: 1000,
+            timeout: AGENT_IDLE_TIMEOUT,
         }),
     }),
 };
