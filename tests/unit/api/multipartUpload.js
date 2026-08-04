@@ -3895,7 +3895,6 @@ describe('validatePerPartChecksums', () => {
             assert.strictEqual(err.message, 'InvalidPart');
         });
     });
-
 });
 
 describe('CompleteMultipartUpload x-amz-checksum-type header', () => {
@@ -4675,10 +4674,25 @@ describe('CompleteMultipartUpload final checksum on azure-style external backend
         });
         // Mirror AzureClient.completeMPU: filter the stored parts against the
         // request part list and hand them back for local aggregation.
-        dataClient.completeMPU = (jsonList, mdInfo, key, uploadId, bucketName,
-            userMetadata, contentSettings, tagging, log, cb) => {
+        dataClient.completeMPU = (
+            jsonList,
+            mdInfo,
+            key,
+            uploadId,
+            bucketName,
+            userMetadata,
+            contentSettings,
+            tagging,
+            log,
+            cb,
+        ) => {
             const filteredPartsObj = s3middleware.processMpuParts.validateAndFilterMpuParts(
-                mdInfo.storedParts, jsonList, mdInfo.mpuOverviewKey, mdInfo.splitter, log);
+                mdInfo.storedParts,
+                jsonList,
+                mdInfo.mpuOverviewKey,
+                mdInfo.splitter,
+                log,
+            );
             if (filteredPartsObj.error) {
                 return cb(filteredPartsObj.error);
             }
