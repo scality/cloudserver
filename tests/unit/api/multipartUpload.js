@@ -1,4 +1,4 @@
-const { errors, storage, versioning } = require('arsenal');
+const { errors, s3middleware, storage, versioning } = require('arsenal');
 
 const assert = require('assert');
 const async = require('async');
@@ -3895,30 +3895,6 @@ describe('validatePerPartChecksums', () => {
             assert.strictEqual(err.message, 'InvalidPart');
         });
     });
-
-    describe('external backend MPU (isExternal=true)', () => {
-        // External parts store no per-part checksum, so the COMPOSITE requirement
-        // is relaxed - but a checksum the client submits is still rejected, since
-        // there is no stored value to verify it against.
-        it('should not require a per-part checksum (external parts store none)', () => {
-            const mpuChecksum = { algorithm: 'crc32', type: 'COMPOSITE', isDefault: false };
-            const stored = [makeStoredPart(1, null)];
-            const jsonList = { Part: [makeJsonPart(1, 'etag1')] };
-            const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum, true);
-            assert.ifError(err);
-        });
-
-        it('should still return InvalidPart for a client-submitted checksum (nothing to verify against)', () => {
-            const mpuChecksum = { algorithm: 'crc32', type: 'FULL_OBJECT', isDefault: false };
-            const stored = [makeStoredPart(1, null)];
-            const jsonList = {
-                Part: [makeJsonPart(1, 'etag1', { ChecksumCRC32: SAMPLE_DIGESTS.crc32[0] })],
-            };
-            const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum, true);
-            assert(err);
-            assert.strictEqual(err.message, 'InvalidPart');
-        });
-    });
 });
 
 describe('CompleteMultipartUpload x-amz-checksum-type header', () => {
@@ -4429,10 +4405,10 @@ describe('CompleteMultipartUpload final-object checksum response', () => {
 });
 
 describe('CompleteMultipartUpload per-part validation on external backends', () => {
-    // External backend parts store no per-part checksum, so CompleteMPU relaxes
-    // the COMPOSITE per-part requirement for them - but still rejects any checksum
-    // the client submits, since it can't be verified. The location is flipped via
-    // a getLocationConstraintType stub so only that gate differs.
+    // External-backend MPUs record no checksum config at CreateMPU
+    // (CLDSRV-964), so CompleteMPU has nothing to validate against and MPU
+    // checksums are ignored entirely. The location is flipped via a
+    // getLocationConstraintType stub so only that gate differs.
     const dataClient = data.client;
     const prevDataImplName = data.implName;
     const prevConfigBackendsData = data.config.backends.data;
@@ -4498,8 +4474,12 @@ describe('CompleteMultipartUpload per-part validation on external backends', () 
 
     // Create an MPU on the (external) ingest backend and upload one part. The
     // part is stored without a per-part checksum, as external backends do.
-    async function _initiateExternalMpu({ algo = 'CRC32', type = 'COMPOSITE' } = {}) {
+    // getLocationConstraintType is stubbed for the whole flow: since
+    // CLDSRV-964 the location type matters at initiate time, where external
+    // MPUs skip recording the checksum config.
+    async function _initiateExternalMpu({ algo = 'CRC32', type = 'COMPOSITE', locationType = 'aws_s3' } = {}) {
         await _bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log);
+        sinon.stub(config, 'getLocationConstraintType').returns(locationType);
         const initiate = new DummyRequest({
             bucketName,
             namespace,
@@ -4522,21 +4502,293 @@ describe('CompleteMultipartUpload per-part validation on external backends', () 
 
     describe('COMPOSITE MPU (no per-part checksum)', () => {
         it('should reject on a local location', async () => {
-            const { uploadId, eTag } = await _initiateExternalMpu({ type: 'COMPOSITE' });
+            const { uploadId, eTag } = await _initiateExternalMpu({ type: 'COMPOSITE', locationType: 'scality' });
             const completeReq = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
-            sinon.stub(config, 'getLocationConstraintType').returns('scality');
             await assert.rejects(_complete(completeReq), err => {
                 assert.match(err.message, /InvalidRequest/);
                 return true;
             });
         });
 
-        it('should complete on an external location', async () => {
+        it('should complete on an external location (checksum config not recorded)', async () => {
             const { uploadId, eTag } = await _initiateExternalMpu({ type: 'COMPOSITE' });
             const completeReq = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
-            sinon.stub(config, 'getLocationConstraintType').returns('aws_s3');
             const result = await _complete(completeReq);
             assert(result, 'external COMPOSITE MPU should complete without per-part checksums');
         });
+
+        it('should complete on an external location, ignoring an x-amz-checksum header', async () => {
+            // No final checksum can be computed for an external MPU, so the
+            // header cannot be validated; it must not fail the request.
+            const { uploadId, eTag } = await _initiateExternalMpu({ type: 'COMPOSITE' });
+            const completeReq = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
+            completeReq.headers['x-amz-checksum-crc32'] = `${SAMPLE_DIGESTS.crc32[0]}-1`;
+            const result = await _complete(completeReq);
+            assert(result, 'external MPU should complete despite an unverifiable checksum header');
+        });
+
+        it('should complete on an external location, ignoring per-part checksums in the request body', async () => {
+            // The SDK scenario CLDSRV-964 fixes: a Complete body carrying
+            // per-part Checksum<Algo> elements used to fail with InvalidPart
+            // (no stored value to verify against); with no checksum config
+            // recorded for the MPU they are ignored instead.
+            const { uploadId, eTag } = await _initiateExternalMpu({ type: 'COMPOSITE' });
+            const completeReq = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
+            completeReq.post =
+                '<CompleteMultipartUpload>' +
+                `<Part><PartNumber>1</PartNumber><ETag>"${eTag}"</ETag>` +
+                `<ChecksumCRC32>${SAMPLE_DIGESTS.crc32[0]}</ChecksumCRC32></Part>` +
+                '</CompleteMultipartUpload>';
+            const result = await _complete(completeReq);
+            assert(result, 'external MPU should ignore per-part checksums in the request body');
+        });
+
+        it('should complete on an external location, ignoring an x-amz-checksum-type header', async () => {
+            // An SDK that echoes the checksum type it requested at CreateMPU
+            // must not be rejected: the MPU recorded no checksum config, so
+            // the header is ignored like the other checksum inputs.
+            const { uploadId, eTag } = await _initiateExternalMpu({ type: 'COMPOSITE' });
+            const completeReq = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
+            completeReq.headers['x-amz-checksum-type'] = 'COMPOSITE';
+            const result = await _complete(completeReq);
+            assert(result, 'external MPU should ignore the x-amz-checksum-type header');
+        });
+
+        it('should still reject a bogus x-amz-checksum-type header value on an external location', async () => {
+            const { uploadId, eTag } = await _initiateExternalMpu({ type: 'COMPOSITE' });
+            const completeReq = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
+            completeReq.headers['x-amz-checksum-type'] = 'BOGUS';
+            await assert.rejects(_complete(completeReq), err => {
+                assert.strictEqual(err.message, 'InvalidRequest');
+                assert.strictEqual(err.description, 'Value for x-amz-checksum-type header is invalid.');
+                return true;
+            });
+        });
+    });
+
+    describe('CreateMPU checksum headers on an external location (CLDSRV-964)', () => {
+        const _initiate = headers =>
+            new Promise((resolve, reject) => {
+                const initiate = new DummyRequest({
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    headers: { host: `${bucketName}.s3.amazonaws.com`, ...headers },
+                    url: `/${objectKey}?uploads`,
+                });
+                initiateMultipartUpload(authInfo, initiate, log, (err, xml, resHeaders) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve({ xml, resHeaders });
+                });
+            });
+
+        beforeEach(async () => {
+            await _bucketPut(authInfo, newPutIngestBucketRequest('us-east-1:ingest'), log);
+            sinon.stub(config, 'getLocationConstraintType').returns('aws_s3');
+        });
+
+        it('should not acknowledge checksum headers in the response', async () => {
+            const { resHeaders } = await _initiate({
+                'x-amz-checksum-algorithm': 'CRC32',
+                'x-amz-checksum-type': 'COMPOSITE',
+            });
+            assert.strictEqual(resHeaders['x-amz-checksum-algorithm'], undefined);
+            assert.strictEqual(resHeaders['x-amz-checksum-type'], undefined);
+        });
+
+        it('should not record the checksum config in the MPU overview metadata', async () => {
+            const { xml } = await _initiate({
+                'x-amz-checksum-algorithm': 'CRC32',
+                'x-amz-checksum-type': 'COMPOSITE',
+            });
+            const uploadId = (await parseStringPromise(xml)).InitiateMultipartUploadResult.UploadId[0];
+            const overviewKey = `overview${splitter}${objectKey}${splitter}${uploadId}`;
+            const overviewMD = metadata.keyMaps.get(mpuBucket).get(overviewKey);
+            assert(overviewMD, 'MPU overview metadata should exist');
+            assert.strictEqual(overviewMD.checksumAlgorithm, undefined);
+            assert.strictEqual(overviewMD.checksumType, undefined);
+            assert.strictEqual(overviewMD.checksumIsDefault, undefined);
+        });
+
+        it('should still reject invalid checksum header combinations', async () => {
+            await assert.rejects(
+                _initiate({
+                    'x-amz-checksum-algorithm': 'CRC64NVME',
+                    'x-amz-checksum-type': 'COMPOSITE',
+                }),
+                err => {
+                    assert.strictEqual(err.message, 'InvalidRequest');
+                    return true;
+                },
+            );
+        });
+    });
+});
+
+describe('CompleteMultipartUpload final checksum on azure-style external backends', () => {
+    // Azure is not in mpuMDStoredExternallyBackend and its completeMPU returns
+    // filteredPartsObj, so unlike aws_s3/gcp the final-checksum compute step
+    // would run with per-part info - over external parts that store no
+    // checksum. CompleteMPU must behave like aws_s3/gcp in all cases
+    // (CLDSRV-964): complete successfully, store no final checksum, return no
+    // checksum elements, and ignore any x-amz-checksum-<algo> header on the
+    // request.
+    const dataClient = data.client;
+    const prevDataImplName = data.implName;
+    const prevConfigBackendsData = data.config.backends.data;
+    const partBody = Buffer.from('part body', 'utf8');
+    const partETag = crypto.createHash('md5').update(partBody).digest('hex');
+
+    before(() => {
+        data.switch(
+            new storage.data.MultipleBackendGateway(
+                {
+                    'us-east-1': dataClient,
+                    'us-east-2': dataClient,
+                },
+                metadata,
+                data.locStorageCheckFn,
+            ),
+        );
+        data.implName = 'multipleBackends';
+        data.config.backends.data = 'multiple';
+        dataClient.clientType = 'azure';
+    });
+
+    after(() => {
+        data.switch(dataClient);
+        data.implName = prevDataImplName;
+        data.config.backends.data = prevConfigBackendsData;
+        delete dataClient.clientType;
+    });
+
+    beforeEach(() => {
+        cleanup();
+        dataClient.uploadPart = sinon.stub().yields(undefined, {
+            key: 'mock-azure-key',
+            dataStoreName: 'us-east-1',
+            dataStoreType: 'azure',
+            dataStoreETag: partETag,
+        });
+        // Mirror AzureClient.completeMPU: filter the stored parts against the
+        // request part list and hand them back for local aggregation.
+        dataClient.completeMPU = (
+            jsonList,
+            mdInfo,
+            key,
+            uploadId,
+            bucketName,
+            userMetadata,
+            contentSettings,
+            tagging,
+            log,
+            cb,
+        ) => {
+            const filteredPartsObj = s3middleware.processMpuParts.validateAndFilterMpuParts(
+                mdInfo.storedParts,
+                jsonList,
+                mdInfo.mpuOverviewKey,
+                mdInfo.splitter,
+                log,
+            );
+            if (filteredPartsObj.error) {
+                return cb(filteredPartsObj.error);
+            }
+            return cb(null, { key, filteredPartsObj });
+        };
+    });
+
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    const newPutExternalBucketRequest = location =>
+        new DummyRequest({
+            bucketName,
+            namespace,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            url: '/',
+            post:
+                '<?xml version="1.0" encoding="UTF-8"?>' +
+                '<CreateBucketConfiguration ' +
+                'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+                `<LocationConstraint>${location}</LocationConstraint>` +
+                '</CreateBucketConfiguration>',
+        });
+
+    // Create an MPU on the azure-style backend and upload one part. The part
+    // MD is stored locally (unlike aws_s3) but carries no checksum fields.
+    // getLocationConstraintType is stubbed to azure for the whole flow, so
+    // initiate skips recording the checksum config (CLDSRV-964).
+    async function _initiateAzureMpu({ algo, type } = {}) {
+        await _bucketPut(authInfo, newPutExternalBucketRequest('us-east-1:ingest'), log);
+        sinon.stub(config, 'getLocationConstraintType').returns('azure');
+        const headers = { host: `${bucketName}.s3.amazonaws.com` };
+        if (algo) {
+            headers['x-amz-checksum-algorithm'] = algo;
+            headers['x-amz-checksum-type'] = type;
+        }
+        const initiate = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey,
+            headers,
+            url: `/${objectKey}?uploads`,
+        });
+        const initRes = await util.promisify(initiateMultipartUpload)(authInfo, initiate, log);
+        const uploadId = (await parseStringPromise(initRes)).InitiateMultipartUploadResult.UploadId[0];
+        const partReq = _createPutPartRequest(uploadId, 1, partBody);
+        const eTag = await util.promisify(objectPutPart)(authInfo, partReq, undefined, log);
+        return { uploadId, eTag };
+    }
+
+    const _complete = completeReq =>
+        new Promise((resolve, reject) => {
+            completeMultipartUpload(authInfo, completeReq, log, (err, xml, headers) => {
+                if (err) {
+                    return reject(err);
+                }
+                return resolve({ xml, headers });
+            });
+        });
+
+    async function _assertNoChecksumInResult(xml) {
+        const result = (await parseStringPromise(xml)).CompleteMultipartUploadResult;
+        Object.keys(algorithms).forEach(algo => {
+            const xmlTag = algorithms[algo].xmlTag;
+            assert.strictEqual(result[xmlTag], undefined, `${xmlTag} should not be in the response`);
+        });
+        assert.strictEqual(result.ChecksumType, undefined, 'ChecksumType should not be in the response');
+    }
+
+    it('should complete an explicit COMPOSITE MPU without a final checksum', async () => {
+        const { uploadId, eTag } = await _initiateAzureMpu({ algo: 'CRC32', type: 'COMPOSITE' });
+        const completeReq = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
+        const { xml } = await _complete(completeReq);
+        await _assertNoChecksumInResult(xml);
+    });
+
+    it('should complete an explicit FULL_OBJECT MPU without a final checksum', async () => {
+        const { uploadId, eTag } = await _initiateAzureMpu({ algo: 'CRC32', type: 'FULL_OBJECT' });
+        const completeReq = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
+        const { xml } = await _complete(completeReq);
+        await _assertNoChecksumInResult(xml);
+    });
+
+    it('should complete a default MPU without a final checksum', async () => {
+        const { uploadId, eTag } = await _initiateAzureMpu();
+        const completeReq = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
+        const { xml } = await _complete(completeReq);
+        await _assertNoChecksumInResult(xml);
+    });
+
+    it('should complete a default MPU, ignoring an x-amz-checksum header', async () => {
+        const { uploadId, eTag } = await _initiateAzureMpu();
+        const completeReq = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
+        completeReq.headers['x-amz-checksum-crc64nvme'] = SAMPLE_DIGESTS.crc64nvme[0];
+        const { xml } = await _complete(completeReq);
+        await _assertNoChecksumInResult(xml);
     });
 });
