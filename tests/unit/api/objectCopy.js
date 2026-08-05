@@ -1924,3 +1924,117 @@ describe('objectCopy source size limit', () => {
         });
     });
 });
+
+describe('objectCopy with checksums disabled', () => {
+    const sourceChecksum = {
+        checksumAlgorithm: 'crc32',
+        checksumValue: 'AAAAAA==',
+        checksumType: 'FULL_OBJECT',
+    };
+    let originalIntegrityChecks;
+
+    beforeEach(done => {
+        originalIntegrityChecks = config.integrityChecks;
+        cleanup();
+        async.series(
+            [
+                next => bucketPut(authInfo, putDestBucketRequest, log, next),
+                next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+                next =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]),
+                        undefined,
+                        log,
+                        next,
+                    ),
+            ],
+            done,
+        );
+    });
+
+    afterEach(() => {
+        config.integrityChecks = originalIntegrityChecks;
+        sinon.restore();
+        cleanup();
+    });
+
+    // Runs a copy with checksums disabled and hands the destination metadata back.
+    function copyDisabled(headers, cb) {
+        config.integrityChecks = { enabled: false };
+        const req = _createObjectCopyRequest(destBucketName, headers);
+        return objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
+            assert.ifError(err);
+            return metadata.getObjectMD(destBucketName, objectKey, {}, log, (mdErr, md) => {
+                assert.ifError(mdErr);
+                cb(xml, md);
+            });
+        });
+    }
+
+    it('should not store a checksum when the source has none', done => {
+        setSourceChecksum(null, err => {
+            assert.ifError(err);
+            copyDisabled(undefined, (xml, md) => {
+                assert.strictEqual(md.checksum, undefined);
+                assert.doesNotMatch(xml, /<Checksum/, 'response should carry no checksum');
+                done();
+            });
+        });
+    });
+
+    it('should not inherit the source checksum', done => {
+        setSourceChecksum(sourceChecksum, err => {
+            assert.ifError(err);
+            copyDisabled(undefined, (xml, md) => {
+                assert.strictEqual(md.checksum, undefined, 'destination must not inherit the source checksum');
+                done();
+            });
+        });
+    });
+
+    it('should ignore x-amz-checksum-algorithm instead of recomputing', done => {
+        setSourceChecksum(sourceChecksum, err => {
+            assert.ifError(err);
+            // sha256 differs from the source's crc32, which would normally force a
+            // recompute — the expensive path this flag exists to avoid.
+            copyDisabled({ 'x-amz-checksum-algorithm': 'SHA256' }, (xml, md) => {
+                assert.strictEqual(md.checksum, undefined);
+                done();
+            });
+        });
+    });
+
+    it('should not reject an invalid x-amz-checksum-algorithm', done => {
+        setSourceChecksum(null, err => {
+            assert.ifError(err);
+            copyDisabled({ 'x-amz-checksum-algorithm': 'NOT-AN-ALGO' }, (xml, md) => {
+                assert.strictEqual(md.checksum, undefined);
+                done();
+            });
+        });
+    });
+
+    it('should still reject an invalid x-amz-checksum-algorithm when enabled', done => {
+        config.integrityChecks = { enabled: true };
+        const req = _createObjectCopyRequest(destBucketName, { 'x-amz-checksum-algorithm': 'NOT-AN-ALGO' });
+        objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
+            assert(err, 'should reject');
+            assert.strictEqual(err.message, 'InvalidRequest');
+            done();
+        });
+    });
+
+    it('should recompute again once re-enabled', done => {
+        config.integrityChecks = { enabled: true };
+        setSourceChecksum(null, err => {
+            assert.ifError(err);
+            const req = _createObjectCopyRequest(destBucketName);
+            objectCopy(authInfo, req, sourceBucketName, objectKey, undefined, log, (err, xml) => {
+                assert.ifError(err);
+                assert.match(xml, /<ChecksumCRC64NVME>/, 'enabled should recompute the default checksum');
+                done();
+            });
+        });
+    });
+});
