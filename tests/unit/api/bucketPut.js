@@ -1030,7 +1030,8 @@ describe('bucketPut checkPolicies request context', () => {
                 },
             },
         });
-        const checkPoliciesStub = sinon.stub(vault, 'checkPolicies')
+        const checkPoliciesStub = sinon
+            .stub(vault, 'checkPolicies')
             .callsFake((requestContextParams, arn, log, cb) => cb(errors.AccessDenied));
         const request = {
             ...testRequest,
