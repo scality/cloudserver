@@ -5046,3 +5046,39 @@ describe('CompleteMPU x-amz-checksum-type validation vs the checksum flag', () =
         });
     });
 });
+
+describe('MPU created with checksums, then disabled mid-upload', () => {
+    const partBody = Buffer.from('I am a part\n', 'utf8');
+    let originalIntegrityChecks;
+
+    beforeEach(done => {
+        originalIntegrityChecks = config.integrityChecks;
+        cleanup();
+        bucketPut(authInfo, bucketPutRequest, log, done);
+    });
+
+    afterEach(() => {
+        config.integrityChecks = originalIntegrityChecks;
+        cleanup();
+    });
+
+    // crc32 defaults to COMPOSITE, the combination that previously wedged:
+    // UploadPart demanded a per-part checksum that CompleteMPU would never use.
+    it('should complete an explicit COMPOSITE MPU flipped to disabled', async () => {
+        config.integrityChecks = { enabled: true };
+        const headers = { ...initiateRequest.headers, 'x-amz-checksum-algorithm': 'crc32' };
+        const initRes = await util.promisify(initiateMultipartUpload)(authInfo, { ...initiateRequest, headers }, log);
+        const uploadId = (await parseStringPromise(initRes)).InitiateMultipartUploadResult.UploadId[0];
+
+        config.integrityChecks = { enabled: false };
+        const partRequest = _createPutPartRequest(uploadId, 1, partBody);
+        const eTag = await util.promisify(objectPutPart)(authInfo, partRequest, undefined, log);
+
+        const completeRequest = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
+        const xml = await util.promisify(cb =>
+            completeMultipartUpload(authInfo, completeRequest, log, (err, res) => cb(err, res)),
+        )();
+        assert.match(xml, /<CompleteMultipartUploadResult/);
+        assert.doesNotMatch(xml, /<Checksum/, 'no final-object checksum should be returned');
+    });
+});

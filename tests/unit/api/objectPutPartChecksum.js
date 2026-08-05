@@ -11,6 +11,7 @@ const constants = require('../../../constants');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
 const { algorithms } = require('../../../lib/api/apiUtils/integrity/validateChecksums');
+const { config } = require('../../../lib/Config');
 
 const { metadata } = storage.metadata.inMemory.metadata;
 
@@ -388,6 +389,105 @@ describe('objectPutPart checksum validation', () => {
                         })
                         .catch(done);
                 });
+            });
+        });
+    });
+});
+
+describe('objectPutPart with checksums disabled', () => {
+    let originalIntegrityChecks;
+
+    beforeEach(() => {
+        originalIntegrityChecks = config.integrityChecks;
+        cleanup();
+    });
+
+    afterEach(() => {
+        config.integrityChecks = originalIntegrityChecks;
+        cleanup();
+    });
+
+    // Creates the MPU with checksums enabled so an algorithm is recorded, then
+    // disables before uploading: the mid-flight case where the flag is flipped
+    // between CreateMPU and UploadPart.
+    function uploadPartAfterDisabling(initiateHeaders, partHeaders, cb) {
+        config.integrityChecks = { enabled: true };
+        return initiateMPU(initiateHeaders, (err, uploadId) => {
+            assert.ifError(err);
+            config.integrityChecks = { enabled: false };
+            const request = makePutPartRequest(uploadId, 1, partBody, partHeaders);
+            return objectPutPart(authInfo, request, undefined, log, (putErr, resHeaders) =>
+                cb(putErr, uploadId, resHeaders),
+            );
+        });
+    }
+
+    it('should accept a part with no checksum on a COMPOSITE MPU', done => {
+        // Enabled, this is rejected: a COMPOSITE MPU requires a per-part checksum.
+        uploadPartAfterDisabling({ 'x-amz-checksum-algorithm': 'crc32' }, {}, (err, uploadId) => {
+            assert.ifError(err);
+            const part = getPartMetadata(uploadId);
+            assert.strictEqual(part.checksumValue, undefined);
+            done();
+        });
+    });
+
+    it('should accept a part whose algorithm differs from the MPU', done => {
+        uploadPartAfterDisabling(
+            { 'x-amz-checksum-algorithm': 'crc32' },
+            { 'x-amz-checksum-sha256': 'YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE=' },
+            (err, uploadId) => {
+                assert.ifError(err);
+                assert.strictEqual(getPartMetadata(uploadId).checksumValue, undefined);
+                done();
+            },
+        );
+    });
+
+    it('should accept a part whose checksum does not match the body', done => {
+        uploadPartAfterDisabling(
+            { 'x-amz-checksum-algorithm': 'crc32' },
+            { 'x-amz-checksum-crc32': 'AAAAAA==' },
+            (err, uploadId) => {
+                assert.ifError(err);
+                assert.strictEqual(getPartMetadata(uploadId).checksumValue, undefined);
+                done();
+            },
+        );
+    });
+
+    it('should not echo a checksum back in the response', done => {
+        uploadPartAfterDisabling(
+            { 'x-amz-checksum-algorithm': 'crc32' },
+            { 'x-amz-checksum-crc32': 'AAAAAA==' },
+            (err, uploadId, resHeaders) => {
+                assert.ifError(err);
+                assert.strictEqual(resHeaders['x-amz-checksum-crc32'], undefined);
+                done();
+            },
+        );
+    });
+
+    it('should not reject a malformed per-part checksum header', done => {
+        uploadPartAfterDisabling(
+            { 'x-amz-checksum-algorithm': 'crc32' },
+            { 'x-amz-checksum-crc32': 'not-base64!!' },
+            err => {
+                assert.ifError(err);
+                done();
+            },
+        );
+    });
+
+    it('should reject a part with no checksum on a COMPOSITE MPU once re-enabled', done => {
+        config.integrityChecks = { enabled: true };
+        initiateMPU({ 'x-amz-checksum-algorithm': 'crc32' }, (err, uploadId) => {
+            assert.ifError(err);
+            const request = makePutPartRequest(uploadId, 1, partBody, {});
+            objectPutPart(authInfo, request, undefined, log, putErr => {
+                assert(putErr, 'should reject');
+                assert.strictEqual(putErr.message, 'InvalidRequest');
+                done();
             });
         });
     });
