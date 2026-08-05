@@ -14,6 +14,7 @@ const {
     arsenalErrorFromChecksumError,
     getChecksumDataFromMPUHeaders,
     validateCompleteMultipartUploadChecksum,
+    validateCompleteMPUChecksumType,
     getCopyObjectChecksumAlgorithm,
 } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
 const { errors: ArsenalErrors } = require('arsenal');
@@ -1463,5 +1464,107 @@ describe('validateMethodChecksumNoChunking x-amz-content-sha256', () => {
         };
         const result = await validateMethodChecksumNoChunking(request, body, new DummyRequestLogger());
         assert.ifError(result);
+    });
+});
+
+describe('validateCompleteMPUChecksumType', () => {
+    describe('when the header is absent', () => {
+        it('should return null whatever the MPU checksum type is', () => {
+            assert.strictEqual(validateCompleteMPUChecksumType({}, 'COMPOSITE'), null);
+            assert.strictEqual(validateCompleteMPUChecksumType({}, 'FULL_OBJECT'), null);
+            assert.strictEqual(validateCompleteMPUChecksumType({}, undefined), null);
+        });
+
+        it('should return null for an empty header value', () => {
+            assert.strictEqual(validateCompleteMPUChecksumType({ 'x-amz-checksum-type': '' }, 'COMPOSITE'), null);
+        });
+    });
+
+    describe('when the header matches the MPU checksum type', () => {
+        ['COMPOSITE', 'FULL_OBJECT'].forEach(type => {
+            it(`should return null for ${type}`, () => {
+                assert.strictEqual(validateCompleteMPUChecksumType({ 'x-amz-checksum-type': type }, type), null);
+            });
+        });
+
+        it('should compare case-insensitively on both sides', () => {
+            const lowerHeader = { 'x-amz-checksum-type': 'composite' };
+            assert.strictEqual(validateCompleteMPUChecksumType(lowerHeader, 'COMPOSITE'), null);
+            const upperHeader = { 'x-amz-checksum-type': 'FULL_OBJECT' };
+            assert.strictEqual(validateCompleteMPUChecksumType(upperHeader, 'full_object'), null);
+        });
+    });
+
+    describe('when the header value is not a valid checksum type', () => {
+        it('should return MPUTypeInvalid', () => {
+            const result = validateCompleteMPUChecksumType({ 'x-amz-checksum-type': 'BOGUS' }, 'COMPOSITE');
+            assert.strictEqual(result.error, ChecksumError.MPUTypeInvalid);
+            assert.strictEqual(result.details.type, 'BOGUS');
+        });
+
+        it('should take precedence over an unset MPU checksum type', () => {
+            const result = validateCompleteMPUChecksumType({ 'x-amz-checksum-type': 'BOGUS' }, undefined);
+            assert.strictEqual(result.error, ChecksumError.MPUTypeInvalid);
+        });
+
+        it('should map to InvalidRequest (400)', () => {
+            const result = validateCompleteMPUChecksumType({ 'x-amz-checksum-type': 'BOGUS' }, 'COMPOSITE');
+            const err = arsenalErrorFromChecksumError(result);
+            assert.strictEqual(err.message, 'InvalidRequest');
+            assert.strictEqual(err.code, 400);
+            assert.strictEqual(err.description, 'Value for x-amz-checksum-type header is invalid.');
+        });
+    });
+
+    describe('when the MPU was created without a checksum type', () => {
+        it('should return MPUTypeNotConfigured', () => {
+            const result = validateCompleteMPUChecksumType({ 'x-amz-checksum-type': 'COMPOSITE' }, undefined);
+            assert.strictEqual(result.error, ChecksumError.MPUTypeNotConfigured);
+        });
+
+        it('should map to InvalidRequest (400) describing the legacy upload', () => {
+            const result = validateCompleteMPUChecksumType({ 'x-amz-checksum-type': 'COMPOSITE' }, undefined);
+            const err = arsenalErrorFromChecksumError(result);
+            assert.strictEqual(err.message, 'InvalidRequest');
+            assert.strictEqual(err.code, 400);
+            assert.strictEqual(
+                err.description,
+                'The upload was not created with a checksum mode. ' +
+                    'The complete request must not include a x-amz-checksum-type header.',
+            );
+        });
+
+        it('should ignore the header for an external-backend MPU', () => {
+            // External backends record no checksum config (CLDSRV-964), so an
+            // absent type means "not tracked here", not a legacy upload.
+            const headers = { 'x-amz-checksum-type': 'COMPOSITE' };
+            assert.strictEqual(validateCompleteMPUChecksumType(headers, undefined, true), null);
+        });
+
+        it('should still reject a mismatch on an external-backend MPU that has a type', () => {
+            const headers = { 'x-amz-checksum-type': 'COMPOSITE' };
+            const result = validateCompleteMPUChecksumType(headers, 'FULL_OBJECT', true);
+            assert.strictEqual(result.error, ChecksumError.MPUTypeModeMismatch);
+        });
+    });
+
+    describe('when the header does not match the MPU checksum type', () => {
+        it('should return MPUTypeModeMismatch carrying the MPU type', () => {
+            const result = validateCompleteMPUChecksumType({ 'x-amz-checksum-type': 'COMPOSITE' }, 'FULL_OBJECT');
+            assert.strictEqual(result.error, ChecksumError.MPUTypeModeMismatch);
+            assert.strictEqual(result.details.type, 'FULL_OBJECT');
+        });
+
+        it('should map to InvalidRequest (400) naming the mode the MPU was created with', () => {
+            const result = validateCompleteMPUChecksumType({ 'x-amz-checksum-type': 'COMPOSITE' }, 'FULL_OBJECT');
+            const err = arsenalErrorFromChecksumError(result);
+            assert.strictEqual(err.message, 'InvalidRequest');
+            assert.strictEqual(err.code, 400);
+            assert.strictEqual(
+                err.description,
+                'The upload was created using the FULL_OBJECT checksum mode. ' +
+                    'The complete request must use the same checksum mode.',
+            );
+        });
     });
 });
