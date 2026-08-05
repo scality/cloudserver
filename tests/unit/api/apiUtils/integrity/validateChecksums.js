@@ -1612,3 +1612,63 @@ describe('areChecksumsEnabled', () => {
         });
     });
 });
+
+describe('validateMethodChecksumNoChunking with checksums disabled', () => {
+    const body = 'Hello, World!';
+    const sigV4Header = 'AWS4-HMAC-SHA256 Credential=x';
+    const correctMd5 = crypto.createHash('md5').update(body).digest('base64');
+    const wrongMd5 = crypto.createHash('md5').update('other').digest('base64');
+    let originalIntegrityChecks;
+
+    beforeEach(() => {
+        originalIntegrityChecks = config.integrityChecks;
+        config.integrityChecks = { enabled: false };
+    });
+
+    afterEach(() => {
+        config.integrityChecks = originalIntegrityChecks;
+    });
+
+    const run = headers =>
+        validateMethodChecksumNoChunking({ apiMethod: 'bucketPutCors', headers }, body, new DummyRequestLogger());
+
+    it('should ignore a wrong x-amz-checksum-<algo> for every checksumed method', async () => {
+        for (const method of Object.keys(checksumedMethods)) {
+            const request = { apiMethod: method, headers: { 'x-amz-checksum-crc32': 'AAAAAA==' } };
+            const result = await validateMethodChecksumNoChunking(request, body, new DummyRequestLogger());
+            assert.ifError(result, `${method} should not reject`);
+        }
+    });
+
+    it('should ignore x-amz-checksum-* headers that would otherwise be rejected', async () => {
+        // Malformed, unsupported, multiple, and a mismatched sdk-algorithm all
+        // become no-ops: the header is not looked at once checksums are off.
+        assert.ifError(await run({ 'x-amz-checksum-crc32': 'not-base64!!' }));
+        assert.ifError(await run({ 'x-amz-checksum-md5': 'AAAAAA==' }));
+        assert.ifError(await run({ 'x-amz-checksum-crc32': 'AAAAAA==', 'x-amz-checksum-crc32c': 'AAAAAA==' }));
+        assert.ifError(await run({ 'x-amz-checksum-crc32': 'AAAAAA==', 'x-amz-sdk-checksum-algorithm': 'SHA256' }));
+    });
+
+    it('should still enforce Content-MD5', async () => {
+        const result = await run({ 'content-md5': wrongMd5 });
+        assert.strictEqual(result.message, 'BadDigest');
+        assert.ifError(await run({ 'content-md5': correctMd5 }));
+    });
+
+    it('should still enforce Content-MD5 alongside an ignored x-amz-checksum', async () => {
+        const result = await run({ 'content-md5': wrongMd5, 'x-amz-checksum-crc32': 'AAAAAA==' });
+        assert.strictEqual(result.message, 'BadDigest');
+    });
+
+    it('should still enforce x-amz-content-sha256', async () => {
+        const wrongHex = crypto.createHash('sha256').update('other').digest('hex');
+        const result = await run({ authorization: sigV4Header, 'x-amz-content-sha256': wrongHex });
+        assert.strictEqual(result.message, 'XAmzContentSHA256Mismatch');
+    });
+
+    it('should reject a wrong x-amz-checksum-<algo> again once re-enabled', async () => {
+        config.integrityChecks = { enabled: true };
+        const result = await run({ 'x-amz-checksum-crc32': 'AAAAAA==' });
+        assert.strictEqual(result.message, 'BadDigest');
+    });
+});
