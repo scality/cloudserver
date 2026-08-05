@@ -457,3 +457,110 @@ describe('objectPutCopyPart._copyPartStreamingWithChecksum', () => {
         });
     });
 });
+
+describe('objectPutCopyPart with checksums disabled', () => {
+    const { _shouldRecomputeChecksum } = objectPutCopyPart;
+    const objData = Buffer.from('foo', 'utf8');
+    let originalIntegrityChecks;
+
+    beforeEach(done => {
+        originalIntegrityChecks = config.integrityChecks;
+        cleanup();
+        sinon.spy(metadataswitch, 'putObjectMD');
+        async.waterfall(
+            [
+                cb => bucketPut(authInfo, putDestBucketRequest, log, e => cb(e)),
+                cb => bucketPut(authInfo, putSourceBucketRequest, log, e => cb(e)),
+                cb =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData),
+                        undefined,
+                        log,
+                        e => cb(e),
+                    ),
+            ],
+            done,
+        );
+    });
+
+    afterEach(() => {
+        config.integrityChecks = originalIntegrityChecks;
+        sinon.restore();
+        cleanup();
+    });
+
+    describe('_shouldRecomputeChecksum', () => {
+        it('should never recompute, whatever the source or range', () => {
+            config.integrityChecks = { enabled: false };
+            const withRange = { headers: { 'x-amz-copy-source-range': 'bytes=0-1' } };
+            const noRange = { headers: {} };
+            const composite = { checksumType: 'COMPOSITE', checksumAlgorithm: 'crc32' };
+            // Each of these returns true when enabled.
+            assert.strictEqual(_shouldRecomputeChecksum(withRange, composite, 'crc32'), false);
+            assert.strictEqual(_shouldRecomputeChecksum(noRange, undefined, 'crc32'), false);
+            assert.strictEqual(_shouldRecomputeChecksum(noRange, composite, 'crc32'), false);
+        });
+
+        it('should recompute again once re-enabled', () => {
+            config.integrityChecks = { enabled: true };
+            assert.strictEqual(_shouldRecomputeChecksum({ headers: {} }, undefined, 'crc32'), true);
+        });
+    });
+
+    describe('part metadata', () => {
+        function copyPartDisabled({ sourceChecksum, headers } = {}) {
+            return new Promise((resolve, reject) => {
+                const initReq = _createInitiateRequest(destBucketName, {
+                    'x-amz-checksum-algorithm': 'CRC32',
+                });
+                // Create the MPU with checksums on so an algorithm is recorded,
+                // then disable: the flag must be honoured at copy time.
+                config.integrityChecks = { enabled: true };
+                return initiateMultipartUpload(authInfo, initReq, log, (err, res) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return parseString(res, (parseErr, json) => {
+                        if (parseErr) {
+                            return reject(parseErr);
+                        }
+                        const uploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                        if (sourceChecksum) {
+                            metadata.keyMaps.get(sourceBucketName).get(objectKey).checksum = sourceChecksum;
+                        } else {
+                            delete metadata.keyMaps.get(sourceBucketName).get(objectKey).checksum;
+                        }
+                        config.integrityChecks = { enabled: false };
+                        const req = _createObjectCopyPartRequest(destBucketName, uploadId, headers);
+                        return objectPutCopyPart(authInfo, req, sourceBucketName, objectKey, undefined, log, copyErr =>
+                            copyErr ? reject(copyErr) : resolve(metadataswitch.putObjectMD.lastCall.args[2]),
+                        );
+                    });
+                });
+            });
+        }
+
+        it('should store no checksum when the source has one to reuse', async () => {
+            const omVal = await copyPartDisabled({
+                sourceChecksum: { checksumType: 'FULL_OBJECT', checksumAlgorithm: 'crc32', checksumValue: 'AAAAAA==' },
+            });
+            assert.strictEqual(omVal.checksumAlgorithm, undefined);
+            assert.strictEqual(omVal.checksumValue, undefined);
+        });
+
+        it('should store no checksum when the source has none', async () => {
+            // Would previously recompute; must not dereference the absent source checksum.
+            const omVal = await copyPartDisabled();
+            assert.strictEqual(omVal.checksumAlgorithm, undefined);
+            assert.strictEqual(omVal.checksumValue, undefined);
+        });
+
+        it('should store no checksum for a ranged copy', async () => {
+            // A range always forces a recompute when enabled.
+            const omVal = await copyPartDisabled({ headers: { 'x-amz-copy-source-range': 'bytes=0-1' } });
+            assert.strictEqual(omVal.checksumAlgorithm, undefined);
+            assert.strictEqual(omVal.checksumValue, undefined);
+        });
+    });
+});
