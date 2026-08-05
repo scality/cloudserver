@@ -964,7 +964,7 @@ describe('bucketPut checkPolicies request context', () => {
         };
 
         bucketPut(userAuthInfo, request, log, err => {
-            assert.strictEqual(err.is.AccessDenied, true);
+            assert.strictEqual(err.is.AccessDenied, true, `expected AccessDenied, got ${err && err.message}`);
             sinon.assert.calledOnce(checkPoliciesStub);
             const { constantParams } = checkPoliciesStub.getCall(0).args[0][0];
             assert.strictEqual(constantParams.signatureVersion, 'AWS4-HMAC-SHA256');
