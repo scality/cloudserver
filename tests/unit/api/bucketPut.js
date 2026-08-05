@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
+const { auth, errors } = require('arsenal');
 const sinon = require('sinon');
 const inMemory = require('../../../lib/kms/in_memory/backend').backend;
 const vault = require('../../../lib/auth/vault');
@@ -1006,6 +1006,46 @@ describe('bucketPut API quota metric seeding', () => {
                 initStub.calledBefore(updateSpy),
                 'metric must be seeded before the transient/deleted flag is cleared',
             );
+            done();
+        });
+    });
+});
+
+describe('bucketPut checkPolicies request context', () => {
+    afterEach(() => {
+        sinon.restore();
+        cleanup();
+    });
+
+    it('should forward auth params unswapped to vault, including a zero signatureAge', done => {
+        // IAM user so that the request goes through the checkPolicies path
+        const userAuthInfo = makeAuthInfo(accessKey, 'testuser');
+        sinon.stub(auth.server, 'extractParams').returns({
+            params: {
+                version: 4,
+                data: {
+                    signatureVersion: 'AWS4-HMAC-SHA256',
+                    authType: 'REST-HEADER',
+                    signatureAge: 0,
+                },
+            },
+        });
+        const checkPoliciesStub = sinon.stub(vault, 'checkPolicies')
+            .callsFake((requestContextParams, arn, log, cb) => cb(errors.AccessDenied));
+        const request = {
+            ...testRequest,
+            socket: {
+                remoteAddress: '127.0.0.1',
+            },
+        };
+
+        bucketPut(userAuthInfo, request, log, err => {
+            assert(err && err.AccessDenied);
+            sinon.assert.calledOnce(checkPoliciesStub);
+            const { constantParams } = checkPoliciesStub.getCall(0).args[0][0];
+            assert.strictEqual(constantParams.signatureVersion, 'AWS4-HMAC-SHA256');
+            assert.strictEqual(constantParams.authType, 'REST-HEADER');
+            assert.strictEqual(constantParams.signatureAge, 0);
             done();
         });
     });
