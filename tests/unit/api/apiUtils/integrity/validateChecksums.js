@@ -16,7 +16,9 @@ const {
     validateCompleteMultipartUploadChecksum,
     validateCompleteMPUChecksumType,
     getCopyObjectChecksumAlgorithm,
+    areChecksumsEnabled,
 } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
+const { config } = require('../../../../../lib/Config');
 const { errors: ArsenalErrors } = require('arsenal');
 
 describe('validateChecksumsNoChunking MD5', () => {
@@ -1565,6 +1567,48 @@ describe('validateCompleteMPUChecksumType', () => {
                 'The upload was created using the FULL_OBJECT checksum mode. ' +
                     'The complete request must use the same checksum mode.',
             );
+        });
+    });
+});
+
+describe('areChecksumsEnabled', () => {
+    let originalIntegrityChecks;
+
+    beforeEach(() => {
+        originalIntegrityChecks = config.integrityChecks;
+    });
+
+    afterEach(() => {
+        config.integrityChecks = originalIntegrityChecks;
+    });
+
+    it('should be enabled with the shipped config', () => {
+        assert.strictEqual(areChecksumsEnabled(), true);
+    });
+
+    it('should be disabled only when enabled is exactly false', () => {
+        config.integrityChecks = { enabled: false };
+        assert.strictEqual(areChecksumsEnabled(), false);
+    });
+
+    it('should be enabled when enabled is true', () => {
+        config.integrityChecks = { enabled: true };
+        assert.strictEqual(areChecksumsEnabled(), true);
+    });
+
+    it('should default to enabled when the section or the key is missing', () => {
+        config.integrityChecks = undefined;
+        assert.strictEqual(areChecksumsEnabled(), true);
+        config.integrityChecks = {};
+        assert.strictEqual(areChecksumsEnabled(), true);
+    });
+
+    it('should not treat a falsy non-false value as disabled', () => {
+        // Guards the `!== false` comparison: only an explicit boolean false
+        // turns checksums off, so a mis-typed config cannot silently disable them.
+        [0, '', null, 'false'].forEach(value => {
+            config.integrityChecks = { enabled: value };
+            assert.strictEqual(areChecksumsEnabled(), true, `enabled: ${JSON.stringify(value)}`);
         });
     });
 });
