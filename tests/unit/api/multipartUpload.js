@@ -4885,3 +4885,164 @@ describe('CompleteMultipartUpload with checksums disabled', () => {
         assert.doesNotMatch(disabledXml, /<ChecksumCRC64NVME>/, 'disabled should omit the final checksum');
     });
 });
+
+describe('initiateMultipartUpload with checksums disabled', () => {
+    const partBody = Buffer.from('I am a part\n', 'utf8');
+    let originalIntegrityChecks;
+
+    beforeEach(done => {
+        originalIntegrityChecks = config.integrityChecks;
+        cleanup();
+        config.integrityChecks = { enabled: false };
+        bucketPut(authInfo, bucketPutRequest, log, done);
+    });
+
+    afterEach(() => {
+        config.integrityChecks = originalIntegrityChecks;
+        cleanup();
+    });
+
+    const initiate = headers => util.promisify(initiateMultipartUpload)(authInfo, { ...initiateRequest, headers }, log);
+
+    async function uploadIdFrom(xml) {
+        return (await parseStringPromise(xml)).InitiateMultipartUploadResult.UploadId[0];
+    }
+
+    function storedOverview(uploadId) {
+        for (const [key, value] of metadata.keyMaps.get(mpuBucket)) {
+            if (key.startsWith('overview') && value.uploadId === uploadId) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    it('should record no checksum config on the MPU', async () => {
+        const headers = { ...initiateRequest.headers, 'x-amz-checksum-algorithm': 'crc32' };
+        const overview = storedOverview(await uploadIdFrom(await initiate(headers)));
+        assert.strictEqual(overview.checksumAlgorithm, undefined);
+        assert.strictEqual(overview.checksumType, undefined);
+        assert.strictEqual(overview.checksumIsDefault, undefined);
+    });
+
+    it('should not reject an unsupported x-amz-checksum-algorithm', async () => {
+        const headers = { ...initiateRequest.headers, 'x-amz-checksum-algorithm': 'NOT-AN-ALGO' };
+        await assert.doesNotReject(initiate(headers));
+    });
+
+    it('should not reject x-amz-checksum-type without an algorithm', async () => {
+        const headers = { ...initiateRequest.headers, 'x-amz-checksum-type': 'FULL_OBJECT' };
+        await assert.doesNotReject(initiate(headers));
+    });
+
+    it('should complete an MPU whose parts carry no checksum', async () => {
+        // The end-to-end case CreateMPU previously broke: an explicit algorithm
+        // was recorded, so CompleteMPU demanded per-part digests that never existed.
+        const headers = { ...initiateRequest.headers, 'x-amz-checksum-algorithm': 'crc32' };
+        const uploadId = await uploadIdFrom(await initiate(headers));
+
+        const partRequest = _createPutPartRequest(uploadId, 1, partBody);
+        const eTag = await util.promisify(objectPutPart)(authInfo, partRequest, undefined, log);
+
+        const completeRequest = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
+        const xml = await util.promisify(cb =>
+            completeMultipartUpload(authInfo, completeRequest, log, (err, res) => cb(err, res)),
+        )();
+        assert.match(xml, /<CompleteMultipartUploadResult/);
+        assert.doesNotMatch(xml, /<Checksum/, 'no final-object checksum should be returned');
+    });
+
+    it('should ignore x-amz-checksum-type on CompleteMPU', async () => {
+        const uploadId = await uploadIdFrom(await initiate(initiateRequest.headers));
+        const partRequest = _createPutPartRequest(uploadId, 1, partBody);
+        const eTag = await util.promisify(objectPutPart)(authInfo, partRequest, undefined, log);
+
+        const completeRequest = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
+        completeRequest.headers = { ...completeRequest.headers, 'x-amz-checksum-type': 'FULL_OBJECT' };
+        await assert.doesNotReject(
+            util.promisify(cb => completeMultipartUpload(authInfo, completeRequest, log, (err, res) => cb(err, res)))(),
+        );
+    });
+
+    it('should record the checksum config again once re-enabled', async () => {
+        config.integrityChecks = { enabled: true };
+        const headers = { ...initiateRequest.headers, 'x-amz-checksum-algorithm': 'crc32' };
+        const overview = storedOverview(await uploadIdFrom(await initiate(headers)));
+        assert.strictEqual(overview.checksumAlgorithm, 'crc32');
+        assert.strictEqual(overview.checksumType, 'COMPOSITE');
+    });
+});
+
+describe('CompleteMPU x-amz-checksum-type validation vs the checksum flag', () => {
+    const partBody = Buffer.from('I am a part\n', 'utf8');
+    let originalIntegrityChecks;
+
+    beforeEach(done => {
+        originalIntegrityChecks = config.integrityChecks;
+        cleanup();
+        bucketPut(authInfo, bucketPutRequest, log, done);
+    });
+
+    afterEach(() => {
+        config.integrityChecks = originalIntegrityChecks;
+        cleanup();
+    });
+
+    // Creates an MPU under `createEnabled`, uploads one part, and returns a
+    // CompleteMPU request carrying `headerType` as x-amz-checksum-type.
+    async function buildComplete(createEnabled, createHeaders, headerType) {
+        config.integrityChecks = { enabled: createEnabled };
+        const headers = { ...initiateRequest.headers, ...createHeaders };
+        const initRes = await util.promisify(initiateMultipartUpload)(authInfo, { ...initiateRequest, headers }, log);
+        const uploadId = (await parseStringPromise(initRes)).InitiateMultipartUploadResult.UploadId[0];
+        const partRequest = _createPutPartRequest(uploadId, 1, partBody);
+        const eTag = await util.promisify(objectPutPart)(authInfo, partRequest, undefined, log);
+        const request = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
+        request.headers = { ...request.headers, 'x-amz-checksum-type': headerType };
+        return request;
+    }
+
+    const complete = request =>
+        util.promisify(cb => completeMultipartUpload(authInfo, request, log, (err, xml) => cb(err, xml)))();
+
+    describe('when disabled', () => {
+        it('should ignore a type header on an MPU that recorded none', async () => {
+            const request = await buildComplete(false, { 'x-amz-checksum-algorithm': 'crc32' }, 'COMPOSITE');
+            config.integrityChecks = { enabled: false };
+            await assert.doesNotReject(complete(request));
+        });
+
+        it('should ignore an invalid type value', async () => {
+            const request = await buildComplete(false, {}, 'NOT-A-TYPE');
+            config.integrityChecks = { enabled: false };
+            await assert.doesNotReject(complete(request));
+        });
+
+        it('should ignore a type that mismatches one recorded while enabled', async () => {
+            // MPU created with checksums on, completed after the flag was flipped.
+            const request = await buildComplete(true, { 'x-amz-checksum-algorithm': 'crc64nvme' }, 'COMPOSITE');
+            config.integrityChecks = { enabled: false };
+            await assert.doesNotReject(complete(request));
+        });
+    });
+
+    describe('when enabled', () => {
+        it('should still reject a type header on an MPU that recorded none', async () => {
+            const request = await buildComplete(false, {}, 'FULL_OBJECT');
+            config.integrityChecks = { enabled: true };
+            await assert.rejects(complete(request), { message: 'InvalidRequest' });
+        });
+
+        it('should still reject an invalid type value', async () => {
+            const request = await buildComplete(true, { 'x-amz-checksum-algorithm': 'crc64nvme' }, 'NOT-A-TYPE');
+            config.integrityChecks = { enabled: true };
+            await assert.rejects(complete(request), { message: 'InvalidRequest' });
+        });
+
+        it('should still reject a type that mismatches the recorded one', async () => {
+            const request = await buildComplete(true, { 'x-amz-checksum-algorithm': 'crc64nvme' }, 'COMPOSITE');
+            config.integrityChecks = { enabled: true };
+            await assert.rejects(complete(request), { message: 'InvalidRequest' });
+        });
+    });
+});
