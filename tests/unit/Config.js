@@ -7,6 +7,7 @@ const {
     azureGetLocationCredentials,
     locationConstraintAssert,
     parseSupportedLifecycleRules,
+    parseIntegrityChecks,
     ConfigObject,
 } = require('../../lib/Config');
 
@@ -905,6 +906,49 @@ describe('Config', () => {
         it('should throw error for invalid string objectKeyByteLimit override', () => {
             setEnv('OVERRIDE_OBJECT_KEY_BYTE_LIMIT', 'invalid');
             assert.throws(() => new ConfigObject());
+        });
+    });
+
+    describe('parse integrity checks', () => {
+        afterEach(() => {
+            delete process.env.S3_INTEGRITY_CHECKS_ENABLED;
+        });
+
+        it('should default to enabled when not configured', () => {
+            assert.deepStrictEqual(parseIntegrityChecks(null), { enabled: true });
+            assert.deepStrictEqual(parseIntegrityChecks({}), { enabled: true });
+        });
+
+        it('should read the configured value', () => {
+            assert.deepStrictEqual(parseIntegrityChecks({ integrityChecks: { enabled: false } }), { enabled: false });
+            assert.deepStrictEqual(parseIntegrityChecks({ integrityChecks: { enabled: true } }), { enabled: true });
+        });
+
+        it('should throw if integrityChecks is not an object', () => {
+            assert.throws(() => parseIntegrityChecks({ integrityChecks: 'yes' }), /must be an object/);
+            assert.throws(() => parseIntegrityChecks({ integrityChecks: [true] }), /must be an object/);
+        });
+
+        it('should throw if enabled is not a boolean', () => {
+            assert.throws(() => parseIntegrityChecks({ integrityChecks: { enabled: 'false' } }), /must be a boolean/);
+            assert.throws(() => parseIntegrityChecks({ integrityChecks: { enabled: 0 } }), /must be a boolean/);
+        });
+
+        it('should let S3_INTEGRITY_CHECKS_ENABLED override the config file', () => {
+            process.env.S3_INTEGRITY_CHECKS_ENABLED = 'false';
+            assert.deepStrictEqual(parseIntegrityChecks({ integrityChecks: { enabled: true } }), { enabled: false });
+            process.env.S3_INTEGRITY_CHECKS_ENABLED = 'true';
+            assert.deepStrictEqual(parseIntegrityChecks({ integrityChecks: { enabled: false } }), { enabled: true });
+        });
+
+        it('should throw on a non-boolean S3_INTEGRITY_CHECKS_ENABLED', () => {
+            process.env.S3_INTEGRITY_CHECKS_ENABLED = 'nope';
+            assert.throws(() => parseIntegrityChecks(null), /S3_INTEGRITY_CHECKS_ENABLED/);
+        });
+
+        it('should expose integrityChecks on the config object', () => {
+            const config = new ConfigObject();
+            assert.deepStrictEqual(config.integrityChecks, { enabled: true });
         });
     });
 

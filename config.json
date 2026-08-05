@@ -152,6 +152,9 @@
         "multiObjectDelete": 2097152,
         "bucketPutPolicy": 20480
     },
+    "integrityChecks": {
+        "enabled": true
+    },
     "serverAccessLogs": {
         "mode": "DISABLED",
         "outputFile": "/logs/server-access.log",
