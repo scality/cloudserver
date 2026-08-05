@@ -4792,3 +4792,96 @@ describe('CompleteMultipartUpload final checksum on azure-style external backend
         await _assertNoChecksumInResult(xml);
     });
 });
+
+describe('CompleteMultipartUpload with checksums disabled', () => {
+    const partBody = Buffer.from('I am a part\n', 'utf8');
+    let originalIntegrityChecks;
+
+    beforeEach(done => {
+        originalIntegrityChecks = config.integrityChecks;
+        cleanup();
+        bucketPut(authInfo, bucketPutRequest, log, done);
+    });
+
+    afterEach(() => {
+        config.integrityChecks = originalIntegrityChecks;
+        cleanup();
+    });
+
+    // Starts a CRC64NVME (FULL_OBJECT) MPU and uploads one part, returning what CompleteMPU needs.
+    // Runs with checksums enabled so the part carries a stored digest — this
+    // commit only gates CompleteMPU, UploadPart still computes as usual.
+    async function initiateAndUploadPart() {
+        config.integrityChecks = { enabled: true };
+        const headers = { ...initiateRequest.headers, 'x-amz-checksum-algorithm': 'crc64nvme' };
+        const initRes = await util.promisify(initiateMultipartUpload)(authInfo, { ...initiateRequest, headers }, log);
+        const uploadId = (await parseStringPromise(initRes)).InitiateMultipartUploadResult.UploadId[0];
+
+        const partRequest = _createPutPartRequest(uploadId, 1, partBody);
+        const eTag = await util.promisify(objectPutPart)(authInfo, partRequest, undefined, log);
+
+        let storedChecksum;
+        for (const [key, value] of metadata.keyMaps.get(mpuBucket)) {
+            if (key.startsWith(uploadId) && !key.startsWith('overview')) {
+                storedChecksum = value.checksumValue;
+            }
+        }
+        assert(storedChecksum, 'part should have a stored checksum to validate against');
+
+        return { uploadId, eTag, storedChecksum };
+    }
+
+    function completeRequestWithPartChecksum(uploadId, eTag, checksumValue) {
+        const post = [
+            '<CompleteMultipartUpload>',
+            '<Part>',
+            '<PartNumber>1</PartNumber>',
+            `<ETag>"${eTag}"</ETag>`,
+            `<ChecksumCRC64NVME>${checksumValue}</ChecksumCRC64NVME>`,
+            '</Part>',
+            '</CompleteMultipartUpload>',
+        ];
+        return {
+            bucketName,
+            namespace,
+            objectKey,
+            parsedHost: 's3.amazonaws.com',
+            url: `/${objectKey}?uploadId=${uploadId}`,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            query: { uploadId },
+            post,
+            actionImplicitDenies: false,
+        };
+    }
+
+    const complete = request =>
+        util.promisify(cb => completeMultipartUpload(authInfo, request, log, (err, xml) => cb(err, xml)))();
+
+    it('should reject a mismatched per-part checksum while enabled', async () => {
+        const { uploadId, eTag } = await initiateAndUploadPart();
+        const request = completeRequestWithPartChecksum(uploadId, eTag, 'AQIDBAUGBwg=');
+        await assert.rejects(complete(request), { message: 'InvalidPart' });
+    });
+
+    it('should accept a mismatched per-part checksum once disabled', async () => {
+        const { uploadId, eTag } = await initiateAndUploadPart();
+        config.integrityChecks = { enabled: false };
+        const request = completeRequestWithPartChecksum(uploadId, eTag, 'AQIDBAUGBwg=');
+        const xml = await complete(request);
+        assert.match(xml, /<CompleteMultipartUploadResult/);
+    });
+
+    it('should omit the final-object checksum once disabled', async () => {
+        const { uploadId, eTag, storedChecksum } = await initiateAndUploadPart();
+
+        const enabledXml = await complete(completeRequestWithPartChecksum(uploadId, eTag, storedChecksum));
+        assert.match(enabledXml, /<ChecksumCRC64NVME>/, 'enabled should return a final checksum');
+
+        const second = await initiateAndUploadPart();
+        config.integrityChecks = { enabled: false };
+        const disabledXml = await complete(
+            completeRequestWithPartChecksum(second.uploadId, second.eTag, second.storedChecksum),
+        );
+        assert.doesNotMatch(disabledXml, /<ChecksumCRC64NVME>/, 'disabled should omit the final checksum');
+    });
+});
