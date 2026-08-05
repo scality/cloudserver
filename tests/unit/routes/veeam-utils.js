@@ -5,6 +5,7 @@ const { Readable } = require('stream');
 const UtilizationService = require('../../../lib/utilization/instance');
 const metadata = require('../../../lib/metadata/wrapper');
 const { fetchCapacityMetrics, buildVeeamFileData, receiveData } = require('../../../lib/routes/veeam/utils');
+const { config } = require('../../../lib/Config');
 const { DummyRequestLogger } = require('../helpers');
 
 describe('fetchCapacityMetrics', () => {
@@ -384,5 +385,63 @@ describe('receiveData', () => {
             null,
         );
         await assert.rejects(receiveData(request, log), err => err.is.InvalidArgument);
+    });
+
+    describe('with checksums disabled', () => {
+        let originalIntegrityChecks;
+
+        beforeEach(() => {
+            originalIntegrityChecks = config.integrityChecks;
+            config.integrityChecks = { enabled: false };
+        });
+
+        afterEach(() => {
+            config.integrityChecks = originalIntegrityChecks;
+        });
+
+        it('should accept a malformed x-amz-checksum header', async () => {
+            // Enabled, this is InvalidRequest.
+            const request = makeRequest(
+                payload,
+                {
+                    'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
+                    'x-amz-checksum-crc64nvme': 'not-base64!',
+                },
+                payload.length,
+            );
+            const data = await receiveData(request, log);
+            assert.strictEqual(data, payload);
+        });
+
+        it('should ignore a mismatched x-amz-checksum header', async () => {
+            // Enabled, this is BadDigest.
+            const request = makeRequest(
+                payload,
+                {
+                    'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
+                    'x-amz-checksum-sha256': crypto.createHash('sha256').update('other').digest('base64'),
+                },
+                payload.length,
+            );
+            const data = await receiveData(request, log);
+            assert.strictEqual(data, payload);
+        });
+
+        it('should still strip an unvalidated trailing checksum from the body', async () => {
+            // Enabled, this digest is a BadDigest mismatch.
+            const body = chunkedBody('AAAAAAAAAAA=');
+            const request = makeRequest(
+                body,
+                {
+                    'content-length': `${body.length}`,
+                    'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
+                    'x-amz-trailer': 'x-amz-checksum-crc64nvme',
+                    'x-amz-decoded-content-length': `${payload.length}`,
+                },
+                payload.length,
+            );
+            const data = await receiveData(request, log);
+            assert.strictEqual(data, payload);
+        });
     });
 });

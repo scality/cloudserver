@@ -10,6 +10,7 @@ const TrailingChecksumTransform = require('../../../../../lib/auth/streamingV4/t
 const { DummyRequestLogger } = require('../../../helpers');
 const DummyRequest = require('../../../DummyRequest');
 const { defaultChecksumData } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
+const { config } = require('../../../../../lib/Config');
 
 const log = new DummyRequestLogger();
 const defaultChecksums = { primary: defaultChecksumData, secondary: null };
@@ -417,5 +418,69 @@ describe('prepareStream', () => {
             result.stream.emit('error', errors.InternalError);
             assert.strictEqual(count, 1);
         });
+    });
+});
+
+describe('prepareStream with checksums disabled', () => {
+    let originalIntegrityChecks;
+
+    beforeEach(() => {
+        originalIntegrityChecks = config.integrityChecks;
+        config.integrityChecks = { enabled: false };
+    });
+
+    afterEach(() => {
+        config.integrityChecks = originalIntegrityChecks;
+    });
+
+    // Disabling must land in exactly the state a caller requesting no checksum
+    // already produces, which the 'no checksum requested' suite above pins down.
+    it('should build no ChecksumTransform even when checksums are requested', () => {
+        const request = makeRequest({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
+        const checksums = { primary: defaultChecksumData, secondary: { algorithm: 'crc32', isTrailer: false } };
+        const result = prepareStream(request, null, checksums, log, () => {});
+        assert.strictEqual(result.error, null);
+        assert.strictEqual(result.stream, request, 'the request should pass through untouched');
+        assert.strictEqual(result.primaryChecksumStream, null);
+        assert.strictEqual(result.secondaryChecksumStream, null);
+    });
+
+    it('should drop the checksum transforms on the chunked upload path', () => {
+        const request = makeRequest({ 'x-amz-content-sha256': 'STREAMING-AWS4-HMAC-SHA256-PAYLOAD' });
+        const result = prepareStream(request, mockV4Params, defaultChecksums, log, () => {});
+        assert(result.stream instanceof V4Transform, 'v4 chunk decoding must still happen');
+        assert.strictEqual(result.primaryChecksumStream, null);
+        assert.strictEqual(result.secondaryChecksumStream, null);
+    });
+
+    it('should drop the checksum transforms on the trailer path', () => {
+        const request = makeRequest({
+            'x-amz-content-sha256': 'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
+            'x-amz-trailer': 'x-amz-checksum-crc32',
+        });
+        const result = prepareStream(request, null, defaultChecksums, log, () => {});
+        assert(result.stream instanceof TrailingChecksumTransform, 'trailer framing must still be parsed');
+        assert.strictEqual(result.primaryChecksumStream, null);
+    });
+
+    it('should still validate a literal x-amz-content-sha256 payload hash', done => {
+        // x-amz-content-sha256 is SigV4 load-bearing and out of scope for the flag.
+        const request = makeRequest({ authorization: sigV4Auth, 'x-amz-content-sha256': bodyHex }, bodyData);
+        const result = prepareStream(request, null, defaultChecksums, log, done);
+        assert.strictEqual(result.primaryChecksumStream, null);
+        assert(result.contentSHA256Stream instanceof ContentSHA256Transform);
+        result.stream.resume();
+        result.stream.on('finish', () => {
+            assert.strictEqual(result.contentSHA256Stream.validateChecksum(), null);
+            done();
+        });
+        result.stream.on('error', done);
+    });
+
+    it('should build the transforms again once re-enabled', () => {
+        config.integrityChecks = { enabled: true };
+        const request = makeRequest({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
+        const result = prepareStream(request, null, defaultChecksums, log, () => {});
+        assert(result.primaryChecksumStream instanceof ChecksumTransform);
     });
 });

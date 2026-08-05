@@ -1411,3 +1411,186 @@ describe('objectPut with objectKeyByteLimit', () => {
         });
     });
 });
+
+describe('objectPut with checksums disabled', () => {
+    const sha256Value = crypto.createHash('sha256').update(postBody).digest('base64');
+    let originalIntegrityChecks;
+
+    beforeEach(done => {
+        originalIntegrityChecks = config.integrityChecks;
+        cleanup();
+        bucketPut(authInfo, testPutBucketRequest, log, done);
+    });
+
+    afterEach(() => {
+        config.integrityChecks = originalIntegrityChecks;
+        cleanup();
+    });
+
+    const putRequest = headers =>
+        new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { host: `${bucketName}.s3.amazonaws.com`, ...headers },
+                url: '/',
+            },
+            postBody,
+        );
+
+    function putDisabled(headers, cb) {
+        config.integrityChecks = { enabled: false };
+        return objectPut(authInfo, putRequest(headers), undefined, log, (err, resHeaders) => {
+            assert.ifError(err);
+            return metadata.getObjectMD(bucketName, objectName, {}, log, (mdErr, md) => {
+                assert.ifError(mdErr);
+                cb(resHeaders, md);
+            });
+        });
+    }
+
+    it('should store no checksum metadata when none is requested', done => {
+        putDisabled(undefined, (resHeaders, md) => {
+            // Enabled, this stores the implicit crc64nvme default.
+            assert.strictEqual(md.checksum, undefined);
+            assert.strictEqual(resHeaders['x-amz-checksum-crc64nvme'], undefined);
+            done();
+        });
+    });
+
+    it('should ignore a client-supplied checksum rather than storing it', done => {
+        putDisabled({ 'x-amz-checksum-sha256': sha256Value }, (resHeaders, md) => {
+            assert.strictEqual(md.checksum, undefined);
+            assert.strictEqual(resHeaders['x-amz-checksum-sha256'], undefined);
+            done();
+        });
+    });
+
+    it('should accept a client-supplied checksum that does not match the body', done => {
+        const wrong = crypto.createHash('sha256').update('not the body').digest('base64');
+        putDisabled({ 'x-amz-checksum-sha256': wrong }, (resHeaders, md) => {
+            assert.strictEqual(md.checksum, undefined);
+            done();
+        });
+    });
+
+    it('should accept a malformed checksum value', done => {
+        // Enabled, this is InvalidRequest.
+        putDisabled({ 'x-amz-checksum-crc32': 'not-base64!' }, (resHeaders, md) => {
+            assert.strictEqual(md.checksum, undefined);
+            done();
+        });
+    });
+
+    it('should accept an unsupported checksum algorithm', done => {
+        // Enabled, this is InvalidRequest.
+        putDisabled({ 'x-amz-checksum-md5': 'AAAAAA==' }, (resHeaders, md) => {
+            assert.strictEqual(md.checksum, undefined);
+            done();
+        });
+    });
+
+    it('should accept multiple checksum headers', done => {
+        // Enabled, this is InvalidRequest.
+        putDisabled({ 'x-amz-checksum-sha256': sha256Value, 'x-amz-checksum-crc32': 'AAAAAA==' }, (resHeaders, md) => {
+            assert.strictEqual(md.checksum, undefined);
+            done();
+        });
+    });
+
+    it('should still reject a mismatched Content-MD5', done => {
+        config.integrityChecks = { enabled: false };
+        // checkHashMatchMD5 reads request.contentMD5, not the header.
+        const request = putRequest();
+        request.contentMD5 = crypto.createHash('md5').update('not the body').digest('base64');
+        objectPut(authInfo, request, undefined, log, err => {
+            assert(err, 'should reject');
+            assert.strictEqual(err.message, 'BadDigest');
+            done();
+        });
+    });
+
+    it('should store no checksum for a zero-byte object', done => {
+        config.integrityChecks = { enabled: false };
+        const request = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: '/',
+            },
+            Buffer.alloc(0),
+        );
+        objectPut(authInfo, request, undefined, log, err => {
+            assert.ifError(err);
+            metadata.getObjectMD(bucketName, objectName, {}, log, (mdErr, md) => {
+                assert.ifError(mdErr);
+                assert.strictEqual(md.checksum, undefined);
+                done();
+            });
+        });
+    });
+
+    it('should ignore a wrong checksum on a zero-byte object', done => {
+        config.integrityChecks = { enabled: false };
+        const request = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'host': `${bucketName}.s3.amazonaws.com`,
+                    'x-amz-checksum-crc32': 'AAAAAA==',
+                },
+                url: '/',
+            },
+            Buffer.alloc(0),
+        );
+        objectPut(authInfo, request, undefined, log, err => {
+            assert.ifError(err);
+            metadata.getObjectMD(bucketName, objectName, {}, log, (mdErr, md) => {
+                assert.ifError(mdErr);
+                assert.strictEqual(md.checksum, undefined);
+                done();
+            });
+        });
+    });
+
+    it('should store the zero-byte checksum again once re-enabled', done => {
+        config.integrityChecks = { enabled: true };
+        const request = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: '/',
+            },
+            Buffer.alloc(0),
+        );
+        objectPut(authInfo, request, undefined, log, err => {
+            assert.ifError(err);
+            metadata.getObjectMD(bucketName, objectName, {}, log, (mdErr, md) => {
+                assert.ifError(mdErr);
+                assert(md.checksum, 'enabled should store the empty-body checksum');
+                assert.strictEqual(md.checksum.checksumAlgorithm, 'crc64nvme');
+                done();
+            });
+        });
+    });
+
+    it('should store the checksum again once re-enabled', done => {
+        config.integrityChecks = { enabled: true };
+        objectPut(authInfo, putRequest(), undefined, log, err => {
+            assert.ifError(err);
+            metadata.getObjectMD(bucketName, objectName, {}, log, (mdErr, md) => {
+                assert.ifError(mdErr);
+                assert(md.checksum, 'enabled should store the default checksum');
+                assert.strictEqual(md.checksum.checksumAlgorithm, 'crc64nvme');
+                done();
+            });
+        });
+    });
+});
