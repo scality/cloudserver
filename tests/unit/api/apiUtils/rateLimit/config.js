@@ -521,11 +521,11 @@ describe('parseRateLimitConfig', () => {
             assert.throws(
                 () => parseRateLimitConfig(config),
                 // eslint-disable-next-line max-len
-                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.burstCapacity" must be a positive number/
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.burstCapacity" must be larger than or equal to 0/
             );
         });
 
-        it('should throw if burstCapacity is zero', () => {
+        it('should accept zero burstCapacity', () => {
             const config = {
                 serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
                 bucket: {
@@ -538,10 +538,9 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            assert.throws(
-                () => parseRateLimitConfig(config),
-                // eslint-disable-next-line max-len
-                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.burstCapacity" must be a positive number/
+            const result = parseRateLimitConfig(config);
+            assert.strictEqual(
+                result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity, 0
             );
         });
 
@@ -579,6 +578,55 @@ describe('parseRateLimitConfig', () => {
             };
 
             const result = parseRateLimitConfig(config);
+            assert.strictEqual(
+                result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity, 1.5
+            );
+        });
+
+        it('should accept zero defaultBurstCapacity and apply it when burstCapacity is omitted', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                bucket: {
+                    defaultConfig: {
+                        requestsPerSecond: {
+                            limit: 100,
+                        },
+                    },
+                    defaultBurstCapacity: 0,
+                },
+            };
+
+            const result = parseRateLimitConfig(config);
+            assert.strictEqual(result.bucket.defaultBurstCapacity, 0);
+            assert.strictEqual(
+                result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity, 0
+            );
+        });
+
+        it('should throw if defaultBurstCapacity is negative', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                bucket: {
+                    defaultBurstCapacity: -1,
+                },
+            };
+
+            assert.throws(
+                () => parseRateLimitConfig(config),
+                /rateLimiting configuration is invalid.*"bucket.defaultBurstCapacity" must be larger than or equal to 0/
+            );
+        });
+
+        it('should accept float defaultBurstCapacity', () => {
+            const config = {
+                serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
+                bucket: {
+                    defaultBurstCapacity: 1.5,
+                },
+            };
+
+            const result = parseRateLimitConfig(config);
+            assert.strictEqual(result.bucket.defaultBurstCapacity, 1.5);
             assert.strictEqual(
                 result.bucket.defaultConfig.RequestsPerSecond.BurstCapacity, 1.5
             );
@@ -1040,11 +1088,11 @@ describe('parseRateLimitConfig', () => {
             assert.throws(
                 () => parseRateLimitConfig(config),
                 // eslint-disable-next-line max-len
-                /rateLimiting configuration is invalid.*"account.defaultConfig.requestsPerSecond.burstCapacity" must be a positive number/
+                /rateLimiting configuration is invalid.*"account.defaultConfig.requestsPerSecond.burstCapacity" must be larger than or equal to 0/
             );
         });
 
-        it('should throw if burstCapacity is zero', () => {
+        it('should accept zero burstCapacity', () => {
             const config = {
                 serviceUserArn: 'arn:aws:iam::123456789012:user/rate-limit-service',
                 account: {
@@ -1057,10 +1105,9 @@ describe('parseRateLimitConfig', () => {
                 },
             };
 
-            assert.throws(
-                () => parseRateLimitConfig(config),
-                // eslint-disable-next-line max-len
-                /rateLimiting configuration is invalid.*"account.defaultConfig.requestsPerSecond.burstCapacity" must be a positive number/
+            const result = parseRateLimitConfig(config);
+            assert.strictEqual(
+                result.account.defaultConfig.RequestsPerSecond.BurstCapacity, 0
             );
         });
 
