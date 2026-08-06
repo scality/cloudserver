@@ -558,6 +558,55 @@ jobs:
           source: /tmp/artifacts
         if: always()
 
+  # Runs the server with x-amz-checksum-* computation turned off and asserts the
+  # resulting behaviour. Needs its own job because every other functional suite
+  # runs against a server with checksums enabled.
+  checksums-disabled-tests:
+    runs-on: ubuntu-24.04
+    needs: build
+    env:
+      S3BACKEND: mem
+      S3VAULT: mem
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
+      MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
+      MPU_TESTING: 'yes'
+      S3_INTEGRITY_CHECKS_ENABLED: 'false'
+      JOB_NAME: ${{ github.job }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup CI environment
+        uses: ./.github/actions/setup-ci
+      - name: Setup CI services
+        run: docker compose up -d
+        working-directory: .github/docker
+      - name: Run checksums-disabled tests
+        run: |-
+          set -o pipefail;
+          bash wait_for_local_port.bash 8000 40
+          yarn run ft_checksums_disabled | tee /tmp/artifacts/${{ github.job }}/tests.log
+      - name: Cleanup and upload coverage
+        uses: ./.github/actions/cleanup-and-coverage
+        with:
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+        if: always()
+      - name: Upload test results to Codecov
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: '**/junit/*junit*.xml'
+          flags: checksums-disabled-tests
+        if: always() && !cancelled()
+      - name: Upload logs to artifacts
+        uses: scality/action-artifacts@v4
+        with:
+          method: upload
+          url: https://artifacts.scality.net
+          user: ${{ secrets.ARTIFACTS_USER }}
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          source: /tmp/artifacts
+        if: always()
+
   # Configure and run as Integration run S3C tests
   s3c-ft-tests:
     strategy:

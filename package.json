@@ -121,6 +121,7 @@
         "ft_awssdk_objects_misc": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/legacy test/object test/service test/support --exit",
         "ft_awssdk_versioning": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/versioning/ --exit",
         "ft_awssdk_external_backends": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/multipleBackend --exit",
+        "ft_checksums_disabled": "cd tests/functional/checksumsDisabled && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 120000 *.js --exit",
         "ft_mixed_bucket_format_version": "cd tests/functional/metadata && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json MixedVersionFormat.js --exit",
         "ft_management": "cd tests/functional/report && yarn test",
         "ft_backbeat": "cd tests/functional/backbeat && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js --exit",
