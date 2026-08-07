@@ -335,10 +335,9 @@ describe('checkRateLimitIfNeeded cross-account rate limiting', () => {
         validateBucketRequest(otherAuthInfo, () => {
             assert.strictEqual(vaultStub.calledOnce, true);
             assert.strictEqual(vaultStub.firstCall.args[0], ownerCanonicalId);
-            assert.deepStrictEqual(
-                rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId),
-                { RequestsPerSecond: { BurstCapacity: 1, Limit: 100, source: 'resource' } },
-            );
+            assert.deepStrictEqual(rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId), {
+                RequestsPerSecond: { BurstCapacity: 1, Limit: 100, source: 'resource' },
+            });
             assert(tokenBucket.getAllTokenBuckets().has(`account:${ownerCanonicalId}:rps`));
             assert(!tokenBucket.getAllTokenBuckets().has(`account:${otherCanonicalId}:rps`));
             done();
@@ -371,10 +370,9 @@ describe('checkRateLimitIfNeeded cross-account rate limiting', () => {
             assert.strictEqual(vaultStub.calledOnce, true);
             assert.strictEqual(vaultStub.firstCall.args[0], ownerCanonicalId);
             assert.strictEqual(request.rateLimitAccountAlreadyChecked, true);
-            assert.deepStrictEqual(
-                rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId),
-                { RequestsPerSecond: { BurstCapacity: 1, Limit: 100, source: 'resource' } },
-            );
+            assert.deepStrictEqual(rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId), {
+                RequestsPerSecond: { BurstCapacity: 1, Limit: 100, source: 'resource' },
+            });
             assert.strictEqual(
                 rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, constants.publicId),
                 undefined,
@@ -413,10 +411,9 @@ describe('checkRateLimitIfNeeded cross-account rate limiting', () => {
         vaultStub.yields(null, { RequestsPerSecond: { Limit: 100 } });
         validateBucketRequest(publicAuthInfo, () => {
             assert.strictEqual(vaultStub.calledOnce, true);
-            assert.deepStrictEqual(
-                rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId),
-                { RequestsPerSecond: { BurstCapacity: 1, Limit: 100, source: 'resource' } },
-            );
+            assert.deepStrictEqual(rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId), {
+                RequestsPerSecond: { BurstCapacity: 1, Limit: 100, source: 'resource' },
+            });
             done();
         });
     });
@@ -425,10 +422,9 @@ describe('checkRateLimitIfNeeded cross-account rate limiting', () => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
         vaultStub.yields(null, undefined);
         validateBucketRequest(publicAuthInfo, () => {
-            assert.deepStrictEqual(
-                rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId),
-                { RequestsPerSecond: { BurstCapacity: 1, source: 'global' } },
-            );
+            assert.deepStrictEqual(rateLimitCache.getCachedConfig(rateLimitCache.namespace.account, ownerCanonicalId), {
+                RequestsPerSecond: { BurstCapacity: 1, source: 'global' },
+            });
             // No Limit in the global defaults, so no token bucket is created
             assert(!tokenBucket.getAllTokenBuckets().has(`account:${ownerCanonicalId}:rps`));
             done();
