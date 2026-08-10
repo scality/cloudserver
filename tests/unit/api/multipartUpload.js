@@ -3876,7 +3876,7 @@ describe('validatePerPartChecksums', () => {
             assert.ifError(err);
         });
 
-        it('should return InvalidPart when stored part has no checksum but request does', () => {
+        it('should accept a submitted checksum when the stored part has none', () => {
             const mpuChecksum = {
                 algorithm: 'sha256',
                 type: 'COMPOSITE',
@@ -3889,6 +3889,33 @@ describe('validatePerPartChecksums', () => {
                         ChecksumSHA256: SAMPLE_DIGESTS.sha256[0],
                     }),
                 ],
+            };
+            const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum);
+            assert.ifError(err);
+        });
+
+        it('should not require a per-part checksum when the stored part has none', () => {
+            // Mixed fleet: part 1 stored a digest, part 2 did not, so the client
+            // only has a checksum for part 1.
+            const mpuChecksum = { algorithm: 'sha256', type: 'COMPOSITE', isDefault: false };
+            const stored = [
+                makeStoredPart(1, { algorithm: 'sha256', value: SAMPLE_DIGESTS.sha256[0] }),
+                makeStoredPart(2, null),
+            ];
+            const jsonList = {
+                Part: [
+                    makeJsonPart(1, 'etag1', { ChecksumSHA256: SAMPLE_DIGESTS.sha256[0] }),
+                    makeJsonPart(2, 'etag2'),
+                ],
+            };
+            assert.ifError(validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum));
+        });
+
+        it('should still reject a mismatch when the stored part does have a checksum', () => {
+            const mpuChecksum = { algorithm: 'sha256', type: 'COMPOSITE', isDefault: false };
+            const stored = [makeStoredPart(1, { algorithm: 'sha256', value: SAMPLE_DIGESTS.sha256[0] })];
+            const jsonList = {
+                Part: [makeJsonPart(1, 'etag1', { ChecksumSHA256: SAMPLE_DIGESTS.sha256[1] })],
             };
             const err = validatePerPartChecksums(jsonList, stored, splitter, mpuChecksum);
             assert(err);
@@ -4040,6 +4067,10 @@ describe('computeFinalChecksum', () => {
         assert.deepStrictEqual(got, { result: null, error: null });
     }
 
+    function assertMissingPartChecksums(got) {
+        assert.deepStrictEqual(got, { result: null, error: null, missingPartChecksums: true });
+    }
+
     function assertInternalError(got) {
         assert.strictEqual(got.result, null);
         assert(got.error, 'expected an error on the result');
@@ -4159,10 +4190,10 @@ describe('computeFinalChecksum', () => {
             uploadId,
             log,
         );
-        assertSoftNull(got);
+        assertMissingPartChecksums(got);
     });
 
-    it('should return InternalError when an explicit-MPU part is missing ChecksumValue', async () => {
+    it('should soft-null when an explicit-MPU part is missing ChecksumValue', async () => {
         const stored = [
             makeStoredPart(1, { algorithm: 'sha256', value: SAMPLE_DIGESTS.sha256[0] }),
             makeStoredPart(2, null),
@@ -4176,7 +4207,9 @@ describe('computeFinalChecksum', () => {
             uploadId,
             log,
         );
-        assertInternalError(got);
+        // Parts uploaded while checksums were disabled cannot be recovered by the
+        // client, so the object completes without a checksum instead of failing.
+        assertMissingPartChecksums(got);
     });
 
     it('should soft-null when checksumType is unknown on a default MPU', async () => {
@@ -4501,13 +4534,13 @@ describe('CompleteMultipartUpload per-part validation on external backends', () 
     const _complete = completeReq => util.promisify(cb => completeMultipartUpload(authInfo, completeReq, log, cb))();
 
     describe('COMPOSITE MPU (no per-part checksum)', () => {
-        it('should reject on a local location', async () => {
+        it('should complete on a local location, without a final checksum', async () => {
+            // AWS rejects this, we don't: a part with no stored checksum may come
+            // from an instance with checksums toggled off, or from a mixed fleet.
             const { uploadId, eTag } = await _initiateExternalMpu({ type: 'COMPOSITE', locationType: 'scality' });
             const completeReq = _createCompleteMpuRequest(uploadId, [{ partNumber: 1, eTag }]);
-            await assert.rejects(_complete(completeReq), err => {
-                assert.match(err.message, /InvalidRequest/);
-                return true;
-            });
+            const xml = await _complete(completeReq);
+            assert.doesNotMatch(xml, /<ChecksumCRC32>/, 'no final-object checksum should be returned');
         });
 
         it('should complete on an external location (checksum config not recorded)', async () => {
@@ -5044,6 +5077,105 @@ describe('CompleteMPU x-amz-checksum-type validation vs the checksum flag', () =
             config.integrityChecks = { enabled: true };
             await assert.rejects(complete(request), { message: 'InvalidRequest' });
         });
+    });
+});
+
+describe('MPU with parts uploaded across a checksum toggle', () => {
+    // 5MB: the minimum size for a part that is not the last one.
+    const partBody = Buffer.alloc(5 * 1024 * 1024, 'a');
+    const lastPartBody = Buffer.from('I am the last part\n', 'utf8');
+    let originalIntegrityChecks;
+
+    beforeEach(done => {
+        originalIntegrityChecks = config.integrityChecks;
+        cleanup();
+        bucketPut(authInfo, bucketPutRequest, log, done);
+    });
+
+    afterEach(() => {
+        config.integrityChecks = originalIntegrityChecks;
+        cleanup();
+    });
+
+    // A rolling upgrade or a progressive toggle means some instances store part
+    // checksums and some do not, so a single MPU can end up with a mix. The
+    // client's CompleteMPU body mirrors that: it carries a checksum for the
+    // parts whose UploadPart response returned one, and nothing for the others.
+    async function mixedPartsMpu(algo) {
+        config.integrityChecks = { enabled: true };
+        const headers = { ...initiateRequest.headers, 'x-amz-checksum-algorithm': algo };
+        const initRes = await util.promisify(initiateMultipartUpload)(authInfo, { ...initiateRequest, headers }, log);
+        const uploadId = (await parseStringPromise(initRes)).InitiateMultipartUploadResult.UploadId[0];
+
+        // part 1 lands on an instance with checksums on and gets a digest back
+        const digest = await algorithms[algo].digest(partBody);
+        const p1 = _createPutPartRequest(uploadId, 1, partBody);
+        p1.headers = { ...p1.headers, [`x-amz-checksum-${algo}`]: digest };
+        const eTag1 = await util.promisify(objectPutPart)(authInfo, p1, undefined, log);
+
+        // part 2 lands on an instance with checksums off and gets none
+        config.integrityChecks = { enabled: false };
+        const eTag2 = await util.promisify(objectPutPart)(
+            authInfo,
+            _createPutPartRequest(uploadId, 2, lastPartBody),
+            undefined,
+            log,
+        );
+
+        // completion is served by an instance with checksums on
+        config.integrityChecks = { enabled: true };
+        const tag = TAG_BY_ALGO[algo];
+        const post = [
+            '<CompleteMultipartUpload>',
+            `<Part><PartNumber>1</PartNumber><ETag>"${eTag1}"</ETag><${tag}>${digest}</${tag}></Part>`,
+            `<Part><PartNumber>2</PartNumber><ETag>"${eTag2}"</ETag></Part>`,
+            '</CompleteMultipartUpload>',
+        ];
+        return {
+            bucketName,
+            namespace,
+            objectKey,
+            parsedHost: 's3.amazonaws.com',
+            url: `/${objectKey}?uploadId=${uploadId}`,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            query: { uploadId },
+            post,
+            actionImplicitDenies: false,
+        };
+    }
+
+    const complete = request =>
+        util.promisify(cb => completeMultipartUpload(authInfo, request, log, (err, xml) => cb(err, xml)))();
+
+    it('should complete a COMPOSITE MPU with mixed parts, without a checksum', async () => {
+        const xml = await complete(await mixedPartsMpu('crc32'));
+        assert.match(xml, /<CompleteMultipartUploadResult/);
+        assert.doesNotMatch(xml, /<Checksum/, 'the object should carry no checksum');
+    });
+
+    it('should accept a client-asserted final checksum it cannot verify', async () => {
+        // A FULL_OBJECT client may assert the whole-object checksum at
+        // CompleteMPU. It hashed the data itself, so its value is fine; we just
+        // have nothing to check it against. Returned BadDigest before the fix.
+        const algo = 'crc64nvme';
+        const request = await mixedPartsMpu(algo);
+        const asserted = await algorithms[algo].digest(Buffer.concat([partBody, lastPartBody]));
+        request.headers = { ...request.headers, [`x-amz-checksum-${algo}`]: asserted };
+        const xml = await complete(request);
+        assert.match(xml, /<CompleteMultipartUploadResult/);
+        assert.doesNotMatch(xml, /<Checksum/, 'the object still gets no checksum');
+    });
+
+    it('should still reject a malformed asserted checksum', async () => {
+        const request = await mixedPartsMpu('crc64nvme');
+        request.headers = { ...request.headers, 'x-amz-checksum-crc64nvme': 'not-base64!!' };
+        await assert.rejects(complete(request), { message: 'InvalidRequest' });
+    });
+
+    it('should complete a FULL_OBJECT MPU with mixed parts, without a checksum', async () => {
+        const xml = await complete(await mixedPartsMpu('crc64nvme'));
+        assert.match(xml, /<CompleteMultipartUploadResult/);
+        assert.doesNotMatch(xml, /<Checksum/);
     });
 });
 

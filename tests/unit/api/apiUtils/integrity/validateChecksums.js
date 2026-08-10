@@ -1095,6 +1095,20 @@ describe('validateCompleteMultipartUploadChecksum', () => {
         assert.strictEqual(err.error, ChecksumError.XAmzMismatch);
     });
 
+    it('should return null when the checksum could not be composed', () => {
+        // Parts uploaded by an instance with checksums disabled. The client's
+        // asserted value is likely correct; it is the server that has nothing
+        // to compare it against, so the assertion is not rejected.
+        const err = validateCompleteMultipartUploadChecksum({ 'x-amz-checksum-sha256': `${SHA256_A}-3` }, null, true);
+        assert.ifError(err);
+    });
+
+    it('should still shape-check the header when the checksum could not be composed', () => {
+        const err = validateCompleteMultipartUploadChecksum({ 'x-amz-checksum-crc32': 'not-base64!!' }, null, true);
+        assert(err);
+        assert.strictEqual(err.error, ChecksumError.MalformedChecksum);
+    });
+
     it('should return null when finalChecksum is null and no header present', () => {
         const err = validateCompleteMultipartUploadChecksum({ host: 'example.com' }, null);
         assert.ifError(err);
