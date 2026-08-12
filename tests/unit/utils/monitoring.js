@@ -3,6 +3,7 @@ const promclient = require('prom-client');
 const sinon = require('sinon');
 
 const monitoring = require('../../../lib/utilities/monitoringHandler');
+const { config } = require('../../../lib/Config');
 
 describe('Monitoring: endpoint', () => {
     const sandbox = sinon.createSandbox();
@@ -138,5 +139,36 @@ describe('Monitoring: endpoint', () => {
 
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
         assert(parseHttpResponseSize(res.end.args[1][0]) === responseSize + 7532);
+    });
+
+    const quotaMetricNames = [
+        's3_cloudserver_quota_evaluation_duration_seconds',
+        's3_cloudserver_quota_metrics_retrieval_duration_seconds',
+        's3_cloudserver_quota_utilization_service_available',
+        's3_cloudserver_quota_buckets_count',
+        's3_cloudserver_quota_accounts_count',
+        's3_cloudserver_quota_unavailable_count',
+    ];
+
+    it('should register quota metrics even when quota is disabled', async () => {
+        assert.strictEqual(config.isQuotaEnabled(), false);
+
+        await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
+        const metrics = res.end.args[0][0];
+
+        quotaMetricNames.forEach(name => assert(metrics.includes(name), `${name} is not registered`));
+    });
+
+    it('should report the quota counts from crrCacheToProm', async () => {
+        monitoring.crrCacheToProm({
+            getObjectCount: { buckets: 1, objects: 2, bucketWithQuotaCount: 3 },
+            getVaultReport: { accountWithQuotaCount: 4 },
+        });
+
+        await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
+        const metrics = res.end.args[0][0];
+
+        assert(metrics.includes('\ns3_cloudserver_quota_buckets_count 3'));
+        assert(metrics.includes('\ns3_cloudserver_quota_accounts_count 4'));
     });
 });
