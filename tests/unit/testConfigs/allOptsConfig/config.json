@@ -106,7 +106,7 @@
         "port": 8100
     },
     "quota": {
-        "maxStalenessMS": 86400000
+        "maxStalenessMS": 3600000
     },
     "utapi": {
         "redis": {

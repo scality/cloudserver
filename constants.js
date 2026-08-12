@@ -250,6 +250,8 @@ const constants = {
         'bucketPutLogging',
         'bucketGetLogging',
     ],
+    // Default window beyond which quota metrics are considered stale
+    defaultQuotaMaxStalenessMS: 24 * 60 * 60 * 1000,
     // Rate limiting defaults
     rateLimitDefaultConfigCacheTTL: 30000, // 30 seconds
     rateLimitDefaultBurstCapacity: 1,
