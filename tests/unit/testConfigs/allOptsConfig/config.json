@@ -10,29 +10,34 @@
         "127.0.0.2": "us-east-1",
         "s3.amazonaws.com": "us-east-1"
     },
-    "websiteEndpoints": ["s3-website-us-east-1.amazonaws.com",
-                        "s3-website.us-east-2.amazonaws.com",
-                        "s3-website-us-west-1.amazonaws.com",
-                        "s3-website-us-west-2.amazonaws.com",
-                        "s3-website.ap-south-1.amazonaws.com",
-                        "s3-website.ap-northeast-2.amazonaws.com",
-                        "s3-website-ap-southeast-1.amazonaws.com",
-                        "s3-website-ap-southeast-2.amazonaws.com",
-                        "s3-website-ap-northeast-1.amazonaws.com",
-                        "s3-website.eu-central-1.amazonaws.com",
-                        "s3-website-eu-west-1.amazonaws.com",
-                        "s3-website-sa-east-1.amazonaws.com",
-                        "s3-website.localhost",
-                        "s3-website.scality.test",
-                        "zenkoazuretest.blob.core.windows.net"],
-    "replicationEndpoints": [{
-        "site": "zenko",
-        "servers": ["127.0.0.1:8000"],
-        "default": true
-    }, {
-        "site": "us-east-2",
-        "type": "aws_s3"
-    }],
+    "websiteEndpoints": [
+        "s3-website-us-east-1.amazonaws.com",
+        "s3-website.us-east-2.amazonaws.com",
+        "s3-website-us-west-1.amazonaws.com",
+        "s3-website-us-west-2.amazonaws.com",
+        "s3-website.ap-south-1.amazonaws.com",
+        "s3-website.ap-northeast-2.amazonaws.com",
+        "s3-website-ap-southeast-1.amazonaws.com",
+        "s3-website-ap-southeast-2.amazonaws.com",
+        "s3-website-ap-northeast-1.amazonaws.com",
+        "s3-website.eu-central-1.amazonaws.com",
+        "s3-website-eu-west-1.amazonaws.com",
+        "s3-website-sa-east-1.amazonaws.com",
+        "s3-website.localhost",
+        "s3-website.scality.test",
+        "zenkoazuretest.blob.core.windows.net"
+    ],
+    "replicationEndpoints": [
+        {
+            "site": "zenko",
+            "servers": ["127.0.0.1:8000"],
+            "default": true
+        },
+        {
+            "site": "us-east-2",
+            "type": "aws_s3"
+        }
+    ],
     "cdmi": {
         "host": "localhost",
         "port": 81,
@@ -75,11 +80,11 @@
         "recordLogName": "s3-recordlog"
     },
     "mongodb": {
-       "replicaSetHosts": "localhost:27017,localhost:27018,localhost:27019",
-       "writeConcern": "majority",
-       "replicaSet": "rs0",
-       "readPreference": "primary",
-       "database": "metadata"
+        "replicaSetHosts": "localhost:27017,localhost:27018,localhost:27019",
+        "writeConcern": "majority",
+        "replicaSet": "rs0",
+        "readPreference": "primary",
+        "database": "metadata"
     },
     "certFilePaths": {
         "key": "tests/unit/testConfigs/allOptsConfig/key.txt",
@@ -101,7 +106,7 @@
         "port": 8100
     },
     "quota": {
-        "maxStalenessMS": 86400000
+        "maxStalenessMS": 3600000
     },
     "utapi": {
         "redis": {

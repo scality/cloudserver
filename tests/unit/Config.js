@@ -13,6 +13,7 @@ const {
 
 const { LOCATION_NAME_DMF } = require('../constants');
 const constants = require('../../constants');
+const allOptsQuota = require('./testConfigs/allOptsConfig/config.json').quota;
 
 const { ValidLifecycleRules: supportedLifecycleRules } = require('arsenal').models;
 
@@ -545,16 +546,29 @@ describe('Config', () => {
             process.env.S3_CONFIG_FILE = oldConfig;
         });
 
-        it('should set up quota', () => {
+        it('should set up quota from the config file', () => {
+            assert.notStrictEqual(allOptsQuota.maxStalenessMS, constants.defaultQuotaMaxStalenessMS);
+
             const config = new ConfigObject();
 
             assert.deepStrictEqual(config.quota, {
-                maxStaleness: 24 * 60 * 60 * 1000,
+                maxStaleness: allOptsQuota.maxStalenessMS,
                 enableInflights: false,
             });
         });
 
-        it('should use environment variables for scuba', () => {
+        it('should use the default when the config file does not set maxStalenessMS', () => {
+            setEnv('S3_CONFIG_FILE', 'config.json');
+
+            const config = new ConfigObject();
+
+            assert.deepStrictEqual(config.quota, {
+                maxStaleness: constants.defaultQuotaMaxStalenessMS,
+                enableInflights: false,
+            });
+        });
+
+        it('should use environment variables for quota', () => {
             setEnv('QUOTA_MAX_STALENESS_MS', 1234);
             setEnv('QUOTA_ENABLE_INFLIGHTS', 'true');
 
@@ -566,15 +580,22 @@ describe('Config', () => {
             });
         });
 
-        it('should use the default if the maxStaleness is not a number', () => {
-            setEnv('QUOTA_MAX_STALENESS_MS', 'notanumber');
-            setEnv('QUOTA_ENABLE_INFLIGHTS', 'true');
+        it('should fall back to the config file when QUOTA_MAX_STALENESS_MS is empty', () => {
+            setEnv('QUOTA_MAX_STALENESS_MS', '');
 
             const config = new ConfigObject();
 
             assert.deepStrictEqual(config.quota, {
-                maxStaleness: 24 * 60 * 60 * 1000,
-                enableInflights: true,
+                maxStaleness: allOptsQuota.maxStalenessMS,
+                enableInflights: false,
+            });
+        });
+
+        ['notanumber', '0', '-1', '1.5'].forEach(value => {
+            it(`should reject a maxStaleness of '${value}'`, () => {
+                setEnv('QUOTA_MAX_STALENESS_MS', value);
+
+                assert.throws(() => new ConfigObject(), /bad config: quota.maxStalenessMS must be a positive integer/);
             });
         });
     });
