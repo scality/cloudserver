@@ -1,5 +1,6 @@
 const async = require('async');
 const assert = require('assert');
+const http = require('http');
 const getConfig = require('../functional/aws-node-sdk/test/support/config');
 const { Scuba: MockScuba, inflightFlushFrequencyMS } = require('../utilities/mock/Scuba');
 const sendRequest = require('../functional/aws-node-sdk/test/quota/tooling').sendRequest;
@@ -28,6 +29,28 @@ const {
 let mockScuba = null;
 let s3Client = null;
 const quota = { quota: 1000 };
+const retrievalCountMetric = 's3_cloudserver_quota_metrics_retrieval_duration_seconds_count';
+
+function getMetrics(cb) {
+    return http
+        .get({ host: '127.0.0.1', path: '/metrics', port: s3Config.metricsPort }, res => {
+            const body = [];
+            res.on('data', chunk => body.push(chunk));
+            res.on('end', () => cb(null, body.join('')));
+        })
+        .on('error', cb);
+}
+
+function parseMetricCount(metrics, name, labels) {
+    const line = metrics
+        .split('\n')
+        .find(
+            l =>
+                l.startsWith(`${name}{`) &&
+                Object.entries(labels).every(([key, value]) => l.includes(`${key}="${value}"`)),
+        );
+    return line ? parseInt(line.slice(line.indexOf('} ') + 2), 10) : 0;
+}
 
 function wait(timeoutMs, cb) {
     if (s3Config.isQuotaInflightEnabled()) {
@@ -441,6 +464,64 @@ function multiObjectDelete(bucket, keys, size, callback) {
 
     after(() => {
         scuba.stop();
+    });
+
+    it('should label the metrics retrieval histogram with the status returned by scuba', done => {
+        const bucket = 'quota-test-bucket-retrieval-code';
+        const key = 'quota-test-object';
+        const size = 1024;
+        const notFound = { code: '404', class: 'bucket' };
+        const serverError = { code: '500', class: 'bucket' };
+        let before404 = 0;
+        let before500 = 0;
+        return async.series(
+            [
+                next =>
+                    getMetrics((err, metrics) => {
+                        if (err) {
+                            return next(err);
+                        }
+                        before404 = parseMetricCount(metrics, retrievalCountMetric, notFound);
+                        before500 = parseMetricCount(metrics, retrievalCountMetric, serverError);
+                        return next();
+                    }),
+                next => createBucket(bucket, false, next),
+                next =>
+                    sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota), config)
+                        .then(() => next())
+                        .catch(err => next(err)),
+                next => {
+                    scuba.failMetrics(404);
+                    return putObject(bucket, key, size, () => {
+                        scuba.failMetrics(null);
+                        return next();
+                    });
+                },
+                next =>
+                    getMetrics((err, metrics) => {
+                        if (err) {
+                            return next(err);
+                        }
+                        try {
+                            assert(
+                                parseMetricCount(metrics, retrievalCountMetric, notFound) > before404,
+                                'expected the retrieval histogram to record a 404 observation',
+                            );
+                            assert.strictEqual(
+                                parseMetricCount(metrics, retrievalCountMetric, serverError),
+                                before500,
+                                'a 404 from scuba must not be labelled 500',
+                            );
+                            return next();
+                        } catch (assertError) {
+                            return next(assertError);
+                        }
+                    }),
+                next => deleteObject(bucket, key, size, () => next()),
+                next => deleteBucket(bucket, next),
+            ],
+            done,
+        );
     });
 
     it('should return QuotaExceeded when trying to PutObject in a bucket with quota', done => {

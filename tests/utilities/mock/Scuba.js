@@ -8,6 +8,7 @@ class Scuba {
     constructor() {
         this._server = null;
         this._port = 8100;
+        this._failMetricsStatus = null;
         this._data = {
             bucket: new Map(),
         };
@@ -27,6 +28,9 @@ class Scuba {
         });
 
         this._app.post('/metrics/bucket/:bucket/latest', (req, res) => {
+            if (this._failMetricsStatus) {
+                return res.status(this._failMetricsStatus).end();
+            }
             let bucketName = req.params.bucket;
             if (!this.supportsInflight) {
                 bucketName = req.params.bucket?.split('_')[0];
@@ -89,9 +93,14 @@ class Scuba {
     }
 
     reset() {
+        this._failMetricsStatus = null;
         this._data = {
             bucket: new Map(),
         };
+    }
+
+    failMetrics(statusCode) {
+        this._failMetricsStatus = statusCode;
     }
 
     stop() {

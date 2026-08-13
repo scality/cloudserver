@@ -1,6 +1,7 @@
 const assert = require('assert');
 const sinon = require('sinon');
 const { ScubaClientImpl } = require('../../../../lib/utilization/scuba/wrapper');
+const monitoring = require('../../../../lib/utilities/monitoringHandler');
 const { default: ScubaClient } = require('scubaclient');
 
 describe('ScubaClientImpl', () => {
@@ -138,6 +139,58 @@ describe('ScubaClientImpl', () => {
             const forwardedOptions = metricsStub.getCall(0).args[2];
             assert.strictEqual(forwardedOptions.headers['X-Existing'], 'v');
             assert.strictEqual(forwardedOptions.headers['X-Scal-Request-Uids'], 'req1:req2');
+        });
+
+        describe('retrieval duration metric', () => {
+            let observe;
+            let labels;
+            let originalMetric;
+
+            beforeEach(() => {
+                observe = sinon.spy();
+                labels = sinon.stub().returns({ observe });
+                originalMetric = monitoring.utilizationMetricsRetrievalDuration;
+                monitoring.utilizationMetricsRetrievalDuration = { labels };
+            });
+
+            afterEach(() => {
+                monitoring.utilizationMetricsRetrievalDuration = originalMetric;
+            });
+
+            const observedCode = async error => {
+                if (error) {
+                    sinon.stub(ScubaClient.prototype, 'getLatestMetrics').rejects(error);
+                    await assert.rejects(client.getUtilizationMetrics('bucket', 'k', null, {}, {}));
+                } else {
+                    sinon.stub(ScubaClient.prototype, 'getLatestMetrics').resolves({});
+                    await client.getUtilizationMetrics('bucket', 'k', null, {}, {});
+                }
+                assert(observe.calledOnce);
+                return labels.getCall(0).args[0].code;
+            };
+
+            it('should label a successful retrieval with 200', async () => {
+                assert.strictEqual(await observedCode(null), 200);
+            });
+
+            it('should label an axios error with its response status', async () => {
+                const err = new Error('Not Found');
+                err.response = { status: 404 };
+                err.code = 'ERR_BAD_REQUEST';
+
+                assert.strictEqual(await observedCode(err), 404);
+            });
+
+            it('should label a transport failure with the error code', async () => {
+                const err = new Error('connect ECONNREFUSED');
+                err.code = 'ECONNREFUSED';
+
+                assert.strictEqual(await observedCode(err), 'ECONNREFUSED');
+            });
+
+            it('should label an error carrying no status with 500', async () => {
+                assert.strictEqual(await observedCode(new Error('boom')), 500);
+            });
         });
     });
 });
