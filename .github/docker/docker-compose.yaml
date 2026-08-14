@@ -125,7 +125,9 @@ services:
     depends_on:
       - redis
   metadata-standalone:
-    image: ghcr.io/scality/metadata:8.25.0-standalone
+    # TODO: repin on a released tag when MD-1359 ships. bucketd runs the
+    # lifecycle listing, so listLifecyclePHDKeys needs that fix in the image.
+    image: ghcr.io/scality/metadata:490d67ca003d80b6943e4ec4188d2b5bf910176f-standalone
     profiles: ['metadata-standalone']
     network_mode: 'host'
     volumes:
