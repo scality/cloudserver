@@ -6591,9 +6591,9 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#8.4.22":
-  version "8.4.22"
-  resolved "git+https://github.com/scality/Arsenal#64484bec1e2b8948f7834f65d29ddc7461560afd"
+"arsenal@git+https://github.com/scality/Arsenal#8.4.23":
+  version "8.4.23"
+  resolved "git+https://github.com/scality/Arsenal#c3f156440b27ac722240e86679de80ad2c43a45e"
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"
@@ -12603,9 +12603,9 @@ vaultclient@scality/vaultclient#8.5.3:
     werelogs scality/werelogs#8.2.0
     xml2js "^0.6.2"
 
-vaultclient@scality/vaultclient#8.5.7:
-  version "8.5.7"
-  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/f1022abcaa164c5d6046371491a1a310bb13bf4d"
+vaultclient@scality/vaultclient#8.5.8:
+  version "8.5.8"
+  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/05decff559dacb387c436f9fb4923eaf1f1fa5cb"
   dependencies:
     "@aws-crypto/sha256-universal" "^5.2.0"
     "@smithy/signature-v4" "^4.1.0"
