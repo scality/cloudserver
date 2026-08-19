@@ -12086,9 +12086,9 @@ vaultclient@scality/vaultclient#8.5.3:
     werelogs scality/werelogs#8.2.0
     xml2js "^0.6.2"
 
-vaultclient@scality/vaultclient#8.5.7:
-  version "8.5.7"
-  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/f1022abcaa164c5d6046371491a1a310bb13bf4d"
+vaultclient@scality/vaultclient#8.5.8:
+  version "8.5.8"
+  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/05decff559dacb387c436f9fb4923eaf1f1fa5cb"
   dependencies:
     "@aws-crypto/sha256-universal" "^5.2.0"
     "@smithy/signature-v4" "^4.1.0"
