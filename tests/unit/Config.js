@@ -21,7 +21,7 @@ describe('Config', () => {
     const defaultConfig = JSON.parse(fs.readFileSync('config.json'), { encoding: 'utf-8' });
 
     const envToRestore = [];
-    const setEnv = (key, value) => {
+    const recordEnv = key => {
         if (key in process.env) {
             const v = process.env[key];
             envToRestore.push(() => {
@@ -32,7 +32,14 @@ describe('Config', () => {
                 delete process.env[key];
             });
         }
+    };
+    const setEnv = (key, value) => {
+        recordEnv(key);
         process.env[key] = value;
+    };
+    const deleteEnv = key => {
+        recordEnv(key);
+        delete process.env[key];
     };
 
     beforeEach(() => {
@@ -931,23 +938,33 @@ describe('Config', () => {
     });
 
     describe('parse integrity checks', () => {
-        afterEach(() => {
-            delete process.env.S3_INTEGRITY_CHECKS_ENABLED;
+        // CI exports S3_INTEGRITY_CHECKS_ENABLED for some jobs, so clear both
+        // vars rather than assert around whatever the environment inherited.
+        // The suite-level afterEach puts them back.
+        beforeEach(() => {
+            deleteEnv('S3_INTEGRITY_CHECKS_ENABLED');
+            deleteEnv('S3_INTEGRITY_CHECKS_STORE_COMPOSITE_CHECKSUMS');
         });
 
         it('should default to enabled when not configured', () => {
-            assert.deepStrictEqual(parseIntegrityChecks(null), { enabled: true });
-            assert.deepStrictEqual(parseIntegrityChecks({}), { enabled: true });
+            assert.deepStrictEqual(parseIntegrityChecks(null), { enabled: true, storeCompositeChecksums: true });
+            assert.deepStrictEqual(parseIntegrityChecks({}), { enabled: true, storeCompositeChecksums: true });
         });
 
         it('should read the configured value', () => {
-            assert.deepStrictEqual(parseIntegrityChecks({ integrityChecks: { enabled: false } }), { enabled: false });
-            assert.deepStrictEqual(parseIntegrityChecks({ integrityChecks: { enabled: true } }), { enabled: true });
+            assert.deepStrictEqual(parseIntegrityChecks({ integrityChecks: { enabled: false } }), {
+                enabled: false,
+                storeCompositeChecksums: true,
+            });
+            assert.deepStrictEqual(parseIntegrityChecks({ integrityChecks: { enabled: true } }), {
+                enabled: true,
+                storeCompositeChecksums: true,
+            });
         });
 
         it('should throw if integrityChecks is not an object', () => {
-            assert.throws(() => parseIntegrityChecks({ integrityChecks: 'yes' }), /must be an object/);
-            assert.throws(() => parseIntegrityChecks({ integrityChecks: [true] }), /must be an object/);
+            assert.throws(() => parseIntegrityChecks({ integrityChecks: 'yes' }), /must be of type object/);
+            assert.throws(() => parseIntegrityChecks({ integrityChecks: [true] }), /must be of type object/);
         });
 
         it('should throw if enabled is not a boolean', () => {
@@ -955,21 +972,99 @@ describe('Config', () => {
             assert.throws(() => parseIntegrityChecks({ integrityChecks: { enabled: 0 } }), /must be a boolean/);
         });
 
+        it('should ignore unknown keys left over from older config files', () => {
+            assert.deepStrictEqual(
+                parseIntegrityChecks({ integrityChecks: { objectPutRetention: true, bucketPutACL: false } }),
+                { enabled: true, storeCompositeChecksums: true },
+            );
+            assert.deepStrictEqual(
+                parseIntegrityChecks({ integrityChecks: { enabled: false, objectPutRetention: true } }),
+                { enabled: false, storeCompositeChecksums: true },
+            );
+        });
+
         it('should let S3_INTEGRITY_CHECKS_ENABLED override the config file', () => {
-            process.env.S3_INTEGRITY_CHECKS_ENABLED = 'false';
-            assert.deepStrictEqual(parseIntegrityChecks({ integrityChecks: { enabled: true } }), { enabled: false });
-            process.env.S3_INTEGRITY_CHECKS_ENABLED = 'true';
-            assert.deepStrictEqual(parseIntegrityChecks({ integrityChecks: { enabled: false } }), { enabled: true });
+            setEnv('S3_INTEGRITY_CHECKS_ENABLED', 'false');
+            assert.deepStrictEqual(parseIntegrityChecks({ integrityChecks: { enabled: true } }), {
+                enabled: false,
+                storeCompositeChecksums: true,
+            });
+            setEnv('S3_INTEGRITY_CHECKS_ENABLED', 'true');
+            assert.deepStrictEqual(parseIntegrityChecks({ integrityChecks: { enabled: false } }), {
+                enabled: true,
+                storeCompositeChecksums: true,
+            });
         });
 
         it('should throw on a non-boolean S3_INTEGRITY_CHECKS_ENABLED', () => {
-            process.env.S3_INTEGRITY_CHECKS_ENABLED = 'nope';
-            assert.throws(() => parseIntegrityChecks(null), /S3_INTEGRITY_CHECKS_ENABLED/);
+            setEnv('S3_INTEGRITY_CHECKS_ENABLED', 'nope');
+            assert.throws(() => parseIntegrityChecks(null), /"S3_INTEGRITY_CHECKS_ENABLED" must be a boolean/);
+            setEnv('S3_INTEGRITY_CHECKS_ENABLED', '1');
+            assert.throws(() => parseIntegrityChecks(null), /"S3_INTEGRITY_CHECKS_ENABLED" must be a boolean/);
+        });
+
+        it('should default storeCompositeChecksums to true when not configured', () => {
+            assert.strictEqual(parseIntegrityChecks(null).storeCompositeChecksums, true);
+            assert.strictEqual(parseIntegrityChecks({ integrityChecks: {} }).storeCompositeChecksums, true);
+        });
+
+        it('should read the configured storeCompositeChecksums value', () => {
+            assert.deepStrictEqual(parseIntegrityChecks({ integrityChecks: { storeCompositeChecksums: false } }), {
+                enabled: true,
+                storeCompositeChecksums: false,
+            });
+            assert.deepStrictEqual(parseIntegrityChecks({ integrityChecks: { storeCompositeChecksums: true } }), {
+                enabled: true,
+                storeCompositeChecksums: true,
+            });
+        });
+
+        it('should parse enabled and storeCompositeChecksums independently', () => {
+            assert.deepStrictEqual(
+                parseIntegrityChecks({ integrityChecks: { enabled: false, storeCompositeChecksums: true } }),
+                { enabled: false, storeCompositeChecksums: true },
+            );
+            assert.deepStrictEqual(
+                parseIntegrityChecks({ integrityChecks: { enabled: true, storeCompositeChecksums: false } }),
+                { enabled: true, storeCompositeChecksums: false },
+            );
+        });
+
+        it('should throw if storeCompositeChecksums is not a boolean', () => {
+            assert.throws(
+                () => parseIntegrityChecks({ integrityChecks: { storeCompositeChecksums: 'false' } }),
+                /"storeCompositeChecksums" must be a boolean/,
+            );
+            assert.throws(
+                () => parseIntegrityChecks({ integrityChecks: { storeCompositeChecksums: 0 } }),
+                /"storeCompositeChecksums" must be a boolean/,
+            );
+        });
+
+        it('should let S3_INTEGRITY_CHECKS_STORE_COMPOSITE_CHECKSUMS override the config file', () => {
+            setEnv('S3_INTEGRITY_CHECKS_STORE_COMPOSITE_CHECKSUMS', 'false');
+            assert.deepStrictEqual(parseIntegrityChecks({ integrityChecks: { storeCompositeChecksums: true } }), {
+                enabled: true,
+                storeCompositeChecksums: false,
+            });
+            setEnv('S3_INTEGRITY_CHECKS_STORE_COMPOSITE_CHECKSUMS', 'true');
+            assert.deepStrictEqual(parseIntegrityChecks({ integrityChecks: { storeCompositeChecksums: false } }), {
+                enabled: true,
+                storeCompositeChecksums: true,
+            });
+        });
+
+        it('should throw on a non-boolean S3_INTEGRITY_CHECKS_STORE_COMPOSITE_CHECKSUMS', () => {
+            setEnv('S3_INTEGRITY_CHECKS_STORE_COMPOSITE_CHECKSUMS', 'nope');
+            assert.throws(
+                () => parseIntegrityChecks(null),
+                /"S3_INTEGRITY_CHECKS_STORE_COMPOSITE_CHECKSUMS" must be a boolean/,
+            );
         });
 
         it('should expose integrityChecks on the config object', () => {
             const config = new ConfigObject();
-            assert.deepStrictEqual(config.integrityChecks, { enabled: true });
+            assert.deepStrictEqual(config.integrityChecks, { enabled: true, storeCompositeChecksums: true });
         });
     });
 

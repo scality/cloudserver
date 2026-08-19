@@ -153,7 +153,8 @@
         "bucketPutPolicy": 20480
     },
     "integrityChecks": {
-        "enabled": true
+        "enabled": true,
+        "storeCompositeChecksums": true
     },
     "serverAccessLogs": {
         "mode": "DISABLED",
