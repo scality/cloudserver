@@ -74,4 +74,26 @@ export default [...compat.extends('@scality/scality'), {
         "promise/prefer-await-to-then": "warn",
         "n/callback-return": "warn",
     },
+}, {
+    // A werelogs RequestLogger buffers every entry it is handed in
+    // RequestLogger.entries and only flushes when something logs at or above
+    // the dump threshold ('error'). That is safe for the duration of one
+    // request and a memory leak for anything that outlives it: a background
+    // timer logging through a stored RequestLogger grows it until the process
+    // restarts, and a single error-level write then dumps the whole buffer to
+    // the log at once.
+    files: ["lib/**/*.js"],
+
+    rules: {
+        "no-restricted-syntax": ["error", {
+            selector:
+                "AssignmentExpression[left.object.type='ThisExpression']"
+                + "[right.type='Identifier'][right.name=/^_?log(ger)?$/]",
+            message:
+                "Do not store a logger on an object. If the object outlives the request, "
+                + "require lib/utilities/logger and use that instead - it writes through "
+                + "rather than buffering. If the object really is per-request (a stream "
+                + "transform, say), disable this rule on the line and say why.",
+        }],
+    },
 }];
