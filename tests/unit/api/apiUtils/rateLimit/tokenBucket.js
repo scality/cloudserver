@@ -2,6 +2,7 @@ const assert = require('assert');
 const sinon = require('sinon');
 
 const tokenBucket = require('../../../../../lib/api/apiUtils/rateLimit/tokenBucket');
+const rateLimitClient = require('../../../../../lib/api/apiUtils/rateLimit/client');
 const { config } = require('../../../../../lib/Config');
 
 describe('WorkerTokenBucket', () => {
@@ -209,6 +210,108 @@ describe('WorkerTokenBucket', () => {
 
             // refillInProgress is cleared in finally block regardless of outcome
             assert.strictEqual(bucket.refillInProgress, false);
+        });
+    });
+
+    describe('refillIfNeeded against a fake Redis client', () => {
+        // In the unit environment rateLimitClient.instance is undefined
+        // (rate limiting is disabled at Config load), so every test above
+        // exercises only the error path. A fake instance reaches the grant,
+        // denial, disconnected and slow paths.
+        let savedRedisClientInstance;
+
+        beforeEach(() => {
+            savedRedisClientInstance = rateLimitClient.instance;
+        });
+
+        afterEach(() => {
+            rateLimitClient.instance = savedRedisClientInstance;
+        });
+
+        function makeBucketBelowThreshold() {
+            const bucket = new tokenBucket.WorkerTokenBucket(
+                'bucket', 'test-bucket', 'rps', { limit: 100, burstCapacity: 1000 }, mockLog);
+            bucket.tokens = 10; // Below refill threshold of 20
+            return bucket;
+        }
+
+        it('should add granted tokens to the buffer and log the refill', async () => {
+            rateLimitClient.instance = {
+                isReady: () => true,
+                grantTokens: (resourceClass, resourceId, measure, requested,
+                    interval, burstCapacity, callback) => callback(null, requested),
+            };
+            const bucket = makeBucketBelowThreshold();
+
+            const refilled = await bucket.refillIfNeeded(mockLog);
+
+            assert.strictEqual(refilled, true);
+            assert.strictEqual(bucket.tokens, bucket.bufferSize);
+            assert.ok(mockLog.debug.calledWithMatch('Token refill completed'));
+        });
+
+        it('should trace a denial when Redis grants zero tokens', async () => {
+            rateLimitClient.instance = {
+                isReady: () => true,
+                grantTokens: (resourceClass, resourceId, measure, requested,
+                    interval, burstCapacity, callback) => callback(null, 0),
+            };
+            const bucket = makeBucketBelowThreshold();
+
+            const refilled = await bucket.refillIfNeeded(mockLog);
+
+            assert.strictEqual(refilled, false);
+            assert.strictEqual(bucket.tokens, 10);
+            assert.ok(mockLog.trace.calledWithMatch('Token refill denied - quota exhausted'));
+        });
+
+        it('should grant the requested tokens and warn when Redis is not connected', async () => {
+            rateLimitClient.instance = {
+                isReady: () => false,
+                grantTokens: () => {
+                    throw new Error('must not be called while disconnected');
+                },
+            };
+            const bucket = makeBucketBelowThreshold();
+
+            const refilled = await bucket.refillIfNeeded(mockLog);
+
+            // fail-open: full requested amount granted locally
+            assert.strictEqual(refilled, true);
+            assert.strictEqual(bucket.tokens, bucket.bufferSize);
+            assert.ok(mockLog.warn.calledWithMatch(
+                'rate limit redis client not connected. granting tokens anyway to avoid service degradation'));
+        });
+
+        it('should warn when a refill takes longer than 100ms', async () => {
+            rateLimitClient.instance = {
+                isReady: () => true,
+                grantTokens: (resourceClass, resourceId, measure, requested,
+                    interval, burstCapacity, callback) =>
+                    setTimeout(() => callback(null, requested), 110),
+            };
+            const bucket = makeBucketBelowThreshold();
+
+            const refilled = await bucket.refillIfNeeded(mockLog);
+
+            assert.strictEqual(refilled, true);
+            assert.ok(mockLog.warn.calledWithMatch('Slow token refill detected'));
+        });
+
+        it('should log and return false when the grant throws', async () => {
+            rateLimitClient.instance = {
+                isReady: () => true,
+                grantTokens: (resourceClass, resourceId, measure, requested,
+                    interval, burstCapacity, callback) =>
+                    callback(new Error('redis exploded')),
+            };
+            const bucket = makeBucketBelowThreshold();
+
+            const refilled = await bucket.refillIfNeeded(mockLog);
+
+            assert.strictEqual(refilled, false);
+            assert.strictEqual(bucket.refillInProgress, false);
+            assert.ok(mockLog.error.calledWithMatch('Token refill failed'));
         });
     });
 });
