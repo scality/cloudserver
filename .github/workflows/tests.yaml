@@ -926,8 +926,11 @@ jobs:
           python-version: 3.9
       - name: Setup CI environment
         uses: ./.github/actions/setup-ci
-      - name: Install tcpdump to analyze traffic on kmip cluster interfaces
-        run: sudo apt-get update && sudo apt-get install -y tcpdump
+      # tcpdump is already present on the runner image, and the apt mirrors are
+      # unreliable enough to hang a job for hours, so we don't install it.
+      # Uncomment if a runner or image change ever drops the package.
+      # - name: Install tcpdump to analyze traffic on kmip cluster interfaces
+      #   run: sudo apt-get install -y tcpdump
       - name: Copy KMIP certs
         run: cp -r ./certs /tmp/ssl-kmip
         working-directory: .github/pykmip
