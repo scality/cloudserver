@@ -182,7 +182,7 @@ describe('WorkerTokenBucket', () => {
                 'bucket', 'test-bucket', 'rps', { limit: 100 }, mockLog);
             bucket.tokens = 30; // Above threshold of 20
 
-            await bucket.refillIfNeeded();
+            await bucket.refillIfNeeded(mockLog);
 
             // refillInProgress was never set (no refill attempted)
             assert.ok(!bucket.refillInProgress);
@@ -194,7 +194,7 @@ describe('WorkerTokenBucket', () => {
             bucket.tokens = 10; // Below threshold
             bucket.refillInProgress = true;
 
-            await bucket.refillIfNeeded();
+            await bucket.refillIfNeeded(mockLog);
 
             // Still true — function returned early without clearing it
             assert.strictEqual(bucket.refillInProgress, true);
@@ -205,7 +205,7 @@ describe('WorkerTokenBucket', () => {
                 'bucket', 'test-bucket', 'rps', { limit: 100, burstCapacity: 1000 }, mockLog);
             bucket.tokens = 10; // Below threshold of 20
 
-            await bucket.refillIfNeeded();
+            await bucket.refillIfNeeded(mockLog);
 
             // refillInProgress is cleared in finally block regardless of outcome
             assert.strictEqual(bucket.refillInProgress, false);
