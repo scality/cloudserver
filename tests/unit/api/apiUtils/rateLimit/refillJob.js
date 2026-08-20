@@ -232,4 +232,55 @@ describe('Token refill job', () => {
             assert.strictEqual(stub3.calledOnce, true);
         });
     });
+
+    describe('stopRefillJob with a tick in flight', () => {
+        it('should not re-arm the timer when stopped mid-tick', async () => {
+            let stopped = false;
+            let callsAfterStop = 0;
+
+            // refill takes longer than the tick interval, so a tick is
+            // guaranteed to be awaiting when stopRefillJob() runs
+            tokenBucket.getAllTokenBuckets().set('account:slow:rps', {
+                tokens: 0,
+                refillIfNeeded: async () => {
+                    if (stopped) {
+                        callsAfterStop++;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 120));
+                    return false;
+                },
+            });
+
+            refillJob.startRefillJob(logger, { skipUnref: true });
+            await new Promise(resolve => setTimeout(resolve, 150));
+
+            stopped = true;
+            refillJob.stopRefillJob(logger);
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            assert.strictEqual(callsAfterStop, 0,
+                'refill job kept running after stopRefillJob() returned');
+        });
+
+        it('should refuse to start a second concurrent job', async () => {
+            let calls = 0;
+            tokenBucket.getAllTokenBuckets().set('account:counted:rps', {
+                tokens: 0,
+                refillIfNeeded: async () => { calls++; return false; },
+            });
+
+            // a second start must not orphan the first timer and leave two
+            // independent tick loops running at double the refill rate
+            refillJob.startRefillJob(logger, { skipUnref: true });
+            refillJob.startRefillJob(logger, { skipUnref: true });
+
+            await new Promise(resolve => setTimeout(resolve, 450));
+            refillJob.stopRefillJob(logger);
+
+            // ~4 ticks for one loop over 450ms at a 100ms interval; two loops
+            // would roughly double it
+            assert.ok(calls <= 6,
+                `expected a single refill loop, saw ${calls} refills in 450ms`);
+        });
+    });
 });
