@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const assert = require('assert');
 const { storage } = require('arsenal');
+const { Werelogs } = require('werelogs');
 
 const AuthInfo = require('arsenal').auth.AuthInfo;
 const { RequestContext } = require('arsenal').policies;
@@ -521,6 +522,36 @@ function createRequestContext(apiMethod, request) {
         '127.0.0.1', false, apiMethod, 's3');
 }
 
+/**
+ * A real werelogs RequestLogger.
+ *
+ * DummyRequestLogger records calls but has no entries buffer, so it cannot
+ * show what werelogs actually does with the entries it is handed - which is
+ * how real leaks have gone unnoticed. Use this wherever a test needs to
+ * observe buffering, and assert with bufferedEntryCount().
+ *
+ * @param {object} [options] - level, dump and name overrides
+ * @returns {object} a werelogs RequestLogger
+ */
+function makeRealRequestLogger(options = {}) {
+    const werelogs = new Werelogs({
+        level: options.level || 'info',
+        dump: options.dump || 'error',
+    });
+    return new werelogs.Logger(options.name || 'test').newRequestLogger();
+}
+
+/**
+ * How many log entries werelogs is currently holding in memory for a request
+ * logger. A count that grows without bound is a leak.
+ *
+ * @param {object} log - a werelogs RequestLogger
+ * @returns {number} buffered entry count
+ */
+function bufferedEntryCount(log) {
+    return Array.isArray(log.entries) ? log.entries.length : 0;
+}
+
 module.exports = {
     testsRangeOnEmptyFile,
     makeid,
@@ -529,6 +560,8 @@ module.exports = {
     createAlteredRequest,
     cleanup,
     DummyRequestLogger,
+    makeRealRequestLogger,
+    bufferedEntryCount,
     makeAuthInfo,
     WebsiteConfig,
     CorsConfigTester,
