@@ -2,6 +2,7 @@ const assert = require('assert');
 const sinon = require('sinon');
 
 const tokenBucket = require('../../../../../lib/api/apiUtils/rateLimit/tokenBucket');
+const rateLimitClient = require('../../../../../lib/api/apiUtils/rateLimit/client');
 const { config } = require('../../../../../lib/Config');
 
 describe('WorkerTokenBucket', () => {
@@ -145,7 +146,12 @@ describe('WorkerTokenBucket', () => {
     describe('updateLimit', () => {
         it('should update limitConfig and interval when limit changes', () => {
             const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100, burstCapacity: 1000 }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, burstCapacity: 1000 },
+                mockLog,
+            );
             const oldInterval = bucket.interval;
 
             const result = bucket.updateLimit({ limit: 200, burstCapacity: 1000 });
@@ -158,7 +164,12 @@ describe('WorkerTokenBucket', () => {
 
         it('should update limitConfig when burstCapacity changes', () => {
             const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100, burstCapacity: 1000 }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, burstCapacity: 1000 },
+                mockLog,
+            );
 
             const result = bucket.updateLimit({ limit: 100, burstCapacity: 2000 });
 
@@ -168,7 +179,12 @@ describe('WorkerTokenBucket', () => {
 
         it('should return updated: false when config is unchanged', () => {
             const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100, burstCapacity: 1000 }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, burstCapacity: 1000 },
+                mockLog,
+            );
 
             const result = bucket.updateLimit({ limit: 100, burstCapacity: 1000 });
 
@@ -178,23 +194,21 @@ describe('WorkerTokenBucket', () => {
 
     describe('refillIfNeeded', () => {
         it('should skip refill when above threshold', async () => {
-            const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100 }, mockLog);
+            const bucket = new tokenBucket.WorkerTokenBucket('bucket', 'test-bucket', 'rps', { limit: 100 }, mockLog);
             bucket.tokens = 30; // Above threshold of 20
 
-            await bucket.refillIfNeeded();
+            await bucket.refillIfNeeded(mockLog);
 
             // refillInProgress was never set (no refill attempted)
             assert.ok(!bucket.refillInProgress);
         });
 
         it('should skip refill when already in progress', async () => {
-            const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100 }, mockLog);
+            const bucket = new tokenBucket.WorkerTokenBucket('bucket', 'test-bucket', 'rps', { limit: 100 }, mockLog);
             bucket.tokens = 10; // Below threshold
             bucket.refillInProgress = true;
 
-            await bucket.refillIfNeeded();
+            await bucket.refillIfNeeded(mockLog);
 
             // Still true — function returned early without clearing it
             assert.strictEqual(bucket.refillInProgress, true);
@@ -202,13 +216,126 @@ describe('WorkerTokenBucket', () => {
 
         it('should trigger refill when below threshold', async () => {
             const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100, burstCapacity: 1000 }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, burstCapacity: 1000 },
+                mockLog,
+            );
             bucket.tokens = 10; // Below threshold of 20
 
-            await bucket.refillIfNeeded();
+            await bucket.refillIfNeeded(mockLog);
 
             // refillInProgress is cleared in finally block regardless of outcome
             assert.strictEqual(bucket.refillInProgress, false);
+        });
+    });
+
+    describe('refillIfNeeded against a fake Redis client', () => {
+        // In the unit environment rateLimitClient.instance is undefined
+        // (rate limiting is disabled at Config load), so every test above
+        // exercises only the error path. A fake instance reaches the grant,
+        // denial, disconnected and slow paths.
+        let savedRedisClientInstance;
+
+        beforeEach(() => {
+            savedRedisClientInstance = rateLimitClient.instance;
+        });
+
+        afterEach(() => {
+            rateLimitClient.instance = savedRedisClientInstance;
+        });
+
+        function makeBucketBelowThreshold() {
+            const bucket = new tokenBucket.WorkerTokenBucket(
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, burstCapacity: 1000 },
+                mockLog,
+            );
+            bucket.tokens = 10; // Below refill threshold of 20
+            return bucket;
+        }
+
+        it('should add granted tokens to the buffer and log the refill', async () => {
+            rateLimitClient.instance = {
+                isReady: () => true,
+                grantTokens: (resourceClass, resourceId, measure, requested, interval, burstCapacity, callback) =>
+                    callback(null, requested),
+            };
+            const bucket = makeBucketBelowThreshold();
+
+            const refilled = await bucket.refillIfNeeded(mockLog);
+
+            assert.strictEqual(refilled, true);
+            assert.strictEqual(bucket.tokens, bucket.bufferSize);
+            assert.ok(mockLog.debug.calledWithMatch('Token refill completed'));
+        });
+
+        it('should trace a denial when Redis grants zero tokens', async () => {
+            rateLimitClient.instance = {
+                isReady: () => true,
+                grantTokens: (resourceClass, resourceId, measure, requested, interval, burstCapacity, callback) =>
+                    callback(null, 0),
+            };
+            const bucket = makeBucketBelowThreshold();
+
+            const refilled = await bucket.refillIfNeeded(mockLog);
+
+            assert.strictEqual(refilled, false);
+            assert.strictEqual(bucket.tokens, 10);
+            assert.ok(mockLog.trace.calledWithMatch('Token refill denied - quota exhausted'));
+        });
+
+        it('should grant the requested tokens and warn when Redis is not connected', async () => {
+            rateLimitClient.instance = {
+                isReady: () => false,
+                grantTokens: () => {
+                    throw new Error('must not be called while disconnected');
+                },
+            };
+            const bucket = makeBucketBelowThreshold();
+
+            const refilled = await bucket.refillIfNeeded(mockLog);
+
+            // fail-open: full requested amount granted locally
+            assert.strictEqual(refilled, true);
+            assert.strictEqual(bucket.tokens, bucket.bufferSize);
+            assert.ok(
+                mockLog.warn.calledWithMatch(
+                    'rate limit redis client not connected. granting tokens anyway to avoid service degradation',
+                ),
+            );
+        });
+
+        it('should warn when a refill takes longer than 100ms', async () => {
+            rateLimitClient.instance = {
+                isReady: () => true,
+                grantTokens: (resourceClass, resourceId, measure, requested, interval, burstCapacity, callback) =>
+                    setTimeout(() => callback(null, requested), 110),
+            };
+            const bucket = makeBucketBelowThreshold();
+
+            const refilled = await bucket.refillIfNeeded(mockLog);
+
+            assert.strictEqual(refilled, true);
+            assert.ok(mockLog.warn.calledWithMatch('Slow token refill detected'));
+        });
+
+        it('should log and return false when the grant throws', async () => {
+            rateLimitClient.instance = {
+                isReady: () => true,
+                grantTokens: (resourceClass, resourceId, measure, requested, interval, burstCapacity, callback) =>
+                    callback(new Error('redis exploded')),
+            };
+            const bucket = makeBucketBelowThreshold();
+
+            const refilled = await bucket.refillIfNeeded(mockLog);
+
+            assert.strictEqual(refilled, false);
+            assert.strictEqual(bucket.refillInProgress, false);
+            assert.ok(mockLog.error.calledWithMatch('Token refill failed'));
         });
     });
 });
@@ -291,11 +418,21 @@ describe('Token bucket management functions', () => {
 
         it('should update limitConfig when limit changes', () => {
             const bucket1 = tokenBucket.getTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100, source: 'bucket' }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, source: 'bucket' },
+                mockLog,
+            );
             assert.strictEqual(bucket1.limitConfig.limit, 100);
 
             const bucket2 = tokenBucket.getTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 200, source: 'bucket' }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 200, source: 'bucket' },
+                mockLog,
+            );
 
             assert.strictEqual(bucket1, bucket2);
             assert.strictEqual(bucket2.limitConfig.limit, 200);
@@ -352,7 +489,7 @@ describe('Token bucket management functions', () => {
     });
 
     describe('cleanupTokenBuckets', () => {
-        it('should remove idle buckets with no tokens', () => {
+        it('should remove buckets unused for longer than maxIdleMs', () => {
             const bucket1 = tokenBucket.getTokenBucket('bucket', 'bucket-1', 'rps', { limit: 100 }, mockLog);
             const bucket2 = tokenBucket.getTokenBucket('bucket', 'bucket-2', 'rps', { limit: 200 }, mockLog);
 
@@ -370,16 +507,16 @@ describe('Token bucket management functions', () => {
             assert(!tokenBucket.getAllTokenBuckets().has('bucket:bucket-1:rps'));
         });
 
-        it('should not remove idle buckets with tokens', () => {
+        it('should remove unused buckets whatever the remaining token count', () => {
             const bucket = tokenBucket.getTokenBucket('bucket', 'test-bucket', 'rps', { limit: 100 }, mockLog);
 
             bucket.lastRefillTime = Date.now() - 120000;
-            bucket.tokens = 10;
+            bucket.tokens = bucket.bufferSize;
 
             const removed = tokenBucket.cleanupTokenBuckets(60000);
 
-            assert.strictEqual(removed, 0);
-            assert.strictEqual(tokenBucket.getAllTokenBuckets().size, 1);
+            assert.strictEqual(removed, 1);
+            assert.strictEqual(tokenBucket.getAllTokenBuckets().size, 0);
         });
 
         it('should not remove recently active buckets', () => {
