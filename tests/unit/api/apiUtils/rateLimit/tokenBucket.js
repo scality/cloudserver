@@ -455,7 +455,7 @@ describe('Token bucket management functions', () => {
     });
 
     describe('cleanupTokenBuckets', () => {
-        it('should remove idle buckets with no tokens', () => {
+        it('should remove buckets unused for longer than maxIdleMs', () => {
             const bucket1 = tokenBucket.getTokenBucket('bucket', 'bucket-1', 'rps', { limit: 100 }, mockLog);
             const bucket2 = tokenBucket.getTokenBucket('bucket', 'bucket-2', 'rps', { limit: 200 }, mockLog);
 
@@ -473,16 +473,16 @@ describe('Token bucket management functions', () => {
             assert(!tokenBucket.getAllTokenBuckets().has('bucket:bucket-1:rps'));
         });
 
-        it('should not remove idle buckets with tokens', () => {
+        it('should remove unused buckets whatever the remaining token count', () => {
             const bucket = tokenBucket.getTokenBucket('bucket', 'test-bucket', 'rps', { limit: 100 }, mockLog);
 
             bucket.lastRefillTime = Date.now() - 120000;
-            bucket.tokens = 10;
+            bucket.tokens = bucket.bufferSize;
 
             const removed = tokenBucket.cleanupTokenBuckets(60000);
 
-            assert.strictEqual(removed, 0);
-            assert.strictEqual(tokenBucket.getAllTokenBuckets().size, 1);
+            assert.strictEqual(removed, 1);
+            assert.strictEqual(tokenBucket.getAllTokenBuckets().size, 0);
         });
 
         it('should not remove recently active buckets', () => {

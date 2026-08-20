@@ -75,4 +75,18 @@ describe('rate limit token bucket retention', () => {
         assert.ok(logCallCount(jobLog) > 0,
             'refill must log through the logger supplied by the refill job');
     });
+
+    it('should evict buckets idle longer than maxIdleMs even when they still hold tokens', () => {
+        const requestLog = makeLog();
+
+        const bucket = tokenBucket.getTokenBucket(
+            'account', 'acct-retention-3', 'rps', { limit: 60, burstCapacity: 1000 }, requestLog);
+
+        bucket.lastRefillTime = Date.now() - 120000;
+
+        const removed = tokenBucket.cleanupTokenBuckets(60000);
+
+        assert.strictEqual(removed, 1, 'idle bucket must be evicted even with a full token buffer');
+        assert.strictEqual(tokenBucket.getAllTokenBuckets().size, 0);
+    });
 });
