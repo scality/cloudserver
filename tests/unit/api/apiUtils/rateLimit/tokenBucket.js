@@ -146,7 +146,12 @@ describe('WorkerTokenBucket', () => {
     describe('updateLimit', () => {
         it('should update limitConfig and interval when limit changes', () => {
             const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100, burstCapacity: 1000 }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, burstCapacity: 1000 },
+                mockLog,
+            );
             const oldInterval = bucket.interval;
 
             const result = bucket.updateLimit({ limit: 200, burstCapacity: 1000 });
@@ -159,7 +164,12 @@ describe('WorkerTokenBucket', () => {
 
         it('should update limitConfig when burstCapacity changes', () => {
             const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100, burstCapacity: 1000 }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, burstCapacity: 1000 },
+                mockLog,
+            );
 
             const result = bucket.updateLimit({ limit: 100, burstCapacity: 2000 });
 
@@ -169,7 +179,12 @@ describe('WorkerTokenBucket', () => {
 
         it('should return updated: false when config is unchanged', () => {
             const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100, burstCapacity: 1000 }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, burstCapacity: 1000 },
+                mockLog,
+            );
 
             const result = bucket.updateLimit({ limit: 100, burstCapacity: 1000 });
 
@@ -179,8 +194,7 @@ describe('WorkerTokenBucket', () => {
 
     describe('refillIfNeeded', () => {
         it('should skip refill when above threshold', async () => {
-            const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100 }, mockLog);
+            const bucket = new tokenBucket.WorkerTokenBucket('bucket', 'test-bucket', 'rps', { limit: 100 }, mockLog);
             bucket.tokens = 30; // Above threshold of 20
 
             await bucket.refillIfNeeded(mockLog);
@@ -190,8 +204,7 @@ describe('WorkerTokenBucket', () => {
         });
 
         it('should skip refill when already in progress', async () => {
-            const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100 }, mockLog);
+            const bucket = new tokenBucket.WorkerTokenBucket('bucket', 'test-bucket', 'rps', { limit: 100 }, mockLog);
             bucket.tokens = 10; // Below threshold
             bucket.refillInProgress = true;
 
@@ -203,7 +216,12 @@ describe('WorkerTokenBucket', () => {
 
         it('should trigger refill when below threshold', async () => {
             const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100, burstCapacity: 1000 }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, burstCapacity: 1000 },
+                mockLog,
+            );
             bucket.tokens = 10; // Below threshold of 20
 
             await bucket.refillIfNeeded(mockLog);
@@ -230,7 +248,12 @@ describe('WorkerTokenBucket', () => {
 
         function makeBucketBelowThreshold() {
             const bucket = new tokenBucket.WorkerTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100, burstCapacity: 1000 }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, burstCapacity: 1000 },
+                mockLog,
+            );
             bucket.tokens = 10; // Below refill threshold of 20
             return bucket;
         }
@@ -238,8 +261,8 @@ describe('WorkerTokenBucket', () => {
         it('should add granted tokens to the buffer and log the refill', async () => {
             rateLimitClient.instance = {
                 isReady: () => true,
-                grantTokens: (resourceClass, resourceId, measure, requested,
-                    interval, burstCapacity, callback) => callback(null, requested),
+                grantTokens: (resourceClass, resourceId, measure, requested, interval, burstCapacity, callback) =>
+                    callback(null, requested),
             };
             const bucket = makeBucketBelowThreshold();
 
@@ -253,8 +276,8 @@ describe('WorkerTokenBucket', () => {
         it('should trace a denial when Redis grants zero tokens', async () => {
             rateLimitClient.instance = {
                 isReady: () => true,
-                grantTokens: (resourceClass, resourceId, measure, requested,
-                    interval, burstCapacity, callback) => callback(null, 0),
+                grantTokens: (resourceClass, resourceId, measure, requested, interval, burstCapacity, callback) =>
+                    callback(null, 0),
             };
             const bucket = makeBucketBelowThreshold();
 
@@ -279,15 +302,17 @@ describe('WorkerTokenBucket', () => {
             // fail-open: full requested amount granted locally
             assert.strictEqual(refilled, true);
             assert.strictEqual(bucket.tokens, bucket.bufferSize);
-            assert.ok(mockLog.warn.calledWithMatch(
-                'rate limit redis client not connected. granting tokens anyway to avoid service degradation'));
+            assert.ok(
+                mockLog.warn.calledWithMatch(
+                    'rate limit redis client not connected. granting tokens anyway to avoid service degradation',
+                ),
+            );
         });
 
         it('should warn when a refill takes longer than 100ms', async () => {
             rateLimitClient.instance = {
                 isReady: () => true,
-                grantTokens: (resourceClass, resourceId, measure, requested,
-                    interval, burstCapacity, callback) =>
+                grantTokens: (resourceClass, resourceId, measure, requested, interval, burstCapacity, callback) =>
                     setTimeout(() => callback(null, requested), 110),
             };
             const bucket = makeBucketBelowThreshold();
@@ -301,8 +326,7 @@ describe('WorkerTokenBucket', () => {
         it('should log and return false when the grant throws', async () => {
             rateLimitClient.instance = {
                 isReady: () => true,
-                grantTokens: (resourceClass, resourceId, measure, requested,
-                    interval, burstCapacity, callback) =>
+                grantTokens: (resourceClass, resourceId, measure, requested, interval, burstCapacity, callback) =>
                     callback(new Error('redis exploded')),
             };
             const bucket = makeBucketBelowThreshold();
@@ -394,11 +418,21 @@ describe('Token bucket management functions', () => {
 
         it('should update limitConfig when limit changes', () => {
             const bucket1 = tokenBucket.getTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 100, source: 'bucket' }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 100, source: 'bucket' },
+                mockLog,
+            );
             assert.strictEqual(bucket1.limitConfig.limit, 100);
 
             const bucket2 = tokenBucket.getTokenBucket(
-                'bucket', 'test-bucket', 'rps', { limit: 200, source: 'bucket' }, mockLog);
+                'bucket',
+                'test-bucket',
+                'rps',
+                { limit: 200, source: 'bucket' },
+                mockLog,
+            );
 
             assert.strictEqual(bucket1, bucket2);
             assert.strictEqual(bucket2.limitConfig.limit, 200);
