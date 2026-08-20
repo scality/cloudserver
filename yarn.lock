@@ -3210,10 +3210,10 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
-"@scality/cloudserverclient@1.0.9":
-  version "1.0.9"
-  resolved "https://registry.yarnpkg.com/@scality/cloudserverclient/-/cloudserverclient-1.0.9.tgz#0a333e39436e1f1e74279c3b5a11645be1fffbc1"
-  integrity sha512-ZGqH4G535opDAEP2PxdYDFG7kjZ/eBrzP3ZmO49goFVjRhyDCZ1gT0Pask3/wZcyysZ2Au1qylorZSLPiZmB2A==
+"@scality/cloudserverclient@1.0.12":
+  version "1.0.12"
+  resolved "https://registry.yarnpkg.com/@scality/cloudserverclient/-/cloudserverclient-1.0.12.tgz#cbef36fb65b9cb9f7235d6d7dec291a535cd8dd2"
+  integrity sha512-A85ki+dQSdBt7C9pGxTA2NXRbg74azZ2LV/dBWf2A5soQFYXabDAnKQl/4+hnar8OAbIZ8XFoJjqqQzRZ4mGhg==
   dependencies:
     "@aws-sdk/client-s3" "^3.1009.0"
     "@aws-sdk/middleware-expect-continue" "^3.972.8"
