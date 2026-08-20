@@ -5838,9 +5838,9 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#8.5.14":
-  version "8.5.14"
-  resolved "git+https://github.com/scality/arsenal#d624af5286c8a9e4dd8880cc210a3d91bc5249d0"
+"arsenal@git+https://github.com/scality/arsenal#8.5.15":
+  version "8.5.15"
+  resolved "git+https://github.com/scality/arsenal#0bbe970dd72b2e235c47910474883af9b9c13eb1"
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"
@@ -5879,7 +5879,7 @@ arraybuffer.prototype.slice@^1.0.4:
     simple-glob "^0.2.0"
     socket.io "^4.8.0"
     socket.io-client "^4.8.0"
-    sproxydclient "github:scality/sproxydclient#8.2.1"
+    sproxydclient "github:scality/sproxydclient#8.2.2"
     utf8 "^3.0.0"
     uuid "^10.0.0"
     werelogs scality/werelogs#8.2.4
@@ -11340,9 +11340,9 @@ sprintf-js@~1.0.2:
     httpagent "github:scality/httpagent#1.1.0"
     werelogs scality/werelogs#8.2.0
 
-"sproxydclient@github:scality/sproxydclient#8.2.1":
-  version "8.2.1"
-  resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/501829f5521787e7e946de6792f5806ffa6ec437"
+"sproxydclient@github:scality/sproxydclient#8.2.2":
+  version "8.2.2"
+  resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/62d3aac1c844beda2286f33a1a7c7f2a31937579"
   dependencies:
     async "^3.2.6"
     httpagent "github:scality/httpagent#1.1.0"
