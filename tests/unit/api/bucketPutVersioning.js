@@ -42,8 +42,7 @@ const xmlReplicationConfiguration =
     '</Rule>' +
     '</ReplicationConfiguration>';
 
-const externalVersioningErrorMessage =
-    'We do not currently support putting ' + 'a versioned object to a location-constraint of type Azure or GCP.';
+const { locationVersioningErrorMessage } = require('../../../constants');
 
 const log = new DummyRequestLogger();
 const bucketName = 'bucketname';
@@ -159,14 +158,14 @@ describe('bucketPutVersioning API', () => {
                     'should return error if enabling versioning on location ' +
                     'constraint with supportsVersioning set to false',
                 input: xmlEnableVersioning,
-                output: { error: errorInstances.NotImplemented.customizeDescription(externalVersioningErrorMessage) },
+                output: { error: errorInstances.NotImplemented.customizeDescription(locationVersioningErrorMessage) },
             },
             {
                 msg:
                     'should return error if suspending versioning on ' +
                     ' location constraint with supportsVersioning set to false',
                 input: xmlSuspendVersioning,
-                output: { error: errorInstances.NotImplemented.customizeDescription(externalVersioningErrorMessage) },
+                output: { error: errorInstances.NotImplemented.customizeDescription(locationVersioningErrorMessage) },
             },
         ];
         tests.forEach(test =>

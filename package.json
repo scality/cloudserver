@@ -35,7 +35,7 @@
         "@opentelemetry/instrumentation-ioredis": "~0.64.0",
         "@opentelemetry/instrumentation-mongodb": "~0.69.0",
         "@smithy/node-http-handler": "^3.0.0",
-        "arsenal": "git+https://github.com/scality/arsenal#8.5.15",
+        "arsenal": "git+https://github.com/scality/arsenal#2136c02ff1d3dfd43a5ff7ca59f955d105946dba",
         "async": "2.6.4",
         "aws-crt": "^1.24.0",
         "bucketclient": "scality/bucketclient#8.2.7",
