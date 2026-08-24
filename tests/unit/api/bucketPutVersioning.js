@@ -45,7 +45,7 @@ const xmlReplicationConfiguration =
 '</ReplicationConfiguration>';
 
 const externalVersioningErrorMessage = 'We do not currently support putting ' +
-'a versioned object to a location-constraint of type Azure or GCP.';
+'a versioned object to a location-constraint of type Azure.';
 
 const log = new DummyRequestLogger();
 const bucketName = 'bucketname';

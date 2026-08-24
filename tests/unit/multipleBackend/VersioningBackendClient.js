@@ -105,7 +105,7 @@ describe('AwsClient::copyObject', () => {
     genTests.forEach(test => it(test.msg, done => {
         testClient._supportsVersioning = test.input.supportsVersioning;
         testClient._client.versioning = test.input.enableMockVersioning;
-        testClient.copyObject(copyObjectRequest, null, key,
+        testClient.copyObject(copyObjectRequest, null, key, undefined,
         sourceLocationConstraint, null, config, log,
         err => test.callback(err, done));
     }));
