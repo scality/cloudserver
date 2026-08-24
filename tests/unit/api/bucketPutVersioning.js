@@ -1,5 +1,6 @@
 const assert = require('assert');
 const async = require('async');
+const { promisify } = require('util');
 
 const { errorInstances } = require('arsenal');
 const { bucketPut } = require('../../../lib/api/bucketPut');
@@ -8,6 +9,7 @@ const bucketPutReplication = require('../../../lib/api/bucketPutReplication');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const metadata = require('../../../lib/metadata/wrapper');
+const { locationVersioningErrorMessage } = require('../../../constants');
 
 const xmlEnableVersioning =
     '<VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -29,6 +31,11 @@ const locConstraintNonVersioned =
     '<LocationConstraint>withoutversioning</LocationConstraint>' +
     '</CreateBucketConfiguration>';
 
+const locConstraintGcp =
+    '<CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+    '<LocationConstraint>gcpbackend</LocationConstraint>' +
+    '</CreateBucketConfiguration>';
+
 const xmlReplicationConfiguration =
     '<ReplicationConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
     '<Role>arn:aws:iam::account-id:role/src-resource</Role>' +
@@ -42,8 +49,9 @@ const xmlReplicationConfiguration =
     '</Rule>' +
     '</ReplicationConfiguration>';
 
-const externalVersioningErrorMessage =
-    'We do not currently support putting ' + 'a versioned object to a location-constraint of type Azure or GCP.';
+const bucketPutAsync = promisify(bucketPut);
+const bucketPutVersioningAsync = promisify(bucketPutVersioning);
+const getBucketAsync = promisify(metadata.getBucket.bind(metadata));
 
 const log = new DummyRequestLogger();
 const bucketName = 'bucketname';
@@ -159,14 +167,14 @@ describe('bucketPutVersioning API', () => {
                     'should return error if enabling versioning on location ' +
                     'constraint with supportsVersioning set to false',
                 input: xmlEnableVersioning,
-                output: { error: errorInstances.NotImplemented.customizeDescription(externalVersioningErrorMessage) },
+                output: { error: errorInstances.NotImplemented.customizeDescription(locationVersioningErrorMessage) },
             },
             {
                 msg:
                     'should return error if suspending versioning on ' +
                     ' location constraint with supportsVersioning set to false',
                 input: xmlSuspendVersioning,
-                output: { error: errorInstances.NotImplemented.customizeDescription(externalVersioningErrorMessage) },
+                output: { error: errorInstances.NotImplemented.customizeDescription(locationVersioningErrorMessage) },
             },
         ];
         tests.forEach(test =>
@@ -178,5 +186,15 @@ describe('bucketPutVersioning API', () => {
                 });
             }),
         );
+    });
+
+    describe('with GCP location constraint', () => {
+        beforeEach(() => bucketPutAsync(authInfo, _getPutBucketRequest(locConstraintGcp), log));
+
+        it('should successfully enable versioning', async () => {
+            await bucketPutVersioningAsync(authInfo, _putVersioningRequest(xmlEnableVersioning), log);
+            const bucket = await getBucketAsync(bucketName, log);
+            assert.deepStrictEqual(bucket._versioningConfiguration, { Status: 'Enabled' });
+        });
     });
 });
