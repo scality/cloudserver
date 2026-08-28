@@ -9,6 +9,7 @@ const { storage } = require('arsenal');
 const sinon = require('sinon');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
+const { data } = require('../../../lib/data/wrapper');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const metadata = require('../metadataswitch');
 const rawCreateAndStoreObject = require('../../../lib/api/apiUtils/object/createAndStoreObject');
@@ -195,6 +196,56 @@ describe('createAndStoreObject', () => {
             assert.deepStrictEqual(ds, []);
 
             const objMD = await getObjectMDAsync(bucketName, objectKey, {});
+            assert(objMD.isDeleteMarker);
+        });
+
+        // The marker must still reach the backend, which uses it to drop the
+        // live version there.
+        it('should ignore the request checksum for a delete marker on an external location', async () => {
+            const putStub = sinon.stub(data.client, 'put').yields(null, 'key', 'versionId');
+            const externalBucket = 'test-bucket-external';
+            const bucketRequest = new DummyRequest({
+                bucketName: externalBucket,
+                namespace: 'default',
+                headers: { host: `${externalBucket}.s3.amazonaws.com` },
+                url: '/',
+                post:
+                    '<?xml version="1.0" encoding="UTF-8"?>' +
+                    '<CreateBucketConfiguration ' +
+                    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+                    '<LocationConstraint>awsbackend</LocationConstraint>' +
+                    '</CreateBucketConfiguration>',
+            });
+            await promisify(bucketPut)(authInfo, bucketRequest, log);
+            const bucket = await promisify(metadata.getBucket.bind(metadata))(externalBucket, log);
+
+            const request = new DummyRequest({
+                bucketName: externalBucket,
+                namespace: 'default',
+                objectKey,
+                headers: { 'x-amz-checksum-crc32': 'AAAAAQ==' },
+                url: `/${externalBucket}/${objectKey}`,
+            });
+
+            await createAndStoreObject(
+                externalBucket,
+                bucket,
+                objectKey,
+                null,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                true,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectRemoved:DeleteMarkerCreated',
+            );
+
+            assert(putStub.calledOnce, 'delete marker must still reach the backend');
+            assert(putStub.firstCall.args[2].isDeleteMarker);
+            const objMD = await getObjectMDAsync(externalBucket, objectKey, {});
             assert(objMD.isDeleteMarker);
         });
     });
