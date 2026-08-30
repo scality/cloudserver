@@ -125,7 +125,7 @@ services:
     depends_on:
       - redis
   metadata-standalone:
-    image: ghcr.io/scality/metadata:8.11.0-standalone
+    image: ghcr.io/scality/metadata:8.24.0-standalone
     profiles: ['metadata-standalone']
     network_mode: 'host'
     volumes:
