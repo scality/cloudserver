@@ -5,6 +5,7 @@ const { errors } = require('arsenal');
 const async = require('async');
 const crypto = require('crypto');
 
+const { overheadField } = require('../../../../../constants');
 const abortMultipartUpload = require('../../../../../lib/api/apiUtils/object/abortMultipartUpload');
 const { bucketPut } = require('../../../../../lib/api/bucketPut');
 const initiateMultipartUpload = require('../../../../../lib/api/initiateMultipartUpload');
@@ -305,6 +306,8 @@ describe('abortMultipartUpload', () => {
                 assert.ifError(err);
                 sinon.assert.calledOnce(deleteObjectMDStub);
                 assert.strictEqual(deleteObjectMDStub.getCall(0).args[2].versionId, 'orphan-vid');
+                assert.deepStrictEqual(
+                    deleteObjectMDStub.getCall(0).args[2].overheadField, overheadField);
                 done();
             }, { ...abortRequest, query: { uploadId: 'abort-id' } });
         });
