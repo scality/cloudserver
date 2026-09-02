@@ -7,8 +7,7 @@ const DummyService = require('../DummyService');
 const { DummyRequestLogger } = require('../helpers');
 
 const missingVerIdInternalError = errorInstances.InternalError.customizeDescription(
-    'Invalid state. Please ensure versioning is enabled ' +
-    'in AWS for the location constraint and try again.'
+    'Invalid state. Please ensure versioning is enabled in AWS for the location constraint and try again.',
 );
 
 const log = new DummyRequestLogger();
@@ -43,8 +42,7 @@ const s3Config = {
 };
 
 const assertSuccess = (err, cb) => {
-    assert.ifError(err,
-        `Expected success, but got error ${err}`);
+    assert.ifError(err, `Expected success, but got error ${err}`);
     cb();
 };
 
@@ -54,26 +52,22 @@ const assertFailure = (err, cb) => {
 };
 const genTests = [
     {
-        msg: 'should return success if supportsVersioning === true ' +
-        'and backend versioning is enabled',
+        msg: 'should return success if supportsVersioning === true and backend versioning is enabled',
         input: { supportsVersioning: true, enableMockVersioning: true },
         callback: assertSuccess,
     },
     {
-        msg: 'should return success if supportsVersioning === false ' +
-        'and backend versioning is enabled',
+        msg: 'should return success if supportsVersioning === false and backend versioning is enabled',
         input: { supportsVersioning: false, enableMockVersioning: true },
         callback: assertSuccess,
     },
     {
-        msg: 'should return error if supportsVersioning === true ' +
-        'and backend versioning is disabled',
+        msg: 'should return error if supportsVersioning === true and backend versioning is disabled',
         input: { supportsVersioning: true, enableMockVersioning: false },
         callback: assertFailure,
     },
     {
-        msg: 'should return success if supportsVersioning === false ' +
-        'and backend versioning is disabled',
+        msg: 'should return success if supportsVersioning === false and backend versioning is disabled',
         input: { supportsVersioning: false, enableMockVersioning: false },
         callback: assertSuccess,
     },
@@ -86,12 +80,13 @@ describe('AwsClient::putObject', () => {
         testClient = new AwsClient(s3Config);
         testClient._client = new DummyService({ versioning: true });
     });
-    genTests.forEach(test => it(test.msg, done => {
-        testClient._supportsVersioning = test.input.supportsVersioning;
-        testClient._client.versioning = test.input.enableMockVersioning;
-        testClient.put('', 0, { bucketName: bucket, objectKey: key },
-        reqUID, err => test.callback(err, done));
-    }));
+    genTests.forEach(test =>
+        it(test.msg, done => {
+            testClient._supportsVersioning = test.input.supportsVersioning;
+            testClient._client.versioning = test.input.enableMockVersioning;
+            testClient.put('', 0, { bucketName: bucket, objectKey: key }, reqUID, err => test.callback(err, done));
+        }),
+    );
 });
 
 describe('AwsClient::copyObject', () => {
@@ -102,13 +97,23 @@ describe('AwsClient::copyObject', () => {
         testClient._client = new DummyService({ versioning: true });
     });
 
-    genTests.forEach(test => it(test.msg, done => {
-        testClient._supportsVersioning = test.input.supportsVersioning;
-        testClient._client.versioning = test.input.enableMockVersioning;
-        testClient.copyObject(copyObjectRequest, null, key,
-        sourceLocationConstraint, null, config, log,
-        err => test.callback(err, done));
-    }));
+    genTests.forEach(test =>
+        it(test.msg, done => {
+            testClient._supportsVersioning = test.input.supportsVersioning;
+            testClient._client.versioning = test.input.enableMockVersioning;
+            testClient.copyObject(
+                copyObjectRequest,
+                null,
+                key,
+                undefined,
+                sourceLocationConstraint,
+                null,
+                config,
+                log,
+                err => test.callback(err, done),
+            );
+        }),
+    );
 });
 
 describe('AwsClient::completeMPU', () => {
@@ -118,13 +123,14 @@ describe('AwsClient::completeMPU', () => {
         testClient = new AwsClient(s3Config);
         testClient._client = new DummyService({ versioning: true });
     });
-    genTests.forEach(test => it(test.msg, done => {
-        testClient._supportsVersioning = test.input.supportsVersioning;
-        testClient._client.versioning = test.input.enableMockVersioning;
-        const uploadId = 'externalBackendTestUploadId';
-        testClient.completeMPU(jsonList, null, key, uploadId,
-        bucket, log, err => test.callback(err, done));
-    }));
+    genTests.forEach(test =>
+        it(test.msg, done => {
+            testClient._supportsVersioning = test.input.supportsVersioning;
+            testClient._client.versioning = test.input.enableMockVersioning;
+            const uploadId = 'externalBackendTestUploadId';
+            testClient.completeMPU(jsonList, null, key, uploadId, bucket, log, err => test.callback(err, done));
+        }),
+    );
 });
 
 describe('AwsClient::healthcheck', () => {
@@ -159,34 +165,31 @@ describe('AwsClient::healthcheck', () => {
 
     const tests = [
         {
-            msg: 'should return success if supportsVersioning === true ' +
-            'and backend versioning is enabled',
+            msg: 'should return success if supportsVersioning === true and backend versioning is enabled',
             input: { supportsVersioning: true, enableMockVersioning: true },
             callback: assertSuccessVersioned,
         },
         {
-            msg: 'should return success if supportsVersioning === false ' +
-            'and backend versioning is enabled',
+            msg: 'should return success if supportsVersioning === false and backend versioning is enabled',
             input: { supportsVersioning: false, enableMockVersioning: true },
             callback: assertSuccessNonVersioned,
         },
         {
-            msg: 'should return error if supportsVersioning === true ' +
-            ' and backend versioning is disabled',
+            msg: 'should return error if supportsVersioning === true and backend versioning is disabled',
             input: { supportsVersioning: true, enableMockVersioning: false },
             callback: assertFailure,
         },
         {
-            msg: 'should return success if supportsVersioning === false ' +
-            'and backend versioning is disabled',
+            msg: 'should return success if supportsVersioning === false and backend versioning is disabled',
             input: { supportsVersioning: false, enableMockVersioning: false },
             callback: assertSuccessNonVersioned,
         },
     ];
-    tests.forEach(test => it(test.msg, done => {
-        testClient._supportsVersioning = test.input.supportsVersioning;
-        testClient._client.versioning = test.input.enableMockVersioning;
-        testClient.healthcheck('backend',
-        (err, resp) => test.callback(resp.backend, done));
-    }));
+    tests.forEach(test =>
+        it(test.msg, done => {
+            testClient._supportsVersioning = test.input.supportsVersioning;
+            testClient._client.versioning = test.input.enableMockVersioning;
+            testClient.healthcheck('backend', (err, resp) => test.callback(resp.backend, done));
+        }),
+    );
 });
