@@ -58,19 +58,33 @@ describe('abortMultipartUpload', () => {
 
     beforeEach(() => {
         cleanup();
-        sinon.stub(data, 'abortMPU').callsFake(
-            (objectKey, uploadId, location, bucketName, request,
-                destBucket, locationConstraintCheckFn, log, callback) => callback(null, false)
-        );
+        sinon
+            .stub(data, 'abortMPU')
+            .callsFake(
+                (
+                    objectKey,
+                    uploadId,
+                    location,
+                    bucketName,
+                    request,
+                    destBucket,
+                    locationConstraintCheckFn,
+                    log,
+                    callback,
+                ) => callback(null, false),
+            );
         sinon.stub(data, 'delete').yields(null);
         sinon.stub(quotaUtils, 'validateQuotas').yields(null);
 
-        sinon.stub(services, 'metadataValidateMultipart')
-            .yields(null, {
+        sinon.stub(services, 'metadataValidateMultipart').yields(
+            null,
+            {
                 getName: () => 'mpu-shadow-bucket',
                 getMdBucketModelVersion: () => 2,
                 isVersioningEnabled: () => true,
-            }, { controllingLocationConstraint: 'us-east-1' });
+            },
+            { controllingLocationConstraint: 'us-east-1' },
+        );
 
         sinon.stub(services, 'getMPUparts').yields(null, { Contents: [] });
         sinon.stub(services, 'batchDeleteObjectMetadata').yields(null);
@@ -81,48 +95,75 @@ describe('abortMultipartUpload', () => {
     });
 
     function createBucketAndMPU(versioned, callback) {
-        async.waterfall([
-            next => bucketPut(authInfo, bucketRequest, log, err => next(err)),
-            next => {
-                if (versioned) {
-                    return bucketPutVersioning(authInfo, enableVersioningRequest, log, err => next(err));
-                }
-                return next();
-            },
-            next => initiateMultipartUpload(authInfo, initiateRequest, log, (err, result) => next(err, result)),
-            (result, next) => parseString(result, (err, json) =>
-                next(err, json.InitiateMultipartUploadResult.UploadId[0])),
-        ], callback);
+        async.waterfall(
+            [
+                next => bucketPut(authInfo, bucketRequest, log, err => next(err)),
+                next => {
+                    if (versioned) {
+                        return bucketPutVersioning(authInfo, enableVersioningRequest, log, err => next(err));
+                    }
+                    return next();
+                },
+                next => initiateMultipartUpload(authInfo, initiateRequest, log, (err, result) => next(err, result)),
+                (result, next) =>
+                    parseString(result, (err, json) => next(err, json.InitiateMultipartUploadResult.UploadId[0])),
+            ],
+            callback,
+        );
     }
 
     describe('basic functionality', () => {
         it('should successfully abort multipart upload', done => {
             createBucketAndMPU(false, (err, uploadId) => {
                 assert.ifError(err);
-                abortMultipartUpload(authInfo, bucketName, objectKey, uploadId, log, err => {
-                    assert.strictEqual(err, null);
-                    done();
-                }, { ...abortRequest, query: { uploadId } });
+                abortMultipartUpload(
+                    authInfo,
+                    bucketName,
+                    objectKey,
+                    uploadId,
+                    log,
+                    err => {
+                        assert.strictEqual(err, null);
+                        done();
+                    },
+                    { ...abortRequest, query: { uploadId } },
+                );
             });
         });
 
         it('should return error for non-existent bucket', done => {
-            abortMultipartUpload(authInfo, 'non-existent-bucket', objectKey, 'fake-upload-id', log, err => {
-                assert(err);
-                assert.strictEqual(err.is.NoSuchBucket, true);
-                done();
-            }, abortRequest);
+            abortMultipartUpload(
+                authInfo,
+                'non-existent-bucket',
+                objectKey,
+                'fake-upload-id',
+                log,
+                err => {
+                    assert(err);
+                    assert.strictEqual(err.is.NoSuchBucket, true);
+                    done();
+                },
+                abortRequest,
+            );
         });
 
         it('should return error for non-existent upload', done => {
             services.metadataValidateMultipart.yields(errors.NoSuchUpload);
             bucketPut(authInfo, bucketRequest, log, err => {
                 assert.ifError(err);
-                abortMultipartUpload(authInfo, bucketName, objectKey, 'fake-upload-id', log, err => {
-                    assert(err);
-                    assert.strictEqual(err.is.NoSuchUpload, true);
-                    done();
-                }, abortRequest);
+                abortMultipartUpload(
+                    authInfo,
+                    bucketName,
+                    objectKey,
+                    'fake-upload-id',
+                    log,
+                    err => {
+                        assert(err);
+                        assert.strictEqual(err.is.NoSuchUpload, true);
+                        done();
+                    },
+                    abortRequest,
+                );
             });
         });
 
@@ -134,10 +175,18 @@ describe('abortMultipartUpload', () => {
             });
             createBucketAndMPU(false, (err, uploadId) => {
                 assert.ifError(err);
-                abortMultipartUpload(authInfo, bucketName, objectKey, uploadId, log, err => {
-                    assert.deepStrictEqual(err, testError);
-                    done();
-                }, { ...abortRequest, query: { uploadId } });
+                abortMultipartUpload(
+                    authInfo,
+                    bucketName,
+                    objectKey,
+                    uploadId,
+                    log,
+                    err => {
+                        assert.deepStrictEqual(err, testError);
+                        done();
+                    },
+                    { ...abortRequest, query: { uploadId } },
+                );
             });
         });
     });
@@ -146,31 +195,46 @@ describe('abortMultipartUpload', () => {
         it('should delete part data when aborting', done => {
             createBucketAndMPU(false, (err, uploadId) => {
                 assert.ifError(err);
-                const partRequest = new DummyRequest({
-                    bucketName, objectKey, namespace: 'default',
-                    url: `/${objectKey}?partNumber=1&uploadId=${uploadId}`,
-                    headers: { host: `${bucketName}.s3.amazonaws.com` },
-                    query: { partNumber: '1', uploadId },
-                    calculatedHash: crypto.createHash('md5').update(postBody).digest('hex'),
-                }, postBody);
+                const partRequest = new DummyRequest(
+                    {
+                        bucketName,
+                        objectKey,
+                        namespace: 'default',
+                        url: `/${objectKey}?partNumber=1&uploadId=${uploadId}`,
+                        headers: { host: `${bucketName}.s3.amazonaws.com` },
+                        query: { partNumber: '1', uploadId },
+                        calculatedHash: crypto.createHash('md5').update(postBody).digest('hex'),
+                    },
+                    postBody,
+                );
 
                 objectPutPart(authInfo, partRequest, undefined, log, err => {
                     assert.ifError(err);
                     services.getMPUparts.yields(null, {
-                        Contents: [{
-                            key: `1${uploadId}`,
-                            value: {
-                                Size: 11,
-                                partLocations: [{ key: 'a-key' }],
+                        Contents: [
+                            {
+                                key: `1${uploadId}`,
+                                value: {
+                                    Size: 11,
+                                    partLocations: [{ key: 'a-key' }],
+                                },
                             },
-                        }],
+                        ],
                     });
 
-                    abortMultipartUpload(authInfo, bucketName, objectKey, uploadId, log, err => {
-                        assert.strictEqual(err, null);
-                        sinon.assert.called(data.delete);
-                        done();
-                    }, { ...abortRequest, query: { uploadId } });
+                    abortMultipartUpload(
+                        authInfo,
+                        bucketName,
+                        objectKey,
+                        uploadId,
+                        log,
+                        err => {
+                            assert.strictEqual(err, null);
+                            sinon.assert.called(data.delete);
+                            done();
+                        },
+                        { ...abortRequest, query: { uploadId } },
+                    );
                 });
             });
         });
@@ -192,11 +256,19 @@ describe('abortMultipartUpload', () => {
         it('should NOT search for orphans if master object does not exist', done => {
             bucketPutVersioning(authInfo, enableVersioningRequest, log, err => {
                 assert.ifError(err);
-                abortMultipartUpload(authInfo, bucketName, objectKey, 'any-id', log, err => {
-                    assert.ifError(err);
-                    sinon.assert.notCalled(findObjectVersionStub);
-                    done();
-                }, abortRequest);
+                abortMultipartUpload(
+                    authInfo,
+                    bucketName,
+                    objectKey,
+                    'any-id',
+                    log,
+                    err => {
+                        assert.ifError(err);
+                        sinon.assert.notCalled(findObjectVersionStub);
+                        done();
+                    },
+                    abortRequest,
+                );
             });
         });
 
@@ -207,14 +279,22 @@ describe('abortMultipartUpload', () => {
                 getOwner: () => 'testCanonicalId',
                 getName: () => bucketName,
             };
-            const mockMasterMD = { 'uploadId': 'master-id' };
+            const mockMasterMD = { uploadId: 'master-id' };
             standardMetadataValidateStub.yields(null, mockBucket, mockMasterMD);
 
-            abortMultipartUpload(authInfo, bucketName, objectKey, 'abort-id', log, err => {
-                assert.ifError(err);
-                sinon.assert.notCalled(findObjectVersionStub);
-                done();
-            }, { ...abortRequest, query: { uploadId: 'abort-id' } });
+            abortMultipartUpload(
+                authInfo,
+                bucketName,
+                objectKey,
+                'abort-id',
+                log,
+                err => {
+                    assert.ifError(err);
+                    sinon.assert.notCalled(findObjectVersionStub);
+                    done();
+                },
+                { ...abortRequest, query: { uploadId: 'abort-id' } },
+            );
         });
 
         it('should proceed without cleanup if finding object version fails', done => {
@@ -228,16 +308,24 @@ describe('abortMultipartUpload', () => {
                 getOwner: () => 'testCanonicalId',
                 getName: () => bucketName,
             };
-            const mockMasterMD = { 'uploadId': 'master-id' };
+            const mockMasterMD = { uploadId: 'master-id' };
             standardMetadataValidateStub.yields(null, mockBucket, mockMasterMD);
 
-            abortMultipartUpload(authInfo, bucketName, objectKey, 'abort-id', log, err => {
-                assert.ifError(err);
-                sinon.assert.calledOnce(findObjectVersionStub);
-                sinon.assert.notCalled(metadataGetObjectStub);
-                sinon.assert.notCalled(deleteObjectMDStub);
-                done();
-            }, { ...abortRequest, query: { uploadId: 'abort-id' } });
+            abortMultipartUpload(
+                authInfo,
+                bucketName,
+                objectKey,
+                'abort-id',
+                log,
+                err => {
+                    assert.ifError(err);
+                    sinon.assert.calledOnce(findObjectVersionStub);
+                    sinon.assert.notCalled(metadataGetObjectStub);
+                    sinon.assert.notCalled(deleteObjectMDStub);
+                    done();
+                },
+                { ...abortRequest, query: { uploadId: 'abort-id' } },
+            );
         });
 
         it('should proceed without cleanup if finding object version returns null', done => {
@@ -250,16 +338,24 @@ describe('abortMultipartUpload', () => {
                 getOwner: () => 'testCanonicalId',
                 getName: () => bucketName,
             };
-            const mockMasterMD = { 'uploadId': 'master-id' };
+            const mockMasterMD = { uploadId: 'master-id' };
             standardMetadataValidateStub.yields(null, mockBucket, mockMasterMD);
 
-            abortMultipartUpload(authInfo, bucketName, objectKey, 'abort-id', log, err => {
-                assert.ifError(err);
-                sinon.assert.calledOnce(findObjectVersionStub);
-                sinon.assert.notCalled(metadataGetObjectStub);
-                sinon.assert.notCalled(deleteObjectMDStub);
-                done();
-            }, { ...abortRequest, query: { uploadId: 'abort-id' } });
+            abortMultipartUpload(
+                authInfo,
+                bucketName,
+                objectKey,
+                'abort-id',
+                log,
+                err => {
+                    assert.ifError(err);
+                    sinon.assert.calledOnce(findObjectVersionStub);
+                    sinon.assert.notCalled(metadataGetObjectStub);
+                    sinon.assert.notCalled(deleteObjectMDStub);
+                    done();
+                },
+                { ...abortRequest, query: { uploadId: 'abort-id' } },
+            );
         });
 
         it('should proceed without cleanup if found version getObject fails', done => {
@@ -274,17 +370,25 @@ describe('abortMultipartUpload', () => {
                 getOwner: () => 'testCanonicalId',
                 getName: () => bucketName,
             };
-            const mockMasterMD = { 'uploadId': 'master-id' };
+            const mockMasterMD = { uploadId: 'master-id' };
             standardMetadataValidateStub.yields(null, mockBucket, mockMasterMD);
 
-            abortMultipartUpload(authInfo, bucketName, objectKey, 'abort-id', log, err => {
-                assert.ifError(err);
-                sinon.assert.calledOnce(findObjectVersionStub);
-                sinon.assert.calledOnce(metadataGetObjectStub);
-                sinon.assert.calledWith(metadataGetObjectStub, bucketName, objectKey, 'orphan-vid', null, log);
-                sinon.assert.notCalled(deleteObjectMDStub);
-                done();
-            }, { ...abortRequest, query: { uploadId: 'abort-id' } });
+            abortMultipartUpload(
+                authInfo,
+                bucketName,
+                objectKey,
+                'abort-id',
+                log,
+                err => {
+                    assert.ifError(err);
+                    sinon.assert.calledOnce(findObjectVersionStub);
+                    sinon.assert.calledOnce(metadataGetObjectStub);
+                    sinon.assert.calledWith(metadataGetObjectStub, bucketName, objectKey, 'orphan-vid', null, log);
+                    sinon.assert.notCalled(deleteObjectMDStub);
+                    done();
+                },
+                { ...abortRequest, query: { uploadId: 'abort-id' } },
+            );
         });
 
         it('should delete the correct orphaned object version', done => {
@@ -299,17 +403,24 @@ describe('abortMultipartUpload', () => {
                 getName: () => bucketName,
                 getVersioningConfiguration: () => ({ Status: 'Enabled' }),
             };
-            const mockMasterMD = { 'uploadId': 'master-id' };
+            const mockMasterMD = { uploadId: 'master-id' };
             standardMetadataValidateStub.yields(null, mockBucket, mockMasterMD);
 
-            abortMultipartUpload(authInfo, bucketName, objectKey, 'abort-id', log, err => {
-                assert.ifError(err);
-                sinon.assert.calledOnce(deleteObjectMDStub);
-                assert.strictEqual(deleteObjectMDStub.getCall(0).args[2].versionId, 'orphan-vid');
-                assert.deepStrictEqual(
-                    deleteObjectMDStub.getCall(0).args[2].overheadField, overheadField);
-                done();
-            }, { ...abortRequest, query: { uploadId: 'abort-id' } });
+            abortMultipartUpload(
+                authInfo,
+                bucketName,
+                objectKey,
+                'abort-id',
+                log,
+                err => {
+                    assert.ifError(err);
+                    sinon.assert.calledOnce(deleteObjectMDStub);
+                    assert.strictEqual(deleteObjectMDStub.getCall(0).args[2].versionId, 'orphan-vid');
+                    assert.deepStrictEqual(deleteObjectMDStub.getCall(0).args[2].overheadField, overheadField);
+                    done();
+                },
+                { ...abortRequest, query: { uploadId: 'abort-id' } },
+            );
         });
 
         it('should proceed if orphaned object version is already deleted (NoSuchKey)', done => {
@@ -324,14 +435,22 @@ describe('abortMultipartUpload', () => {
                 getName: () => bucketName,
                 getVersioningConfiguration: () => ({ Status: 'Enabled' }),
             };
-            const mockMasterMD = { 'uploadId': 'master-id' };
+            const mockMasterMD = { uploadId: 'master-id' };
             standardMetadataValidateStub.yields(null, mockBucket, mockMasterMD);
 
-            abortMultipartUpload(authInfo, bucketName, objectKey, 'abort-id', log, err => {
-                assert.ifError(err);
-                sinon.assert.calledOnce(deleteObjectMDStub);
-                done();
-            }, { ...abortRequest, query: { uploadId: 'abort-id' } });
+            abortMultipartUpload(
+                authInfo,
+                bucketName,
+                objectKey,
+                'abort-id',
+                log,
+                err => {
+                    assert.ifError(err);
+                    sinon.assert.calledOnce(deleteObjectMDStub);
+                    done();
+                },
+                { ...abortRequest, query: { uploadId: 'abort-id' } },
+            );
         });
     });
 });
