@@ -9,6 +9,7 @@ const { storage } = require('arsenal');
 const sinon = require('sinon');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
+const { data } = require('../../../lib/data/wrapper');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const metadata = require('../metadataswitch');
 const rawCreateAndStoreObject = require('../../../lib/api/apiUtils/object/createAndStoreObject');
@@ -23,15 +24,16 @@ const canonicalID = authInfo.getCanonicalID();
 const bucketName = 'test-bucket';
 const objectKey = 'test-object';
 
-const getObjectMDAsync = (bucket, key, params = {}) => new Promise((resolve, reject) => {
-    metadata.getObjectMD(bucket, key, params, log, (err, data) => {
-        if (err) {
-            reject(err);
-        } else {
-            resolve(data);
-        }
+const getObjectMDAsync = (bucket, key, params = {}) =>
+    new Promise((resolve, reject) => {
+        metadata.getObjectMD(bucket, key, params, log, (err, data) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(data);
+            }
+        });
     });
-});
 
 describe('createAndStoreObject', () => {
     let testBucket;
@@ -64,17 +66,32 @@ describe('createAndStoreObject', () => {
 
     describe('Regular object creation', () => {
         it('should create object successfully', async () => {
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: { 'content-type': 'text/plain' },
-                url: `/${bucketName}/${objectKey}`,
-            }, Buffer.from('test data', 'utf8'));
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: { 'content-type': 'text/plain' },
+                    url: `/${bucketName}/${objectKey}`,
+                },
+                Buffer.from('test data', 'utf8'),
+            );
 
-            const result = await createAndStoreObject(bucketName, testBucket, objectKey, null,
-                authInfo, canonicalID, null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            const result = await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                null,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             assert(result.contentMD5);
 
@@ -83,18 +100,33 @@ describe('createAndStoreObject', () => {
         });
 
         it('should handle zero-byte object', async () => {
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: { 'content-type': 'text/plain' },
-                parsedContentLength: 0,
-                url: `/${bucketName}/${objectKey}`,
-            }, '');
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: { 'content-type': 'text/plain' },
+                    parsedContentLength: 0,
+                    url: `/${bucketName}/${objectKey}`,
+                },
+                '',
+            );
 
-            const result = await createAndStoreObject(bucketName, testBucket, objectKey, null,
-                authInfo, canonicalID, null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            const result = await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                null,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             assert(result.contentMD5);
         });
@@ -103,17 +135,32 @@ describe('createAndStoreObject', () => {
             const authInfo2 = makeAuthInfo('accessKey2');
             sinon.spy(metadata, 'putObjectMD');
 
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: {},
-                url: `/${bucketName}/${objectKey}`,
-            }, Buffer.from('test', 'utf8'));
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: {},
+                    url: `/${bucketName}/${objectKey}`,
+                },
+                Buffer.from('test', 'utf8'),
+            );
 
-            await createAndStoreObject(bucketName, testBucket, objectKey, null,
-                authInfo2, authInfo2.getCanonicalID(), null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                null,
+                authInfo2,
+                authInfo2.getCanonicalID(),
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             const storedObjMD = getStoredObjectData();
             assert.strictEqual(storedObjMD.bucketOwnerId, canonicalID);
@@ -130,13 +177,75 @@ describe('createAndStoreObject', () => {
                 url: `/${bucketName}/${objectKey}`,
             });
 
-            await createAndStoreObject(bucketName, testBucket, objectKey, null,
-                authInfo, canonicalID, null, request, true, null,
-                ['overhead'], log, 's3:ObjectRemoved:DeleteMarkerCreated');
+            await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                null,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                true,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectRemoved:DeleteMarkerCreated',
+            );
 
             assert.deepStrictEqual(ds, []);
 
             const objMD = await getObjectMDAsync(bucketName, objectKey, {});
+            assert(objMD.isDeleteMarker);
+        });
+
+        // The marker must still reach the backend, which uses it to drop the
+        // live version there.
+        it('should ignore the request checksum for a delete marker on an external location', async () => {
+            const putStub = sinon.stub(data.client, 'put').yields(null, 'key', 'versionId');
+            const externalBucket = 'test-bucket-external';
+            const bucketRequest = new DummyRequest({
+                bucketName: externalBucket,
+                namespace: 'default',
+                headers: { host: `${externalBucket}.s3.amazonaws.com` },
+                url: '/',
+                post:
+                    '<?xml version="1.0" encoding="UTF-8"?>' +
+                    '<CreateBucketConfiguration ' +
+                    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+                    '<LocationConstraint>awsbackend</LocationConstraint>' +
+                    '</CreateBucketConfiguration>',
+            });
+            await promisify(bucketPut)(authInfo, bucketRequest, log);
+            const bucket = await promisify(metadata.getBucket.bind(metadata))(externalBucket, log);
+
+            const request = new DummyRequest({
+                bucketName: externalBucket,
+                namespace: 'default',
+                objectKey,
+                headers: { 'x-amz-checksum-crc32': 'AAAAAQ==' },
+                url: `/${externalBucket}/${objectKey}`,
+            });
+
+            await createAndStoreObject(
+                externalBucket,
+                bucket,
+                objectKey,
+                null,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                true,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectRemoved:DeleteMarkerCreated',
+            );
+
+            assert(putStub.calledOnce, 'delete marker must still reach the backend');
+            assert(putStub.firstCall.args[2].isDeleteMarker);
+            const objMD = await getObjectMDAsync(externalBucket, objectKey, {});
             assert(objMD.isDeleteMarker);
         });
     });
@@ -146,24 +255,39 @@ describe('createAndStoreObject', () => {
             const archivedObjMD = {
                 'content-md5': 'abc123',
                 'content-length': 100,
-                'archive': {
-                    'archiveInfo': { 'archiveID': 'archive-123' },
+                archive: {
+                    archiveInfo: { archiveID: 'archive-123' },
                 },
             };
 
             sinon.spy(metadata, 'putObjectMD');
 
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: {},
-                url: `/${bucketName}/${objectKey}`,
-            }, Buffer.from('new data', 'utf8'));
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: {},
+                    url: `/${bucketName}/${objectKey}`,
+                },
+                Buffer.from('new data', 'utf8'),
+            );
 
-            await createAndStoreObject(bucketName, testBucket, objectKey, archivedObjMD,
-                authInfo, canonicalID, null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                archivedObjMD,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             const options = getStoredOptions();
             assert.strictEqual(options.needOplogUpdate, true);
@@ -174,26 +298,41 @@ describe('createAndStoreObject', () => {
             const archivedObjMD = {
                 'content-md5': 'abc123',
                 'content-length': 100,
-                'versionId': 'v1',
-                'archive': {
-                    'archiveInfo': { 'archiveID': 'archive-123' },
+                versionId: 'v1',
+                archive: {
+                    archiveInfo: { archiveID: 'archive-123' },
                 },
             };
 
             sinon.stub(testBucket, 'isVersioningEnabled').returns(true);
             sinon.spy(metadata, 'putObjectMD');
 
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: {},
-                url: `/${bucketName}/${objectKey}`,
-            }, Buffer.from('new data', 'utf8'));
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: {},
+                    url: `/${bucketName}/${objectKey}`,
+                },
+                Buffer.from('new data', 'utf8'),
+            );
 
-            await createAndStoreObject(bucketName, testBucket, objectKey, archivedObjMD,
-                authInfo, canonicalID, null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                archivedObjMD,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             const options = getStoredOptions();
             assert.strictEqual(options.needOplogUpdate, undefined);
@@ -212,17 +351,32 @@ describe('createAndStoreObject', () => {
             sinon.stub(testBucket, 'isVersioningEnabled').returns(false);
             sinon.spy(metadata, 'putObjectMD');
 
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: {},
-                url: `/${bucketName}/${objectKey}`,
-            }, Buffer.from('new data', 'utf8'));
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: {},
+                    url: `/${bucketName}/${objectKey}`,
+                },
+                Buffer.from('new data', 'utf8'),
+            );
 
-            await createAndStoreObject(bucketName, testBucket, objectKey, archivedObjMD,
-                authInfo, canonicalID, null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                archivedObjMD,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             const options = getStoredOptions();
             assert.strictEqual(options.needOplogUpdate, true);
@@ -239,17 +393,32 @@ describe('createAndStoreObject', () => {
             };
             sinon.spy(metadata, 'putObjectMD');
 
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: {},
-                url: `/${bucketName}/${objectKey}`,
-            }, Buffer.from('new data', 'utf8'));
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: {},
+                    url: `/${bucketName}/${objectKey}`,
+                },
+                Buffer.from('new data', 'utf8'),
+            );
 
-            await createAndStoreObject(bucketName, testBucket, objectKey, archivedObjMD,
-                authInfo, canonicalID, null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                archivedObjMD,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             const options = getStoredOptions();
             assert.strictEqual(options.needOplogUpdate, undefined);
@@ -261,34 +430,49 @@ describe('createAndStoreObject', () => {
         it('should restore object with x-scal-s3-version-id header', async () => {
             const now = Date.now();
             const archivedObjMD = {
-                'key': objectKey,
-                'versionId': 'v123',
+                key: objectKey,
+                versionId: 'v123',
                 'content-md5': 'original-hash',
                 'content-length': 100,
                 'x-amz-storage-class': 'cold-location',
-                'dataStoreName': 'cold-location',
+                dataStoreName: 'cold-location',
                 'x-amz-meta-custom': 'preserved-value',
-                'tags': { 'tagkey': 'tagvalue' },
-                'archive': {
-                    'archiveInfo': { 'archiveID': 'archive-123' },
-                    'restoreRequestedAt': new Date(now).toISOString(),
-                    'restoreRequestedDays': 7,
+                tags: { tagkey: 'tagvalue' },
+                archive: {
+                    archiveInfo: { archiveID: 'archive-123' },
+                    restoreRequestedAt: new Date(now).toISOString(),
+                    restoreRequestedDays: 7,
                 },
             };
 
             sinon.spy(metadata, 'putObjectMD');
 
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: { 'x-scal-s3-version-id': 'v123' },
-                url: `/${bucketName}/${objectKey}`,
-            }, Buffer.from('restored data', 'utf8'));
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: { 'x-scal-s3-version-id': 'v123' },
+                    url: `/${bucketName}/${objectKey}`,
+                },
+                Buffer.from('restored data', 'utf8'),
+            );
 
-            await createAndStoreObject(bucketName, testBucket, objectKey, archivedObjMD,
-                authInfo, canonicalID, null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                archivedObjMD,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             const storedObjMD = getStoredObjectData();
             const options = getStoredOptions();
@@ -296,7 +480,7 @@ describe('createAndStoreObject', () => {
             assert(storedObjMD.archive.restoreWillExpireAt, 'restoreWillExpireAt should be set');
             assert.strictEqual(storedObjMD.archive.restoreRequestedDays, 7);
             assert.strictEqual(storedObjMD['x-amz-meta-custom'], 'preserved-value');
-            assert.deepStrictEqual(storedObjMD.tags, { 'tagkey': 'tagvalue' });
+            assert.deepStrictEqual(storedObjMD.tags, { tagkey: 'tagvalue' });
             assert.strictEqual(storedObjMD.originOp, 's3:ObjectRestore:Completed');
             assert.strictEqual(options.needOplogUpdate, undefined);
             assert.strictEqual(options.originOp, undefined);
@@ -304,36 +488,49 @@ describe('createAndStoreObject', () => {
 
         it('should preserve original etag for MPU restoration with different part count', async () => {
             const archivedObjMD = {
-                'versionId': 'v123',
+                versionId: 'v123',
                 'content-md5': 'original-abc123-5', // Original had 5 parts
-                'archive': {
-                    'archiveInfo': { 'archiveID': 'archive-123' },
-                    'restoreRequestedAt': new Date().toISOString(),
-                    'restoreRequestedDays': 7,
+                archive: {
+                    archiveInfo: { archiveID: 'archive-123' },
+                    restoreRequestedAt: new Date().toISOString(),
+                    restoreRequestedDays: 7,
                 },
             };
 
             sinon.spy(metadata, 'putObjectMD');
 
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: { 'x-scal-s3-version-id': 'v123' },
-                url: `/${bucketName}/${objectKey}`,
-                calculatedHash: 'restored-def456-3', // Restored with 3 parts
-            }, Buffer.from('restored data', 'utf8'));
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: { 'x-scal-s3-version-id': 'v123' },
+                    url: `/${bucketName}/${objectKey}`,
+                    calculatedHash: 'restored-def456-3', // Restored with 3 parts
+                },
+                Buffer.from('restored data', 'utf8'),
+            );
 
-            await createAndStoreObject(bucketName, testBucket, objectKey, archivedObjMD,
-                authInfo, canonicalID, null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                archivedObjMD,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             const storedObjMD = getStoredObjectData();
-            assert.strictEqual(storedObjMD['content-md5'], 'original-abc123-5',
-                'Original etag should be preserved');
+            assert.strictEqual(storedObjMD['content-md5'], 'original-abc123-5', 'Original etag should be preserved');
             assert(storedObjMD['x-amz-restore']['content-md5']);
-            assert.notStrictEqual(storedObjMD['x-amz-restore']['content-md5'],
-                storedObjMD['content-md5']);
+            assert.notStrictEqual(storedObjMD['x-amz-restore']['content-md5'], storedObjMD['content-md5']);
         });
 
         it('should preserve replication info during restoration', async () => {
@@ -343,156 +540,237 @@ describe('createAndStoreObject', () => {
             };
 
             const archivedObjMD = {
-                'versionId': 'v123',
+                versionId: 'v123',
                 replicationInfo,
-                'archive': {
-                    'archiveInfo': { 'archiveID': 'archive-123' },
-                    'restoreRequestedAt': new Date().toISOString(),
-                    'restoreRequestedDays': 7,
+                archive: {
+                    archiveInfo: { archiveID: 'archive-123' },
+                    restoreRequestedAt: new Date().toISOString(),
+                    restoreRequestedDays: 7,
                 },
             };
 
             sinon.spy(metadata, 'putObjectMD');
 
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: { 'x-scal-s3-version-id': 'v123' },
-                url: `/${bucketName}/${objectKey}`,
-            }, Buffer.from('restored', 'utf8'));
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: { 'x-scal-s3-version-id': 'v123' },
+                    url: `/${bucketName}/${objectKey}`,
+                },
+                Buffer.from('restored', 'utf8'),
+            );
 
-            await createAndStoreObject(bucketName, testBucket, objectKey, archivedObjMD,
-                authInfo, canonicalID, null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                archivedObjMD,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             const storedObjMD = getStoredObjectData();
-            assert.strictEqual(storedObjMD.replicationInfo.status, replicationInfo.status,
-                'Replication status should be preserved');
-            assert.deepStrictEqual(storedObjMD.replicationInfo.backends, replicationInfo.backends,
-                'Replication backends should be preserved');
+            assert.strictEqual(
+                storedObjMD.replicationInfo.status,
+                replicationInfo.status,
+                'Replication status should be preserved',
+            );
+            assert.deepStrictEqual(
+                storedObjMD.replicationInfo.backends,
+                replicationInfo.backends,
+                'Replication backends should be preserved',
+            );
         });
 
         it('should preserve legal hold during restoration', async () => {
             const archivedObjMD = {
-                'versionId': 'v123',
-                'legalHold': true,
-                'archive': {
-                    'archiveInfo': { 'archiveID': 'archive-123' },
-                    'restoreRequestedAt': new Date().toISOString(),
-                    'restoreRequestedDays': 7,
+                versionId: 'v123',
+                legalHold: true,
+                archive: {
+                    archiveInfo: { archiveID: 'archive-123' },
+                    restoreRequestedAt: new Date().toISOString(),
+                    restoreRequestedDays: 7,
                 },
             };
 
             sinon.spy(metadata, 'putObjectMD');
 
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: { 'x-scal-s3-version-id': 'v123' },
-                url: `/${bucketName}/${objectKey}`,
-            }, Buffer.from('restored', 'utf8'));
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: { 'x-scal-s3-version-id': 'v123' },
+                    url: `/${bucketName}/${objectKey}`,
+                },
+                Buffer.from('restored', 'utf8'),
+            );
 
-            await createAndStoreObject(bucketName, testBucket, objectKey, archivedObjMD,
-                authInfo, canonicalID, null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                archivedObjMD,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             const storedObjMD = getStoredObjectData();
-            assert.strictEqual(storedObjMD.legalHold, true,
-                'Legal hold should be preserved');
+            assert.strictEqual(storedObjMD.legalHold, true, 'Legal hold should be preserved');
         });
 
         it('should preserve ACLs during restoration', async () => {
             const acl = {
-                'Canned': '',
-                'FULL_CONTROL': ['canonical-id-1'],
-                'READ': ['canonical-id-2'],
+                Canned: '',
+                FULL_CONTROL: ['canonical-id-1'],
+                READ: ['canonical-id-2'],
             };
 
             const archivedObjMD = {
-                'versionId': 'v123',
+                versionId: 'v123',
                 acl,
-                'archive': {
-                    'archiveInfo': { 'archiveID': 'archive-123' },
-                    'restoreRequestedAt': new Date().toISOString(),
-                    'restoreRequestedDays': 7,
+                archive: {
+                    archiveInfo: { archiveID: 'archive-123' },
+                    restoreRequestedAt: new Date().toISOString(),
+                    restoreRequestedDays: 7,
                 },
             };
 
             sinon.spy(metadata, 'putObjectMD');
 
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: { 'x-scal-s3-version-id': 'v123' },
-                url: `/${bucketName}/${objectKey}`,
-            }, Buffer.from('restored', 'utf8'));
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: { 'x-scal-s3-version-id': 'v123' },
+                    url: `/${bucketName}/${objectKey}`,
+                },
+                Buffer.from('restored', 'utf8'),
+            );
 
-            await createAndStoreObject(bucketName, testBucket, objectKey, archivedObjMD,
-                authInfo, canonicalID, null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                archivedObjMD,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             const storedObjMD = getStoredObjectData();
-            assert.deepStrictEqual(storedObjMD.acl, acl,
-                'ACLs should be preserved');
+            assert.deepStrictEqual(storedObjMD.acl, acl, 'ACLs should be preserved');
         });
 
         it('should not preserve x-amz-meta-scal-s3-restore-attempt metadata', async () => {
             const archivedObjMD = {
-                'versionId': 'v123',
+                versionId: 'v123',
                 'x-amz-meta-custom': 'keep-this',
                 'x-amz-meta-scal-s3-restore-attempt': '3',
-                'archive': {
-                    'archiveInfo': { 'archiveID': 'archive-123' },
-                    'restoreRequestedAt': new Date().toISOString(),
-                    'restoreRequestedDays': 7,
+                archive: {
+                    archiveInfo: { archiveID: 'archive-123' },
+                    restoreRequestedAt: new Date().toISOString(),
+                    restoreRequestedDays: 7,
                 },
             };
 
             sinon.spy(metadata, 'putObjectMD');
 
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: { 'x-scal-s3-version-id': 'v123' },
-                url: `/${bucketName}/${objectKey}`,
-            }, Buffer.from('restored', 'utf8'));
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: { 'x-scal-s3-version-id': 'v123' },
+                    url: `/${bucketName}/${objectKey}`,
+                },
+                Buffer.from('restored', 'utf8'),
+            );
 
-            await createAndStoreObject(bucketName, testBucket, objectKey, archivedObjMD,
-                authInfo, canonicalID, null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                archivedObjMD,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             const storedObjMD = getStoredObjectData();
-            assert.strictEqual(storedObjMD['x-amz-meta-custom'], 'keep-this',
-                'Custom metadata should be preserved');
-            assert.strictEqual(storedObjMD['x-amz-meta-scal-s3-restore-attempt'], undefined,
-                'Restore attempt metadata should NOT be preserved');
+            assert.strictEqual(storedObjMD['x-amz-meta-custom'], 'keep-this', 'Custom metadata should be preserved');
+            assert.strictEqual(
+                storedObjMD['x-amz-meta-scal-s3-restore-attempt'],
+                undefined,
+                'Restore attempt metadata should NOT be preserved',
+            );
         });
     });
 
     describe('MPU scenarios', () => {
         it('should set oldReplayId when overwriting MPU object', async () => {
             const mpuObjMD = {
-                'uploadId': 'mpu-upload-123',
+                uploadId: 'mpu-upload-123',
                 'content-md5': 'abc123',
             };
 
             sinon.spy(metadata, 'putObjectMD');
 
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: {},
-                url: `/${bucketName}/${objectKey}`,
-            }, Buffer.from('new data', 'utf8'));
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: {},
+                    url: `/${bucketName}/${objectKey}`,
+                },
+                Buffer.from('new data', 'utf8'),
+            );
 
-            await createAndStoreObject(bucketName, testBucket, objectKey, mpuObjMD,
-                authInfo, canonicalID, null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                mpuObjMD,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             const options = getStoredOptions();
             assert.strictEqual(options.oldReplayId, 'mpu-upload-123');
@@ -508,17 +786,32 @@ describe('createAndStoreObject', () => {
 
             sinon.spy(metadata, 'putObjectMD');
 
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: {},
-                url: `/${bucketName}/${objectKey}`,
-            }, Buffer.from('new data', 'utf8'));
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: {},
+                    url: `/${bucketName}/${objectKey}`,
+                },
+                Buffer.from('new data', 'utf8'),
+            );
 
-            await createAndStoreObject(bucketName, testBucket, objectKey, existingObjMD,
-                authInfo, canonicalID, null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                existingObjMD,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             const storedObjMD = getStoredObjectData();
             assert.strictEqual(storedObjMD['creation-time'], '2024-01-01T00:00:00.000Z');
@@ -531,17 +824,32 @@ describe('createAndStoreObject', () => {
 
             sinon.spy(metadata, 'putObjectMD');
 
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: {},
-                url: `/${bucketName}/${objectKey}`,
-            }, Buffer.from('new data', 'utf8'));
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: {},
+                    url: `/${bucketName}/${objectKey}`,
+                },
+                Buffer.from('new data', 'utf8'),
+            );
 
-            await createAndStoreObject(bucketName, testBucket, objectKey, existingObjMD,
-                authInfo, canonicalID, null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                existingObjMD,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             const storedObjMD = getStoredObjectData();
             assert.strictEqual(storedObjMD['creation-time'], '2024-02-01T00:00:00.000Z');
@@ -562,17 +870,32 @@ describe('createAndStoreObject', () => {
                 },
             };
 
-            const request = new DummyRequest({
-                bucketName,
-                namespace: 'default',
-                objectKey,
-                headers: { 'x-scal-s3-version-id': putVersionId },
-                url: `/${bucketName}/${objectKey}`,
-            }, Buffer.from('restored', 'utf8'));
+            const request = new DummyRequest(
+                {
+                    bucketName,
+                    namespace: 'default',
+                    objectKey,
+                    headers: { 'x-scal-s3-version-id': putVersionId },
+                    url: `/${bucketName}/${objectKey}`,
+                },
+                Buffer.from('restored', 'utf8'),
+            );
 
-            await createAndStoreObject(bucketName, testBucket, objectKey, archivedObjMD,
-                authInfo, canonicalID, null, request, false, null,
-                ['overhead'], log, 's3:ObjectCreated:Put');
+            await createAndStoreObject(
+                bucketName,
+                testBucket,
+                objectKey,
+                archivedObjMD,
+                authInfo,
+                canonicalID,
+                null,
+                request,
+                false,
+                null,
+                ['overhead'],
+                log,
+                's3:ObjectCreated:Put',
+            );
 
             const storedObjMD = getStoredObjectData();
             assert.strictEqual(storedObjMD['x-amz-meta-scal-version-id'], putVersionId);
