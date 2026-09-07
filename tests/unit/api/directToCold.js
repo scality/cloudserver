@@ -4,6 +4,9 @@ const async = require('async');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
 const objectCopy = require('../../../lib/api/objectCopy');
+const objectGet = require('../../../lib/api/objectGet');
+const objectHead = require('../../../lib/api/objectHead');
+const objectRestore = require('../../../lib/api/objectRestore');
 const initiateMultipartUpload = require('../../../lib/api/initiateMultipartUpload');
 const DummyRequest = require('../DummyRequest');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
@@ -63,6 +66,34 @@ function copyObjectRequest(headers = {}) {
 
 function getObjectMD(key, cb) {
     return metadata.getObjectMD(bucketName, key, {}, log, cb);
+}
+
+function getObjectRequest() {
+    return {
+        bucketName,
+        namespace,
+        objectKey,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        url: `/${bucketName}/${objectKey}`,
+        actionImplicitDenies: false,
+    };
+}
+
+function restoreObjectRequest(days) {
+    return {
+        ...getObjectRequest(),
+        post:
+            '<RestoreRequest xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+            `<Days>${days}</Days>` +
+            '<Tier>Standard</Tier>' +
+            '</RestoreRequest>',
+    };
+}
+
+function putDirectToColdObject(cb) {
+    return objectPut(authInfo, putObjectRequest({ 'x-amz-storage-class': coldLocation }), undefined, log, err =>
+        cb(err),
+    );
 }
 
 function assertDirectToCold(md) {
@@ -358,6 +389,119 @@ describe('direct to cold', () => {
                     done();
                 },
             );
+        });
+    });
+
+    describe('restore during the archive window', () => {
+        beforeEach(done => {
+            config.enableDirectToCold = true;
+            putDirectToColdObject(done);
+        });
+
+        it('should accept a restore and record it in the object metadata', done => {
+            const testStartTime = new Date();
+            async.waterfall(
+                [
+                    next =>
+                        objectRestore(authInfo, restoreObjectRequest(5), log, (err, statusCode) => {
+                            assert.ifError(err);
+                            assert.strictEqual(statusCode, 202);
+                            next();
+                        }),
+                    next => getObjectMD(objectKey, next),
+                ],
+                (err, md) => {
+                    assert.ifError(err);
+                    // the object has not been archived, so the request is only recorded
+                    assert.strictEqual(md.archive.archiveInfo, undefined);
+                    assert.strictEqual(md.archive.restoreRequestedDays, 5);
+                    assert.ok(new Date(md.archive.restoreRequestedAt) >= testStartTime);
+                    assert.strictEqual(md.archive.restoreCompletedAt, undefined);
+                    // the object is still declared cold, its data still hot, and it still needs
+                    // to be transitioned
+                    assert.strictEqual(md['x-amz-storage-class'], coldLocation);
+                    assert.strictEqual(md.dataStoreName, hotLocation);
+                    assert.strictEqual(md['x-amz-scal-transition-in-progress'], true);
+                    assert.strictEqual(md.originOp, 's3:ObjectRestore:Post');
+                    done();
+                },
+            );
+        });
+
+        it('should update the pending request on a repeated restore', done => {
+            async.waterfall(
+                [
+                    next => objectRestore(authInfo, restoreObjectRequest(5), log, err => next(err)),
+                    next => getObjectMD(objectKey, next),
+                    (md, next) =>
+                        objectRestore(authInfo, restoreObjectRequest(9), log, (err, statusCode) => {
+                            assert.ifError(err);
+                            assert.strictEqual(statusCode, 202);
+                            next(null, md);
+                        }),
+                    (md, next) => getObjectMD(objectKey, (err, updatedMd) => next(err, md, updatedMd)),
+                ],
+                (err, md, updatedMd) => {
+                    assert.ifError(err);
+                    assert.strictEqual(updatedMd.archive.restoreRequestedDays, 9);
+                    assert.ok(new Date(updatedMd.archive.restoreRequestedAt)
+                        >= new Date(md.archive.restoreRequestedAt));
+                    assert.strictEqual(updatedMd.archive.archiveInfo, undefined);
+                    done();
+                },
+            );
+        });
+
+        it('should report an ongoing restore on HEAD', done => {
+            async.waterfall(
+                [
+                    next =>
+                        objectHead(authInfo, getObjectRequest(), log, (err, headers) => {
+                            assert.ifError(err);
+                            // before the restore request, the object simply appears cold
+                            assert.strictEqual(headers['x-amz-storage-class'], coldLocation);
+                            assert.strictEqual(headers['x-amz-meta-scal-s3-transition-in-progress'], true);
+                            assert.strictEqual(headers['x-amz-restore'], undefined);
+                            next();
+                        }),
+                    next => objectRestore(authInfo, restoreObjectRequest(5), log, err => next(err)),
+                    next => objectHead(authInfo, getObjectRequest(), log, next),
+                ],
+                (err, headers) => {
+                    assert.ifError(err);
+                    assert.strictEqual(headers['x-amz-restore'], 'ongoing-request="true"');
+                    assert.strictEqual(headers['x-amz-storage-class'], coldLocation);
+                    assert.strictEqual(headers['x-amz-meta-scal-s3-transition-in-progress'], true);
+                    done();
+                },
+            );
+        });
+
+        it('should still allow the object to be read', done => {
+            async.waterfall(
+                [
+                    next => objectRestore(authInfo, restoreObjectRequest(5), log, err => next(err)),
+                    next => objectGet(authInfo, getObjectRequest(), false, log,
+                        (err, _, headers) => next(err, headers)),
+                ],
+                (err, headers) => {
+                    // the data is still in the hot location, so it stays readable
+                    assert.ifError(err);
+                    assert.strictEqual(headers['x-amz-restore'], 'ongoing-request="true"');
+                    done();
+                },
+            );
+        });
+
+        it('should accept a restore once direct-to-cold is disabled', done => {
+            // the object was created while the feature was enabled: turning it off must not make
+            // it unrestorable
+            config.enableDirectToCold = false;
+            objectRestore(authInfo, restoreObjectRequest(5), log, (err, statusCode) => {
+                assert.ifError(err);
+                assert.strictEqual(statusCode, 202);
+                done();
+            });
         });
     });
 });
