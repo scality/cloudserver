@@ -56,6 +56,26 @@ async function cleanupVersionedBucket(bucketUtil, bucketName) {
     await bucketUtil.deleteOne(bucketName);
 }
 
+// Poll ListMultipartUploads until the given uploadId no longer appears.
+// After a racing Complete/Abort, MPU metadata cleanup can be eventually
+// consistent, so a single immediate read may still observe the upload and
+// fail spuriously (CLDSRV-938). On timeout this returns the still-present
+// uploads so the caller's assertion fails with the original message, which
+// preserves detection of a genuine orphan-MPU leak.
+async function waitForMpuCleanup(s3, bucketName, uploadId, { timeoutMs = 10000, intervalMs = 250 } = {}) {
+    const deadline = Date.now() + timeoutMs;
+    let remainingUploads = [];
+    do {
+        const listResult = await s3.send(new ListMultipartUploadsCommand({ Bucket: bucketName }));
+        remainingUploads = (listResult.Uploads || []).filter(upload => upload.UploadId === uploadId);
+        if (remainingUploads.length === 0) {
+            return remainingUploads;
+        }
+        await scheduler.wait(intervalMs);
+    } while (Date.now() < deadline);
+    return remainingUploads;
+}
+
 describe('Abort MPU', () => {
     withV4(sigCfg => {
         let bucketUtil;
@@ -811,9 +831,10 @@ describe('Abort MPU - Race Conditions', function testSuite() {
             // If both operations encountered errors, that's also acceptable
             // as long as the system remains consistent
 
-            // Verify no MPU metadata remains
-            const listResult = await s3.send(new ListMultipartUploadsCommand({ Bucket: bucketName }));
-            const remainingUploads = (listResult.Uploads || []).filter(upload => upload.UploadId === uploadId);
+            // Verify no MPU metadata remains. Cleanup after a racing
+            // Complete/Abort can be eventually consistent, so poll rather than
+            // reading once (CLDSRV-938).
+            const remainingUploads = await waitForMpuCleanup(s3, bucketName, uploadId);
             assert.strictEqual(remainingUploads.length, 0, 'No MPU metadata should remain');
         });
 
@@ -880,9 +901,10 @@ describe('Abort MPU - Race Conditions', function testSuite() {
                 }
             }
 
-            // Verify no MPU metadata remains
-            const listResult = await s3.send(new ListMultipartUploadsCommand({ Bucket: bucketName }));
-            const remainingUploads = (listResult.Uploads || []).filter(upload => upload.UploadId === uploadId);
+            // Verify no MPU metadata remains. Cleanup after concurrent aborts
+            // can be eventually consistent, so poll rather than reading once
+            // (CLDSRV-938).
+            const remainingUploads = await waitForMpuCleanup(s3, bucketName, uploadId);
             assert.strictEqual(remainingUploads.length, 0,
                 'No MPU metadata should remain after concurrent aborts');
         });
