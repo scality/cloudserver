@@ -1,4 +1,5 @@
 const assert = require('assert');
+const { promisify } = require('util');
 const async = require('async');
 const {
     CreateBucketCommand,
@@ -112,6 +113,9 @@ const indexRespObject = [
         name: 'lifecycleDataStoreNamePrefixed',
     },
 ];
+
+const indexPut = promisify(indexPutRequest);
+const indexGet = promisify(indexGetRequest);
 
 const describeIfMongo = process.env.S3METADATA === 'mongodb' ? describe : describe.skip;
 const describeIfNotMongo = process.env.S3METADATA !== 'mongodb' ? describe : describe.skip;
@@ -231,6 +235,38 @@ describe('Indexing Routes', () => {
                     });
                 },
             ], done);
+        });
+
+        it('should successfully add an index with a partialFilterExpression', async () => {
+            const payload = [
+                {
+                    keys: [
+                        { key: 'value.last-modified', order: 1 },
+                        { key: '_id', order: 1 },
+                    ],
+                    name: 'lifecycleLastModifiedPartial',
+                    partialFilterExpression: { 'value.dataStoreName': 'us-east-1' },
+                },
+            ];
+            await indexPut(payload, TEST_BUCKET);
+            const data = await indexGet(TEST_BUCKET);
+            const res = JSON.parse(data.body);
+            assert(res.Indexes.some(index => index.name === 'lifecycleLastModifiedPartial'));
+        });
+
+        it('should return error: partialFilterExpression invalid for mongodb', async () => {
+            const payload = [
+                {
+                    keys: [{ key: '_id', order: 1 }],
+                    name: 'badPartialIndex',
+                    partialFilterExpression: { _id: { $regex: 'a' } },
+                },
+            ];
+            await assert.rejects(indexPut(payload, TEST_BUCKET), err => {
+                assert.strictEqual(err.code, 'InternalError');
+                assert.strictEqual(err.statusCode, 500);
+                return true;
+            });
         });
     });
 
