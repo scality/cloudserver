@@ -242,6 +242,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=mongodb
 
   multiple-backend:
+    if: false # CLDSRV-992 stress: unrelated job
     runs-on: ubuntu-24.04
     needs: build
     env:
@@ -301,6 +302,7 @@ jobs:
       if: always()
  
   mongo-v0-ft-tests:
+    if: false # CLDSRV-992 stress: unrelated job
     runs-on: ubuntu-24.04
     needs: build
     env:
@@ -360,6 +362,7 @@ jobs:
       if: always()
 
   mongo-v1-ft-tests:
+    if: false # CLDSRV-992 stress: unrelated job
     runs-on: ubuntu-24.04
     needs: build
     env:
@@ -424,6 +427,7 @@ jobs:
   # All tests use non federation images
 
   file-ft-tests:
+    if: false # CLDSRV-992 stress: unrelated job
     strategy:
       matrix:
         include:
@@ -494,17 +498,39 @@ jobs:
   # Configure and run as Integration run S3C tests
   s3c-ft-tests:
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - vformat: v0
-            enable-null-compat: ''
-            job-name: s3c-ft-tests-v0
-          - vformat: v0
-            enable-null-compat: 'true'
-            job-name: s3c-ft-tests-v0-null-compat
           - vformat: v1
             enable-null-compat: ''
-            job-name: s3c-ft-tests-v1
+            job-name: s3c-ft-tests-v1-1
+          - vformat: v1
+            enable-null-compat: ''
+            job-name: s3c-ft-tests-v1-2
+          - vformat: v1
+            enable-null-compat: ''
+            job-name: s3c-ft-tests-v1-3
+          - vformat: v1
+            enable-null-compat: ''
+            job-name: s3c-ft-tests-v1-4
+          - vformat: v1
+            enable-null-compat: ''
+            job-name: s3c-ft-tests-v1-5
+          - vformat: v1
+            enable-null-compat: ''
+            job-name: s3c-ft-tests-v1-6
+          - vformat: v1
+            enable-null-compat: ''
+            job-name: s3c-ft-tests-v1-7
+          - vformat: v1
+            enable-null-compat: ''
+            job-name: s3c-ft-tests-v1-8
+          - vformat: v1
+            enable-null-compat: ''
+            job-name: s3c-ft-tests-v1-9
+          - vformat: v1
+            enable-null-compat: ''
+            job-name: s3c-ft-tests-v1-10
     name: ${{ matrix.job-name }}
     runs-on: ubuntu-24.04
     needs: build
@@ -624,7 +650,7 @@ jobs:
   utapi-v2-tests:
     runs-on: ubuntu-24.04
     needs: build
-    if: always()
+    if: false # CLDSRV-992 stress: unrelated job
     env:
       ENABLE_UTAPI_V2: t
       S3BACKEND: mem
@@ -668,6 +694,7 @@ jobs:
       if: always()
 
   sur-tests:
+    if: false # CLDSRV-992 stress: unrelated job
     runs-on: ubuntu-24.04
     needs: build
     strategy:
@@ -726,6 +753,7 @@ jobs:
       if: always()
 
   kmip-ft-tests:
+    if: false # CLDSRV-992 stress: unrelated job
     runs-on: ubuntu-24.04
     needs: build
     env:
@@ -786,6 +814,7 @@ jobs:
       if: always()
 
   kmip-cluster-ft-tests:
+    if: false # CLDSRV-992 stress: unrelated job
     runs-on: ubuntu-latest
     needs: build
     env:
@@ -849,6 +878,7 @@ jobs:
 
   # This test with the final yarn run ft_sse_arn covers more code than the kmip tests
   sse-kms-migration-tests:
+    if: false # CLDSRV-992 stress: unrelated job
     strategy:
       fail-fast: false # prevent cancel if one 1 matrix option fails
       matrix:
