@@ -923,7 +923,7 @@ describe('GET object', () => {
                 const partOneBody = Buffer.concat(bufs, partOneSize);
                 const partTwoBody = Buffer.alloc(partSize, 4);
 
-                beforeEach(done => async.waterfall([
+                before(done => async.waterfall([
                     next => completeMPU(orderedPartNumbers, next),
                     next => createMPUAndPutTwoParts(partTwoBody, next),
                     (uploadId, ETags, next) =>
@@ -946,7 +946,7 @@ describe('GET object', () => {
                         }, next),
                 ], done));
 
-                afterEach(done => s3.deleteObject({
+                after(done => s3.deleteObject({
                     Bucket: bucketName,
                     Key: copyPartKey,
                 }, done));
@@ -968,7 +968,7 @@ describe('GET object', () => {
                     Buffer.alloc(partSize, n));
                 const partTwoBody = Buffer.concat(bufs, partTwoSize);
 
-                beforeEach(done => async.waterfall([
+                before(done => async.waterfall([
                     next => completeMPU(orderedPartNumbers, next),
                     next => createMPUAndPutTwoParts(partTwoBody, next),
                     /* eslint-disable no-param-reassign */
@@ -1019,7 +1019,7 @@ describe('GET object', () => {
                         }, next),
                 ], done));
 
-                afterEach(done => s3.deleteObject({
+                after(done => s3.deleteObject({
                     Bucket: bucketName,
                     Key: copyPartKey,
                 }, done));
