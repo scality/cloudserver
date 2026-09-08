@@ -666,6 +666,15 @@ jobs:
         run: |-
           set -o pipefail;
           yarn run ft_scripts | tee /tmp/artifacts/${{ matrix.job-name }}/ft_scripts.log
+      # cloudserver runs as a container on these jobs and its log is never
+      # captured, so a server-side stall or 503 here cannot be diagnosed after
+      # the fact. Runs before teardown, while the containers still exist.
+      - name: Capture cloudserver logs
+        run: |-
+          docker compose logs --no-color --timestamps cloudserver-sse-before-migration \
+            > /tmp/artifacts/${{ matrix.job-name }}/s3.log 2>&1 || true
+        working-directory: .github/docker
+        if: always()
       - name: Teardown CI services
         run: docker compose down redis sproxyd metadata-standalone vault cloudserver-sse-before-migration
         working-directory: .github/docker
