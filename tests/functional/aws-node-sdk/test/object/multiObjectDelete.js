@@ -74,22 +74,27 @@ describe('Multi-Object Delete Success', function success() {
                 objects.push(`${key}${i}`);
             }
             const parallel = 20;
-            const queued = [];
-            const putObjectWithLimit = async key => {
-                while (queued.length >= parallel) {
-                    await Promise.race(queued);
-                    queued.splice(0, queued.findIndex(p => p === queued[0]) + 1);
+            // Fixed pool draining a shared queue. The previous limiter peaked
+            // at 999 concurrent puts and abandoned the rest on first failure.
+            const pending = objects.slice();
+            const putErrors = [];
+            await Promise.all(Array.from({ length: parallel }, async () => {
+                while (pending.length > 0) {
+                    const objectKey = pending.shift();
+                    try {
+                        await s3.send(new PutObjectCommand({
+                            Bucket: bucketName,
+                            Key: objectKey,
+                            Body: 'somebody',
+                        }));
+                    } catch (err) {
+                        putErrors.push(err);
+                    }
                 }
-                const result = s3.send(new PutObjectCommand({
-                    Bucket: bucketName,
-                    Key: key,
-                    Body: 'somebody',
-                }));
-                queued.push(result);
-                return result;
-            };
-            const putPromises = objects.map(key => putObjectWithLimit(key));
-            await Promise.all(putPromises);
+            }));
+            if (putErrors.length > 0) {
+                throw putErrors[0];
+            }
         } catch (err) {
             process.stdout.write(`Error creating objects: ${err}\n`);
             throw err;
