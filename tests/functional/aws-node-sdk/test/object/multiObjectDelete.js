@@ -68,29 +68,37 @@ describe('Multi-Object Delete Success', function success() {
                 objects.push(`${key}${i}`);
             }
             const parallel = 20;
-            const queued = [];
-            const putObjectWithLimit = async key => {
-                while (queued.length >= parallel) {
-                    await Promise.race(queued);
-                    queued.splice(0, queued.findIndex(p => p === queued[0]) + 1);
+            // Fixed pool draining a shared queue. The previous limiter peaked
+            // at 999 concurrent puts and abandoned the rest on first failure.
+            const pending = objects.slice();
+            const putErrors = [];
+            await Promise.all(Array.from({ length: parallel }, async () => {
+                while (pending.length > 0) {
+                    const objectKey = pending.shift();
+                    try {
+                        await s3.putObject({
+                            Bucket: bucketName,
+                            Key: objectKey,
+                            Body: 'somebody',
+                        }).promise();
+                    } catch (err) {
+                        putErrors.push(err);
+                    }
                 }
-                const result = s3.putObject({
-                    Bucket: bucketName,
-                    Key: key,
-                    Body: 'somebody',
-                }).promise();
-                queued.push(result);
-                return result;
-            };
-            const putPromises = objects.map(key => putObjectWithLimit(key));
-            await Promise.all(putPromises);
+            }));
+            if (putErrors.length > 0) {
+                throw putErrors[0];
+            }
         } catch (err) {
             process.stdout.write(`Error creating objects: ${err}\n`);
             throw err;
         }
     });
 
-    afterEach(() => s3.deleteBucket({ Bucket: bucketName }).promise());
+    afterEach(async () => {
+        await bucketUtil.empty(bucketName);
+        await s3.deleteBucket({ Bucket: bucketName }).promise();
+    });
 
     it('should batch delete 1000 objects', done => {
         const objects = createObjectsList(1000);
@@ -150,7 +158,10 @@ describe('Multi-Object Delete Error Responses', () => {
             });
         });
 
-        afterEach(() => s3.deleteBucket({ Bucket: bucketName }).promise());
+        afterEach(async () => {
+            await bucketUtil.empty(bucketName);
+            await s3.deleteBucket({ Bucket: bucketName }).promise();
+        });
 
         it('should return error if request deletion of more than 1000 objects',
             () => {
@@ -240,7 +251,10 @@ describe('Multi-Object Delete Access', function access() {
         });
     });
 
-    after(() => s3.deleteBucket({ Bucket: bucketName }).promise());
+    after(async () => {
+        await bucketUtil.empty(bucketName);
+        await s3.deleteBucket({ Bucket: bucketName }).promise();
+    });
 
     it('should return access denied error for each object where no acl ' +
         'permission', () => {
@@ -339,7 +353,10 @@ describeSkipIfCeph('Multi-Object Delete with Object Lock', () => {
         });
     });
 
-    after(() => s3.deleteBucket({ Bucket: bucketName }).promise());
+    after(async () => {
+        await bucketUtil.empty(bucketName);
+        await s3.deleteBucket({ Bucket: bucketName }).promise();
+    });
 
     it('should not delete locked objects', () => {
         const objects = createObjectsList(5, versionIds);
