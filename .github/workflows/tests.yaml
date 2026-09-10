@@ -532,6 +532,8 @@ jobs:
       - name: Run file ft tests
         run: |-
           set -o pipefail;
+          # the data daemon binds after 8000 and nothing in startup waits for it
+          bash wait_for_local_port.bash 9991 120
           bash wait_for_local_port.bash 8000 40
           yarn run ft_test | tee /tmp/artifacts/${{ matrix.job-name }}/tests.log
       - name: Cleanup and upload coverage
@@ -880,6 +882,8 @@ jobs:
       - name: Run file KMIP tests
         run: |-
           set -ex -o pipefail;
+          # the data daemon binds after 8000 and nothing in startup waits for it
+          bash wait_for_local_port.bash 9991 120
           bash wait_for_local_port.bash 8000 40
           bash wait_for_local_port.bash 5696 40
           yarn run ft_kmip | tee /tmp/artifacts/${{ github.job }}/tests.log
@@ -958,6 +962,8 @@ jobs:
           S3_END_TO_END: true # to use the default credentials profile and not vault profile
         run: |-
           set -ex -o pipefail;
+          # the data daemon binds after 8000 and nothing in startup waits for it
+          bash wait_for_local_port.bash 9991 120
           bash wait_for_local_port.bash 8000 40
           bash wait_for_local_port.bash 5696 40
           yarn run ft_kmip_cluster | tee /tmp/artifacts/${{ github.job }}/tests.log
@@ -1058,6 +1064,8 @@ jobs:
       - name: Wait for services vault and s3
         run: |-
           bash wait_for_local_port.bash 8500 40
+          # the data daemon binds after 8000 and nothing in startup waits for it
+          bash wait_for_local_port.bash 9991 120
           bash wait_for_local_port.bash 8000 40
       - name: Ensure old version of cloudserver and vault is used
         run: |-
@@ -1102,6 +1110,8 @@ jobs:
         run: |-
           bash wait_for_local_port.bash ${{ matrix.kms.port }} 40
           bash wait_for_local_port.bash 8500 40
+          # the data daemon binds after 8000 and nothing in startup waits for it
+          bash wait_for_local_port.bash 9991 120
           bash wait_for_local_port.bash 8000 40
       - name: Ensure latest version of cloudserver and vault is used
         run: |-
