@@ -1540,3 +1540,117 @@ describe('routeBackbeat authorization', () => {
         });
     });
 });
+
+describe('routeBackbeat index add payload validation', () => {
+    const bucketName = 'bucketname';
+    let endPromise;
+    let resolveEnd;
+    let response;
+
+    function makeIndexRequest(payload) {
+        const body = JSON.stringify(payload);
+        return new DummyRequest(
+            {
+                method: 'POST',
+                headers: { 'content-length': body.length },
+                url: `/_/backbeat/index/${bucketName}?operation=add`,
+            },
+            body,
+        );
+    }
+
+    beforeEach(() => {
+        endPromise = new Promise(resolve => {
+            resolveEnd = resolve;
+        });
+        response = {
+            setHeader: sinon.stub(),
+            writeHead: sinon.stub(),
+            end: sinon.stub().callsFake((body, encoding, callback) => {
+                resolveEnd();
+                if (callback) {
+                    callback();
+                }
+            }),
+        };
+        sinon.stub(auth.server, 'doAuth').yields(
+            null,
+            new AuthInfo({
+                canonicalID: 'abcdef/lifecycle',
+                accountDisplayName: 'Lifecycle Service Account',
+            }),
+            undefined,
+            undefined,
+            {},
+        );
+        sinon.stub(metadata, 'putBucketIndexes').yields(null);
+    });
+
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    it('should accept indexes with a partialFilterExpression', async () => {
+        const payload = [
+            {
+                keys: [
+                    { key: 'value.last-modified', order: 1 },
+                    { key: '_id', order: 1 },
+                ],
+                name: 'partialIndex',
+                partialFilterExpression: { _id: { $gte: 'a', $lt: 'b' } },
+            },
+        ];
+        routeBackbeat('127.0.0.1', makeIndexRequest(payload), response, log);
+        void (await endPromise);
+
+        assert.strictEqual(response.writeHead.getCall(0).args[0], 200);
+        assert.deepStrictEqual(metadata.putBucketIndexes.getCall(0).args[1], payload);
+    });
+
+    it('should accept indexes without a partialFilterExpression', async () => {
+        const payload = [
+            {
+                keys: [{ key: '_id', order: 1 }],
+                name: 'plainIndex',
+            },
+        ];
+        routeBackbeat('127.0.0.1', makeIndexRequest(payload), response, log);
+        void (await endPromise);
+
+        assert.strictEqual(response.writeHead.getCall(0).args[0], 200);
+        assert.deepStrictEqual(metadata.putBucketIndexes.getCall(0).args[1], payload);
+    });
+
+    it('should reject indexes with unknown fields', async () => {
+        const payload = [
+            {
+                keys: [{ key: '_id', order: 1 }],
+                name: 'badIndex',
+                unknownField: true,
+            },
+        ];
+        routeBackbeat('127.0.0.1', makeIndexRequest(payload), response, log);
+        void (await endPromise);
+
+        const err = JSON.parse(response.end.getCall(0).args[0]);
+        assert.strictEqual(err.code, 'BadRequest');
+        assert.strictEqual(metadata.putBucketIndexes.called, false);
+    });
+
+    it('should reject a non-object partialFilterExpression', async () => {
+        const payload = [
+            {
+                keys: [{ key: '_id', order: 1 }],
+                name: 'badIndex',
+                partialFilterExpression: 'not-an-object',
+            },
+        ];
+        routeBackbeat('127.0.0.1', makeIndexRequest(payload), response, log);
+        void (await endPromise);
+
+        const err = JSON.parse(response.end.getCall(0).args[0]);
+        assert.strictEqual(err.code, 'BadRequest');
+        assert.strictEqual(metadata.putBucketIndexes.called, false);
+    });
+});
