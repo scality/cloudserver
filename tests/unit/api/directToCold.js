@@ -444,8 +444,9 @@ describe('direct to cold', () => {
                 (err, md, updatedMd) => {
                     assert.ifError(err);
                     assert.strictEqual(updatedMd.archive.restoreRequestedDays, 9);
-                    assert.ok(new Date(updatedMd.archive.restoreRequestedAt)
-                        >= new Date(md.archive.restoreRequestedAt));
+                    assert.ok(
+                        new Date(updatedMd.archive.restoreRequestedAt) >= new Date(md.archive.restoreRequestedAt),
+                    );
                     assert.strictEqual(updatedMd.archive.archiveInfo, undefined);
                     done();
                 },
@@ -481,8 +482,8 @@ describe('direct to cold', () => {
             async.waterfall(
                 [
                     next => objectRestore(authInfo, restoreObjectRequest(5), log, err => next(err)),
-                    next => objectGet(authInfo, getObjectRequest(), false, log,
-                        (err, _, headers) => next(err, headers)),
+                    next =>
+                        objectGet(authInfo, getObjectRequest(), false, log, (err, _, headers) => next(err, headers)),
                 ],
                 (err, headers) => {
                     // the data is still in the hot location, so it stays readable
