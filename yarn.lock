@@ -6591,9 +6591,9 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#8.4.24":
-  version "8.4.24"
-  resolved "git+https://github.com/scality/Arsenal#8c136afde33cac95a5df62b0aab7f5a9805d4004"
+"arsenal@git+https://github.com/scality/Arsenal#8.4.26":
+  version "8.4.26"
+  resolved "git+https://github.com/scality/Arsenal#7d29c31f1c099ee6e0ad3b60280c81cf5cc1c29e"
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"
