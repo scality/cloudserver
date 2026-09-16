@@ -37,6 +37,17 @@ RUN corepack enable \
 ################################################################################
 FROM node:${NODE_VERSION} AS production
 
+# The production stage runs `yarn start`, and package.json pins Yarn 4 via
+# packageManager, so the image's bundled Yarn 1 refuses to run at all. Install
+# Yarn into the image rather than only enabling Corepack: a bare `corepack
+# enable` leaves the CLI to be downloaded on every container start, which
+# breaks air-gapped deployments. COREPACK_HOME is shared and world-readable so
+# images that drop privileges (images/federation runs as `scality`) can use it.
+ENV COREPACK_HOME=/usr/local/corepack
+RUN corepack enable \
+    && corepack install -g yarn@4.18.0 \
+    && chmod -R a+rX ${COREPACK_HOME}
+
 ENV NO_PROXY=localhost,127.0.0.1
 ENV no_proxy=localhost,127.0.0.1
 
@@ -58,11 +69,6 @@ COPY . /usr/src/app
 COPY --from=builder /usr/src/app/node_modules ./node_modules/
 
 VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
-
-# The production stage runs `yarn start`, and package.json pins Yarn 4 via
-# packageManager. Without Corepack the image's bundled Yarn 1 refuses to
-# run at all, so the container would fail on launch.
-RUN corepack enable
 
 ENTRYPOINT ["tini", "-g", "--", "/usr/src/app/docker-entrypoint.sh"]
 

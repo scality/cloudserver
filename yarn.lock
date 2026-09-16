@@ -6727,23 +6727,15 @@ __metadata:
   dependenciesMeta:
     aws-crt:
       built: true
-    aws-sdk:
-      built: true
     bufferutil:
       built: true
     diskusage:
-      built: true
-    es5-ext:
       built: true
     fcntl:
       built: true
     ioctl:
       built: true
-    level:
-      built: true
     leveldown:
-      built: true
-    protobufjs:
       built: true
     scubaclient:
       built: true
@@ -9511,6 +9503,7 @@ __metadata:
     bindings: "npm:^1.1.1"
     node-addon-api: "npm:^8.3.0"
     node-gyp: "npm:^11.1.0"
+  checksum: 10c0/fb2a025a5005ac25053bda7dd8241bd8ae9b727959662f98855bc42a21459c98bce565c9bf6232cbc79b83a73329d97b24bb39e2d20eb561f923d6ccba904ad4
   languageName: node
   linkType: hard
 
