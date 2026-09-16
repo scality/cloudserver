@@ -15,7 +15,7 @@ CloudServer provides a single AWS S3 API interface to access multiple
 backend data storage both on-premise or public in the cloud.
 
 CloudServer is useful for Developers, either to run as part of a
-continous integration test environment to emulate the AWS S3 service locally
+continuous integration test environment to emulate the AWS S3 service locally
 or as an abstraction layer to develop object storage enabled
 application on the go.
 

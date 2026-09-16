@@ -271,7 +271,7 @@ Off you go!
 ~~~~~~~~~~~
 
 Let us know how you use this and if you'd like any specific developments 
-around it. Even better: come and contribute to our `Github repository 
+around it. Even better: come and contribute to our `GitHub repository 
 <https://github.com/scality/s3/>`__! We look forward to meeting you!
 
 S3FS
