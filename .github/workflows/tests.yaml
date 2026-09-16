@@ -98,7 +98,7 @@ jobs:
       - name: install typescript
         shell: bash
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: yarn global add typescript@4.9.5
+        run: npm install -g typescript@4.9.5
       - name: install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: yarn install --immutable
@@ -172,7 +172,7 @@ jobs:
       - name: install typescript
         shell: bash
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: yarn global add typescript@4.9.5
+        run: npm install -g typescript@4.9.5
       - name: install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: yarn install --immutable
@@ -181,6 +181,9 @@ jobs:
           set -ex
           yarn run cover test
           yarn run cover test_legacy_location
+          # Berry does not run post* lifecycle scripts, so postcover
+          # (which writes the lcov report) has to be invoked explicitly.
+          yarn run postcover
         env:
           S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
           NO_PROXY: 'test.scality.com,scality.com'

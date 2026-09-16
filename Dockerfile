@@ -59,6 +59,11 @@ COPY --from=builder /usr/src/app/node_modules ./node_modules/
 
 VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 
+# The production stage runs `yarn start`, and package.json pins Yarn 4 via
+# packageManager. Without Corepack the image's bundled Yarn 1 refuses to
+# run at all, so the container would fail on launch.
+RUN corepack enable
+
 ENTRYPOINT ["tini", "-g", "--", "/usr/src/app/docker-entrypoint.sh"]
 
 CMD [ "yarn", "start" ]
