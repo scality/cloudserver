@@ -34,6 +34,7 @@
         "@opentelemetry/instrumentation-http": "~0.218.0",
         "@opentelemetry/instrumentation-ioredis": "~0.64.0",
         "@opentelemetry/instrumentation-mongodb": "~0.69.0",
+        "@scality/cloudserverclient": "1.0.12",
         "@smithy/node-http-handler": "^3.0.0",
         "arsenal": "git+https://github.com/scality/arsenal#8.5.15",
         "async": "2.6.4",
@@ -64,7 +65,6 @@
         "vaultclient": "scality/vaultclient#8.5.8",
         "werelogs": "scality/werelogs#semver:^8.2.4",
         "ws": "^8.18.0",
-        "@scality/cloudserverclient": "1.0.12",
         "xml2js": "^0.6.2"
     },
     "devDependencies": {
@@ -95,9 +95,7 @@
     "resolutions": {
         "jsonwebtoken": "^9.0.0",
         "nan": "v2.22.0",
-        "fast-xml-parser": "^5.5.6",
-        "ts-morph/**/brace-expansion": "^5.0.5",
-        "ts-morph/**/picomatch": "^4.0.4"
+        "fast-xml-parser": "^5.5.6"
     },
     "countAsyncSourcePaths": [
         "lib/**/*.js",
@@ -123,14 +121,14 @@
         "ft_awssdk_external_backends": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/multipleBackend --exit",
         "ft_checksums_disabled": "cd tests/functional/checksumsDisabled && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 120000 *.js --exit",
         "ft_mixed_bucket_format_version": "cd tests/functional/metadata && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json MixedVersionFormat.js --exit",
-        "ft_management": "cd tests/functional/report && yarn test",
+        "ft_management": "cd tests/functional/report && mocha -t 40000 *.js",
         "ft_backbeat": "cd tests/functional/backbeat && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js --exit",
-        "ft_node": "cd tests/functional/raw-node && yarn test",
-        "ft_node_routes": "cd tests/functional/raw-node && yarn run test-routes",
+        "ft_node": "cd tests/functional/raw-node && mocha -t 40000 test/ --exit",
+        "ft_node_routes": "cd tests/functional/raw-node && mocha -t 40000 test/routes/ --exit",
         "ft_route_backbeat": "cd tests/multipleBackend/routes && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 routeBackbeat.js routeBackbeatForReplication.js --exit",
-        "ft_gcp": "cd tests/functional/raw-node && yarn run test-gcp",
+        "ft_gcp": "cd tests/functional/raw-node && mocha -t 40000 test/GCP/ --exit",
         "cleanup_gcp_buckets": "node .github/scripts/cleanupOldGCPBuckets.js",
-        "ft_healthchecks": "cd tests/functional/healthchecks && yarn test",
+        "ft_healthchecks": "cd tests/functional/healthchecks && mocha -t 40000 test/ --exit",
         "ft_s3cmd": "cd tests/functional/s3cmd && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js --exit",
         "ft_s3curl": "cd tests/functional/s3curl && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js --exit",
         "ft_scripts": "cd tests/functional/scripts && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js --exit",
@@ -171,5 +169,32 @@
         "check-diff-async": "node .github/scripts/check-diff-async.mjs",
         "prettier": "prettier",
         "prettier:diff": "bash scripts/prettier-diff.sh"
+    },
+    "packageManager": "yarn@4.18.0+sha512.fcb8716fe7cd0eece141ffc18b92193a9df9204c1ba83189c288835223fc0bbe64af473bab0d5e9927a7daeb5caf2bb07eb2787cc9338ca040ea125f2a1f2f7e",
+    "dependenciesMeta": {
+        "aws-crt": {
+            "built": true
+        },
+        "bufferutil": {
+            "built": true
+        },
+        "diskusage": {
+            "built": true
+        },
+        "fcntl": {
+            "built": true
+        },
+        "ioctl": {
+            "built": true
+        },
+        "leveldown": {
+            "built": true
+        },
+        "scubaclient": {
+            "built": true
+        },
+        "utf-8-validate": {
+            "built": true
+        }
     }
 }
