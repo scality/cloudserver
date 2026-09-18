@@ -376,6 +376,7 @@ jobs:
       S3KMS: file
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
       DEFAULT_BUCKET_KEY_FORMAT: v0
+      S3_CLEAN_READ_ENABLED: 'true'
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
       JOB_NAME: ${{ github.job }}
@@ -436,6 +437,7 @@ jobs:
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
       S3_VERSION_ID_ENCODING_TYPE: base62
       DEFAULT_BUCKET_KEY_FORMAT: v1
+      S3_CLEAN_READ_ENABLED: 'true'
       METADATA_MAX_CACHED_BUCKETS: 1
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage

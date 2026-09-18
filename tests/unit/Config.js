@@ -8,6 +8,7 @@ const {
     locationConstraintAssert,
     parseSupportedLifecycleRules,
     parseIntegrityChecks,
+    parseCleanRead,
     ConfigObject,
 } = require('../../lib/Config');
 
@@ -934,6 +935,28 @@ describe('Config', () => {
         it('should throw error for invalid string objectKeyByteLimit override', () => {
             setEnv('OVERRIDE_OBJECT_KEY_BYTE_LIMIT', 'invalid');
             assert.throws(() => new ConfigObject());
+        });
+    });
+
+    describe('parse clean read', () => {
+        beforeEach(() => {
+            deleteEnv('S3_CLEAN_READ_ENABLED');
+        });
+
+        it('should default to disabled', () => {
+            assert.strictEqual(parseCleanRead(), false);
+        });
+
+        it('should be activated by the environment variable', () => {
+            setEnv('S3_CLEAN_READ_ENABLED', 'true');
+            assert.strictEqual(parseCleanRead(), true);
+            setEnv('S3_CLEAN_READ_ENABLED', 'false');
+            assert.strictEqual(parseCleanRead(), false);
+        });
+
+        it('should throw if the environment variable is not a boolean', () => {
+            setEnv('S3_CLEAN_READ_ENABLED', 'yes please');
+            assert.throws(() => parseCleanRead(), /must be a boolean/);
         });
     });
 
