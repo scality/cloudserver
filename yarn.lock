@@ -6157,17 +6157,16 @@ bson@^6.10.4:
   resolved "https://registry.yarnpkg.com/bson/-/bson-6.10.4.tgz#d530733bb5bb16fb25c162e01a3344fab332fd2b"
   integrity sha512-WIsKqkSC0ABoBJuT1LEX+2HEvNmNKKgnTAyd0fL8qzK4SH2i9NXg+t08YtdZp/V9IZ33cxe3iV4yM0qg8lMQng==
 
-bucketclient@scality/bucketclient#8.2.5:
-  version "8.2.5"
-  resolved "https://codeload.github.com/scality/bucketclient/tar.gz/aeb2655ef82fdacc56968e92367f01d09f0e09a2"
+bucketclient@scality/bucketclient#8.2.10:
+  version "8.2.10"
+  resolved "https://codeload.github.com/scality/bucketclient/tar.gz/9ef61d545d6cd9dce6ba0be1223392aebd798584"
   dependencies:
-    arsenal "git+https://github.com/scality/Arsenal#8.2.4"
     httpagent "git+https://github.com/scality/httpagent#1.1.0"
     werelogs scality/werelogs#8.2.2
 
-bucketclient@scality/bucketclient#8.2.7:
-  version "8.2.7"
-  resolved "https://codeload.github.com/scality/bucketclient/tar.gz/3f6cd94ef0100bfdd5c640ac21e38228de855457"
+bucketclient@scality/bucketclient#8.2.5:
+  version "8.2.5"
+  resolved "https://codeload.github.com/scality/bucketclient/tar.gz/aeb2655ef82fdacc56968e92367f01d09f0e09a2"
   dependencies:
     arsenal "git+https://github.com/scality/Arsenal#8.2.4"
     httpagent "git+https://github.com/scality/httpagent#1.1.0"
@@ -9833,10 +9832,10 @@ ms@2.1.3, ms@^2.0.0, ms@^2.1.1, ms@^2.1.3:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.3.tgz#574c8138ce1d2b5861f0b44579dbadd60c6615b2"
   integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
 
-nan@^2.14.0, nan@^2.18.0, nan@v2.22.0:
-  version "2.22.0"
-  resolved "https://registry.yarnpkg.com/nan/-/nan-2.22.0.tgz#31bc433fc33213c97bad36404bb68063de604de3"
-  integrity sha512-nbajikzWTMwsW+eSsNm3QwlOs7het9gGJU5dDZzRTQGk03vyBOauxgI4VakDzE0PtsGTmXPsXTbbjVhRwR5mpw==
+nan@^2.14.0, nan@^2.18.0, nan@v2.23.0:
+  version "2.23.0"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.23.0.tgz#24aa4ddffcc37613a2d2935b97683c1ec96093c6"
+  integrity sha512-1UxuyYGdoQHcGg87Lkqm3FzefucTa0NAiOcuRsDmysep3c1LVCRK2krrUDafMWtjSG04htvAmvg96+SDknOmgQ==
 
 napi-macros@~2.0.0:
   version "2.0.0"
