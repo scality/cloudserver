@@ -8194,6 +8194,12 @@ http-signature@~1.2.0:
   dependencies:
     agentkeepalive "^4.5.0"
 
+"httpagent@git+https://github.com/scality/httpagent#1.1.1":
+  version "1.1.1"
+  resolved "git+https://github.com/scality/httpagent#7c6ef8be1cd89b56651f4a922ea5c92d7673ee2e"
+  dependencies:
+    agentkeepalive "^4.6.0"
+
 "httpagent@github:scality/httpagent#1.1.0", httpagent@scality/httpagent#1.1.0:
   version "1.1.0"
   uid "8f9958eb9cde086db7819a86582fba640a5f8876"
@@ -12085,15 +12091,15 @@ vaultclient@scality/vaultclient#8.5.3:
     werelogs scality/werelogs#8.2.0
     xml2js "^0.6.2"
 
-vaultclient@scality/vaultclient#8.5.8:
-  version "8.5.8"
-  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/05decff559dacb387c436f9fb4923eaf1f1fa5cb"
+vaultclient@scality/vaultclient#8.5.9:
+  version "8.5.9"
+  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/f809e3b79f2ad9acf26ddc98a550e6689c568515"
   dependencies:
     "@aws-crypto/sha256-universal" "^5.2.0"
     "@smithy/signature-v4" "^4.1.0"
     commander "^11.0.0"
-    httpagent "git+https://github.com/scality/httpagent#1.1.0"
-    werelogs scality/werelogs#8.2.0
+    httpagent "git+https://github.com/scality/httpagent#1.1.1"
+    werelogs scality/werelogs#8.2.5
     xml2js "^0.6.2"
 
 verror@1.10.0:
@@ -12132,6 +12138,13 @@ werelogs@scality/werelogs#8.2.0:
 werelogs@scality/werelogs#8.2.4, "werelogs@scality/werelogs#semver:^8.2.4":
   version "8.2.4"
   resolved "https://codeload.github.com/scality/werelogs/tar.gz/a7bbb5917a08b035d3763b24b070d517483d6982"
+  dependencies:
+    fast-safe-stringify "^2.1.1"
+    safe-json-stringify "^1.2.0"
+
+werelogs@scality/werelogs#8.2.5:
+  version "8.2.5"
+  resolved "https://codeload.github.com/scality/werelogs/tar.gz/41188826d661227f98ebaaeda7df5e5862809bc7"
   dependencies:
     fast-safe-stringify "^2.1.1"
     safe-json-stringify "^1.2.0"
