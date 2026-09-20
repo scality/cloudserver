@@ -4,7 +4,7 @@
     "description": "Zenko CloudServer, an open-source Node.js implementation of a server handling the Amazon S3 protocol",
     "main": "index.js",
     "engines": {
-        "node": ">=22"
+        "node": ">=24"
     },
     "repository": "scality/S3",
     "keywords": [
@@ -38,7 +38,7 @@
         "arsenal": "git+https://github.com/scality/arsenal#8.5.17",
         "async": "2.6.4",
         "aws-crt": "^1.24.0",
-        "bucketclient": "scality/bucketclient#8.2.7",
+        "bucketclient": "scality/bucketclient#8.2.10",
         "bufferutil": "^4.0.8",
         "commander": "^12.1.0",
         "cron-parser": "^4.9.0",
@@ -94,7 +94,7 @@
     },
     "resolutions": {
         "jsonwebtoken": "^9.0.0",
-        "nan": "v2.22.0",
+        "nan": "v2.23.0",
         "fast-xml-parser": "^5.5.6",
         "ts-morph/**/brace-expansion": "^5.0.5",
         "ts-morph/**/picomatch": "^4.0.4"
