@@ -108,12 +108,12 @@ backends defined in `locationConfig.json` based on location constraints.
 
 ### Metadata Backends (`S3METADATA`)
 
-| Backend          | Port   | Description                                        |
-| ---------------- | ------ | -------------------------------------------------- |
-| `file` (default) | 9990   | Local LevelDB via `mdserver.js`                    |
-| `scality`        | 9000   | External bucketd service (production Scality RING) |
-| `mongodb`        | 27017+ | MongoDB replica set                                |
-| `mem`            | -      | In-memory (testing only)                           |
+| Backend          | Port   | Description                                |
+| ---------------- | ------ | ------------------------------------------ |
+| `file` (default) | 9990   | Local LevelDB via `mdserver.js`            |
+| `scality`        | 9000   | External bucketd (production Scality RING) |
+| `mongodb`        | 27017+ | MongoDB replica set                        |
+| `mem`            | -      | In-memory (testing only)                   |
 
 **file vs scality**: The `file` backend runs a self-contained metadata server
 (`mdserver.js`) for development. The `scality` backend connects to external
