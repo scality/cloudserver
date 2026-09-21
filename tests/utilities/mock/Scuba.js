@@ -42,7 +42,8 @@ class Scuba {
             });
             const immediateInflights = req.body?.action === 'objectRestore' ? 0 : inflight;
             return res.json({
-                bytesTotal: (this._data.bucket.get(bucketName)?.current || 0) +
+                bytesTotal:
+                    (this._data.bucket.get(bucketName)?.current || 0) +
                     (this._data.bucket.get(bucketName)?.nonCurrent || 0) +
                     (this._data.bucket.get(bucketName)?.inflight || 0) +
                     immediateInflights,
@@ -116,7 +117,7 @@ class Scuba {
         let inflightCount = 0;
         this._data.bucket.forEach((value, key) => {
             if (!this.supportsInflight && key === bucketName) {
-                inflightCount += (value.current + value.nonCurrent);
+                inflightCount += value.current + value.nonCurrent;
             } else if (this.supportsInflight && key.startsWith(`${bucketName}_`)) {
                 inflightCount += value.inflight;
             }

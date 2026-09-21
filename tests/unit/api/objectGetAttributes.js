@@ -23,15 +23,18 @@ const postBody = Buffer.from(body, 'utf8');
 const expectedMD5 = 'fc3ff98e8c6a0d3087d515c0473f8677';
 
 // Promisify helper for functions with non-standard callback signatures
-const promisify = fn => (...args) => new Promise((resolve, reject) => {
-    fn(...args, (err, ...results) => {
-        if (err) {
-            reject(err);
-        } else {
-            resolve(results);
-        }
-    });
-});
+const promisify =
+    fn =>
+    (...args) =>
+        new Promise((resolve, reject) => {
+            fn(...args, (err, ...results) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
 
 const bucketPutAsync = promisify(bucketPut);
 const bucketPutVersioningAsync = promisify(bucketPutVersioning);
@@ -104,7 +107,7 @@ describe('objectGetAttributes API', () => {
             assert.strictEqual(
                 err.description,
                 'The x-amz-object-attributes header specifying the attributes ' +
-                'to be retrieved is either missing or empty',
+                    'to be retrieved is either missing or empty',
             );
         }
     });
@@ -174,12 +177,7 @@ describe('objectGetAttributes API', () => {
     });
 
     it('should return all attributes', async () => {
-        const testGetRequest = createGetAttributesRequest([
-            'ETag',
-            'ObjectParts',
-            'StorageClass',
-            'ObjectSize',
-        ]);
+        const testGetRequest = createGetAttributesRequest(['ETag', 'ObjectParts', 'StorageClass', 'ObjectSize']);
 
         const { xml, responseHeaders } = await objectGetAttributes(authInfo, testGetRequest, log);
         assert(xml, 'Response XML should be present');
@@ -296,8 +294,7 @@ describe('objectGetAttributes API with multipart upload', () => {
             completeParts.push(`<Part><PartNumber>${i}</PartNumber><ETag>"${partHash}"</ETag></Part>`);
         }
 
-        const completeBody =
-            `<CompleteMultipartUpload>${completeParts.join('')}</CompleteMultipartUpload>`;
+        const completeBody = `<CompleteMultipartUpload>${completeParts.join('')}</CompleteMultipartUpload>`;
 
         const completeRequest = {
             bucketName,

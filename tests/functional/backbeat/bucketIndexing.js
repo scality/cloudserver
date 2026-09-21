@@ -1,13 +1,9 @@
 const assert = require('assert');
 const async = require('async');
-const {
-    CreateBucketCommand,
-    DeleteBucketCommand,
-} = require('@aws-sdk/client-s3');
+const { CreateBucketCommand, DeleteBucketCommand } = require('@aws-sdk/client-s3');
 
 const { makeRequest } = require('../../functional/raw-node/utils/makeRequest');
-const BucketUtility =
-      require('../../functional/aws-node-sdk/lib/utility/bucket-util');
+const BucketUtility = require('../../functional/aws-node-sdk/lib/utility/bucket-util');
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 
@@ -18,57 +14,63 @@ let credentials = null;
 let backbeatAuthCredentials = null;
 
 async function getCredentials() {
-        const creds = await s3.config.credentials();
-        credentials = {
-            accessKey: creds.accessKeyId,
-            secretKey: creds.secretAccessKey,
-        };
+    const creds = await s3.config.credentials();
+    credentials = {
+        accessKey: creds.accessKeyId,
+        secretKey: creds.secretAccessKey,
+    };
     return credentials;
 }
 
 const TEST_BUCKET = 'bucket-for-bucket-indexing';
 
 function indexDeleteRequest(payload, bucket, cb) {
-    makeRequest({
-        authCredentials: backbeatAuthCredentials,
-        hostname: ipAddress,
-        port: 8000,
-        method: 'POST',
-        path:
-            `/_/backbeat/index/${bucket}`,
-        headers: {},
-        jsonResponse: true,
-        requestBody: JSON.stringify(payload),
-        queryObj: { operation: 'delete' },
-    }, cb);
+    makeRequest(
+        {
+            authCredentials: backbeatAuthCredentials,
+            hostname: ipAddress,
+            port: 8000,
+            method: 'POST',
+            path: `/_/backbeat/index/${bucket}`,
+            headers: {},
+            jsonResponse: true,
+            requestBody: JSON.stringify(payload),
+            queryObj: { operation: 'delete' },
+        },
+        cb,
+    );
 }
 
 function indexPutRequest(payload, bucket, cb) {
-    makeRequest({
-        authCredentials: backbeatAuthCredentials,
-        hostname: ipAddress,
-        port: 8000,
-        method: 'POST',
-        path:
-            `/_/backbeat/index/${bucket}`,
-        headers: {},
-        jsonResponse: true,
-        requestBody: JSON.stringify(payload),
-        queryObj: { operation: 'add' },
-    }, cb);
+    makeRequest(
+        {
+            authCredentials: backbeatAuthCredentials,
+            hostname: ipAddress,
+            port: 8000,
+            method: 'POST',
+            path: `/_/backbeat/index/${bucket}`,
+            headers: {},
+            jsonResponse: true,
+            requestBody: JSON.stringify(payload),
+            queryObj: { operation: 'add' },
+        },
+        cb,
+    );
 }
 
 function indexGetRequest(bucket, cb) {
-    makeRequest({
-        authCredentials: backbeatAuthCredentials,
-        hostname: ipAddress,
-        port: 8000,
-        method: 'GET',
-        path:
-            `/_/backbeat/index/${bucket}`,
-        headers: {},
-        jsonResponse: true,
-    }, cb);
+    makeRequest(
+        {
+            authCredentials: backbeatAuthCredentials,
+            hostname: ipAddress,
+            port: 8000,
+            method: 'GET',
+            path: `/_/backbeat/index/${bucket}`,
+            headers: {},
+            jsonResponse: true,
+        },
+        cb,
+    );
 }
 
 const indexReqObject = [
@@ -92,9 +94,7 @@ const indexReqObject = [
 const indexRespObject = [
     {
         name: '_id_',
-        keys: [
-            { key: '_id', order: 1 },
-        ]
+        keys: [{ key: '_id', order: 1 }],
     },
     {
         keys: [
@@ -136,19 +136,21 @@ describe('Indexing Routes', () => {
     });
 
     it('should reject non-authenticated requests', done => {
-        makeRequest({
-            hostname: ipAddress,
-            port: 8000,
-            method: 'GET',
-            path:
-                '/_/backbeat/index/testbucket',
-            headers: {},
-            jsonResponse: true,
-        }, err => {
-            assert(err);
-            assert.strictEqual(err.code, 'AccessDenied');
-            done();
-        });
+        makeRequest(
+            {
+                hostname: ipAddress,
+                port: 8000,
+                method: 'GET',
+                path: '/_/backbeat/index/testbucket',
+                headers: {},
+                jsonResponse: true,
+            },
+            err => {
+                assert(err);
+                assert.strictEqual(err.code, 'AccessDenied');
+                done();
+            },
+        );
     });
 
     it('should return error: invalid payload - empty', done => {
@@ -177,60 +179,66 @@ describe('Indexing Routes', () => {
 
     describeIfMongo('with mongodb metadata', () => {
         it('should successfully add indexes', done => {
-            async.series([
-                next => {
-                    indexPutRequest(indexReqObject, TEST_BUCKET, err => {
-                        assert.ifError(err);
-                        next();
-                    });
-                },
-                next => {
-                    indexGetRequest(TEST_BUCKET, (err, data) => {
-                        assert.ifError(err);
-                        const res = JSON.parse(data.body);
-                        assert.deepStrictEqual(res.Indexes, indexRespObject);
-                        next();
-                    });
-                },
-            ], done);
+            async.series(
+                [
+                    next => {
+                        indexPutRequest(indexReqObject, TEST_BUCKET, err => {
+                            assert.ifError(err);
+                            next();
+                        });
+                    },
+                    next => {
+                        indexGetRequest(TEST_BUCKET, (err, data) => {
+                            assert.ifError(err);
+                            const res = JSON.parse(data.body);
+                            assert.deepStrictEqual(res.Indexes, indexRespObject);
+                            next();
+                        });
+                    },
+                ],
+                done,
+            );
         });
 
         it('should successfully delete indexes', done => {
-            async.series([
-                next => {
-                    indexPutRequest(indexReqObject, TEST_BUCKET, err => {
-                        assert.ifError(err);
-                        next();
-                    });
-                },
-                next => {
-                    indexGetRequest(TEST_BUCKET, (err, data) => {
-                        assert.ifError(err);
-                        const res = JSON.parse(data.body);
-                        assert.deepStrictEqual(res.Indexes, indexRespObject);
-                        next();
-                    });
-                },
-                next => {
-                    indexDeleteRequest(indexReqObject, TEST_BUCKET, err => {
-                        assert.ifError(err);
-                        next();
-                    });
-                },
-                next => {
-                    indexGetRequest(TEST_BUCKET, (err, data) => {
-                        assert.ifError(err);
-                        const res = JSON.parse(data.body);
-                        assert.deepStrictEqual(res.Indexes, [
-                            {
-                                name: '_id_',
-                                keys: [{ key: '_id', order: 1 }],
-                            }
-                        ]);
-                        next();
-                    });
-                },
-            ], done);
+            async.series(
+                [
+                    next => {
+                        indexPutRequest(indexReqObject, TEST_BUCKET, err => {
+                            assert.ifError(err);
+                            next();
+                        });
+                    },
+                    next => {
+                        indexGetRequest(TEST_BUCKET, (err, data) => {
+                            assert.ifError(err);
+                            const res = JSON.parse(data.body);
+                            assert.deepStrictEqual(res.Indexes, indexRespObject);
+                            next();
+                        });
+                    },
+                    next => {
+                        indexDeleteRequest(indexReqObject, TEST_BUCKET, err => {
+                            assert.ifError(err);
+                            next();
+                        });
+                    },
+                    next => {
+                        indexGetRequest(TEST_BUCKET, (err, data) => {
+                            assert.ifError(err);
+                            const res = JSON.parse(data.body);
+                            assert.deepStrictEqual(res.Indexes, [
+                                {
+                                    name: '_id_',
+                                    keys: [{ key: '_id', order: 1 }],
+                                },
+                            ]);
+                            next();
+                        });
+                    },
+                ],
+                done,
+            );
         });
     });
 
@@ -263,4 +271,3 @@ describe('Indexing Routes', () => {
         });
     });
 });
-

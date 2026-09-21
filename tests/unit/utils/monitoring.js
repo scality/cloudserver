@@ -7,8 +7,12 @@ const monitoring = require('../../../lib/utilities/monitoringHandler');
 describe('Monitoring: endpoint', () => {
     const sandbox = sinon.createSandbox();
     const res = {
-        writeHead(/* result, headers */) { return this; },
-        write(/* body */) { return this; },
+        writeHead(/* result, headers */) {
+            return this;
+        },
+        write(/* body */) {
+            return this;
+        },
         end(/* body */) {},
     };
     monitoring.collectDefaultMetrics();
@@ -23,9 +27,20 @@ describe('Monitoring: endpoint', () => {
     });
 
     async function fetchMetrics(req, res) {
-        await new Promise(resolve => monitoring.monitoringHandler(null, req, {
-            ...res, end: (...body) => { res.end(...body); resolve(); }
-        }, null));
+        await new Promise(resolve =>
+            monitoring.monitoringHandler(
+                null,
+                req,
+                {
+                    ...res,
+                    end: (...body) => {
+                        res.end(...body);
+                        resolve();
+                    },
+                },
+                null,
+            ),
+        );
     }
 
     it('should return an error is method is not GET', async () => {
@@ -80,20 +95,28 @@ describe('Monitoring: endpoint', () => {
     });
 
     function parseMetric(metrics, name, labels) {
-        const labelsString = Object.entries(labels).map(e => `${e[0]}="${e[1]}"`).join(',');
+        const labelsString = Object.entries(labels)
+            .map(e => `${e[0]}="${e[1]}"`)
+            .join(',');
         const metric = metrics.match(new RegExp(`^${name}{${labelsString}} (.*)$`, 'm'));
         return metric ? metric[1] : null;
     }
 
     function parseHttpRequestSize(metrics, action = 'putObject') {
-        const value = parseMetric(metrics, 's3_cloudserver_http_request_size_bytes_sum',
-            { method: 'PUT', action, code: '200' });
+        const value = parseMetric(metrics, 's3_cloudserver_http_request_size_bytes_sum', {
+            method: 'PUT',
+            action,
+            code: '200',
+        });
         return value ? parseInt(value, 10) : 0;
     }
 
     function parseHttpResponseSize(metrics, action = 'getObject') {
-        const value = parseMetric(metrics, 's3_cloudserver_http_response_size_bytes_sum',
-            { method: 'GET', action, code: '200' });
+        const value = parseMetric(metrics, 's3_cloudserver_http_response_size_bytes_sum', {
+            method: 'GET',
+            action,
+            code: '200',
+        });
         return value ? parseInt(value, 10) : 0;
     }
 
@@ -101,8 +124,7 @@ describe('Monitoring: endpoint', () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
         const requestSize = parseHttpRequestSize(res.end.args[0][0]);
 
-        monitoring.promMetrics('PUT', 'stuff', '200',
-            'putObject', 2357, 3572, false, null, 5723);
+        monitoring.promMetrics('PUT', 'stuff', '200', 'putObject', 2357, 3572, false, null, 5723);
 
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
         assert(parseHttpRequestSize(res.end.args[1][0]) === requestSize + 2357);
@@ -112,8 +134,7 @@ describe('Monitoring: endpoint', () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
         const responseSize = parseHttpResponseSize(res.end.args[0][0]);
 
-        monitoring.promMetrics('GET', 'stuff', '200',
-            'getObject', 7532);
+        monitoring.promMetrics('GET', 'stuff', '200', 'getObject', 7532);
 
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
         assert(parseHttpResponseSize(res.end.args[1][0]) === responseSize + 7532);

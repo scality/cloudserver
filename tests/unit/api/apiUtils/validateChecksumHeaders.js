@@ -55,7 +55,6 @@ unsupportedSignatureChecksums.forEach(checksum => {
     });
 });
 
-
 describe('validateChecksumHeaders', () => {
     passingCases.forEach(testCase => {
         it(testCase.description, () => {

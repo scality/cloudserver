@@ -2,8 +2,11 @@ const assert = require('assert');
 const crypto = require('crypto');
 const sinon = require('sinon');
 
-const { validateChecksumsNoChunking, ChecksumError, validateMethodChecksumNoChunking } = 
-    require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
+const {
+    validateChecksumsNoChunking,
+    ChecksumError,
+    validateMethodChecksumNoChunking,
+} = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
 const { errors: ArsenalErrors } = require('arsenal');
 const { config } = require('../../../../../lib/Config');
 
@@ -13,7 +16,7 @@ describe('validateChecksumsNoChunking', () => {
             const body = 'Hello, World!';
             const expectedMd5 = crypto.createHash('md5').update(body, 'utf8').digest('base64');
             const headers = {
-                'content-md5': expectedMd5
+                'content-md5': expectedMd5,
             };
 
             const result = validateChecksumsNoChunking(headers, body);
@@ -27,7 +30,7 @@ describe('validateChecksumsNoChunking', () => {
             const wrongMd5 = 'wrongchecksum123=';
             const expectedMd5 = crypto.createHash('md5').update(body, 'utf8').digest('base64');
             const headers = {
-                'content-md5': wrongMd5
+                'content-md5': wrongMd5,
             };
 
             const result = validateChecksumsNoChunking(headers, body);
@@ -55,12 +58,12 @@ describe('validateChecksumsNoChunking', () => {
             assert.strictEqual(result.error, ChecksumError.MissingChecksum);
             assert.strictEqual(result.details, null);
         });
-        
+
         it('should return MD5Mismatch error when content-md5 header is undefined', () => {
             const body = 'Hello, World!';
             const headers = {
                 'content-type': 'application/json',
-                'content-md5': undefined
+                'content-md5': undefined,
             };
             const calculatedMD5 = crypto.createHash('md5').update(body, 'utf8').digest('base64');
 
@@ -74,7 +77,7 @@ describe('validateChecksumsNoChunking', () => {
             const body = 'Hello, World!';
             const headers = {
                 'content-type': 'application/json',
-                'content-md5': null
+                'content-md5': null,
             };
             const calculatedMD5 = crypto.createHash('md5').update(body, 'utf8').digest('base64');
 
@@ -88,7 +91,7 @@ describe('validateChecksumsNoChunking', () => {
             const body = 'Hello, World!';
             const headers = {
                 'content-type': 'application/json',
-                'content-md5': ''
+                'content-md5': '',
             };
             const calculatedMD5 = crypto.createHash('md5').update(body, 'utf8').digest('base64');
 
@@ -103,10 +106,10 @@ describe('validateChecksumsNoChunking', () => {
 describe('validateMethodChecksumNoChunking', () => {
     let sandbox;
     let originalIntegrityChecks;
-    
+
     const supportedMethods = [
         'bucketPutACL',
-        'bucketPutCors', 
+        'bucketPutCors',
         'bucketPutEncryption',
         'bucketPutLifecycle',
         'bucketPutNotification',
@@ -119,7 +122,7 @@ describe('validateMethodChecksumNoChunking', () => {
         'objectPutACL',
         'objectPutLegalHold',
         'objectPutTagging',
-        'objectPutRetention'
+        'objectPutRetention',
     ];
 
     beforeEach(() => {
@@ -136,19 +139,19 @@ describe('validateMethodChecksumNoChunking', () => {
         supportedMethods.forEach(method => {
             it(`should return BadDigest error for ${method} when checksum mismatch`, () => {
                 config.integrityChecks[method] = true;
-                
+
                 const body = 'Hello, World!';
                 const wrongMd5 = 'wrongchecksum123=';
                 const request = {
                     apiMethod: method,
                     headers: {
-                        'content-md5': wrongMd5
-                    }
+                        'content-md5': wrongMd5,
+                    },
                 };
                 const log = { debug: sandbox.stub() };
 
                 const result = validateMethodChecksumNoChunking(request, body, log);
-                
+
                 assert.deepStrictEqual(result, ArsenalErrors.BadDigest, 'Expected BadDigest error');
                 assert(log.debug.calledOnce);
             });
@@ -159,16 +162,16 @@ describe('validateMethodChecksumNoChunking', () => {
         supportedMethods.forEach(method => {
             it(`should return null for ${method} when no checksum is provided`, () => {
                 config.integrityChecks[method] = true;
-                
+
                 const body = 'Hello, World!';
                 const request = {
                     apiMethod: method,
-                    headers: {}
+                    headers: {},
                 };
                 const log = { debug: sandbox.stub() };
 
                 const result = validateMethodChecksumNoChunking(request, body, log);
-                
+
                 assert.strictEqual(result, null);
                 assert(log.debug.notCalled);
             });
@@ -179,19 +182,19 @@ describe('validateMethodChecksumNoChunking', () => {
         supportedMethods.forEach(method => {
             it(`should return null for ${method} when checksum matches`, () => {
                 config.integrityChecks[method] = true;
-                
+
                 const body = 'Hello, World!';
                 const correctMd5 = crypto.createHash('md5').update(body, 'utf8').digest('base64');
                 const request = {
                     apiMethod: method,
                     headers: {
-                        'content-md5': correctMd5
-                    }
+                        'content-md5': correctMd5,
+                    },
                 };
                 const log = { debug: sandbox.stub() };
 
                 const result = validateMethodChecksumNoChunking(request, body, log);
-                
+
                 assert.strictEqual(result, null);
                 assert(log.debug.notCalled);
             });
@@ -202,19 +205,19 @@ describe('validateMethodChecksumNoChunking', () => {
         supportedMethods.forEach(method => {
             it(`should return null for ${method} when disabled, even with checksum mismatch`, () => {
                 config.integrityChecks[method] = false;
-                
+
                 const body = 'Hello, World!';
                 const wrongMd5 = 'wrongchecksum123=';
                 const request = {
                     apiMethod: method,
                     headers: {
-                        'content-md5': wrongMd5
-                    }
+                        'content-md5': wrongMd5,
+                    },
                 };
                 const log = { debug: sandbox.stub() };
 
                 const result = validateMethodChecksumNoChunking(request, body, log);
-                
+
                 assert.strictEqual(result, null);
                 assert(log.debug.notCalled);
             });
@@ -225,19 +228,19 @@ describe('validateMethodChecksumNoChunking', () => {
         it('should return null for unsupported method even when enabled in config', () => {
             const unsupportedMethod = 'someUnsupportedMethod';
             config.integrityChecks[unsupportedMethod] = true;
-            
+
             const body = 'Hello, World!';
             const wrongMd5 = 'wrongchecksum123=';
             const request = {
                 apiMethod: unsupportedMethod,
                 headers: {
-                    'content-md5': wrongMd5
-                }
+                    'content-md5': wrongMd5,
+                },
             };
             const log = { debug: sandbox.stub() };
 
             const result = validateMethodChecksumNoChunking(request, body, log);
-            
+
             assert.strictEqual(result, null);
             assert(log.debug.notCalled);
         });
@@ -248,13 +251,13 @@ describe('validateMethodChecksumNoChunking', () => {
             const body = 'Hello, World!';
             const request = {
                 headers: {
-                    'content-md5': 'wrongchecksum123='
-                }
+                    'content-md5': 'wrongchecksum123=',
+                },
             };
             const log = { debug: sandbox.stub() };
 
             const result = validateMethodChecksumNoChunking(request, body, log);
-            
+
             assert.strictEqual(result, null);
         });
 
@@ -263,13 +266,13 @@ describe('validateMethodChecksumNoChunking', () => {
             const request = {
                 apiMethod: 'nonExistentMethod',
                 headers: {
-                    'content-md5': 'wrongchecksum123='
-                }
+                    'content-md5': 'wrongchecksum123=',
+                },
             };
             const log = { debug: sandbox.stub() };
 
             const result = validateMethodChecksumNoChunking(request, body, log);
-            
+
             assert.strictEqual(result, null);
         });
     });

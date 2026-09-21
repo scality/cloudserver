@@ -1,6 +1,5 @@
 const assert = require('assert');
-const collectResponseHeaders =
-    require('../../../lib/utilities/collectResponseHeaders');
+const collectResponseHeaders = require('../../../lib/utilities/collectResponseHeaders');
 
 describe('Middleware: Collect Response Headers', () => {
     it('should be able to set replication status when config is set', () => {
@@ -21,22 +20,19 @@ describe('Middleware: Collect Response Headers', () => {
         };
         const headers = collectResponseHeaders(objectMD);
         assert.deepStrictEqual(headers['x-amz-replication-status'], 'COMPLETED');
-        assert.deepStrictEqual(headers['x-amz-meta-us-east-1-replication-status'],
-            'COMPLETED');
+        assert.deepStrictEqual(headers['x-amz-meta-us-east-1-replication-status'], 'COMPLETED');
         assert.deepStrictEqual(headers['x-amz-meta-us-east-1-version-id'], '123');
-        assert.deepStrictEqual(headers['x-amz-meta-us-west-2-replication-status'],
-            'COMPLETED');
+        assert.deepStrictEqual(headers['x-amz-meta-us-west-2-replication-status'], 'COMPLETED');
         assert.deepStrictEqual(headers['x-amz-meta-us-west-2-version-id'], undefined);
     });
-    
+
     [
         { md: { replicationInfo: null }, test: 'when config is not set' },
         { md: {}, test: 'for older objects' },
     ].forEach(item => {
         it(`should skip replication header ${item.test}`, () => {
             const headers = collectResponseHeaders(item.md);
-            assert.deepStrictEqual(headers['x-amz-replication-status'],
-                undefined);
+            assert.deepStrictEqual(headers['x-amz-replication-status'], undefined);
         });
     });
 
@@ -45,19 +41,16 @@ describe('Middleware: Collect Response Headers', () => {
         assert.strictEqual(headers['Accept-Ranges'], 'bytes');
     });
 
-    it('should return an undefined value when x-amz-website-redirect-location' +
-       ' is empty', () => {
+    it('should return an undefined value when x-amz-website-redirect-location' + ' is empty', () => {
         const objectMD = { 'x-amz-website-redirect-location': '' };
         const headers = collectResponseHeaders(objectMD);
-        assert.strictEqual(headers['x-amz-website-redirect-location'],
-            undefined);
+        assert.strictEqual(headers['x-amz-website-redirect-location'], undefined);
     });
 
     it('should return the (nonempty) value of WebsiteRedirectLocation', () => {
         const obj = { 'x-amz-website-redirect-location': 'google.com' };
         const headers = collectResponseHeaders(obj);
-        assert.strictEqual(headers['x-amz-website-redirect-location'],
-            'google.com');
+        assert.strictEqual(headers['x-amz-website-redirect-location'], 'google.com');
     });
 
     it('should not set flag when transition not in progress', () => {

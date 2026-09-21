@@ -16,11 +16,14 @@ const bucketName = 'testputtaggingbucket';
 const objectName = 'testputtaggingobject';
 const objectNameAcl = 'testputtaggingobjectacl';
 
-const taggingConfig = { TagSet: [
-    {
-        Key: 'key1',
-        Value: 'value1',
-    }] };
+const taggingConfig = {
+    TagSet: [
+        {
+            Key: 'key1',
+            Value: 'value1',
+        },
+    ],
+};
 
 function generateMultipleTagConfig(number) {
     const tags = [];
@@ -61,28 +64,29 @@ describe('PUT object taggings', () => {
 
         taggingTests.forEach(taggingTest => {
             it(taggingTest.it, async () => {
-                const taggingConfig = generateTaggingConfig(
-                    taggingTest.tag.key,
-                    taggingTest.tag.value
-                );
-                
+                const taggingConfig = generateTaggingConfig(taggingTest.tag.key, taggingTest.tag.value);
+
                 if (taggingTest.error) {
                     try {
-                        await s3.send(new PutObjectTaggingCommand({
-                            Bucket: bucketName,
-                            Key: objectName,
-                            Tagging: taggingConfig
-                        }));
+                        await s3.send(
+                            new PutObjectTaggingCommand({
+                                Bucket: bucketName,
+                                Key: objectName,
+                                Tagging: taggingConfig,
+                            }),
+                        );
                         assert.fail('Expected an error but request succeeded');
                     } catch (err) {
                         checkError(err, taggingTest.error, 400);
                     }
                 } else {
-                    const data = await s3.send(new PutObjectTaggingCommand({
-                        Bucket: bucketName,
-                        Key: objectName,
-                        Tagging: taggingConfig
-                    }));
+                    const data = await s3.send(
+                        new PutObjectTaggingCommand({
+                            Bucket: bucketName,
+                            Key: objectName,
+                            Tagging: taggingConfig,
+                        }),
+                    );
                     assert.strictEqual(Object.keys(data).length, 1);
                 }
             });
@@ -90,59 +94,70 @@ describe('PUT object taggings', () => {
 
         it('should allow putting 50 tags', async () => {
             const taggingConfig = generateMultipleTagConfig(50);
-            await s3.send(new PutObjectTaggingCommand({
-                Bucket: bucketName,
-                Key: objectName,
-                Tagging: taggingConfig
-            }));
+            await s3.send(
+                new PutObjectTaggingCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    Tagging: taggingConfig,
+                }),
+            );
         });
 
         it('should return BadRequest if putting more than 50 tags', async () => {
             const taggingConfig = generateMultipleTagConfig(51);
             try {
-                await s3.send(new PutObjectTaggingCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    Tagging: taggingConfig
-                }));
+                await s3.send(
+                    new PutObjectTaggingCommand({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        Tagging: taggingConfig,
+                    }),
+                );
                 assert.fail('Expected BadRequest error');
             } catch (err) {
                 checkError(err, 'BadRequest', 400);
             }
         });
 
-
         it('should put tag set', async () => {
-            await s3.send(new PutObjectTaggingCommand({
-                Bucket: bucketName,
-                Key: objectName,
-                Tagging: taggingConfig,
-            }));
+            await s3.send(
+                new PutObjectTaggingCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    Tagging: taggingConfig,
+                }),
+            );
 
-            const data = await s3.send(new GetObjectTaggingCommand({
-                Bucket: bucketName,
-                Key: objectName,
-            }));
+            const data = await s3.send(
+                new GetObjectTaggingCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                }),
+            );
 
             assert.deepStrictEqual(data.TagSet, taggingConfig.TagSet);
         });
 
         it('should return InvalidTag if using the same key twice', async () => {
             try {
-                await s3.send(new PutObjectTaggingCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    Tagging:  { TagSet: [
-                        {
-                            Key: 'key1',
-                            Value: 'value1',
+                await s3.send(
+                    new PutObjectTaggingCommand({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        Tagging: {
+                            TagSet: [
+                                {
+                                    Key: 'key1',
+                                    Value: 'value1',
+                                },
+                                {
+                                    Key: 'key1',
+                                    Value: 'value2',
+                                },
+                            ],
                         },
-                        {
-                            Key: 'key1',
-                            Value: 'value2',
-                        },
-                    ] },
-                }));
+                    }),
+                );
                 throw new Error('Expected InvalidRequest error');
             } catch (err) {
                 checkError(err, 'InvalidTag', 400);
@@ -151,18 +166,20 @@ describe('PUT object taggings', () => {
 
         it('should return InvalidTag if key is an empty string', async () => {
             try {
-                await s3.send(new PutObjectTaggingCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    Tagging: {
-                        TagSet: [
-                            {
-                                Key: '',
-                                Value: 'value1',
-                            },
-                        ]
-                    }
-                }));
+                await s3.send(
+                    new PutObjectTaggingCommand({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        Tagging: {
+                            TagSet: [
+                                {
+                                    Key: '',
+                                    Value: 'value1',
+                                },
+                            ],
+                        },
+                    }),
+                );
                 assert.fail('Expected InvalidTag error');
             } catch (err) {
                 checkError(err, 'InvalidTag', 400);
@@ -170,103 +187,126 @@ describe('PUT object taggings', () => {
         });
 
         it('should be able to put an empty Tag set', async () => {
-            const data = await s3.send(new PutObjectTaggingCommand({
-                Bucket: bucketName,
-                Key: objectName,
-                Tagging: { TagSet: [] }
-            }));
+            const data = await s3.send(
+                new PutObjectTaggingCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    Tagging: { TagSet: [] },
+                }),
+            );
             assert.strictEqual(data.$metadata.httpStatusCode, 200);
         });
 
-        it('should return NoSuchKey put tag to a non-existing object',
-        async () => {
+        it('should return NoSuchKey put tag to a non-existing object', async () => {
             try {
-                await s3.send(new PutObjectTaggingCommand({
-                    Bucket: bucketName,
-                    Key: 'nonexisting',
-                    Tagging: taggingConfig,
-                }));
+                await s3.send(
+                    new PutObjectTaggingCommand({
+                        Bucket: bucketName,
+                        Key: 'nonexisting',
+                        Tagging: taggingConfig,
+                    }),
+                );
                 throw new Error('Expected NoSuchKey error');
             } catch (err) {
                 checkError(err, 'NoSuchKey', 404);
             }
         });
 
-        it('should return 403 AccessDenied putting tag with another account',
-        async () => {
+        it('should return 403 AccessDenied putting tag with another account', async () => {
             try {
-                await otherAccountS3.send(new PutObjectTaggingCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    Tagging: taggingConfig,
-                }));
+                await otherAccountS3.send(
+                    new PutObjectTaggingCommand({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        Tagging: taggingConfig,
+                    }),
+                );
                 throw new Error('Expected AccessDenied error');
             } catch (err) {
                 checkError(err, 'AccessDenied', 403);
             }
         });
 
-        it('should return 403 AccessDenied putting tag with a different ' +
-        'account to an object with ACL "public-read-write"',
-        async () => {
-            await s3.send(new PutObjectCommand({
-                Bucket: bucketName,
-                Key: objectName,
-                ACL: 'public-read-write',
-            }));
+        it(
+            'should return 403 AccessDenied putting tag with a different ' +
+                'account to an object with ACL "public-read-write"',
+            async () => {
+                await s3.send(
+                    new PutObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        ACL: 'public-read-write',
+                    }),
+                );
 
-            try {
-                await otherAccountS3.send(new PutObjectTaggingCommand({
+                try {
+                    await otherAccountS3.send(
+                        new PutObjectTaggingCommand({
+                            Bucket: bucketName,
+                            Key: objectName,
+                            Tagging: taggingConfig,
+                        }),
+                    );
+                    throw new Error('Expected AccessDenied error');
+                } catch (err) {
+                    checkError(err, 'AccessDenied', 403);
+                }
+            },
+        );
+
+        it(
+            'should return 403 AccessDenied putting tag to an object ' +
+                ' in a bucket created with a different account',
+            async () => {
+                await s3.send(
+                    new PutBucketAclCommand({
+                        Bucket: bucketName,
+                        ACL: 'public-read-write',
+                    }),
+                );
+                await otherAccountS3.send(
+                    new PutObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectNameAcl,
+                    }),
+                );
+
+                try {
+                    await otherAccountS3.send(
+                        new PutObjectTaggingCommand({
+                            Bucket: bucketName,
+                            Key: objectNameAcl,
+                            Tagging: taggingConfig,
+                        }),
+                    );
+                    throw new Error('Expected AccessDenied error');
+                } catch (err) {
+                    checkError(err, 'AccessDenied', 403);
+                }
+            },
+        );
+
+        it('should put tag to an object in a bucket created with same ' + 'account', async () => {
+            await s3.send(
+                new PutBucketAclCommand({
                     Bucket: bucketName,
-                    Key: objectName,
-                    Tagging: taggingConfig,
-                }));
-                throw new Error('Expected AccessDenied error');
-            } catch (err) {
-                checkError(err, 'AccessDenied', 403);
-            }
-        });
+                    ACL: 'public-read-write',
+                }),
+            );
+            await otherAccountS3.send(
+                new PutObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectNameAcl,
+                }),
+            );
 
-        it('should return 403 AccessDenied putting tag to an object ' +
-        ' in a bucket created with a different account',
-        async () => {
-            await s3.send(new PutBucketAclCommand({
-                Bucket: bucketName,
-                ACL: 'public-read-write',
-            }));
-            await otherAccountS3.send(new PutObjectCommand({
-                Bucket: bucketName,
-                Key: objectNameAcl,
-            }));
-
-            try {
-                await otherAccountS3.send(new PutObjectTaggingCommand({
+            await s3.send(
+                new PutObjectTaggingCommand({
                     Bucket: bucketName,
                     Key: objectNameAcl,
                     Tagging: taggingConfig,
-                }));
-                throw new Error('Expected AccessDenied error');
-            } catch (err) {
-                checkError(err, 'AccessDenied', 403);
-            }
-        });
-
-        it('should put tag to an object in a bucket created with same ' +
-        'account', async () => {
-            await s3.send(new PutBucketAclCommand({
-                Bucket: bucketName,
-                ACL: 'public-read-write',
-            }));
-            await otherAccountS3.send(new PutObjectCommand({
-                Bucket: bucketName,
-                Key: objectNameAcl,
-            }));
-
-            await s3.send(new PutObjectTaggingCommand({
-                Bucket: bucketName,
-                Key: objectNameAcl,
-                Tagging: taggingConfig,
-            }));
+                }),
+            );
         });
     });
 });

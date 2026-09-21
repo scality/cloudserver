@@ -1,14 +1,15 @@
 const assert = require('assert');
-const { CreateBucketCommand,
+const {
+    CreateBucketCommand,
     CreateMultipartUploadCommand,
     UploadPartCommand,
     AbortMultipartUploadCommand,
-    ListPartsCommand } = require('@aws-sdk/client-s3');
+    ListPartsCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { azureLocation, getAzureContainerName,
-    genUniqID, describeSkipIfNotMultiple } = require('../utils');
+const { azureLocation, getAzureContainerName, genUniqID, describeSkipIfNotMultiple } = require('../utils');
 
 const azureContainerName = getAzureContainerName(azureLocation);
 const firstPartSize = 10;
@@ -19,88 +20,121 @@ const bodySecondPart = Buffer.alloc(secondPartSize);
 let bucketUtil;
 let s3;
 
-describeSkipIfNotMultiple('List parts of MPU on Azure data backend',
-() => {
+describeSkipIfNotMultiple('List parts of MPU on Azure data backend', () => {
     withV4(sigCfg => {
         beforeEach(function beforeEachFn() {
             this.currentTest.key = `somekey-${genUniqID()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.send(new CreateBucketCommand({ Bucket: azureContainerName }))
-            .then(() => s3.send(new CreateMultipartUploadCommand({
-                Bucket: azureContainerName, Key: this.currentTest.key,
-                Metadata: { 'scal-location-constraint': azureLocation },
-            }))
-            .then(res => {
-                this.currentTest.uploadId = res.UploadId;
-                return s3.send(new UploadPartCommand({ Bucket: azureContainerName,
-                    Key: this.currentTest.key, PartNumber: 1,
-                    UploadId: this.currentTest.uploadId, Body: bodyFirstPart,
-                }));
-            }).then(res => {
-                this.currentTest.firstEtag = res.ETag;
-            }).then(() => s3.send(new UploadPartCommand({ Bucket: azureContainerName,
-                Key: this.currentTest.key, PartNumber: 2,
-                UploadId: this.currentTest.uploadId, Body: bodySecondPart,
-            }))).then(res => {
-                this.currentTest.secondEtag = res.ETag;
-            })
-            .catch(err => {
-                process.stdout.write(`Error in beforeEach: ${err}\n`);
-                throw err;
-            }));
+            return s3.send(new CreateBucketCommand({ Bucket: azureContainerName })).then(() =>
+                s3
+                    .send(
+                        new CreateMultipartUploadCommand({
+                            Bucket: azureContainerName,
+                            Key: this.currentTest.key,
+                            Metadata: { 'scal-location-constraint': azureLocation },
+                        }),
+                    )
+                    .then(res => {
+                        this.currentTest.uploadId = res.UploadId;
+                        return s3.send(
+                            new UploadPartCommand({
+                                Bucket: azureContainerName,
+                                Key: this.currentTest.key,
+                                PartNumber: 1,
+                                UploadId: this.currentTest.uploadId,
+                                Body: bodyFirstPart,
+                            }),
+                        );
+                    })
+                    .then(res => {
+                        this.currentTest.firstEtag = res.ETag;
+                    })
+                    .then(() =>
+                        s3.send(
+                            new UploadPartCommand({
+                                Bucket: azureContainerName,
+                                Key: this.currentTest.key,
+                                PartNumber: 2,
+                                UploadId: this.currentTest.uploadId,
+                                Body: bodySecondPart,
+                            }),
+                        ),
+                    )
+                    .then(res => {
+                        this.currentTest.secondEtag = res.ETag;
+                    })
+                    .catch(err => {
+                        process.stdout.write(`Error in beforeEach: ${err}\n`);
+                        throw err;
+                    }),
+            );
         });
 
         afterEach(function afterEachFn() {
             process.stdout.write('Emptying bucket');
-            return s3.send(new AbortMultipartUploadCommand({
-                Bucket: azureContainerName, Key: this.currentTest.key,
-                UploadId: this.currentTest.uploadId,
-            }))
-            .then(() => bucketUtil.empty(azureContainerName))
-            .then(() => {
-                process.stdout.write('Deleting bucket');
-                return bucketUtil.deleteOne(azureContainerName);
-            })
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
-            });
+            return s3
+                .send(
+                    new AbortMultipartUploadCommand({
+                        Bucket: azureContainerName,
+                        Key: this.currentTest.key,
+                        UploadId: this.currentTest.uploadId,
+                    }),
+                )
+                .then(() => bucketUtil.empty(azureContainerName))
+                .then(() => {
+                    process.stdout.write('Deleting bucket');
+                    return bucketUtil.deleteOne(azureContainerName);
+                })
+                .catch(err => {
+                    process.stdout.write('Error in afterEach');
+                    throw err;
+                });
         });
 
         it('should list both parts', function itFn(done) {
-            s3.send(new ListPartsCommand({
-                Bucket: azureContainerName,
-                Key: this.test.key,
-                UploadId: this.test.uploadId })).then(data => {
-                assert.strictEqual(data.Parts.length, 2);
-                assert.strictEqual(data.Parts[0].PartNumber, 1);
-                assert.strictEqual(data.Parts[0].Size, firstPartSize);
-                assert.strictEqual(data.Parts[0].ETag, this.test.firstEtag);
-                assert.strictEqual(data.Parts[1].PartNumber, 2);
-                assert.strictEqual(data.Parts[1].Size, secondPartSize);
-                assert.strictEqual(data.Parts[1].ETag, this.test.secondEtag);
-                done();
-            }).catch(err => {
-                assert.equal(err, null, `Err listing parts: ${err}`);
-                done(err);
-            });
+            s3.send(
+                new ListPartsCommand({
+                    Bucket: azureContainerName,
+                    Key: this.test.key,
+                    UploadId: this.test.uploadId,
+                }),
+            )
+                .then(data => {
+                    assert.strictEqual(data.Parts.length, 2);
+                    assert.strictEqual(data.Parts[0].PartNumber, 1);
+                    assert.strictEqual(data.Parts[0].Size, firstPartSize);
+                    assert.strictEqual(data.Parts[0].ETag, this.test.firstEtag);
+                    assert.strictEqual(data.Parts[1].PartNumber, 2);
+                    assert.strictEqual(data.Parts[1].Size, secondPartSize);
+                    assert.strictEqual(data.Parts[1].ETag, this.test.secondEtag);
+                    done();
+                })
+                .catch(err => {
+                    assert.equal(err, null, `Err listing parts: ${err}`);
+                    done(err);
+                });
         });
 
         it('should only list the second part', function itFn(done) {
-            s3.send(new ListPartsCommand({
-                Bucket: azureContainerName,
-                Key: this.test.key,
-                PartNumberMarker: 1,
-                UploadId: this.test.uploadId })).then(data => {
-                assert.strictEqual(data.Parts[0].PartNumber, 2);
-                assert.strictEqual(data.Parts[0].Size, secondPartSize);
-                assert.strictEqual(data.Parts[0].ETag, this.test.secondEtag);
-                done();
-            }).catch(err => {
-                assert.equal(err, null, `Err listing parts: ${err}`);
-                done(err);
-            });
+            s3.send(
+                new ListPartsCommand({
+                    Bucket: azureContainerName,
+                    Key: this.test.key,
+                    PartNumberMarker: 1,
+                    UploadId: this.test.uploadId,
+                }),
+            )
+                .then(data => {
+                    assert.strictEqual(data.Parts[0].PartNumber, 2);
+                    assert.strictEqual(data.Parts[0].Size, secondPartSize);
+                    assert.strictEqual(data.Parts[0].ETag, this.test.secondEtag);
+                    done();
+                })
+                .catch(err => {
+                    assert.equal(err, null, `Err listing parts: ${err}`);
+                    done(err);
+                });
         });
     });
 });

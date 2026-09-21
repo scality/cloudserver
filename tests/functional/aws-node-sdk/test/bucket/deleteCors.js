@@ -1,26 +1,29 @@
 const assert = require('assert');
-const { S3Client,
+const {
+    S3Client,
     CreateBucketCommand,
     DeleteBucketCommand,
     DeleteBucketCorsCommand,
     PutBucketCorsCommand,
-    GetBucketCorsCommand } = require('@aws-sdk/client-s3');
+    GetBucketCorsCommand,
+} = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const getConfig = require('../support/config');
 
 const bucketName = 'testdeletecorsbucket';
-const sampleCors = { CORSRules: [
-    { AllowedMethods: ['PUT', 'POST', 'DELETE'],
-        AllowedOrigins: ['http://www.example.com'],
-        AllowedHeaders: ['*'],
-        MaxAgeSeconds: 3000,
-        ExposeHeaders: ['x-amz-server-side-encryption'] },
-    { AllowedMethods: ['GET'],
-        AllowedOrigins: ['*'],
-        AllowedHeaders: ['*'],
-        MaxAgeSeconds: 3000 },
-] };
+const sampleCors = {
+    CORSRules: [
+        {
+            AllowedMethods: ['PUT', 'POST', 'DELETE'],
+            AllowedOrigins: ['http://www.example.com'],
+            AllowedHeaders: ['*'],
+            MaxAgeSeconds: 3000,
+            ExposeHeaders: ['x-amz-server-side-encryption'],
+        },
+        { AllowedMethods: ['GET'], AllowedOrigins: ['*'], AllowedHeaders: ['*'], MaxAgeSeconds: 3000 },
+    ],
+};
 
 const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
 
@@ -49,30 +52,31 @@ describe('DELETE bucket cors', () => {
 
         describe('with existing bucket', () => {
             beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucketName })));
-            
+
             afterEach(() => deleteBucket(s3, bucketName));
 
             describe('without existing cors configuration', () => {
                 it('should return a 204 response', async () => {
                     const res = await s3.send(new DeleteBucketCorsCommand({ Bucket: bucketName }));
                     const statusCode = res?.$metadata?.httpStatusCode;
-                    assert.strictEqual(statusCode, 204,
-                        `Found unexpected statusCode ${statusCode}`);
+                    assert.strictEqual(statusCode, 204, `Found unexpected statusCode ${statusCode}`);
                 });
             });
 
             describe('with existing cors configuration', () => {
-                beforeEach(() => s3.send(new PutBucketCorsCommand({ 
-                    Bucket: bucketName,
-                    CORSConfiguration: sampleCors 
-                })));
-
+                beforeEach(() =>
+                    s3.send(
+                        new PutBucketCorsCommand({
+                            Bucket: bucketName,
+                            CORSConfiguration: sampleCors,
+                        }),
+                    ),
+                );
 
                 it('should delete bucket configuration successfully', async () => {
                     const res = await s3.send(new DeleteBucketCorsCommand({ Bucket: bucketName }));
                     const statusCode = res?.$metadata?.httpStatusCode;
-                    assert.strictEqual(statusCode, 204,
-                        `Found unexpected statusCode ${statusCode}`);
+                    assert.strictEqual(statusCode, 204, `Found unexpected statusCode ${statusCode}`);
                     try {
                         await s3.send(new GetBucketCorsCommand({ Bucket: bucketName }));
                         throw new Error('Expected NoSuchCORSConfiguration error');
@@ -88,8 +92,7 @@ describe('DELETE bucket cors', () => {
                 // to add a second set of real aws credentials under a profile
                 // named 'lisa' in ~/.aws/scality, then rename 'itSkipIfAWS' to
                 // 'it'.
-                itSkipIfAWS('should return AccessDenied if user is not bucket' +
-                'owner', async () => {
+                itSkipIfAWS('should return AccessDenied if user is not bucket' + 'owner', async () => {
                     try {
                         await otherAccountS3.send(new DeleteBucketCorsCommand({ Bucket: bucketName }));
                         throw new Error('Expected AccessDenied error');

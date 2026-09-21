@@ -8,8 +8,7 @@ const { config } = require('../../../lib/Config');
 const { client, implName, data } = require('../../../lib/data/wrapper');
 const kms = require('../../../lib/kms/wrapper');
 const vault = require('../../../lib/auth/vault');
-const locationStorageCheck =
-    require('../../../lib/api/apiUtils/object/locationStorageCheck');
+const locationStorageCheck = require('../../../lib/api/apiUtils/object/locationStorageCheck');
 const metadata = require('../../../lib/metadata/wrapper');
 
 const routesUtils = s3routes.routesUtils;
@@ -51,10 +50,12 @@ describe.skip('responseStreamData:', () => {
 
     it('should stream full requested object data for one part object', done => {
         ds.push(null, dataStoreEntry);
-        const dataLocations = [{
-            key: 1,
-            dataStore: 'mem',
-        }];
+        const dataLocations = [
+            {
+                key: 1,
+                dataStore: 'mem',
+            },
+        ];
         const response = httpMocks.createResponse({
             eventEmitter: EventEmitter,
         });
@@ -63,8 +64,16 @@ describe.skip('responseStreamData:', () => {
             assert.strictEqual(data, postBody.toString());
             done();
         });
-        return responseStreamData(errCode, overrideHeaders, resHeaders,
-            dataLocations, dataRetrievalParams, response, null, log);
+        return responseStreamData(
+            errCode,
+            overrideHeaders,
+            resHeaders,
+            dataLocations,
+            dataRetrievalParams,
+            response,
+            null,
+            log,
+        );
     });
 
     it('should stream full requested object data for two part object', done => {
@@ -81,7 +90,8 @@ describe.skip('responseStreamData:', () => {
                 dataStore: 'mem',
                 start: 11,
                 size: 11,
-            }];
+            },
+        ];
         const response = httpMocks.createResponse({
             eventEmitter: EventEmitter,
         });
@@ -91,17 +101,27 @@ describe.skip('responseStreamData:', () => {
             assert.strictEqual(data, doublePostBody);
             done();
         });
-        return responseStreamData(errCode, overrideHeaders, resHeaders,
-            dataLocations, dataRetrievalParams, response, null, log);
+        return responseStreamData(
+            errCode,
+            overrideHeaders,
+            resHeaders,
+            dataLocations,
+            dataRetrievalParams,
+            response,
+            null,
+            log,
+        );
     });
 
     it('#334 non-regression test, destroy connection on error', done => {
-        const dataLocations = [{
-            key: 1,
-            dataStore: 'mem',
-            start: 0,
-            size: 11,
-        }];
+        const dataLocations = [
+            {
+                key: 1,
+                dataStore: 'mem',
+                start: 0,
+                size: 11,
+            },
+        ];
         const prev = data.get;
         data.get = (objectGetInfo, response, log, cb) => {
             setTimeout(() => cb(errors.InternalError), 1000);
@@ -117,12 +137,19 @@ describe.skip('responseStreamData:', () => {
         response.on('end', () => {
             data.get = prev;
             if (!destroyed) {
-                return done(new Error('end reached instead of destroying ' +
-                    'connection'));
+                return done(new Error('end reached instead of destroying ' + 'connection'));
             }
             return done();
         });
-        return responseStreamData(errCode, overrideHeaders, resHeaders,
-            dataLocations, dataRetrievalParams, response, null, log);
+        return responseStreamData(
+            errCode,
+            overrideHeaders,
+            resHeaders,
+            dataLocations,
+            dataRetrievalParams,
+            response,
+            null,
+            log,
+        );
     });
 });

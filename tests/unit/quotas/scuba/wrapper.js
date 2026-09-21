@@ -44,7 +44,7 @@ describe('ScubaClientImpl', () => {
         });
 
         it('should disable Scuba if health check returns non-stale data', async () => {
-            sinon.stub(client, 'healthCheck').resolves({ date: Date.now() - (12 * 60 * 60 * 1000) });
+            sinon.stub(client, 'healthCheck').resolves({ date: Date.now() - 12 * 60 * 60 * 1000 });
 
             await client._healthCheck();
 
@@ -52,7 +52,7 @@ describe('ScubaClientImpl', () => {
         });
 
         it('should disable Scuba if health check returns stale data', async () => {
-            sinon.stub(client, 'healthCheck').resolves({ date: Date.now() - (48 * 60 * 60 * 1000) });
+            sinon.stub(client, 'healthCheck').resolves({ date: Date.now() - 48 * 60 * 60 * 1000 });
 
             await client._healthCheck();
 

@@ -40,12 +40,14 @@ describe('objectGetAttributes', () => {
 
         it('should fail with a wrong bucket owner header', async () => {
             try {
-                await s3.send(new GetObjectAttributesCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    ObjectAttributes: ['ETag'],
-                    ExpectedBucketOwner: 'wrongAccountId',
-                }));
+                await s3.send(
+                    new GetObjectAttributesCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        ObjectAttributes: ['ETag'],
+                        ExpectedBucketOwner: 'wrongAccountId',
+                    }),
+                );
                 assert.fail('Expected AccessDenied error');
             } catch (err) {
                 assert.strictEqual(err.name, 'AccessDenied');
@@ -55,11 +57,13 @@ describe('objectGetAttributes', () => {
 
         it('should fail because attributes header is missing', async () => {
             try {
-                await s3.send(new GetObjectAttributesCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    ObjectAttributes: [],
-                }));
+                await s3.send(
+                    new GetObjectAttributesCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        ObjectAttributes: [],
+                    }),
+                );
                 assert.fail('Expected InvalidArgument error');
             } catch (err) {
                 assert.strictEqual(err.name, 'InvalidArgument');
@@ -69,11 +73,13 @@ describe('objectGetAttributes', () => {
 
         it('should fail because attribute name is invalid', async () => {
             try {
-                await s3.send(new GetObjectAttributesCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    ObjectAttributes: ['InvalidAttribute'],
-                }));
+                await s3.send(
+                    new GetObjectAttributesCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        ObjectAttributes: ['InvalidAttribute'],
+                    }),
+                );
                 assert.fail('Expected InvalidArgument error');
             } catch (err) {
                 assert.strictEqual(err.name, 'InvalidArgument');
@@ -83,11 +89,13 @@ describe('objectGetAttributes', () => {
 
         it('should return NoSuchKey for non-existent object', async () => {
             try {
-                await s3.send(new GetObjectAttributesCommand({
-                    Bucket: bucket,
-                    Key: 'nonexistent',
-                    ObjectAttributes: ['ETag'],
-                }));
+                await s3.send(
+                    new GetObjectAttributesCommand({
+                        Bucket: bucket,
+                        Key: 'nonexistent',
+                        ObjectAttributes: ['ETag'],
+                    }),
+                );
                 assert.fail('Expected NoSuchKey error');
             } catch (err) {
                 assert.strictEqual(err.name, 'NoSuchKey');
@@ -96,11 +104,13 @@ describe('objectGetAttributes', () => {
         });
 
         it('should return all attributes', async () => {
-            const data = await s3.send(new GetObjectAttributesCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['ETag', 'ObjectParts', 'StorageClass', 'ObjectSize'],
-            }));
+            const data = await s3.send(
+                new GetObjectAttributesCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['ETag', 'ObjectParts', 'StorageClass', 'ObjectSize'],
+                }),
+            );
 
             assert.strictEqual(data.ETag, expectedMD5);
             assert.strictEqual(data.StorageClass, 'STANDARD');
@@ -110,22 +120,26 @@ describe('objectGetAttributes', () => {
         });
 
         it('should return ETag', async () => {
-            const data = await s3.send(new GetObjectAttributesCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['ETag'],
-            }));
+            const data = await s3.send(
+                new GetObjectAttributesCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['ETag'],
+                }),
+            );
 
             assert.strictEqual(data.ETag, expectedMD5);
         });
 
         it('should fail with NotImplemented when Checksum is requested', async () => {
             try {
-                await s3.send(new GetObjectAttributesCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    ObjectAttributes: ['Checksum'],
-                }));
+                await s3.send(
+                    new GetObjectAttributesCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        ObjectAttributes: ['Checksum'],
+                    }),
+                );
                 assert.fail('Expected NotImplemented error');
             } catch (err) {
                 assert.strictEqual(err.name, 'NotImplemented');
@@ -135,42 +149,50 @@ describe('objectGetAttributes', () => {
 
         it("shouldn't return ObjectParts for non-MPU objects", async () => {
             // Requesting only ObjectParts for a non-MPU object break AWS SDK v3
-            const data = await s3.send(new GetObjectAttributesCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['ObjectParts', 'ETag'],
-            }));
+            const data = await s3.send(
+                new GetObjectAttributesCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['ObjectParts', 'ETag'],
+                }),
+            );
 
             assert.strictEqual(data.ObjectParts, undefined, "ObjectParts shouldn't be present");
             assert.strictEqual(data.ETag, expectedMD5);
         });
 
         it('should return StorageClass', async () => {
-            const data = await s3.send(new GetObjectAttributesCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['StorageClass'],
-            }));
+            const data = await s3.send(
+                new GetObjectAttributesCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['StorageClass'],
+                }),
+            );
 
             assert.strictEqual(data.StorageClass, 'STANDARD');
         });
 
         it('should return ObjectSize', async () => {
-            const data = await s3.send(new GetObjectAttributesCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['ObjectSize'],
-            }));
+            const data = await s3.send(
+                new GetObjectAttributesCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['ObjectSize'],
+                }),
+            );
 
             assert.strictEqual(data.ObjectSize, body.length);
         });
 
         it('should return LastModified', async () => {
-            const data = await s3.send(new GetObjectAttributesCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['ETag'],
-            }));
+            const data = await s3.send(
+                new GetObjectAttributesCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['ETag'],
+                }),
+            );
 
             assert(data.LastModified, 'LastModified should be present');
             assert(data.LastModified instanceof Date, 'LastModified should be a Date');
@@ -193,31 +215,37 @@ describe('Test get object attributes with multipart upload', () => {
 
             await s3.send(new CreateBucketCommand({ Bucket: bucket }));
 
-            const createResult = await s3.send(new CreateMultipartUploadCommand({
-                Bucket: bucket,
-                Key: mpuKey,
-            }));
+            const createResult = await s3.send(
+                new CreateMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: mpuKey,
+                }),
+            );
             const uploadId = createResult.UploadId;
 
             const partData = Buffer.alloc(partSize, 'a');
             const parts = [];
             for (let i = 1; i <= partCount; i++) {
-                const uploadResult = await s3.send(new UploadPartCommand({
-                    Bucket: bucket,
-                    Key: mpuKey,
-                    PartNumber: i,
-                    UploadId: uploadId,
-                    Body: partData,
-                }));
+                const uploadResult = await s3.send(
+                    new UploadPartCommand({
+                        Bucket: bucket,
+                        Key: mpuKey,
+                        PartNumber: i,
+                        UploadId: uploadId,
+                        Body: partData,
+                    }),
+                );
                 parts.push({ PartNumber: i, ETag: uploadResult.ETag });
             }
 
-            await s3.send(new CompleteMultipartUploadCommand({
-                Bucket: bucket,
-                Key: mpuKey,
-                UploadId: uploadId,
-                MultipartUpload: { Parts: parts },
-            }));
+            await s3.send(
+                new CompleteMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: mpuKey,
+                    UploadId: uploadId,
+                    MultipartUpload: { Parts: parts },
+                }),
+            );
         });
 
         after(async () => {
@@ -226,22 +254,26 @@ describe('Test get object attributes with multipart upload', () => {
         });
 
         it('should return TotalPartsCount for MPU object', async () => {
-            const data = await s3.send(new GetObjectAttributesCommand({
-                Bucket: bucket,
-                Key: mpuKey,
-                ObjectAttributes: ['ObjectParts'],
-            }));
+            const data = await s3.send(
+                new GetObjectAttributesCommand({
+                    Bucket: bucket,
+                    Key: mpuKey,
+                    ObjectAttributes: ['ObjectParts'],
+                }),
+            );
 
             assert(data.ObjectParts, 'ObjectParts should be present');
             assert.strictEqual(data.ObjectParts.TotalPartsCount, partCount);
         });
 
         it('should return TotalPartsCount along with other attributes for MPU object', async () => {
-            const data = await s3.send(new GetObjectAttributesCommand({
-                Bucket: bucket,
-                Key: mpuKey,
-                ObjectAttributes: ['ETag', 'ObjectParts', 'ObjectSize', 'StorageClass'],
-            }));
+            const data = await s3.send(
+                new GetObjectAttributesCommand({
+                    Bucket: bucket,
+                    Key: mpuKey,
+                    ObjectAttributes: ['ETag', 'ObjectParts', 'ObjectSize', 'StorageClass'],
+                }),
+            );
 
             assert(data.ETag, 'ETag should be present');
             assert(data.ETag.includes(`-${partCount}`), `ETag should indicate MPU with ${partCount} parts`);
@@ -273,64 +305,76 @@ describe('objectGetAttributes with user metadata', () => {
         });
 
         it('should return specific user metadata when requested', async () => {
-            await s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: key,
-                Body: body,
-                Metadata: {
-                    'custom-key': 'custom-value',
-                    'another-key': 'another-value',
-                },
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    Body: body,
+                    Metadata: {
+                        'custom-key': 'custom-value',
+                        'another-key': 'another-value',
+                    },
+                }),
+            );
 
-            const response = await s3.send(new GetObjectAttributesExtendedCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['x-amz-meta-custom-key'],
-            }));
+            const response = await s3.send(
+                new GetObjectAttributesExtendedCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['x-amz-meta-custom-key'],
+                }),
+            );
 
             assert.strictEqual(response['x-amz-meta-custom-key'], 'custom-value');
         });
 
         it('should return multiple user metadata when requested', async () => {
-            await s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: key,
-                Body: body,
-                Metadata: {
-                    foo: 'foo-value',
-                    bar: 'bar-value',
-                    baz: 'baz-value',
-                },
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    Body: body,
+                    Metadata: {
+                        foo: 'foo-value',
+                        bar: 'bar-value',
+                        baz: 'baz-value',
+                    },
+                }),
+            );
 
-            const response = await s3.send(new GetObjectAttributesExtendedCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['x-amz-meta-foo', 'x-amz-meta-bar'],
-            }));
+            const response = await s3.send(
+                new GetObjectAttributesExtendedCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['x-amz-meta-foo', 'x-amz-meta-bar'],
+                }),
+            );
 
             assert.strictEqual(response['x-amz-meta-foo'], 'foo-value');
             assert.strictEqual(response['x-amz-meta-bar'], 'bar-value');
         });
 
         it('should return only all user metadata when x-amz-meta-* is requested', async () => {
-            await s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: key,
-                Body: body,
-                Metadata: {
-                    key1: 'value1',
-                    key2: 'value2',
-                    key3: 'value3',
-                },
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    Body: body,
+                    Metadata: {
+                        key1: 'value1',
+                        key2: 'value2',
+                        key3: 'value3',
+                    },
+                }),
+            );
 
-            const response = await s3.send(new GetObjectAttributesExtendedCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['x-amz-meta-*'],
-            }));
+            const response = await s3.send(
+                new GetObjectAttributesExtendedCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['x-amz-meta-*'],
+                }),
+            );
 
             assert.strictEqual(response['x-amz-meta-key1'], 'value1');
             assert.strictEqual(response['x-amz-meta-key2'], 'value2');
@@ -339,75 +383,91 @@ describe('objectGetAttributes with user metadata', () => {
         });
 
         it('should return empty response when object has no user metadata and x-amz-meta-* is requested', async () => {
-            await s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: key,
-                Body: body,
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    Body: body,
+                }),
+            );
 
-            const response = await s3.send(new GetObjectAttributesExtendedCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['ETag', 'x-amz-meta-*'],
-            }));
+            const response = await s3.send(
+                new GetObjectAttributesExtendedCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['ETag', 'x-amz-meta-*'],
+                }),
+            );
 
             const metadataKeys = Object.keys(response).filter(k => k.startsWith('x-amz-meta-'));
             assert.strictEqual(metadataKeys.length, 0);
         });
 
         it('should return empty response when requested metadata key does not exist', async () => {
-            await s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: key,
-                Body: body,
-                Metadata: {
-                    existing: 'value',
-                },
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    Body: body,
+                    Metadata: {
+                        existing: 'value',
+                    },
+                }),
+            );
 
-            const response = await s3.send(new GetObjectAttributesExtendedCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['ETag', 'x-amz-meta-nonexistent'],
-            }));
+            const response = await s3.send(
+                new GetObjectAttributesExtendedCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['ETag', 'x-amz-meta-nonexistent'],
+                }),
+            );
 
             assert.strictEqual(response['x-amz-meta-nonexistent'], undefined);
         });
 
         it('should return empty response when only a non-existing metadata key is requested', async () => {
-            await s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: key,
-                Body: body,
-                Metadata: {
-                    existing: 'value',
-                },
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    Body: body,
+                    Metadata: {
+                        existing: 'value',
+                    },
+                }),
+            );
 
-            const response = await s3.send(new GetObjectAttributesExtendedCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['x-amz-meta-nonexistent'],
-            }));
+            const response = await s3.send(
+                new GetObjectAttributesExtendedCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['x-amz-meta-nonexistent'],
+                }),
+            );
 
             assert.strictEqual(response['x-amz-meta-nonexistent'], undefined);
         });
 
         it('should return user metadata along with standard attributes', async () => {
-            await s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: key,
-                Body: body,
-                Metadata: {
-                    custom: 'custom-value',
-                },
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    Body: body,
+                    Metadata: {
+                        custom: 'custom-value',
+                    },
+                }),
+            );
 
-            const response = await s3.send(new GetObjectAttributesExtendedCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['ETag', 'x-amz-meta-custom', 'ObjectSize'],
-            }));
+            const response = await s3.send(
+                new GetObjectAttributesExtendedCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['ETag', 'x-amz-meta-custom', 'ObjectSize'],
+                }),
+            );
 
             assert.strictEqual(response.ETag, expectedMD5);
             assert.strictEqual(response.ObjectSize, body.length);
@@ -415,22 +475,26 @@ describe('objectGetAttributes with user metadata', () => {
         });
 
         it('should return all metadata once wildcard is provided', async () => {
-            await s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: key,
-                Body: body,
-                Metadata: {
-                    key1: 'value1',
-                    key2: 'value2',
-                    key3: 'value3',
-                },
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    Body: body,
+                    Metadata: {
+                        key1: 'value1',
+                        key2: 'value2',
+                        key3: 'value3',
+                    },
+                }),
+            );
 
-            const response = await s3.send(new GetObjectAttributesExtendedCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['x-amz-meta-*', 'x-amz-meta-key1'],
-            }));
+            const response = await s3.send(
+                new GetObjectAttributesExtendedCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['x-amz-meta-*', 'x-amz-meta-key1'],
+                }),
+            );
 
             assert.strictEqual(response['x-amz-meta-key1'], 'value1');
             assert.strictEqual(response['x-amz-meta-key2'], 'value2');
@@ -438,42 +502,50 @@ describe('objectGetAttributes with user metadata', () => {
         });
 
         it('should handle duplicate wildcard requests without duplicating results', async () => {
-            await s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: key,
-                Body: body,
-                Metadata: {
-                    key1: 'value1',
-                    key2: 'value2',
-                },
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    Body: body,
+                    Metadata: {
+                        key1: 'value1',
+                        key2: 'value2',
+                    },
+                }),
+            );
 
-            const response = await s3.send(new GetObjectAttributesExtendedCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['x-amz-meta-*', 'x-amz-meta-*'],
-            }));
+            const response = await s3.send(
+                new GetObjectAttributesExtendedCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['x-amz-meta-*', 'x-amz-meta-*'],
+                }),
+            );
 
             assert.strictEqual(response['x-amz-meta-key1'], 'value1');
             assert.strictEqual(response['x-amz-meta-key2'], 'value2');
         });
 
         it('should handle duplicate specific metadata requests without duplicating results', async () => {
-            await s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: key,
-                Body: body,
-                Metadata: {
-                    key1: 'value1',
-                    key2: 'value2',
-                },
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    Body: body,
+                    Metadata: {
+                        key1: 'value1',
+                        key2: 'value2',
+                    },
+                }),
+            );
 
-            const response = await s3.send(new GetObjectAttributesExtendedCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['x-amz-meta-key1', 'x-amz-meta-key1'],
-            }));
+            const response = await s3.send(
+                new GetObjectAttributesExtendedCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['x-amz-meta-key1', 'x-amz-meta-key1'],
+                }),
+            );
 
             assert.strictEqual(response['x-amz-meta-key1'], 'value1');
             assert.strictEqual(response['x-amz-meta-key2'], undefined);

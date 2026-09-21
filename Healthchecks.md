@@ -6,19 +6,19 @@ response with HTTP code
 
 - 200 OK
 
- Server is up and running
+Server is up and running
 
 - 500 Internal Server error
 
- Server is experiencing an Internal Error
+Server is experiencing an Internal Error
 
 - 400 Bad Request
 
- Bad Request due to unsupported HTTP methods
+Bad Request due to unsupported HTTP methods
 
 - 403 Forbidden
 
- Request is not allowed due to IP restriction
+Request is not allowed due to IP restriction
 
 ## Stats
 
@@ -53,12 +53,12 @@ returned. This is accomplished by retrieving the 6 keys that represent the 6
 five-second intervals. As Redis does not have a performant RANGE query, the
 list of keys are built manually as follows
 
-* Take current timestamp
+- Take current timestamp
 
-* Build each key by subtracting the interval from the timestamp (5 seconds)
+- Build each key by subtracting the interval from the timestamp (5 seconds)
 
-* Total keys for each metric (total requests, 500s etc.) is TTL / interval
-  30/5  = 6
+- Total keys for each metric (total requests, 500s etc.) is TTL / interval
+  30/5 = 6
 
 Note: When Redis is queried, results from non-existent keys are set to 0.
 

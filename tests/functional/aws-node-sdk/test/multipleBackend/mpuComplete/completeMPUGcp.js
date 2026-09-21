@@ -11,9 +11,18 @@ const {
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { fileLocation, awsS3, awsLocation,
-    awsBucket, gcpClient, gcpBucket, gcpLocation, gcpLocationMismatch,
-    genUniqID, describeSkipIfNotMultiple } = require('../utils');
+const {
+    fileLocation,
+    awsS3,
+    awsLocation,
+    awsBucket,
+    gcpClient,
+    gcpBucket,
+    gcpLocation,
+    gcpLocationMismatch,
+    genUniqID,
+    describeSkipIfNotMultiple,
+} = require('../utils');
 
 const bucket = `completempugcp${genUniqID()}`;
 const smallBody = Buffer.from('I am a body', 'utf8');
@@ -28,10 +37,12 @@ let bucketUtil;
 function getCheck(key, bucketMatch, cb) {
     (async () => {
         let gcpKey = key;
-        const s3Res = await s3.send(new GetObjectCommand({
-            Bucket: bucket,
-            Key: gcpKey,
-        }));
+        const s3Res = await s3.send(
+            new GetObjectCommand({
+                Bucket: bucket,
+                Key: gcpKey,
+            }),
+        );
         assert.strictEqual(s3Res.ETag, `"${s3MD5}"`);
 
         if (!bucketMatch) {
@@ -52,59 +63,67 @@ function getCheck(key, bucketMatch, cb) {
 
 function mpuSetup(key, location, cb) {
     const partArray = [];
-    async.waterfall([
-        next => {
-            s3.send(new CreateMultipartUploadCommand({
-                Bucket: bucket,
-                Key: key,
-                Metadata: { 'scal-location-constraint': location },
-            }))
-                .then(res => {
-                    const uploadId = res.UploadId;
-                    assert(uploadId);
-                    assert.strictEqual(res.Bucket, bucket);
-                    assert.strictEqual(res.Key, key);
-                    next(null, uploadId);
-                })
-                .catch(next);
+    async.waterfall(
+        [
+            next => {
+                s3.send(
+                    new CreateMultipartUploadCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        Metadata: { 'scal-location-constraint': location },
+                    }),
+                )
+                    .then(res => {
+                        const uploadId = res.UploadId;
+                        assert(uploadId);
+                        assert.strictEqual(res.Bucket, bucket);
+                        assert.strictEqual(res.Key, key);
+                        next(null, uploadId);
+                    })
+                    .catch(next);
+            },
+            (uploadId, next) => {
+                s3.send(
+                    new UploadPartCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        PartNumber: 1,
+                        UploadId: uploadId,
+                        Body: smallBody,
+                    }),
+                )
+                    .then(res => {
+                        partArray.push({ ETag: res.ETag, PartNumber: 1 });
+                        next(null, uploadId);
+                    })
+                    .catch(next);
+            },
+            (uploadId, next) => {
+                s3.send(
+                    new UploadPartCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        PartNumber: 2,
+                        UploadId: uploadId,
+                        Body: bigBody,
+                    }),
+                )
+                    .then(res => {
+                        partArray.push({ ETag: res.ETag, PartNumber: 2 });
+                        next(null, uploadId);
+                    })
+                    .catch(next);
+            },
+        ],
+        (err, uploadId) => {
+            process.stdout.write('Created MPU and put two parts\n');
+            assert.equal(err, null, `Err setting up MPU: ${err}`);
+            cb(uploadId, partArray);
         },
-        (uploadId, next) => {
-            s3.send(new UploadPartCommand({
-                Bucket: bucket,
-                Key: key,
-                PartNumber: 1,
-                UploadId: uploadId,
-                Body: smallBody,
-            }))
-                .then(res => {
-                    partArray.push({ ETag: res.ETag, PartNumber: 1 });
-                    next(null, uploadId);
-                })
-                .catch(next);
-        },
-        (uploadId, next) => {
-            s3.send(new UploadPartCommand({
-                Bucket: bucket,
-                Key: key,
-                PartNumber: 2,
-                UploadId: uploadId,
-                Body: bigBody,
-            }))
-                .then(res => {
-                    partArray.push({ ETag: res.ETag, PartNumber: 2 });
-                    next(null, uploadId);
-                })
-                .catch(next);
-        },
-    ], (err, uploadId) => {
-        process.stdout.write('Created MPU and put two parts\n');
-        assert.equal(err, null, `Err setting up MPU: ${err}`);
-        cb(uploadId, partArray);
-    });
+    );
 }
 
-describeSkipIfNotMultiple('Complete MPU API for GCP data backend',
-function testSuite() {
+describeSkipIfNotMultiple('Complete MPU API for GCP data backend', function testSuite() {
     this.timeout(150000);
     withV4(sigCfg => {
         beforeEach(function beFn() {
@@ -112,24 +131,24 @@ function testSuite() {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             this.currentTest.awsClient = awsS3;
-            return s3.send(new CreateBucketCommand({ Bucket: bucket }))
-                .catch(err => {
-                    process.stdout.write(`Error creating bucket: ${err}\n`);
-                    throw err;
-                });
+            return s3.send(new CreateBucketCommand({ Bucket: bucket })).catch(err => {
+                process.stdout.write(`Error creating bucket: ${err}\n`);
+                throw err;
+            });
         });
 
         afterEach(() => {
             process.stdout.write('Emptying bucket\n');
-            return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write(`Error in afterEach: ${err}\n`);
-                throw err;
-            });
+            return bucketUtil
+                .empty(bucket)
+                .then(() => {
+                    process.stdout.write('Deleting bucket\n');
+                    return bucketUtil.deleteOne(bucket);
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in afterEach: ${err}\n`);
+                    throw err;
+                });
         });
 
         it('should complete an MPU on GCP', function itFn(done) {
@@ -148,10 +167,8 @@ function testSuite() {
             });
         });
 
-        it('should complete an MPU on GCP with bucketMatch=false',
-        function itFn(done) {
-            mpuSetup(this.test.key, gcpLocationMismatch,
-            (uploadId, partArray) => {
+        it('should complete an MPU on GCP with bucketMatch=false', function itFn(done) {
+            mpuSetup(this.test.key, gcpLocationMismatch, (uploadId, partArray) => {
                 const params = {
                     Bucket: bucket,
                     Key: this.test.key,
@@ -161,23 +178,23 @@ function testSuite() {
                 setTimeout(() => {
                     s3.send(new CompleteMultipartUploadCommand(params))
                         .then(() => getCheck(this.test.key, false, done))
-                            .catch(done);
+                        .catch(done);
                 }, gcpTimeout);
             });
         });
 
-        it('should complete an MPU on GCP with same key as object put ' +
-        'to file', function itFn(done) {
+        it('should complete an MPU on GCP with same key as object put ' + 'to file', function itFn(done) {
             const body = Buffer.from('I am a body', 'utf8');
-            s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: this.test.key,
-                Body: body,
-                Metadata: { 'scal-location-constraint': fileLocation },
-            }))
+            s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: this.test.key,
+                    Body: body,
+                    Metadata: { 'scal-location-constraint': fileLocation },
+                }),
+            )
                 .then(() => {
-                    mpuSetup(this.test.key, gcpLocation,
-                    (uploadId, partArray) => {
+                    mpuSetup(this.test.key, gcpLocation, (uploadId, partArray) => {
                         const params = {
                             Bucket: bucket,
                             Key: this.test.key,
@@ -197,18 +214,18 @@ function testSuite() {
                 });
         });
 
-        it('should complete an MPU on GCP with same key as object put ' +
-        'to GCP', function itFn(done) {
+        it('should complete an MPU on GCP with same key as object put ' + 'to GCP', function itFn(done) {
             const body = Buffer.from('I am a body', 'utf8');
-            s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: this.test.key,
-                Body: body,
-                Metadata: { 'scal-location-constraint': gcpLocation },
-            }))
+            s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: this.test.key,
+                    Body: body,
+                    Metadata: { 'scal-location-constraint': gcpLocation },
+                }),
+            )
                 .then(() => {
-                    mpuSetup(this.test.key, gcpLocation,
-                    (uploadId, partArray) => {
+                    mpuSetup(this.test.key, gcpLocation, (uploadId, partArray) => {
                         const params = {
                             Bucket: bucket,
                             Key: this.test.key,
@@ -228,18 +245,18 @@ function testSuite() {
                 });
         });
 
-        it('should complete an MPU on GCP with same key as object put ' +
-        'to AWS', function itFn(done) {
+        it('should complete an MPU on GCP with same key as object put ' + 'to AWS', function itFn(done) {
             const body = Buffer.from('I am a body', 'utf8');
-            s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: this.test.key,
-                Body: body,
-                Metadata: { 'scal-location-constraint': awsLocation },
-            }))
+            s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: this.test.key,
+                    Body: body,
+                    Metadata: { 'scal-location-constraint': awsLocation },
+                }),
+            )
                 .then(() => {
-                    mpuSetup(this.test.key, gcpLocation,
-                    (uploadId, partArray) => {
+                    mpuSetup(this.test.key, gcpLocation, (uploadId, partArray) => {
                         const params = {
                             Bucket: bucket,
                             Key: this.test.key,
@@ -250,8 +267,7 @@ function testSuite() {
                             .then(() => {
                                 // make sure object is gone from AWS
                                 setTimeout(() => {
-                                    this.test.awsClient.getObject({ Bucket: awsBucket,
-                                    Key: this.test.key }, err => {
+                                    this.test.awsClient.getObject({ Bucket: awsBucket, Key: this.test.key }, err => {
                                         assert.strictEqual(err.code, 'NoSuchKey');
                                         getCheck(this.test.key, true, done);
                                     });

@@ -9,11 +9,12 @@ const { DummyRequestLogger } = require('../helpers');
 const log = new DummyRequestLogger();
 
 // note this is not the correct checksum in objDataWithTrailingChecksum
-const objDataWithTrailingChecksum = '10\r\n01234\r6789abcd\r\n\r\n' +
-                                    '2\r\n01\r\n' +
-                                    '1\r\n2\r\n' +
-                                    'd\r\n3456789abcdef\r\n' +
-                                    '0\r\nchecksum:xyz=\r\n';
+const objDataWithTrailingChecksum =
+    '10\r\n01234\r6789abcd\r\n\r\n' +
+    '2\r\n01\r\n' +
+    '1\r\n2\r\n' +
+    'd\r\n3456789abcdef\r\n' +
+    '0\r\nchecksum:xyz=\r\n';
 const objDataWithoutTrailingChecksum = '01234\r6789abcd\r\n0123456789abcdef';
 
 class ChunkedReader extends Readable {
@@ -43,9 +44,7 @@ describe('TrailingChecksumTransform class', () => {
         trailingChecksumTransform.on('error', err => {
             assert.strictEqual(err, null);
         });
-        const chunks = [
-            Buffer.from(objDataWithTrailingChecksum),
-        ];
+        const chunks = [Buffer.from(objDataWithTrailingChecksum)];
         const chunkedReader = new ChunkedReader(chunks);
         chunkedReader.pipe(trailingChecksumTransform);
         const outputChunks = [];

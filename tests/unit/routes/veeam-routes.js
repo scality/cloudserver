@@ -83,7 +83,8 @@ describe('Veeam routes - comprehensive unit tests', () => {
             response.end.called = true;
             response.headersSent = true;
             // Emit finish event when end is called
-            const finishHandlers = response.on.getCalls()
+            const finishHandlers = response.on
+                .getCalls()
                 .filter(call => call.args[0] === 'finish')
                 .map(call => call.args[1]);
             finishHandlers.forEach(handler => handler());
@@ -113,12 +114,10 @@ describe('Veeam routes - comprehensive unit tests', () => {
 
         assert(logWarnSpy.calledOnce, 'log.warn should have been called once');
         const warnCall = logWarnSpy.getCall(0);
-        assert(warnCall.args[0].includes('UtilizationService returned 404'),
-            'warning message should mention 404');
+        assert(warnCall.args[0].includes('UtilizationService returned 404'), 'warning message should mention 404');
         assert.strictEqual(warnCall.args[1].bucket, 'test-bucket');
 
-        assert(response.writeHead.calledWith(200),
-            'should return 200 despite 404 from UtilizationService');
+        assert(response.writeHead.calledWith(200), 'should return 200 despite 404 from UtilizationService');
         assert(response.end.called, 'response should be ended');
     });
 
@@ -132,8 +131,10 @@ describe('Veeam routes - comprehensive unit tests', () => {
 
         await getVeeamFile(request, response, bucketMd, log);
 
-        assert(response.headersSent || response.write.called || response.writeHead.called,
-            'should send error response for 500 errors');
+        assert(
+            response.headersSent || response.write.called || response.writeHead.called,
+            'should send error response for 500 errors',
+        );
     });
 
     it('should handle connection error from UtilizationService and return 500', async () => {
@@ -146,8 +147,10 @@ describe('Veeam routes - comprehensive unit tests', () => {
 
         await getVeeamFile(request, response, bucketMd, log);
 
-        assert(response.headersSent || response.write.called || response.writeHead.called,
-            'should send error response for connection errors');
+        assert(
+            response.headersSent || response.write.called || response.writeHead.called,
+            'should send error response for connection errors',
+        );
     });
 
     it('should successfully use metrics when UtilizationService returns data', async () => {
@@ -168,8 +171,7 @@ describe('Veeam routes - comprehensive unit tests', () => {
         assert(utilizationStub.calledOnce, 'should call UtilizationService once');
         assert(response.end.called, 'response should be ended');
 
-        const lastModifiedCall = response.setHeader.getCalls()
-            .find(call => call.args[0] === 'Last-Modified');
+        const lastModifiedCall = response.setHeader.getCalls().find(call => call.args[0] === 'Last-Modified');
 
         assert(lastModifiedCall, 'Last-Modified header should be set');
         assert.strictEqual(
@@ -217,8 +219,7 @@ describe('Veeam routes - comprehensive unit tests', () => {
         await getVeeamFile(request, response, bucketMd, log);
 
         assert(logWarnSpy.calledOnce, 'should log warning for 404');
-        assert(response.writeHead.calledWith(200),
-            'should return 200 with static capacity data for 404');
+        assert(response.writeHead.calledWith(200), 'should return 200 with static capacity data for 404');
         assert(response.end.called, 'response should be ended');
         const warnCall = logWarnSpy.getCall(0);
         assert(warnCall.args[0].includes('404'), 'warning should mention 404');
@@ -233,8 +234,10 @@ describe('Veeam routes - comprehensive unit tests', () => {
 
         await getVeeamFile(request, response, bucketMd, log);
 
-        assert(response.headersSent || response.write.called || response.writeHead.called,
-            'should send response for metadata errors');
+        assert(
+            response.headersSent || response.write.called || response.writeHead.called,
+            'should send response for metadata errors',
+        );
     });
 
     it('should handle tagging query parameter', async () => {
@@ -244,8 +247,7 @@ describe('Veeam routes - comprehensive unit tests', () => {
 
         await getVeeamFile(request, response, bucketMd, log);
 
-        assert(response.writeHead.calledWith(200),
-            'should return 200 for tagging query');
+        assert(response.writeHead.calledWith(200), 'should return 200 for tagging query');
         assert(response.end.called, 'response should be ended');
     });
 });
@@ -361,8 +363,7 @@ describe('Veeam routes - HEAD request UtilizationService error handling', () => 
         assert(response.setHeader.called, 'should set headers');
         assert(response.end.called, 'response should be ended');
 
-        const lastModifiedCall = response.setHeader.getCalls()
-            .find(call => call.args[0] === 'Last-Modified');
+        const lastModifiedCall = response.setHeader.getCalls().find(call => call.args[0] === 'Last-Modified');
         assert(lastModifiedCall, 'Last-Modified header should be set');
         assert.strictEqual(
             lastModifiedCall.args[1],
@@ -383,8 +384,7 @@ describe('Veeam routes - HEAD request UtilizationService error handling', () => 
 
         assert(logWarnSpy.calledOnce, 'log.warn should have been called once');
         const warnCall = logWarnSpy.getCall(0);
-        assert(warnCall.args[0].includes('UtilizationService returned 404'),
-            'warning message should mention 404');
+        assert(warnCall.args[0].includes('UtilizationService returned 404'), 'warning message should mention 404');
         assert(response.setHeader.called, 'should set headers');
         assert(response.end.called, 'response should be ended');
     });
@@ -496,7 +496,8 @@ describe('Veeam routes - LIST request handling', () => {
         response.once.returns(response);
         response.end.callsFake(() => {
             response.end.called = true;
-            const finishHandlers = response.on.getCalls()
+            const finishHandlers = response.on
+                .getCalls()
                 .filter(call => call.args[0] === 'finish')
                 .map(call => call.args[1]);
             finishHandlers.forEach(handler => handler());
@@ -544,12 +545,11 @@ describe('Veeam routes - LIST request handling', () => {
             matches.push(match[1]);
         }
 
-        assert.strictEqual(matches.length, 3,
-            'should have 3 LastModified entries (system.xml, capacity.xml, folder)');
+        assert.strictEqual(matches.length, 3, 'should have 3 LastModified entries (system.xml, capacity.xml, folder)');
 
         const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
-        matches.forEach(
-            value => { assert(iso8601Regex.test(value), `LastModified "${value}" should be in ISO 8601 format`);
+        matches.forEach(value => {
+            assert(iso8601Regex.test(value), `LastModified "${value}" should be in ISO 8601 format`);
         });
     });
 
@@ -565,8 +565,7 @@ describe('Veeam routes - LIST request handling', () => {
 
         assert(logWarnSpy.calledOnce, 'log.warn should have been called once');
         const warnCall = logWarnSpy.getCall(0);
-        assert(warnCall.args[0].includes('UtilizationService returned 404'),
-            'warning message should mention 404');
+        assert(warnCall.args[0].includes('UtilizationService returned 404'), 'warning message should mention 404');
         assert(response.writeHead.calledWith(200), 'should return 200 despite 404');
         assert(response.end.called, 'response should be ended');
     });
@@ -615,31 +614,28 @@ describe('Veeam routes - LIST request handling', () => {
         assert(response.end.called, 'response should be ended');
     });
 
-    it(
-        'should list only available files when only SystemInfo is present, without calling UtilizationService',
-        async () => {
-            const bucketMdOnlySystem = {
-                ...bucketMd,
-                _capabilities: {
-                    VeeamSOSApi: {
-                        SystemInfo: {
-                            ProtocolVersion: '1.0',
-                            ModelName: 'ARTESCA',
-                            LastModified: '2024-01-01T00:00:00.000Z',
-                        },
+    it('should list only available files when only SystemInfo is present, without calling UtilizationService', async () => {
+        const bucketMdOnlySystem = {
+            ...bucketMd,
+            _capabilities: {
+                VeeamSOSApi: {
+                    SystemInfo: {
+                        ProtocolVersion: '1.0',
+                        ModelName: 'ARTESCA',
+                        LastModified: '2024-01-01T00:00:00.000Z',
                     },
                 },
-            };
-            metadataStub.callsArgWith(2, null, bucketMdOnlySystem);
+            },
+        };
+        metadataStub.callsArgWith(2, null, bucketMdOnlySystem);
 
-            const request = createRequest();
-            const response = createResponse();
+        const request = createRequest();
+        const response = createResponse();
 
-            await listVeeamFiles(request, response, bucketMdOnlySystem, log);
+        await listVeeamFiles(request, response, bucketMdOnlySystem, log);
 
-            assert(!utilizationStub.called, 'should not call UtilizationService without CapacityInfo');
-            assert(response.writeHead.calledWith(200), 'should return 200');
-            assert(response.end.called, 'response should be ended');
-        },
-    );
+        assert(!utilizationStub.called, 'should not call UtilizationService without CapacityInfo');
+        assert(response.writeHead.calledWith(200), 'should return 200');
+        assert(response.end.called, 'response should be ended');
+    });
 });
