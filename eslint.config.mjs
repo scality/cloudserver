@@ -69,6 +69,7 @@ export default [...compat.extends('@scality/scality'), {
         "new-parens": "off",
         "no-multi-spaces": "off",
         "quote-props": "off",
+        "max-len": "off",
         "mocha/no-exclusive-tests": "error",
         "no-redeclare": ["error", { "builtinGlobals": false }],
         "promise/prefer-await-to-then": "warn",
