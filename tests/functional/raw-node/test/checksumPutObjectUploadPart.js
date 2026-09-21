@@ -637,7 +637,6 @@ function makeScenarioTests(urlFn, { expectsImplicitChecksum = true } = {}) {
 
     itSkipIfAWS('should return 200 for trailer line with whitespace around name and value', done => {
         // TrailingChecksumTransform trims both name and value, so whitespace is accepted.
-        // eslint-disable-next-line max-len -- prettier keeps this fixture template on one line (121 > 120)
         const body = `f\r\ntrailer content\r\n0\r\n x-amz-checksum-sha256  :    ${trailerContentSha256}  \n\r\n\r\n\r\n`;
         doPutRequest(
             urlFn(),
