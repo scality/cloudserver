@@ -10,26 +10,26 @@
 ### Features tested
 
 - Authentication
-  - Building signature
-  - Checking timestamp
-  - Canonicalization
-  - Error Handling
+    - Building signature
+    - Checking timestamp
+    - Canonicalization
+    - Error Handling
 
 - Bucket Metadata API
-  - GET, PUT, DELETE Bucket Metadata
+    - GET, PUT, DELETE Bucket Metadata
 
 - s3 API
-  - GET Service
-  - GET, PUT, DELETE, HEAD Object
-  - GET, PUT, DELETE, HEAD Bucket
-  - ACL's
-  - Bucket Policies
-  - Lifecycle
-  - Range requests
-  - Multi-part upload
+    - GET Service
+    - GET, PUT, DELETE, HEAD Object
+    - GET, PUT, DELETE, HEAD Bucket
+    - ACL's
+    - Bucket Policies
+    - Lifecycle
+    - Range requests
+    - Multi-part upload
 
 - Routes
-  - GET, PUT, PUTRAW, DELETE, HEAD for objects and buckets
+    - GET, PUT, PUTRAW, DELETE, HEAD for objects and buckets
 
 ## Functional Tests
 

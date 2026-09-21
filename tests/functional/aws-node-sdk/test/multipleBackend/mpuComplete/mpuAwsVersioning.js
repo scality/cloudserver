@@ -2,9 +2,14 @@ const assert = require('assert');
 const async = require('async');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { CreateBucketCommand, DeleteBucketCommand,
-    CreateMultipartUploadCommand, UploadPartCommand,
-    CompleteMultipartUploadCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const {
+    CreateBucketCommand,
+    DeleteBucketCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    CompleteMultipartUploadCommand,
+    DeleteObjectCommand,
+} = require('@aws-sdk/client-s3');
 const { minimumAllowedPartSize } = require('../../../../../../constants');
 const { removeAllVersions } = require('../../../lib/utility/versioning-util');
 const {
@@ -25,161 +30,195 @@ const bucket = `mpuawsversioning${genUniqID()}`;
 
 function mpuSetup(s3, key, location, cb) {
     const partArray = [];
-    async.waterfall([
-        next => {
-            const params = {
-                Bucket: bucket,
-                Key: key,
-                Metadata: { 'scal-location-constraint': location },
-            };
-            s3.send(new CreateMultipartUploadCommand(params)).then(res => {
-                const uploadId = res.UploadId;
-                assert(uploadId);
-                assert.strictEqual(res.Bucket, bucket);
-                assert.strictEqual(res.Key, key);
-                next(null, uploadId);
-            }).catch(err => {
-                next(err);
-            });
+    async.waterfall(
+        [
+            next => {
+                const params = {
+                    Bucket: bucket,
+                    Key: key,
+                    Metadata: { 'scal-location-constraint': location },
+                };
+                s3.send(new CreateMultipartUploadCommand(params))
+                    .then(res => {
+                        const uploadId = res.UploadId;
+                        assert(uploadId);
+                        assert.strictEqual(res.Bucket, bucket);
+                        assert.strictEqual(res.Key, key);
+                        next(null, uploadId);
+                    })
+                    .catch(err => {
+                        next(err);
+                    });
+            },
+            (uploadId, next) => {
+                const partParams = {
+                    Bucket: bucket,
+                    Key: key,
+                    PartNumber: 1,
+                    UploadId: uploadId,
+                    Body: data[0],
+                };
+                s3.send(new UploadPartCommand(partParams))
+                    .then(res => {
+                        partArray.push({ ETag: res.ETag, PartNumber: 1 });
+                        next(null, uploadId);
+                    })
+                    .catch(err => {
+                        next(err);
+                    });
+            },
+            (uploadId, next) => {
+                const partParams = {
+                    Bucket: bucket,
+                    Key: key,
+                    PartNumber: 2,
+                    UploadId: uploadId,
+                    Body: data[1],
+                };
+                s3.send(new UploadPartCommand(partParams))
+                    .then(res => {
+                        partArray.push({ ETag: res.ETag, PartNumber: 2 });
+                        next(null, uploadId);
+                    })
+                    .catch(err => {
+                        next(err);
+                    });
+            },
+        ],
+        (err, uploadId) => {
+            process.stdout.write('Created MPU and put two parts\n');
+            cb(err, uploadId, partArray);
         },
-        (uploadId, next) => {
-            const partParams = {
-                Bucket: bucket,
-                Key: key,
-                PartNumber: 1,
-                UploadId: uploadId,
-                Body: data[0],
-            };
-            s3.send(new UploadPartCommand(partParams)).then(res => {
-                partArray.push({ ETag: res.ETag, PartNumber: 1 });
-                next(null, uploadId);
-            }).catch(err => {
-                next(err);
-            });
-        },
-        (uploadId, next) => {
-            const partParams = {
-                Bucket: bucket,
-                Key: key,
-                PartNumber: 2,
-                UploadId: uploadId,
-                Body: data[1],
-            };
-            s3.send(new UploadPartCommand(partParams)).then(res => {
-                partArray.push({ ETag: res.ETag, PartNumber: 2 });
-                next(null, uploadId);
-            }).catch(err => {
-                next(err);
-            });
-        },
-    ], (err, uploadId) => {
-        process.stdout.write('Created MPU and put two parts\n');
-        cb(err, uploadId, partArray);
-    });
+    );
 }
 
 function completeAndAssertMpu(s3, params, cb) {
-    const { bucket, key, uploadId, partArray, expectVersionId,
-        expectedGetVersionId } = params;
-    s3.send(new CompleteMultipartUploadCommand({
-        Bucket: bucket,
-        Key: key,
-        UploadId: uploadId,
-        MultipartUpload: { Parts: partArray },
-    })).then(data => {
-        if (expectVersionId) {
-            assert.notEqual(data.VersionId, undefined);
-        } else {
-            assert.strictEqual(data.VersionId, undefined);
-        }
-        const expectedVersionId = expectedGetVersionId || data.VersionId;
-        getAndAssertResult(s3, { bucket, key, body: concattedData,
-            expectedVersionId }, cb);
-    }).catch(err => {
-        cb(err);
-    });
+    const { bucket, key, uploadId, partArray, expectVersionId, expectedGetVersionId } = params;
+    s3.send(
+        new CompleteMultipartUploadCommand({
+            Bucket: bucket,
+            Key: key,
+            UploadId: uploadId,
+            MultipartUpload: { Parts: partArray },
+        }),
+    )
+        .then(data => {
+            if (expectVersionId) {
+                assert.notEqual(data.VersionId, undefined);
+            } else {
+                assert.strictEqual(data.VersionId, undefined);
+            }
+            const expectedVersionId = expectedGetVersionId || data.VersionId;
+            getAndAssertResult(s3, { bucket, key, body: concattedData, expectedVersionId }, cb);
+        })
+        .catch(err => {
+            cb(err);
+        });
 }
 
-describeSkipIfNotMultiple('AWS backend complete mpu with versioning',
-function testSuite() {
+describeSkipIfNotMultiple('AWS backend complete mpu with versioning', function testSuite() {
     this.timeout(120000);
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
-        beforeEach(done => s3.send(new CreateBucketCommand({
-            Bucket: bucket,
-            CreateBucketConfiguration: {
-                LocationConstraint: awsLocation,
-            },
-        })).then(() => done()).catch(err => done(err)));
+        beforeEach(done =>
+            s3
+                .send(
+                    new CreateBucketCommand({
+                        Bucket: bucket,
+                        CreateBucketConfiguration: {
+                            LocationConstraint: awsLocation,
+                        },
+                    }),
+                )
+                .then(() => done())
+                .catch(err => done(err)),
+        );
         afterEach(done => {
             removeAllVersions({ Bucket: bucket }, err => {
                 if (err) {
                     return done(err);
                 }
-                return s3.send(new DeleteBucketCommand({ Bucket: bucket }))
-                .then(() => done()).catch(done);
+                return s3
+                    .send(new DeleteBucketCommand({ Bucket: bucket }))
+                    .then(() => done())
+                    .catch(done);
             });
         });
 
-        it('versioning not configured: should not return version id ' +
-        'completing mpu', done => {
+        it('versioning not configured: should not return version id ' + 'completing mpu', done => {
             const key = `somekey-${genUniqID()}`;
             mpuSetup(s3, key, awsLocation, (err, uploadId, partArray) => {
-                completeAndAssertMpu(s3, { bucket, key, uploadId, partArray,
-                    expectVersionId: false }, done);
+                completeAndAssertMpu(s3, { bucket, key, uploadId, partArray, expectVersionId: false }, done);
             });
         });
 
-        it('versioning not configured: if complete mpu on already-existing ' +
-        'object, metadata should be overwritten but data of previous version' +
-        'in AWS should not be deleted', function itF(done) {
+        it(
+            'versioning not configured: if complete mpu on already-existing ' +
+                'object, metadata should be overwritten but data of previous version' +
+                'in AWS should not be deleted',
+            function itF(done) {
+                const key = `somekey-${genUniqID()}`;
+                async.waterfall(
+                    [
+                        next => putToAwsBackend(s3, bucket, key, '', err => next(err)),
+                        next => awsGetLatestVerId(key, '', next),
+                        (awsVerId, next) => {
+                            this.test.awsVerId = awsVerId;
+                            next();
+                        },
+                        next => mpuSetup(s3, key, awsLocation, next),
+                        (uploadId, partArray, next) =>
+                            completeAndAssertMpu(
+                                s3,
+                                { bucket, key, uploadId, partArray, expectVersionId: false },
+                                next,
+                            ),
+                        next =>
+                            s3
+                                .send(new DeleteObjectCommand({ Bucket: bucket, Key: key, VersionId: 'null' }))
+                                .then(delData => next(null, delData))
+                                .catch(next),
+                        (delData, next) => getAndAssertResult(s3, { bucket, key, expectedError: 'NoSuchKey' }, next),
+                        next => awsGetLatestVerId(key, '', next),
+                        (awsVerId, next) => {
+                            assert.strictEqual(awsVerId, this.test.awsVerId);
+                            next();
+                        },
+                    ],
+                    done,
+                );
+            },
+        );
+
+        it('versioning suspended: should not return version id completing mpu', done => {
             const key = `somekey-${genUniqID()}`;
-            async.waterfall([
-                next => putToAwsBackend(s3, bucket, key, '', err => next(err)),
-                next => awsGetLatestVerId(key, '', next),
-                (awsVerId, next) => {
-                    this.test.awsVerId = awsVerId;
-                    next();
-                },
-                next => mpuSetup(s3, key, awsLocation, next),
-                (uploadId, partArray, next) => completeAndAssertMpu(s3,
-                    { bucket, key, uploadId, partArray, expectVersionId:
-                        false }, next),
-                next => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key, VersionId:
-                    'null' })).then(delData => next(null, delData)).catch(next),
-                (delData, next) => getAndAssertResult(s3, { bucket, key,
-                    expectedError: 'NoSuchKey' }, next),
-                next => awsGetLatestVerId(key, '', next),
-                (awsVerId, next) => {
-                    assert.strictEqual(awsVerId, this.test.awsVerId);
-                    next();
-                },
-            ], done);
+            async.waterfall(
+                [
+                    next => suspendVersioning(s3, bucket, next),
+                    next => mpuSetup(s3, key, awsLocation, next),
+                    (uploadId, partArray, next) =>
+                        completeAndAssertMpu(
+                            s3,
+                            { bucket, key, uploadId, partArray, expectVersionId: false, expectedGetVersionId: 'null' },
+                            next,
+                        ),
+                ],
+                done,
+            );
         });
 
-        it('versioning suspended: should not return version id completing mpu',
-        done => {
+        it('versioning enabled: should return version id completing mpu', done => {
             const key = `somekey-${genUniqID()}`;
-            async.waterfall([
-                next => suspendVersioning(s3, bucket, next),
-                next => mpuSetup(s3, key, awsLocation, next),
-                (uploadId, partArray, next) => completeAndAssertMpu(s3,
-                    { bucket, key, uploadId, partArray, expectVersionId: false,
-                    expectedGetVersionId: 'null' }, next),
-            ], done);
-        });
-
-        it('versioning enabled: should return version id completing mpu',
-        done => {
-            const key = `somekey-${genUniqID()}`;
-            async.waterfall([
-                next => enableVersioning(s3, bucket, next),
-                next => mpuSetup(s3, key, awsLocation, next),
-                (uploadId, partArray, next) => completeAndAssertMpu(s3,
-                    { bucket, key, uploadId, partArray, expectVersionId: true },
-                    next),
-            ], done);
+            async.waterfall(
+                [
+                    next => enableVersioning(s3, bucket, next),
+                    next => mpuSetup(s3, key, awsLocation, next),
+                    (uploadId, partArray, next) =>
+                        completeAndAssertMpu(s3, { bucket, key, uploadId, partArray, expectVersionId: true }, next),
+                ],
+                done,
+            );
         });
     });
 });

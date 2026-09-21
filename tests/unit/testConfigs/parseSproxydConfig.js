@@ -19,16 +19,14 @@ function makeSproxydConf(bootstrap, chordCos, sproxydPath) {
 
 describe('parseSproxydConfig', () => {
     it('should return a parsed config if valid', () => {
-        const sproxydConf = parseSproxydConfig(makeSproxydConf(
-            ['localhost:8181'], null, '/arc'));
+        const sproxydConf = parseSproxydConfig(makeSproxydConf(['localhost:8181'], null, '/arc'));
         assert.deepStrictEqual(sproxydConf, {
             bootstrap: ['localhost:8181'],
             path: '/arc',
         });
     });
     it('should return a parsed config with chordCos if valid', () => {
-        const sproxydConf = parseSproxydConfig(makeSproxydConf(
-            ['localhost:8181'], '3', '/arc'));
+        const sproxydConf = parseSproxydConfig(makeSproxydConf(['localhost:8181'], '3', '/arc'));
         assert.deepStrictEqual(sproxydConf, {
             bootstrap: ['localhost:8181'],
             path: '/arc',
@@ -40,8 +38,7 @@ describe('parseSproxydConfig', () => {
             parseSproxydConfig(makeSproxydConf('localhost:8181'));
         });
     });
-    it('should throw an error if bootstrap array does not contain strings',
-    () => {
+    it('should throw an error if bootstrap array does not contain strings', () => {
         assert.throws(() => {
             parseSproxydConfig(makeSproxydConf([8181]));
         });

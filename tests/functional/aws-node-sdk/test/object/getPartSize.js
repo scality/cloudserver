@@ -30,8 +30,7 @@ const invalidPartNumbers = [-1, 0, maximumAllowedPartCount + 1];
 let ETags = [];
 
 function checkNoError(err) {
-    assert.equal(err, null,
-        `Expected success, got error ${JSON.stringify(err)}`);
+    assert.equal(err, null, `Expected success, got error ${JSON.stringify(err)}`);
 }
 
 function generateContent(partNumber) {
@@ -45,25 +44,31 @@ describe('Part size tests with object head', () => {
         let uploadId;
 
         function headObject(fields, cb) {
-            s3.send(new HeadObjectCommand({
-                Bucket: bucket,
-                Key: object,
-                ...fields,
-            })).then(data => {
-                cb(null, data);
-            }).catch(err => {
-                cb(err);
-            });
+            s3.send(
+                new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: object,
+                    ...fields,
+                }),
+            )
+                .then(data => {
+                    cb(null, data);
+                })
+                .catch(err => {
+                    cb(err);
+                });
         }
 
         before(async () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-            const uploadResult = await s3.send(new CreateMultipartUploadCommand({
-                Bucket: bucket,
-                Key: object
-            }));
+            const uploadResult = await s3.send(
+                new CreateMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: object,
+                }),
+            );
             uploadId = uploadResult.UploadId;
             const uploadPromises = partNumbers.map(async partNumber => {
                 const uploadPartParams = {
@@ -77,16 +82,20 @@ describe('Part size tests with object head', () => {
                 return result.ETag;
             });
             ETags = await Promise.all(uploadPromises);
-            await s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: emptyObject,
-                Body: '',
-            }));
-            await s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: nonMpuObject,
-                Body: generateContent(0),
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: emptyObject,
+                    Body: '',
+                }),
+            );
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: nonMpuObject,
+                    Body: generateContent(0),
+                }),
+            );
             const completeParams = {
                 Bucket: bucket,
                 Key: object,
@@ -102,37 +111,42 @@ describe('Part size tests with object head', () => {
         });
 
         after(async () => {
-            await s3.send(new DeleteObjectCommand({
-                Bucket: bucket,
-                Key: object
-            }));
-            await s3.send(new DeleteObjectCommand({
-                Bucket: bucket,
-                Key: emptyObject
-            }));
-            await s3.send(new DeleteObjectCommand({
-                Bucket: bucket,
-                Key: nonMpuObject
-            }));
-            await s3.send(new DeleteBucketCommand({
-                Bucket: bucket
-            }));
+            await s3.send(
+                new DeleteObjectCommand({
+                    Bucket: bucket,
+                    Key: object,
+                }),
+            );
+            await s3.send(
+                new DeleteObjectCommand({
+                    Bucket: bucket,
+                    Key: emptyObject,
+                }),
+            );
+            await s3.send(
+                new DeleteObjectCommand({
+                    Bucket: bucket,
+                    Key: nonMpuObject,
+                }),
+            );
+            await s3.send(
+                new DeleteBucketCommand({
+                    Bucket: bucket,
+                }),
+            );
         });
 
-        it('should return the total size of the object ' +
-            'when --part-number is not used', done => {
-                const totalSize = partNumbers.reduce((total, current) =>
-                    total + (bodySize + current + 1), 0);
-                headObject({}, (err, data) => {
-                    checkNoError(err);
-                    assert.equal(totalSize, data.ContentLength);
-                    done();
-                });
+        it('should return the total size of the object ' + 'when --part-number is not used', done => {
+            const totalSize = partNumbers.reduce((total, current) => total + (bodySize + current + 1), 0);
+            headObject({}, (err, data) => {
+                checkNoError(err);
+                assert.equal(totalSize, data.ContentLength);
+                done();
             });
+        });
 
         partNumbers.forEach(part => {
-            it(`should return the size of part ${part + 1} ` +
-                `when --part-number is set to ${part + 1}`, done => {
+            it(`should return the size of part ${part + 1} ` + `when --part-number is set to ${part + 1}`, done => {
                 const partNumber = Number.parseInt(part, 10) + 1;
                 const partSize = bodySize + partNumber;
                 headObject({ PartNumber: partNumber }, (err, data) => {
@@ -144,8 +158,7 @@ describe('Part size tests with object head', () => {
         });
 
         invalidPartNumbers.forEach(part => {
-            it(`should return an error when --part-number is set to ${part}`,
-            done => {
+            it(`should return an error when --part-number is set to ${part}`, done => {
                 headObject({ PartNumber: part }, err => {
                     assert.equal(err.$metadata.httpStatusCode, 400);
                     done();
@@ -154,8 +167,7 @@ describe('Part size tests with object head', () => {
         });
 
         it('should return an error when incorrect --part-number is used', done => {
-            headObject({ PartNumber: partNumbers.length + 1 },
-            err => {
+            headObject({ PartNumber: partNumbers.length + 1 }, err => {
                 checkError(err, '', 416);
                 done();
             });
@@ -174,7 +186,7 @@ describe('Part size tests with object head', () => {
                 checkError(err, '', 416);
                 done();
             });
-        }); 
+        });
 
         it('should return content-length requesting part 1 of non-MPU object', done => {
             headObject({ Key: nonMpuObject, PartNumber: 1 }, (err, data) => {

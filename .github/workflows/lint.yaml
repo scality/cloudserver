@@ -15,18 +15,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: '22.23.1'
           cache: yarn
       - name: install dependencies
         run: yarn install --frozen-lockfile --network-concurrency 1
-      - name: Prettier (changed files)
-        shell: bash
-        env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
-        run: |
-          MERGE_BASE=$(git merge-base HEAD "origin/${BASE_REF}")
-          yarn run --silent prettier:diff --check "${MERGE_BASE}..HEAD"
+      - name: Prettier
+        run: yarn run --silent prettier:check

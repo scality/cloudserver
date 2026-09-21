@@ -52,10 +52,12 @@ function checkContents(contents, expectedKeyVersions) {
         assert(d.Owner.ID);
         assert(d.StorageClass);
         assert.strictEqual(d.StorageClass, 'STANDARD');
-        assert.deepStrictEqual(d.TagSet, [{
-            Key: 'mykey',
-            Value: 'myvalue',
-        }]);
+        assert.deepStrictEqual(d.TagSet, [
+            {
+                Key: 'mykey',
+                Value: 'myvalue',
+            },
+        ]);
         assert.strictEqual(d.IsLatest, true);
         assert.strictEqual(d.DataStoreName, location);
         assert.strictEqual(d.ListType, 'current');
@@ -71,7 +73,496 @@ function checkContents(contents, expectedKeyVersions) {
         let date;
         const expectedKeyVersions = {};
 
-        before(done => async.series([
+        before(done =>
+            async.series(
+                [
+                    next => {
+                        getCredentials()
+                            .then(creds => {
+                                credentials = creds;
+                                return getS3Hostname();
+                            })
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next =>
+                        s3
+                            .send(new CreateBucketCommand({ Bucket: testBucket }))
+                            .then(() => next())
+                            .catch(next),
+                    next =>
+                        s3
+                            .send(new CreateBucketCommand({ Bucket: emptyBucket }))
+                            .then(() => next())
+                            .catch(next),
+                    next => {
+                        if (versioning !== 'Enabled') {
+                            return process.nextTick(next);
+                        }
+                        return s3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: testBucket,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next => {
+                        if (versioning !== 'Enabled') {
+                            return process.nextTick(next);
+                        }
+                        return s3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: emptyBucket,
+                                    VersioningConfiguration: { Status: 'Enabled' },
+                                }),
+                            )
+                            .then(() => next())
+                            .catch(next);
+                    },
+                    next =>
+                        async.times(
+                            3,
+                            (n, cb) => {
+                                const keyName = `oldkey${n}`;
+                                s3.send(
+                                    new PutObjectCommand({
+                                        Bucket: testBucket,
+                                        Key: keyName,
+                                        Body: '123',
+                                        Tagging: 'mykey=myvalue',
+                                    }),
+                                )
+                                    .then(data => {
+                                        expectedKeyVersions[keyName] = data.VersionId;
+                                        cb();
+                                    })
+                                    .catch(cb);
+                            },
+                            next,
+                        ),
+                    next => {
+                        date = new Date(Date.now()).toISOString();
+                        return async.times(
+                            5,
+                            (n, cb) => {
+                                const keyName = `key${n}`;
+                                s3.send(
+                                    new PutObjectCommand({
+                                        Bucket: testBucket,
+                                        Key: keyName,
+                                        Body: '123',
+                                        Tagging: 'mykey=myvalue',
+                                    }),
+                                )
+                                    .then(data => {
+                                        expectedKeyVersions[keyName] = data.VersionId;
+                                        cb();
+                                    })
+                                    .catch(cb);
+                            },
+                            next,
+                        );
+                    },
+                ],
+                done,
+            ),
+        );
+
+        after(async () => {
+            await removeAllVersionsPromise({ Bucket: testBucket });
+            await s3.send(new DeleteBucketCommand({ Bucket: testBucket }));
+            await s3.send(new DeleteBucketCommand({ Bucket: emptyBucket }));
+        });
+
+        it('should return empty list of current versions if bucket is empty', done => {
+            makeBackbeatRequest(
+                {
+                    method: 'GET',
+                    bucket: emptyBucket,
+                    queryObj: { 'list-type': 'current' },
+                    authCredentials: credentials,
+                },
+                (err, response) => {
+                    assert.ifError(err);
+                    assert.strictEqual(response.statusCode, 200);
+                    const data = JSON.parse(response.body);
+
+                    assert.strictEqual(data.IsTruncated, false);
+                    assert(!data.NextMarker);
+                    assert.strictEqual(data.MaxKeys, 1000);
+                    assert.strictEqual(
+                        data.MaxScannedLifecycleListingEntries,
+                        config.maxScannedLifecycleListingEntries,
+                    );
+                    assert.strictEqual(data.Contents.length, 0);
+                    return done();
+                },
+            );
+        });
+
+        it('should return empty list of current versions if prefix does not apply', done => {
+            makeBackbeatRequest(
+                {
+                    method: 'GET',
+                    bucket: testBucket,
+                    queryObj: { 'list-type': 'current', prefix: 'unknown' },
+                    authCredentials: credentials,
+                },
+                (err, response) => {
+                    assert.ifError(err);
+                    assert.strictEqual(response.statusCode, 200);
+                    const data = JSON.parse(response.body);
+
+                    assert.strictEqual(data.IsTruncated, false);
+                    assert(!data.NextMarker);
+                    assert.strictEqual(data.MaxKeys, 1000);
+                    assert.strictEqual(
+                        data.MaxScannedLifecycleListingEntries,
+                        config.maxScannedLifecycleListingEntries,
+                    );
+                    assert.strictEqual(data.Contents.length, 0);
+                    return done();
+                },
+            );
+        });
+
+        it('should return empty list if max-keys is set to 0', done => {
+            makeBackbeatRequest(
+                {
+                    method: 'GET',
+                    bucket: testBucket,
+                    queryObj: { 'list-type': 'current', 'max-keys': '0' },
+                    authCredentials: credentials,
+                },
+                (err, response) => {
+                    assert.ifError(err);
+                    assert.strictEqual(response.statusCode, 200);
+                    const data = JSON.parse(response.body);
+
+                    assert.strictEqual(data.IsTruncated, false);
+                    assert(!data.NextMarker);
+                    assert.strictEqual(data.MaxKeys, 0);
+                    assert.strictEqual(
+                        data.MaxScannedLifecycleListingEntries,
+                        config.maxScannedLifecycleListingEntries,
+                    );
+                    assert.strictEqual(data.Contents.length, 0);
+
+                    return done();
+                },
+            );
+        });
+
+        it('should return NoSuchBucket error if bucket does not exist', done => {
+            makeBackbeatRequest(
+                {
+                    method: 'GET',
+                    bucket: 'idonotexist',
+                    queryObj: { 'list-type': 'current' },
+                    authCredentials: credentials,
+                },
+                err => {
+                    assert.strictEqual(err.code, 'NoSuchBucket');
+                    return done();
+                },
+            );
+        });
+
+        it('should return InvalidArgument error if max-keys is invalid', done => {
+            makeBackbeatRequest(
+                {
+                    method: 'GET',
+                    bucket: testBucket,
+                    queryObj: { 'list-type': 'current', 'max-keys': 'a' },
+                    authCredentials: credentials,
+                },
+                err => {
+                    assert.strictEqual(err.code, 'InvalidArgument');
+                    return done();
+                },
+            );
+        });
+
+        it('should return InvalidArgument error if max-scanned-lifecycle-listing-entries is invalid', done => {
+            makeBackbeatRequest(
+                {
+                    method: 'GET',
+                    bucket: testBucket,
+                    queryObj: { 'list-type': 'current', 'max-scanned-lifecycle-listing-entries': 'a' },
+                    authCredentials: credentials,
+                },
+                err => {
+                    assert.strictEqual(err.code, 'InvalidArgument');
+                    return done();
+                },
+            );
+        });
+
+        it('should return InvalidArgument error if max-scanned-lifecycle-listing-entries is set to 0', done => {
+            makeBackbeatRequest(
+                {
+                    method: 'GET',
+                    bucket: testBucket,
+                    queryObj: { 'list-type': 'current', 'max-scanned-lifecycle-listing-entries': '0' },
+                    authCredentials: credentials,
+                },
+                err => {
+                    assert.strictEqual(err.code, 'InvalidArgument');
+                    return done();
+                },
+            );
+        });
+
+        it('should return InvalidArgument if max-scanned-lifecycle-listing-entries exceeds the default value', done => {
+            makeBackbeatRequest(
+                {
+                    method: 'GET',
+                    bucket: testBucket,
+                    queryObj: {
+                        'list-type': 'current',
+                        'max-scanned-lifecycle-listing-entries': (
+                            config.maxScannedLifecycleListingEntries + 1
+                        ).toString(),
+                    },
+                    authCredentials: credentials,
+                },
+                err => {
+                    assert.strictEqual(err.code, 'InvalidArgument');
+                    return done();
+                },
+            );
+        });
+
+        it('should return all the current versions', done => {
+            makeBackbeatRequest(
+                {
+                    method: 'GET',
+                    bucket: testBucket,
+                    queryObj: { 'list-type': 'current' },
+                    authCredentials: credentials,
+                },
+                (err, response) => {
+                    assert.ifError(err);
+                    assert.strictEqual(response.statusCode, 200);
+                    const data = JSON.parse(response.body);
+
+                    assert.strictEqual(data.IsTruncated, false);
+                    assert(!data.NextMarker);
+                    assert.strictEqual(data.MaxKeys, 1000);
+                    assert.strictEqual(
+                        data.MaxScannedLifecycleListingEntries,
+                        config.maxScannedLifecycleListingEntries,
+                    );
+
+                    const contents = data.Contents;
+                    assert.strictEqual(contents.length, 8);
+                    checkContents(contents, expectedKeyVersions);
+
+                    return done();
+                },
+            );
+        });
+
+        it('should return all the current versions before max scanned entries value is reached', done => {
+            makeBackbeatRequest(
+                {
+                    method: 'GET',
+                    bucket: testBucket,
+                    queryObj: { 'list-type': 'current', 'max-scanned-lifecycle-listing-entries': '5' },
+                    authCredentials: credentials,
+                },
+                (err, response) => {
+                    assert.ifError(err);
+                    assert.strictEqual(response.statusCode, 200);
+                    const data = JSON.parse(response.body);
+
+                    assert.strictEqual(data.IsTruncated, true);
+                    assert.strictEqual(data.NextMarker, 'key4');
+                    assert.strictEqual(data.MaxKeys, 1000);
+                    assert.strictEqual(data.MaxScannedLifecycleListingEntries, 5);
+
+                    const contents = data.Contents;
+                    assert.strictEqual(contents.length, 5);
+                    checkContents(contents, expectedKeyVersions);
+
+                    return done();
+                },
+            );
+        });
+
+        it('should return all the current versions with prefix old', done => {
+            const prefix = 'old';
+
+            makeBackbeatRequest(
+                {
+                    method: 'GET',
+                    bucket: testBucket,
+                    queryObj: { 'list-type': 'current', prefix },
+                    authCredentials: credentials,
+                },
+                (err, response) => {
+                    assert.ifError(err);
+                    assert.strictEqual(response.statusCode, 200);
+                    const data = JSON.parse(response.body);
+
+                    assert.strictEqual(data.IsTruncated, false);
+                    assert(!data.NextMarker);
+                    assert.strictEqual(data.MaxKeys, 1000);
+                    assert.strictEqual(
+                        data.MaxScannedLifecycleListingEntries,
+                        config.maxScannedLifecycleListingEntries,
+                    );
+                    assert.strictEqual(data.Prefix, prefix);
+
+                    const contents = data.Contents;
+                    assert.strictEqual(contents.length, 3);
+                    checkContents(contents, expectedKeyVersions);
+
+                    return done();
+                },
+            );
+        });
+
+        it('should return the current versions before a defined date', done => {
+            makeBackbeatRequest(
+                {
+                    method: 'GET',
+                    bucket: testBucket,
+                    queryObj: { 'list-type': 'current', 'before-date': date },
+                    authCredentials: credentials,
+                },
+                (err, response) => {
+                    assert.ifError(err);
+                    assert.strictEqual(response.statusCode, 200);
+                    const data = JSON.parse(response.body);
+
+                    assert.strictEqual(data.IsTruncated, false);
+                    assert(!data.NextMarker);
+                    assert.strictEqual(data.MaxKeys, 1000);
+                    assert.strictEqual(
+                        data.MaxScannedLifecycleListingEntries,
+                        config.maxScannedLifecycleListingEntries,
+                    );
+                    assert.strictEqual(data.Contents.length, 3);
+                    assert.strictEqual(data.BeforeDate, date);
+
+                    const contents = data.Contents;
+                    checkContents(contents, expectedKeyVersions);
+                    assert.strictEqual(contents[0].Key, 'oldkey0');
+                    assert.strictEqual(contents[1].Key, 'oldkey1');
+                    assert.strictEqual(contents[2].Key, 'oldkey2');
+                    return done();
+                },
+            );
+        });
+
+        it('should truncate list of current versions before a defined date', done => {
+            makeBackbeatRequest(
+                {
+                    method: 'GET',
+                    bucket: testBucket,
+                    queryObj: { 'list-type': 'current', 'before-date': date, 'max-keys': '1' },
+                    authCredentials: credentials,
+                },
+                (err, response) => {
+                    assert.ifError(err);
+                    assert.strictEqual(response.statusCode, 200);
+                    const data = JSON.parse(response.body);
+
+                    assert.strictEqual(data.IsTruncated, true);
+                    assert.strictEqual(data.NextMarker, 'oldkey0');
+                    assert.strictEqual(data.MaxKeys, 1);
+                    assert.strictEqual(
+                        data.MaxScannedLifecycleListingEntries,
+                        config.maxScannedLifecycleListingEntries,
+                    );
+                    assert.strictEqual(data.BeforeDate, date);
+                    assert.strictEqual(data.Contents.length, 1);
+
+                    const contents = data.Contents;
+                    checkContents(contents, expectedKeyVersions);
+                    assert.strictEqual(contents[0].Key, 'oldkey0');
+                    return done();
+                },
+            );
+        });
+
+        it('should return the next truncate list of current versions before a defined date', done => {
+            makeBackbeatRequest(
+                {
+                    method: 'GET',
+                    bucket: testBucket,
+                    queryObj: { 'list-type': 'current', 'before-date': date, 'max-keys': '1', marker: 'oldkey0' },
+                    authCredentials: credentials,
+                },
+                (err, response) => {
+                    assert.ifError(err);
+                    assert.strictEqual(response.statusCode, 200);
+                    const data = JSON.parse(response.body);
+
+                    assert.strictEqual(data.IsTruncated, true);
+                    assert.strictEqual(data.Marker, 'oldkey0');
+                    assert.strictEqual(data.NextMarker, 'oldkey1');
+                    assert.strictEqual(data.MaxKeys, 1);
+                    assert.strictEqual(
+                        data.MaxScannedLifecycleListingEntries,
+                        config.maxScannedLifecycleListingEntries,
+                    );
+                    assert.strictEqual(data.Contents.length, 1);
+
+                    const contents = data.Contents;
+                    checkContents(contents, expectedKeyVersions);
+                    assert.strictEqual(contents[0].Key, 'oldkey1');
+                    assert.strictEqual(data.BeforeDate, date);
+                    return done();
+                },
+            );
+        });
+
+        it('should return the last truncate list of current versions before a defined date', done => {
+            makeBackbeatRequest(
+                {
+                    method: 'GET',
+                    bucket: testBucket,
+                    queryObj: { 'list-type': 'current', 'before-date': date, 'max-keys': '1', marker: 'oldkey1' },
+                    authCredentials: credentials,
+                },
+                (err, response) => {
+                    assert.ifError(err);
+                    assert.strictEqual(response.statusCode, 200);
+                    const data = JSON.parse(response.body);
+
+                    assert.strictEqual(data.IsTruncated, false);
+                    assert.strictEqual(data.MaxKeys, 1);
+                    assert.strictEqual(
+                        data.MaxScannedLifecycleListingEntries,
+                        config.maxScannedLifecycleListingEntries,
+                    );
+                    assert.strictEqual(data.Marker, 'oldkey1');
+                    assert.strictEqual(data.BeforeDate, date);
+
+                    const contents = data.Contents;
+                    assert.strictEqual(contents.length, 1);
+                    checkContents(contents, expectedKeyVersions);
+                    assert.strictEqual(contents[0].Key, 'oldkey2');
+                    return done();
+                },
+            );
+        });
+    });
+});
+
+describe('listLifecycleCurrents with bucket versioning enabled and maxKeys', () => {
+    const testBucket = 'bucket-for-list-lifecycle-current-tests-truncated';
+    const expectedKeyVersions = {};
+
+    before(done =>
+        async.series(
+            [
                 next => {
                     getCredentials()
                         .then(creds => {
@@ -81,441 +572,88 @@ function checkContents(contents, expectedKeyVersions) {
                         .then(() => next())
                         .catch(next);
                 },
-                next => s3.send(new CreateBucketCommand({ Bucket: testBucket }))
-                    .then(() => next())
-                    .catch(next),
-                next => s3.send(new CreateBucketCommand({ Bucket: emptyBucket }))
-                    .then(() => next())
-                    .catch(next),
-                next => {
-                    if (versioning !== 'Enabled') {
-                        return process.nextTick(next);
-                    }
-                    return s3.send(new PutBucketVersioningCommand({
-                        Bucket: testBucket,
-                        VersioningConfiguration: { Status: 'Enabled' },
-                    }))
+                next =>
+                    s3
+                        .send(new CreateBucketCommand({ Bucket: testBucket }))
                         .then(() => next())
-                        .catch(next);
-                },
-                next => {
-                    if (versioning !== 'Enabled') {
-                        return process.nextTick(next);
-                    }
-                    return s3.send(new PutBucketVersioningCommand({
-                        Bucket: emptyBucket,
-                        VersioningConfiguration: { Status: 'Enabled' },
-                    }))
+                        .catch(next),
+                next =>
+                    s3
+                        .send(
+                            new PutBucketVersioningCommand({
+                                Bucket: testBucket,
+                                VersioningConfiguration: { Status: 'Enabled' },
+                            }),
+                        )
                         .then(() => next())
-                        .catch(next);
-                },
-                next => async.times(3, (n, cb) => {
-                    const keyName = `oldkey${n}`;
-                    s3.send(new PutObjectCommand({
-                        Bucket: testBucket,
-                        Key: keyName,
-                        Body: '123',
-                        Tagging: 'mykey=myvalue',
-                    }))
-                        .then(data => {
-                            expectedKeyVersions[keyName] = data.VersionId;
-                            cb();
-                        })
-                        .catch(cb);
-                }, next),
-                next => {
-                    date = new Date(Date.now()).toISOString();
-                    return async.times(5, (n, cb) => {
-                        const keyName = `key${n}`;
-                        s3.send(new PutObjectCommand({
-                            Bucket: testBucket,
-                            Key: keyName,
-                            Body: '123',
-                            Tagging: 'mykey=myvalue',
-                        }))
-                            .then(data => {
-                                expectedKeyVersions[keyName] = data.VersionId;
-                                cb();
-                            })
-                            .catch(cb);
-                    }, next);
-                },
-            ], done));
-
-        after(async () => {
-            await removeAllVersionsPromise({ Bucket: testBucket });
-            await s3.send(new DeleteBucketCommand({ Bucket: testBucket }));
-            await s3.send(new DeleteBucketCommand({ Bucket: emptyBucket })); 
-        });
-
-        it('should return empty list of current versions if bucket is empty', done => {
-            makeBackbeatRequest({
-                method: 'GET',
-                bucket: emptyBucket,
-                queryObj: { 'list-type': 'current' },
-                authCredentials: credentials,
-            }, (err, response) => {
-                assert.ifError(err);
-                assert.strictEqual(response.statusCode, 200);
-                const data = JSON.parse(response.body);
-
-                assert.strictEqual(data.IsTruncated, false);
-                assert(!data.NextMarker);
-                assert.strictEqual(data.MaxKeys, 1000);
-                assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
-                assert.strictEqual(data.Contents.length, 0);
-                return done();
-            });
-        });
-
-        it('should return empty list of current versions if prefix does not apply', done => {
-            makeBackbeatRequest({
-                method: 'GET',
-                bucket: testBucket,
-                queryObj: { 'list-type': 'current', 'prefix': 'unknown' },
-                authCredentials: credentials,
-            }, (err, response) => {
-                assert.ifError(err);
-                assert.strictEqual(response.statusCode, 200);
-                const data = JSON.parse(response.body);
-
-                assert.strictEqual(data.IsTruncated, false);
-                assert(!data.NextMarker);
-                assert.strictEqual(data.MaxKeys, 1000);
-                assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
-                assert.strictEqual(data.Contents.length, 0);
-                return done();
-            });
-        });
-
-        it('should return empty list if max-keys is set to 0', done => {
-            makeBackbeatRequest({
-                method: 'GET',
-                bucket: testBucket,
-                queryObj: { 'list-type': 'current', 'max-keys': '0' },
-                authCredentials: credentials,
-            }, (err, response) => {
-                assert.ifError(err);
-                assert.strictEqual(response.statusCode, 200);
-                const data = JSON.parse(response.body);
-
-                assert.strictEqual(data.IsTruncated, false);
-                assert(!data.NextMarker);
-                assert.strictEqual(data.MaxKeys, 0);
-                assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
-                assert.strictEqual(data.Contents.length, 0);
-
-                return done();
-            });
-        });
-
-        it('should return NoSuchBucket error if bucket does not exist', done => {
-            makeBackbeatRequest({
-                method: 'GET',
-                bucket: 'idonotexist',
-                queryObj: { 'list-type': 'current' },
-                authCredentials: credentials,
-            }, err => {
-                assert.strictEqual(err.code, 'NoSuchBucket');
-                return done();
-            });
-        });
-
-        it('should return InvalidArgument error if max-keys is invalid', done => {
-            makeBackbeatRequest({
-                method: 'GET',
-                bucket: testBucket,
-                queryObj: { 'list-type': 'current', 'max-keys': 'a' },
-                authCredentials: credentials,
-            }, err => {
-                assert.strictEqual(err.code, 'InvalidArgument');
-                return done();
-            });
-        });
-
-        it('should return InvalidArgument error if max-scanned-lifecycle-listing-entries is invalid', done => {
-            makeBackbeatRequest({
-                method: 'GET',
-                bucket: testBucket,
-                queryObj: { 'list-type': 'current', 'max-scanned-lifecycle-listing-entries': 'a' },
-                authCredentials: credentials,
-            }, err => {
-                assert.strictEqual(err.code, 'InvalidArgument');
-                return done();
-            });
-        });
-
-        it('should return InvalidArgument error if max-scanned-lifecycle-listing-entries is set to 0', done => {
-            makeBackbeatRequest({
-                method: 'GET',
-                bucket: testBucket,
-                queryObj: { 'list-type': 'current', 'max-scanned-lifecycle-listing-entries': '0' },
-                authCredentials: credentials,
-            }, err => {
-                assert.strictEqual(err.code, 'InvalidArgument');
-                return done();
-            });
-        });
-
-        it('should return InvalidArgument if max-scanned-lifecycle-listing-entries exceeds the default value', done => {
-            makeBackbeatRequest({
-                method: 'GET',
-                bucket: testBucket,
-                queryObj: { 'list-type': 'current', 'max-scanned-lifecycle-listing-entries':
-                    (config.maxScannedLifecycleListingEntries + 1).toString() },
-                authCredentials: credentials,
-            }, err => {
-                assert.strictEqual(err.code, 'InvalidArgument');
-                return done();
-            });
-        });
-
-        it('should return all the current versions', done => {
-            makeBackbeatRequest({
-                method: 'GET',
-                bucket: testBucket,
-                queryObj: { 'list-type': 'current' },
-                authCredentials: credentials,
-            }, (err, response) => {
-                assert.ifError(err);
-                assert.strictEqual(response.statusCode, 200);
-                const data = JSON.parse(response.body);
-
-                assert.strictEqual(data.IsTruncated, false);
-                assert(!data.NextMarker);
-                assert.strictEqual(data.MaxKeys, 1000);
-                assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
-
-                const contents = data.Contents;
-                assert.strictEqual(contents.length, 8);
-                checkContents(contents, expectedKeyVersions);
-
-                return done();
-            });
-        });
-
-        it('should return all the current versions before max scanned entries value is reached', done => {
-            makeBackbeatRequest({
-                method: 'GET',
-                bucket: testBucket,
-                queryObj: { 'list-type': 'current', 'max-scanned-lifecycle-listing-entries': '5' },
-                authCredentials: credentials,
-            }, (err, response) => {
-                assert.ifError(err);
-                assert.strictEqual(response.statusCode, 200);
-                const data = JSON.parse(response.body);
-
-                assert.strictEqual(data.IsTruncated, true);
-                assert.strictEqual(data.NextMarker, 'key4');
-                assert.strictEqual(data.MaxKeys, 1000);
-                assert.strictEqual(data.MaxScannedLifecycleListingEntries, 5);
-
-                const contents = data.Contents;
-                assert.strictEqual(contents.length, 5);
-                checkContents(contents, expectedKeyVersions);
-
-                return done();
-            });
-        });
-
-        it('should return all the current versions with prefix old', done => {
-            const prefix = 'old';
-
-            makeBackbeatRequest({
-                method: 'GET',
-                bucket: testBucket,
-                queryObj: { 'list-type': 'current', prefix },
-                authCredentials: credentials,
-            }, (err, response) => {
-                assert.ifError(err);
-                assert.strictEqual(response.statusCode, 200);
-                const data = JSON.parse(response.body);
-
-                assert.strictEqual(data.IsTruncated, false);
-                assert(!data.NextMarker);
-                assert.strictEqual(data.MaxKeys, 1000);
-                assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
-                assert.strictEqual(data.Prefix, prefix);
-
-                const contents = data.Contents;
-                assert.strictEqual(contents.length, 3);
-                checkContents(contents, expectedKeyVersions);
-
-                return done();
-            });
-        });
-
-        it('should return the current versions before a defined date', done => {
-            makeBackbeatRequest({
-                method: 'GET',
-                bucket: testBucket,
-                queryObj: { 'list-type': 'current', 'before-date': date },
-                authCredentials: credentials,
-            }, (err, response) => {
-                assert.ifError(err);
-                assert.strictEqual(response.statusCode, 200);
-                const data = JSON.parse(response.body);
-
-                assert.strictEqual(data.IsTruncated, false);
-                assert(!data.NextMarker);
-                assert.strictEqual(data.MaxKeys, 1000);
-                assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
-                assert.strictEqual(data.Contents.length, 3);
-                assert.strictEqual(data.BeforeDate, date);
-
-                const contents = data.Contents;
-                checkContents(contents, expectedKeyVersions);
-                assert.strictEqual(contents[0].Key, 'oldkey0');
-                assert.strictEqual(contents[1].Key, 'oldkey1');
-                assert.strictEqual(contents[2].Key, 'oldkey2');
-                return done();
-            });
-        });
-
-        it('should truncate list of current versions before a defined date', done => {
-            makeBackbeatRequest({
-                method: 'GET',
-                bucket: testBucket,
-                queryObj: { 'list-type': 'current', 'before-date': date, 'max-keys': '1' },
-                authCredentials: credentials,
-            }, (err, response) => {
-                assert.ifError(err);
-                assert.strictEqual(response.statusCode, 200);
-                const data = JSON.parse(response.body);
-
-                assert.strictEqual(data.IsTruncated, true);
-                assert.strictEqual(data.NextMarker, 'oldkey0');
-                assert.strictEqual(data.MaxKeys, 1);
-                assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
-                assert.strictEqual(data.BeforeDate, date);
-                assert.strictEqual(data.Contents.length, 1);
-
-                const contents = data.Contents;
-                checkContents(contents, expectedKeyVersions);
-                assert.strictEqual(contents[0].Key, 'oldkey0');
-                return done();
-            });
-        });
-
-        it('should return the next truncate list of current versions before a defined date', done => {
-            makeBackbeatRequest({
-                method: 'GET',
-                bucket: testBucket,
-                queryObj: { 'list-type': 'current', 'before-date': date, 'max-keys': '1', 'marker': 'oldkey0' },
-                authCredentials: credentials,
-            }, (err, response) => {
-                assert.ifError(err);
-                assert.strictEqual(response.statusCode, 200);
-                const data = JSON.parse(response.body);
-
-                assert.strictEqual(data.IsTruncated, true);
-                assert.strictEqual(data.Marker, 'oldkey0');
-                assert.strictEqual(data.NextMarker, 'oldkey1');
-                assert.strictEqual(data.MaxKeys, 1);
-                assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
-                assert.strictEqual(data.Contents.length, 1);
-
-                const contents = data.Contents;
-                checkContents(contents, expectedKeyVersions);
-                assert.strictEqual(contents[0].Key, 'oldkey1');
-                assert.strictEqual(data.BeforeDate, date);
-                return done();
-            });
-        });
-
-        it('should return the last truncate list of current versions before a defined date', done => {
-            makeBackbeatRequest({
-                method: 'GET',
-                bucket: testBucket,
-                queryObj: { 'list-type': 'current', 'before-date': date, 'max-keys': '1', 'marker': 'oldkey1' },
-                authCredentials: credentials,
-            }, (err, response) => {
-                assert.ifError(err);
-                assert.strictEqual(response.statusCode, 200);
-                const data = JSON.parse(response.body);
-
-                assert.strictEqual(data.IsTruncated, false);
-                assert.strictEqual(data.MaxKeys, 1);
-                assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
-                assert.strictEqual(data.Marker, 'oldkey1');
-                assert.strictEqual(data.BeforeDate, date);
-
-                const contents = data.Contents;
-                assert.strictEqual(contents.length, 1);
-                checkContents(contents, expectedKeyVersions);
-                assert.strictEqual(contents[0].Key, 'oldkey2');
-                return done();
-            });
-        });
-    });
-});
-
-describe('listLifecycleCurrents with bucket versioning enabled and maxKeys', () => {
-    const testBucket = 'bucket-for-list-lifecycle-current-tests-truncated';
-    const expectedKeyVersions = {};
-
-    before(done => async.series([
-            next => {
-                getCredentials()
-                    .then(creds => {
-                        credentials = creds;
-                        return getS3Hostname();
-                    })
-                    .then(() => next())
-                    .catch(next);
-            },
-            next => s3.send(new CreateBucketCommand({ Bucket: testBucket }))
-                .then(() => next())
-                .catch(next),
-            next => s3.send(new PutBucketVersioningCommand({
-                Bucket: testBucket,
-                VersioningConfiguration: { Status: 'Enabled' },
-            }))
-                .then(() => next())
-                .catch(next),
-            next => async.times(3, (n, cb) => {
-                const keyName = 'key0';
-                s3.send(new PutObjectCommand({
-                    Bucket: testBucket,
-                    Key: keyName,
-                    Body: '123',
-                    Tagging: 'mykey=myvalue',
-                }))
-                    .then(data => {
-                        expectedKeyVersions[keyName] = data.VersionId;
-                        cb();
-                    })
-                    .catch(err => cb(err));
-            }, next),
-            next => async.times(5, (n, cb) => {
-                const keyName = 'key1';
-                s3.send(new PutObjectCommand({
-                    Bucket: testBucket,
-                    Key: keyName,
-                    Body: '123',
-                    Tagging: 'mykey=myvalue',
-                }))
-                    .then(data => {
-                        expectedKeyVersions[keyName] = data.VersionId;
-                        cb();
-                    })
-                    .catch(err => cb(err));
-            }, next),
-            next => async.times(3, (n, cb) => {
-                const keyName = 'key2';
-                s3.send(new PutObjectCommand({
-                    Bucket: testBucket,
-                    Key: keyName,
-                    Body: '123',
-                    Tagging: 'mykey=myvalue',
-                }))
-                    .then(data => {
-                        expectedKeyVersions[keyName] = data.VersionId;
-                        cb();
-                    })
-                    .catch(err => cb(err));
-            }, next),
-        ], done));
+                        .catch(next),
+                next =>
+                    async.times(
+                        3,
+                        (n, cb) => {
+                            const keyName = 'key0';
+                            s3.send(
+                                new PutObjectCommand({
+                                    Bucket: testBucket,
+                                    Key: keyName,
+                                    Body: '123',
+                                    Tagging: 'mykey=myvalue',
+                                }),
+                            )
+                                .then(data => {
+                                    expectedKeyVersions[keyName] = data.VersionId;
+                                    cb();
+                                })
+                                .catch(err => cb(err));
+                        },
+                        next,
+                    ),
+                next =>
+                    async.times(
+                        5,
+                        (n, cb) => {
+                            const keyName = 'key1';
+                            s3.send(
+                                new PutObjectCommand({
+                                    Bucket: testBucket,
+                                    Key: keyName,
+                                    Body: '123',
+                                    Tagging: 'mykey=myvalue',
+                                }),
+                            )
+                                .then(data => {
+                                    expectedKeyVersions[keyName] = data.VersionId;
+                                    cb();
+                                })
+                                .catch(err => cb(err));
+                        },
+                        next,
+                    ),
+                next =>
+                    async.times(
+                        3,
+                        (n, cb) => {
+                            const keyName = 'key2';
+                            s3.send(
+                                new PutObjectCommand({
+                                    Bucket: testBucket,
+                                    Key: keyName,
+                                    Body: '123',
+                                    Tagging: 'mykey=myvalue',
+                                }),
+                            )
+                                .then(data => {
+                                    expectedKeyVersions[keyName] = data.VersionId;
+                                    cb();
+                                })
+                                .catch(err => cb(err));
+                        },
+                        next,
+                    ),
+            ],
+            done,
+        ),
+    );
 
     after(async () => {
         await removeAllVersionsPromise({ Bucket: testBucket });
@@ -523,88 +661,97 @@ describe('listLifecycleCurrents with bucket versioning enabled and maxKeys', () 
     });
 
     it('should return truncated lists - part 1', done => {
-        makeBackbeatRequest({
-            method: 'GET',
-            bucket: testBucket,
-            queryObj: { 'list-type': 'current', 'max-keys': '1' },
-            authCredentials: credentials,
-        }, (err, response) => {
-            assert.ifError(err);
-            assert.strictEqual(response.statusCode, 200);
-            const data = JSON.parse(response.body);
+        makeBackbeatRequest(
+            {
+                method: 'GET',
+                bucket: testBucket,
+                queryObj: { 'list-type': 'current', 'max-keys': '1' },
+                authCredentials: credentials,
+            },
+            (err, response) => {
+                assert.ifError(err);
+                assert.strictEqual(response.statusCode, 200);
+                const data = JSON.parse(response.body);
 
-            assert.strictEqual(data.IsTruncated, true);
-            assert.strictEqual(data.NextMarker, 'key0');
-            assert.strictEqual(data.MaxKeys, 1);
-            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
-            assert.strictEqual(data.Contents.length, 1);
+                assert.strictEqual(data.IsTruncated, true);
+                assert.strictEqual(data.NextMarker, 'key0');
+                assert.strictEqual(data.MaxKeys, 1);
+                assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
+                assert.strictEqual(data.Contents.length, 1);
 
-            const contents = data.Contents;
-            assert.strictEqual(contents.length, 1);
-            checkContents(contents, expectedKeyVersions);
-            assert.strictEqual(contents[0].Key, 'key0');
-            return done();
-        });
+                const contents = data.Contents;
+                assert.strictEqual(contents.length, 1);
+                checkContents(contents, expectedKeyVersions);
+                assert.strictEqual(contents[0].Key, 'key0');
+                return done();
+            },
+        );
     });
 
     it('should return truncated lists - part 2', done => {
-        makeBackbeatRequest({
-            method: 'GET',
-            bucket: testBucket,
-            queryObj: {
-                'list-type': 'current',
-                'max-keys': '1',
-                'marker': 'key0',
+        makeBackbeatRequest(
+            {
+                method: 'GET',
+                bucket: testBucket,
+                queryObj: {
+                    'list-type': 'current',
+                    'max-keys': '1',
+                    marker: 'key0',
+                },
+                authCredentials: credentials,
             },
-            authCredentials: credentials,
-        }, (err, response) => {
-            assert.ifError(err);
-            assert.strictEqual(response.statusCode, 200);
-            const data = JSON.parse(response.body);
+            (err, response) => {
+                assert.ifError(err);
+                assert.strictEqual(response.statusCode, 200);
+                const data = JSON.parse(response.body);
 
-            assert.strictEqual(data.Marker, 'key0');
-            assert.strictEqual(data.IsTruncated, true);
-            assert.strictEqual(data.NextMarker, 'key1');
-            assert.strictEqual(data.MaxKeys, 1);
-            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
-            assert.strictEqual(data.Contents.length, 1);
+                assert.strictEqual(data.Marker, 'key0');
+                assert.strictEqual(data.IsTruncated, true);
+                assert.strictEqual(data.NextMarker, 'key1');
+                assert.strictEqual(data.MaxKeys, 1);
+                assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
+                assert.strictEqual(data.Contents.length, 1);
 
-            const contents = data.Contents;
-            assert.strictEqual(contents.length, 1);
-            checkContents(contents, expectedKeyVersions);
-            assert.strictEqual(contents[0].Key, 'key1');
-            return done();
-        });
+                const contents = data.Contents;
+                assert.strictEqual(contents.length, 1);
+                checkContents(contents, expectedKeyVersions);
+                assert.strictEqual(contents[0].Key, 'key1');
+                return done();
+            },
+        );
     });
 
     it('should return truncated lists - part 3', done => {
-        makeBackbeatRequest({
-            method: 'GET',
-            bucket: testBucket,
-            queryObj: {
-                'list-type': 'current',
-                'max-keys': '1',
-                'marker': 'key1',
+        makeBackbeatRequest(
+            {
+                method: 'GET',
+                bucket: testBucket,
+                queryObj: {
+                    'list-type': 'current',
+                    'max-keys': '1',
+                    marker: 'key1',
+                },
+                authCredentials: credentials,
             },
-            authCredentials: credentials,
-        }, (err, response) => {
-            assert.ifError(err);
-            assert.strictEqual(response.statusCode, 200);
-            const data = JSON.parse(response.body);
+            (err, response) => {
+                assert.ifError(err);
+                assert.strictEqual(response.statusCode, 200);
+                const data = JSON.parse(response.body);
 
-            assert(!data.NextMarker);
-            assert.strictEqual(data.IsTruncated, false);
-            assert.strictEqual(data.Marker, 'key1');
-            assert.strictEqual(data.MaxKeys, 1);
-            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
-            assert.strictEqual(data.Contents.length, 1);
+                assert(!data.NextMarker);
+                assert.strictEqual(data.IsTruncated, false);
+                assert.strictEqual(data.Marker, 'key1');
+                assert.strictEqual(data.MaxKeys, 1);
+                assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
+                assert.strictEqual(data.Contents.length, 1);
 
-            const contents = data.Contents;
-            assert.strictEqual(contents.length, 1);
-            checkContents(contents, expectedKeyVersions);
-            assert.strictEqual(contents[0].Key, 'key2');
-            return done();
-        });
+                const contents = data.Contents;
+                assert.strictEqual(contents.length, 1);
+                checkContents(contents, expectedKeyVersions);
+                assert.strictEqual(contents[0].Key, 'key2');
+                return done();
+            },
+        );
     });
 });
 
@@ -615,74 +762,107 @@ describe('listLifecycleCurrents with bucket versioning enabled and delete object
     const keyName2 = 'key2';
     const expectedKeyVersions = {};
 
-    before(done => async.series([
-            next => {
-                getCredentials()
-                    .then(creds => {
-                        credentials = creds;
-                        return getS3Hostname();
-                    })
-                    .then(() => next())
-                    .catch(next);
-            },
-            next => s3.send(new CreateBucketCommand({ Bucket: testBucket }))
-                .then(() => next())
-                .catch(next),
-            next => s3.send(new PutBucketVersioningCommand({
-                Bucket: testBucket,
-                VersioningConfiguration: { Status: 'Enabled' },
-            }))
-                .then(() => next())
-                .catch(next),
-            next => s3.send(new PutObjectCommand({
-                Bucket: testBucket,
-                Key: keyName0,
-                Body: '123',
-                Tagging: 'mykey=myvalue',
-            }))
-                .then(data => {
-                    expectedKeyVersions[keyName0] = data.VersionId;
-                    next();
-                })
-                .catch(next),
-            next => s3.send(new PutObjectCommand({
-                Bucket: testBucket,
-                Key: keyName1,
-                Body: '123',
-                Tagging: 'mykey=myvalue',
-            }))
-                .then(() => next())
-                .catch(next),
-            next => s3.send(new DeleteObjectCommand({ Bucket: testBucket, Key: keyName1 }))
-                .then(() => next())
-                .catch(next),
-            next => s3.send(new PutObjectCommand({
-                Bucket: testBucket,
-                Key: keyName2,
-                Body: '123',
-                Tagging: 'mykey=myvalue',
-            }))
-                .then(data => {
-                    expectedKeyVersions[keyName2] = data.VersionId;
-                    next();
-                })
-                .catch(next),
-            next => s3.send(new PutObjectCommand({
-                Bucket: testBucket,
-                Key: keyName2,
-                Body: '123',
-                Tagging: 'mykey=myvalue',
-            }))
-                .then(data => s3.send(new DeleteObjectCommand({
-                    Bucket: testBucket,
-                    Key: keyName2,
-                    VersionId: data.VersionId,
-                }))
-                    .then(() => next())
-                    .catch(next))
-                .catch(next),
-        ], done));
-
+    before(done =>
+        async.series(
+            [
+                next => {
+                    getCredentials()
+                        .then(creds => {
+                            credentials = creds;
+                            return getS3Hostname();
+                        })
+                        .then(() => next())
+                        .catch(next);
+                },
+                next =>
+                    s3
+                        .send(new CreateBucketCommand({ Bucket: testBucket }))
+                        .then(() => next())
+                        .catch(next),
+                next =>
+                    s3
+                        .send(
+                            new PutBucketVersioningCommand({
+                                Bucket: testBucket,
+                                VersioningConfiguration: { Status: 'Enabled' },
+                            }),
+                        )
+                        .then(() => next())
+                        .catch(next),
+                next =>
+                    s3
+                        .send(
+                            new PutObjectCommand({
+                                Bucket: testBucket,
+                                Key: keyName0,
+                                Body: '123',
+                                Tagging: 'mykey=myvalue',
+                            }),
+                        )
+                        .then(data => {
+                            expectedKeyVersions[keyName0] = data.VersionId;
+                            next();
+                        })
+                        .catch(next),
+                next =>
+                    s3
+                        .send(
+                            new PutObjectCommand({
+                                Bucket: testBucket,
+                                Key: keyName1,
+                                Body: '123',
+                                Tagging: 'mykey=myvalue',
+                            }),
+                        )
+                        .then(() => next())
+                        .catch(next),
+                next =>
+                    s3
+                        .send(new DeleteObjectCommand({ Bucket: testBucket, Key: keyName1 }))
+                        .then(() => next())
+                        .catch(next),
+                next =>
+                    s3
+                        .send(
+                            new PutObjectCommand({
+                                Bucket: testBucket,
+                                Key: keyName2,
+                                Body: '123',
+                                Tagging: 'mykey=myvalue',
+                            }),
+                        )
+                        .then(data => {
+                            expectedKeyVersions[keyName2] = data.VersionId;
+                            next();
+                        })
+                        .catch(next),
+                next =>
+                    s3
+                        .send(
+                            new PutObjectCommand({
+                                Bucket: testBucket,
+                                Key: keyName2,
+                                Body: '123',
+                                Tagging: 'mykey=myvalue',
+                            }),
+                        )
+                        .then(data =>
+                            s3
+                                .send(
+                                    new DeleteObjectCommand({
+                                        Bucket: testBucket,
+                                        Key: keyName2,
+                                        VersionId: data.VersionId,
+                                    }),
+                                )
+                                .then(() => next())
+                                .catch(next),
+                        )
+                        .catch(next),
+            ],
+            done,
+        ),
+    );
 
     after(async () => {
         await removeAllVersionsPromise({ Bucket: testBucket });
@@ -690,57 +870,63 @@ describe('listLifecycleCurrents with bucket versioning enabled and delete object
     });
 
     it('should return truncated lists - part 1', done => {
-        makeBackbeatRequest({
-            method: 'GET',
-            bucket: testBucket,
-            queryObj: { 'list-type': 'current', 'max-keys': '1' },
-            authCredentials: credentials,
-        }, (err, response) => {
-            assert.ifError(err);
-            assert.strictEqual(response.statusCode, 200);
-            const data = JSON.parse(response.body);
+        makeBackbeatRequest(
+            {
+                method: 'GET',
+                bucket: testBucket,
+                queryObj: { 'list-type': 'current', 'max-keys': '1' },
+                authCredentials: credentials,
+            },
+            (err, response) => {
+                assert.ifError(err);
+                assert.strictEqual(response.statusCode, 200);
+                const data = JSON.parse(response.body);
 
-            assert.strictEqual(data.IsTruncated, true);
-            assert.strictEqual(data.NextMarker, keyName0);
-            assert.strictEqual(data.MaxKeys, 1);
-            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
-            assert.strictEqual(data.Contents.length, 1);
+                assert.strictEqual(data.IsTruncated, true);
+                assert.strictEqual(data.NextMarker, keyName0);
+                assert.strictEqual(data.MaxKeys, 1);
+                assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
+                assert.strictEqual(data.Contents.length, 1);
 
-            const contents = data.Contents;
-            assert.strictEqual(contents.length, 1);
-            checkContents(contents, expectedKeyVersions);
-            assert.strictEqual(contents[0].Key, keyName0);
-            return done();
-        });
+                const contents = data.Contents;
+                assert.strictEqual(contents.length, 1);
+                checkContents(contents, expectedKeyVersions);
+                assert.strictEqual(contents[0].Key, keyName0);
+                return done();
+            },
+        );
     });
 
     it('should return truncated lists - part 2', done => {
-        makeBackbeatRequest({
-            method: 'GET',
-            bucket: testBucket,
-            queryObj: {
-                'list-type': 'current',
-                'max-keys': '1',
-                'marker': keyName0,
+        makeBackbeatRequest(
+            {
+                method: 'GET',
+                bucket: testBucket,
+                queryObj: {
+                    'list-type': 'current',
+                    'max-keys': '1',
+                    marker: keyName0,
+                },
+                authCredentials: credentials,
             },
-            authCredentials: credentials,
-        }, (err, response) => {
-            assert.ifError(err);
-            assert.strictEqual(response.statusCode, 200);
-            const data = JSON.parse(response.body);
+            (err, response) => {
+                assert.ifError(err);
+                assert.strictEqual(response.statusCode, 200);
+                const data = JSON.parse(response.body);
 
-            assert(!data.NextMarker);
-            assert.strictEqual(data.IsTruncated, false);
-            assert.strictEqual(data.Marker, keyName0);
-            assert.strictEqual(data.MaxKeys, 1);
-            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
-            assert.strictEqual(data.Contents.length, 1);
+                assert(!data.NextMarker);
+                assert.strictEqual(data.IsTruncated, false);
+                assert.strictEqual(data.Marker, keyName0);
+                assert.strictEqual(data.MaxKeys, 1);
+                assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
+                assert.strictEqual(data.Contents.length, 1);
 
-            const contents = data.Contents;
-            assert.strictEqual(contents.length, 1);
-            checkContents(contents, expectedKeyVersions);
-            assert.strictEqual(contents[0].Key, keyName2);
-            return done();
-        });
+                const contents = data.Contents;
+                assert.strictEqual(contents.length, 1);
+                checkContents(contents, expectedKeyVersions);
+                assert.strictEqual(contents[0].Key, keyName2);
+                return done();
+            },
+        );
     });
 });
