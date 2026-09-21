@@ -893,7 +893,6 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         .catch(() => {});
                 });
 
-                // eslint-disable-next-line max-len
                 it('should allow when the bucket policy supplies scality:ListBucketOptionalObjectAttributes that IAM lacks', async () => {
                     await bucketUtil.s3.send(new PutBucketPolicyCommand({
                         Bucket: bucketName,
