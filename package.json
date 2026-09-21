@@ -145,6 +145,9 @@
         "ft_sse_arn": "cd tests/functional/sse-kms-migration && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 10000 cleanup.js arnPrefix.js --exit",
         "lint": "eslint $(git ls-files '*.js')",
         "lint_md": "mdlint $(git ls-files '*.md')",
+        "prettier": "prettier",
+        "prettier:check": "prettier --check .",
+        "prettier:write": "prettier --write .",
         "mem_backend": "S3BACKEND=mem node index.js",
         "start": "npm-run-all --parallel start_dmd start_s3server",
         "start_mongo": "yarn run cloudserver",
@@ -168,8 +171,6 @@
         "cover": "nyc --clean --silent yarn run",
         "postcover": "nyc report --report-dir ./coverage/test --reporter=lcov",
         "count-async": "node .github/scripts/count-async-functions.mjs",
-        "check-diff-async": "node .github/scripts/check-diff-async.mjs",
-        "prettier": "prettier",
-        "prettier:diff": "bash scripts/prettier-diff.sh"
+        "check-diff-async": "node .github/scripts/check-diff-async.mjs"
     }
 }

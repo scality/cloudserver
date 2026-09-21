@@ -3,10 +3,7 @@ const assert = require('assert');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketGetPolicy = require('../../../lib/api/bucketGetPolicy');
 const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');
-const { cleanup,
-    DummyRequestLogger,
-    makeAuthInfo }
-    = require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
@@ -43,8 +40,7 @@ describe('getBucketPolicy API', () => {
     beforeEach(done => bucketPut(authInfo, testBasicRequest, log, done));
     afterEach(() => cleanup());
 
-    it('should return NoSuchBucketPolicy error if ' +
-    'bucket has no policy', done => {
+    it('should return NoSuchBucketPolicy error if ' + 'bucket has no policy', done => {
         bucketGetPolicy(authInfo, testBasicRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucketPolicy, true);
             done();

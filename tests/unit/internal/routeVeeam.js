@@ -44,21 +44,19 @@ describe('RouteVeeam: checkBucketAndKey', () => {
         });
     });
 
-    [
-        ['test', 'badObjectKey', null, 'GET', log],
-    ].forEach(test => {
+    [['test', 'badObjectKey', null, 'GET', log]].forEach(test => {
         it(`should return InvalidArgument for "${test[1]}" object name`, () => {
             assert.strictEqual(routeVeeam.checkBucketAndKey(...test).is.InvalidArgument, true);
         });
     });
 
-    [
-        ['test', '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', { random: 'queryparam' }, 'GET', log],
-    ].forEach(test => {
-        it(`should return InvalidRequest for "${test[1]}" object name`, () => {
-            assert.strictEqual(routeVeeam.checkBucketAndKey(...test).is.InvalidRequest, true);
-        });
-    });
+    [['test', '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', { random: 'queryparam' }, 'GET', log]].forEach(
+        test => {
+            it(`should return InvalidRequest for "${test[1]}" object name`, () => {
+                assert.strictEqual(routeVeeam.checkBucketAndKey(...test).is.InvalidRequest, true);
+            });
+        },
+    );
 
     [
         ['test', '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', null, 'GET', log],
@@ -234,14 +232,19 @@ describe('RouteVeeam: routeVeeam', () => {
             url: '/bucket/veeam',
         });
         req.method = 'PATCH';
-        routeVeeam.routeVeeam('127.0.0.1', req, {
-            setHeader: () => {},
-            writeHead: () => {},
-            end: data => {
-                assert(data.includes('MethodNotAllowed'));
-                done();
+        routeVeeam.routeVeeam(
+            '127.0.0.1',
+            req,
+            {
+                setHeader: () => {},
+                writeHead: () => {},
+                end: data => {
+                    assert(data.includes('MethodNotAllowed'));
+                    done();
+                },
+                headersSent: false,
             },
-            headersSent: false,
-        }, log);
+            log,
+        );
     });
 });

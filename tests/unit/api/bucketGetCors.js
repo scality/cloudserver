@@ -4,10 +4,7 @@ const crypto = require('crypto');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutCors = require('../../../lib/api/bucketPutCors');
 const bucketGetCors = require('../../../lib/api/bucketGetCors');
-const { cleanup,
-    DummyRequestLogger,
-    makeAuthInfo }
-= require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
@@ -32,25 +29,24 @@ function _makeCorsRequest(xml) {
 
     if (xml) {
         request.post = xml;
-        request.headers['content-md5'] = crypto.createHash('md5')
-            .update(request.post, 'utf8').digest('base64');
+        request.headers['content-md5'] = crypto.createHash('md5').update(request.post, 'utf8').digest('base64');
     }
     return request;
 }
 const testGetCorsRequest = _makeCorsRequest();
 
 function _comparePutGetXml(sampleXml, done) {
-    const fullXml = '<?xml version="1.0" encoding="UTF-8" ' +
-    'standalone="yes"?><CORSConfiguration>' +
-    `${sampleXml}</CORSConfiguration>`;
+    const fullXml =
+        '<?xml version="1.0" encoding="UTF-8" ' +
+        'standalone="yes"?><CORSConfiguration>' +
+        `${sampleXml}</CORSConfiguration>`;
     const testPutCorsRequest = _makeCorsRequest(fullXml);
     bucketPutCors(authInfo, testPutCorsRequest, log, err => {
         if (err) {
             process.stdout.write(`Err putting cors config ${err}`);
             return done(err);
         }
-        return bucketGetCors(authInfo, testGetCorsRequest, log,
-        (err, res) => {
+        return bucketGetCors(authInfo, testGetCorsRequest, log, (err, res) => {
             assert.strictEqual(err, null, `Unexpected err ${err}`);
             assert.strictEqual(res, fullXml);
             done();
@@ -65,8 +61,7 @@ describe('getBucketCors API', () => {
     });
     afterEach(() => cleanup());
 
-    it('should return same XML as uploaded for AllowedMethod and ' +
-    'AllowedOrigin', done => {
+    it('should return same XML as uploaded for AllowedMethod and ' + 'AllowedOrigin', done => {
         const sampleXml =
             '<CORSRule>' +
             '<AllowedMethod>PUT</AllowedMethod>' +
@@ -91,7 +86,7 @@ describe('getBucketCors API', () => {
         _comparePutGetXml(sampleXml, done);
     });
 
-    it('should return same XML as uploaded for AllowedHeader\'s', done => {
+    it("should return same XML as uploaded for AllowedHeader's", done => {
         const sampleXml =
             '<CORSRule>' +
             '<AllowedMethod>PUT</AllowedMethod>' +
@@ -103,7 +98,7 @@ describe('getBucketCors API', () => {
         _comparePutGetXml(sampleXml, done);
     });
 
-    it('should return same XML as uploaded for ExposedHeader\'s', done => {
+    it("should return same XML as uploaded for ExposedHeader's", done => {
         const sampleXml =
             '<CORSRule>' +
             '<AllowedMethod>PUT</AllowedMethod>' +

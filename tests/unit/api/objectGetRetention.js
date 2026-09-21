@@ -24,15 +24,19 @@ const bucketPutRequest = {
     actionImplicitDenies: false,
 };
 
-const putObjectRequest = new DummyRequest({
-    bucketName,
-    namespace,
-    objectKey: objectName,
-    headers: {},
-    url: `/${bucketName}/${objectName}`,
-}, postBody);
+const putObjectRequest = new DummyRequest(
+    {
+        bucketName,
+        namespace,
+        objectKey: objectName,
+        headers: {},
+        url: `/${bucketName}/${objectName}`,
+    },
+    postBody,
+);
 
-const objectRetentionXml = '<Retention ' +
+const objectRetentionXml =
+    '<Retention ' +
     'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
     '<Mode>GOVERNANCE</Mode>' +
     `<RetainUntilDate>${date.toISOString()}</RetainUntilDate>` +
@@ -74,8 +78,9 @@ describe('getObjectRetention API', () => {
     });
 
     describe('with Object Lock enabled on bucket', () => {
-        const bucketObjLockRequest = Object.assign({}, bucketPutRequest,
-            { headers: { 'x-amz-bucket-object-lock-enabled': 'true' } });
+        const bucketObjLockRequest = Object.assign({}, bucketPutRequest, {
+            headers: { 'x-amz-bucket-object-lock-enabled': 'true' },
+        });
 
         beforeEach(done => {
             bucketPut(authInfo, bucketObjLockRequest, log, err => {
@@ -85,19 +90,17 @@ describe('getObjectRetention API', () => {
         });
         afterEach(cleanup);
 
-        it('should return NoSuchObjectLockConfiguration if no retention set',
-        done => {
+        it('should return NoSuchObjectLockConfiguration if no retention set', done => {
             objectGetRetention(authInfo, getObjRetRequest, log, err => {
                 assert.strictEqual(err.is.NoSuchObjectLockConfiguration, true);
                 done();
             });
         });
 
-        it('should get an object\'s retention info', done => {
+        it("should get an object's retention info", done => {
             objectPutRetention(authInfo, putObjRetRequest, log, err => {
                 assert.ifError(err);
-                objectGetRetention(authInfo, getObjRetRequest, log,
-                (err, xml) => {
+                objectGetRetention(authInfo, getObjRetRequest, log, (err, xml) => {
                     assert.ifError(err);
                     assert.strictEqual(xml, objectRetentionXml);
                     done();

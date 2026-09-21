@@ -8,12 +8,10 @@ const { managementAgentMessageType } = require('./lib/management/agentClient');
 const { addOverlayMessageListener } = require('./lib/management/push');
 const { saveConfigurationVersion } = require('./lib/management/configuration');
 
-
 // TODO: auth?
 // TODO: werelogs with a specific name.
 
 const CHECK_BROKEN_CONNECTIONS_FREQUENCY_MS = 15000;
-
 
 class ManagementAgentServer {
     constructor() {
@@ -34,9 +32,7 @@ class ManagementAgentServer {
 
         /* Define REPORT_TOKEN env variable needed by the management
          * module. */
-        process.env.REPORT_TOKEN = process.env.REPORT_TOKEN
-          || _config.reportToken
-          || Uuid.v4();
+        process.env.REPORT_TOKEN = process.env.REPORT_TOKEN || _config.reportToken || Uuid.v4();
 
         initManagement(logger.newRequestLogger(), overlay => {
             let error = null;
@@ -73,8 +69,7 @@ class ManagementAgentServer {
         this.wss.on('listening', this.onListening.bind(this));
         this.wss.on('error', this.onError.bind(this));
 
-        setInterval(this.checkBrokenConnections.bind(this),
-                    CHECK_BROKEN_CONNECTIONS_FREQUENCY_MS);
+        setInterval(this.checkBrokenConnections.bind(this), CHECK_BROKEN_CONNECTIONS_FREQUENCY_MS);
 
         addOverlayMessageListener(this.onNewOverlay.bind(this));
     }
@@ -114,8 +109,7 @@ class ManagementAgentServer {
     }
 
     onListening() {
-        logger.info('websocket server listening',
-                    { port: this.port });
+        logger.info('websocket server listening', { port: this.port });
     }
 
     onError(error) {
@@ -137,27 +131,24 @@ class ManagementAgentServer {
         };
         client.send(JSON.stringify(msg), error => {
             if (error) {
-                logger.error(
-                  'failed to send remoteOverlay to management agent client', {
-                      error, client: client._socket._peername,
-                  });
+                logger.error('failed to send remoteOverlay to management agent client', {
+                    error,
+                    client: client._socket._peername,
+                });
             }
         });
     }
 
     onNewOverlay(remoteOverlay) {
         const remoteOverlayObj = JSON.parse(remoteOverlay);
-        saveConfigurationVersion(
-            this.loadedOverlay, remoteOverlayObj, logger, err => {
-                if (err) {
-                    logger.error('failed to save remote overlay', { err });
-                    return;
-                }
-                this.loadedOverlay = remoteOverlayObj;
-                this.wss.clients.forEach(
-                    this._sendNewOverlayToClient.bind(this)
-                );
-            });
+        saveConfigurationVersion(this.loadedOverlay, remoteOverlayObj, logger, err => {
+            if (err) {
+                logger.error('failed to save remote overlay', { err });
+                return;
+            }
+            this.loadedOverlay = remoteOverlayObj;
+            this.wss.clients.forEach(this._sendNewOverlayToClient.bind(this));
+        });
     }
 
     checkBrokenConnections() {

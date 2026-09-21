@@ -52,10 +52,10 @@ async function assertObjectSSE(
     const sseMD = await helpers.getObjectMDSSE(Bucket, Key);
     const arnPrefixReg = new RegExp(`^${arnPrefix}`);
 
-    const expectedAlgo = (objConf.algo || bktConf.algo) ||
-        (testCase === 'after' && helpers.config.globalEncryptionEnabled && !bktConf.deleteSSE
-            ? 'AES256'
-            : undefined);
+    const expectedAlgo =
+        objConf.algo ||
+        bktConf.algo ||
+        (testCase === 'after' && helpers.config.globalEncryptionEnabled && !bktConf.deleteSSE ? 'AES256' : undefined);
 
     // obj precedence over bkt
     assert.strictEqual(head.ServerSideEncryption, expectedAlgo);
@@ -209,8 +209,7 @@ async function copyObjectAndSSE(
         const { SSEAlgorithm, KMSMasterKeyID } = await helpers.getBucketSSE(copyBkt);
         assert.strictEqual(headers.ServerSideEncryption, SSEAlgorithm);
         testCase !== 'before' && assert.strictEqual(headers.SSEKMSKeyId, KMSMasterKeyID);
-        const keyArn = `${KMSMasterKeyID && isScalityKmsArn(KMSMasterKeyID)
-            ? '' : kms.arnPrefix}${KMSMasterKeyID}`;
+        const keyArn = `${KMSMasterKeyID && isScalityKmsArn(KMSMasterKeyID) ? '' : kms.arnPrefix}${KMSMasterKeyID}`;
         const kmsKeyInfo = {
             masterKeyId: getKeyIdFromArn(keyArn),
             masterKeyArn: keyArn,
@@ -263,7 +262,9 @@ async function mpuUploadPart({ UploadId, Bucket, Key, Body, PartNumber }, mpuOve
 // before has no headers to assert
 async function mpuUploadPartCopy(
     { UploadId, Bucket, Key, PartNumber, CopySource, CopySourceRange },
-    mpuOverviewMDSSE, algo, testCase
+    mpuOverviewMDSSE,
+    algo,
+    testCase,
 ) {
     const part = await helpers.s3.uploadPartCopy({
         UploadId,
@@ -284,23 +285,23 @@ async function mpuComplete({ UploadId, Bucket, Key }, { existingParts, newParts 
         assert(eTag !== undefined, `Could not find ETag in part: ${JSON.stringify(part)}`);
         return eTag;
     };
-    
+
     const allParts = [
-        ...existingParts.map(part => ({ 
-            PartNumber: part.PartNumber, 
-            ETag: extractETag(part)
+        ...existingParts.map(part => ({
+            PartNumber: part.PartNumber,
+            ETag: extractETag(part),
         })),
-        ...newParts.map((part, idx) => ({ 
-            PartNumber: existingParts.length + idx + 1, 
-            ETag: extractETag(part)
+        ...newParts.map((part, idx) => ({
+            PartNumber: existingParts.length + idx + 1,
+            ETag: extractETag(part),
         })),
-    ];    
+    ];
     const complete = await helpers.s3.completeMultipartUpload({
         UploadId,
         Bucket,
         Key,
         MultipartUpload: {
-             Parts: allParts,
+            Parts: allParts,
         },
     });
     testCase !== 'before' && assertMPUSSEHeaders(complete, mpuOverviewMDSSE, algo);

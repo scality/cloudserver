@@ -85,8 +85,7 @@ describe('bucketGetRateLimit API', () => {
         });
     });
 
-    it('should return NoSuchRateLimitConfig error if bucket exists but ' +
-        'rate limit config is not set', done => {
+    it('should return NoSuchRateLimitConfig error if bucket exists but ' + 'rate limit config is not set', done => {
         bucketPut(regularAuthInfo, bucketPutReq, log, err => {
             assert.ifError(err);
             const rateLimitRequest = getRateLimitConfigRequest(bucketName);

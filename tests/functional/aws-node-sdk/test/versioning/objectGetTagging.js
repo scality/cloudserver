@@ -14,10 +14,7 @@ const {
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
-const {
-    removeAllVersions,
-    versioningEnabled,
-} = require('../../lib/utility/versioning-util');
+const { removeAllVersions, versioningEnabled } = require('../../lib/utility/versioning-util');
 
 const removeAllVersionsPromise = promisify(removeAllVersions);
 const bucketName = 'testtaggingbucket';
@@ -45,145 +42,275 @@ describe('Get object tagging with versioning', () => {
         });
 
         it('should be able to get tag with versioning', done => {
-            const taggingConfig = { TagSet: [
-                {
-                    Key: 'key1',
-                    Value: 'value1',
-                }] };
-            async.waterfall([
-                next => s3.send(new PutBucketVersioningCommand({
-                    Bucket: bucketName,
-                    VersioningConfiguration: versioningEnabled,
-                })).then(() => next()).catch(next),
-                
-                next => s3.send(new PutObjectCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                })).then(data => next(null, data.VersionId)).catch(next),
-                
-                (versionId, next) => s3.send(new PutObjectTaggingCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    VersionId: versionId,
-                    Tagging: taggingConfig,
-                })).then(() => next(null, versionId)).catch(next),
-                
-                (versionId, next) => s3.send(new GetObjectTaggingCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    VersionId: versionId,
-                })).then(data => next(null, data, versionId)).catch(next),
-            ], (err, data, versionId) => {
-                assert.ifError(err, `Found unexpected err ${err}`);
-                assert.strictEqual(data.VersionId, versionId);
-                assert.deepStrictEqual(data.TagSet, taggingConfig.TagSet);
-                done();
-            });
+            const taggingConfig = {
+                TagSet: [
+                    {
+                        Key: 'key1',
+                        Value: 'value1',
+                    },
+                ],
+            };
+            async.waterfall(
+                [
+                    next =>
+                        s3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketName,
+                                    VersioningConfiguration: versioningEnabled,
+                                }),
+                            )
+                            .then(() => next())
+                            .catch(next),
+
+                    next =>
+                        s3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketName,
+                                    Key: objectName,
+                                }),
+                            )
+                            .then(data => next(null, data.VersionId))
+                            .catch(next),
+
+                    (versionId, next) =>
+                        s3
+                            .send(
+                                new PutObjectTaggingCommand({
+                                    Bucket: bucketName,
+                                    Key: objectName,
+                                    VersionId: versionId,
+                                    Tagging: taggingConfig,
+                                }),
+                            )
+                            .then(() => next(null, versionId))
+                            .catch(next),
+
+                    (versionId, next) =>
+                        s3
+                            .send(
+                                new GetObjectTaggingCommand({
+                                    Bucket: bucketName,
+                                    Key: objectName,
+                                    VersionId: versionId,
+                                }),
+                            )
+                            .then(data => next(null, data, versionId))
+                            .catch(next),
+                ],
+                (err, data, versionId) => {
+                    assert.ifError(err, `Found unexpected err ${err}`);
+                    assert.strictEqual(data.VersionId, versionId);
+                    assert.deepStrictEqual(data.TagSet, taggingConfig.TagSet);
+                    done();
+                },
+            );
         });
 
         it('should be able to get tag with a version of id "null"', done => {
-            async.waterfall([
-                next => s3.send(new PutObjectCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                })).then(() => next()).catch(next),
-                
-                next => s3.send(new PutBucketVersioningCommand({
-                    Bucket: bucketName,
-                    VersioningConfiguration: versioningEnabled,
-                })).then(() => next()).catch(next),
-                
-                next => s3.send(new GetObjectTaggingCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    VersionId: 'null',
-                })).then(data => next(null, data)).catch(next),
-            ], (err, data) => {
-                assert.ifError(err, `Found unexpected err ${err}`);
-                assert.strictEqual(data.VersionId, 'null');
-                done();
-            });
+            async.waterfall(
+                [
+                    next =>
+                        s3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketName,
+                                    Key: objectName,
+                                }),
+                            )
+                            .then(() => next())
+                            .catch(next),
+
+                    next =>
+                        s3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketName,
+                                    VersioningConfiguration: versioningEnabled,
+                                }),
+                            )
+                            .then(() => next())
+                            .catch(next),
+
+                    next =>
+                        s3
+                            .send(
+                                new GetObjectTaggingCommand({
+                                    Bucket: bucketName,
+                                    Key: objectName,
+                                    VersionId: 'null',
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(next),
+                ],
+                (err, data) => {
+                    assert.ifError(err, `Found unexpected err ${err}`);
+                    assert.strictEqual(data.VersionId, 'null');
+                    done();
+                },
+            );
         });
 
-        it('should return InvalidArgument getting tag with a non existing ' +
-        'version id', done => {
-            async.waterfall([
-                next => s3.send(new PutObjectCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                })).then(() => next()).catch(next),
-                
-                next => s3.send(new PutBucketVersioningCommand({
-                    Bucket: bucketName,
-                    VersioningConfiguration: versioningEnabled,
-                })).then(() => next()).catch(next),
-                
-                next => s3.send(new GetObjectTaggingCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    VersionId: invalidId,
-                })).then(data => next(null, data)).catch(next),
-            ], err => {
-                _checkError(err, 'InvalidArgument', 400);
-                done();
-            });
+        it('should return InvalidArgument getting tag with a non existing ' + 'version id', done => {
+            async.waterfall(
+                [
+                    next =>
+                        s3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucketName,
+                                    Key: objectName,
+                                }),
+                            )
+                            .then(() => next())
+                            .catch(next),
+
+                    next =>
+                        s3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketName,
+                                    VersioningConfiguration: versioningEnabled,
+                                }),
+                            )
+                            .then(() => next())
+                            .catch(next),
+
+                    next =>
+                        s3
+                            .send(
+                                new GetObjectTaggingCommand({
+                                    Bucket: bucketName,
+                                    Key: objectName,
+                                    VersionId: invalidId,
+                                }),
+                            )
+                            .then(data => next(null, data))
+                            .catch(next),
+                ],
+                err => {
+                    _checkError(err, 'InvalidArgument', 400);
+                    done();
+                },
+            );
         });
 
-        it('should return 404 NoSuchKey getting tag without ' +
-         'version id if version specified is a delete marker', done => {
-            async.waterfall([
-                next => s3.send(new PutBucketVersioningCommand({
-                    Bucket: bucketName,
-                    VersioningConfiguration: versioningEnabled,
-                })).then(() => next()).catch(next),
-                
-                next => s3.send(new PutObjectCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                })).then(() => next()).catch(next),
-                
-                next => s3.send(new DeleteObjectCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                })).then(() => next()).catch(next),
-                
-                next => s3.send(new GetObjectTaggingCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                })).then(data => next(null, data)).catch(next),
-            ], err => {
-                _checkError(err, 'NoSuchKey', 404);
-                done();
-            });
-        });
+        it(
+            'should return 404 NoSuchKey getting tag without ' + 'version id if version specified is a delete marker',
+            done => {
+                async.waterfall(
+                    [
+                        next =>
+                            s3
+                                .send(
+                                    new PutBucketVersioningCommand({
+                                        Bucket: bucketName,
+                                        VersioningConfiguration: versioningEnabled,
+                                    }),
+                                )
+                                .then(() => next())
+                                .catch(next),
 
-        it('should return 405 MethodNotAllowed getting tag with ' +
-         'version id if version specified is a delete marker', done => {
-            async.waterfall([
-                next => s3.send(new PutBucketVersioningCommand({
-                    Bucket: bucketName,
-                    VersioningConfiguration: versioningEnabled,
-                })).then(() => next()).catch(next),
-                
-                next => s3.send(new PutObjectCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                })).then(() => next()).catch(next),
-                
-                next => s3.send(new DeleteObjectCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                })).then(data => next(null, data.VersionId)).catch(next),
-                
-                (versionId, next) => s3.send(new GetObjectTaggingCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    VersionId: versionId,
-                })).then(data => next(null, data)).catch(next),
-            ], err => {
-                _checkError(err, 'MethodNotAllowed', 405);
-                done();
-            });
-        });
+                        next =>
+                            s3
+                                .send(
+                                    new PutObjectCommand({
+                                        Bucket: bucketName,
+                                        Key: objectName,
+                                    }),
+                                )
+                                .then(() => next())
+                                .catch(next),
+
+                        next =>
+                            s3
+                                .send(
+                                    new DeleteObjectCommand({
+                                        Bucket: bucketName,
+                                        Key: objectName,
+                                    }),
+                                )
+                                .then(() => next())
+                                .catch(next),
+
+                        next =>
+                            s3
+                                .send(
+                                    new GetObjectTaggingCommand({
+                                        Bucket: bucketName,
+                                        Key: objectName,
+                                    }),
+                                )
+                                .then(data => next(null, data))
+                                .catch(next),
+                    ],
+                    err => {
+                        _checkError(err, 'NoSuchKey', 404);
+                        done();
+                    },
+                );
+            },
+        );
+
+        it(
+            'should return 405 MethodNotAllowed getting tag with ' +
+                'version id if version specified is a delete marker',
+            done => {
+                async.waterfall(
+                    [
+                        next =>
+                            s3
+                                .send(
+                                    new PutBucketVersioningCommand({
+                                        Bucket: bucketName,
+                                        VersioningConfiguration: versioningEnabled,
+                                    }),
+                                )
+                                .then(() => next())
+                                .catch(next),
+
+                        next =>
+                            s3
+                                .send(
+                                    new PutObjectCommand({
+                                        Bucket: bucketName,
+                                        Key: objectName,
+                                    }),
+                                )
+                                .then(() => next())
+                                .catch(next),
+
+                        next =>
+                            s3
+                                .send(
+                                    new DeleteObjectCommand({
+                                        Bucket: bucketName,
+                                        Key: objectName,
+                                    }),
+                                )
+                                .then(data => next(null, data.VersionId))
+                                .catch(next),
+
+                        (versionId, next) =>
+                            s3
+                                .send(
+                                    new GetObjectTaggingCommand({
+                                        Bucket: bucketName,
+                                        Key: objectName,
+                                        VersionId: versionId,
+                                    }),
+                                )
+                                .then(data => next(null, data))
+                                .catch(next),
+                    ],
+                    err => {
+                        _checkError(err, 'MethodNotAllowed', 405);
+                        done();
+                    },
+                );
+            },
+        );
     });
 });
