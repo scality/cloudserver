@@ -56,7 +56,6 @@ const secondPutMetadata = {
     secondputagain: 'secondValue',
 };
 
-
 describe('Put object with same key as prior object', () => {
     withV4(sigCfg => {
         let bucketUtil;
@@ -71,16 +70,20 @@ describe('Put object with same key as prior object', () => {
         });
 
         beforeEach(async () => {
-            await s3.send(new PutObjectCommand({
-                Bucket: bucketName,
-                Key: objectName,
-                Body: 'I am the best content ever',
-                Metadata: firstPutMetadata,
-            }));
-            const res = await s3.send(new HeadObjectCommand({ 
-                Bucket: bucketName, 
-                Key: objectName 
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    Body: 'I am the best content ever',
+                    Metadata: firstPutMetadata,
+                }),
+            );
+            const res = await s3.send(
+                new HeadObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                }),
+            );
             assert.deepStrictEqual(res.Metadata, firstPutMetadata);
         });
 
@@ -88,22 +91,25 @@ describe('Put object with same key as prior object', () => {
 
         after(async () => await bucketUtil.deleteOne(bucketName));
 
-        it('should overwrite all user metadata and data on overwrite put',
-            async () => {
-                await s3.send(new PutObjectCommand({
+        it('should overwrite all user metadata and data on overwrite put', async () => {
+            await s3.send(
+                new PutObjectCommand({
                     Bucket: bucketName,
                     Key: objectName,
                     Body: 'Much different',
                     Metadata: secondPutMetadata,
-                }));
-                const res = await s3.send(new GetObjectCommand({ 
-                    Bucket: bucketName, 
-                    Key: objectName 
-                }));
-                assert.deepStrictEqual(res.Metadata, secondPutMetadata);
-                const bodyText = await res.Body.transformToString();
-                assert.deepStrictEqual(bodyText, 'Much different');
-            });
+                }),
+            );
+            const res = await s3.send(
+                new GetObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                }),
+            );
+            assert.deepStrictEqual(res.Metadata, secondPutMetadata);
+            const bodyText = await res.Body.transformToString();
+            assert.deepStrictEqual(bodyText, 'Much different');
+        });
 
         coldStateScenarios.forEach(({ name, transitionInProgress, archiveState }) => {
             it(`should replace object with cold-state metadata (${name}) in non-versioned bucket`, async () => {
@@ -113,12 +119,14 @@ describe('Put object with same key as prior object', () => {
                     await fakeMetadataArchive(bucketName, objectName, undefined, archiveState);
                 }
 
-                await s3.send(new PutObjectCommand({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    Body: `overwrite cold state ${name}`,
-                    Metadata: secondPutMetadata,
-                }));
+                await s3.send(
+                    new PutObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        Body: `overwrite cold state ${name}`,
+                        Metadata: secondPutMetadata,
+                    }),
+                );
 
                 const currentMD = await getMetadata(bucketName, objectName, undefined);
                 assert.strictEqual(currentMD.archive, undefined);
@@ -129,17 +137,21 @@ describe('Put object with same key as prior object', () => {
         it('should create a new version when replacing archived current object in versioned bucket', async () => {
             await bucketUtil.empty(bucketName);
 
-            await s3.send(new PutBucketVersioningCommand({
-                Bucket: bucketName,
-                VersioningConfiguration: { Status: 'Enabled' },
-            }));
+            await s3.send(
+                new PutBucketVersioningCommand({
+                    Bucket: bucketName,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }),
+            );
 
-            const firstPutRes = await s3.send(new PutObjectCommand({
-                Bucket: bucketName,
-                Key: objectName,
-                Body: 'versioned first payload',
-                Metadata: firstPutMetadata,
-            }));
+            const firstPutRes = await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    Body: 'versioned first payload',
+                    Metadata: firstPutMetadata,
+                }),
+            );
             assert(firstPutRes.VersionId);
 
             await fakeMetadataArchive(bucketName, objectName, undefined, {
@@ -148,19 +160,23 @@ describe('Put object with same key as prior object', () => {
                 restoreRequestedDays: 5,
             });
 
-            const secondPutRes = await s3.send(new PutObjectCommand({
-                Bucket: bucketName,
-                Key: objectName,
-                Body: 'versioned second payload',
-                Metadata: secondPutMetadata,
-            }));
+            const secondPutRes = await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    Body: 'versioned second payload',
+                    Metadata: secondPutMetadata,
+                }),
+            );
             assert(secondPutRes.VersionId);
             assert.notStrictEqual(secondPutRes.VersionId, firstPutRes.VersionId);
 
-            const headRes = await s3.send(new HeadObjectCommand({
-                Bucket: bucketName,
-                Key: objectName,
-            }));
+            const headRes = await s3.send(
+                new HeadObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                }),
+            );
             assert.deepStrictEqual(headRes.Metadata, secondPutMetadata);
 
             const currentMD = await getMetadata(bucketName, objectName, undefined);
@@ -170,25 +186,33 @@ describe('Put object with same key as prior object', () => {
         it('should replace archived current null version in version-suspended bucket', async () => {
             await bucketUtil.empty(bucketName);
 
-            await s3.send(new PutBucketVersioningCommand({
-                Bucket: bucketName,
-                VersioningConfiguration: { Status: 'Enabled' },
-            }));
-            await s3.send(new PutObjectCommand({
-                Bucket: bucketName,
-                Key: objectName,
-                Body: 'enabled-version-payload',
-            }));
-            await s3.send(new PutBucketVersioningCommand({
-                Bucket: bucketName,
-                VersioningConfiguration: { Status: 'Suspended' },
-            }));
+            await s3.send(
+                new PutBucketVersioningCommand({
+                    Bucket: bucketName,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }),
+            );
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    Body: 'enabled-version-payload',
+                }),
+            );
+            await s3.send(
+                new PutBucketVersioningCommand({
+                    Bucket: bucketName,
+                    VersioningConfiguration: { Status: 'Suspended' },
+                }),
+            );
 
-            await s3.send(new PutObjectCommand({
-                Bucket: bucketName,
-                Key: objectName,
-                Body: 'null-current-before-archive',
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    Body: 'null-current-before-archive',
+                }),
+            );
 
             await fakeMetadataArchive(bucketName, objectName, undefined, {
                 archiveInfo: { archiveId: 'archive-null-current' },
@@ -196,17 +220,18 @@ describe('Put object with same key as prior object', () => {
                 restoreRequestedDays: 5,
             });
 
-            await s3.send(new PutObjectCommand({
-                Bucket: bucketName,
-                Key: objectName,
-                Body: 'replace archived null current',
-                Metadata: secondPutMetadata,
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    Body: 'replace archived null current',
+                    Metadata: secondPutMetadata,
+                }),
+            );
 
             const currentMD = await getMetadata(bucketName, objectName, undefined);
             assert.strictEqual(currentMD.archive, undefined);
             assert.deepStrictEqual(currentMD['x-amz-meta-secondput'], secondPutMetadata.secondput);
         });
-
     });
 });

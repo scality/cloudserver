@@ -25,35 +25,50 @@ describe('checkBucketAcls', () => {
         {
             description: 'should return true if bucket owner matches canonicalID',
             input: {
-                bucketAcl: {}, requestType: 'anyType', canonicalID: 'ownerId', mainApiCall: 'anyApiCall',
+                bucketAcl: {},
+                requestType: 'anyType',
+                canonicalID: 'ownerId',
+                mainApiCall: 'anyApiCall',
             },
             expected: true,
         },
         {
             description: 'should return true for objectGetTagging when mainApiCall is objectGet',
             input: {
-                bucketAcl: {}, requestType: 'objectGetTagging', canonicalID: 'anyId', mainApiCall: 'objectGet',
+                bucketAcl: {},
+                requestType: 'objectGetTagging',
+                canonicalID: 'anyId',
+                mainApiCall: 'objectGet',
             },
             expected: true,
         },
         {
             description: 'should return true for objectPutTagging when mainApiCall is objectPut',
             input: {
-                bucketAcl: {}, requestType: 'objectPutTagging', canonicalID: 'anyId', mainApiCall: 'objectPut',
+                bucketAcl: {},
+                requestType: 'objectPutTagging',
+                canonicalID: 'anyId',
+                mainApiCall: 'objectPut',
             },
             expected: true,
         },
         {
             description: 'should return true for objectPutLegalHold when mainApiCall is objectPut',
             input: {
-                bucketAcl: {}, requestType: 'objectPutLegalHold', canonicalID: 'anyId', mainApiCall: 'objectPut',
+                bucketAcl: {},
+                requestType: 'objectPutLegalHold',
+                canonicalID: 'anyId',
+                mainApiCall: 'objectPut',
             },
             expected: true,
         },
         {
             description: 'should return true for objectPutRetention when mainApiCall is objectPut',
             input: {
-                bucketAcl: {}, requestType: 'objectPutRetention', canonicalID: 'anyId', mainApiCall: 'objectPut',
+                bucketAcl: {},
+                requestType: 'objectPutRetention',
+                canonicalID: 'anyId',
+                mainApiCall: 'objectPut',
             },
             expected: true,
         },
@@ -62,7 +77,10 @@ describe('checkBucketAcls', () => {
             input: {
                 bucketAcl: {
                     Canned: 'public-read-write',
-                }, requestType: 'initiateMultipartUpload', canonicalID: 'any', mainApiCall: 'initiateMultipartUpload',
+                },
+                requestType: 'initiateMultipartUpload',
+                canonicalID: 'any',
+                mainApiCall: 'initiateMultipartUpload',
             },
             expected: true,
         },
@@ -71,7 +89,10 @@ describe('checkBucketAcls', () => {
             input: {
                 bucketAcl: {
                     Canned: 'public-read-write',
-                }, requestType: 'objectPutPart', canonicalID: 'any', mainApiCall: 'objectPutPart',
+                },
+                requestType: 'objectPutPart',
+                canonicalID: 'any',
+                mainApiCall: 'objectPutPart',
             },
             expected: true,
         },
@@ -80,7 +101,10 @@ describe('checkBucketAcls', () => {
             input: {
                 bucketAcl: {
                     Canned: 'public-read-write',
-                }, requestType: 'completeMultipartUpload', canonicalID: 'any', mainApiCall: 'completeMultipartUpload',
+                },
+                requestType: 'completeMultipartUpload',
+                canonicalID: 'any',
+                mainApiCall: 'completeMultipartUpload',
             },
             expected: true,
         },
@@ -240,8 +264,12 @@ describe('checkBucketAcls', () => {
             // Mock the bucket based on the test scenario's input
             mockBucket.getAcl = () => scenario.input.bucketAcl;
 
-            const result = checkBucketAcls(mockBucket,
-                scenario.input.requestType, scenario.input.canonicalID, scenario.input.mainApiCall);
+            const result = checkBucketAcls(
+                mockBucket,
+                scenario.input.requestType,
+                scenario.input.canonicalID,
+                scenario.input.mainApiCall,
+            );
             assert.strictEqual(result, scenario.expected);
         });
     });
@@ -255,7 +283,7 @@ describe('checkObjectAcls', () => {
     };
     const mockObjectMD = {
         'owner-id': 'objectOwnerId',
-        'acl': {
+        acl: {
             Canned: '',
             FULL_CONTROL: [],
             READ: [],
@@ -266,42 +294,73 @@ describe('checkObjectAcls', () => {
     };
 
     it('should return true if request type is in bucketOwnerActions and bucket owner matches canonicalID', () => {
-        assert.strictEqual(checkObjectAcls(mockBucket, mockObjectMD, bucketOwnerActions[0],
-            'bucketOwnerId', false, false, 'anyApiCall'), true);
+        assert.strictEqual(
+            checkObjectAcls(
+                mockBucket,
+                mockObjectMD,
+                bucketOwnerActions[0],
+                'bucketOwnerId',
+                false,
+                false,
+                'anyApiCall',
+            ),
+            true,
+        );
     });
 
     it('should return true if objectMD owner matches canonicalID', () => {
-        assert.strictEqual(checkObjectAcls(mockBucket, mockObjectMD, 'anyType',
-            'objectOwnerId', false, false, 'anyApiCall'), true);
+        assert.strictEqual(
+            checkObjectAcls(mockBucket, mockObjectMD, 'anyType', 'objectOwnerId', false, false, 'anyApiCall'),
+            true,
+        );
     });
 
     it('should return true for objectGetTagging when mainApiCall is objectGet and conditions met', () => {
-        assert.strictEqual(checkObjectAcls(mockBucket, mockObjectMD, 'objectGetTagging',
-            'anyIdNotPublic', true, true, 'objectGet'), true);
+        assert.strictEqual(
+            checkObjectAcls(mockBucket, mockObjectMD, 'objectGetTagging', 'anyIdNotPublic', true, true, 'objectGet'),
+            true,
+        );
     });
 
     it('should return false if no acl provided in objectMD', () => {
         const objMDWithoutAcl = Object.assign({}, mockObjectMD);
         delete objMDWithoutAcl.acl;
-        assert.strictEqual(checkObjectAcls(mockBucket, objMDWithoutAcl, 'anyType',
-            'anyId', false, false, 'anyApiCall'), false);
+        assert.strictEqual(
+            checkObjectAcls(mockBucket, objMDWithoutAcl, 'anyType', 'anyId', false, false, 'anyApiCall'),
+            false,
+        );
     });
 
     const tests = [
         {
-            acl: 'public-read', reqType: 'objectGet', id: 'anyIdNotPublic', expected: true,
+            acl: 'public-read',
+            reqType: 'objectGet',
+            id: 'anyIdNotPublic',
+            expected: true,
         },
         {
-            acl: 'public-read-write', reqType: 'objectGet', id: 'anyIdNotPublic', expected: true,
+            acl: 'public-read-write',
+            reqType: 'objectGet',
+            id: 'anyIdNotPublic',
+            expected: true,
         },
         {
-            acl: 'authenticated-read', reqType: 'objectGet', id: 'anyIdNotPublic', expected: true,
+            acl: 'authenticated-read',
+            reqType: 'objectGet',
+            id: 'anyIdNotPublic',
+            expected: true,
         },
         {
-            acl: 'bucket-owner-read', reqType: 'objectGet', id: 'bucketOwnerId', expected: true,
+            acl: 'bucket-owner-read',
+            reqType: 'objectGet',
+            id: 'bucketOwnerId',
+            expected: true,
         },
         {
-            acl: 'bucket-owner-full-control', reqType: 'objectGet', id: 'bucketOwnerId', expected: true,
+            acl: 'bucket-owner-full-control',
+            reqType: 'objectGet',
+            id: 'bucketOwnerId',
+            expected: true,
         },
         {
             aclList: ['someId', 'anyIdNotPublic'],
@@ -323,19 +382,31 @@ describe('checkObjectAcls', () => {
         { reqType: 'completeMultipartUpload', id: 'anyId', expected: true },
         { reqType: 'objectDelete', id: 'anyId', expected: true },
         {
-            aclList: ['anyId'], aclField: 'FULL_CONTROL', reqType: 'objectPutACL', id: 'anyId', expected: true,
+            aclList: ['anyId'],
+            aclField: 'FULL_CONTROL',
+            reqType: 'objectPutACL',
+            id: 'anyId',
+            expected: true,
         },
         {
-            aclList: ['anyId'], aclField: 'FULL_CONTROL', reqType: 'objectGetACL', id: 'anyId', expected: true,
+            aclList: ['anyId'],
+            aclField: 'FULL_CONTROL',
+            reqType: 'objectGetACL',
+            id: 'anyId',
+            expected: true,
         },
         {
-            acl: '', reqType: 'objectGet', id: 'randomId', expected: false,
+            acl: '',
+            reqType: 'objectGet',
+            id: 'randomId',
+            expected: false,
         },
     ];
 
     tests.forEach(test => {
-        it(`should return ${test.expected} for ${test.reqType} with ACL as ${test.acl
-            || (`${test.aclField}:${JSON.stringify(test.aclList)}`)}`, () => {
+        it(`should return ${test.expected} for ${test.reqType} with ACL as ${
+            test.acl || `${test.aclField}:${JSON.stringify(test.aclList)}`
+        }`, () => {
             if (test.acl) {
                 mockObjectMD.acl.Canned = test.acl;
             } else if (test.aclList && test.aclField) {
@@ -360,112 +431,123 @@ describe('validatePolicyConditions', () => {
         {
             description: 'Should return null if conditions have a valid IP address',
             inputPolicy: {
-                Statement: [{
-                    Condition: {
-                        IpAddress: { 'aws:SourceIp': '192.168.1.1/24' },
+                Statement: [
+                    {
+                        Condition: {
+                            IpAddress: { 'aws:SourceIp': '192.168.1.1/24' },
+                        },
                     },
-                }],
+                ],
             },
             expected: null,
         },
         {
-            description: 'Should return "Invalid IP address in Conditions" ' +
-            'if conditions have an invalid IP address',
+            description:
+                'Should return "Invalid IP address in Conditions" ' + 'if conditions have an invalid IP address',
             inputPolicy: {
-                Statement: [{
-                    Condition: {
-                        IpAddress: { 'aws:SourceIp': '123' },
+                Statement: [
+                    {
+                        Condition: {
+                            IpAddress: { 'aws:SourceIp': '123' },
+                        },
                     },
-                }],
+                ],
             },
             expected: 'Invalid IP address in Conditions',
         },
         {
-            description: 'Should return "Policy has an invalid condition key" if a' +
-            ' condition key does not start with \'aws:\' and is not recognized',
+            description:
+                'Should return "Policy has an invalid condition key" if a' +
+                " condition key does not start with 'aws:' and is not recognized",
             inputPolicy: {
-                Statement: [{
-                    Condition: {
-                        NotARealCondition: { 's3:prefix': 'something' },
+                Statement: [
+                    {
+                        Condition: {
+                            NotARealCondition: { 's3:prefix': 'something' },
+                        },
                     },
-                }],
+                ],
             },
             expected: 'Policy has an invalid condition key',
         },
         {
-            description: 'Should return null if a statement in the policy does not contain a \'Condition\' block',
+            description: "Should return null if a statement in the policy does not contain a 'Condition' block",
             inputPolicy: {
                 Statement: [{}],
             },
             expected: null,
         },
         {
-            description: 'Should return a relevant error message ' +
-            'if the condition value is an empty string',
+            description: 'Should return a relevant error message ' + 'if the condition value is an empty string',
             inputPolicy: {
-                Statement: [{
-                    Condition: {
-                        IpAddress: { 'aws:SourceIp': '' },
+                Statement: [
+                    {
+                        Condition: {
+                            IpAddress: { 'aws:SourceIp': '' },
+                        },
                     },
-                }],
+                ],
             },
             expected: 'Invalid IP address in Conditions',
         },
         {
             description: 'Should accept arrays of IPs',
             inputPolicy: {
-                Statement: [{
-                    Condition: {
-                        IpAddress: {
-                            'aws:SourceIp': [
-                                '10.0.11.0/24',
-                                '10.0.1.0/24',
-                            ],
+                Statement: [
+                    {
+                        Condition: {
+                            IpAddress: {
+                                'aws:SourceIp': ['10.0.11.0/24', '10.0.1.0/24'],
+                            },
                         },
                     },
-                }],
+                ],
             },
             expected: null,
         },
         {
             description: 'Should return relevant error if one of the IPs in the array is invalid',
             inputPolicy: {
-                Statement: [{
-                    Condition: {
-                        IpAddress: {
-                            'aws:SourceIp': [
-                                '10.0.11.0/24',
-                                '123',
-                            ],
+                Statement: [
+                    {
+                        Condition: {
+                            IpAddress: {
+                                'aws:SourceIp': ['10.0.11.0/24', '123'],
+                            },
                         },
                     },
-                }],
+                ],
             },
             expected: 'Invalid IP address in Conditions',
         },
         {
             description: 'Should not return error if array value in IP condition is empty', // this is AWS behavior
             inputPolicy: {
-                Statement: [{
-                    Condition: {
-                        IpAddress: {
-                            'aws:SourceIp': [],
+                Statement: [
+                    {
+                        Condition: {
+                            IpAddress: {
+                                'aws:SourceIp': [],
+                            },
                         },
                     },
-                }],
+                ],
             },
             expected: null,
         },
         {
-            description: 'Should return null or a relevant error message ' +
-            'if multiple conditions are provided in a single statement',
+            description:
+                'Should return null or a relevant error message ' +
+                'if multiple conditions are provided in a single statement',
             inputPolicy: {
-                Statement: [{
-                    Condition: {
-                        IpAddress: { 'aws:SourceIp': '192.168.1.1' },
-                        NotARealCondition: { 's3:prefix': 'something' },
+                Statement: [
+                    {
+                        Condition: {
+                            IpAddress: { 'aws:SourceIp': '192.168.1.1' },
+                            NotARealCondition: { 's3:prefix': 'something' },
+                        },
                     },
-                }],
+                ],
             },
             expected: 'Policy has an invalid condition key',
         },
@@ -490,34 +572,41 @@ describe('validatePolicyConditions', () => {
         {
             description: 'Should return null if conditions have a valid IPv6 address',
             inputPolicy: {
-                Statement: [{
-                    Condition: {
-                        IpAddress: { 'aws:SourceIp': '2001:0db8:85a3:0000:0000:8a2e:0370:7334' },
+                Statement: [
+                    {
+                        Condition: {
+                            IpAddress: { 'aws:SourceIp': '2001:0db8:85a3:0000:0000:8a2e:0370:7334' },
+                        },
                     },
-                }],
+                ],
             },
             expected: null,
         },
         {
             description: 'Should return "Invalid IP address in Conditions" if conditions have an invalid IPv6 address',
             inputPolicy: {
-                Statement: [{
-                    Condition: {
-                        IpAddress: { 'aws:SourceIp': '2001:0db8:85a3:0000:XYZZ:8a2e:0370:7334' },
+                Statement: [
+                    {
+                        Condition: {
+                            IpAddress: { 'aws:SourceIp': '2001:0db8:85a3:0000:XYZZ:8a2e:0370:7334' },
+                        },
                     },
-                }],
+                ],
             },
             expected: 'Invalid IP address in Conditions',
         },
         {
-            description: 'Should return "Invalid IP address in Conditions" if conditions'
-            + ' have an IPv6 address with unusual and invalid notation',
+            description:
+                'Should return "Invalid IP address in Conditions" if conditions' +
+                ' have an IPv6 address with unusual and invalid notation',
             inputPolicy: {
-                Statement: [{
-                    Condition: {
-                        IpAddress: { 'aws:SourceIp': '2001::85a3::8a2e' },
+                Statement: [
+                    {
+                        Condition: {
+                            IpAddress: { 'aws:SourceIp': '2001::85a3::8a2e' },
+                        },
                     },
-                }],
+                ],
             },
             expected: 'Invalid IP address in Conditions',
         },

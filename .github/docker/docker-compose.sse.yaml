@@ -5,7 +5,7 @@ services:
     # root because S3C images needs ownership permission on files and mounted paths
     user: root
     command: sh -c "chmod 400 tests/utils/keyfile && yarn start > /artifacts/vault.log 2> /artifacts/vault-stderr.log"
-    network_mode: "host"
+    network_mode: 'host'
     volumes:
       - /tmp/artifacts/${JOB_NAME}:/artifacts
       - ./vault-config.json:/conf/config.json:ro

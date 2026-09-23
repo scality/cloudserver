@@ -2,7 +2,8 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const util = require('util');
-const { CreateBucketCommand, 
+const {
+    CreateBucketCommand,
     PutObjectCommand,
     GetObjectAclCommand,
     GetObjectTaggingCommand,
@@ -13,10 +14,8 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 const checkError = require('../../lib/utility/checkError');
 const provideRawOutput = require('../../lib/utility/provideRawOutput');
 const provideRawOutputAsync = util.promisify(provideRawOutput);
-const { taggingTests, generateMultipleTagQuery }
-    = require('../../lib/utility/tagging');
-const genMaxSizeMetaHeaders
-    = require('../../lib/utility/genMaxSizeMetaHeaders');
+const { taggingTests, generateMultipleTagQuery } = require('../../lib/utility/tagging');
+const genMaxSizeMetaHeaders = require('../../lib/utility/genMaxSizeMetaHeaders');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
 
 const object = 'object2putstuffin';
@@ -35,131 +34,144 @@ describe('PUT object', () => {
 
         afterEach(() => {
             process.stdout.write('Emptying bucket');
-            return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
+            return bucketUtil
+                .empty(bucket)
+                .then(() => {
+                    process.stdout.write('Deleting bucket');
+                    return bucketUtil.deleteOne(bucket);
+                })
+                .catch(err => {
+                    process.stdout.write('Error in afterEach');
+                    throw err;
+                });
+        });
+
+        it('should put an object and set the acl via query param', async () => {
+            // Create a temporary file for upload
+            const tempFile = path.join(__dirname, 'temp-upload-file.txt');
+            fs.writeFileSync(tempFile, 'test content for upload');
+            const params = { Bucket: bucket, Key: 'key', ACL: 'public-read', StorageClass: 'STANDARD' };
+
+            const command = new PutObjectCommand(params);
+            const url = await getSignedUrl(s3, command);
+            const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url, '--upload-file', tempFile]);
+            fs.unlinkSync(tempFile);
+            assert.strictEqual(httpCode, '200 OK');
+            const result = await s3.send(new GetObjectAclCommand({ Bucket: bucket, Key: 'key' }));
+            assert.deepStrictEqual(result.Grants[1], {
+                Grantee: { Type: 'Group', URI: 'http://acs.amazonaws.com/groups/global/AllUsers' },
+                Permission: 'READ',
             });
         });
 
-        it('should put an object and set the acl via query param',
-            async () => {
-                // Create a temporary file for upload
-                const tempFile = path.join(__dirname, 'temp-upload-file.txt');
-                fs.writeFileSync(tempFile, 'test content for upload');
-                const params = { Bucket: bucket, Key: 'key',
-                    ACL: 'public-read', StorageClass: 'STANDARD' };
-                
-                const command = new PutObjectCommand(params);
-                const url = await getSignedUrl(s3, command);
-                const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url,
-                    '--upload-file', tempFile]);
-                fs.unlinkSync(tempFile);
-                assert.strictEqual(httpCode, '200 OK');
-                const result = await s3.send(new GetObjectAclCommand({ Bucket: bucket, Key: 'key' }));
-                assert.deepStrictEqual(result.Grants[1], { Grantee:
-                    { Type: 'Group', URI:
-                        'http://acs.amazonaws.com/groups/global/AllUsers',
-                    }, Permission: 'READ' });
-            });
-
-        it('should put an object with key slash',
-            done => {
-                const params = { Bucket: bucket, Key: '/' };
-                s3.send(new PutObjectCommand(params)).then(() => {
+        it('should put an object with key slash', done => {
+            const params = { Bucket: bucket, Key: '/' };
+            s3.send(new PutObjectCommand(params))
+                .then(() => {
                     done();
-                }).catch(err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${JSON.stringify(err)}`);
+                })
+                .catch(err => {
+                    assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
                     done(err);
                 });
-            });
+        });
 
         it('should return KeyTooLong error when key is longer than 915 bytes', done => {
             const params = { Bucket: bucket, Key: 'a'.repeat(916) };
-            s3.send(new PutObjectCommand(params)).then(() => {
-                assert(false, 'Expected failure but got success');
-            }).catch(err => {
-                assert(err, 'Expected error but did not find one');
-                assert.strictEqual(err.name, 'KeyTooLong');
-                assert.match(err.message, /915/);
-                done();
-            });
+            s3.send(new PutObjectCommand(params))
+                .then(() => {
+                    assert(false, 'Expected failure but got success');
+                })
+                .catch(err => {
+                    assert(err, 'Expected error but did not find one');
+                    assert.strictEqual(err.name, 'KeyTooLong');
+                    assert.match(err.message, /915/);
+                    done();
+                });
         });
 
-        it('should return error if putting object w/ > 2KB user-defined md',
-            done => {
-                const metadata = genMaxSizeMetaHeaders();
-                const params = { Bucket: bucket, Key: '/', Metadata: metadata };
-                s3.send(new PutObjectCommand(params)).then(() => {
+        it('should return error if putting object w/ > 2KB user-defined md', done => {
+            const metadata = genMaxSizeMetaHeaders();
+            const params = { Bucket: bucket, Key: '/', Metadata: metadata };
+            s3.send(new PutObjectCommand(params))
+                .then(() => {
                     // add one more byte to be over the limit
                     metadata.header0 = `${metadata.header0}${'0'}`;
-                    s3.send(new PutObjectCommand(params)).then(() => {
+                    s3.send(new PutObjectCommand(params))
+                        .then(() => {
+                            assert(false, 'Expected failure but got success');
+                        })
+                        .catch(err => {
+                            assert(err, 'Expected err but did not find one');
+                            assert.strictEqual(err.name, 'MetadataTooLarge');
+                            assert.strictEqual(err.$metadata.httpStatusCode, 400);
+                            done();
+                        });
+                })
+                .catch(err => {
+                    assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                    done(err);
+                });
+        });
+
+        it(
+            'should return InvalidRequest error if putting object with ' +
+                'object lock retention date and mode when object lock is not ' +
+                'enabled on the bucket',
+            done => {
+                const date = new Date(2050, 10, 10);
+                const params = {
+                    Bucket: bucket,
+                    Key: 'key',
+                    ObjectLockRetainUntilDate: date,
+                    ObjectLockMode: 'GOVERNANCE',
+                };
+                s3.send(new PutObjectCommand(params))
+                    .then(() => {
                         assert(false, 'Expected failure but got success');
-                    }).catch(err => {
-                        assert(err, 'Expected err but did not find one');
-                        assert.strictEqual(err.name, 'MetadataTooLarge');
+                    })
+                    .catch(err => {
+                        const expectedErrMessage = 'Bucket is missing ObjectLockConfiguration';
+                        assert.strictEqual(err.name, 'InvalidRequest');
+                        assert.strictEqual(err.$metadata.httpStatusCode, 400);
+                        assert(err.toString().includes(expectedErrMessage));
+                        done();
+                    });
+            },
+        );
+
+        it(
+            'should return Not Implemented error for obj. encryption using ' + 'customer-provided encryption keys',
+            done => {
+                const params = { Bucket: bucket, Key: 'key', SSECustomerAlgorithm: 'AES256' };
+                s3.send(new PutObjectCommand(params))
+                    .then(() => {
+                        assert(false, 'Expected failure but got success');
+                    })
+                    .catch(err => {
+                        assert.strictEqual(err.name, 'NotImplemented');
+                        done();
+                    });
+            },
+        );
+
+        it(
+            'should return InvalidRedirectLocation if putting object ' +
+                'with x-amz-website-redirect-location header that does not start ' +
+                "with 'http://', 'https://' or '/'",
+            done => {
+                const params = { Bucket: bucket, Key: 'key', WebsiteRedirectLocation: 'google.com' };
+                s3.send(new PutObjectCommand(params))
+                    .then(() => {
+                        assert(false, 'Expected failure but got success');
+                    })
+                    .catch(err => {
+                        assert.strictEqual(err.name, 'InvalidRedirectLocation');
                         assert.strictEqual(err.$metadata.httpStatusCode, 400);
                         done();
                     });
-                }).catch(err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${JSON.stringify(err)}`);
-                    done(err);
-                });
-            });
-
-        it('should return InvalidRequest error if putting object with ' +
-            'object lock retention date and mode when object lock is not ' +
-            'enabled on the bucket', done => {
-            const date = new Date(2050, 10, 10);
-            const params = {
-                Bucket: bucket,
-                Key: 'key',
-                ObjectLockRetainUntilDate: date,
-                ObjectLockMode: 'GOVERNANCE',
-            };
-            s3.send(new PutObjectCommand(params)).then(() => {
-                assert(false, 'Expected failure but got success');
-            }).catch(err => {
-                const expectedErrMessage
-                    = 'Bucket is missing ObjectLockConfiguration';
-                assert.strictEqual(err.name, 'InvalidRequest');
-                assert.strictEqual(err.$metadata.httpStatusCode, 400);
-                assert(err.toString().includes(expectedErrMessage));
-                done();
-            });
-        });
-
-        it('should return Not Implemented error for obj. encryption using ' +
-            'customer-provided encryption keys', done => {
-            const params = { Bucket: bucket, Key: 'key',
-                SSECustomerAlgorithm: 'AES256' };
-            s3.send(new PutObjectCommand(params)).then(() => {
-                assert(false, 'Expected failure but got success');
-            }).catch(err => {
-                assert.strictEqual(err.name, 'NotImplemented');
-                done();
-            });
-        });
-
-        it('should return InvalidRedirectLocation if putting object ' +
-        'with x-amz-website-redirect-location header that does not start ' +
-        'with \'http://\', \'https://\' or \'/\'', done => {
-            const params = { Bucket: bucket, Key: 'key',
-                WebsiteRedirectLocation: 'google.com' };
-            s3.send(new PutObjectCommand(params)).then(() => {
-                assert(false, 'Expected failure but got success');
-            }).catch(err => {
-                assert.strictEqual(err.name, 'InvalidRedirectLocation');
-                assert.strictEqual(err.$metadata.httpStatusCode, 400);
-                done();
-            });
-        });
+            },
+        );
 
         describe('Put object with tag set', () => {
             taggingTests.forEach(taggingTest => {
@@ -167,152 +179,156 @@ describe('PUT object', () => {
                     const key = encodeURIComponent(taggingTest.tag.key);
                     const value = encodeURIComponent(taggingTest.tag.value);
                     const tagging = `${key}=${value}`;
-                    const params = { Bucket: bucket, Key: object,
-                        Tagging: tagging };
-                    s3.send(new PutObjectCommand(params)).then(() => 
-                        s3.send(new GetObjectTaggingCommand({ Bucket: bucket,
-                            Key: object })).then(data => {
-                            assert.deepStrictEqual(data.TagSet[0], {
-                                Key: taggingTest.tag.key,
-                                Value: taggingTest.tag.value });
-                            done();
-                        }).catch(err => {
-                            assert.equal(err, null, 'Expected success, ' +
-                            `got error ${JSON.stringify(err)}`);
-                            done();
-                        })).catch(err => {
-                        if (taggingTest.error) {
-                            checkError(err, taggingTest.error, 400);
+                    const params = { Bucket: bucket, Key: object, Tagging: tagging };
+                    s3.send(new PutObjectCommand(params))
+                        .then(() =>
+                            s3
+                                .send(new GetObjectTaggingCommand({ Bucket: bucket, Key: object }))
+                                .then(data => {
+                                    assert.deepStrictEqual(data.TagSet[0], {
+                                        Key: taggingTest.tag.key,
+                                        Value: taggingTest.tag.value,
+                                    });
+                                    done();
+                                })
+                                .catch(err => {
+                                    assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                                    done();
+                                }),
+                        )
+                        .catch(err => {
+                            if (taggingTest.error) {
+                                checkError(err, taggingTest.error, 400);
+                                return done();
+                            }
+                            assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
                             return done();
-                        }
-                        assert.equal(err, null, 'Expected success, ' +
-                        `got error ${JSON.stringify(err)}`);
-                        return done();
+                        });
                 });
             });
-        });
 
-            it('should be able to put object with 10 tags',
-            done => {
+            it('should be able to put object with 10 tags', done => {
                 const taggingConfig = generateMultipleTagQuery(10);
-                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object,
-                    Tagging: taggingConfig })).then(() => {
-                    done();
-                }).catch(err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                    `got error ${JSON.stringify(err)}`);
-                    done();
-                });
+                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object, Tagging: taggingConfig }))
+                    .then(() => {
+                        done();
+                    })
+                    .catch(err => {
+                        assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                        done();
+                    });
             });
 
             it('should be able to put an empty Tag set', done => {
-                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object,
-                    Tagging: '',
-                })).then(() => {
-                    done();
-                }).catch(err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                    `got error ${JSON.stringify(err)}`);
-                    done();
-                });
+                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object, Tagging: '' }))
+                    .then(() => {
+                        done();
+                    })
+                    .catch(err => {
+                        assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                        done();
+                    });
             });
 
-            it('should be able to put object with empty tags',
-            done => {
-                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object,
-                    Tagging: '&&&&&&&&&&&&&&&&&key1=value1' })).then(() => {
-                    done();
-                }).catch(err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                    `got error ${JSON.stringify(err)}`);
-                    done();
-                });
+            it('should be able to put object with empty tags', done => {
+                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object, Tagging: '&&&&&&&&&&&&&&&&&key1=value1' }))
+                    .then(() => {
+                        done();
+                    })
+                    .catch(err => {
+                        assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                        done();
+                    });
             });
 
             it('should allow putting 50 tags', done => {
                 const taggingConfig = generateMultipleTagQuery(50);
-                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object,
-                    Tagging: taggingConfig })).then(() => {
-                    done();
-                }).catch(err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                    `got error ${JSON.stringify(err)}`);
-                    done();
-                });
+                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object, Tagging: taggingConfig }))
+                    .then(() => {
+                        done();
+                    })
+                    .catch(err => {
+                        assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                        done();
+                    });
             });
 
-            it('should return BadRequest if putting more that 50 tags',
-            done => {
+            it('should return BadRequest if putting more that 50 tags', done => {
                 const taggingConfig = generateMultipleTagQuery(51);
-                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object,
-                    Tagging: taggingConfig })).then(() => {
-                    assert(false, 'Expected failure but got success');
-                }).catch(err => {
-                    checkError(err, 'BadRequest', 400);
-                    done();
-                });
+                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object, Tagging: taggingConfig }))
+                    .then(() => {
+                        assert(false, 'Expected failure but got success');
+                    })
+                    .catch(err => {
+                        checkError(err, 'BadRequest', 400);
+                        done();
+                    });
             });
 
-            it('should return InvalidArgument if using the same key twice',
-            done => {
-                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object,
-                    Tagging: 'key1=value1&key1=value2' })).then(() => {
-                    assert(false, 'Expected failure but got success');
-                }).catch(err => {
-                    checkError(err, 'InvalidArgument', 400);
-                    done();
-                });
+            it('should return InvalidArgument if using the same key twice', done => {
+                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object, Tagging: 'key1=value1&key1=value2' }))
+                    .then(() => {
+                        assert(false, 'Expected failure but got success');
+                    })
+                    .catch(err => {
+                        checkError(err, 'InvalidArgument', 400);
+                        done();
+                    });
             });
 
-            it('should return InvalidArgument if using the same key twice ' +
-            'and empty tags', done => {
-                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object,
-                    Tagging: '&&&&&&&&&&&&&&&&&key1=value1&key1=value2' })).then(() => {
-                    assert(false, 'Expected failure but got success');
-    
-                }).catch(err => {
-                    checkError(err, 'InvalidArgument', 400);
-                    done();
-                });
+            it('should return InvalidArgument if using the same key twice ' + 'and empty tags', done => {
+                s3.send(
+                    new PutObjectCommand({
+                        Bucket: bucket,
+                        Key: object,
+                        Tagging: '&&&&&&&&&&&&&&&&&key1=value1&key1=value2',
+                    }),
+                )
+                    .then(() => {
+                        assert(false, 'Expected failure but got success');
+                    })
+                    .catch(err => {
+                        checkError(err, 'InvalidArgument', 400);
+                        done();
+                    });
             });
 
             it('should return InvalidArgument if tag with no key', done => {
-                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object,
-                    Tagging: '=value1',
-                })).then(() => {
-                    assert(false, 'Expected failure but got success');
-                }).catch(err => {
-                    checkError(err, 'InvalidArgument', 400);
-                    done();
-                });
+                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object, Tagging: '=value1' }))
+                    .then(() => {
+                        assert(false, 'Expected failure but got success');
+                    })
+                    .catch(err => {
+                        checkError(err, 'InvalidArgument', 400);
+                        done();
+                    });
             });
 
-            it('should return InvalidArgument putting object with ' +
-            'bad encoded tags', done => {
-                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object, Tagging:
-                'key1==value1' })).then(() => {
-                    assert(false, 'Expected failure but got success');
-                }).catch(err => {
-                    checkError(err, 'InvalidArgument', 400);
-                    done();
-                });
+            it('should return InvalidArgument putting object with ' + 'bad encoded tags', done => {
+                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object, Tagging: 'key1==value1' }))
+                    .then(() => {
+                        assert(false, 'Expected failure but got success');
+                    })
+                    .catch(err => {
+                        checkError(err, 'InvalidArgument', 400);
+                        done();
+                    });
             });
 
-            it('should return InvalidArgument putting object tag with ' +
-            'invalid characters: %', done => {
+            it('should return InvalidArgument putting object tag with ' + 'invalid characters: %', done => {
                 const value = 'value1%';
-                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object, Tagging:
-                `key1=${value}` })).then(() => {
-                    assert(false, 'Expected failure but got success');
-                }).catch(err => {
-                    checkError(err, 'InvalidArgument', 400);
-                    done();
-                });
+                s3.send(new PutObjectCommand({ Bucket: bucket, Key: object, Tagging: `key1=${value}` }))
+                    .then(() => {
+                        assert(false, 'Expected failure but got success');
+                    })
+                    .catch(err => {
+                        checkError(err, 'InvalidArgument', 400);
+                        done();
+                    });
             });
         });
     });
 });
-
 
 describe('PUT object with object lock', () => {
     const bucket = 'bucket2putstuffin4324242-lock';
@@ -323,54 +339,61 @@ describe('PUT object with object lock', () => {
         beforeEach(async () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            await s3.send(new CreateBucketCommand({
-                Bucket: bucket,
-                ObjectLockEnabledForBucket: true,
-            }));
+            await s3.send(
+                new CreateBucketCommand({
+                    Bucket: bucket,
+                    ObjectLockEnabledForBucket: true,
+                }),
+            );
         });
 
         afterEach(() => {
             process.stdout.write('Emptying bucket');
-            return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
-            });
+            return bucketUtil
+                .empty(bucket)
+                .then(() => {
+                    process.stdout.write('Deleting bucket');
+                    return bucketUtil.deleteOne(bucket);
+                })
+                .catch(err => {
+                    process.stdout.write('Error in afterEach');
+                    throw err;
+                });
         });
 
-        it('should put object with valid object lock retention date and ' +
-            'mode when object lock is enabled on the bucket', done => {
-            const date = new Date(2050, 10, 10);
-            const params = {
-                Bucket: bucket,
-                Key: 'key1',
-                ObjectLockRetainUntilDate: date,
-                ObjectLockMode: 'COMPLIANCE',
-            };
-            s3.send(new PutObjectCommand(params)).then(res => {
-                changeObjectLock(
-                    [{ bucket, key: 'key1', versionId: res.VersionId }], '', done);
-            });
-        });
+        it(
+            'should put object with valid object lock retention date and ' +
+                'mode when object lock is enabled on the bucket',
+            done => {
+                const date = new Date(2050, 10, 10);
+                const params = {
+                    Bucket: bucket,
+                    Key: 'key1',
+                    ObjectLockRetainUntilDate: date,
+                    ObjectLockMode: 'COMPLIANCE',
+                };
+                s3.send(new PutObjectCommand(params)).then(res => {
+                    changeObjectLock([{ bucket, key: 'key1', versionId: res.VersionId }], '', done);
+                });
+            },
+        );
 
-        it('should put object with valid object lock retention date and ' +
-            'mode when object lock is enabled on the bucket', done => {
-            const date = new Date(2050, 10, 10);
-            const params = {
-                Bucket: bucket,
-                Key: 'key2',
-                ObjectLockRetainUntilDate: date,
-                ObjectLockMode: 'GOVERNANCE',
-            };
-            s3.send(new PutObjectCommand(params)).then(res => {
-                changeObjectLock(
-                    [{ bucket, key: 'key2', versionId: res.VersionId }], '', done);
-            });
-        });
+        it(
+            'should put object with valid object lock retention date and ' +
+                'mode when object lock is enabled on the bucket',
+            done => {
+                const date = new Date(2050, 10, 10);
+                const params = {
+                    Bucket: bucket,
+                    Key: 'key2',
+                    ObjectLockRetainUntilDate: date,
+                    ObjectLockMode: 'GOVERNANCE',
+                };
+                s3.send(new PutObjectCommand(params)).then(res => {
+                    changeObjectLock([{ bucket, key: 'key2', versionId: res.VersionId }], '', done);
+                });
+            },
+        );
 
         it('should error with invalid object lock mode header', done => {
             const date = new Date(2050, 10, 10);
@@ -380,13 +403,15 @@ describe('PUT object with object lock', () => {
                 ObjectLockMode: 'Governance',
                 ObjectLockRetainUntilDate: date,
             };
-            s3.send(new PutObjectCommand(params)).then(() => {
-                assert(false, 'Expected failure but got success');
-            }).catch(err => {
-                assert.strictEqual(err.name, 'InvalidArgument');
-                assert(err.toString().includes('Unknown wormMode directive'));
-                done();
-            });
+            s3.send(new PutObjectCommand(params))
+                .then(() => {
+                    assert(false, 'Expected failure but got success');
+                })
+                .catch(err => {
+                    assert.strictEqual(err.name, 'InvalidArgument');
+                    assert(err.toString().includes('Unknown wormMode directive'));
+                    done();
+                });
         });
 
         it('should put object with valid legal hold status ON', done => {
@@ -396,8 +421,7 @@ describe('PUT object with object lock', () => {
                 ObjectLockLegalHoldStatus: 'ON',
             };
             s3.send(new PutObjectCommand(params)).then(res => {
-                changeObjectLock(
-                    [{ bucket, key: 'key4', versionId: res.VersionId }], '', done);
+                changeObjectLock([{ bucket, key: 'key4', versionId: res.VersionId }], '', done);
             });
         });
 
@@ -418,68 +442,83 @@ describe('PUT object with object lock', () => {
                 Key: 'key6',
                 ObjectLockLegalHoldStatus: 'on',
             };
-            s3.send(new PutObjectCommand(params)).then(() => {
-                assert(false, 'Expected failure but got success');
-            }).catch(err => {
-                assert.strictEqual(err.name, 'InvalidArgument');
-                assert(err.toString().includes('Legal hold status must be one of "ON", "OFF"'));
-                done();
-            });
+            s3.send(new PutObjectCommand(params))
+                .then(() => {
+                    assert(false, 'Expected failure but got success');
+                })
+                .catch(err => {
+                    assert.strictEqual(err.name, 'InvalidArgument');
+                    assert(err.toString().includes('Legal hold status must be one of "ON", "OFF"'));
+                    done();
+                });
         });
 
-        it('should return error when object lock retain until date header is ' +
-            'provided but object lock mode header is missing', done => {
-            const date = new Date(2050, 10, 10);
-            const params = {
-                Bucket: bucket,
-                Key: 'key7',
-                ObjectLockRetainUntilDate: date,
-            };
-            s3.send(new PutObjectCommand(params)).then(() => {
-                assert(false, 'Expected failure but got success');
-            }).catch(err => {
-                const expectedErrMessage
-                    = 'x-amz-object-lock-retain-until-date and ' +
-                    'x-amz-object-lock-mode must both be supplied';
-                assert.strictEqual(err.name, 'InvalidArgument');
-                assert(err.toString().includes(expectedErrMessage));
-                done();
-            });
-        });
+        it(
+            'should return error when object lock retain until date header is ' +
+                'provided but object lock mode header is missing',
+            done => {
+                const date = new Date(2050, 10, 10);
+                const params = {
+                    Bucket: bucket,
+                    Key: 'key7',
+                    ObjectLockRetainUntilDate: date,
+                };
+                s3.send(new PutObjectCommand(params))
+                    .then(() => {
+                        assert(false, 'Expected failure but got success');
+                    })
+                    .catch(err => {
+                        const expectedErrMessage =
+                            'x-amz-object-lock-retain-until-date and ' + 'x-amz-object-lock-mode must both be supplied';
+                        assert.strictEqual(err.name, 'InvalidArgument');
+                        assert(err.toString().includes(expectedErrMessage));
+                        done();
+                    });
+            },
+        );
 
-        it('should return error when object lock mode header is provided ' +
-            'but object lock retain until date header is missing', done => {
-            const params = {
-                Bucket: bucket,
-                Key: 'key8',
-                ObjectLockMode: 'GOVERNANCE',
-            };
-            s3.send(new PutObjectCommand(params)).then(() => {
-                assert(false, 'Expected failure but got success');
-            }).catch(err => {
-                const expectedErrMessage
-                    = 'x-amz-object-lock-retain-until-date and ' +
-                    'x-amz-object-lock-mode must both be supplied';
-                assert.strictEqual(err.name, 'InvalidArgument');
-                assert(err.toString().includes(expectedErrMessage));
-                done();
-            });
-        });
+        it(
+            'should return error when object lock mode header is provided ' +
+                'but object lock retain until date header is missing',
+            done => {
+                const params = {
+                    Bucket: bucket,
+                    Key: 'key8',
+                    ObjectLockMode: 'GOVERNANCE',
+                };
+                s3.send(new PutObjectCommand(params))
+                    .then(() => {
+                        assert(false, 'Expected failure but got success');
+                    })
+                    .catch(err => {
+                        const expectedErrMessage =
+                            'x-amz-object-lock-retain-until-date and ' + 'x-amz-object-lock-mode must both be supplied';
+                        assert.strictEqual(err.name, 'InvalidArgument');
+                        assert(err.toString().includes(expectedErrMessage));
+                        done();
+                    });
+            },
+        );
 
-        it('should return InvalidStorageClass error when x-amz-storage-class header is provided ' +
-            'and not equal to STANDARD', done => {
-            const params = {
-                Bucket: bucket,
-                Key: 'key8',
-                StorageClass: 'COLD',
-            };
-            s3.send(new PutObjectCommand(params)).then(() => {
-                assert(false, 'Expected failure but got success');
-            }).catch(err => {
-                assert.strictEqual(err.name, 'InvalidStorageClass');
-                assert.strictEqual(err.$metadata.httpStatusCode, 400);
-                done();
-            });
-        });
+        it(
+            'should return InvalidStorageClass error when x-amz-storage-class header is provided ' +
+                'and not equal to STANDARD',
+            done => {
+                const params = {
+                    Bucket: bucket,
+                    Key: 'key8',
+                    StorageClass: 'COLD',
+                };
+                s3.send(new PutObjectCommand(params))
+                    .then(() => {
+                        assert(false, 'Expected failure but got success');
+                    })
+                    .catch(err => {
+                        assert.strictEqual(err.name, 'InvalidStorageClass');
+                        assert.strictEqual(err.$metadata.httpStatusCode, 400);
+                        done();
+                    });
+            },
+        );
     });
 });

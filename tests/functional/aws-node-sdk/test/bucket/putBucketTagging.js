@@ -1,9 +1,11 @@
 const assert = require('assert');
-const { S3Client,
+const {
+    S3Client,
     CreateBucketCommand,
     DeleteBucketCommand,
     PutBucketTaggingCommand,
-    GetBucketTaggingCommand } = require('@aws-sdk/client-s3');
+    GetBucketTaggingCommand,
+} = require('@aws-sdk/client-s3');
 const assertError = require('../../../../utilities/bucketTagging-util');
 
 const getConfig = require('../support/config');
@@ -52,7 +54,8 @@ const validEmptyTagging = {
 const taggingKeyNotValid = {
     TagSet: [
         {
-            Key: 'stringaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaastringaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' +
+            Key:
+                'stringaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaastringaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' +
                 'astringaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaastringaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' +
                 'stringaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
             Value: 'string',
@@ -72,7 +75,8 @@ const taggingValueNotValid = {
         },
         {
             Key: 'string',
-            Value: 'stringaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaastringaaaaaaaaaaaaaaaaaaaaaa' +
+            Value:
+                'stringaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaastringaaaaaaaaaaaaaaaaaaaaaa' +
                 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaastringaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' +
                 'aaaaaaastringaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaastringaaaaaaaaaaaaaaaaaa' +
                 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaastringaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' +
@@ -97,11 +101,13 @@ describe('aws-sdk test put bucket tagging', () => {
 
     it('should not add tag if tagKey not unique', async () => {
         try {
-            await s3.send(new PutBucketTaggingCommand({
-                AccountId: s3.AccountId,
-                Tagging: taggingNotUnique, 
-                Bucket: bucket,
-            }));
+            await s3.send(
+                new PutBucketTaggingCommand({
+                    AccountId: s3.AccountId,
+                    Tagging: taggingNotUnique,
+                    Bucket: bucket,
+                }),
+            );
             throw new Error('Expected InvalidTag error');
         } catch (err) {
             assertError(err, 'InvalidTag');
@@ -110,11 +116,13 @@ describe('aws-sdk test put bucket tagging', () => {
 
     it('should not add tag if tagKey not valid', async () => {
         try {
-            await s3.send(new PutBucketTaggingCommand({
-                AccountId: s3.AccountId,
-                Tagging: taggingKeyNotValid, 
-                Bucket: bucket,
-            }));
+            await s3.send(
+                new PutBucketTaggingCommand({
+                    AccountId: s3.AccountId,
+                    Tagging: taggingKeyNotValid,
+                    Bucket: bucket,
+                }),
+            );
             throw new Error('Expected InvalidTag error');
         } catch (err) {
             assertError(err, 'InvalidTag');
@@ -123,11 +131,13 @@ describe('aws-sdk test put bucket tagging', () => {
 
     it('should not add tag if tagValue not valid', async () => {
         try {
-            await s3.send(new PutBucketTaggingCommand({
-                AccountId: s3.AccountId,
-                Tagging: taggingValueNotValid, 
-                Bucket: bucket,
-            }));
+            await s3.send(
+                new PutBucketTaggingCommand({
+                    AccountId: s3.AccountId,
+                    Tagging: taggingValueNotValid,
+                    Bucket: bucket,
+                }),
+            );
             throw new Error('Expected InvalidTag error');
         } catch (err) {
             assertError(err, 'InvalidTag');
@@ -136,42 +146,54 @@ describe('aws-sdk test put bucket tagging', () => {
 
     it('should add tag', async () => {
         // Put bucket tagging
-        await s3.send(new PutBucketTaggingCommand({
-            AccountId: s3.AccountId,
-            Tagging: validTagging, 
-            Bucket: bucket,
-        }));        
-        const res = await s3.send(new GetBucketTaggingCommand({
-            AccountId: s3.AccountId,
-            Bucket: bucket,
-        }));
+        await s3.send(
+            new PutBucketTaggingCommand({
+                AccountId: s3.AccountId,
+                Tagging: validTagging,
+                Bucket: bucket,
+            }),
+        );
+        const res = await s3.send(
+            new GetBucketTaggingCommand({
+                AccountId: s3.AccountId,
+                Bucket: bucket,
+            }),
+        );
         assert.deepStrictEqual(res.TagSet, validTagging.TagSet);
     });
 
     it('should be able to put single tag', async () => {
-        await s3.send(new PutBucketTaggingCommand({
-            AccountId: s3.AccountId,
-            Tagging: validSingleTagging, 
-            Bucket: bucket,
-        }));
-        const res = await s3.send(new GetBucketTaggingCommand({
-            AccountId: s3.AccountId,
-            Bucket: bucket,
-        }));
+        await s3.send(
+            new PutBucketTaggingCommand({
+                AccountId: s3.AccountId,
+                Tagging: validSingleTagging,
+                Bucket: bucket,
+            }),
+        );
+        const res = await s3.send(
+            new GetBucketTaggingCommand({
+                AccountId: s3.AccountId,
+                Bucket: bucket,
+            }),
+        );
         assert.deepStrictEqual(res.TagSet, validSingleTagging.TagSet);
     });
 
     it('should be able to put empty tag array', async () => {
-        await s3.send(new PutBucketTaggingCommand({
-            AccountId: s3.AccountId,
-            Tagging: validEmptyTagging, 
-            Bucket: bucket,
-        }));        
-        try {
-            await s3.send(new GetBucketTaggingCommand({
+        await s3.send(
+            new PutBucketTaggingCommand({
                 AccountId: s3.AccountId,
+                Tagging: validEmptyTagging,
                 Bucket: bucket,
-            }));
+            }),
+        );
+        try {
+            await s3.send(
+                new GetBucketTaggingCommand({
+                    AccountId: s3.AccountId,
+                    Bucket: bucket,
+                }),
+            );
             throw new Error('Expected NoSuchTagSet error');
         } catch (err) {
             assertError(err, 'NoSuchTagSet');
@@ -180,12 +202,14 @@ describe('aws-sdk test put bucket tagging', () => {
 
     it('should return accessDenied if expected bucket owner does not match', async () => {
         try {
-            await s3.send(new PutBucketTaggingCommand({ 
-                AccountId: s3.AccountId,
-                Tagging: validEmptyTagging, 
-                Bucket: bucket, 
-                ExpectedBucketOwner: '944690102203' 
-            }));
+            await s3.send(
+                new PutBucketTaggingCommand({
+                    AccountId: s3.AccountId,
+                    Tagging: validEmptyTagging,
+                    Bucket: bucket,
+                    ExpectedBucketOwner: '944690102203',
+                }),
+            );
             throw new Error('Expected AccessDenied error');
         } catch (err) {
             assertError(err, 'AccessDenied');
@@ -193,17 +217,21 @@ describe('aws-sdk test put bucket tagging', () => {
     });
 
     it('should not return accessDenied if expected bucket owner matches', async () => {
-        await s3.send(new PutBucketTaggingCommand({ 
-            AccountId: s3.AccountId,
-            Tagging: validEmptyTagging, 
-            Bucket: bucket, 
-            ExpectedBucketOwner: s3.AccountId 
-        }));        
+        await s3.send(
+            new PutBucketTaggingCommand({
+                AccountId: s3.AccountId,
+                Tagging: validEmptyTagging,
+                Bucket: bucket,
+                ExpectedBucketOwner: s3.AccountId,
+            }),
+        );
         try {
-            await s3.send(new GetBucketTaggingCommand({ 
-                AccountId: s3.AccountId, 
-                Bucket: bucket 
-            }));
+            await s3.send(
+                new GetBucketTaggingCommand({
+                    AccountId: s3.AccountId,
+                    Bucket: bucket,
+                }),
+            );
             throw new Error('Expected NoSuchTagSet error');
         } catch (err) {
             assertError(err, 'NoSuchTagSet');
@@ -217,12 +245,14 @@ describe('aws-sdk test put bucket tagging', () => {
                 Value: `value_${index}`,
             })),
         };
-        await s3.send(new PutBucketTaggingCommand({
-            AccountId: s3.AccountId,
-            Tagging: tags,
-            Bucket: bucket,
-            ExpectedBucketOwner: s3.AccountId
-        }));
+        await s3.send(
+            new PutBucketTaggingCommand({
+                AccountId: s3.AccountId,
+                Tagging: tags,
+                Bucket: bucket,
+                ExpectedBucketOwner: s3.AccountId,
+            }),
+        );
     });
 
     it('should not put more than 50 tags', async () => {
@@ -233,12 +263,14 @@ describe('aws-sdk test put bucket tagging', () => {
             })),
         };
         try {
-            await s3.send(new PutBucketTaggingCommand({
-                AccountId: s3.AccountId,
-                Tagging: tags,
-                Bucket: bucket,
-                ExpectedBucketOwner: s3.AccountId
-            }));
+            await s3.send(
+                new PutBucketTaggingCommand({
+                    AccountId: s3.AccountId,
+                    Tagging: tags,
+                    Bucket: bucket,
+                    ExpectedBucketOwner: s3.AccountId,
+                }),
+            );
             throw new Error('Expected BadRequest error');
         } catch (err) {
             assertError(err, 'BadRequest');
