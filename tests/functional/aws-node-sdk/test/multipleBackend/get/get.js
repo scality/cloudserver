@@ -58,7 +58,7 @@ describe('Multiple backend get object', function testSuite() {
                     return bucketUtil.deleteOne(bucket);
                 })
                 .catch(err => {
-                    process.stdout.write('Error emptying/deleting bucket: ' + `${err}\n`);
+                    process.stdout.write(`Error emptying/deleting bucket: ${err}\n`);
                     throw err;
                 });
         });
@@ -317,7 +317,7 @@ describe('Multiple backend get object', function testSuite() {
                         done();
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success but got ' + `error ${err}`);
+                        assert.equal(err, null, `Expected success but got error ${err}`);
                         done(err);
                     });
             });
@@ -329,7 +329,7 @@ describe('Multiple backend get object', function testSuite() {
                         done();
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success but got ' + `error ${err}`);
+                        assert.equal(err, null, `Expected success but got error ${err}`);
                         done(err);
                     });
             });
@@ -341,7 +341,7 @@ describe('Multiple backend get object', function testSuite() {
                         done();
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success but got error ' + `error ${err}`);
+                        assert.equal(err, null, `Expected success but got error error ${err}`);
                         done(err);
                     });
             });
@@ -353,7 +353,7 @@ describe('Multiple backend get object', function testSuite() {
                         done();
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success but got ' + `error ${err}`);
+                        assert.equal(err, null, `Expected success but got error ${err}`);
                         done(err);
                     });
             });
@@ -365,7 +365,7 @@ describe('Multiple backend get object', function testSuite() {
                         done();
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success but got ' + `error ${err}`);
+                        assert.equal(err, null, `Expected success but got error ${err}`);
                         done(err);
                     });
             });
@@ -377,7 +377,7 @@ describe('Multiple backend get object', function testSuite() {
                         done();
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success but got ' + `error ${err}`);
+                        assert.equal(err, null, `Expected success but got error ${err}`);
                         done(err);
                     });
             });
@@ -395,7 +395,7 @@ describe('Multiple backend get object', function testSuite() {
                         done();
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success but got ' + `error ${err}`);
+                        assert.equal(err, null, `Expected success but got error ${err}`);
                         done(err);
                     });
             });

@@ -131,7 +131,7 @@ function assertCopyPart(infos, cb) {
                             next();
                         },
                         err => {
-                            assert.equal(err, null, 'listBlocks: Expected ' + `success, got error: ${err}`);
+                            assert.equal(err, null, `listBlocks: Expected success, got error: ${err}`);
                             next();
                         },
                     ),
@@ -492,7 +492,7 @@ describeSkipIfNotMultiple('Put Copy Part to AZURE', function describeF() {
                                     UploadId: this.test.uploadIdAWS,
                                 },
                                 (err, res) => {
-                                    assert.equal(err, null, 'listParts: Expected success,' + ` got error: ${err}`);
+                                    assert.equal(err, null, `listParts: Expected success, got error: ${err}`);
                                     assert.strictEqual(res.Bucket, awsBucket);
                                     assert.strictEqual(res.Key, this.test.mpuKeyNameAWS);
                                     assert.strictEqual(res.UploadId, this.test.uploadIdAWS);
@@ -537,7 +537,7 @@ describeSkipIfNotMultiple('Put Copy Part to AZURE', function describeF() {
                                     UploadId: this.test.uploadIdAWS,
                                 },
                                 (err, res) => {
-                                    assert.equal(err, null, 'listParts: Expected success,' + ` got error: ${err}`);
+                                    assert.equal(err, null, `listParts: Expected success, got error: ${err}`);
                                     assert.strictEqual(res.Bucket, awsBucket);
                                     assert.strictEqual(res.Key, this.test.mpuKeyNameAWS);
                                     assert.strictEqual(res.UploadId, this.test.uploadIdAWS);

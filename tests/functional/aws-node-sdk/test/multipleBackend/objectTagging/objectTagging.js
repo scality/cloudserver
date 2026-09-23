@@ -264,7 +264,7 @@ describeSkipIfNotMultiple('Object tagging with multiple backends', function test
                         .catch(done);
                 });
 
-                it(`should put tags to preexisting object in ${backend} ` + 'backend', done => {
+                it(`should put tags to preexisting object in ${backend} backend`, done => {
                     const key = `somekey-${genUniqID()}`;
                     const params = Object.assign(
                         { Key: key, Metadata: { 'scal-location-constraint': backend } },
@@ -283,7 +283,7 @@ describeSkipIfNotMultiple('Object tagging with multiple backends', function test
                         .catch(done);
                 });
 
-                it('should put tags to preexisting 0 byte object in ' + `${backend} backend`, done => {
+                it(`should put tags to preexisting 0 byte object in ${backend} backend`, done => {
                     const key = `somekey-${genUniqID()}`;
                     const params = {
                         Bucket: bucket,
@@ -303,7 +303,7 @@ describeSkipIfNotMultiple('Object tagging with multiple backends', function test
                         .catch(done);
                 });
 
-                itSkipIfAzure('should put tags to completed MPU ' + `object in ${backend}`, done => {
+                itSkipIfAzure(`should put tags to completed MPU object in ${backend}`, done => {
                     const key = `somekey-${genUniqID()}`;
                     const params = {
                         Bucket: bucket,

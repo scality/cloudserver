@@ -243,7 +243,7 @@ describeSkipIfNotMultiple('MultipleBackend put part to AZURE', function describe
                             .catch(next);
                     },
                     err => {
-                        assert.equal(err, null, 'Expected success, ' + `got error: ${err}`);
+                        assert.equal(err, null, `Expected success, got error: ${err}`);
                         checkSubPart(this.test.key, this.test.uploadId, parts, done);
                     },
                 );
@@ -275,7 +275,7 @@ describeSkipIfNotMultiple('MultipleBackend put part to AZURE', function describe
                             .catch(next);
                     },
                     err => {
-                        assert.equal(err, null, 'Expected success, ' + `got error: ${err}`);
+                        assert.equal(err, null, `Expected success, got error: ${err}`);
                         checkSubPart(this.test.key, this.test.uploadId, parts, done);
                     },
                 );
@@ -352,7 +352,7 @@ describeSkipIfNotMultiple('MultipleBackend put part to AZURE', function describe
                             )
                                 .then(() => next())
                                 .catch(err => {
-                                    assert.equal(err, null, 'Err putting object to ' + `azure: ${err}`);
+                                    assert.equal(err, null, `Err putting object to azure: ${err}`);
                                     next(err);
                                 });
                         },
@@ -434,7 +434,7 @@ describeSkipIfNotMultiple('MultipleBackend put part to AZURE', function describe
                         azureCheck(this.test.key, done);
                     })
                     .catch(err => {
-                        assert.strictEqual(err, null, 'Err putting part to ' + `Azure: ${err}`);
+                        assert.strictEqual(err, null, `Err putting part to Azure: ${err}`);
                         done(err);
                     });
             });

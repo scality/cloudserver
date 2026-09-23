@@ -260,9 +260,8 @@ describe('aws-node-sdk range tests', () => {
             ];
 
             putRangeTests.forEach(range => {
-                it(`should get a range of ${range} bytes using a ${fileSize} ` + 'byte sized object', () =>
-                    checkRanges(range, fileSize),
-                );
+                it(`should get a range of ${range} bytes using a ${fileSize} byte sized object`, () =>
+                    checkRanges(range, fileSize));
             });
         }));
 

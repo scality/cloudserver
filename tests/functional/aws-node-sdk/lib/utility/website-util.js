@@ -132,7 +132,7 @@ function _assertResponseHtml404(method, response, type) {
         _assertResponseHtml(response.body, 'ul', ['Code: NoSuchKey', 'Message: The specified key does not exist.']);
     } else {
         throw new Error(
-            `'${type}' is not a recognized 404 ` + 'error checked in the WebsiteConfigTester.checkHTML function',
+            `'${type}' is not a recognized 404 error checked in the WebsiteConfigTester.checkHTML function`,
         );
     }
 }
@@ -145,7 +145,7 @@ function _assertResponseHtml403(method, response, type) {
             assert.strictEqual(response.headers['x-amz-error-message'], 'Access Denied');
         } else if (type !== '403-retrieve-error-document') {
             throw new Error(
-                `'${type}' is not a recognized 403 ` + 'error checked in the WebsiteConfigTester.checkHTML function',
+                `'${type}' is not a recognized 403 error checked in the WebsiteConfigTester.checkHTML function`,
             );
         }
     } else {
@@ -168,7 +168,7 @@ function _assertResponseHtml403(method, response, type) {
             ]);
         } else if (type !== '403-access-denied') {
             throw new Error(
-                `'${type}' is not a recognized 403 ` + 'error checked in the WebsiteConfigTester.checkHTML function',
+                `'${type}' is not a recognized 403 error checked in the WebsiteConfigTester.checkHTML function`,
             );
         }
     }
@@ -222,7 +222,7 @@ function _assertResponseHtmlRedirect(response, type, redirectUrl, method, expect
         }
     } else {
         throw new Error(
-            `'${type}' is not a recognized redirect type ` + 'checked in the WebsiteConfigTester.checkHTML function',
+            `'${type}' is not a recognized redirect type checked in the WebsiteConfigTester.checkHTML function`,
         );
     }
 }
@@ -298,7 +298,7 @@ class WebsiteConfigTester {
                     _assertResponseHtmlIndexUser(res);
                 } else {
                     throw new Error(
-                        `'${responseType}' is not a response ` + 'type recognized by WebsiteConfigTester.checkHTML',
+                        `'${responseType}' is not a response type recognized by WebsiteConfigTester.checkHTML`,
                     );
                 }
             }

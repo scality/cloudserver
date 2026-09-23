@@ -33,7 +33,7 @@ const putObjectRequest = new DummyRequest(
 );
 
 const objectLegalHoldXml = status =>
-    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' + `<LegalHold><Status>${status}</Status></LegalHold>`;
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><LegalHold><Status>${status}</Status></LegalHold>`;
 
 const putObjectLegalHoldRequest = status => ({
     bucketName,

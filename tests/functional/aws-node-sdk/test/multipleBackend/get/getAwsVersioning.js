@@ -74,7 +74,7 @@ describeSkipIfNotMultiple('AWS backend get object with versioning', function tes
                     return bucketUtil.deleteOne(bucket);
                 })
                 .catch(err => {
-                    process.stdout.write('Error emptying/deleting bucket: ' + `${err}\n`);
+                    process.stdout.write(`Error emptying/deleting bucket: ${err}\n`);
                     throw err;
                 });
         });
@@ -94,7 +94,7 @@ describeSkipIfNotMultiple('AWS backend get object with versioning', function tes
                     getAndAssertResult(s3, { bucket, key, body: someBody, expectedVersionId: false }, done);
                 })
                 .catch(err => {
-                    assert.strictEqual(err, null, 'Expected success ' + `putting object, got error ${err}`);
+                    assert.strictEqual(err, null, `Expected success putting object, got error ${err}`);
                     done();
                 });
         });
@@ -121,7 +121,7 @@ describeSkipIfNotMultiple('AWS backend get object with versioning', function tes
                         );
                     })
                     .catch(err => {
-                        assert.strictEqual(err, null, 'Expected success ' + `putting object, got error ${err}`);
+                        assert.strictEqual(err, null, `Expected success putting object, got error ${err}`);
                         done();
                     });
             },
@@ -143,7 +143,7 @@ describeSkipIfNotMultiple('AWS backend get object with versioning', function tes
                             )
                             .then(() => next())
                             .catch(err => {
-                                assert.strictEqual(err, null, 'Expected success ' + `putting object, got error ${err}`);
+                                assert.strictEqual(err, null, `Expected success putting object, got error ${err}`);
                                 next(err);
                             }),
                     next => enableVersioning(s3, bucket, next),
@@ -198,7 +198,7 @@ describeSkipIfNotMultiple('AWS backend get object with versioning', function tes
                             )
                             .then(() => next())
                             .catch(err => {
-                                assert.strictEqual(err, null, 'Expected success ' + `putting object, got error ${err}`);
+                                assert.strictEqual(err, null, `Expected success putting object, got error ${err}`);
                                 next(err);
                             }),
                     next => suspendVersioning(s3, bucket, next),
@@ -214,7 +214,7 @@ describeSkipIfNotMultiple('AWS backend get object with versioning', function tes
                             )
                             .then(() => next())
                             .catch(err => {
-                                assert.strictEqual(err, null, 'Expected success ' + `putting object, got error ${err}`);
+                                assert.strictEqual(err, null, `Expected success putting object, got error ${err}`);
                                 next(err);
                             }),
                     // get latest version
@@ -276,11 +276,7 @@ describeSkipIfNotMultiple('AWS backend get object with versioning', function tes
                                     next();
                                 })
                                 .catch(err => {
-                                    assert.strictEqual(
-                                        err,
-                                        null,
-                                        'Expected success ' + `putting object, got error ${err}`,
-                                    );
+                                    assert.strictEqual(err, null, `Expected success putting object, got error ${err}`);
                                     next(err);
                                 }),
                         next => suspendVersioning(s3, bucket, next),
@@ -296,11 +292,7 @@ describeSkipIfNotMultiple('AWS backend get object with versioning', function tes
                                 )
                                 .then(() => next())
                                 .catch(err => {
-                                    assert.strictEqual(
-                                        err,
-                                        null,
-                                        'Expected success ' + `putting object, got error ${err}`,
-                                    );
+                                    assert.strictEqual(err, null, `Expected success putting object, got error ${err}`);
                                     next(err);
                                 }),
                         // get latest version

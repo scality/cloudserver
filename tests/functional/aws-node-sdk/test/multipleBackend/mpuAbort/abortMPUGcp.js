@@ -223,7 +223,7 @@ describeSkipIfNotMultiple('Abort MPU on GCP data backend', function descrbeFn() 
                         return bucketUtil.deleteOne(bucket);
                     })
                     .catch(err => {
-                        process.stdout.write('Error emptying/deleting bucket: ' + `${err}\n`);
+                        process.stdout.write(`Error emptying/deleting bucket: ${err}\n`);
                         throw err;
                     });
             });

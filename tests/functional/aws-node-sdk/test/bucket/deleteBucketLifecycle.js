@@ -34,7 +34,7 @@ function assertError(err, expectedErr) {
         assert.strictEqual(
             err.$metadata.httpStatusCode,
             errors[expectedErr].code,
-            'incorrect error status code: should be 400 but got ' + `'${err.$metadata.httpStatusCode}'`,
+            `incorrect error status code: should be 400 but got '${err.$metadata.httpStatusCode}'`,
         );
     }
 }

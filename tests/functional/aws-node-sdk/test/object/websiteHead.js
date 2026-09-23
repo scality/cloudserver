@@ -347,7 +347,7 @@ describe('Head request on bucket website endpoint', () => {
                     });
             });
 
-            it(`should redirect to ${redirectEndpoint} if error 403` + ' occured', done => {
+            it(`should redirect to ${redirectEndpoint} if error 403 occured`, done => {
                 const expectedHeaders = {
                     location: redirectEndpoint,
                 };
@@ -372,7 +372,7 @@ describe('Head request on bucket website endpoint', () => {
                     });
             });
 
-            it(`should redirect to ${redirectEndpoint}about if ` + 'key prefix is equal to "about"', done => {
+            it(`should redirect to ${redirectEndpoint}about if key prefix is equal to "about"`, done => {
                 const expectedHeaders = {
                     location: `${redirectEndpoint}about/`,
                 };
@@ -398,15 +398,12 @@ describe('Head request on bucket website endpoint', () => {
                     });
             });
 
-            it(
-                `should redirect to ${redirectEndpoint} if ` + 'key prefix is equal to "about" AND error code 403',
-                done => {
-                    const expectedHeaders = {
-                        location: `${redirectEndpoint}about/`,
-                    };
-                    WebsiteConfigTester.makeHeadRequest(undefined, `${endpoint}/about/`, 301, expectedHeaders, done);
-                },
-            );
+            it(`should redirect to ${redirectEndpoint} if key prefix is equal to "about" AND error code 403`, done => {
+                const expectedHeaders = {
+                    location: `${redirectEndpoint}about/`,
+                };
+                WebsiteConfigTester.makeHeadRequest(undefined, `${endpoint}/about/`, 301, expectedHeaders, done);
+            });
         });
 
         describe('redirect with multiple redirect rules', () => {
@@ -509,7 +506,7 @@ describe('Head request on bucket website endpoint', () => {
                     });
             });
 
-            it(`should redirect to ${redirectEndpoint}about if ` + 'ReplaceKeyPrefixWith equals "about"', done => {
+            it(`should redirect to ${redirectEndpoint}about if ReplaceKeyPrefixWith equals "about"`, done => {
                 const expectedHeaders = {
                     location: `${redirectEndpoint}about`,
                 };

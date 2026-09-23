@@ -74,7 +74,7 @@ describe('DELETE multipart', () => {
         });
 
         confLocations.forEach(confLocation => {
-            confLocation.describe('on existing bucket with ' + `${confLocation.name}`, () => {
+            confLocation.describe(`on existing bucket with ${confLocation.name}`, () => {
                 beforeEach(async () => {
                     const command = new CreateBucketCommand({
                         Bucket: bucket,
@@ -92,13 +92,10 @@ describe('DELETE multipart', () => {
                     await bucketUtil.deleteOne(bucket);
                 });
 
-                itSkipIfAWS(
-                    `should return ${confLocation.statusCode} if ` + 'mpu does not exist with uploadId',
-                    done => {
-                        const uploadId = 'nonexistinguploadid';
-                        _assertStatusCode(uploadId, confLocation.statusCode, done);
-                    },
-                );
+                itSkipIfAWS(`should return ${confLocation.statusCode} if mpu does not exist with uploadId`, done => {
+                    const uploadId = 'nonexistinguploadid';
+                    _assertStatusCode(uploadId, confLocation.statusCode, done);
+                });
 
                 describe('if mpu exists with uploadId + at least one part', () => {
                     let uploadId;

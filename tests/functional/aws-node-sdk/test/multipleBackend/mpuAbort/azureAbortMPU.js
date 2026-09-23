@@ -192,7 +192,7 @@ describeSkipIfNotMultiple('Abort MPU on Azure data backend', function describeF(
                             )
                                 .then(() => next())
                                 .catch(err => {
-                                    assert.equal(err, null, 'Err putting object to ' + `azure: ${err}`);
+                                    assert.equal(err, null, `Err putting object to azure: ${err}`);
                                     next(err);
                                 });
                         },
@@ -226,7 +226,7 @@ describeSkipIfNotMultiple('Abort MPU on Azure data backend', function describeF(
                         return bucketUtil.deleteOne(azureContainerName);
                     })
                     .catch(err => {
-                        process.stdout.write('Error emptying/deleting bucket: ' + `${err}\n`);
+                        process.stdout.write(`Error emptying/deleting bucket: ${err}\n`);
                         throw err;
                     });
             });

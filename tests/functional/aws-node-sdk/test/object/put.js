@@ -189,7 +189,7 @@ describe('PUT object', () => {
                                     done();
                                 })
                                 .catch(err => {
-                                    assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                                    assert.equal(err, null, `Expected success, got error ${JSON.stringify(err)}`);
                                     done();
                                 }),
                         )
@@ -198,7 +198,7 @@ describe('PUT object', () => {
                                 checkError(err, taggingTest.error, 400);
                                 return done();
                             }
-                            assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                            assert.equal(err, null, `Expected success, got error ${JSON.stringify(err)}`);
                             return done();
                         });
                 });
@@ -211,7 +211,7 @@ describe('PUT object', () => {
                         done();
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                        assert.equal(err, null, `Expected success, got error ${JSON.stringify(err)}`);
                         done();
                     });
             });
@@ -222,7 +222,7 @@ describe('PUT object', () => {
                         done();
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                        assert.equal(err, null, `Expected success, got error ${JSON.stringify(err)}`);
                         done();
                     });
             });
@@ -233,7 +233,7 @@ describe('PUT object', () => {
                         done();
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                        assert.equal(err, null, `Expected success, got error ${JSON.stringify(err)}`);
                         done();
                     });
             });
@@ -245,7 +245,7 @@ describe('PUT object', () => {
                         done();
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                        assert.equal(err, null, `Expected success, got error ${JSON.stringify(err)}`);
                         done();
                     });
             });

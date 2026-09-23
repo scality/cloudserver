@@ -392,8 +392,7 @@ utils.getAndAssertResult = (s3, params, callback) => {
                     bodyBuffer.length,
                     data.ContentLength,
                     `received data of length ${bodyBuffer.length} does not ` +
-                        'equal expected based on ' +
-                        `content length header of ${data.ContentLength}`,
+                        `equal expected based on content length header of ${data.ContentLength}`,
                 );
                 const expectedMD5 = utils.expectedETag(body, false);
                 const resultMD5 = utils.expectedETag(bodyBuffer, false);
@@ -475,7 +474,7 @@ utils.getAwsRetry = (params, retryNumber, assertCb) => {
 
 utils.awsGetLatestVerId = (key, body, cb) =>
     utils.getAwsRetry({ key }, 0, async (err, result) => {
-        assert.strictEqual(err, null, 'Expected success ' + `getting object from AWS, got error ${err}`);
+        assert.strictEqual(err, null, `Expected success getting object from AWS, got error ${err}`);
 
         const chunks = [];
         for await (const chunk of result.Body) {

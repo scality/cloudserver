@@ -445,7 +445,7 @@ describe('User visits bucket website endpoint', () => {
                 s3.putBucketWebsite({ Bucket: bucket, WebsiteConfiguration: webConfig }, done);
             });
 
-            it(`should redirect to ${redirectEndpoint} if error 403` + ' occured', done => {
+            it(`should redirect to ${redirectEndpoint} if error 403 occured`, done => {
                 WebsiteConfigTester.checkHTML(
                     {
                         method: 'GET',
@@ -471,7 +471,7 @@ describe('User visits bucket website endpoint', () => {
                 s3.putBucketWebsite({ Bucket: bucket, WebsiteConfiguration: webConfig }, done);
             });
 
-            it(`should redirect to ${redirectEndpoint}/about/ if ` + 'key prefix is equal to "about"', done => {
+            it(`should redirect to ${redirectEndpoint}/about/ if key prefix is equal to "about"`, done => {
                 WebsiteConfigTester.checkHTML(
                     {
                         method: 'GET',
@@ -498,20 +498,17 @@ describe('User visits bucket website endpoint', () => {
                 s3.putBucketWebsite({ Bucket: bucket, WebsiteConfiguration: webConfig }, done);
             });
 
-            it(
-                `should redirect to ${redirectEndpoint} if ` + 'key prefix is equal to "about" AND error code 403',
-                done => {
-                    WebsiteConfigTester.checkHTML(
-                        {
-                            method: 'GET',
-                            url: `${endpoint}/about/`,
-                            responseType: 'redirect',
-                            redirectUrl: `${redirectEndpoint}/about/`,
-                        },
-                        done,
-                    );
-                },
-            );
+            it(`should redirect to ${redirectEndpoint} if key prefix is equal to "about" AND error code 403`, done => {
+                WebsiteConfigTester.checkHTML(
+                    {
+                        method: 'GET',
+                        url: `${endpoint}/about/`,
+                        responseType: 'redirect',
+                        redirectUrl: `${redirectEndpoint}/about/`,
+                    },
+                    done,
+                );
+            });
         });
 
         describe.skip('redirect with multiple redirect rules', () => {
@@ -613,7 +610,7 @@ describe('User visits bucket website endpoint', () => {
                 s3.putBucketWebsite({ Bucket: bucket, WebsiteConfiguration: webConfig }, done);
             });
 
-            it(`should redirect to ${redirectEndpoint}/about/ if ` + 'ReplaceKeyPrefixWith equals "about/"', done => {
+            it(`should redirect to ${redirectEndpoint}/about/ if ReplaceKeyPrefixWith equals "about/"`, done => {
                 WebsiteConfigTester.checkHTML(
                     {
                         method: 'GET',

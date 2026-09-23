@@ -179,7 +179,7 @@ function getObjectsAndAssertAcls(s3, key, versionIds, expectedData, expectedAcps
             );
         },
         err => {
-            assert.strictEqual(err, null, 'Expected success ' + `getting object acls, got error ${err}`);
+            assert.strictEqual(err, null, `Expected success getting object acls, got error ${err}`);
             cb();
         },
     );
@@ -218,7 +218,7 @@ describeSkipIfNotMultiple('AWS backend put/get object acl with versioning', func
                     return bucketUtil.deleteOne(bucket);
                 })
                 .catch(err => {
-                    process.stdout.write('Error emptying/deleting bucket: ' + `${err}\n`);
+                    process.stdout.write(`Error emptying/deleting bucket: ${err}\n`);
                     throw err;
                 });
         });

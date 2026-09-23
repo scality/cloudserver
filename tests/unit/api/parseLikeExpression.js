@@ -29,7 +29,7 @@ describe('parseLikeExpression', () => {
         },
     ];
     tests.forEach(test =>
-        it('should return correct MongoDB query object: ' + `"${test.input}" => ${JSON.stringify(test.output)}`, () => {
+        it(`should return correct MongoDB query object: "${test.input}" => ${JSON.stringify(test.output)}`, () => {
             const res = parseLikeExpression(test.input);
             assert.deepStrictEqual(res, test.output);
         }),
@@ -45,7 +45,7 @@ describe('parseLikeExpression', () => {
         },
     ];
     badInputTests.forEach(test =>
-        it('should return null if input is not a string ' + `"${test.input}" => ${JSON.stringify(test.output)}`, () => {
+        it(`should return null if input is not a string "${test.input}" => ${JSON.stringify(test.output)}`, () => {
             const res = parseLikeExpression(test.input);
             assert.deepStrictEqual(res, test.output);
         }),

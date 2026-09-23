@@ -392,7 +392,7 @@ describe('objectGetACL API', () => {
     const grantsByURI = [constants.publicId, constants.allAuthedUsersId];
 
     grantsByURI.forEach(uri => {
-        it('should get all ACLs when predefined group - ' + `${uri} is used for multiple grants`, done => {
+        it(`should get all ACLs when predefined group - ${uri} is used for multiple grants`, done => {
             const testPutObjectRequest = new DummyRequest(
                 {
                     bucketName,

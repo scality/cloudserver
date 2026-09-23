@@ -233,26 +233,23 @@ describe('putBucketACL API', () => {
     });
 
     Object.keys(invalidIds).forEach(idType => {
-        it(
-            'should return an error if grantee canonical ID provided in ACL ' + `request invalid because ${idType}`,
-            done => {
-                const testACLRequest = {
-                    bucketName,
-                    namespace,
-                    headers: {
-                        host: `${bucketName}.s3.amazonaws.com`,
-                        'x-amz-grant-full-control': invalidIds[idType],
-                    },
-                    url: '/?acl',
-                    query: { acl: '' },
-                    actionImplicitDenies: false,
-                };
-                return bucketPutACL(authInfo, testACLRequest, log, err => {
-                    assert.strictEqual(err.is.InvalidArgument, true);
-                    done();
-                });
-            },
-        );
+        it(`should return an error if grantee canonical ID provided in ACL request invalid because ${idType}`, done => {
+            const testACLRequest = {
+                bucketName,
+                namespace,
+                headers: {
+                    host: `${bucketName}.s3.amazonaws.com`,
+                    'x-amz-grant-full-control': invalidIds[idType],
+                },
+                url: '/?acl',
+                query: { acl: '' },
+                actionImplicitDenies: false,
+            };
+            return bucketPutACL(authInfo, testACLRequest, log, err => {
+                assert.strictEqual(err.is.InvalidArgument, true);
+                done();
+            });
+        });
     });
 
     it('should return an error if invalid email provided in ACL header request', done => {

@@ -79,7 +79,7 @@ function gcpGetCheck(objectKey, s3MD5, gcpMD5, location, callback) {
                     }, retryTimeout);
                     return;
                 }
-                assert.strictEqual(err, null, 'Expected success, got error ' + `on call to GCP through S3: ${err}`);
+                assert.strictEqual(err, null, `Expected success, got error on call to GCP through S3: ${err}`);
             });
     }
     attempt();

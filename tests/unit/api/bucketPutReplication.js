@@ -13,10 +13,7 @@ function checkError(xml, expectedErr, cb) {
         if (expectedErr === null) {
             assert.strictEqual(err, null, `expected no error but got '${err}'`);
         } else {
-            assert(
-                err.is[expectedErr],
-                'incorrect error response: should be ' + `'Error: ${expectedErr}' but got '${err}'`,
-            );
+            assert(err.is[expectedErr], `incorrect error response: should be 'Error: ${expectedErr}' but got '${err}'`);
         }
         return cb();
     });
@@ -29,8 +26,8 @@ function checkGeneratedID(xml, cb) {
             return cb(err);
         }
         const id = res.rules[0].id;
-        assert.strictEqual(typeof id, 'string', 'expected rule ID to be ' + `string but got ${typeof id}`);
-        assert.strictEqual(id.length, 48, 'expected rule ID to be a length ' + `of 48 but got ${id.length}`);
+        assert.strictEqual(typeof id, 'string', `expected rule ID to be string but got ${typeof id}`);
+        assert.strictEqual(id.length, 48, `expected rule ID to be a length of 48 but got ${id.length}`);
         return cb();
     });
 }
