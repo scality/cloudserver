@@ -6778,6 +6778,23 @@ __metadata:
     werelogs: "scality/werelogs#semver:^8.2.4"
     ws: "npm:^8.18.0"
     xml2js: "npm:^0.6.2"
+  dependenciesMeta:
+    aws-crt:
+      built: true
+    bufferutil:
+      built: true
+    diskusage:
+      built: true
+    fcntl:
+      built: true
+    ioctl:
+      built: true
+    leveldown:
+      built: true
+    scubaclient:
+      built: true
+    utf-8-validate:
+      built: true
   languageName: unknown
   linkType: soft
 
