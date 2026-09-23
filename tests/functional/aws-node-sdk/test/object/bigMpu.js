@@ -91,7 +91,7 @@ describe('large mpu', function tester() {
     const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
     // will fail on AWS because parts too small
 
-    itSkipIfAWS('should intiate, put parts and complete mpu ' + `with ${partCount} parts`, done => {
+    itSkipIfAWS(`should intiate, put parts and complete mpu with ${partCount} parts`, done => {
         process.stdout.write('***Running large MPU test***\n');
         let uploadId;
         return waterfall(

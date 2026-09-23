@@ -79,7 +79,7 @@ describe('getBucketNotification API', () => {
             const getRequest = getNotificationRequest(bucketName);
             bucketGetNotification(authInfo, getRequest, log, (err, res) => {
                 assert.ifError(err);
-                const expectedXML = '<?xml version="1.0" encoding="UTF-8"?>' + `${getNotificationXml()}`;
+                const expectedXML = `<?xml version="1.0" encoding="UTF-8"?>${getNotificationXml()}`;
                 assert.deepStrictEqual(expectedXML, res);
                 done();
             });

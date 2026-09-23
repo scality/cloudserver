@@ -145,7 +145,7 @@ describe('KMIP backed server-side encryption', () => {
 
     it('should create an encrypted bucket', done => {
         _createBucket(bucketName, true, err => {
-            assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+            assert.equal(err, null, `Expected success, got error ${JSON.stringify(err)}`);
             done();
         });
     });
@@ -157,7 +157,7 @@ describe('KMIP backed server-side encryption', () => {
                 next => _putObject(bucketName, objectName, false, err => next(err)),
             ],
             err => {
-                assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                assert.equal(err, null, `Expected success, got error ${JSON.stringify(err)}`);
                 done();
             },
         );
@@ -170,7 +170,7 @@ describe('KMIP backed server-side encryption', () => {
                 next => _putObject(bucketName, objectName, true, err => next(err)),
             ],
             err => {
-                assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                assert.equal(err, null, `Expected success, got error ${JSON.stringify(err)}`);
                 done();
             },
         );
@@ -185,7 +185,7 @@ describe('KMIP backed server-side encryption', () => {
                 next => _copyObject(bucketName, objectName, `${bucketName}2`, `${objectName}2`, true, err => next(err)),
             ],
             err => {
-                assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                assert.equal(err, null, `Expected success, got error ${JSON.stringify(err)}`);
                 done();
             },
         );
@@ -198,7 +198,7 @@ describe('KMIP backed server-side encryption', () => {
                 next => _initiateMultipartUpload(bucketName, objectName, true, err => next(err)),
             ],
             err => {
-                assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                assert.equal(err, null, `Expected success, got error ${JSON.stringify(err)}`);
                 done();
             },
         );

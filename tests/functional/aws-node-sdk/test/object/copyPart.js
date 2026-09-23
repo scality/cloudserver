@@ -986,7 +986,7 @@ describe('Object Part Copy', () => {
                 return otherAccountS3
                     .send(new CreateBucketCommand({ Bucket: otherAccountBucket }))
                     .catch(err => {
-                        process.stdout.write('Error creating other account ' + `bucket: ${err}\n`);
+                        process.stdout.write(`Error creating other account bucket: ${err}\n`);
                         throw err;
                     })
                     .then(() => {
@@ -1002,7 +1002,7 @@ describe('Object Part Copy', () => {
                         otherAccountUploadId = initiateRes.UploadId;
                     })
                     .catch(err => {
-                        process.stdout.write('Error in other account ' + `beforeEach: ${err}\n`);
+                        process.stdout.write(`Error in other account beforeEach: ${err}\n`);
                         throw err;
                     });
             });
@@ -1021,7 +1021,7 @@ describe('Object Part Copy', () => {
                     )
                     .catch(err => {
                         if (err.name !== 'NoSuchUpload') {
-                            process.stdout.write('Error in other account ' + `afterEach: ${err}\n`);
+                            process.stdout.write(`Error in other account afterEach: ${err}\n`);
                             throw err;
                         }
                     })

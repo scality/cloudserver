@@ -47,7 +47,7 @@ describeSkipAWS('GET bucket location ', () => {
                 );
                 after(() => bucketUtil.deleteOne(bucketName));
 
-                it(`should return location configuration: ${location} ` + 'successfully', async () => {
+                it(`should return location configuration: ${location} successfully`, async () => {
                     const data = await s3.send(new GetBucketLocationCommand({ Bucket: bucketName }));
                     assert.deepStrictEqual(data.LocationConstraint, location);
                 });

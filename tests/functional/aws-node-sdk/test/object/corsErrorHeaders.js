@@ -65,7 +65,7 @@ describe('CORS headers on 403 responses when bucket has CORS configured', () => 
     });
 
     unauthenticatedRequests.forEach(spec => {
-        it(`returns CORS headers on 403 for ${spec.description} ` + 'when Origin matches a rule', done => {
+        it(`returns CORS headers on 403 for ${spec.description} when Origin matches a rule`, done => {
             methodRequest(
                 {
                     method: spec.method,

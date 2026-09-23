@@ -130,9 +130,7 @@ function _createCompleteMpuRequest(uploadId, parts) {
     const completeBody = [];
     completeBody.push('<CompleteMultipartUpload>');
     parts.forEach(part => {
-        completeBody.push(
-            '<Part>' + `<PartNumber>${part.partNumber}</PartNumber><ETag>"${part.eTag}"</ETag>` + '</Part>',
-        );
+        completeBody.push(`<Part><PartNumber>${part.partNumber}</PartNumber><ETag>"${part.eTag}"</ETag></Part>`);
     });
     completeBody.push('</CompleteMultipartUpload>');
     return {

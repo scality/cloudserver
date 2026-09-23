@@ -80,7 +80,7 @@ describeSkipIfNotMultiple('Multiple backend get object from Azure', function tes
                             done();
                         })
                         .catch(err => {
-                            assert.equal(err, null, 'Expected success ' + `but got error ${err}`);
+                            assert.equal(err, null, `Expected success but got error ${err}`);
                             done(err);
                         });
                 });
@@ -122,7 +122,7 @@ describeSkipIfNotMultiple('Multiple backend get object from Azure', function tes
                         done();
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success but got ' + `error ${err}`);
+                        assert.equal(err, null, `Expected success but got error ${err}`);
                         done(err);
                     });
             });
@@ -142,7 +142,7 @@ describeSkipIfNotMultiple('Multiple backend get object from Azure', function tes
                         done();
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success but got ' + `error ${err}`);
+                        assert.equal(err, null, `Expected success but got error ${err}`);
                         done(err);
                     });
             });
@@ -166,12 +166,12 @@ describeSkipIfNotMultiple('Multiple backend get object from Azure', function tes
                             .getContainerClient(azureContainerName)
                             .deleteBlob(azureObject)
                             .then(done, err => {
-                                assert.equal(err, null, 'Expected success but got ' + `error ${err}`);
+                                assert.equal(err, null, `Expected success but got error ${err}`);
                                 done(err);
                             });
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success but got ' + `error ${err}`);
+                        assert.equal(err, null, `Expected success but got error ${err}`);
                         done(err);
                     });
             });

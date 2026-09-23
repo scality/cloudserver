@@ -31,9 +31,7 @@ async function gcpRetryCall(callFn, retryOptions) {
                 throw err;
             }
             const delay = getDelayMs(attempt);
-            process.stdout.write(
-                'Retryable error from GCP, retrying in ' + `${delay}ms (attempt ${attempt + 1}): ${err}\n`,
-            );
+            process.stdout.write(`Retryable error from GCP, retrying in ${delay}ms (attempt ${attempt + 1}): ${err}\n`);
 
             await new Promise(resolve => setTimeout(resolve, delay));
         }

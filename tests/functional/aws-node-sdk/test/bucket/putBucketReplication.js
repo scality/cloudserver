@@ -27,7 +27,7 @@ function assertError(err, expectedErr) {
         assert.strictEqual(
             err.name,
             expectedErr,
-            'incorrect error response ' + `code: should be '${expectedErr}' but got '${err.name}'`,
+            `incorrect error response code: should be '${expectedErr}' but got '${err.name}'`,
         );
         assert.strictEqual(
             err.$metadata.httpStatusCode,
@@ -203,8 +203,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
 
         it(
             "should not accept configuration when 'Role' is not a " +
-                'comma-separated list of two valid Amazon Resource Names: ' +
-                `'${Role}'`,
+                `comma-separated list of two valid Amazon Resource Names: '${Role}'`,
             () => checkError(config, 'InvalidArgument'),
         );
     });
@@ -285,10 +284,8 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
     replicationUtils.invalidBucketARNs.forEach(ARN => {
         const config = setConfigRules({ Destination: { Bucket: ARN } });
 
-        it(
-            "should not accept configuration when 'Bucket' is not a " + `valid Amazon Resource Name format: '${ARN}'`,
-            () => checkError(config, 'InvalidArgument'),
-        );
+        it(`should not accept configuration when 'Bucket' is not a valid Amazon Resource Name format: '${ARN}'`, () =>
+            checkError(config, 'InvalidArgument'));
     });
 
     it("should not accept configuration when 'Rules' is empty ", () => {
@@ -413,7 +410,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
             },
         });
 
-        it("should accept configuration when 'StorageClass' is " + `${storageClass}`, () => checkError(config, null));
+        it(`should accept configuration when 'StorageClass' is ${storageClass}`, () => checkError(config, null));
     });
 
     // A combination of external destination storage classes.
@@ -425,7 +422,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
             },
         });
 
-        itSkipIfE2E("should accept configuration when 'StorageClass' is " + `${storageClass}`, () =>
+        itSkipIfE2E(`should accept configuration when 'StorageClass' is ${storageClass}`, () =>
             checkError(config, null),
         );
     });

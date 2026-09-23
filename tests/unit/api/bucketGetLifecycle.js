@@ -42,7 +42,7 @@ describe('getBucketLifecycle API', () => {
             const getRequest = getLifecycleRequest(bucketName);
             bucketGetLifecycle(authInfo, getRequest, log, (err, res) => {
                 assert.equal(err, null);
-                const expectedXML = '<?xml version="1.0" encoding="UTF-8"?>' + `${getLifecycleXml()}`;
+                const expectedXML = `<?xml version="1.0" encoding="UTF-8"?>${getLifecycleXml()}`;
                 assert.deepStrictEqual(expectedXML, res);
                 done();
             });

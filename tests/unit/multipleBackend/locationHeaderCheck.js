@@ -37,7 +37,7 @@ const testCases = [
 
 describe('Location Header Check', () => {
     testCases.forEach(test => {
-        it('should return expected result with location constraint header ' + `set to ${test.location}`, () => {
+        it(`should return expected result with location constraint header set to ${test.location}`, () => {
             const headers = { 'x-amz-location-constraint': `${test.location}` };
             const checkRes = locationHeaderCheck(headers, objectKey, bucketName);
             assert.deepStrictEqual(checkRes, test.expRes);

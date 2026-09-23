@@ -496,7 +496,7 @@ describeSkipIfNotMultiple('Put Copy Part to GCP', function describeFn() {
                                     UploadId: this.test.uploadIdAWS,
                                 },
                                 (err, res) => {
-                                    assert.ifError(err, 'listParts: Expected success,' + ` got error: ${err}`);
+                                    assert.ifError(err, `listParts: Expected success, got error: ${err}`);
                                     assert.strictEqual(res.Bucket, awsBucket);
                                     assert.strictEqual(res.Key, this.test.mpuKeyNameAWS);
                                     assert.strictEqual(res.UploadId, this.test.uploadIdAWS);
@@ -541,7 +541,7 @@ describeSkipIfNotMultiple('Put Copy Part to GCP', function describeFn() {
                                     UploadId: this.test.uploadIdAWS,
                                 },
                                 (err, res) => {
-                                    assert.ifError(err, 'listParts: Expected success,' + ` got error: ${err}`);
+                                    assert.ifError(err, `listParts: Expected success, got error: ${err}`);
                                     assert.strictEqual(res.Bucket, awsBucket);
                                     assert.strictEqual(res.Key, this.test.mpuKeyNameAWS);
                                     assert.strictEqual(res.UploadId, this.test.uploadIdAWS);
@@ -664,7 +664,7 @@ describeSkipIfNotMultiple('Put Copy Part to GCP', function describeFn() {
                                         UploadId: this.test.uploadId,
                                     },
                                     (err, res) => {
-                                        assert.ifError(err, 'GCP listParts: Expected ' + `success, got error: ${err}`);
+                                        assert.ifError(err, `GCP listParts: Expected success, got error: ${err}`);
                                         assert.strictEqual(res.Contents[0].ETag, `"${oneKbMD5}"`);
                                         assert.strictEqual(res.Contents[1].ETag, `"${normalMD5}"`);
                                         next();

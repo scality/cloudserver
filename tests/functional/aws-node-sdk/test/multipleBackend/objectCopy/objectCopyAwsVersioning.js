@@ -245,7 +245,7 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
                 .empty(sourceBucketName)
                 .then(() => bucketUtil.deleteOne(sourceBucketName))
                 .catch(err => {
-                    process.stdout.write('Error deleting source bucket ' + `in afterEach: ${err}\n`);
+                    process.stdout.write(`Error deleting source bucket in afterEach: ${err}\n`);
                     throw err;
                 })
                 .then(() => bucketUtil.empty(destBucketName))
@@ -256,7 +256,7 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
                         // we do not throw err since dest bucket may not exist
                         // if we are using source as dest
                     } else {
-                        process.stdout.write('Error deleting dest bucket ' + `in afterEach: ${err}\n`);
+                        process.stdout.write(`Error deleting dest bucket in afterEach: ${err}\n`);
                         throw err;
                     }
                 }),
@@ -311,8 +311,7 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
 
             it(
                 `should copy ${isEmptyObj ? 'an empty ' : ''}version ` +
-                    'from one AWS backend versioned bucket' +
-                    `to another on ${directive} directive`,
+                    `from one AWS backend versioned bucketto another on ${directive} directive`,
                 done => {
                     Object.assign(testParams, {
                         sourceVersioningState: 'Enabled',
@@ -366,8 +365,7 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
 
             it(
                 `should copy ${isEmptyObj ? 'an empty ' : ''}version ` +
-                    'from a AWS backend versioned bucket to a versioned-suspended' +
-                    `one with ${directive} directive`,
+                    `from a AWS backend versioned bucket to a versioned-suspendedone with ${directive} directive`,
                 done => {
                     Object.assign(testParams, {
                         sourceVersioningState: 'Enabled',

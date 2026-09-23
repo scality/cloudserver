@@ -210,7 +210,7 @@ describeSkipIfNotMultiple(
                         return bucketUtil.deleteOne(bucket);
                     })
                     .catch(err => {
-                        process.stdout.write('Error emptying/deleting bucket: ' + `${err}\n`);
+                        process.stdout.write(`Error emptying/deleting bucket: ${err}\n`);
                         throw err;
                     });
             });

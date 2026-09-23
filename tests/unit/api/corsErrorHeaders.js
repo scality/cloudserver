@@ -153,7 +153,7 @@ describe('CORS headers on 403 auth failures (api.callApiMethod)', () => {
                 // the HTTP response. We assert on the response since
                 // that is what the HTTP transport ultimately sends.
                 const allowOrigin = response.getHeader('access-control-allow-origin');
-                assert(allowOrigin, 'access-control-allow-origin missing from 403 ' + `response for ${spec.apiMethod}`);
+                assert(allowOrigin, `access-control-allow-origin missing from 403 response for ${spec.apiMethod}`);
                 assert(response.getHeader('access-control-allow-methods'), 'access-control-allow-methods missing');
                 done();
             });
@@ -264,7 +264,7 @@ describe('CORS headers on 403 via handler (fast path)', () => {
             assert(err && err.is.AccessDenied);
             assert(
                 getBucketSpy.callCount <= 2,
-                'expected at most 2 metadata.getBucket calls, got ' + `${getBucketSpy.callCount}`,
+                `expected at most 2 metadata.getBucket calls, got ${getBucketSpy.callCount}`,
             );
             done();
         });
