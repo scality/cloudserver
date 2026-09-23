@@ -69,7 +69,7 @@ describe('PUT Bucket ACL', () => {
 
         afterEach(() => bucketUtil.deleteOne(bucketName));
 
-        it('should set multiple ACL permissions with same grantee specifiedusing email', async () => {
+        it('should set multiple ACL permissions with same grantee specified using email', async () => {
             await s3.send(
                 new PutBucketAclCommand({
                     Bucket: bucketName,

@@ -273,8 +273,8 @@ describe('Object Version Copy', () => {
         });
 
         it(
-            'should copy a version from a source bucket to a differentdestination ' +
-                'bucket and copy the metadata if no metadata directiveheader provided',
+            'should copy a version from a source bucket to a different destination ' +
+                'bucket and copy the metadata if no metadata directive header provided',
             async () => {
                 const res = await s3.send(
                     new CopyObjectCommand({ Bucket: destBucketName, Key: destObjName, CopySource: copySource }),

@@ -555,7 +555,7 @@ describeSkipIfNotMultiple(
                 );
             });
 
-            it('should get the new latest version after deleting the latestspecific version', done => {
+            it('should get the new latest version after deleting the latest specific version', done => {
                 const key = `somekey-${genUniqID()}`;
                 const data = [...Array(4).keys()].map(i => i.toString());
                 async.waterfall(

@@ -506,7 +506,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should abort a multipart upload on real AWS location withbucketMatch set to false', done => {
+    it('should abort a multipart upload on real AWS location with bucketMatch set to false', done => {
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocationMismatch, objectKey, uploadId => {
             const delParams = getDeleteParams(objectKey, uploadId);

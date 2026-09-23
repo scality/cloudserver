@@ -3059,7 +3059,7 @@ describe('backbeat routes', () => {
             );
         });
 
-        it('PUT metadata with "x-scal-replication-content: METADATA"header should replicate metadata only', done => {
+        it('PUT metadata with "x-scal-replication-content: METADATA" header should replicate metadata only', done => {
             async.waterfall(
                 [
                     next => {

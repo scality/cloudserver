@@ -108,7 +108,7 @@ describe('PUT bucket website', () => {
 
         it(
             'should return InvalidRequest if Condition HttpErrorCodeReturnedEquals ' +
-                'is a string that does  not contain a number',
+                'is a string that does not contain a number',
             done => {
                 const condition = { HttpErrorCodeReturnedEquals: 'notvalidcode' };
                 const config = new WebsiteConfigTester('index.html');
@@ -119,7 +119,7 @@ describe('PUT bucket website', () => {
 
         it(
             'should return InvalidRequest if Condition ' +
-                'HttpErrorCodeReturnedEquals is not a valid httperror code (4XX or 5XX)',
+                'HttpErrorCodeReturnedEquals is not a valid http error code (4XX or 5XX)',
             done => {
                 const condition = { HttpErrorCodeReturnedEquals: '300' };
                 const config = new WebsiteConfigTester('index.html');

@@ -285,7 +285,7 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
             const { isEmptyObj, directive } = testParams;
             it(
                 `should copy ${isEmptyObj ? 'an empty' : ''} ` +
-                    'object from AWS backend non-versioned bucketto AWS backend versioned bucket ' +
+                    'object from AWS backend non-versioned bucket to AWS backend versioned bucket ' +
                     `with ${directive} directive`,
                 done => {
                     Object.assign(testParams, {
@@ -311,7 +311,7 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
 
             it(
                 `should copy ${isEmptyObj ? 'an empty ' : ''}version ` +
-                    `from one AWS backend versioned bucketto another on ${directive} directive`,
+                    `from one AWS backend versioned bucket to another on ${directive} directive`,
                 done => {
                     Object.assign(testParams, {
                         sourceVersioningState: 'Enabled',
@@ -365,7 +365,7 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
 
             it(
                 `should copy ${isEmptyObj ? 'an empty ' : ''}version ` +
-                    `from a AWS backend versioned bucket to a versioned-suspendedone with ${directive} directive`,
+                    `from a AWS backend versioned bucket to a versioned-suspended one with ${directive} directive`,
                 done => {
                     Object.assign(testParams, {
                         sourceVersioningState: 'Enabled',

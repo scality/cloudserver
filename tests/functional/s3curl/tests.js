@@ -242,7 +242,7 @@ describe('s3curl put delete buckets', () => {
             });
         });
 
-        it('should be able to create a bucket with a nameof a bucket that has previously been deleted', done => {
+        it('should be able to create a bucket with a name of a bucket that has previously been deleted', done => {
             provideRawOutput(['--createBucket', '--', bucketPath, '-v'], httpCode => {
                 assert.strictEqual(httpCode, '200 OK');
                 done();
@@ -812,7 +812,7 @@ describe('s3curl object ACLs', () => {
         });
     });
 
-    it('should return a NoSuchKey error if try to get an objectACL for an object that does not exist', done => {
+    it('should return a NoSuchKey error if try to get an object ACL for an object that does not exist', done => {
         provideRawOutput(['--', `${bucketPath}/keydoesnotexist?acl`, '-v'], (httpCode, rawOutput) => {
             assert.strictEqual(httpCode, '404 NOT FOUND');
             assertError(rawOutput.stdout, 'NoSuchKey', done);
