@@ -1,9 +1,5 @@
 const assert = require('assert');
-const {
-    CreateBucketCommand,
-    PutBucketLoggingCommand,
-    GetBucketLoggingCommand,
-} = require('@aws-sdk/client-s3');
+const { CreateBucketCommand, PutBucketLoggingCommand, GetBucketLoggingCommand } = require('@aws-sdk/client-s3');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -55,7 +51,9 @@ function cleanUp(bucketUtil, cb) {
                 throw err;
             }
         }),
-    ]).then(() => cb()).catch(err => cb(err));
+    ])
+        .then(() => cb())
+        .catch(err => cb(err));
 }
 
 describe('PUT bucket logging', () => {
@@ -67,10 +65,12 @@ describe('PUT bucket logging', () => {
 
         async function _testPutBucketLoggingError(account, config, statusCode, errMsg, cb) {
             try {
-                await account.send(new PutBucketLoggingCommand({
-                    Bucket: bucketName,
-                    BucketLoggingStatus: config,
-                }));
+                await account.send(
+                    new PutBucketLoggingCommand({
+                        Bucket: bucketName,
+                        BucketLoggingStatus: config,
+                    }),
+                );
                 return cb(new Error('Expected error but found none'));
             } catch (err) {
                 assert(err, 'Expected err but found none');
@@ -100,10 +100,12 @@ describe('PUT bucket logging', () => {
             afterEach(async () => {
                 process.stdout.write('Deleting buckets\n');
                 try {
-                    await s3.send(new PutBucketLoggingCommand({
-                        Bucket: bucketName,
-                        BucketLoggingStatus: {},
-                    }));
+                    await s3.send(
+                        new PutBucketLoggingCommand({
+                            Bucket: bucketName,
+                            BucketLoggingStatus: {},
+                        }),
+                    );
                 } catch (err) {
                     if (err.name !== 'NoSuchBucket' && err.code !== 'NoSuchBucket') {
                         throw err;
@@ -131,17 +133,17 @@ describe('PUT bucket logging', () => {
             });
 
             it('should put bucket logging configuration successfully', async () => {
-                await s3.send(new PutBucketLoggingCommand({
-                    Bucket: bucketName,
-                    BucketLoggingStatus: validLoggingConfig,
-                }));
+                await s3.send(
+                    new PutBucketLoggingCommand({
+                        Bucket: bucketName,
+                        BucketLoggingStatus: validLoggingConfig,
+                    }),
+                );
 
                 const data = await s3.send(new GetBucketLoggingCommand({ Bucket: bucketName }));
                 assert(data.LoggingEnabled);
-                assert.strictEqual(data.LoggingEnabled.TargetBucket,
-                    targetBucket);
-                assert.strictEqual(data.LoggingEnabled.TargetPrefix,
-                    'logs/');
+                assert.strictEqual(data.LoggingEnabled.TargetBucket, targetBucket);
+                assert.strictEqual(data.LoggingEnabled.TargetPrefix, 'logs/');
             });
 
             itSkipIfAWS('should return NotImplemented if TargetGrants is present', done => {
@@ -149,18 +151,22 @@ describe('PUT bucket logging', () => {
             });
 
             it('should disable logging with empty BucketLoggingStatus', async () => {
-                await s3.send(new PutBucketLoggingCommand({
-                    Bucket: bucketName,
-                    BucketLoggingStatus: validLoggingConfig,
-                }));
+                await s3.send(
+                    new PutBucketLoggingCommand({
+                        Bucket: bucketName,
+                        BucketLoggingStatus: validLoggingConfig,
+                    }),
+                );
 
                 const enabled = await s3.send(new GetBucketLoggingCommand({ Bucket: bucketName }));
                 assert(enabled.LoggingEnabled);
 
-                await s3.send(new PutBucketLoggingCommand({
-                    Bucket: bucketName,
-                    BucketLoggingStatus: {},
-                }));
+                await s3.send(
+                    new PutBucketLoggingCommand({
+                        Bucket: bucketName,
+                        BucketLoggingStatus: {},
+                    }),
+                );
 
                 const disabled = await s3.send(new GetBucketLoggingCommand({ Bucket: bucketName }));
                 assert(disabled);
@@ -171,22 +177,23 @@ describe('PUT bucket logging', () => {
                 _testPutBucketLoggingError(otherAccountS3, validLoggingConfig, 405, 'MethodNotAllowed', done);
             });
 
-            it('should return InvalidTargetBucketForLogging if target bucket does not exist',
-                done => {
-                    const invalidConfig = {
-                        LoggingEnabled: {
-                            TargetBucket: 'nonexistentbucket',
-                            TargetPrefix: 'logs/',
-                        },
-                    };
-                    _testPutBucketLoggingError(s3, invalidConfig, 400, 'InvalidTargetBucketForLogging', done);
-                });
+            it('should return InvalidTargetBucketForLogging if target bucket does not exist', done => {
+                const invalidConfig = {
+                    LoggingEnabled: {
+                        TargetBucket: 'nonexistentbucket',
+                        TargetPrefix: 'logs/',
+                    },
+                };
+                _testPutBucketLoggingError(s3, invalidConfig, 400, 'InvalidTargetBucketForLogging', done);
+            });
 
             it('should allow logging when target bucket is owned by same account', async () => {
-                await s3.send(new PutBucketLoggingCommand({
-                    Bucket: bucketName,
-                    BucketLoggingStatus: validLoggingConfig,
-                }));
+                await s3.send(
+                    new PutBucketLoggingCommand({
+                        Bucket: bucketName,
+                        BucketLoggingStatus: validLoggingConfig,
+                    }),
+                );
 
                 const data = await s3.send(new GetBucketLoggingCommand({ Bucket: bucketName }));
                 assert(data.LoggingEnabled);
@@ -229,8 +236,7 @@ describe('PUT bucket logging', () => {
                 }
             });
 
-            it('should return InvalidTargetBucketForLogging when target bucket is owned by different account', 
-                async () => {
+            it('should return InvalidTargetBucketForLogging when target bucket is owned by different account', async () => {
                 const crossAccountConfig = {
                     LoggingEnabled: {
                         TargetBucket: otherAccountTargetBucket,
@@ -239,10 +245,12 @@ describe('PUT bucket logging', () => {
                 };
 
                 try {
-                    await s3.send(new PutBucketLoggingCommand({
-                        Bucket: bucketName,
-                        BucketLoggingStatus: crossAccountConfig,
-                    }));
+                    await s3.send(
+                        new PutBucketLoggingCommand({
+                            Bucket: bucketName,
+                            BucketLoggingStatus: crossAccountConfig,
+                        }),
+                    );
                     assert.fail('Expected InvalidTargetBucketForLogging error');
                 } catch (err) {
                     assert.strictEqual(err.name, 'InvalidTargetBucketForLogging');

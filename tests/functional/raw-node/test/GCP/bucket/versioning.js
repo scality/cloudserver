@@ -8,8 +8,7 @@ const {
 } = require('@aws-sdk/client-s3');
 const { GCP } = arsenal.storage.data.external.GCP;
 const { genBucketName, gcpRetry } = require('../../../utils/gcpUtils');
-const { getRealAwsConfig } =
-    require('../../../../aws-node-sdk/test/support/awsConfig');
+const { getRealAwsConfig } = require('../../../../aws-node-sdk/test/support/awsConfig');
 
 const credentialOne = 'gcpbackend';
 const config = getRealAwsConfig(credentialOne);
@@ -28,24 +27,26 @@ describe('GCP: Bucket Versioning', function testSuite() {
     });
 
     it('should enable bucket versioning', async () => {
-        await gcpClient.send(new PutBucketVersioningCommand({
-            Bucket: bucketName,
-            VersioningConfiguration: { Status: 'Enabled' },
-        }));
+        await gcpClient.send(
+            new PutBucketVersioningCommand({
+                Bucket: bucketName,
+                VersioningConfiguration: { Status: 'Enabled' },
+            }),
+        );
 
-        const res = await gcpClient.send(
-            new GetBucketVersioningCommand({ Bucket: bucketName }));
+        const res = await gcpClient.send(new GetBucketVersioningCommand({ Bucket: bucketName }));
         assert.strictEqual(res.Status, 'Enabled');
     });
 
     it('should disable bucket versioning', async () => {
-        await gcpClient.send(new PutBucketVersioningCommand({
-            Bucket: bucketName,
-            VersioningConfiguration: { Status: 'Suspended' },
-        }));
+        await gcpClient.send(
+            new PutBucketVersioningCommand({
+                Bucket: bucketName,
+                VersioningConfiguration: { Status: 'Suspended' },
+            }),
+        );
 
-        const res = await gcpClient.send(
-            new GetBucketVersioningCommand({ Bucket: bucketName }));
+        const res = await gcpClient.send(new GetBucketVersioningCommand({ Bucket: bucketName }));
         assert.strictEqual(res.Status, 'Suspended');
     });
 });

@@ -8,8 +8,7 @@ const {
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
-const genMaxSizeMetaHeaders
-    = require('../../lib/utility/genMaxSizeMetaHeaders');
+const genMaxSizeMetaHeaders = require('../../lib/utility/genMaxSizeMetaHeaders');
 const { generateMultipleTagQuery } = require('../../lib/utility/tagging');
 
 const bucket = `initiatempubucket${Date.now()}`;
@@ -28,59 +27,69 @@ describe('Initiate MPU', () => {
 
         afterEach(async () => await bucketUtil.deleteOne(bucket));
 
-        it('should return InvalidRedirectLocation if initiate MPU ' +
-        'with x-amz-website-redirect-location header that does not start ' +
-        'with \'http://\', \'https://\' or \'/\'', async () => {
-            const params = { 
-                Bucket: bucket, 
-                Key: key,
-                WebsiteRedirectLocation: 'google.com' 
-            };
-            
-            try {
-                await s3.send(new CreateMultipartUploadCommand(params));
-                throw new Error('Expected InvalidRedirectLocation error');
-            } catch (err) {
-                assert.strictEqual(err.name, 'InvalidRedirectLocation');
-                assert.strictEqual(err.$metadata.httpStatusCode, 400);
-            }
-        });
+        it(
+            'should return InvalidRedirectLocation if initiate MPU ' +
+                'with x-amz-website-redirect-location header that does not start ' +
+                "with 'http://', 'https://' or '/'",
+            async () => {
+                const params = {
+                    Bucket: bucket,
+                    Key: key,
+                    WebsiteRedirectLocation: 'google.com',
+                };
 
-        it('should return InvalidStorageClass error when x-amz-storage-class header is provided ' +
-        'and not equal to STANDARD', done => {
-            s3.send(new CreateMultipartUploadCommand({
-                Bucket: bucket,
-                Key: key,
-                StorageClass: 'COLD',
-            })).then(() => {
-                throw new Error('Expected InvalidStorageClass error');
-            }).catch(err => {
-                assert.strictEqual(err.name, 'InvalidStorageClass');
-                assert.strictEqual(err.$metadata.httpStatusCode, 400);
-                done();
-            });
-        });
+                try {
+                    await s3.send(new CreateMultipartUploadCommand(params));
+                    throw new Error('Expected InvalidRedirectLocation error');
+                } catch (err) {
+                    assert.strictEqual(err.name, 'InvalidRedirectLocation');
+                    assert.strictEqual(err.$metadata.httpStatusCode, 400);
+                }
+            },
+        );
+
+        it(
+            'should return InvalidStorageClass error when x-amz-storage-class header is provided ' +
+                'and not equal to STANDARD',
+            done => {
+                s3.send(
+                    new CreateMultipartUploadCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        StorageClass: 'COLD',
+                    }),
+                )
+                    .then(() => {
+                        throw new Error('Expected InvalidStorageClass error');
+                    })
+                    .catch(err => {
+                        assert.strictEqual(err.name, 'InvalidStorageClass');
+                        assert.strictEqual(err.$metadata.httpStatusCode, 400);
+                        done();
+                    });
+            },
+        );
 
         it('should return KeyTooLong error when key is longer than 915 bytes', done => {
-            s3.send(new CreateMultipartUploadCommand({ Bucket: bucket, Key: 'a'.repeat(916) }))
-            .catch(err => {
+            s3.send(new CreateMultipartUploadCommand({ Bucket: bucket, Key: 'a'.repeat(916) })).catch(err => {
                 assert.strictEqual(err.name, 'KeyTooLong');
                 assert.strictEqual(err.$metadata.httpStatusCode, 400);
                 done();
             });
         });
 
-        it('should return error if initiating MPU w/ > 2KB user-defined md',
-        async () => {
+        it('should return error if initiating MPU w/ > 2KB user-defined md', async () => {
             const metadata = genMaxSizeMetaHeaders();
             const params = { Bucket: bucket, Key: key, Metadata: metadata };
             const data = await s3.send(new CreateMultipartUploadCommand(params));
             const uploadId = data.UploadId;
-            await s3.send(new AbortMultipartUploadCommand({
-                Bucket: bucket,
-                Key: key,
-                UploadId: uploadId,
-            }));
+            await s3.send(
+                new AbortMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    UploadId: uploadId,
+                }),
+            );
             metadata.header0 = `${metadata.header0}${'0'}`;
             try {
                 await s3.send(new CreateMultipartUploadCommand(params));
@@ -91,57 +100,62 @@ describe('Initiate MPU', () => {
             }
         });
 
-        it('should return error if initiating MPU w/ > 2KB user-defined md',
-            async () => {
-                const metadata = genMaxSizeMetaHeaders();
-                const params = { Bucket: bucket, Key: key, Metadata: metadata };
-                const data = await s3.send(new CreateMultipartUploadCommand(params));
-                const uploadId = data.UploadId;
-                await s3.send(new AbortMultipartUploadCommand({
+        it('should return error if initiating MPU w/ > 2KB user-defined md', async () => {
+            const metadata = genMaxSizeMetaHeaders();
+            const params = { Bucket: bucket, Key: key, Metadata: metadata };
+            const data = await s3.send(new CreateMultipartUploadCommand(params));
+            const uploadId = data.UploadId;
+            await s3.send(
+                new AbortMultipartUploadCommand({
                     Bucket: bucket,
                     Key: key,
                     UploadId: uploadId,
-                }));
-                metadata.header0 = `${metadata.header0}${'0'}`;
-                try {
-                    await s3.send(new CreateMultipartUploadCommand(params));
-                    throw new Error('Expected MetadataTooLarge error');
-                } catch (err) {
-                    assert.strictEqual(err.name, 'MetadataTooLarge');
-                    assert.strictEqual(err.$metadata.httpStatusCode, 400);
-                }
+                }),
+            );
+            metadata.header0 = `${metadata.header0}${'0'}`;
+            try {
+                await s3.send(new CreateMultipartUploadCommand(params));
+                throw new Error('Expected MetadataTooLarge error');
+            } catch (err) {
+                assert.strictEqual(err.name, 'MetadataTooLarge');
+                assert.strictEqual(err.$metadata.httpStatusCode, 400);
+            }
         });
 
         describe('with tag set', () => {
-            it('should be able to put object with 10 tags',
-            async () => {
+            it('should be able to put object with 10 tags', async () => {
                 const taggingConfig = generateMultipleTagQuery(10);
-                await s3.send(new CreateMultipartUploadCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    Tagging: taggingConfig,
-                }));
+                await s3.send(
+                    new CreateMultipartUploadCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        Tagging: taggingConfig,
+                    }),
+                );
             });
 
             it('should allow putting 50 tags', async () => {
                 const taggingConfig = generateMultipleTagQuery(50);
-                await s3.send(new CreateMultipartUploadCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    Tagging: taggingConfig,
-                }));
-            });
-
-            it('should return BadRequest if putting more that 50 tags',
-            async () => {
-                const taggingConfig = generateMultipleTagQuery(51);
-                
-                try {
-                    await s3.send(new CreateMultipartUploadCommand({
+                await s3.send(
+                    new CreateMultipartUploadCommand({
                         Bucket: bucket,
                         Key: key,
                         Tagging: taggingConfig,
-                    }));
+                    }),
+                );
+            });
+
+            it('should return BadRequest if putting more that 50 tags', async () => {
+                const taggingConfig = generateMultipleTagQuery(51);
+
+                try {
+                    await s3.send(
+                        new CreateMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            Tagging: taggingConfig,
+                        }),
+                    );
                     throw new Error('Expected BadRequest error');
                 } catch (err) {
                     assert.strictEqual(err.name, 'BadRequest');
@@ -149,16 +163,17 @@ describe('Initiate MPU', () => {
                 }
             });
 
-            it('should return InvalidArgument creating mpu tag with ' +
-            'invalid characters: %', async () => {
+            it('should return InvalidArgument creating mpu tag with ' + 'invalid characters: %', async () => {
                 const value = 'value1%';
-                
+
                 try {
-                    await s3.send(new CreateMultipartUploadCommand({
-                        Bucket: bucket,
-                        Key: key,
-                        Tagging: `key1=${value}`,
-                    }));
+                    await s3.send(
+                        new CreateMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            Tagging: `key1=${value}`,
+                        }),
+                    );
                     throw new Error('Expected InvalidArgument error');
                 } catch (err) {
                     assert.strictEqual(err.name, 'InvalidArgument');
@@ -166,14 +181,15 @@ describe('Initiate MPU', () => {
                 }
             });
 
-            it('should return InvalidArgument creating mpu with ' +
-            'bad encoded tags', async () => {
+            it('should return InvalidArgument creating mpu with ' + 'bad encoded tags', async () => {
                 try {
-                    await s3.send(new CreateMultipartUploadCommand({
-                        Bucket: bucket,
-                        Key: key,
-                        Tagging: 'key1==value1',
-                    }));
+                    await s3.send(
+                        new CreateMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            Tagging: 'key1==value1',
+                        }),
+                    );
                     throw new Error('Expected InvalidArgument error');
                 } catch (err) {
                     assert.strictEqual(err.name, 'InvalidArgument');
@@ -183,11 +199,13 @@ describe('Initiate MPU', () => {
 
             it('should return InvalidArgument if tag with no key', async () => {
                 try {
-                    await s3.send(new CreateMultipartUploadCommand({
-                        Bucket: bucket,
-                        Key: key,
-                        Tagging: '=value1',
-                    }));
+                    await s3.send(
+                        new CreateMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            Tagging: '=value1',
+                        }),
+                    );
                     throw new Error('Expected InvalidArgument error');
                 } catch (err) {
                     assert.strictEqual(err.name, 'InvalidArgument');
@@ -195,14 +213,15 @@ describe('Initiate MPU', () => {
                 }
             });
 
-            it('should return InvalidArgument if using the same key twice',
-            async () => {
+            it('should return InvalidArgument if using the same key twice', async () => {
                 try {
-                    await s3.send(new CreateMultipartUploadCommand({
-                        Bucket: bucket,
-                        Key: key,
-                        Tagging: 'key1=value1&key1=value2',
-                    }));
+                    await s3.send(
+                        new CreateMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            Tagging: 'key1=value1&key1=value2',
+                        }),
+                    );
                     throw new Error('Expected InvalidArgument error');
                 } catch (err) {
                     assert.strictEqual(err.name, 'InvalidArgument');
@@ -210,14 +229,15 @@ describe('Initiate MPU', () => {
                 }
             });
 
-            it('should return InvalidArgument if using the same key twice ' +
-            'and empty tags', async () => {
+            it('should return InvalidArgument if using the same key twice ' + 'and empty tags', async () => {
                 try {
-                    await s3.send(new PutObjectCommand({
-                        Bucket: bucket,
-                        Key: key,
-                        Tagging: '&&&&&&&&&&&&&&&&&key1=value1&key1=value2',
-                    }));
+                    await s3.send(
+                        new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            Tagging: '&&&&&&&&&&&&&&&&&key1=value1&key1=value2',
+                        }),
+                    );
                     throw new Error('Expected InvalidArgument error');
                 } catch (err) {
                     assert.strictEqual(err.name, 'InvalidArgument');
