@@ -47,14 +47,14 @@ function createTestRequest(locationConstraint) {
 }
 
 describe('Location Constraint Check', () => {
-    it('should return error if controlling location constraint is ' + 'not valid', done => {
+    it('should return error if controlling location constraint is not valid', done => {
         const backendInfoObj = locationConstraintCheck(createTestRequest('fail-region'), null, testBucket, log);
         assert.strictEqual(backendInfoObj.err.code, 400, 'Expected "Invalid Argument" code error');
-        assert(backendInfoObj.err.is.InvalidArgument, 'Expected "Invalid ' + 'Argument" error');
+        assert(backendInfoObj.err.is.InvalidArgument, 'Expected "Invalid Argument" error');
         done();
     });
 
-    it('should return instance of BackendInfo with correct ' + 'locationConstraints', done => {
+    it('should return instance of BackendInfo with correct locationConstraints', done => {
         const backendInfoObj = locationConstraintCheck(createTestRequest(memLocation), null, testBucket, log);
         assert.strictEqual(backendInfoObj.err, null, 'Expected success ' + `but got error ${backendInfoObj.err}`);
         assert.strictEqual(typeof backendInfoObj.controllingLC, 'string');

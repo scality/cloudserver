@@ -111,7 +111,7 @@ describeSkipIfNotMultiple('MultipleBackend put object to GCP', function describe
                 });
         });
 
-        describe('with set location from "x-amz-meta-scal-' + 'location-constraint" header', function describe() {
+        describe('with set location from "x-amz-meta-scal-location-constraint" header', function describe() {
             if (!process.env.S3_END_TO_END) {
                 this.retries(2);
             }
@@ -159,64 +159,58 @@ describeSkipIfNotMultiple('MultipleBackend put object to GCP', function describe
                 this.retries(2);
             }
 
-            it(
-                'should put objects with same key to GCP ' + 'then file, and object should only be present in file',
-                done => {
-                    const key = `somekey-${genUniqID()}`;
-                    const params = {
-                        Bucket: bucket,
-                        Key: key,
-                        Body: body,
-                        Metadata: { 'scal-location-constraint': gcpLocation },
-                    };
-                    return s3
-                        .send(new PutObjectCommand(params))
-                        .then(() => {
-                            params.Metadata = { 'scal-location-constraint': fileLocation };
-                            return s3.send(new PutObjectCommand(params));
-                        })
-                        .then(() =>
-                            s3.send(
-                                new GetObjectCommand({
-                                    Bucket: bucket,
-                                    Key: key,
-                                }),
-                            ),
-                        )
-                        .then(res => {
-                            assert.strictEqual(res.Metadata['scal-location-constraint'], fileLocation);
-                            checkGcpError(key, 'NoSuchKey', () => done());
-                        })
-                        .catch(done);
-                },
-            );
+            it('should put objects with same key to GCP then file, and object should only be present in file', done => {
+                const key = `somekey-${genUniqID()}`;
+                const params = {
+                    Bucket: bucket,
+                    Key: key,
+                    Body: body,
+                    Metadata: { 'scal-location-constraint': gcpLocation },
+                };
+                return s3
+                    .send(new PutObjectCommand(params))
+                    .then(() => {
+                        params.Metadata = { 'scal-location-constraint': fileLocation };
+                        return s3.send(new PutObjectCommand(params));
+                    })
+                    .then(() =>
+                        s3.send(
+                            new GetObjectCommand({
+                                Bucket: bucket,
+                                Key: key,
+                            }),
+                        ),
+                    )
+                    .then(res => {
+                        assert.strictEqual(res.Metadata['scal-location-constraint'], fileLocation);
+                        checkGcpError(key, 'NoSuchKey', () => done());
+                    })
+                    .catch(done);
+            });
 
-            it(
-                'should put objects with same key to file ' + 'then GCP, and object should only be present on GCP',
-                done => {
-                    const key = `somekey-${genUniqID()}`;
-                    const params = {
-                        Bucket: bucket,
-                        Key: key,
-                        Body: body,
-                        Metadata: { 'scal-location-constraint': fileLocation },
-                    };
-                    return s3
-                        .send(new PutObjectCommand(params))
-                        .then(() => {
-                            params.Metadata = {
-                                'scal-location-constraint': gcpLocation,
-                            };
-                            return s3.send(new PutObjectCommand(params));
-                        })
-                        .then(() => {
-                            gcpGetCheck(key, correctMD5, correctMD5, gcpLocation, () => done());
-                        })
-                        .catch(done);
-                },
-            );
+            it('should put objects with same key to file then GCP, and object should only be present on GCP', done => {
+                const key = `somekey-${genUniqID()}`;
+                const params = {
+                    Bucket: bucket,
+                    Key: key,
+                    Body: body,
+                    Metadata: { 'scal-location-constraint': fileLocation },
+                };
+                return s3
+                    .send(new PutObjectCommand(params))
+                    .then(() => {
+                        params.Metadata = {
+                            'scal-location-constraint': gcpLocation,
+                        };
+                        return s3.send(new PutObjectCommand(params));
+                    })
+                    .then(() => {
+                        gcpGetCheck(key, correctMD5, correctMD5, gcpLocation, () => done());
+                    })
+                    .catch(done);
+            });
 
-            it('should put two objects to GCP with same ' + 'key, and newest object should be returned', done => {
+            it('should put two objects to GCP with same key, and newest object should be returned', done => {
                 const key = `somekey-${genUniqID()}`;
                 const params = {
                     Bucket: bucket,

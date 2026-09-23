@@ -91,8 +91,7 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
 
     it('should put an object with native characters', async () => {
         const Key =
-            'key-pâtisserie-中文-español-English-हिन्दी-العربية-' +
-            'português-বাংলা-русский-日本語-ਪੰਜਾਬੀ-한국어-தமிழ்';
+            'key-pâtisserie-中文-español-English-हिन्दी-العربية-português-বাংলা-русский-日本語-ਪੰਜਾਬੀ-한국어-தமிழ்';
         const params = { Bucket: bucket, Key };
         const url = await getSignedUrl(s3, new PutObjectCommand(params), { expiresIn: 900 });
         const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url, '--upload-file', 'uploadFile']);
@@ -147,8 +146,7 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
 
     it('should delete an object with native characters', async () => {
         const Key =
-            'key-pâtisserie-中文-español-English-हिन्दी-العربية-' +
-            'português-বাংলা-русский-日本語-ਪੰਜਾਬੀ-한국어-தமிழ்';
+            'key-pâtisserie-中文-español-English-हिन्दी-العربية-português-বাংলা-русский-日本語-ਪੰਜਾਬੀ-한국어-தமிழ்';
         const params = { Bucket: bucket, Key };
         const url = await getSignedUrl(s3, new DeleteObjectCommand(params), { expiresIn: 900 });
         const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'DELETE', url]);

@@ -32,8 +32,7 @@ function _generateSampleXml(value) {
         '<AllowedMethod>PUT</AllowedMethod>' +
         '<AllowedOrigin>www.example.com</AllowedOrigin>' +
         `${value}` +
-        '</CORSRule>' +
-        '</CORSConfiguration>';
+        '</CORSRule></CORSConfiguration>';
 
     return xml;
 }
@@ -147,7 +146,7 @@ describe('PUT bucket cors :: helper validation functions ', () => {
             });
         });
 
-        it('should return MalformedXML if more than one MaxAgeSeconds ' + 'per rule', done => {
+        it('should return MalformedXML if more than one MaxAgeSeconds per rule', done => {
             const testValue = '60';
             const xml = _generateSampleXml(
                 `<MaxAgeSeconds>${testValue}</MaxAgeSeconds>` + `<MaxAgeSeconds>${testValue}</MaxAgeSeconds>`,

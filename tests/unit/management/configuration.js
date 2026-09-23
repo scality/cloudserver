@@ -143,7 +143,7 @@ describe('patchConfiguration', () => {
         });
     });
 
-    it('should apply second configuration if version (2) is greater than ' + 'overlayVersion (1)', done => {
+    it('should apply second configuration if version (2) is greater than overlayVersion (1)', done => {
         const newConf1 = {
             version: 1,
             instanceId,
@@ -170,7 +170,7 @@ describe('patchConfiguration', () => {
         });
     });
 
-    it('should not apply the second configuration if version equals ' + 'overlayVersion', done => {
+    it('should not apply the second configuration if version equals overlayVersion', done => {
         const newConf1 = {
             version: 1,
             instanceId,
@@ -199,7 +199,7 @@ describe('patchConfiguration', () => {
 });
 
 describe('remoteOverlayIsNewer', () => {
-    it('should return remoteOverlayIsNewer equals false if remote overlay ' + 'is less than the cached', () => {
+    it('should return remoteOverlayIsNewer equals false if remote overlay is less than the cached', () => {
         const cachedOverlay = {
             version: 2,
         };
@@ -209,7 +209,7 @@ describe('remoteOverlayIsNewer', () => {
         const isRemoteOverlayNewer = remoteOverlayIsNewer(cachedOverlay, remoteOverlay);
         assert.equal(isRemoteOverlayNewer, false);
     });
-    it('should return remoteOverlayIsNewer equals false if remote overlay ' + 'and the cached one are equal', () => {
+    it('should return remoteOverlayIsNewer equals false if remote overlay and the cached one are equal', () => {
         const cachedOverlay = {
             version: 1,
         };

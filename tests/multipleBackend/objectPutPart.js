@@ -49,8 +49,7 @@ function _getOverviewKey(objectKey, uploadId) {
 function putPart(bucketLoc, mpuLoc, requestHost, cb, errorDescription) {
     const objectName = `objectName-${Date.now()}`;
     const post = bucketLoc
-        ? '<?xml version="1.0" encoding="UTF-8"?>' +
-          '<CreateBucketConfiguration ' +
+        ? '<?xml version="1.0" encoding="UTF-8"?><CreateBucketConfiguration ' +
           'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
           `<LocationConstraint>${bucketLoc}</LocationConstraint>` +
           '</CreateBucketConfiguration>'
@@ -234,7 +233,7 @@ describeSkipIfE2E('objectPutPart API with multiple backends', function testSuite
         });
     });
 
-    it('should upload part based on mpu location even if part ' + 'location constraint is specified ', done => {
+    it('should upload part based on mpu location even if part location constraint is specified ', done => {
         putPart(fileLocation, memLocation, 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body1);
             done();
@@ -262,14 +261,14 @@ describeSkipIfE2E('objectPutPart API with multiple backends', function testSuite
         });
     });
 
-    it('should put a part to AWS based on bucket location with bucketMatch ' + 'set to true', done => {
+    it('should put a part to AWS based on bucket location with bucketMatch set to true', done => {
         putPart(null, awsLocation, 'localhost', (objectName, uploadId) => {
             assert.deepStrictEqual(ds, []);
             listAndAbort(uploadId, null, objectName, awsLocation, done);
         });
     });
 
-    it('should put a part to AWS based on bucket location with bucketMatch ' + 'set to false', done => {
+    it('should put a part to AWS based on bucket location with bucketMatch set to false', done => {
         putPart(null, awsLocationMismatch, 'localhost', (objectName, uploadId) => {
             assert.deepStrictEqual(ds, []);
             listAndAbort(uploadId, null, `${bucketName}/${objectName}`, awsLocationMismatch, done);

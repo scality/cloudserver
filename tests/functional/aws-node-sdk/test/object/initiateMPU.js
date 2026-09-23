@@ -28,9 +28,8 @@ describe('Initiate MPU', () => {
         afterEach(async () => await bucketUtil.deleteOne(bucket));
 
         it(
-            'should return InvalidRedirectLocation if initiate MPU ' +
-                'with x-amz-website-redirect-location header that does not start ' +
-                "with 'http://', 'https://' or '/'",
+            'should return InvalidRedirectLocation if initiate MPU with x-amz-website-redirect-location ' +
+                "header that does not start with 'http://', 'https://' or '/'",
             async () => {
                 const params = {
                     Bucket: bucket,
@@ -163,7 +162,7 @@ describe('Initiate MPU', () => {
                 }
             });
 
-            it('should return InvalidArgument creating mpu tag with ' + 'invalid characters: %', async () => {
+            it('should return InvalidArgument creating mpu tag with invalid characters: %', async () => {
                 const value = 'value1%';
 
                 try {
@@ -181,7 +180,7 @@ describe('Initiate MPU', () => {
                 }
             });
 
-            it('should return InvalidArgument creating mpu with ' + 'bad encoded tags', async () => {
+            it('should return InvalidArgument creating mpu with bad encoded tags', async () => {
                 try {
                     await s3.send(
                         new CreateMultipartUploadCommand({
@@ -229,7 +228,7 @@ describe('Initiate MPU', () => {
                 }
             });
 
-            it('should return InvalidArgument if using the same key twice ' + 'and empty tags', async () => {
+            it('should return InvalidArgument if using the same key twice and empty tags', async () => {
                 try {
                     await s3.send(
                         new PutObjectCommand({

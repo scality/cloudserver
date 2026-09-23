@@ -326,7 +326,7 @@ describe('objectDelete API', () => {
                     assert.strictEqual(err, null);
                     sinon.assert.calledWith(
                         warnStub,
-                        'expiration is trying to delete a master version ' + 'of an object with versioning enabled',
+                        'expiration is trying to delete a master version of an object with versioning enabled',
                     );
                     done();
                 });

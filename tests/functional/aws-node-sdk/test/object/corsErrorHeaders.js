@@ -16,7 +16,7 @@ const s3 = new S3Client({ ...config, forcePathStyle: true });
 const bucket = 'corserrorheadertest';
 const objectKey = 'objectKey';
 const allowedOrigin = 'http://www.allowed.test';
-const vary = 'Origin, Access-Control-Request-Headers, ' + 'Access-Control-Request-Method';
+const vary = 'Origin, Access-Control-Request-Headers, Access-Control-Request-Method';
 
 const expectedCorsHeaders = {
     'access-control-allow-origin': allowedOrigin,

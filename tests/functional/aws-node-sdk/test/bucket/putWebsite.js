@@ -35,23 +35,20 @@ describe('PUT bucket website', () => {
             s3.send(new PutBucketWebsiteCommand({ Bucket: bucketName, WebsiteConfiguration: config }));
         });
 
-        it('should return InvalidArgument if IndexDocument or ' + 'RedirectAllRequestsTo is not provided', done => {
+        it('should return InvalidArgument if IndexDocument or RedirectAllRequestsTo is not provided', done => {
             const config = new WebsiteConfigTester();
             _testPutBucketWebsite(config, 400, 'InvalidArgument', done);
         });
 
-        it(
-            'should return an InvalidRequest if both ' + 'RedirectAllRequestsTo and IndexDocument are provided',
-            done => {
-                const redirectAllTo = {
-                    HostName: 'test',
-                    Protocol: 'http',
-                };
-                const config = new WebsiteConfigTester(null, null, redirectAllTo);
-                config.addRoutingRule({ Protocol: 'http' });
-                _testPutBucketWebsite(config, 400, 'InvalidRequest', done);
-            },
-        );
+        it('should return an InvalidRequest if both RedirectAllRequestsTo and IndexDocument are provided', done => {
+            const redirectAllTo = {
+                HostName: 'test',
+                Protocol: 'http',
+            };
+            const config = new WebsiteConfigTester(null, null, redirectAllTo);
+            config.addRoutingRule({ Protocol: 'http' });
+            _testPutBucketWebsite(config, 400, 'InvalidRequest', done);
+        });
 
         it('should return InvalidArgument if index has slash', done => {
             const config = new WebsiteConfigTester('in/dex.html');
@@ -78,13 +75,13 @@ describe('PUT bucket website', () => {
             },
         );
 
-        it('should return InvalidRequest if Redirect Protocol is ' + 'not http or https', done => {
+        it('should return InvalidRequest if Redirect Protocol is not http or https', done => {
             const config = new WebsiteConfigTester('index.html');
             config.addRoutingRule({ Protocol: 'notvalidprotocol' });
             _testPutBucketWebsite(config, 400, 'InvalidRequest', done);
         });
 
-        it('should return InvalidRequest if RedirectAllRequestsTo Protocol ' + 'is not http or https', done => {
+        it('should return InvalidRequest if RedirectAllRequestsTo Protocol is not http or https', done => {
             const redirectAllTo = {
                 HostName: 'test',
                 Protocol: 'notvalidprotocol',
@@ -113,9 +110,8 @@ describe('PUT bucket website', () => {
         );
 
         it(
-            'should return InvalidRequest if Condition ' +
-                'HttpErrorCodeReturnedEquals is a string that does ' +
-                ' not contain a number',
+            'should return InvalidRequest if Condition HttpErrorCodeReturnedEquals ' +
+                'is a string that does  not contain a number',
             done => {
                 const condition = { HttpErrorCodeReturnedEquals: 'notvalidcode' };
                 const config = new WebsiteConfigTester('index.html');
@@ -125,9 +121,8 @@ describe('PUT bucket website', () => {
         );
 
         it(
-            'should return InvalidRequest if Condition ' +
-                'HttpErrorCodeReturnedEquals is not a valid http' +
-                'error code (4XX or 5XX)',
+            'should return InvalidRequest if Condition HttpErrorCodeReturnedEquals ' +
+                'is not a valid httperror code (4XX or 5XX)',
             done => {
                 const condition = { HttpErrorCodeReturnedEquals: '300' };
                 const config = new WebsiteConfigTester('index.html');

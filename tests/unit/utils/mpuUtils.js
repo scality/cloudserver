@@ -27,8 +27,7 @@ function createBucketPutRequest(namespace, bucketName, location = 'scality-inter
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
         post:
-            '<CreateBucketConfiguration ' +
-            'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+            '<CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
             `<LocationConstraint>${location}</LocationConstraint>` +
             '</CreateBucketConfiguration >',
         actionImplicitDenies: false,
@@ -73,12 +72,9 @@ function createCompleteRequest(namespace, bucketName, objectKey, testUploadId, o
     const { extraHeaders = {}, partChecksumXml = '' } = opts;
     // only supports a single part for now
     const completeBody =
-        '<CompleteMultipartUpload>' +
-        '<Part>' +
-        '<PartNumber>1</PartNumber>' +
+        '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
         `<ETag>"${calculatedHash}"</ETag>${partChecksumXml}` +
-        '</Part>' +
-        '</CompleteMultipartUpload>';
+        '</Part></CompleteMultipartUpload>';
 
     const request = {
         bucketName,

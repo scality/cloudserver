@@ -10,14 +10,12 @@ const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const metadata = require('../../../lib/metadata/wrapper');
 
 const xmlEnableVersioning =
-    '<VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    '<Status>Enabled</Status>' +
-    '</VersioningConfiguration>';
+    '<VersioningConfiguration ' +
+    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Status>Enabled</Status></VersioningConfiguration>';
 
 const xmlSuspendVersioning =
-    '<VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    '<Status>Suspended</Status>' +
-    '</VersioningConfiguration>';
+    '<VersioningConfiguration ' +
+    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Status>Suspended</Status></VersioningConfiguration>';
 
 const locConstraintVersioned =
     '<CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -43,7 +41,7 @@ const xmlReplicationConfiguration =
     '</ReplicationConfiguration>';
 
 const externalVersioningErrorMessage =
-    'We do not currently support putting ' + 'a versioned object to a location-constraint of type Azure or GCP.';
+    'We do not currently support putting a versioned object to a location-constraint of type Azure or GCP.';
 
 const log = new DummyRequestLogger();
 const bucketName = 'bucketname';
@@ -92,9 +90,7 @@ describe('bucketPutVersioning API', () => {
 
         const tests = [
             {
-                msg:
-                    'should successfully enable versioning on location ' +
-                    'constraint with supportsVersioning set to true',
+                msg: 'should successfully enable versioning on location constraint with supportsVersioning set to true',
                 input: xmlEnableVersioning,
                 output: { Status: 'Enabled' },
             },

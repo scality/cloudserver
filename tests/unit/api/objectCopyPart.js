@@ -114,9 +114,8 @@ describe('objectCopyPart', () => {
             assert(err.is.InvalidArgument);
             assert.strictEqual(
                 err.description,
-                'The x-amz-copy-source-range value must be of the form ' +
-                    'bytes=first-last where first and last are the ' +
-                    'zero-based offsets of the first and last bytes to copy',
+                'The x-amz-copy-source-range value must be of the form bytes=first-last where ' +
+                    'first and last are the zero-based offsets of the first and last bytes to copy',
             );
             done();
         });

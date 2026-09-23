@@ -223,7 +223,7 @@ describeSkipIfNotMultiple('AWS backend put/get object acl with versioning', func
                 });
         });
 
-        it('versioning not configured: should put/get acl successfully when ' + 'versioning not configured', done => {
+        it('versioning not configured: should put/get acl successfully when versioning not configured', done => {
             const key = `somekey-${genUniqID()}`;
             waitForVersioningBeforePut(s3, bucket, err => {
                 if (err) {
@@ -296,7 +296,7 @@ describeSkipIfNotMultiple('AWS backend put/get object acl with versioning', func
             );
         });
 
-        it('versioning enabled: should get correct acl when getting ' + 'without version ID', done => {
+        it('versioning enabled: should get correct acl when getting without version ID', done => {
             const key = `somekey-${genUniqID()}`;
             const acps = ['READ', 'FULL_CONTROL', 'READ_ACP', 'WRITE_ACP'].map(perm => {
                 const acp = new _AccessControlPolicy(ownerParams);

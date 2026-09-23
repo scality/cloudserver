@@ -1,3 +1,6 @@
-# Whole-repo Prettier reformat (CLDSRV-1002), no behaviour change.
-# Run once locally: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# Commits listed here are skipped by git blame. GitHub reads this file
+# automatically; locally, run once:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# CLDSRV-1002: whole-repo Prettier reformat, no behaviour change
 e7e8232dcea6ac692fd28058f9dda6820d4af0e6

@@ -205,32 +205,29 @@ describe('clientCheck - failure detection logic', () => {
     });
 
     describe('external backend error handling', () => {
-        it(
-            'should NOT fail on external backend errors during normal operation ' + '(flightCheckOnStartUp=false)',
-            done => {
-                dataStub.callsFake((log, cb) =>
-                    cb(null, {
-                        's3-backend': { error: errors.InternalError, code: 500, external: true },
-                    }),
-                );
-                metadataStub.callsFake((log, cb) =>
-                    cb(null, {
-                        metadata: { code: 200, message: 'OK' },
-                    }),
-                );
-                vaultStub.callsFake((log, cb) => cb(null, {}));
-                kmsStub.callsFake((log, cb) => cb(null, {}));
+        it('should NOT fail on external backend errors during normal operation (flightCheckOnStartUp=false)', done => {
+            dataStub.callsFake((log, cb) =>
+                cb(null, {
+                    's3-backend': { error: errors.InternalError, code: 500, external: true },
+                }),
+            );
+            metadataStub.callsFake((log, cb) =>
+                cb(null, {
+                    metadata: { code: 200, message: 'OK' },
+                }),
+            );
+            vaultStub.callsFake((log, cb) => cb(null, {}));
+            kmsStub.callsFake((log, cb) => cb(null, {}));
 
-                clientCheck(false, log, (err, result) => {
-                    assert.ifError(err);
-                    assert.deepStrictEqual(result, {
-                        's3-backend': { error: errors.InternalError, code: 500, external: true },
-                        metadata: { code: 200, message: 'OK' },
-                    });
-                    done();
+            clientCheck(false, log, (err, result) => {
+                assert.ifError(err);
+                assert.deepStrictEqual(result, {
+                    's3-backend': { error: errors.InternalError, code: 500, external: true },
+                    metadata: { code: 200, message: 'OK' },
                 });
-            },
-        );
+                done();
+            });
+        });
 
         it('should fail on external backend errors during startup (flightCheckOnStartUp=true)', done => {
             dataStub.callsFake((log, cb) =>

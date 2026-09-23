@@ -41,21 +41,17 @@ describe('prepareRequestContexts', () => {
         },
     );
 
-    it(
-        'should return s3:PutObjectVersion request context action for objectPut method with empty x-scal-s3-version-id' +
-            ' header',
-        () => {
-            const apiMethod = 'objectPut';
-            const request = makeRequest({
-                'x-scal-s3-version-id': '',
-            });
-            const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
+    it('should return s3:PutObjectVersion request context action for objectPut method with empty x-scal-s3-version-id header', () => {
+        const apiMethod = 'objectPut';
+        const request = makeRequest({
+            'x-scal-s3-version-id': '',
+        });
+        const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
 
-            assert.strictEqual(results.length, 1);
-            const expectedAction = 's3:PutObjectVersion';
-            assert.strictEqual(results[0].getAction(), expectedAction);
-        },
-    );
+        assert.strictEqual(results.length, 1);
+        const expectedAction = 's3:PutObjectVersion';
+        assert.strictEqual(results[0].getAction(), expectedAction);
+    });
 
     it('should return s3:PutObject request context action for objectPut method and no header', () => {
         const apiMethod = 'objectPut';

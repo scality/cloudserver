@@ -176,7 +176,7 @@ describeSkipIfNotMultiple('Multiple backend get object from Azure', function tes
                     });
             });
 
-            it('should return an error on get done to object deleted ' + 'from Azure', done => {
+            it('should return an error on get done to object deleted from Azure', done => {
                 s3.send(
                     new GetObjectCommand({
                         Bucket: azureContainerName,

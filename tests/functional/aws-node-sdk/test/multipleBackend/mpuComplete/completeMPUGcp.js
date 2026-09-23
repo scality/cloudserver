@@ -183,7 +183,7 @@ describeSkipIfNotMultiple('Complete MPU API for GCP data backend', function test
             });
         });
 
-        it('should complete an MPU on GCP with same key as object put ' + 'to file', function itFn(done) {
+        it('should complete an MPU on GCP with same key as object put to file', function itFn(done) {
             const body = Buffer.from('I am a body', 'utf8');
             s3.send(
                 new PutObjectCommand({
@@ -214,7 +214,7 @@ describeSkipIfNotMultiple('Complete MPU API for GCP data backend', function test
                 });
         });
 
-        it('should complete an MPU on GCP with same key as object put ' + 'to GCP', function itFn(done) {
+        it('should complete an MPU on GCP with same key as object put to GCP', function itFn(done) {
             const body = Buffer.from('I am a body', 'utf8');
             s3.send(
                 new PutObjectCommand({
@@ -245,7 +245,7 @@ describeSkipIfNotMultiple('Complete MPU API for GCP data backend', function test
                 });
         });
 
-        it('should complete an MPU on GCP with same key as object put ' + 'to AWS', function itFn(done) {
+        it('should complete an MPU on GCP with same key as object put to AWS', function itFn(done) {
             const body = Buffer.from('I am a body', 'utf8');
             s3.send(
                 new PutObjectCommand({

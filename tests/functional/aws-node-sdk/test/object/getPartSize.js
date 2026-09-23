@@ -136,7 +136,7 @@ describe('Part size tests with object head', () => {
             );
         });
 
-        it('should return the total size of the object ' + 'when --part-number is not used', done => {
+        it('should return the total size of the object when --part-number is not used', done => {
             const totalSize = partNumbers.reduce((total, current) => total + (bodySize + current + 1), 0);
             headObject({}, (err, data) => {
                 checkNoError(err);

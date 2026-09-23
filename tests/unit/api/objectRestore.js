@@ -37,25 +37,19 @@ const putObjectRequest = new DummyRequest(
 );
 
 const objectRestoreXml =
-    '<RestoreRequest ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+    '<RestoreRequest xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
     `<Days>${restoreDays}</Days>` +
-    '<Tier>Standard</Tier>' +
-    '</RestoreRequest>';
+    '<Tier>Standard</Tier></RestoreRequest>';
 
 const objectRestoreXmlBulkTier =
-    '<RestoreRequest ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+    '<RestoreRequest xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
     `<Days>${restoreDays}</Days>` +
-    '<Tier>Bulk</Tier>' +
-    '</RestoreRequest>';
+    '<Tier>Bulk</Tier></RestoreRequest>';
 
 const objectRestoreXmlExpeditedTier =
-    '<RestoreRequest ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+    '<RestoreRequest xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
     `<Days>${restoreDays}</Days>` +
-    '<Tier>Expedited</Tier>' +
-    '</RestoreRequest>';
+    '<Tier>Expedited</Tier></RestoreRequest>';
 
 const objectRestoreRequest = requestXml => ({
     bucketName,
@@ -116,9 +110,8 @@ describe('restoreObject API', () => {
     });
 
     it(
-        'should return Accepted and update objectMD ' +
-            'while restoring an object from cold storage ' +
-            "and the object doesn't have a restored copy in bucket",
+        'should return Accepted and update objectMD while restoring an object ' +
+            "from cold storage and the object doesn't have a restored copy in bucket",
         done => {
             const testStartTime = new Date(Date.now());
             mdColdHelper.putBucketMock(bucketName, null, () => {
@@ -139,9 +132,8 @@ describe('restoreObject API', () => {
     );
 
     it(
-        'should update the expiry time and return OK ' +
-            'while restoring an object from cold storage ' +
-            'and the object have a restored copy in bucket',
+        'should update the expiry time and return OK while restoring an object ' +
+            'from cold storage and the object have a restored copy in bucket',
         done => {
             const testStartTime = new Date(Date.now());
             mdColdHelper.putBucketMock(bucketName, null, () => {
@@ -161,7 +153,7 @@ describe('restoreObject API', () => {
         },
     );
 
-    it('should return InvalidObjectState ' + 'while restoring an expired restored object', () => {
+    it('should return InvalidObjectState while restoring an expired restored object', () => {
         mdColdHelper.putBucketMock(bucketName, null, () => {
             mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getExpiredObjectMD(), () => {
                 objectRestore(authInfo, objectRestoreRequest(objectRestoreXml), log, err => {

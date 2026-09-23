@@ -40,10 +40,7 @@ function createReplicationXML(missingTag, tagValue) {
     let Role =
         missingTag === 'Role'
             ? ''
-            : '<Role>' +
-              'arn:aws:iam::account-id:role/src-resource,' +
-              'arn:aws:iam::account-id:role/dest-resource' +
-              '</Role>';
+            : '<Role>arn:aws:iam::account-id:role/src-resource,arn:aws:iam::account-id:role/dest-resource</Role>';
     Role = tagValue && tagValue.Role ? `<Role>${tagValue.Role}</Role>` : Role;
     let ID = missingTag === 'ID' ? '' : '<ID>foo</ID>';
     ID = tagValue && tagValue.ID === '' ? '<ID/>' : ID;
@@ -92,7 +89,7 @@ describe("'getReplicationConfiguration' function", () => {
         checkError(xml, null, done);
     });
 
-    it("should create a rule 'ID' if omitted from the replication " + 'configuration', done => {
+    it("should create a rule 'ID' if omitted from the replication configuration", done => {
         const xml = createReplicationXML('ID');
         return checkGeneratedID(xml, done);
     });
@@ -116,7 +113,7 @@ describe("'validateReplicationConfig' function", () => {
             'not transient and preferred read location is not specified',
         () => {
             const withoutPreferredRead = {
-                role: 'arn:aws:iam::account-id:role/src-resource,' + 'arn:aws:iam::account-id:role/dest-resource',
+                role: 'arn:aws:iam::account-id:role/src-resource,arn:aws:iam::account-id:role/dest-resource',
                 destination: 'arn:aws:s3:::destination-bucket',
                 rules: [
                     {
@@ -136,7 +133,7 @@ describe("'validateReplicationConfig' function", () => {
         'should validate configuration when bucket location is transient ' + 'and preferred read location is specified',
         () => {
             const withPreferredRead = {
-                role: 'arn:aws:iam::account-id:role/src-resource,' + 'arn:aws:iam::account-id:role/dest-resource',
+                role: 'arn:aws:iam::account-id:role/src-resource,arn:aws:iam::account-id:role/dest-resource',
                 destination: 'arn:aws:s3:::destination-bucket',
                 rules: [
                     {
@@ -157,7 +154,7 @@ describe("'validateReplicationConfig' function", () => {
             'transient and preferred read location is not specified',
         () => {
             const withoutPreferredRead = {
-                role: 'arn:aws:iam::account-id:role/src-resource,' + 'arn:aws:iam::account-id:role/dest-resource',
+                role: 'arn:aws:iam::account-id:role/src-resource,arn:aws:iam::account-id:role/dest-resource',
                 destination: 'arn:aws:s3:::destination-bucket',
                 rules: [
                     {

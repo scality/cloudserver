@@ -142,7 +142,7 @@ function assertStatus(expectedStatus, expectedCode, expectedMessage) {
 }
 
 const msgMalformedTrailer =
-    'The request contained trailing data that was not well-formed' + ' or did not conform to our published schema.';
+    'The request contained trailing data that was not well-formed or did not conform to our published schema.';
 const msgSdkMissingTrailer =
     'x-amz-sdk-checksum-algorithm specified, but no corresponding' +
     ' x-amz-checksum-* or x-amz-trailer headers were found.';

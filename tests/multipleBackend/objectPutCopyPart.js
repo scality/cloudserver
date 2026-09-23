@@ -60,8 +60,7 @@ function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, requestHost, cb, errorPutCopy
     const keys = getSourceAndDestKeys();
     const { sourceObjName, destObjName } = keys;
     const post = bucketLoc
-        ? '<?xml version="1.0" encoding="UTF-8"?>' +
-          '<CreateBucketConfiguration ' +
+        ? '<?xml version="1.0" encoding="UTF-8"?><CreateBucketConfiguration ' +
           'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
           `<LocationConstraint>${bucketLoc}</LocationConstraint>` +
           '</CreateBucketConfiguration>'

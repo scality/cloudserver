@@ -105,7 +105,7 @@ describe('GCP: Object Tagging', function testSuite() {
         });
 
         describe('when tagging parameter is incorrect', () => {
-            it('should return 400 and BadRequest if more than ' + '10 tags are given', function testFun(done) {
+            it('should return 400 and BadRequest if more than 10 tags are given', function testFun(done) {
                 return gcpClient.putObjectTagging(
                     {
                         Bucket: bucketName,

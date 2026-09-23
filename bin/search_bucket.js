@@ -82,7 +82,7 @@ function searchBucket() {
         .option('-s', '--ssl', 'Enable ssl')
         .option(
             '-l, --list-versions',
-            'List all versions of the objects that meet the search query, ' + 'otherwise only list the latest version',
+            'List all versions of the objects that meet the search query, otherwise only list the latest version',
         )
         .option('-v, --verbose')
         .parse(process.argv);

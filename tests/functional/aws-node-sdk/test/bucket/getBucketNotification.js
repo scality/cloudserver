@@ -65,9 +65,8 @@ describe('aws-sdk test get bucket notification', () => {
             }
         });
 
-        it('should not return an error if no notification configuration ' + 'put to bucket', () =>
-            s3.send(new GetBucketNotificationConfigurationCommand({ Bucket: bucket })),
-        );
+        it('should not return an error if no notification configuration put to bucket', () =>
+            s3.send(new GetBucketNotificationConfigurationCommand({ Bucket: bucket })));
 
         it('should get bucket notification config', async () => {
             await s3.send(

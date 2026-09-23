@@ -252,7 +252,7 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
                 .then(() => bucketUtil.deleteOne(destBucketName))
                 .catch(err => {
                     if (err.code === 'NoSuchBucket') {
-                        process.stdout.write('Warning: did not find dest bucket ' + 'for deletion');
+                        process.stdout.write('Warning: did not find dest bucket for deletion');
                         // we do not throw err since dest bucket may not exist
                         // if we are using source as dest
                     } else {
@@ -285,8 +285,7 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
             const { isEmptyObj, directive } = testParams;
             it(
                 `should copy ${isEmptyObj ? 'an empty' : ''} ` +
-                    'object from AWS backend non-versioned bucket' +
-                    'to AWS backend versioned bucket ' +
+                    'object from AWS backend non-versioned bucketto AWS backend versioned bucket ' +
                     `with ${directive} directive`,
                 done => {
                     Object.assign(testParams, {
@@ -395,9 +394,8 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
         });
 
         it(
-            'versioning not configured: if copy object to a ' +
-                'pre-existing object on AWS backend, metadata should be overwritten ' +
-                'but data of  previous version in AWS should not be deleted',
+            'versioning not configured: if copy object to a pre-existing object on AWS backend, ' +
+                'metadata should be overwritten but data of  previous version in AWS should not be deleted',
             function itF(done) {
                 const destKey = `destkey-${genUniqID()}`;
                 const testParams = {

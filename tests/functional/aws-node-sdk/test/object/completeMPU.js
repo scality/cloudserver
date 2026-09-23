@@ -147,12 +147,9 @@ describe('Complete MPU', () => {
                     }),
             );
 
-            it(
-                'should complete an MPU with fewer parts than were ' + 'originally put and return a version id',
-                done => {
-                    _completeMpuAndCheckVid(uploadId, eTag, true, done);
-                },
-            );
+            it('should complete an MPU with fewer parts than were originally put and return a version id', done => {
+                _completeMpuAndCheckVid(uploadId, eTag, true, done);
+            });
         });
 
         describe('on bucket with suspended versioning', () => {

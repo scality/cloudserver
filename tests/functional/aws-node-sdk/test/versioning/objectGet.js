@@ -156,25 +156,22 @@ describe('get behavior on versioning-enabled bucket', () => {
                 }
             });
 
-            it(
-                'it should return NoSuchKey if try to get object whose ' + 'latest version is a delete marker',
-                async () => {
-                    try {
-                        await s3.send(
-                            new GetObjectCommand({
-                                Bucket: bucket,
-                                Key: key,
-                            }),
-                        );
-                        assert.fail('Expected NoSuchKey error but got success');
-                    } catch (err) {
-                        _assertError(err, 404, 'NoSuchKey');
-                    }
-                },
-            );
+            it('it should return NoSuchKey if try to get object whose latest version is a delete marker', async () => {
+                try {
+                    await s3.send(
+                        new GetObjectCommand({
+                            Bucket: bucket,
+                            Key: key,
+                        }),
+                    );
+                    assert.fail('Expected NoSuchKey error but got success');
+                } catch (err) {
+                    _assertError(err, 404, 'NoSuchKey');
+                }
+            });
         });
 
-        describe('behavior when put version with content then put delete ' + 'marker', () => {
+        describe('behavior when put version with content then put delete marker', () => {
             let putVersionId;
             let deleteVersionId;
 
@@ -200,7 +197,7 @@ describe('get behavior on versioning-enabled bucket', () => {
                 }
             });
 
-            it('should be able to get a version that was put prior to the ' + 'delete marker', async () => {
+            it('should be able to get a version that was put prior to the delete marker', async () => {
                 const data = await s3.send(
                     new GetObjectCommand({
                         Bucket: bucket,
@@ -255,7 +252,7 @@ describe('get behavior on versioning-enabled bucket', () => {
                 objectVersionId = data.VersionId;
             });
 
-            it('should not return "x-amz-tagging-count" if no tag ' + 'associated with the object', async () => {
+            it('should not return "x-amz-tagging-count" if no tag associated with the object', async () => {
                 params.VersionId = objectVersionId;
                 const data = await s3.send(new GetObjectCommand(params));
                 assert.strictEqual(data.TagCount, undefined);

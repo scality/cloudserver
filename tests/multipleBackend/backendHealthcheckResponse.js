@@ -20,9 +20,8 @@ describe('Healthcheck response', function describeHealthcheck() {
     this.timeout(60000);
 
     it(
-        'should return result for every location constraint in ' +
-            'locationConfig and every external locations with flightCheckOnStartUp ' +
-            'set to true',
+        'should return result for every location constraint in locationConfig ' +
+            'and every external locations with flightCheckOnStartUp set to true',
         done => {
             clientCheck(true, log, (err, results) => {
                 const resultKeys = Object.keys(results);
@@ -44,9 +43,8 @@ describe('Healthcheck response', function describeHealthcheck() {
         });
     });
     it(
-        'should return result for every location constraint in ' +
-            'locationConfig and at least one of every external locations with ' +
-            'flightCheckOnStartUp set to false',
+        'should return result for every location constraint in locationConfig and at ' +
+            'least one of every external locations with flightCheckOnStartUp set to false',
         done => {
             clientCheck(false, log, (err, results) => {
                 assert.notStrictEqual(results.length, locConstraints.length);

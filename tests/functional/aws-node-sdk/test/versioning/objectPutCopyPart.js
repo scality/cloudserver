@@ -118,7 +118,7 @@ describe('Object Part Copy with Versioning', () => {
                 done();
             });
 
-            it('should not return a version id when put part by copying ' + 'without specifying version id', done => {
+            it('should not return a version id when put part by copying without specifying version id', done => {
                 s3.send(
                     new UploadPartCopyCommand({
                         Bucket: destBucket,
@@ -136,7 +136,7 @@ describe('Object Part Copy with Versioning', () => {
                     .catch(done);
             });
 
-            it('should return NoSuchKey if copy source version id is invalid ' + 'id', done => {
+            it('should return NoSuchKey if copy source version id is invalid id', done => {
                 s3.send(
                     new UploadPartCopyCommand({
                         Bucket: destBucket,
@@ -253,28 +253,25 @@ describe('Object Part Copy with Versioning', () => {
                 done();
             });
 
-            it(
-                'copy part without specifying version should return data and ' + 'version id of latest version',
-                done => {
-                    const lastVersion = versionIds[versionIds.length - 1];
-                    const lastETag = eTags[eTags.length - 1];
-                    s3.send(
-                        new UploadPartCopyCommand({
-                            Bucket: destBucket,
-                            CopySource: `${sourceBucket}/${sourceKey}`,
-                            Key: destKey,
-                            PartNumber: 1,
-                            UploadId: uploadId,
-                        }),
-                    )
-                        .then(data => {
-                            assert.strictEqual(data.CopySourceVersionId, lastVersion);
-                            assert.strictEqual(data.CopyPartResult.ETag, lastETag);
-                            done();
-                        })
-                        .catch(done);
-                },
-            );
+            it('copy part without specifying version should return data and version id of latest version', done => {
+                const lastVersion = versionIds[versionIds.length - 1];
+                const lastETag = eTags[eTags.length - 1];
+                s3.send(
+                    new UploadPartCopyCommand({
+                        Bucket: destBucket,
+                        CopySource: `${sourceBucket}/${sourceKey}`,
+                        Key: destKey,
+                        PartNumber: 1,
+                        UploadId: uploadId,
+                    }),
+                )
+                    .then(data => {
+                        assert.strictEqual(data.CopySourceVersionId, lastVersion);
+                        assert.strictEqual(data.CopyPartResult.ETag, lastETag);
+                        done();
+                    })
+                    .catch(done);
+            });
 
             it(
                 'copy part without specifying version should return NoSuchKey ' +
@@ -359,7 +356,7 @@ describe('Object Part Copy with Versioning', () => {
                 },
             );
 
-            it('copy part with specific version should return NoSuchVersion ' + 'if version does not exist', done => {
+            it('copy part with specific version should return NoSuchVersion if version does not exist', done => {
                 const versionId = versionIds[1];
                 s3.send(
                     new DeleteObjectCommand({
@@ -391,7 +388,7 @@ describe('Object Part Copy with Versioning', () => {
                     });
             });
 
-            it('copy part with specific version should return copy source ' + 'version id if it exists', done => {
+            it('copy part with specific version should return copy source version id if it exists', done => {
                 const versionId = versionIds[1];
                 s3.send(
                     new UploadPartCopyCommand({
@@ -515,7 +512,7 @@ describe('Object Part Copy with Versioning', () => {
                 done();
             });
 
-            it('copy part without specifying version should still return ' + 'version id of latest version', done => {
+            it('copy part without specifying version should still return version id of latest version', done => {
                 const lastVersion = versionIds[versionIds.length - 1];
                 const lastETag = eTags[eTags.length - 1];
                 s3.send(
@@ -535,7 +532,7 @@ describe('Object Part Copy with Versioning', () => {
                     .catch(done);
             });
 
-            it('copy part with specific version should still return copy ' + 'source version id if it exists', done => {
+            it('copy part with specific version should still return copy source version id if it exists', done => {
                 const versionId = versionIds[1];
                 s3.send(
                     new UploadPartCopyCommand({
