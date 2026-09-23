@@ -21,7 +21,7 @@ describe('getBucketLifecycle API', () => {
     beforeEach(done => bucketPut(authInfo, testBucketPutRequest, log, done));
     afterEach(() => cleanup());
 
-    it('should return NoSuchLifecycleConfiguration error if ' + 'bucket has no lifecycle', done => {
+    it('should return NoSuchLifecycleConfiguration error if bucket has no lifecycle', done => {
         const lifecycleRequest = getLifecycleRequest(bucketName);
         bucketGetLifecycle(authInfo, lifecycleRequest, log, err => {
             assert.strictEqual(err.is.NoSuchLifecycleConfiguration, true);

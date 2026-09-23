@@ -24,8 +24,7 @@ const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
 function put(bucketLoc, objLoc, requestHost, objectName, cb, errorDescription) {
     const post = bucketLoc
-        ? '<?xml version="1.0" encoding="UTF-8"?>' +
-          '<CreateBucketConfiguration ' +
+        ? '<?xml version="1.0" encoding="UTF-8"?><CreateBucketConfiguration ' +
           'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
           `<LocationConstraint>${bucketLoc}</LocationConstraint>` +
           '</CreateBucketConfiguration>'

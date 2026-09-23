@@ -137,7 +137,7 @@ describe.skip('responseStreamData:', () => {
         response.on('end', () => {
             data.get = prev;
             if (!destroyed) {
-                return done(new Error('end reached instead of destroying ' + 'connection'));
+                return done(new Error('end reached instead of destroying connection'));
             }
             return done();
         });

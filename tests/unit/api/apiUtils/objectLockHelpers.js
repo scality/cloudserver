@@ -122,7 +122,7 @@ describe('objectLockHelpers: validateHeaders', () => {
         };
         const objectLockValidationError = validateHeaders(bucketInfo, headers, log);
         const expectedError = errorInstances.InvalidArgument.customizeDescription(
-            'x-amz-object-lock-retain-until-date and x-amz-object-lock-mode ' + 'must both be supplied',
+            'x-amz-object-lock-retain-until-date and x-amz-object-lock-mode must both be supplied',
         );
         assert.strictEqual(objectLockValidationError.is.InvalidArgument, true);
         assert.strictEqual(objectLockValidationError.description, expectedError.description);
@@ -134,7 +134,7 @@ describe('objectLockHelpers: validateHeaders', () => {
         };
         const objectLockValidationError = validateHeaders(bucketInfo, headers, log);
         const expectedError = errorInstances.InvalidArgument.customizeDescription(
-            'x-amz-object-lock-retain-until-date and x-amz-object-lock-mode ' + 'must both be supplied',
+            'x-amz-object-lock-retain-until-date and x-amz-object-lock-mode must both be supplied',
         );
         assert.strictEqual(objectLockValidationError.is.InvalidArgument, true);
         assert.strictEqual(objectLockValidationError.description, expectedError.description);

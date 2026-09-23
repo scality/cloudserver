@@ -38,8 +38,7 @@ function getNotificationXml() {
     const filterValue = 'logs/';
 
     return (
-        '<NotificationConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-        '<QueueConfiguration>' +
+        '<NotificationConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><QueueConfiguration>' +
         `<Id>${id}</Id>` +
         `<Queue>${queueArn}</Queue>` +
         `<Event>${event}</Event>` +
@@ -47,9 +46,7 @@ function getNotificationXml() {
         '<Filter><S3Key>' +
         `<FilterRule><Name>${filterName}</Name>` +
         `<Value>${filterValue}</Value></FilterRule>` +
-        '</S3Key></Filter>' +
-        '</QueueConfiguration>' +
-        '</NotificationConfiguration>'
+        '</S3Key></Filter></QueueConfiguration></NotificationConfiguration>'
     );
 }
 

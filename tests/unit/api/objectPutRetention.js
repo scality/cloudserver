@@ -36,37 +36,27 @@ const putObjectRequest = new DummyRequest(
 );
 
 const objectRetentionXmlGovernance =
-    '<Retention ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    '<Mode>GOVERNANCE</Mode>' +
+    '<Retention xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Mode>GOVERNANCE</Mode>' +
     `<RetainUntilDate>${expectedDate}</RetainUntilDate>` +
     '</Retention>';
 
 const objectRetentionXmlCompliance =
-    '<Retention ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    '<Mode>COMPLIANCE</Mode>' +
+    '<Retention xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Mode>COMPLIANCE</Mode>' +
     `<RetainUntilDate>${expectedDate}</RetainUntilDate>` +
     '</Retention>';
 
 const objectRetentionXmlGovernanceLonger =
-    '<Retention ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    '<Mode>GOVERNANCE</Mode>' +
+    '<Retention xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Mode>GOVERNANCE</Mode>' +
     `<RetainUntilDate>${moment().add(5, 'days').toISOString()}</RetainUntilDate>` +
     '</Retention>';
 
 const objectRetentionXmlGovernanceShorter =
-    '<Retention ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    '<Mode>GOVERNANCE</Mode>' +
+    '<Retention xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Mode>GOVERNANCE</Mode>' +
     `<RetainUntilDate>${moment().add(1, 'days').toISOString()}</RetainUntilDate>` +
     '</Retention>';
 
 const objectRetentionXmlComplianceShorter =
-    '<Retention ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    '<Mode>COMPLIANCE</Mode>' +
+    '<Retention xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Mode>COMPLIANCE</Mode>' +
     `<RetainUntilDate>${moment().add(1, 'days').toISOString()}</RetainUntilDate>` +
     '</Retention>';
 

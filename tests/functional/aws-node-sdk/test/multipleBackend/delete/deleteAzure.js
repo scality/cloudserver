@@ -181,7 +181,7 @@ describeSkipIfNotMultiple('Multiple backend delete object from Azure', function 
                     });
             });
 
-            it('should return no error on deleting an object deleted ' + 'from Azure', function itF(done) {
+            it('should return no error on deleting an object deleted from Azure', function itF(done) {
                 s3.send(
                     new DeleteObjectCommand({
                         Bucket: azureContainerName,
@@ -213,7 +213,7 @@ describeSkipIfNotMultiple('Multiple backend delete object from Azure', function 
                 ).then(() => done());
             });
 
-            it('should not delete object when deleting a non-existing ' + 'version from Azure', function itF(done) {
+            it('should not delete object when deleting a non-existing version from Azure', function itF(done) {
                 async.waterfall(
                     [
                         next =>

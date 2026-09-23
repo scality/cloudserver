@@ -138,23 +138,20 @@ describe('GET object legal hold', () => {
                     assert.ifError(err);
                 }));
 
-        it(
-            'should return InvalidRequest error getting legal hold of object ' + 'inside object lock disabled bucket',
-            () =>
-                s3
-                    .send(
-                        new GetObjectLegalHoldCommand({
-                            Bucket: unlockedBucket,
-                            Key: key,
-                        }),
-                    )
-                    .then(() => {
-                        throw new Error('Expected InvalidRequest error');
-                    })
-                    .catch(err => {
-                        checkError(err, 'InvalidRequest', 400);
+        it('should return InvalidRequest error getting legal hold of object inside object lock disabled bucket', () =>
+            s3
+                .send(
+                    new GetObjectLegalHoldCommand({
+                        Bucket: unlockedBucket,
+                        Key: key,
                     }),
-        );
+                )
+                .then(() => {
+                    throw new Error('Expected InvalidRequest error');
+                })
+                .catch(err => {
+                    checkError(err, 'InvalidRequest', 400);
+                }));
 
         it('should return NoSuchObjectLockConfiguration if no legal hold set', () =>
             s3

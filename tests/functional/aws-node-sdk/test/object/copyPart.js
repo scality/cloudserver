@@ -124,7 +124,7 @@ describe('Object Part Copy', () => {
                 .then(() => bucketUtil.deleteMany([sourceBucketName, destBucketName])),
         );
 
-        it('should copy a part from a source bucket to a different ' + 'destination bucket', () =>
+        it('should copy a part from a source bucket to a different destination bucket', () =>
             s3
                 .send(
                     new UploadPartCopyCommand({
@@ -138,10 +138,9 @@ describe('Object Part Copy', () => {
                 .then(res => {
                     assert.strictEqual(res.CopyPartResult.ETag, etag);
                     assert(res.CopyPartResult.LastModified);
-                }),
-        );
+                }));
 
-        it('should copy a part from a source bucket to a different ' + 'destination bucket and complete the MPU', () =>
+        it('should copy a part from a source bucket to a different destination bucket and complete the MPU', () =>
             s3
                 .send(
                     new UploadPartCopyCommand({
@@ -172,8 +171,7 @@ describe('Object Part Copy', () => {
                             // AWS confirmed final ETag for MPU
                             assert.strictEqual(res.ETag, '"db77ebbae9e9f5a244a26b86193ad818-1"');
                         });
-                }),
-        );
+                }));
 
         it('should return InvalidArgument error given invalid range', () =>
             s3
@@ -202,9 +200,8 @@ describe('Object Part Copy', () => {
                 ));
 
         it(
-            'should return EntityTooLarge error if attempt to copy ' +
-                'object larger than max and do not specify smaller ' +
-                'range in request',
+            'should return EntityTooLarge error if attempt to copy object ' +
+                'larger than max and do not specify smaller range in request',
             () =>
                 s3
                     .send(
@@ -231,9 +228,8 @@ describe('Object Part Copy', () => {
         );
 
         it(
-            'should return EntityTooLarge error if attempt to copy ' +
-                'object larger than max and specify too large ' +
-                'range in request',
+            'should return EntityTooLarge error if attempt to copy object ' +
+                'larger than max and specify too large range in request',
             () =>
                 s3
                     .send(
@@ -260,35 +256,30 @@ describe('Object Part Copy', () => {
                     }),
         );
 
-        it(
-            'should succeed if attempt to copy ' +
-                'object larger than max but specify acceptable ' +
-                'range in request',
-            () =>
-                s3
-                    .send(
-                        new PutObjectCommand({
-                            Bucket: sourceBucketName,
-                            Key: sourceObjName,
-                            Body: Buffer.alloc(oneHundredMBPlus11, 'packing'),
-                        }),
-                    )
-                    .then(() =>
-                        s3.send(
-                            new UploadPartCopyCommand({
-                                Bucket: destBucketName,
-                                Key: destObjName,
-                                CopySource: `${sourceBucketName}/${sourceObjName}`,
-                                PartNumber: 1,
-                                UploadId: uploadId,
-                                CopySourceRange: 'bytes=0-100',
-                            }),
-                        ),
-                    )
-                    .catch(err => {
-                        checkNoError(err);
+        it('should succeed if attempt to copy object larger than max but specify acceptable range in request', () =>
+            s3
+                .send(
+                    new PutObjectCommand({
+                        Bucket: sourceBucketName,
+                        Key: sourceObjName,
+                        Body: Buffer.alloc(oneHundredMBPlus11, 'packing'),
                     }),
-        );
+                )
+                .then(() =>
+                    s3.send(
+                        new UploadPartCopyCommand({
+                            Bucket: destBucketName,
+                            Key: destObjName,
+                            CopySource: `${sourceBucketName}/${sourceObjName}`,
+                            PartNumber: 1,
+                            UploadId: uploadId,
+                            CopySourceRange: 'bytes=0-100',
+                        }),
+                    ),
+                )
+                .catch(err => {
+                    checkNoError(err);
+                }));
 
         it(
             'should copy a 0 byte object part from a source bucket to a ' +
@@ -503,7 +494,7 @@ describe('Object Part Copy', () => {
                     }),
             );
 
-            it('should copy a part from a source bucket to a different ' + 'destination bucket', () => {
+            it('should copy a part from a source bucket to a different destination bucket', () => {
                 process.stdout.write('Entered first mpu test\n');
                 return s3
                     .send(
@@ -589,8 +580,7 @@ describe('Object Part Copy', () => {
 
             it(
                 'should copy two parts with range headers from a source ' +
-                    'bucket to a different destination bucket and ' +
-                    'complete the MPU',
+                    'bucket to a different destination bucket and complete the MPU',
                 () => {
                     process.stdout.write('Putting first part in MPU range test\n');
                     const part1ETag = '"b1e0d096c8f0670c5367d131e392b84a"';
@@ -724,7 +714,7 @@ describe('Object Part Copy', () => {
                                         assert.strictEqual(res.ETag, finalObjETag);
                                     })
                                     .then(() => {
-                                        process.stdout.write('Getting object put by MPU with ' + 'overwrite part\n');
+                                        process.stdout.write('Getting object put by MPU with overwrite part\n');
                                         return s3
                                             .send(
                                                 new GetObjectCommand({
@@ -1041,23 +1031,20 @@ describe('Object Part Copy', () => {
                     }),
             );
 
-            it(
-                'should not allow an account without read persmission on the ' + 'source object to copy the object',
-                () =>
-                    otherAccountS3
-                        .send(
-                            new UploadPartCopyCommand({
-                                Bucket: otherAccountBucket,
-                                Key: otherAccountKey,
-                                CopySource: `${sourceBucketName}/${sourceObjName}`,
-                                PartNumber: 1,
-                                UploadId: otherAccountUploadId,
-                            }),
-                        )
-                        .catch(err => {
-                            checkError(err, 'AccessDenied');
+            it('should not allow an account without read persmission on the source object to copy the object', () =>
+                otherAccountS3
+                    .send(
+                        new UploadPartCopyCommand({
+                            Bucket: otherAccountBucket,
+                            Key: otherAccountKey,
+                            CopySource: `${sourceBucketName}/${sourceObjName}`,
+                            PartNumber: 1,
+                            UploadId: otherAccountUploadId,
                         }),
-            );
+                    )
+                    .catch(err => {
+                        checkError(err, 'AccessDenied');
+                    }));
 
             it(
                 'should not allow an account without write persmission on the ' +
@@ -1082,9 +1069,8 @@ describe('Object Part Copy', () => {
             );
 
             it(
-                'should allow an account with read permission on the ' +
-                    'source object and write permission on the destination ' +
-                    'bucket to upload part copy the object',
+                'should allow an account with read permission on the source object and ' +
+                    'write permission on the destination bucket to upload part copy the object',
                 () =>
                     s3
                         .send(

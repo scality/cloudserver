@@ -19,7 +19,7 @@ const bucket = 'bucketcorstester';
 const methods = ['PUT', 'POST', 'DELETE', 'GET'];
 const originsWithWildcards = ['*.allowedorigin.com', 'http://*.allowedorigin.com', 'http://www.allowedorigin.*'];
 const allowedOrigin = 'http://www.allowedwebsite.com';
-const vary = 'Origin, Access-Control-Request-Headers, ' + 'Access-Control-Request-Method';
+const vary = 'Origin, Access-Control-Request-Headers, Access-Control-Request-Method';
 
 // AWS seems to take a bit long so sometimes by the time we send the request
 // the bucket has not yet been created or the bucket has been deleted.
@@ -42,7 +42,7 @@ describe('Preflight CORS request on non-existing bucket', () => {
         const headers = {};
         methodRequest({ method: 'OPTIONS', bucket, headers, code: 'BadRequest', headersResponse: null }, done);
     });
-    it('should return BadRequest for OPTIONS request without ' + 'Access-Control-Request-Method', done => {
+    it('should return BadRequest for OPTIONS request without Access-Control-Request-Method', done => {
         const headers = {
             Origin: allowedOrigin,
         };
@@ -62,19 +62,19 @@ describe('Preflight CORS request with existing bucket', () => {
             .catch(err => _waitForAWS(done, err));
     });
 
-    it('should allow GET on bucket without cors configuration even if ' + 'Origin header sent', done => {
+    it('should allow GET on bucket without cors configuration even if Origin header sent', done => {
         const headers = {
             Origin: allowedOrigin,
         };
         methodRequest({ method: 'GET', bucket, headers, code: 200, headersResponse: null }, done);
     });
-    it('should allow HEAD on bucket without cors configuration even if ' + 'Origin header sent', done => {
+    it('should allow HEAD on bucket without cors configuration even if Origin header sent', done => {
         const headers = {
             Origin: allowedOrigin,
         };
         methodRequest({ method: 'HEAD', bucket, headers, code: 200, headersResponse: null }, done);
     });
-    it('should respond AccessForbidden for OPTIONS request on bucket without ' + 'CORSConfiguration', done => {
+    it('should respond AccessForbidden for OPTIONS request on bucket without CORSConfiguration', done => {
         const headers = {
             Origin: allowedOrigin,
             'Access-Control-Request-Method': 'GET',
@@ -82,7 +82,7 @@ describe('Preflight CORS request with existing bucket', () => {
         methodRequest({ method: 'OPTIONS', bucket, headers, code: 'AccessForbidden', headersResponse: null }, done);
     });
 
-    describe('allow PUT, POST, DELETE, GET methods and allow only ' + 'one origin', () => {
+    describe('allow PUT, POST, DELETE, GET methods and allow only one origin', () => {
         const corsParams = {
             Bucket: bucket,
             CORSConfiguration: {
@@ -126,11 +126,11 @@ describe('Preflight CORS request with existing bucket', () => {
                 },
             );
         });
-        it('should respond AccessForbidden to OPTIONS request from ' + 'not allowed origin', done => {
+        it('should respond AccessForbidden to OPTIONS request from not allowed origin', done => {
             const headers = {
                 Origin: allowedOrigin,
                 'Access-Control-Request-Method': 'GET',
-                'Access-Control-Request-Headers': 'Origin, Accept, ' + 'Content-Type',
+                'Access-Control-Request-Headers': 'Origin, Accept, Content-Type',
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 'AccessForbidden', headersResponse: null }, done);
         });
@@ -210,7 +210,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 const headers = {
                     Origin: allowedOrigin,
                     'Access-Control-Request-Method': 'GET',
-                    'Access-Control-Request-Headers': 'Origin, Accept, ' + 'Content-Type',
+                    'Access-Control-Request-Headers': 'Origin, Accept, Content-Type',
                 };
                 methodRequest(
                     { method: 'OPTIONS', bucket, headers, code: 'AccessForbidden', headersResponse: null },
@@ -278,14 +278,13 @@ describe('Preflight CORS request with existing bucket', () => {
                 },
             );
             it(
-                'should respond AccessForbidden to OPTIONS request from ' +
-                    'allowed origin and method but with not allowed Access-Control-' +
-                    'Request-Headers',
+                'should respond AccessForbidden to OPTIONS request from allowed ' +
+                    'origin and method but with not allowed Access-Control-Request-Headers',
                 done => {
                     const headers = {
                         Origin: allowedOrigin,
                         'Access-Control-Request-Method': allowedMethod,
-                        'Access-Control-Request-Headers': 'Origin, Accept, ' + 'Content-Type',
+                        'Access-Control-Request-Headers': 'Origin, Accept, Content-Type',
                     };
                     methodRequest(
                         { method: 'OPTIONS', bucket, headers, code: 'AccessForbidden', headersResponse: null },
@@ -427,9 +426,8 @@ describe('Preflight CORS request with existing bucket', () => {
         });
 
         it(
-            'if OPTIONS request matches rule with multiple origins, response ' +
-                'access-control-request-origin header value should be request Origin ' +
-                '(not list of AllowedOrigins)',
+            'if OPTIONS request matches rule with multiple origins, response access-control-request-origin ' +
+                'header value should be request Origin (not list of AllowedOrigins)',
             done => {
                 const headers = {
                     Origin: allowedOrigin,
@@ -445,9 +443,8 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         );
         it(
-            'if OPTIONS request matches rule with origin containing wildcard, ' +
-                'response access-control-request-origin header value should be ' +
-                'request Origin (not value containing wildcard)',
+            'if OPTIONS request matches rule with origin containing wildcard, response ' +
+                'access-control-request-origin header value should be request Origin (not value containing wildcard)',
             done => {
                 const requestOrigin = originContainingWildcard.replace('*', 'test');
                 const headers = {
@@ -464,9 +461,8 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         );
         it(
-            'if OPTIONS request matches rule that allows all origins, ' +
-                'e.g. "*", response access-control-request-origin header should ' +
-                'return "*"',
+            'if OPTIONS request matches rule that allows all origins, e.g. "*", ' +
+                'response access-control-request-origin header should return "*"',
             done => {
                 const headers = {
                     Origin: anotherOrigin,
@@ -482,7 +478,7 @@ describe('Preflight CORS request with existing bucket', () => {
         );
     });
 
-    describe('CORS allows method GET, allows all origins and allows ' + 'header Content-Type', () => {
+    describe('CORS allows method GET, allows all origins and allows header Content-Type', () => {
         const corsParams = {
             Bucket: bucket,
             CORSConfiguration: {
@@ -508,9 +504,8 @@ describe('Preflight CORS request with existing bucket', () => {
         });
 
         it(
-            'should respond with 200 and access control headers to OPTIONS ' +
-                'request from allowed origin and method, even without request ' +
-                'Access-Control-Request-Headers header value',
+            'should respond with 200 and access control headers to OPTIONS request from allowed ' +
+                'origin and method, even without request Access-Control-Request-Headers header value',
             done => {
                 const headers = {
                     Origin: allowedOrigin,
@@ -525,9 +520,8 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         );
         it(
-            'should respond with 200 and access control headers to OPTIONS ' +
-                'request from allowed origin and method with Access-Control-' +
-                "Request-Headers 'Content-Type'",
+            'should respond with 200 and access control headers to OPTIONS request from ' +
+                "allowed origin and method with Access-Control-Request-Headers 'Content-Type'",
             done => {
                 const headers = {
                     Origin: allowedOrigin,
@@ -544,14 +538,13 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         );
         it(
-            'should respond AccessForbidden to OPTIONS request from allowed ' +
-                'origin and method but not allowed Access-Control-Request-Headers ' +
-                'in addition to Content-Type',
+            'should respond AccessForbidden to OPTIONS request from allowed origin and method ' +
+                'but not allowed Access-Control-Request-Headers in addition to Content-Type',
             done => {
                 const headers = {
                     Origin: allowedOrigin,
                     'Access-Control-Request-Method': 'GET',
-                    'Access-Control-Request-Headers': 'Origin, Accept, ' + 'content-type',
+                    'Access-Control-Request-Headers': 'Origin, Accept, content-type',
                 };
                 methodRequest(
                     { method: 'OPTIONS', bucket, headers, code: 'AccessForbidden', headersResponse: null },
@@ -592,9 +585,8 @@ describe('Preflight CORS request with existing bucket', () => {
         });
 
         it(
-            'should return request access-control-request-headers value, ' +
-                'not list of AllowedHeaders from rule or corresponding AllowedHeader ' +
-                'value containing wildcard',
+            'should return request access-control-request-headers value, not list of ' +
+                'AllowedHeaders from rule or corresponding AllowedHeader value containing wildcard',
             done => {
                 const requestHeaderValue = 'amz-meta-header-test, content-type';
                 const headers = {
@@ -631,9 +623,8 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         );
         it(
-            'should remove empty comma-separated values derived from request ' +
-                'Access-Control-Request-Method header and separate values with ' +
-                'spaces when responding with Access-Control-Allow-Headers header',
+            'should remove empty comma-separated values derived from request Access-Control-Request-Method ' +
+                'header and separate values with spaces when responding with Access-Control-Allow-Headers header',
             done => {
                 const requestHeaderValue = 'content-type,,expires';
                 const expectedValue = 'content-type, expires';
@@ -652,9 +643,8 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         );
         it(
-            'should return request Access-Control-Request-Headers value ' +
-                'even if rule allows all headers (e.g. "*"), unlike access-control-' +
-                'allow-origin value',
+            'should return request Access-Control-Request-Headers value even if rule ' +
+                'allows all headers (e.g. "*"), unlike access-control-allow-origin value',
             done => {
                 const requestHeaderValue = 'puppies';
                 const headers = {
@@ -728,9 +718,8 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         );
         it(
-            'should respond with 200 and access control headers to OPTIONS ' +
-                'request from allowed origin, allowed method, even with non-existing ' +
-                'object key',
+            'should respond with 200 and access control headers to OPTIONS request ' +
+                'from allowed origin, allowed method, even with non-existing object key',
             done => {
                 const headers = {
                     Origin: allowedOrigin,

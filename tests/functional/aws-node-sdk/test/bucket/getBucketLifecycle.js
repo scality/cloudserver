@@ -64,7 +64,7 @@ describe('aws-sdk test get bucket lifecycle', () => {
             }
         });
 
-        it('should return NoSuchLifecycleConfiguration error if no lifecycle ' + 'put to bucket', async () => {
+        it('should return NoSuchLifecycleConfiguration error if no lifecycle put to bucket', async () => {
             try {
                 await s3.send(new GetBucketLifecycleConfigurationCommand({ Bucket: bucket }));
                 throw new Error('Expected NoSuchLifecycleConfiguration error');

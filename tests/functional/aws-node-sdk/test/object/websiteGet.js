@@ -145,7 +145,7 @@ describe('User visits bucket website endpoint', () => {
                 s3.deleteObject({ Bucket: bucket, Key: 'index.html' }, err => done(err));
             });
 
-            it('should return 405 when user requests method other than get ' + 'or head', done => {
+            it('should return 405 when user requests method other than get or head', done => {
                 makeRequest(
                     {
                         hostname,
@@ -155,7 +155,7 @@ describe('User visits bucket website endpoint', () => {
                     (err, res) => {
                         assert.strictEqual(err, null, `Err with request ${err}`);
                         assert.strictEqual(res.statusCode, 405);
-                        assert(res.body.indexOf('<head><title>405 ' + 'Method Not Allowed</title></head>') > -1);
+                        assert(res.body.indexOf('<head><title>405 Method Not Allowed</title></head>') > -1);
                         return done();
                     },
                 );
@@ -423,7 +423,7 @@ describe('User visits bucket website endpoint', () => {
                 s3.putBucketWebsite({ Bucket: bucket, WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should serve s3 error file if unfound custom error document ' + 'and an error occurred', done => {
+            it('should serve s3 error file if unfound custom error document and an error occurred', done => {
                 WebsiteConfigTester.checkHTML(
                     {
                         method: 'GET',
@@ -561,7 +561,7 @@ describe('User visits bucket website endpoint', () => {
                 s3.putBucketWebsite({ Bucket: bucket, WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should redirect to https://www.google.com/about if ' + 'https protocols', done => {
+            it('should redirect to https://www.google.com/about if https protocols', done => {
                 WebsiteConfigTester.checkHTML(
                     {
                         method: 'GET',
@@ -657,37 +657,34 @@ describe('User visits bucket website endpoint', () => {
             });
         });
 
-        describe.skip(
-            'redirect requests, with prefix /about and that return ' + '403 error, to prefix redirect/',
-            () => {
-                beforeEach(done => {
-                    const condition = {
-                        KeyPrefixEquals: 'about/',
-                        HttpErrorCodeReturnedEquals: '403',
-                    };
-                    const redirect = {
-                        ReplaceKeyPrefixWith: 'redirect/',
-                    };
-                    putBucketWebsiteAndPutObjectRedirect(redirect, condition, 'redirect/index.html', done);
-                });
+        describe.skip('redirect requests, with prefix /about and that return 403 error, to prefix redirect/', () => {
+            beforeEach(done => {
+                const condition = {
+                    KeyPrefixEquals: 'about/',
+                    HttpErrorCodeReturnedEquals: '403',
+                };
+                const redirect = {
+                    ReplaceKeyPrefixWith: 'redirect/',
+                };
+                putBucketWebsiteAndPutObjectRedirect(redirect, condition, 'redirect/index.html', done);
+            });
 
-                afterEach(done => {
-                    s3.deleteObject({ Bucket: bucket, Key: 'redirect/index.html' }, err => done(err));
-                });
+            afterEach(done => {
+                s3.deleteObject({ Bucket: bucket, Key: 'redirect/index.html' }, err => done(err));
+            });
 
-                it('should serve redirect file if key prefix is equal to ' + '"about" and error 403', done => {
-                    WebsiteConfigTester.checkHTML(
-                        {
-                            method: 'GET',
-                            url: `${endpoint}/about/`,
-                            responseType: 'redirect-user',
-                            redirectUrl: `${endpoint}/redirect/`,
-                        },
-                        done,
-                    );
-                });
-            },
-        );
+            it('should serve redirect file if key prefix is equal to "about" and error 403', done => {
+                WebsiteConfigTester.checkHTML(
+                    {
+                        method: 'GET',
+                        url: `${endpoint}/about/`,
+                        responseType: 'redirect-user',
+                        redirectUrl: `${endpoint}/redirect/`,
+                    },
+                    done,
+                );
+            });
+        });
 
         describe('object redirect to /', () => {
             beforeEach(done => {
@@ -820,7 +817,7 @@ describe('User visits bucket website endpoint', () => {
                 );
             });
 
-            it('should serve custom error 403 with deny on unrelated object ' + 'and no access to key', done => {
+            it('should serve custom error 403 with deny on unrelated object and no access to key', done => {
                 WebsiteConfigTester.checkHTML(
                     {
                         method: 'GET',
@@ -831,7 +828,7 @@ describe('User visits bucket website endpoint', () => {
                 );
             });
 
-            it('should serve custom error 404 with deny on unrelated object ' + 'and access to key', done => {
+            it('should serve custom error 404 with deny on unrelated object and access to key', done => {
                 WebsiteConfigTester.checkHTML(
                     {
                         method: 'GET',

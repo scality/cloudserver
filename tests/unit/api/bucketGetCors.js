@@ -37,8 +37,7 @@ const testGetCorsRequest = _makeCorsRequest();
 
 function _comparePutGetXml(sampleXml, done) {
     const fullXml =
-        '<?xml version="1.0" encoding="UTF-8" ' +
-        'standalone="yes"?><CORSConfiguration>' +
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><CORSConfiguration>' +
         `${sampleXml}</CORSConfiguration>`;
     const testPutCorsRequest = _makeCorsRequest(fullXml);
     bucketPutCors(authInfo, testPutCorsRequest, log, err => {
@@ -61,7 +60,7 @@ describe('getBucketCors API', () => {
     });
     afterEach(() => cleanup());
 
-    it('should return same XML as uploaded for AllowedMethod and ' + 'AllowedOrigin', done => {
+    it('should return same XML as uploaded for AllowedMethod and AllowedOrigin', done => {
         const sampleXml =
             '<CORSRule>' +
             '<AllowedMethod>PUT</AllowedMethod>' +

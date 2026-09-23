@@ -146,7 +146,7 @@ describeSkipIfNotMultiple('AWS backend complete mpu with versioning', function t
             });
         });
 
-        it('versioning not configured: should not return version id ' + 'completing mpu', done => {
+        it('versioning not configured: should not return version id completing mpu', done => {
             const key = `somekey-${genUniqID()}`;
             mpuSetup(s3, key, awsLocation, (err, uploadId, partArray) => {
                 completeAndAssertMpu(s3, { bucket, key, uploadId, partArray, expectVersionId: false }, done);
@@ -154,9 +154,8 @@ describeSkipIfNotMultiple('AWS backend complete mpu with versioning', function t
         });
 
         it(
-            'versioning not configured: if complete mpu on already-existing ' +
-                'object, metadata should be overwritten but data of previous version' +
-                'in AWS should not be deleted',
+            'versioning not configured: if complete mpu on already-existing object, metadata ' +
+                'should be overwritten but data of previous version in AWS should not be deleted',
             function itF(done) {
                 const key = `somekey-${genUniqID()}`;
                 async.waterfall(

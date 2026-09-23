@@ -186,27 +186,24 @@ function _testBehaviorVersioningEnabledOrSuspended(utils, versionIds) {
         },
     );
 
-    it(
-        'should return 404 NoSuchKey getting acl without ' + 'version id if latest version is a delete marker',
-        async () => {
-            const aclParams = {
-                Bucket: bucket,
-                Key: key,
-            };
-            const data = await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
-            assert.strictEqual(data.DeleteMarker, true);
-            assert(data.VersionId);
+    it('should return 404 NoSuchKey getting acl without version id if latest version is a delete marker', async () => {
+        const aclParams = {
+            Bucket: bucket,
+            Key: key,
+        };
+        const data = await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+        assert.strictEqual(data.DeleteMarker, true);
+        assert(data.VersionId);
 
-            try {
-                await utils.getObjectAcl(aclParams);
-                assert.fail('Expected error but operation succeeded');
-            } catch (err) {
-                assert(err);
-                assert.strictEqual(err.Code, 'NoSuchKey');
-                assert.strictEqual(err.$metadata.httpStatusCode, 404);
-            }
-        },
-    );
+        try {
+            await utils.getObjectAcl(aclParams);
+            assert.fail('Expected error but operation succeeded');
+        } catch (err) {
+            assert(err);
+            assert.strictEqual(err.Code, 'NoSuchKey');
+            assert.strictEqual(err.$metadata.httpStatusCode, 404);
+        }
+    });
 
     it(
         'should return 405 MethodNotAllowed getting acl with ' + 'version id if version specified is a delete marker',
@@ -243,7 +240,7 @@ function _testBehaviorVersioningEnabledOrSuspended(utils, versionIds) {
         },
     );
 
-    it('version specific put and get ACL should return version ID ' + 'in response headers', async () => {
+    it('version specific put and get ACL should return version ID in response headers', async () => {
         const firstVersion = versionIds[0];
         const expectedRes = { versionId: firstVersion };
         await utils.putAndGetAcl('public-read', firstVersion, expectedRes);
@@ -287,28 +284,22 @@ describe('versioned put and get object acl ::', () => {
                 await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key }));
             });
 
-            it('should not return version id for non-version specific ' + 'put and get ACL', async () => {
+            it('should not return version id for non-version specific put and get ACL', async () => {
                 const expectedRes = { versionId: undefined };
                 await utils.putAndGetAcl('public-read', undefined, expectedRes);
             });
 
-            it(
-                'should not return version id for version specific ' + 'put and get ACL (version id = "null")',
-                async () => {
-                    const expectedRes = { versionId: 'null' };
-                    await utils.putAndGetAcl('public-read', 'null', expectedRes);
-                },
-            );
+            it('should not return version id for version specific put and get ACL (version id = "null")', async () => {
+                const expectedRes = { versionId: 'null' };
+                await utils.putAndGetAcl('public-read', 'null', expectedRes);
+            });
 
-            it(
-                'should return NoSuchVersion if attempting to put or get acl ' + 'for non-existing version',
-                async () => {
-                    const error = { code: 'NoSuchVersion', statusCode: 404 };
-                    await utils.putAndGetAcl('private', nonExistingId, { error });
-                },
-            );
+            it('should return NoSuchVersion if attempting to put or get acl for non-existing version', async () => {
+                const error = { code: 'NoSuchVersion', statusCode: 404 };
+                await utils.putAndGetAcl('private', nonExistingId, { error });
+            });
 
-            it('should return InvalidArgument if attempting to put/get acl ' + 'for invalid hex string', async () => {
+            it('should return InvalidArgument if attempting to put/get acl for invalid hex string', async () => {
                 const error = { code: 'InvalidArgument', statusCode: 400 };
                 await utils.putAndGetAcl('private', invalidId, { error });
             });
@@ -373,7 +364,7 @@ describe('versioned put and get object acl ::', () => {
             });
 
             it(
-                'should not create version putting ACL on a' +
+                'should not create version putting ACL on a ' +
                     'version-enabled bucket where no version id is specified',
                 async () => {
                     const params = { Bucket: bucket, Key: key, ACL: 'public-read' };

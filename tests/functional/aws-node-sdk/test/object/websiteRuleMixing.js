@@ -147,7 +147,7 @@ describe(
 
             afterEach(async () => await bucketUtil.empty(bucket));
 
-            it('should return 403 instead of x-amz-website-redirect-location ' + 'header location', done => {
+            it('should return 403 instead of x-amz-website-redirect-location header location', done => {
                 WebsiteConfigTester.checkHTML(
                     {
                         method: 'GET',
@@ -158,22 +158,19 @@ describe(
                 );
             });
 
-            it(
-                'should return 403 instead of x-amz-website-redirect-location ' + 'header location on HEAD request',
-                done => {
-                    WebsiteConfigTester.checkHTML(
-                        {
-                            method: 'HEAD',
-                            url: endpoint,
-                            responseType: '403-access-denied',
-                        },
-                        done,
-                    );
-                },
-            );
+            it('should return 403 instead of x-amz-website-redirect-location header location on HEAD request', done => {
+                WebsiteConfigTester.checkHTML(
+                    {
+                        method: 'HEAD',
+                        url: endpoint,
+                        responseType: '403-access-denied',
+                    },
+                    done,
+                );
+            });
         });
 
-        describe('when key with header is private' + 'and website config has error condition routing rule', () => {
+        describe('when key with header is private and website config has error condition routing rule', () => {
             beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
@@ -208,8 +205,7 @@ describe(
 
             it(
                 `should redirect to ${redirectEndpoint} since error 403 ` +
-                    'occurred instead of x-amz-website-redirect-location header ' +
-                    'location on GET request',
+                    'occurred instead of x-amz-website-redirect-location header location on GET request',
                 done => {
                     WebsiteConfigTester.checkHTML(
                         {
@@ -225,8 +221,7 @@ describe(
 
             it(
                 `should redirect to ${redirectEndpoint} since error 403 ` +
-                    'occurred instead of x-amz-website-redirect-location header ' +
-                    'location on HEAD request',
+                    'occurred instead of x-amz-website-redirect-location header location on HEAD request',
                 done => {
                     WebsiteConfigTester.checkHTML(
                         {
@@ -322,8 +317,7 @@ describe(
 
             it(
                 `should redirect GET request to ${redirectEndpoint}about/ ` +
-                    'instead of about/ key x-amz-website-redirect-location ' +
-                    'header location',
+                    'instead of about/ key x-amz-website-redirect-location header location',
                 done => {
                     WebsiteConfigTester.checkHTML(
                         {
@@ -339,8 +333,7 @@ describe(
 
             it(
                 `should redirect HEAD request to ${redirectEndpoint}about ` +
-                    'instead of about/ key x-amz-website-redirect-location ' +
-                    'header location',
+                    'instead of about/ key x-amz-website-redirect-location header location',
                 done => {
                     WebsiteConfigTester.checkHTML(
                         {

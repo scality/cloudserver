@@ -406,7 +406,7 @@ describe('s3cmd copyObject without MPU to same bucket', function copyStuff() {
     });
 });
 
-describe('s3cmd copyObject without MPU to different bucket ' + '(always unencrypted)', function copyStuff() {
+describe('s3cmd copyObject without MPU to different bucket (always unencrypted)', function copyStuff() {
     const copyBucket = 'receiverbucket';
     this.timeout(40000);
 
@@ -414,7 +414,7 @@ describe('s3cmd copyObject without MPU to different bucket ' + '(always unencryp
         exec(['mb', `s3://${copyBucket}`], done);
     });
 
-    after('delete downloaded file and receiver bucket' + 'copied', done => {
+    after('delete downloaded file and receiver bucket copied', done => {
         deleteFile(downloadCopy, () => {
             exec(['rb', `s3://${copyBucket}`], done);
         });
@@ -464,7 +464,7 @@ describe('s3cmd put and get object ACLs', function aclObj() {
         });
     });
 
-    it('should return error if set acl for ' + 'nonexistent object', done => {
+    it('should return error if set acl for nonexistent object', done => {
         exec(['setacl', `s3://${bucket}/${nonexist}`, '--acl-public'], done, 12);
     });
 });
@@ -625,7 +625,7 @@ MPUploadSplitter.forEach(file => {
     });
 });
 
-describe('s3cmd put, get and delete object with spaces ' + 'in object key names', function test() {
+describe('s3cmd put, get and delete object with spaces in object key names', function test() {
     this.timeout(0);
     const keyWithSpacesAndPluses = 'key with spaces and + pluses +';
     before('create file to put', done => {

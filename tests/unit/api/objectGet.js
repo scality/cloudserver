@@ -308,16 +308,11 @@ describe('objectGet API', () => {
                 },
                 (testUploadId, partHash, next) => {
                     const completeBody =
-                        '<CompleteMultipartUpload>' +
-                        '<Part>' +
-                        '<PartNumber>1</PartNumber>' +
+                        '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                         `<ETag>"${partHash}"</ETag>` +
-                        '</Part>' +
-                        '<Part>' +
-                        '<PartNumber>2</PartNumber>' +
+                        '</Part><Part><PartNumber>2</PartNumber>' +
                         `<ETag>"${partHash}"</ETag>` +
-                        '</Part>' +
-                        '</CompleteMultipartUpload>';
+                        '</Part></CompleteMultipartUpload>';
                     const completeRequest = {
                         bucketName,
                         namespace,

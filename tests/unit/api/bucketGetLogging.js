@@ -62,13 +62,11 @@ function createGetLoggingRequest(bucketName, headers = {}) {
 
 function createValidLoggingXML(targetBucket, targetPrefix = 'logs/') {
     return (
-        '<?xml version="1.0" encoding="UTF-8"?>' +
-        '<BucketLoggingStatus xmlns="http://doc.s3.amazonaws.com/2006-03-01">' +
-        '<LoggingEnabled>' +
+        '<?xml version="1.0" encoding="UTF-8"?><BucketLoggingStatus ' +
+        'xmlns="http://doc.s3.amazonaws.com/2006-03-01"><LoggingEnabled>' +
         `<TargetBucket>${targetBucket}</TargetBucket>` +
         `<TargetPrefix>${targetPrefix}</TargetPrefix>` +
-        '</LoggingEnabled>' +
-        '</BucketLoggingStatus>'
+        '</LoggingEnabled></BucketLoggingStatus>'
     );
 }
 

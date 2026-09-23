@@ -36,9 +36,7 @@ describe('putBucketACL API', () => {
     it('should parse a grantheader', () => {
         const grantRead =
             `uri=${constants.logId}, ` +
-            'emailAddress="test@testing.com", ' +
-            'emailAddress="test2@testly.com", ' +
-            'id="sdfsdfsfwwiieohefs"';
+            'emailAddress="test@testing.com", emailAddress="test2@testly.com", id="sdfsdfsfwwiieohefs"';
         const grantReadHeader = aclUtils.parseGrant(grantRead, 'read');
         const firstIdentifier = grantReadHeader[0].identifier;
         assert.strictEqual(firstIdentifier, constants.logId);
@@ -94,7 +92,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should set a canned public-read ACL followed by ' + 'a canned authenticated-read ACL', done => {
+    it('should set a canned public-read ACL followed by a canned authenticated-read ACL', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -132,7 +130,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should set a canned private ACL ' + 'followed by a log-delivery-write ACL', done => {
+    it('should set a canned private ACL followed by a log-delivery-write ACL', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -178,11 +176,11 @@ describe('putBucketACL API', () => {
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
-                    'emailaddress="sampleaccount1@sampling.com"' + ',emailaddress="sampleaccount2@sampling.com"',
+                    'emailaddress="sampleaccount1@sampling.com",emailaddress="sampleaccount2@sampling.com"',
                 'x-amz-grant-read': `uri=${constants.logId}`,
                 'x-amz-grant-write': `uri=${constants.publicId}`,
-                'x-amz-grant-read-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2be',
-                'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2bf',
+                'x-amz-grant-read-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
+                'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf',
             },
             url: '/?acl',
             query: { acl: '' },
@@ -208,11 +206,11 @@ describe('putBucketACL API', () => {
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
-                    'emailaddress="sampleaccount1@sampling.com"' + ',emailaddress="sampleaccount2@sampling.com"',
+                    'emailaddress="sampleaccount1@sampling.com",emailaddress="sampleaccount2@sampling.com"',
                 'x-amz-grant-read': 'emailaddress="sampleaccount1@sampling.com"',
                 'x-amz-grant-write': 'emailaddress="sampleaccount1@sampling.com"',
-                'x-amz-grant-read-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2be',
-                'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2bf',
+                'x-amz-grant-read-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
+                'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf',
             },
             url: '/?acl',
             query: { acl: '' },
@@ -255,14 +253,14 @@ describe('putBucketACL API', () => {
         );
     });
 
-    it('should return an error if invalid email ' + 'provided in ACL header request', done => {
+    it('should return an error if invalid email provided in ACL header request', done => {
         const testACLRequest = {
             bucketName,
             namespace,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
-                    'emailaddress="sampleaccount1@sampling.com"' + ',emailaddress="nonexistentEmail@sampling.com"',
+                    'emailaddress="sampleaccount1@sampling.com",emailaddress="nonexistentEmail@sampling.com"',
             },
             url: '/?acl',
             query: { acl: '' },
@@ -300,11 +298,7 @@ describe('putBucketACL API', () => {
                 '<Grant>' +
                 '<Grantee xsi:type="Group">' +
                 `<URI>${constants.publicId}</URI>` +
-                '</Grantee>' +
-                '<Permission>READ</Permission>' +
-                '</Grant>' +
-                '<Grant>' +
-                '<Grantee xsi:type="Group">' +
+                '</Grantee><Permission>READ</Permission></Grant><Grant><Grantee xsi:type="Group">' +
                 `<URI>${constants.logId}</URI>` +
                 '</Grantee>' +
                 '<Permission>WRITE</Permission>' +
@@ -448,7 +442,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid grantee user ID ' + 'provided in ACL request body', done => {
+    it('should return an error if invalid grantee user ID provided in ACL request body', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -481,7 +475,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid email ' + 'address provided in ACLs set out in request body', done => {
+    it('should return an error if invalid email address provided in ACLs set out in request body', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -513,7 +507,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if xml provided does not match s3 ' + 'scheme for setting ACLs', done => {
+    it('should return an error if xml provided does not match s3 scheme for setting ACLs', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -635,7 +629,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid group ' + 'uri provided in ACLs set out in request body', done => {
+    it('should return an error if invalid group uri provided in ACLs set out in request body', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -670,13 +664,13 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid group uri' + 'provided in ACL header request', done => {
+    it('should return an error if invalid group uri provided in ACL header request', done => {
         const testACLRequest = {
             bucketName,
             namespace,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
-                'x-amz-grant-full-control': 'uri="http://acs.amazonaws.com/groups/' + 'global/NOTAVALIDGROUP"',
+                'x-amz-grant-full-control': 'uri="http://acs.amazonaws.com/groups/global/NOTAVALIDGROUP"',
             },
             url: '/?acl',
             query: { acl: '' },

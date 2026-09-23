@@ -115,9 +115,8 @@ describe('PUT object', () => {
         });
 
         it(
-            'should return InvalidRequest error if putting object with ' +
-                'object lock retention date and mode when object lock is not ' +
-                'enabled on the bucket',
+            'should return InvalidRequest error if putting object with object lock ' +
+                'retention date and mode when object lock is not enabled on the bucket',
             done => {
                 const date = new Date(2050, 10, 10);
                 const params = {
@@ -140,25 +139,21 @@ describe('PUT object', () => {
             },
         );
 
-        it(
-            'should return Not Implemented error for obj. encryption using ' + 'customer-provided encryption keys',
-            done => {
-                const params = { Bucket: bucket, Key: 'key', SSECustomerAlgorithm: 'AES256' };
-                s3.send(new PutObjectCommand(params))
-                    .then(() => {
-                        assert(false, 'Expected failure but got success');
-                    })
-                    .catch(err => {
-                        assert.strictEqual(err.name, 'NotImplemented');
-                        done();
-                    });
-            },
-        );
+        it('should return Not Implemented error for obj. encryption using customer-provided encryption keys', done => {
+            const params = { Bucket: bucket, Key: 'key', SSECustomerAlgorithm: 'AES256' };
+            s3.send(new PutObjectCommand(params))
+                .then(() => {
+                    assert(false, 'Expected failure but got success');
+                })
+                .catch(err => {
+                    assert.strictEqual(err.name, 'NotImplemented');
+                    done();
+                });
+        });
 
         it(
-            'should return InvalidRedirectLocation if putting object ' +
-                'with x-amz-website-redirect-location header that does not start ' +
-                "with 'http://', 'https://' or '/'",
+            'should return InvalidRedirectLocation if putting object with x-amz-website-redirect-location ' +
+                "header that does not start with 'http://', 'https://' or '/'",
             done => {
                 const params = { Bucket: bucket, Key: 'key', WebsiteRedirectLocation: 'google.com' };
                 s3.send(new PutObjectCommand(params))
@@ -276,7 +271,7 @@ describe('PUT object', () => {
                     });
             });
 
-            it('should return InvalidArgument if using the same key twice ' + 'and empty tags', done => {
+            it('should return InvalidArgument if using the same key twice and empty tags', done => {
                 s3.send(
                     new PutObjectCommand({
                         Bucket: bucket,
@@ -304,7 +299,7 @@ describe('PUT object', () => {
                     });
             });
 
-            it('should return InvalidArgument putting object with ' + 'bad encoded tags', done => {
+            it('should return InvalidArgument putting object with bad encoded tags', done => {
                 s3.send(new PutObjectCommand({ Bucket: bucket, Key: object, Tagging: 'key1==value1' }))
                     .then(() => {
                         assert(false, 'Expected failure but got success');
@@ -315,7 +310,7 @@ describe('PUT object', () => {
                     });
             });
 
-            it('should return InvalidArgument putting object tag with ' + 'invalid characters: %', done => {
+            it('should return InvalidArgument putting object tag with invalid characters: %', done => {
                 const value = 'value1%';
                 s3.send(new PutObjectCommand({ Bucket: bucket, Key: object, Tagging: `key1=${value}` }))
                     .then(() => {
@@ -469,7 +464,7 @@ describe('PUT object with object lock', () => {
                     })
                     .catch(err => {
                         const expectedErrMessage =
-                            'x-amz-object-lock-retain-until-date and ' + 'x-amz-object-lock-mode must both be supplied';
+                            'x-amz-object-lock-retain-until-date and x-amz-object-lock-mode must both be supplied';
                         assert.strictEqual(err.name, 'InvalidArgument');
                         assert(err.toString().includes(expectedErrMessage));
                         done();
@@ -492,7 +487,7 @@ describe('PUT object with object lock', () => {
                     })
                     .catch(err => {
                         const expectedErrMessage =
-                            'x-amz-object-lock-retain-until-date and ' + 'x-amz-object-lock-mode must both be supplied';
+                            'x-amz-object-lock-retain-until-date and x-amz-object-lock-mode must both be supplied';
                         assert.strictEqual(err.name, 'InvalidArgument');
                         assert(err.toString().includes(expectedErrMessage));
                         done();

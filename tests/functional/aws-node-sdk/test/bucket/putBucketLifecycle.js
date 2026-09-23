@@ -99,7 +99,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
             await s3.send(new PutBucketLifecycleConfigurationCommand(params));
         });
 
-        it('should allow Expiration Days=0 (explicit bucket-emptying intent) ' + 'and round-trip it', async () => {
+        it('should allow Expiration Days=0 (explicit bucket-emptying intent) and round-trip it', async () => {
             const params = getLifecycleParams({ key: 'Expiration', value: { Days: 0 } });
             await s3.send(new PutBucketLifecycleConfigurationCommand(params));
             const got = await s3.send(new GetBucketLifecycleConfigurationCommand({ Bucket: bucket }));
@@ -168,41 +168,38 @@ describe('aws-sdk test put bucket lifecycle', () => {
             assert.strictEqual(got.Rules[0].AbortIncompleteMultipartUpload.DaysAfterInitiation, 0);
         });
 
-        it(
-            'should not allow lifecycle configuration with duplicated rule id ' + 'and with Origin header set',
-            async () => {
-                const origin = 'http://www.allowedwebsite.com';
-                const lifecycleConfig = {
-                    Rules: [expirationRule, expirationRule],
-                };
-                const params = {
-                    Bucket: bucket,
-                    LifecycleConfiguration: lifecycleConfig,
-                };
+        it('should not allow lifecycle configuration with duplicated rule id and with Origin header set', async () => {
+            const origin = 'http://www.allowedwebsite.com';
+            const lifecycleConfig = {
+                Rules: [expirationRule, expirationRule],
+            };
+            const params = {
+                Bucket: bucket,
+                LifecycleConfiguration: lifecycleConfig,
+            };
 
-                const clientConfig = getConfig('default', { signatureVersion: 'v4' });
-                const clientWithOrigin = new S3Client({
-                    ...clientConfig,
-                    requestHandler: {
-                        handle: async request => {
-                            if (!request.headers) {
-                                // eslint-disable-next-line no-param-reassign
-                                request.headers = {};
-                            }
+            const clientConfig = getConfig('default', { signatureVersion: 'v4' });
+            const clientWithOrigin = new S3Client({
+                ...clientConfig,
+                requestHandler: {
+                    handle: async request => {
+                        if (!request.headers) {
                             // eslint-disable-next-line no-param-reassign
-                            request.headers.origin = origin;
-                            return clientConfig.requestHandler.handle(request);
-                        },
+                            request.headers = {};
+                        }
+                        // eslint-disable-next-line no-param-reassign
+                        request.headers.origin = origin;
+                        return clientConfig.requestHandler.handle(request);
                     },
-                });
-                try {
-                    await clientWithOrigin.send(new PutBucketLifecycleConfigurationCommand(params));
-                    throw new Error('Expected InvalidRequest error');
-                } catch (err) {
-                    assertError(err, 'InvalidRequest');
-                }
-            },
-        );
+                },
+            });
+            try {
+                await clientWithOrigin.send(new PutBucketLifecycleConfigurationCommand(params));
+                throw new Error('Expected InvalidRequest error');
+            } catch (err) {
+                assertError(err, 'InvalidRequest');
+            }
+        });
 
         it('should not allow lifecycle config with no Status', async () => {
             const params = getLifecycleParams({ key: 'Status', value: '' });
@@ -278,7 +275,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
             }
         });
 
-        it('should not allow lifecycle config with Filter.And.Prefix length ' + '> 1024', async () => {
+        it('should not allow lifecycle config with Filter.And.Prefix length > 1024', async () => {
             const params = getLifecycleParams({
                 key: 'Filter',
                 value: {
@@ -625,9 +622,8 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     assert.strictEqual(err.name, 'InvalidRequest');
                     assert.strictEqual(
                         err.message,
-                        "'StorageClass' must be different for " +
-                            "'NoncurrentVersionTransition' actions in same " +
-                            "'Rule' with prefix ''",
+                        "'StorageClass' must be different for 'NoncurrentVersionTransition' " +
+                            "actions in same 'Rule' with prefix ''",
                     );
                 }
             });
@@ -689,7 +685,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     if (err.name === 'InvalidArgument') {
                         assert.strictEqual(
                             err.message,
-                            "'NoncurrentDays' in NoncurrentVersionTransition " + 'action must be nonnegative',
+                            "'NoncurrentDays' in NoncurrentVersionTransition action must be nonnegative",
                         );
                     }
                 }
@@ -812,7 +808,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     assert.strictEqual(err.name, 'InvalidRequest');
                     assert.strictEqual(
                         err.message,
-                        "'StorageClass' must be different for 'Transition' " + "actions in same 'Rule' with prefix ''",
+                        "'StorageClass' must be different for 'Transition' actions in same 'Rule' with prefix ''",
                     );
                 }
             });
@@ -846,7 +842,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
             });
 
             // TODO: Upgrade to aws-sdk >= 2.60.0 for correct Date field support
-            it.skip('should not allow speficying both Days and Date value ' + 'across transitions', done => {
+            it.skip('should not allow speficying both Days and Date value across transitions', done => {
                 const transitions = [
                     {
                         Date: '2016-01-01T00:00:00.000Z',
@@ -862,38 +858,35 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     assert.strictEqual(err.code, 'InvalidRequest');
                     assert.strictEqual(
                         err.message,
-                        "Found mixed 'Date' and 'Days' based Transition " + "actions in lifecycle rule for prefix ''",
+                        "Found mixed 'Date' and 'Days' based Transition actions in lifecycle rule for prefix ''",
                     );
                     done();
                 });
             });
 
-            it(
-                'should not allow speficying both Days and Date value ' + 'across transitions and expiration',
-                async () => {
-                    const transitions = [
-                        {
-                            Days: 1,
-                            StorageClass: 'us-east-2',
-                        },
-                    ];
-                    const params = getParams(transitions);
-                    params.LifecycleConfiguration.Rules[0].Expiration = {
-                        Date: new Date('2016-01-01T00:00:00.000Z'), // Use proper Date object
-                    };
-                    try {
-                        await s3.send(new PutBucketLifecycleConfigurationCommand(params));
-                        throw new Error('Expected InvalidRequest error');
-                    } catch (err) {
-                        assert.strictEqual(err.name, 'InvalidRequest');
-                        assert.strictEqual(
-                            err.message,
-                            "Found mixed 'Date' and 'Days' based Expiration and " +
-                                "Transition actions in lifecycle rule for prefix ''",
-                        );
-                    }
-                },
-            );
+            it('should not allow speficying both Days and Date value across transitions and expiration', async () => {
+                const transitions = [
+                    {
+                        Days: 1,
+                        StorageClass: 'us-east-2',
+                    },
+                ];
+                const params = getParams(transitions);
+                params.LifecycleConfiguration.Rules[0].Expiration = {
+                    Date: new Date('2016-01-01T00:00:00.000Z'), // Use proper Date object
+                };
+                try {
+                    await s3.send(new PutBucketLifecycleConfigurationCommand(params));
+                    throw new Error('Expected InvalidRequest error');
+                } catch (err) {
+                    assert.strictEqual(err.name, 'InvalidRequest');
+                    assert.strictEqual(
+                        err.message,
+                        "Found mixed 'Date' and 'Days' based Expiration and " +
+                            "Transition actions in lifecycle rule for prefix ''",
+                    );
+                }
+            });
         });
 
         // NoncurrentVersionTransitions not implemented
@@ -927,7 +920,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
             });
         });
 
-        it.skip('should not allow config when specifying ' + 'NoncurrentVersionTransitions', async () => {
+        it.skip('should not allow config when specifying NoncurrentVersionTransitions', async () => {
             const params = {
                 Bucket: bucket,
                 LifecycleConfiguration: {

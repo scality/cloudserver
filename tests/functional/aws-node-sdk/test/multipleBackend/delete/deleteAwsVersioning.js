@@ -182,7 +182,7 @@ function _awsGetAssertDeleted(params, cb) {
 }
 
 describeSkipIfNotMultiple(
-    'AWS backend delete object w. versioning: ' + 'using object location constraint',
+    'AWS backend delete object w. versioning: using object location constraint',
     function testSuite() {
         this.timeout(120000);
         withV4(sigCfg => {
@@ -271,7 +271,7 @@ describeSkipIfNotMultiple(
                 },
             );
 
-            it('versioning suspended: should delete a specific version in AWS ' + 'backend successfully', done => {
+            it('versioning suspended: should delete a specific version in AWS backend successfully', done => {
                 const key = `somekey-${genUniqID()}`;
                 async.waterfall(
                     [
@@ -290,7 +290,7 @@ describeSkipIfNotMultiple(
                 );
             });
 
-            it('versioning enabled: should delete a specific version in AWS ' + 'backend successfully', done => {
+            it('versioning enabled: should delete a specific version in AWS backend successfully', done => {
                 const key = `somekey-${genUniqID()}`;
                 async.waterfall(
                     [
@@ -315,9 +315,8 @@ describeSkipIfNotMultiple(
             });
 
             it(
-                'versioning not configured: deleting existing object should ' +
-                    'not return version id or x-amz-delete-marker: true but should ' +
-                    'create a delete marker in aws ',
+                'versioning not configured: deleting existing object should not return version ' +
+                    'id or x-amz-delete-marker: true but should create a delete marker in aws ',
                 done => {
                     const key = `somekey-${genUniqID()}`;
                     async.waterfall(
@@ -357,9 +356,8 @@ describeSkipIfNotMultiple(
             // delete marker with the version id "null", which overwrites an
             // existing null version in s3 metadata.
             it(
-                'versioning suspended: creating a delete marker will overwrite an ' +
-                    'existing null version that is the latest version in s3 metadata,' +
-                    ' but the data of the first null version will remain in AWS',
+                'versioning suspended: creating a delete marker will overwrite an existing null version that is ' +
+                    'the latest version in s3 metadata, but the data of the first null version will remain in AWS',
                 function itF(done) {
                     const key = `somekey-${genUniqID()}`;
                     async.waterfall(
@@ -397,9 +395,8 @@ describeSkipIfNotMultiple(
             // delete marker with the version id "null" which is supposed to
             // overwrite any existing null version.
             it(
-                'versioning suspended: creating a delete marker will overwrite an ' +
-                    'existing null version that is not the latest version in s3 metadata,' +
-                    ' but the data of the first null version will remain in AWS',
+                'versioning suspended: creating a delete marker will overwrite an existing null version that is ' +
+                    'not the latest version in s3 metadata, but the data of the first null version will remain in AWS',
                 function itF(done) {
                     const key = `somekey-${genUniqID()}`;
                     const data = [undefined, 'data1'];
@@ -478,7 +475,7 @@ describeSkipIfNotMultiple(
                 },
             );
 
-            it('versioning enabled: should delete a delete marker in s3 and ' + 'aws successfully', done => {
+            it('versioning enabled: should delete a delete marker in s3 and aws successfully', done => {
                 const key = `somekey-${genUniqID()}`;
                 async.waterfall(
                     [
@@ -558,7 +555,7 @@ describeSkipIfNotMultiple(
                 },
             );
 
-            it('should get the new latest version after deleting the latest' + 'specific version', done => {
+            it('should get the new latest version after deleting the latest specific version', done => {
                 const key = `somekey-${genUniqID()}`;
                 const data = [...Array(4).keys()].map(i => i.toString());
                 async.waterfall(
@@ -684,7 +681,7 @@ describeSkipIfNotMultiple(
 );
 
 describeSkipIfNotMultiple(
-    'AWS backend delete object w. versioning: ' + 'using bucket location constraint',
+    'AWS backend delete object w. versioning: using bucket location constraint',
     function testSuite() {
         this.timeout(120000);
         const createBucketParams = {
@@ -721,9 +718,8 @@ describeSkipIfNotMultiple(
             });
 
             it(
-                'versioning not configured: deleting non-existing object should ' +
-                    'not return version id or x-amz-delete-marker: true nor create a ' +
-                    'delete marker in aws ',
+                'versioning not configured: deleting non-existing object should not return ' +
+                    'version id or x-amz-delete-marker: true nor create a delete marker in aws ',
                 done => {
                     const key = `somekey-${genUniqID()}`;
                     async.waterfall(
@@ -780,7 +776,7 @@ describeSkipIfNotMultiple(
 );
 
 describeSkipIfNotMultiple(
-    'AWS backend delete multiple objects w. versioning: ' + 'using object location constraint',
+    'AWS backend delete multiple objects w. versioning: using object location constraint',
     function testSuite() {
         this.timeout(120000);
         withV4(sigCfg => {
@@ -834,7 +830,7 @@ describeSkipIfNotMultiple(
                 },
             );
 
-            it('versioning suspended: should delete a specific version in AWS ' + 'backend successfully', done => {
+            it('versioning suspended: should delete a specific version in AWS backend successfully', done => {
                 const key = `somekey-${Date.now()}`;
                 async.waterfall(
                     [
@@ -854,7 +850,7 @@ describeSkipIfNotMultiple(
                 );
             });
 
-            it('versioning enabled: should delete a specific version in AWS ' + 'backend successfully', done => {
+            it('versioning enabled: should delete a specific version in AWS backend successfully', done => {
                 const key = `somekey-${Date.now()}`;
                 async.waterfall(
                     [

@@ -354,8 +354,7 @@ describe('routeBackbeat', () => {
 
         it('should repair master when putting metadata of a new version', async () => {
             mockRequest.url =
-                '/_/backbeat/metadata/bucket0/key0' +
-                '?accountId=123456789012&versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
+                '/_/backbeat/metadata/bucket0/key0?accountId=123456789012&versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
             const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
             putObjectMDStub.onCall(0).callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
@@ -380,8 +379,7 @@ describe('routeBackbeat', () => {
 
         it('should not repair master when updating metadata of an existing version', async () => {
             mockRequest.url =
-                '/_/backbeat/metadata/bucket0/key0' +
-                '?accountId=123456789012&versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
+                '/_/backbeat/metadata/bucket0/key0?accountId=123456789012&versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
             sandbox.stub(metadata, 'putObjectMD').callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
                 assert.strictEqual(options.repairMaster, undefined);
@@ -403,7 +401,7 @@ describe('routeBackbeat', () => {
 
             mockRequest = preparePutMetadataRequest({ microVersionId: incomingRaw });
             mockRequest.headers['x-scal-micro-version-id'] = versioning.VersionID.encode(incomingRaw);
-            mockRequest.url = '/_/backbeat/metadata/bucket0/key0' + '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
+            mockRequest.url = '/_/backbeat/metadata/bucket0/key0?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
             metadataUtils.standardMetadataValidateBucketAndObj.callsFake((_params, _denies, _log, callback) => {
                 callback(null, bucketInfo, { microVersionId: storedRaw });
@@ -430,7 +428,7 @@ describe('routeBackbeat', () => {
 
             mockRequest = preparePutMetadataRequest({ microVersionId: incomingRaw });
             mockRequest.headers['x-scal-micro-version-id'] = versioning.VersionID.encode(incomingRaw);
-            mockRequest.url = '/_/backbeat/metadata/bucket0/key0' + '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
+            mockRequest.url = '/_/backbeat/metadata/bucket0/key0?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
             metadataUtils.standardMetadataValidateBucketAndObj.callsFake((_params, _denies, _log, callback) => {
                 callback(null, bucketInfo, { microVersionId: incomingRaw });
@@ -454,7 +452,7 @@ describe('routeBackbeat', () => {
 
                 mockRequest = preparePutMetadataRequest({ microVersionId: incomingRaw });
                 mockRequest.headers['x-scal-micro-version-id'] = versioning.VersionID.encode(incomingRaw);
-                mockRequest.url = '/_/backbeat/metadata/bucket0/key0' + '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
+                mockRequest.url = '/_/backbeat/metadata/bucket0/key0?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
                 metadataUtils.standardMetadataValidateBucketAndObj.callsFake((_params, _denies, _log, callback) => {
                     callback(null, bucketInfo, {});
@@ -485,7 +483,7 @@ describe('routeBackbeat', () => {
 
             mockRequest = preparePutMetadataRequest({ microVersionId: incomingRaw });
             mockRequest.headers['x-scal-micro-version-id'] = versioning.VersionID.encode(incomingRaw);
-            mockRequest.url = '/_/backbeat/metadata/bucket0/key0' + '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
+            mockRequest.url = '/_/backbeat/metadata/bucket0/key0?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
 
             metadataUtils.standardMetadataValidateBucketAndObj.callsFake((_params, _denies, _log, callback) => {
                 callback(null, bucketInfo, { microVersionId: storedRaw });

@@ -7,7 +7,7 @@ const DummyService = require('../DummyService');
 const { DummyRequestLogger } = require('../helpers');
 
 const missingVerIdInternalError = errorInstances.InternalError.customizeDescription(
-    'Invalid state. Please ensure versioning is enabled ' + 'in AWS for the location constraint and try again.',
+    'Invalid state. Please ensure versioning is enabled in AWS for the location constraint and try again.',
 );
 
 const log = new DummyRequestLogger();
@@ -52,22 +52,22 @@ const assertFailure = (err, cb) => {
 };
 const genTests = [
     {
-        msg: 'should return success if supportsVersioning === true ' + 'and backend versioning is enabled',
+        msg: 'should return success if supportsVersioning === true and backend versioning is enabled',
         input: { supportsVersioning: true, enableMockVersioning: true },
         callback: assertSuccess,
     },
     {
-        msg: 'should return success if supportsVersioning === false ' + 'and backend versioning is enabled',
+        msg: 'should return success if supportsVersioning === false and backend versioning is enabled',
         input: { supportsVersioning: false, enableMockVersioning: true },
         callback: assertSuccess,
     },
     {
-        msg: 'should return error if supportsVersioning === true ' + 'and backend versioning is disabled',
+        msg: 'should return error if supportsVersioning === true and backend versioning is disabled',
         input: { supportsVersioning: true, enableMockVersioning: false },
         callback: assertFailure,
     },
     {
-        msg: 'should return success if supportsVersioning === false ' + 'and backend versioning is disabled',
+        msg: 'should return success if supportsVersioning === false and backend versioning is disabled',
         input: { supportsVersioning: false, enableMockVersioning: false },
         callback: assertSuccess,
     },
@@ -157,22 +157,22 @@ describe('AwsClient::healthcheck', () => {
 
     const tests = [
         {
-            msg: 'should return success if supportsVersioning === true ' + 'and backend versioning is enabled',
+            msg: 'should return success if supportsVersioning === true and backend versioning is enabled',
             input: { supportsVersioning: true, enableMockVersioning: true },
             callback: assertSuccessVersioned,
         },
         {
-            msg: 'should return success if supportsVersioning === false ' + 'and backend versioning is enabled',
+            msg: 'should return success if supportsVersioning === false and backend versioning is enabled',
             input: { supportsVersioning: false, enableMockVersioning: true },
             callback: assertSuccessNonVersioned,
         },
         {
-            msg: 'should return error if supportsVersioning === true ' + ' and backend versioning is disabled',
+            msg: 'should return error if supportsVersioning === true  and backend versioning is disabled',
             input: { supportsVersioning: true, enableMockVersioning: false },
             callback: assertFailure,
         },
         {
-            msg: 'should return success if supportsVersioning === false ' + 'and backend versioning is disabled',
+            msg: 'should return success if supportsVersioning === false and backend versioning is disabled',
             input: { supportsVersioning: false, enableMockVersioning: false },
             callback: assertSuccessNonVersioned,
         },

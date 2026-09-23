@@ -514,7 +514,7 @@ describeSkipIfNotMultiple('Put Copy Part to AZURE', function describeF() {
                 );
             });
 
-            it('should copy part from Azure object with range to MPU ' + 'with AWS location', function ifF(done) {
+            it('should copy part from Azure object with range to MPU with AWS location', function ifF(done) {
                 const params = {
                     Bucket: memBucketName,
                     CopySource: `${azureContainerName}/${this.test.keyNameNormalAzure}`,
@@ -559,7 +559,7 @@ describeSkipIfNotMultiple('Put Copy Part to AZURE', function describeF() {
                 );
             });
 
-            it('should copy 5 Mb part from a memory location to MPU with ' + 'Azure location', function ifF(done) {
+            it('should copy 5 Mb part from a memory location to MPU with Azure location', function ifF(done) {
                 const params = {
                     Bucket: azureContainerName,
                     CopySource: `${azureContainerName}/${this.test.keyNameFiveMbMem}`,
@@ -605,7 +605,7 @@ describeSkipIfNotMultiple('Put Copy Part to AZURE', function describeF() {
                         .then(() => done())
                         .catch(done);
                 });
-                it('should copy part from Azure to Azure with existing ' + 'parts', function ifF(done) {
+                it('should copy part from Azure to Azure with existing parts', function ifF(done) {
                     const resultCopy = JSON.parse(JSON.stringify(result));
                     const params = {
                         Bucket: azureContainerName,
@@ -765,7 +765,7 @@ describeSkipIfNotMultiple('Put Copy Part to AZURE with large object', function d
                     .catch(done);
             });
 
-            it('should copy 105 MB part from Azure to MPU with Azure ' + 'location', function ifF(done) {
+            it('should copy 105 MB part from Azure to MPU with Azure location', function ifF(done) {
                 const params = {
                     Bucket: azureContainerName,
                     CopySource: `${azureContainerName}/` + `${this.test.keyNameOneHundredAndFiveMbAzure}`,
@@ -879,7 +879,7 @@ describeSkipIfNotMultiple('Put Copy Part to AZURE with complete MPU', function d
                 );
             });
 
-            it('should copy two 5 MB part from Azure to MPU with Azure ' + 'location', function ifF(done) {
+            it('should copy two 5 MB part from Azure to MPU with Azure location', function ifF(done) {
                 const uploadParams = {
                     Bucket: azureContainerName,
                     CopySource: `${awsBucketName}/` + `${this.test.keyNameAws}`,

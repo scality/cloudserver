@@ -179,7 +179,7 @@ describeSkipIfNotMultiple('Complete MPU API for Azure data backend', function te
             });
         });
 
-        it('should complete an MPU on Azure with same key as object put ' + 'to file', function itFn(done) {
+        it('should complete an MPU on Azure with same key as object put to file', function itFn(done) {
             const body = Buffer.from('I am a body', 'utf8');
             s3.send(
                 new PutObjectCommand({
@@ -207,7 +207,7 @@ describeSkipIfNotMultiple('Complete MPU API for Azure data backend', function te
                 .catch(done);
         });
 
-        it('should complete an MPU on Azure with same key as object put ' + 'to Azure', function itFn(done) {
+        it('should complete an MPU on Azure with same key as object put to Azure', function itFn(done) {
             const body = Buffer.from('I am a body', 'utf8');
             s3.send(
                 new PutObjectCommand({
@@ -236,7 +236,7 @@ describeSkipIfNotMultiple('Complete MPU API for Azure data backend', function te
             });
         });
 
-        it('should complete an MPU on Azure with same key as object put ' + 'to AWS', function itFn(done) {
+        it('should complete an MPU on Azure with same key as object put to AWS', function itFn(done) {
             const body = Buffer.from('I am a body', 'utf8');
             s3.send(
                 new PutObjectCommand({

@@ -38,8 +38,7 @@ const westLocation = 'scality-internal-file';
 function _createAndAbortMpu(usEastSetting, fakeUploadID, locationConstraint, callback) {
     config.locationConstraints['us-east-1'].legacyAwsBehavior = usEastSetting;
     const post =
-        '<?xml version="1.0" encoding="UTF-8"?>' +
-        '<CreateBucketConfiguration ' +
+        '<?xml version="1.0" encoding="UTF-8"?><CreateBucketConfiguration ' +
         'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
         `<LocationConstraint>${locationConstraint}</LocationConstraint>` +
         '</CreateBucketConfiguration>';
@@ -104,7 +103,7 @@ describe('Multipart Delete API', () => {
         cleanup();
     });
 
-    it('should not return error if mpu exists with uploadId and at least ' + 'one part', done => {
+    it('should not return error if mpu exists with uploadId and at least one part', done => {
         _createAndAbortMpu(true, false, eastLocation, err => {
             assert.ifError(err);
             done(err);

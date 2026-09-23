@@ -83,7 +83,7 @@ describe('objectGetACL API', () => {
         );
     });
 
-    it('should return an error if try to get an ACL ' + 'for a nonexistent object', done => {
+    it('should return an error if try to get an ACL for a nonexistent object', done => {
         bucketPut(authInfo, testBucketPutRequest, log, () => {
             objectGetACL(authInfo, testGetACLRequest, log, err => {
                 assert.strictEqual(err.is.NoSuchKey, true);
@@ -315,11 +315,11 @@ describe('objectGetACL API', () => {
                 objectKey: objectName,
                 headers: {
                     'x-amz-grant-full-control':
-                        'emailaddress="sampleaccount1@sampling.com"' + ',emailaddress="sampleaccount2@sampling.com"',
+                        'emailaddress="sampleaccount1@sampling.com",emailaddress="sampleaccount2@sampling.com"',
                     'x-amz-grant-read': `uri=${constants.allAuthedUsersId}`,
                     'x-amz-grant-write': `uri=${constants.publicId}`,
-                    'x-amz-grant-read-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2be',
-                    'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2bf',
+                    'x-amz-grant-read-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
+                    'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf',
                 },
                 url: `/${bucketName}/${objectName}`,
             },
@@ -338,7 +338,7 @@ describe('objectGetACL API', () => {
             (err, result) => {
                 assert.strictEqual(
                     result.AccessControlPolicy.AccessControlList[0].Grant[0].Grantee[0].ID[0],
-                    '79a59df900b949e55d96a1e698fbacedfd6e09d98' + 'eacf8f8d5218e7cd47ef2be',
+                    '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
                 );
                 assert.strictEqual(
                     result.AccessControlPolicy.AccessControlList[0].Grant[0].Grantee[0].DisplayName[0],
@@ -350,7 +350,7 @@ describe('objectGetACL API', () => {
                 );
                 assert.strictEqual(
                     result.AccessControlPolicy.AccessControlList[0].Grant[1].Grantee[0].ID[0],
-                    '79a59df900b949e55d96a1e698fbacedfd6e09d98' + 'eacf8f8d5218e7cd47ef2bf',
+                    '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf',
                 );
                 assert.strictEqual(
                     result.AccessControlPolicy.AccessControlList[0].Grant[1].Grantee[0].DisplayName[0],
@@ -362,7 +362,7 @@ describe('objectGetACL API', () => {
                 );
                 assert.strictEqual(
                     result.AccessControlPolicy.AccessControlList[0].Grant[2].Grantee[0].ID[0],
-                    '79a59df900b949e55d96a1e698fbacedfd6e09d98' + 'eacf8f8d5218e7cd47ef2bf',
+                    '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf',
                 );
                 assert.strictEqual(
                     result.AccessControlPolicy.AccessControlList[0].Grant[2].Grantee[0].DisplayName[0],
@@ -371,7 +371,7 @@ describe('objectGetACL API', () => {
                 assert.strictEqual(result.AccessControlPolicy.AccessControlList[0].Grant[2].Permission[0], 'WRITE_ACP');
                 assert.strictEqual(
                     result.AccessControlPolicy.AccessControlList[0].Grant[3].Grantee[0].ID[0],
-                    '79a59df900b949e55d96a1e698fbacedfd6e09d98' + 'eacf8f8d5218e7cd47ef2be',
+                    '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
                 );
                 assert.strictEqual(
                     result.AccessControlPolicy.AccessControlList[0].Grant[3].Grantee[0].DisplayName[0],
