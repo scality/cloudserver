@@ -91,7 +91,7 @@ const aclTests = [
         result: 'accessDenied',
     },
     {
-        it: 'should return 404 if public bucket - without index - ' + 'public error documents',
+        it: 'should return 404 if public bucket - without index - public error documents',
         bucketACL: 'public',
         objects: { error: 'public-read' },
         result: 'noSuchKey',
@@ -118,7 +118,7 @@ const aclTests = [
         result: 'noSuchKey',
     },
     {
-        it: 'should return 403 if private bucket - without index - ' + 'without error documents',
+        it: 'should return 403 if private bucket - without index - without error documents',
         bucketACL: 'private',
         objects: {},
         result: 'accessDenied',

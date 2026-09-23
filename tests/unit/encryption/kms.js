@@ -189,7 +189,7 @@ describe('KMS unit tests', () => {
         assert.deepStrictEqual(incrementedIV, expected);
     });
 
-    it('should increment the IV by shifting each position in the ' + 'buffer', () => {
+    it('should increment the IV by shifting each position in the buffer', () => {
         const derivedIV = Buffer.from('ffffffff', 'hex');
         const counter = 1;
         const incrementedIV = Common._incrementIV(derivedIV, counter);

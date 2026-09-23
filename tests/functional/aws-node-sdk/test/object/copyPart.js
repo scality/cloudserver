@@ -433,8 +433,7 @@ describe('Object Part Copy', () => {
                             s3.send(new UploadPartCommand(params)).catch(err => {
                                 if (attempt < 3) {
                                     process.stdout.write(
-                                        `Retrying UploadPart ${params.PartNumber} ` +
-                                            `(attempt ${attempt + 1}/3): ${err}\n`,
+                                        `Retrying UploadPart ${params.PartNumber} (attempt ${attempt + 1}/3): ${err}\n`,
                                     );
                                     return uploadWithRetry(params, attempt + 1);
                                 }
@@ -503,7 +502,7 @@ describe('Object Part Copy', () => {
                     }),
             );
 
-            it('should copy a part from a source bucket to a different ' + 'destination bucket', () => {
+            it('should copy a part from a source bucket to a different destination bucket', () => {
                 process.stdout.write('Entered first mpu test\n');
                 return s3
                     .send(
@@ -724,7 +723,7 @@ describe('Object Part Copy', () => {
                                         assert.strictEqual(res.ETag, finalObjETag);
                                     })
                                     .then(() => {
-                                        process.stdout.write('Getting object put by MPU with ' + 'overwrite part\n');
+                                        process.stdout.write('Getting object put by MPU with overwrite part\n');
                                         return s3
                                             .send(
                                                 new GetObjectCommand({
@@ -1041,23 +1040,20 @@ describe('Object Part Copy', () => {
                     }),
             );
 
-            it(
-                'should not allow an account without read persmission on the ' + 'source object to copy the object',
-                () =>
-                    otherAccountS3
-                        .send(
-                            new UploadPartCopyCommand({
-                                Bucket: otherAccountBucket,
-                                Key: otherAccountKey,
-                                CopySource: `${sourceBucketName}/${sourceObjName}`,
-                                PartNumber: 1,
-                                UploadId: otherAccountUploadId,
-                            }),
-                        )
-                        .catch(err => {
-                            checkError(err, 'AccessDenied');
+            it('should not allow an account without read persmission on the source object to copy the object', () =>
+                otherAccountS3
+                    .send(
+                        new UploadPartCopyCommand({
+                            Bucket: otherAccountBucket,
+                            Key: otherAccountKey,
+                            CopySource: `${sourceBucketName}/${sourceObjName}`,
+                            PartNumber: 1,
+                            UploadId: otherAccountUploadId,
                         }),
-            );
+                    )
+                    .catch(err => {
+                        checkError(err, 'AccessDenied');
+                    }));
 
             it(
                 'should not allow an account without write persmission on the ' +

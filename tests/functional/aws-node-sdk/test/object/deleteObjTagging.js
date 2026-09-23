@@ -107,7 +107,7 @@ describe('DELETE object taggings', () => {
             }
         });
 
-        it('should return 403 AccessDenied deleting tag set with another ' + 'account', async () => {
+        it('should return 403 AccessDenied deleting tag set with another account', async () => {
             try {
                 await otherAccountS3.send(
                     new DeleteObjectTaggingCommand({

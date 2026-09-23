@@ -32,12 +32,9 @@ describe('Requests to ip endpoint not in config', () => {
             await bucketUtil.deleteOne(bucket);
         });
 
-        it(
-            'should accept put bucket request ' + 'to IP address endpoint that is not in config using ' + 'path style',
-            async () => {
-                await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-            },
-        );
+        it('should accept put bucket request to IP address endpoint that is not in config using path style', async () => {
+            await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+        });
 
         const itSkipIfE2E = process.env.S3_END_TO_END ? it.skip : it;
         // skipping in E2E since in E2E 127.0.0.3 resolving to
@@ -63,12 +60,9 @@ describe('Requests to ip endpoint not in config', () => {
             },
         );
 
-        it(
-            'should accept get object request ' + 'to IP address endpoint that is not in config using ' + 'path style',
-            async () => {
-                const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
-                assert.strictEqual(res.ETag, expectedETag);
-            },
-        );
+        it('should accept get object request to IP address endpoint that is not in config using path style', async () => {
+            const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+            assert.strictEqual(res.ETag, expectedETag);
+        });
     });
 });

@@ -122,7 +122,7 @@ class _Utils {
             assert.strictEqual(
                 data.VersionId,
                 expected.versionId,
-                `expected version id '${expected.versionId}' in ` + `getacl res headers, got '${data.VersionId}'`,
+                `expected version id '${expected.versionId}' in getacl res headers, got '${data.VersionId}'`,
             );
             assert.strictEqual(data.Grants.length, 2);
         } catch (err) {
@@ -139,99 +139,87 @@ class _Utils {
 function _testBehaviorVersioningEnabledOrSuspended(utils, versionIds) {
     const s3 = utils.s3;
 
-    it(
-        'should return 405 MethodNotAllowed putting acl without ' + 'version id if latest version is a delete marker',
-        async () => {
-            const aclParams = {
-                Bucket: bucket,
-                Key: key,
-                ACL: 'public-read-write',
-            };
-            const data = await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
-            assert.strictEqual(data.DeleteMarker, true);
-            assert(data.VersionId);
+    it('should return 405 MethodNotAllowed putting acl without version id if latest version is a delete marker', async () => {
+        const aclParams = {
+            Bucket: bucket,
+            Key: key,
+            ACL: 'public-read-write',
+        };
+        const data = await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+        assert.strictEqual(data.DeleteMarker, true);
+        assert(data.VersionId);
 
-            try {
-                await utils.putObjectAcl(aclParams);
-                assert.fail('Expected error but operation succeeded');
-            } catch (err) {
-                assert(err);
-                assert.strictEqual(err.Code, 'MethodNotAllowed');
-                assert.strictEqual(err.$metadata.httpStatusCode, 405);
-            }
-        },
-    );
+        try {
+            await utils.putObjectAcl(aclParams);
+            assert.fail('Expected error but operation succeeded');
+        } catch (err) {
+            assert(err);
+            assert.strictEqual(err.Code, 'MethodNotAllowed');
+            assert.strictEqual(err.$metadata.httpStatusCode, 405);
+        }
+    });
 
-    it(
-        'should return 405 MethodNotAllowed putting acl with ' + 'version id if version specified is a delete marker',
-        async () => {
-            const aclParams = {
-                Bucket: bucket,
-                Key: key,
-                ACL: 'public-read-write',
-            };
-            const data = await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
-            assert.strictEqual(data.DeleteMarker, true);
-            assert(data.VersionId);
-            aclParams.VersionId = data.VersionId;
+    it('should return 405 MethodNotAllowed putting acl with version id if version specified is a delete marker', async () => {
+        const aclParams = {
+            Bucket: bucket,
+            Key: key,
+            ACL: 'public-read-write',
+        };
+        const data = await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+        assert.strictEqual(data.DeleteMarker, true);
+        assert(data.VersionId);
+        aclParams.VersionId = data.VersionId;
 
-            try {
-                await utils.putObjectAcl(aclParams);
-                assert.fail('Expected error but operation succeeded');
-            } catch (err) {
-                assert(err);
-                assert.strictEqual(err.Code, 'MethodNotAllowed');
-                assert.strictEqual(err.$metadata.httpStatusCode, 405);
-            }
-        },
-    );
+        try {
+            await utils.putObjectAcl(aclParams);
+            assert.fail('Expected error but operation succeeded');
+        } catch (err) {
+            assert(err);
+            assert.strictEqual(err.Code, 'MethodNotAllowed');
+            assert.strictEqual(err.$metadata.httpStatusCode, 405);
+        }
+    });
 
-    it(
-        'should return 404 NoSuchKey getting acl without ' + 'version id if latest version is a delete marker',
-        async () => {
-            const aclParams = {
-                Bucket: bucket,
-                Key: key,
-            };
-            const data = await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
-            assert.strictEqual(data.DeleteMarker, true);
-            assert(data.VersionId);
+    it('should return 404 NoSuchKey getting acl without version id if latest version is a delete marker', async () => {
+        const aclParams = {
+            Bucket: bucket,
+            Key: key,
+        };
+        const data = await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+        assert.strictEqual(data.DeleteMarker, true);
+        assert(data.VersionId);
 
-            try {
-                await utils.getObjectAcl(aclParams);
-                assert.fail('Expected error but operation succeeded');
-            } catch (err) {
-                assert(err);
-                assert.strictEqual(err.Code, 'NoSuchKey');
-                assert.strictEqual(err.$metadata.httpStatusCode, 404);
-            }
-        },
-    );
+        try {
+            await utils.getObjectAcl(aclParams);
+            assert.fail('Expected error but operation succeeded');
+        } catch (err) {
+            assert(err);
+            assert.strictEqual(err.Code, 'NoSuchKey');
+            assert.strictEqual(err.$metadata.httpStatusCode, 404);
+        }
+    });
 
-    it(
-        'should return 405 MethodNotAllowed getting acl with ' + 'version id if version specified is a delete marker',
-        async () => {
-            const latestVersion = versionIds[versionIds.length - 1];
-            const aclParams = {
-                Bucket: bucket,
-                Key: key,
-                VersionId: latestVersion,
-            };
-            const data = await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
-            assert.strictEqual(data.DeleteMarker, true);
-            assert(data.VersionId);
-            aclParams.VersionId = data.VersionId;
+    it('should return 405 MethodNotAllowed getting acl with version id if version specified is a delete marker', async () => {
+        const latestVersion = versionIds[versionIds.length - 1];
+        const aclParams = {
+            Bucket: bucket,
+            Key: key,
+            VersionId: latestVersion,
+        };
+        const data = await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+        assert.strictEqual(data.DeleteMarker, true);
+        assert(data.VersionId);
+        aclParams.VersionId = data.VersionId;
 
-            try {
-                await utils.getObjectAcl(aclParams);
-                assert.fail('Expected error but operation succeeded');
-            } catch (err) {
-                assert(err);
-                assert.strictEqual(err.Code, 'MethodNotAllowed');
-                assert.strictEqual(err.$metadata.httpStatusCode, 405);
-            }
-        },
-    );
+        try {
+            await utils.getObjectAcl(aclParams);
+            assert.fail('Expected error but operation succeeded');
+        } catch (err) {
+            assert(err);
+            assert.strictEqual(err.Code, 'MethodNotAllowed');
+            assert.strictEqual(err.$metadata.httpStatusCode, 405);
+        }
+    });
 
     it(
         'non-version specific put and get ACL should target latest ' +
@@ -243,7 +231,7 @@ function _testBehaviorVersioningEnabledOrSuspended(utils, versionIds) {
         },
     );
 
-    it('version specific put and get ACL should return version ID ' + 'in response headers', async () => {
+    it('version specific put and get ACL should return version ID in response headers', async () => {
         const firstVersion = versionIds[0];
         const expectedRes = { versionId: firstVersion };
         await utils.putAndGetAcl('public-read', firstVersion, expectedRes);
@@ -287,28 +275,22 @@ describe('versioned put and get object acl ::', () => {
                 await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key }));
             });
 
-            it('should not return version id for non-version specific ' + 'put and get ACL', async () => {
+            it('should not return version id for non-version specific put and get ACL', async () => {
                 const expectedRes = { versionId: undefined };
                 await utils.putAndGetAcl('public-read', undefined, expectedRes);
             });
 
-            it(
-                'should not return version id for version specific ' + 'put and get ACL (version id = "null")',
-                async () => {
-                    const expectedRes = { versionId: 'null' };
-                    await utils.putAndGetAcl('public-read', 'null', expectedRes);
-                },
-            );
+            it('should not return version id for version specific put and get ACL (version id = "null")', async () => {
+                const expectedRes = { versionId: 'null' };
+                await utils.putAndGetAcl('public-read', 'null', expectedRes);
+            });
 
-            it(
-                'should return NoSuchVersion if attempting to put or get acl ' + 'for non-existing version',
-                async () => {
-                    const error = { code: 'NoSuchVersion', statusCode: 404 };
-                    await utils.putAndGetAcl('private', nonExistingId, { error });
-                },
-            );
+            it('should return NoSuchVersion if attempting to put or get acl for non-existing version', async () => {
+                const error = { code: 'NoSuchVersion', statusCode: 404 };
+                await utils.putAndGetAcl('private', nonExistingId, { error });
+            });
 
-            it('should return InvalidArgument if attempting to put/get acl ' + 'for invalid hex string', async () => {
+            it('should return InvalidArgument if attempting to put/get acl for invalid hex string', async () => {
                 const error = { code: 'InvalidArgument', statusCode: 400 };
                 await utils.putAndGetAcl('private', invalidId, { error });
             });

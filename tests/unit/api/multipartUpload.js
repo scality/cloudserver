@@ -131,7 +131,7 @@ function _createCompleteMpuRequest(uploadId, parts) {
     completeBody.push('<CompleteMultipartUpload>');
     parts.forEach(part => {
         completeBody.push(
-            '<Part>' + `<PartNumber>${part.partNumber}</PartNumber>` + `<ETag>"${part.eTag}"</ETag>` + '</Part>',
+            '<Part>' + `<PartNumber>${part.partNumber}</PartNumber><ETag>"${part.eTag}"</ETag>` + '</Part>',
         );
     });
     completeBody.push('</CompleteMultipartUpload>');
@@ -214,7 +214,7 @@ describe('Multipart Upload API', () => {
         });
     });
 
-    it('should return an error on an initiate multipart upload call if ' + 'no destination bucket', done => {
+    it('should return an error on an initiate multipart upload call if no destination bucket', done => {
         initiateMultipartUpload(authInfo, initiateRequest, log, err => {
             assert(err.is.NoSuchBucket);
             done();
@@ -528,7 +528,7 @@ describe('Multipart Upload API', () => {
                             bucketName,
                             namespace,
                             objectKey,
-                            url: `/${objectKey}?partNumber=` + `1&uploadId=${testUploadId}`,
+                            url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                             headers: { host: `${bucketName}.s3.amazonaws.com` },
                             query: {
                                 partNumber: '2',
@@ -633,7 +633,7 @@ describe('Multipart Upload API', () => {
                             assert.ifError(err);
                             assert.strictEqual(
                                 json.CompleteMultipartUploadResult.Location[0],
-                                `http://${bucketName}.s3.amazonaws.com` + `/${objectKey}`,
+                                `http://${bucketName}.s3.amazonaws.com/${objectKey}`,
                             );
                             assert.strictEqual(json.CompleteMultipartUploadResult.Bucket[0], bucketName);
                             assert.strictEqual(json.CompleteMultipartUploadResult.Key[0], objectKey);
@@ -650,89 +650,86 @@ describe('Multipart Upload API', () => {
         );
     });
 
-    it(
-        'should complete a multipart upload even if etag is sent ' + 'in post body without quotes (a la Cyberduck)',
-        done => {
-            const partBody = Buffer.from('I am a part\n', 'utf8');
-            initiateRequest.headers['x-amz-meta-stuff'] = 'I am some user metadata';
-            async.waterfall(
-                [
-                    function waterfall1(next) {
-                        bucketPut(authInfo, bucketPutRequest, log, next);
-                    },
-                    function waterfall2(corsHeaders, next) {
-                        initiateMultipartUpload(authInfo, initiateRequest, log, next);
-                    },
-                    function waterfall3(result, corsHeaders, next) {
-                        parseString(result, next);
-                    },
-                ],
-                (err, json) => {
-                    // Need to build request in here since do not have uploadId
-                    // until here
-                    assert.ifError(err);
-                    const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
-                    const partHash = crypto.createHash('md5').update(partBody).digest('hex');
-                    const partRequest = new DummyRequest(
-                        {
-                            bucketName,
-                            namespace,
-                            objectKey,
-                            headers: { host: `${bucketName}.s3.amazonaws.com` },
-                            url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                            query: {
-                                partNumber: '1',
-                                uploadId: testUploadId,
-                            },
-                            partHash,
+    it('should complete a multipart upload even if etag is sent in post body without quotes (a la Cyberduck)', done => {
+        const partBody = Buffer.from('I am a part\n', 'utf8');
+        initiateRequest.headers['x-amz-meta-stuff'] = 'I am some user metadata';
+        async.waterfall(
+            [
+                function waterfall1(next) {
+                    bucketPut(authInfo, bucketPutRequest, log, next);
+                },
+                function waterfall2(corsHeaders, next) {
+                    initiateMultipartUpload(authInfo, initiateRequest, log, next);
+                },
+                function waterfall3(result, corsHeaders, next) {
+                    parseString(result, next);
+                },
+            ],
+            (err, json) => {
+                // Need to build request in here since do not have uploadId
+                // until here
+                assert.ifError(err);
+                const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                const partHash = crypto.createHash('md5').update(partBody).digest('hex');
+                const partRequest = new DummyRequest(
+                    {
+                        bucketName,
+                        namespace,
+                        objectKey,
+                        headers: { host: `${bucketName}.s3.amazonaws.com` },
+                        url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                        query: {
+                            partNumber: '1',
+                            uploadId: testUploadId,
                         },
-                        partBody,
-                    );
-                    objectPutPart(authInfo, partRequest, undefined, log, () => {
-                        const completeBody =
-                            '<CompleteMultipartUpload>' +
-                            '<Part>' +
-                            '<PartNumber>1</PartNumber>' +
-                            // ETag without quotes
-                            `<ETag>${partHash}</ETag>` +
-                            '</Part>' +
-                            '</CompleteMultipartUpload>';
-                        const completeRequest = {
-                            bucketName,
-                            namespace,
-                            objectKey,
-                            parsedHost: 's3.amazonaws.com',
-                            url: `/${objectKey}?uploadId=${testUploadId}`,
-                            headers: { host: `${bucketName}.s3.amazonaws.com` },
-                            query: { uploadId: testUploadId },
-                            post: completeBody,
-                            actionImplicitDenies: false,
-                        };
-                        const awsVerifiedETag = '"953e9e776f285afc0bfcf1ab4668299d-1"';
-                        completeMultipartUpload(authInfo, completeRequest, log, (err, result) => {
+                        partHash,
+                    },
+                    partBody,
+                );
+                objectPutPart(authInfo, partRequest, undefined, log, () => {
+                    const completeBody =
+                        '<CompleteMultipartUpload>' +
+                        '<Part>' +
+                        '<PartNumber>1</PartNumber>' +
+                        // ETag without quotes
+                        `<ETag>${partHash}</ETag>` +
+                        '</Part>' +
+                        '</CompleteMultipartUpload>';
+                    const completeRequest = {
+                        bucketName,
+                        namespace,
+                        objectKey,
+                        parsedHost: 's3.amazonaws.com',
+                        url: `/${objectKey}?uploadId=${testUploadId}`,
+                        headers: { host: `${bucketName}.s3.amazonaws.com` },
+                        query: { uploadId: testUploadId },
+                        post: completeBody,
+                        actionImplicitDenies: false,
+                    };
+                    const awsVerifiedETag = '"953e9e776f285afc0bfcf1ab4668299d-1"';
+                    completeMultipartUpload(authInfo, completeRequest, log, (err, result) => {
+                        assert.ifError(err);
+                        parseString(result, (err, json) => {
                             assert.ifError(err);
-                            parseString(result, (err, json) => {
-                                assert.ifError(err);
-                                assert.strictEqual(
-                                    json.CompleteMultipartUploadResult.Location[0],
-                                    `http://${bucketName}.s3.amazonaws.com` + `/${objectKey}`,
-                                );
-                                assert.strictEqual(json.CompleteMultipartUploadResult.Bucket[0], bucketName);
-                                assert.strictEqual(json.CompleteMultipartUploadResult.Key[0], objectKey);
-                                assert.strictEqual(json.CompleteMultipartUploadResult.ETag[0], awsVerifiedETag);
-                                const MD = metadata.keyMaps.get(bucketName).get(objectKey);
-                                assert(MD);
-                                assert.strictEqual(MD['x-amz-meta-stuff'], 'I am some user metadata');
-                                done();
-                            });
+                            assert.strictEqual(
+                                json.CompleteMultipartUploadResult.Location[0],
+                                `http://${bucketName}.s3.amazonaws.com/${objectKey}`,
+                            );
+                            assert.strictEqual(json.CompleteMultipartUploadResult.Bucket[0], bucketName);
+                            assert.strictEqual(json.CompleteMultipartUploadResult.Key[0], objectKey);
+                            assert.strictEqual(json.CompleteMultipartUploadResult.ETag[0], awsVerifiedETag);
+                            const MD = metadata.keyMaps.get(bucketName).get(objectKey);
+                            assert(MD);
+                            assert.strictEqual(MD['x-amz-meta-stuff'], 'I am some user metadata');
+                            done();
                         });
                     });
-                },
-            );
-        },
-    );
+                });
+            },
+        );
+    });
 
-    it('should return an error if a complete multipart upload' + ' request contains malformed xml', done => {
+    it('should return an error if a complete multipart upload request contains malformed xml', done => {
         async.waterfall(
             [
                 next => bucketPut(authInfo, bucketPutRequest, log, next),
@@ -822,7 +819,7 @@ describe('Multipart Upload API', () => {
                     objectPutPart(authInfo, partRequest, undefined, log, () => {
                         // XML is missing any part listing so does
                         // not conform to the AWS spec
-                        const completeBody = '<CompleteMultipartUpload>' + '</CompleteMultipartUpload>';
+                        const completeBody = '<CompleteMultipartUpload></CompleteMultipartUpload>';
                         const completeRequest = {
                             bucketName,
                             namespace,
@@ -1078,96 +1075,93 @@ describe('Multipart Upload API', () => {
         },
     );
 
-    it(
-        'should return an error if there is a part ' + 'other than the last part that is less than 5MB ' + 'in size',
-        done => {
-            async.waterfall(
-                [
-                    next => bucketPut(authInfo, bucketPutRequest, log, next),
-                    (corsHeaders, next) => initiateMultipartUpload(authInfo, initiateRequest, log, next),
-                    (result, corsHeaders, next) => parseString(result, next),
-                ],
-                (err, json) => {
-                    // Need to build request in here since do not have uploadId
-                    // until here
-                    const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
-                    const md5Hash = crypto.createHash('md5');
-                    const bufferBody = Buffer.from(postBody);
-                    md5Hash.update(bufferBody);
-                    const partHash = md5Hash.digest('hex');
-                    const partRequest1 = new DummyRequest(
-                        {
+    it('should return an error if there is a part other than the last part that is less than 5MB in size', done => {
+        async.waterfall(
+            [
+                next => bucketPut(authInfo, bucketPutRequest, log, next),
+                (corsHeaders, next) => initiateMultipartUpload(authInfo, initiateRequest, log, next),
+                (result, corsHeaders, next) => parseString(result, next),
+            ],
+            (err, json) => {
+                // Need to build request in here since do not have uploadId
+                // until here
+                const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                const md5Hash = crypto.createHash('md5');
+                const bufferBody = Buffer.from(postBody);
+                md5Hash.update(bufferBody);
+                const partHash = md5Hash.digest('hex');
+                const partRequest1 = new DummyRequest(
+                    {
+                        bucketName,
+                        namespace,
+                        objectKey,
+                        headers: {
+                            host: `${bucketName}.s3.amazonaws.com`,
+                            'content-length': '100',
+                        },
+                        parsedContentLength: 100,
+                        url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                        query: {
+                            partNumber: '1',
+                            uploadId: testUploadId,
+                        },
+                        partHash,
+                    },
+                    postBody,
+                );
+                const partRequest2 = new DummyRequest(
+                    {
+                        bucketName,
+                        namespace,
+                        objectKey,
+                        headers: {
+                            host: `${bucketName}.s3.amazonaws.com`,
+                            'content-length': '200',
+                        },
+                        parsedContentLength: 200,
+                        url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                        query: {
+                            partNumber: '2',
+                            uploadId: testUploadId,
+                        },
+                        partHash,
+                    },
+                    postBody,
+                );
+                objectPutPart(authInfo, partRequest1, undefined, log, () => {
+                    objectPutPart(authInfo, partRequest2, undefined, log, () => {
+                        const completeBody =
+                            '<CompleteMultipartUpload>' +
+                            '<Part>' +
+                            '<PartNumber>1</PartNumber>' +
+                            `<ETag>"${partHash}"</ETag>` +
+                            '</Part>' +
+                            '<Part>' +
+                            '<PartNumber>2</PartNumber>' +
+                            `<ETag>"${partHash}"</ETag>` +
+                            '</Part>' +
+                            '</CompleteMultipartUpload>';
+                        const completeRequest = {
                             bucketName,
                             namespace,
                             objectKey,
-                            headers: {
-                                host: `${bucketName}.s3.amazonaws.com`,
-                                'content-length': '100',
-                            },
-                            parsedContentLength: 100,
-                            url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                            query: {
-                                partNumber: '1',
-                                uploadId: testUploadId,
-                            },
+                            headers: { host: `${bucketName}.s3.amazonaws.com` },
+                            url: `/${objectKey}?uploadId=${testUploadId}`,
+                            query: { uploadId: testUploadId },
+                            post: completeBody,
                             partHash,
-                        },
-                        postBody,
-                    );
-                    const partRequest2 = new DummyRequest(
-                        {
-                            bucketName,
-                            namespace,
-                            objectKey,
-                            headers: {
-                                host: `${bucketName}.s3.amazonaws.com`,
-                                'content-length': '200',
-                            },
-                            parsedContentLength: 200,
-                            url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                            query: {
-                                partNumber: '2',
-                                uploadId: testUploadId,
-                            },
-                            partHash,
-                        },
-                        postBody,
-                    );
-                    objectPutPart(authInfo, partRequest1, undefined, log, () => {
-                        objectPutPart(authInfo, partRequest2, undefined, log, () => {
-                            const completeBody =
-                                '<CompleteMultipartUpload>' +
-                                '<Part>' +
-                                '<PartNumber>1</PartNumber>' +
-                                `<ETag>"${partHash}"</ETag>` +
-                                '</Part>' +
-                                '<Part>' +
-                                '<PartNumber>2</PartNumber>' +
-                                `<ETag>"${partHash}"</ETag>` +
-                                '</Part>' +
-                                '</CompleteMultipartUpload>';
-                            const completeRequest = {
-                                bucketName,
-                                namespace,
-                                objectKey,
-                                headers: { host: `${bucketName}.s3.amazonaws.com` },
-                                url: `/${objectKey}?uploadId=${testUploadId}`,
-                                query: { uploadId: testUploadId },
-                                post: completeBody,
-                                partHash,
-                                actionImplicitDenies: false,
-                            };
-                            assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 3);
-                            completeMultipartUpload(authInfo, completeRequest, log, err => {
-                                assert(err.is.EntityTooSmall);
-                                done();
-                            });
+                            actionImplicitDenies: false,
+                        };
+                        assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 3);
+                        completeMultipartUpload(authInfo, completeRequest, log, err => {
+                            assert(err.is.EntityTooSmall);
+                            done();
                         });
                     });
-                },
-            );
-        },
-    );
+                });
+            },
+        );
+    });
 
     it('should aggregate the sizes of the parts', done => {
         async.waterfall(
@@ -1368,7 +1362,7 @@ describe('Multipart Upload API', () => {
     });
 
     it('should set specific ACL grants for a multipart upload', done => {
-        const granteeId = '79a59df900b949e55d96a1e698fbace' + 'dfd6e09d98eacf8f8d5218e7cd47ef2be';
+        const granteeId = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
         const granteeEmail = 'sampleAccount1@sampling.com';
         const initiateRequest = {
             bucketName,
@@ -1866,7 +1860,7 @@ describe('Multipart Upload API', () => {
         );
     });
 
-    it('should throw an error on put of an object part with an invalid ' + 'uploadId', done => {
+    it('should throw an error on put of an object part with an invalid uploadId', done => {
         const testUploadId = 'invalidUploadID';
         const partRequest = new DummyRequest(
             {
@@ -1888,89 +1882,86 @@ describe('Multipart Upload API', () => {
         );
     });
 
-    it(
-        'should complete an MPU with fewer parts than were originally ' + 'put and delete data from left out parts',
-        done => {
-            async.waterfall(
-                [
-                    next => bucketPut(authInfo, bucketPutRequest, log, next),
-                    (corsHeaders, next) => initiateMultipartUpload(authInfo, initiateRequest, log, next),
-                    (result, corsHeaders, next) => parseString(result, next),
-                ],
-                (err, json) => {
-                    // Need to build request in here since do not have uploadId
-                    // until here
-                    assert.ifError(err);
-                    const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
-                    const fullSizedPart = crypto.randomBytes(5 * 1024 * 1024);
-                    const partRequest1 = new DummyRequest(
-                        {
-                            bucketName,
-                            namespace,
-                            objectKey,
-                            url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                            headers: { host: `${bucketName}.s3.amazonaws.com` },
-                            query: {
-                                partNumber: '1',
-                                uploadId: testUploadId,
-                            },
+    it('should complete an MPU with fewer parts than were originally put and delete data from left out parts', done => {
+        async.waterfall(
+            [
+                next => bucketPut(authInfo, bucketPutRequest, log, next),
+                (corsHeaders, next) => initiateMultipartUpload(authInfo, initiateRequest, log, next),
+                (result, corsHeaders, next) => parseString(result, next),
+            ],
+            (err, json) => {
+                // Need to build request in here since do not have uploadId
+                // until here
+                assert.ifError(err);
+                const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                const fullSizedPart = crypto.randomBytes(5 * 1024 * 1024);
+                const partRequest1 = new DummyRequest(
+                    {
+                        bucketName,
+                        namespace,
+                        objectKey,
+                        url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                        headers: { host: `${bucketName}.s3.amazonaws.com` },
+                        query: {
+                            partNumber: '1',
+                            uploadId: testUploadId,
                         },
-                        fullSizedPart,
-                    );
-                    const partRequest2 = new DummyRequest(
-                        {
-                            bucketName,
-                            namespace,
-                            objectKey,
-                            url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                            headers: { host: `${bucketName}.s3.amazonaws.com` },
-                            query: {
-                                partNumber: '2',
-                                uploadId: testUploadId,
-                            },
+                    },
+                    fullSizedPart,
+                );
+                const partRequest2 = new DummyRequest(
+                    {
+                        bucketName,
+                        namespace,
+                        objectKey,
+                        url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                        headers: { host: `${bucketName}.s3.amazonaws.com` },
+                        query: {
+                            partNumber: '2',
+                            uploadId: testUploadId,
                         },
-                        postBody,
-                    );
-                    objectPutPart(authInfo, partRequest1, undefined, log, err => {
+                    },
+                    postBody,
+                );
+                objectPutPart(authInfo, partRequest1, undefined, log, err => {
+                    assert.deepStrictEqual(err, null);
+                    const md5Hash = crypto.createHash('md5').update(fullSizedPart);
+                    const partHash = md5Hash.digest('hex');
+                    objectPutPart(authInfo, partRequest2, undefined, log, err => {
                         assert.deepStrictEqual(err, null);
-                        const md5Hash = crypto.createHash('md5').update(fullSizedPart);
-                        const partHash = md5Hash.digest('hex');
-                        objectPutPart(authInfo, partRequest2, undefined, log, err => {
-                            assert.deepStrictEqual(err, null);
-                            const completeBody =
-                                '<CompleteMultipartUpload>' +
-                                '<Part>' +
-                                '<PartNumber>1</PartNumber>' +
-                                `<ETag>"${partHash}"</ETag>` +
-                                '</Part>' +
-                                '</CompleteMultipartUpload>';
-                            const completeRequest = {
-                                bucketName,
-                                namespace,
-                                objectKey,
-                                url: `/${objectKey}?uploadId=${testUploadId}`,
-                                headers: { host: `${bucketName}.s3.amazonaws.com` },
-                                query: { uploadId: testUploadId },
-                                post: completeBody,
-                                partHash,
-                                actionImplicitDenies: false,
-                            };
-                            // show that second part data is there
-                            assert(ds[2]);
-                            completeMultipartUpload(authInfo, completeRequest, log, err => {
-                                assert.strictEqual(err, null);
-                                process.nextTick(() => {
-                                    // data has been deleted
-                                    assert.strictEqual(ds[2], undefined);
-                                    done();
-                                });
+                        const completeBody =
+                            '<CompleteMultipartUpload>' +
+                            '<Part>' +
+                            '<PartNumber>1</PartNumber>' +
+                            `<ETag>"${partHash}"</ETag>` +
+                            '</Part>' +
+                            '</CompleteMultipartUpload>';
+                        const completeRequest = {
+                            bucketName,
+                            namespace,
+                            objectKey,
+                            url: `/${objectKey}?uploadId=${testUploadId}`,
+                            headers: { host: `${bucketName}.s3.amazonaws.com` },
+                            query: { uploadId: testUploadId },
+                            post: completeBody,
+                            partHash,
+                            actionImplicitDenies: false,
+                        };
+                        // show that second part data is there
+                        assert(ds[2]);
+                        completeMultipartUpload(authInfo, completeRequest, log, err => {
+                            assert.strictEqual(err, null);
+                            process.nextTick(() => {
+                                // data has been deleted
+                                assert.strictEqual(ds[2], undefined);
+                                done();
                             });
                         });
                     });
-                },
-            );
-        },
-    );
+                });
+            },
+        );
+    });
 
     it('should not delete data locations on completeMultipartUpload retry', done => {
         const partBody = Buffer.from('foo', 'utf8');
@@ -2483,133 +2474,117 @@ describe('complete mpu with versioning', () => {
         done();
     });
 
-    it(
-        'should delete null version when creating new null version, ' + 'when null version is the latest version',
-        done => {
-            async.waterfall(
-                [
-                    next => bucketPutVersioning(authInfo, suspendVersioningRequest, log, err => next(err)),
-                    next => initiateMultipartUpload(authInfo, initiateRequest, log, next),
-                    (result, corsHeaders, next) => parseString(result, next),
-                    (json, next) => {
-                        const partBody = objData[2];
-                        const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
-                        const partRequest = _createPutPartRequest(testUploadId, 1, partBody);
-                        objectPutPart(authInfo, partRequest, undefined, log, (err, eTag) =>
-                            next(err, eTag, testUploadId),
-                        );
-                    },
-                    (eTag, testUploadId, next) => {
-                        const origPutObject = metadataBackend.putObject;
-                        let callCount = 0;
-                        metadataBackend.putObject = (putBucketName, objName, objVal, params, log, cb) => {
-                            if (callCount === 0) {
-                                // first putObject sets the completeInProgress flag in the overview key
-                                assert.strictEqual(putBucketName, `${constants.mpuBucketPrefix}${bucketName}`);
-                                assert.strictEqual(
-                                    objName,
-                                    `overview${splitter}${objectKey}${splitter}${testUploadId}`,
-                                );
-                                assert.strictEqual(objVal.completeInProgress, true);
-                            } else {
-                                assert.strictEqual(params.replayId, testUploadId);
-                                assert.strictEqual(objVal.originOp, 's3:ObjectCreated:CompleteMultipartUpload');
-                                metadataBackend.putObject = origPutObject;
-                            }
-                            origPutObject(putBucketName, objName, objVal, params, log, cb);
-                            callCount += 1;
-                        };
-                        const parts = [{ partNumber: 1, eTag }];
-                        const completeRequest = _createCompleteMpuRequest(testUploadId, parts);
-                        completeMultipartUpload(authInfo, completeRequest, log, err => next(err, testUploadId));
-                    },
-                    (testUploadId, next) => {
-                        const origPutObject = metadataBackend.putObject;
-                        metadataBackend.putObject = (putBucketName, objName, objVal, params, log, cb) => {
-                            assert.strictEqual(params.oldReplayId, testUploadId);
-                            assert.strictEqual(objVal.originOp, 's3:ObjectCreated:Put');
-                            metadataBackend.putObject = origPutObject;
-                            origPutObject(putBucketName, objName, objVal, params, log, cb);
-                        };
-                        // overwrite null version with a non-MPU object
-                        objectPut(authInfo, testPutObjectRequests[1], undefined, log, err => next(err));
-                    },
-                ],
-                err => {
-                    assert.ifError(err, `Unexpected err: ${err}`);
-                    done();
+    it('should delete null version when creating new null version, when null version is the latest version', done => {
+        async.waterfall(
+            [
+                next => bucketPutVersioning(authInfo, suspendVersioningRequest, log, err => next(err)),
+                next => initiateMultipartUpload(authInfo, initiateRequest, log, next),
+                (result, corsHeaders, next) => parseString(result, next),
+                (json, next) => {
+                    const partBody = objData[2];
+                    const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                    const partRequest = _createPutPartRequest(testUploadId, 1, partBody);
+                    objectPutPart(authInfo, partRequest, undefined, log, (err, eTag) => next(err, eTag, testUploadId));
                 },
-            );
-        },
-    );
-
-    it(
-        'should delete null version when creating new null version, ' + 'when null version is not the latest version',
-        done => {
-            async.waterfall(
-                [
-                    // putting null version: put obj before versioning configured
-                    next => objectPut(authInfo, testPutObjectRequests[0], undefined, log, err => next(err)),
-                    next => bucketPutVersioning(authInfo, enableVersioningRequest, log, err => next(err)),
-                    // put another version:
-                    next => objectPut(authInfo, testPutObjectRequests[1], undefined, log, err => next(err)),
-                    next => bucketPutVersioning(authInfo, suspendVersioningRequest, log, err => next(err)),
-                    next => {
-                        versioningTestUtils.assertDataStoreValues(ds, objData.slice(0, 2));
-                        initiateMultipartUpload(authInfo, initiateRequest, log, next);
-                    },
-                    (result, corsHeaders, next) => parseString(result, next),
-                    (json, next) => {
-                        const partBody = objData[2];
-                        const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
-                        const partRequest = _createPutPartRequest(testUploadId, 1, partBody);
-                        objectPutPart(authInfo, partRequest, undefined, log, (err, eTag) =>
-                            next(err, eTag, testUploadId),
-                        );
-                    },
-                    (eTag, testUploadId, next) => {
-                        const origPutObject = metadataBackend.putObject;
-                        let callCount = 0;
-                        metadataBackend.putObject = (putBucketName, objName, objVal, params, log, cb) => {
-                            if (callCount === 0) {
-                                // first putObject sets the completeInProgress flag in the overview key
-                                assert.strictEqual(putBucketName, `${constants.mpuBucketPrefix}${bucketName}`);
-                                assert.strictEqual(
-                                    objName,
-                                    `overview${splitter}${objectKey}${splitter}${testUploadId}`,
-                                );
-                                assert.strictEqual(objVal.completeInProgress, true);
-                            } else {
-                                assert.strictEqual(params.replayId, testUploadId);
-                                metadataBackend.putObject = origPutObject;
-                            }
-                            origPutObject(putBucketName, objName, objVal, params, log, cb);
-                            callCount += 1;
-                        };
-                        const parts = [{ partNumber: 1, eTag }];
-                        const completeRequest = _createCompleteMpuRequest(testUploadId, parts);
-                        completeMultipartUpload(authInfo, completeRequest, log, err => next(err, testUploadId));
-                    },
-                    (testUploadId, next) => {
-                        versioningTestUtils.assertDataStoreValues(ds, [undefined, objData[1], objData[2]]);
-
-                        const origPutObject = metadataBackend.putObject;
-                        metadataBackend.putObject = (putBucketName, objName, objVal, params, log, cb) => {
-                            assert.strictEqual(params.oldReplayId, testUploadId);
+                (eTag, testUploadId, next) => {
+                    const origPutObject = metadataBackend.putObject;
+                    let callCount = 0;
+                    metadataBackend.putObject = (putBucketName, objName, objVal, params, log, cb) => {
+                        if (callCount === 0) {
+                            // first putObject sets the completeInProgress flag in the overview key
+                            assert.strictEqual(putBucketName, `${constants.mpuBucketPrefix}${bucketName}`);
+                            assert.strictEqual(objName, `overview${splitter}${objectKey}${splitter}${testUploadId}`);
+                            assert.strictEqual(objVal.completeInProgress, true);
+                        } else {
+                            assert.strictEqual(params.replayId, testUploadId);
+                            assert.strictEqual(objVal.originOp, 's3:ObjectCreated:CompleteMultipartUpload');
                             metadataBackend.putObject = origPutObject;
-                            origPutObject(putBucketName, objName, objVal, params, log, cb);
-                        };
-                        // overwrite null version with a non-MPU object
-                        objectPut(authInfo, testPutObjectRequests[1], undefined, log, err => next(err));
-                    },
-                ],
-                err => {
-                    assert.ifError(err, `Unexpected err: ${err}`);
-                    done();
+                        }
+                        origPutObject(putBucketName, objName, objVal, params, log, cb);
+                        callCount += 1;
+                    };
+                    const parts = [{ partNumber: 1, eTag }];
+                    const completeRequest = _createCompleteMpuRequest(testUploadId, parts);
+                    completeMultipartUpload(authInfo, completeRequest, log, err => next(err, testUploadId));
                 },
-            );
-        },
-    );
+                (testUploadId, next) => {
+                    const origPutObject = metadataBackend.putObject;
+                    metadataBackend.putObject = (putBucketName, objName, objVal, params, log, cb) => {
+                        assert.strictEqual(params.oldReplayId, testUploadId);
+                        assert.strictEqual(objVal.originOp, 's3:ObjectCreated:Put');
+                        metadataBackend.putObject = origPutObject;
+                        origPutObject(putBucketName, objName, objVal, params, log, cb);
+                    };
+                    // overwrite null version with a non-MPU object
+                    objectPut(authInfo, testPutObjectRequests[1], undefined, log, err => next(err));
+                },
+            ],
+            err => {
+                assert.ifError(err, `Unexpected err: ${err}`);
+                done();
+            },
+        );
+    });
+
+    it('should delete null version when creating new null version, when null version is not the latest version', done => {
+        async.waterfall(
+            [
+                // putting null version: put obj before versioning configured
+                next => objectPut(authInfo, testPutObjectRequests[0], undefined, log, err => next(err)),
+                next => bucketPutVersioning(authInfo, enableVersioningRequest, log, err => next(err)),
+                // put another version:
+                next => objectPut(authInfo, testPutObjectRequests[1], undefined, log, err => next(err)),
+                next => bucketPutVersioning(authInfo, suspendVersioningRequest, log, err => next(err)),
+                next => {
+                    versioningTestUtils.assertDataStoreValues(ds, objData.slice(0, 2));
+                    initiateMultipartUpload(authInfo, initiateRequest, log, next);
+                },
+                (result, corsHeaders, next) => parseString(result, next),
+                (json, next) => {
+                    const partBody = objData[2];
+                    const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                    const partRequest = _createPutPartRequest(testUploadId, 1, partBody);
+                    objectPutPart(authInfo, partRequest, undefined, log, (err, eTag) => next(err, eTag, testUploadId));
+                },
+                (eTag, testUploadId, next) => {
+                    const origPutObject = metadataBackend.putObject;
+                    let callCount = 0;
+                    metadataBackend.putObject = (putBucketName, objName, objVal, params, log, cb) => {
+                        if (callCount === 0) {
+                            // first putObject sets the completeInProgress flag in the overview key
+                            assert.strictEqual(putBucketName, `${constants.mpuBucketPrefix}${bucketName}`);
+                            assert.strictEqual(objName, `overview${splitter}${objectKey}${splitter}${testUploadId}`);
+                            assert.strictEqual(objVal.completeInProgress, true);
+                        } else {
+                            assert.strictEqual(params.replayId, testUploadId);
+                            metadataBackend.putObject = origPutObject;
+                        }
+                        origPutObject(putBucketName, objName, objVal, params, log, cb);
+                        callCount += 1;
+                    };
+                    const parts = [{ partNumber: 1, eTag }];
+                    const completeRequest = _createCompleteMpuRequest(testUploadId, parts);
+                    completeMultipartUpload(authInfo, completeRequest, log, err => next(err, testUploadId));
+                },
+                (testUploadId, next) => {
+                    versioningTestUtils.assertDataStoreValues(ds, [undefined, objData[1], objData[2]]);
+
+                    const origPutObject = metadataBackend.putObject;
+                    metadataBackend.putObject = (putBucketName, objName, objVal, params, log, cb) => {
+                        assert.strictEqual(params.oldReplayId, testUploadId);
+                        metadataBackend.putObject = origPutObject;
+                        origPutObject(putBucketName, objName, objVal, params, log, cb);
+                    };
+                    // overwrite null version with a non-MPU object
+                    objectPut(authInfo, testPutObjectRequests[1], undefined, log, err => next(err));
+                },
+            ],
+            err => {
+                assert.ifError(err, `Unexpected err: ${err}`);
+                done();
+            },
+        );
+    });
 
     it('should finish deleting metadata on completeMultipartUpload retry', done => {
         let origDeleteObject;
@@ -2758,7 +2733,7 @@ describe('multipart upload with object lock', () => {
 
     after(cleanup);
 
-    it('mpu object should contain retention info when mpu initiated with ' + 'object retention', done => {
+    it('mpu object should contain retention info when mpu initiated with object retention', done => {
         let versionId;
         async.waterfall(
             [
@@ -2793,7 +2768,7 @@ describe('multipart upload with object lock', () => {
         );
     });
 
-    it('mpu object should contain legal hold info when mpu initiated with ' + 'legal hold', done => {
+    it('mpu object should contain legal hold info when mpu initiated with legal hold', done => {
         let versionId;
         async.waterfall(
             [

@@ -40,18 +40,15 @@ describe('PUT bucket website', () => {
             _testPutBucketWebsite(config, 400, 'InvalidArgument', done);
         });
 
-        it(
-            'should return an InvalidRequest if both ' + 'RedirectAllRequestsTo and IndexDocument are provided',
-            done => {
-                const redirectAllTo = {
-                    HostName: 'test',
-                    Protocol: 'http',
-                };
-                const config = new WebsiteConfigTester(null, null, redirectAllTo);
-                config.addRoutingRule({ Protocol: 'http' });
-                _testPutBucketWebsite(config, 400, 'InvalidRequest', done);
-            },
-        );
+        it('should return an InvalidRequest if both RedirectAllRequestsTo and IndexDocument are provided', done => {
+            const redirectAllTo = {
+                HostName: 'test',
+                Protocol: 'http',
+            };
+            const config = new WebsiteConfigTester(null, null, redirectAllTo);
+            config.addRoutingRule({ Protocol: 'http' });
+            _testPutBucketWebsite(config, 400, 'InvalidRequest', done);
+        });
 
         it('should return InvalidArgument if index has slash', done => {
             const config = new WebsiteConfigTester('in/dex.html');
@@ -84,7 +81,7 @@ describe('PUT bucket website', () => {
             _testPutBucketWebsite(config, 400, 'InvalidRequest', done);
         });
 
-        it('should return InvalidRequest if RedirectAllRequestsTo Protocol ' + 'is not http or https', done => {
+        it('should return InvalidRequest if RedirectAllRequestsTo Protocol is not http or https', done => {
             const redirectAllTo = {
                 HostName: 'test',
                 Protocol: 'notvalidprotocol',
@@ -93,14 +90,11 @@ describe('PUT bucket website', () => {
             _testPutBucketWebsite(config, 400, 'InvalidRequest', done);
         });
 
-        it(
-            'should return MalformedXML if Redirect HttpRedirectCode ' + 'is a string that does not contains a number',
-            done => {
-                const config = new WebsiteConfigTester('index.html');
-                config.addRoutingRule({ HttpRedirectCode: 'notvalidhttpcode' });
-                _testPutBucketWebsite(config, 400, 'MalformedXML', done);
-            },
-        );
+        it('should return MalformedXML if Redirect HttpRedirectCode is a string that does not contains a number', done => {
+            const config = new WebsiteConfigTester('index.html');
+            config.addRoutingRule({ HttpRedirectCode: 'notvalidhttpcode' });
+            _testPutBucketWebsite(config, 400, 'MalformedXML', done);
+        });
 
         it(
             'should return InvalidRequest if Redirect HttpRedirectCode ' +

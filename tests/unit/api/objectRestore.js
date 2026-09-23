@@ -161,7 +161,7 @@ describe('restoreObject API', () => {
         },
     );
 
-    it('should return InvalidObjectState ' + 'while restoring an expired restored object', () => {
+    it('should return InvalidObjectState while restoring an expired restored object', () => {
         mdColdHelper.putBucketMock(bucketName, null, () => {
             mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getExpiredObjectMD(), () => {
                 objectRestore(authInfo, objectRestoreRequest(objectRestoreXml), log, err => {

@@ -49,8 +49,7 @@ describe('DELETE object', () => {
                         s3.send(new UploadPartCommand(params)).catch(err => {
                             if (attempt < 3) {
                                 process.stdout.write(
-                                    `Retrying UploadPart ${params.PartNumber} ` +
-                                        `(attempt ${attempt + 1}/3): ${err}\n`,
+                                    `Retrying UploadPart ${params.PartNumber} (attempt ${attempt + 1}/3): ${err}\n`,
                                 );
                                 return uploadWithRetry(params, attempt + 1);
                             }

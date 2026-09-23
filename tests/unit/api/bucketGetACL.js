@@ -369,7 +369,7 @@ describe('bucketGetACL API', () => {
         });
     });
 
-    it('should get all ACLs when predefined groups are used for ' + 'more than one grant', done => {
+    it('should get all ACLs when predefined groups are used for more than one grant', done => {
         const { allAuthedUsersId, publicId } = constants;
         const testPutACLRequest = {
             bucketName,

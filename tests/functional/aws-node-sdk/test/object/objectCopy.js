@@ -231,7 +231,7 @@ describe('Object Copy', () => {
             },
         );
 
-        it('should return 400 InvalidArgument if invalid tagging ' + 'directive', done => {
+        it('should return 400 InvalidArgument if invalid tagging directive', done => {
             s3.send(
                 new CopyObjectCommand({
                     Bucket: destBucketName,
@@ -475,7 +475,7 @@ describe('Object Copy', () => {
             },
         );
 
-        it('should copy an object from a source bucket to a different ' + 'key in the same bucket', async () => {
+        it('should copy an object from a source bucket to a different key in the same bucket', async () => {
             const res = await s3.send(
                 new CopyObjectCommand({
                     Bucket: sourceBucketName,
@@ -487,40 +487,37 @@ describe('Object Copy', () => {
         });
 
         // TODO: see S3C-3482, figure out why this test fails in Integration builds
-        itSkipIfE2E(
-            'should not return error if copying object w/ > ' + '2KB user-defined md and COPY directive',
-            done => {
-                const metadata = genMaxSizeMetaHeaders();
-                const params = {
-                    Bucket: destBucketName,
-                    Key: destObjName,
-                    CopySource: `${sourceBucketName}/${sourceObjName}`,
-                    MetadataDirective: 'COPY',
-                    Metadata: metadata,
-                };
-                s3.send(new CopyObjectCommand(params))
-                    .then(() => {
-                        // add one more byte to be over the limit
-                        metadata.header0 = `${metadata.header0}${'0'}`;
-                        s3.send(new CopyObjectCommand(params))
-                            .then(() => {
-                                done();
-                            })
-                            .catch(err => {
-                                assert.strictEqual(err, null, `Unexpected err: ${err}`);
-                                done(err);
-                            });
-                    })
-                    .catch(err => {
-                        assert.strictEqual(err, null, `Unexpected err: ${err}`);
-                        done(err);
-                    });
-            },
-        );
+        itSkipIfE2E('should not return error if copying object w/ > 2KB user-defined md and COPY directive', done => {
+            const metadata = genMaxSizeMetaHeaders();
+            const params = {
+                Bucket: destBucketName,
+                Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                MetadataDirective: 'COPY',
+                Metadata: metadata,
+            };
+            s3.send(new CopyObjectCommand(params))
+                .then(() => {
+                    // add one more byte to be over the limit
+                    metadata.header0 = `${metadata.header0}${'0'}`;
+                    s3.send(new CopyObjectCommand(params))
+                        .then(() => {
+                            done();
+                        })
+                        .catch(err => {
+                            assert.strictEqual(err, null, `Unexpected err: ${err}`);
+                            done(err);
+                        });
+                })
+                .catch(err => {
+                    assert.strictEqual(err, null, `Unexpected err: ${err}`);
+                    done(err);
+                });
+        });
 
         // TODO: see S3C-3482, figure out why this test fails in Integration builds
         itSkipIfE2E(
-            'should return error if copying object w/ > 2KB ' + 'user-defined md and REPLACE directive',
+            'should return error if copying object w/ > 2KB user-defined md and REPLACE directive',
             async () => {
                 try {
                     const metadata = genMaxSizeMetaHeaders();
@@ -543,7 +540,7 @@ describe('Object Copy', () => {
             },
         );
 
-        it('should copy an object from a source to the same destination ' + '(update metadata)', async () => {
+        it('should copy an object from a source to the same destination (update metadata)', async () => {
             const res = await s3.send(
                 new CopyObjectCommand({
                     Bucket: sourceBucketName,
@@ -556,21 +553,18 @@ describe('Object Copy', () => {
             await successCopyCheck(null, res.CopyObjectResult, newMetadata, sourceBucketName, sourceObjName);
         });
 
-        it(
-            'should copy an object and replace the metadata if replace ' + 'included as metadata directive header',
-            async () => {
-                const res = await s3.send(
-                    new CopyObjectCommand({
-                        Bucket: destBucketName,
-                        Key: destObjName,
-                        CopySource: `${sourceBucketName}/${sourceObjName}`,
-                        MetadataDirective: 'REPLACE',
-                        Metadata: newMetadata,
-                    }),
-                );
-                await successCopyCheck(null, res.CopyObjectResult, newMetadata, destBucketName, destObjName);
-            },
-        );
+        it('should copy an object and replace the metadata if replace included as metadata directive header', async () => {
+            const res = await s3.send(
+                new CopyObjectCommand({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    MetadataDirective: 'REPLACE',
+                    Metadata: newMetadata,
+                }),
+            );
+            await successCopyCheck(null, res.CopyObjectResult, newMetadata, destBucketName, destObjName);
+        });
 
         it(
             'should copy an object and replace ContentType if replace ' +
@@ -930,25 +924,22 @@ describe('Object Copy', () => {
             },
         );
 
-        it(
-            'should return Not Implemented error for obj. encryption using ' + 'customer-provided encryption keys',
-            done => {
-                const params = {
-                    Bucket: destBucketName,
-                    Key: 'key',
-                    CopySource: `${sourceBucketName}/${sourceObjName}`,
-                    SSECustomerAlgorithm: 'AES256',
-                };
-                s3.send(new CopyObjectCommand(params))
-                    .then(() => {
-                        throw Error('Expected NotImplemented error');
-                    })
-                    .catch(err => {
-                        assert.strictEqual(err.name, 'NotImplemented');
-                        done();
-                    });
-            },
-        );
+        it('should return Not Implemented error for obj. encryption using customer-provided encryption keys', done => {
+            const params = {
+                Bucket: destBucketName,
+                Key: 'key',
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                SSECustomerAlgorithm: 'AES256',
+            };
+            s3.send(new CopyObjectCommand(params))
+                .then(() => {
+                    throw Error('Expected NotImplemented error');
+                })
+                .catch(err => {
+                    assert.strictEqual(err.name, 'NotImplemented');
+                    done();
+                });
+        });
 
         it('should copy an object and set the acl on the new object', done => {
             s3.send(
@@ -1214,26 +1205,23 @@ describe('Object Copy', () => {
                     .then(() => otherAccountBucketUtility.deleteOne(otherAccountBucket)),
             );
 
-            it(
-                'should not allow an account without read persmission on the ' + 'source object to copy the object',
-                done => {
-                    otherAccountS3
-                        .send(
-                            new CopyObjectCommand({
-                                Bucket: otherAccountBucket,
-                                Key: otherAccountKey,
-                                CopySource: `${sourceBucketName}/${sourceObjName}`,
-                            }),
-                        )
-                        .then(() => {
-                            done();
-                        })
-                        .catch(err => {
-                            checkError(err, 'AccessDenied', 403);
-                            done();
-                        });
-                },
-            );
+            it('should not allow an account without read persmission on the source object to copy the object', done => {
+                otherAccountS3
+                    .send(
+                        new CopyObjectCommand({
+                            Bucket: otherAccountBucket,
+                            Key: otherAccountKey,
+                            CopySource: `${sourceBucketName}/${sourceObjName}`,
+                        }),
+                    )
+                    .then(() => {
+                        done();
+                    })
+                    .catch(err => {
+                        checkError(err, 'AccessDenied', 403);
+                        done();
+                    });
+            });
 
             it(
                 'should not allow an account without write persmission on the ' +
@@ -1281,7 +1269,7 @@ describe('Object Copy', () => {
             );
         });
 
-        it('If-Match: returns no error when ETag match, with double quotes ' + 'around ETag', done => {
+        it('If-Match: returns no error when ETag match, with double quotes around ETag', done => {
             requestCopy({ CopySourceIfMatch: etag }, err => {
                 checkNoError(err);
                 done();
@@ -1302,7 +1290,7 @@ describe('Object Copy', () => {
             });
         });
 
-        it('If-Match: returns no error when one of ETags match, without ' + 'double quotes around ETag', done => {
+        it('If-Match: returns no error when one of ETags match, without double quotes around ETag', done => {
             requestCopy({ CopySourceIfMatch: `non-matching,${etagTrim}` }, err => {
                 checkNoError(err);
                 done();
@@ -1342,7 +1330,7 @@ describe('Object Copy', () => {
             );
         });
 
-        it('If-None-Match: returns PreconditionFailed when ETag match, with' + 'double quotes around ETag', done => {
+        it('If-None-Match: returns PreconditionFailed when ETag match, withdouble quotes around ETag', done => {
             requestCopy({ CopySourceIfNoneMatch: etag }, err => {
                 checkError(err, 'PreconditionFailed', 412);
                 done();

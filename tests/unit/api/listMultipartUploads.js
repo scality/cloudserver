@@ -90,7 +90,7 @@ describe('listMultipartUploads API', () => {
         },
     );
 
-    it('should return list of all multipart uploads if ' + 'no delimiter specified', done => {
+    it('should return list of all multipart uploads if no delimiter specified', done => {
         const testListRequest = {
             bucketName,
             namespace,
@@ -117,7 +117,7 @@ describe('listMultipartUploads API', () => {
         );
     });
 
-    it('should return no more keys than ' + 'max-uploads specified', done => {
+    it('should return no more keys than max-uploads specified', done => {
         const testListRequest = {
             bucketName,
             namespace,
@@ -146,7 +146,7 @@ describe('listMultipartUploads API', () => {
         );
     });
 
-    it('should url encode object key name ' + 'if requested', done => {
+    it('should url encode object key name if requested', done => {
         const testListRequest = {
             bucketName,
             namespace,
@@ -173,7 +173,7 @@ describe('listMultipartUploads API', () => {
         );
     });
 
-    it('should return key following specified ' + 'key-marker', done => {
+    it('should return key following specified key-marker', done => {
         const testListRequest = {
             bucketName,
             namespace,

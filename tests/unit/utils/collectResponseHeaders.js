@@ -41,7 +41,7 @@ describe('Middleware: Collect Response Headers', () => {
         assert.strictEqual(headers['Accept-Ranges'], 'bytes');
     });
 
-    it('should return an undefined value when x-amz-website-redirect-location' + ' is empty', () => {
+    it('should return an undefined value when x-amz-website-redirect-location is empty', () => {
         const objectMD = { 'x-amz-website-redirect-location': '' };
         const headers = collectResponseHeaders(objectMD);
         assert.strictEqual(headers['x-amz-website-redirect-location'], undefined);

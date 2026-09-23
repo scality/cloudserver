@@ -140,7 +140,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
     // S3C doesn't support service account. There is no cross account access for replication account.
     // (canonicalId looking like http://acs.zenko.io/accounts/service/replication)
     const itSkipS3C = process.env.S3_END_TO_END ? it.skip : it;
-    itSkipS3C('should accept valid versioning configuration if user is a ' + 'replication user', async () => {
+    itSkipS3C('should accept valid versioning configuration if user is a replication user', async () => {
         const params = {
             Bucket: bucket,
             VersioningConfiguration: {

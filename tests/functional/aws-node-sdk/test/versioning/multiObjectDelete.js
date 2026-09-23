@@ -66,9 +66,7 @@ describe('Multi-Object Versioning Delete Success', function success() {
                     return await s3.send(new PutObjectCommand(params));
                 } catch (err) {
                     if (attempt < 3) {
-                        process.stdout.write(
-                            `Retrying PutObject ${params.Key} ` + `(attempt ${attempt + 1}/3): ${err}\n`,
-                        );
+                        process.stdout.write(`Retrying PutObject ${params.Key} (attempt ${attempt + 1}/3): ${err}\n`);
                         return putWithRetry(params, attempt + 1);
                     }
                     throw err;
@@ -220,7 +218,7 @@ describe('Multi-Object Versioning Delete - deleting delete marker', () => {
             });
         });
 
-        it('should send back VersionId and DeleteMarkerVersionId both equal ' + 'to deleteVersionId', async () => {
+        it('should send back VersionId and DeleteMarkerVersionId both equal to deleteVersionId', async () => {
             await s3.send(new PutObjectCommand({ Bucket: bucketName, Key: key }));
 
             const deleteRes = await s3.send(

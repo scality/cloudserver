@@ -67,8 +67,8 @@ describe('putBucketWebsite API', () => {
     });
 
     describe('helper functions', () => {
-        it('xmlContainsElem should return true if xml contains ' + 'specified element', done => {
-            const xml = '<Toplevel><Parent>' + '<Element>value</Element>' + '</Parent></Toplevel>';
+        it('xmlContainsElem should return true if xml contains specified element', done => {
+            const xml = '<Toplevel><Parent><Element>value</Element></Parent></Toplevel>';
             parseString(xml, (err, result) => {
                 if (err) {
                     process.stdout.write(`Unexpected err ${err} parsing xml`);
@@ -80,7 +80,7 @@ describe('putBucketWebsite API', () => {
             });
         });
         it('xmlContainsElem should return false if xml does not contain ' + 'specified element', done => {
-            const xml = '<Toplevel><Parent>' + '<ElementA>value</ElementA>' + '</Parent></Toplevel>';
+            const xml = '<Toplevel><Parent><ElementA>value</ElementA></Parent></Toplevel>';
             parseString(xml, (err, result) => {
                 if (err) {
                     process.stdout.write(`Unexpected err ${err} parsing xml`);
@@ -116,7 +116,7 @@ describe('putBucketWebsite API', () => {
             'xmlContainsElem should return true if parent contains at least ' +
                 'one of the elements specified, if multiple',
             done => {
-                const xml = '<Toplevel><Parent>' + '<ElementB>value</ElementB>' + '</Parent></Toplevel>';
+                const xml = '<Toplevel><Parent><ElementB>value</ElementB></Parent></Toplevel>';
                 parseString(xml, (err, result) => {
                     if (err) {
                         process.stdout.write(`Unexpected err ${err} parsing xml`);
@@ -132,7 +132,7 @@ describe('putBucketWebsite API', () => {
             'xmlContainsElem should return false if parent contains only one ' +
                 'of multiple elements specified and checkForAll specified in options',
             done => {
-                const xml = '<Toplevel><Parent>' + '<ElementB>value</ElementB>' + '</Parent></Toplevel>';
+                const xml = '<Toplevel><Parent><ElementB>value</ElementB></Parent></Toplevel>';
                 parseString(xml, (err, result) => {
                     if (err) {
                         process.stdout.write(`Unexpected err ${err} parsing xml`);

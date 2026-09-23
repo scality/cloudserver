@@ -366,7 +366,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should initiate a multipart upload on AWS location with ' + 'bucketMatch equals false', done => {
+    it('should initiate a multipart upload on AWS location with bucketMatch equals false', done => {
         const objectKey = `key-${Date.now()}`;
         const initiateRequest = {
             bucketName,
@@ -425,7 +425,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should list the parts of a multipart upload on real AWS location ' + 'with bucketMatch set to false', done => {
+    it('should list the parts of a multipart upload on real AWS location with bucketMatch set to false', done => {
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocationMismatch, objectKey, uploadId => {
             const listParams = getListParams(objectKey, uploadId);
@@ -508,7 +508,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should abort a multipart upload on real AWS location with' + 'bucketMatch set to false', done => {
+    it('should abort a multipart upload on real AWS location withbucketMatch set to false', done => {
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocationMismatch, objectKey, uploadId => {
             const delParams = getDeleteParams(objectKey, uploadId);
@@ -542,7 +542,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should return ServiceUnavailable if MPU deleted directly from AWS ' + 'and try to complete from S3', done => {
+    it('should return ServiceUnavailable if MPU deleted directly from AWS and try to complete from S3', done => {
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocation, objectKey, uploadId => {
             abortMPU(uploadId, getAwsParams(objectKey), () => {
@@ -567,7 +567,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should complete a multipart upload on real AWS location with ' + 'bucketMatch set to false', done => {
+    it('should complete a multipart upload on real AWS location with bucketMatch set to false', done => {
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocationMismatch, objectKey, uploadId => {
             const compParams = getCompleteParams(objectKey, uploadId);
@@ -607,7 +607,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should be successful initiating MPU on AWS with Scality ' + 'S3 versioning enabled', done => {
+    it('should be successful initiating MPU on AWS with Scality S3 versioning enabled', done => {
         const objectKey = `key-${Date.now()}`;
         // putting null version: put obj before versioning configured
         putObject(awsLocation, objectKey, () => {

@@ -131,22 +131,19 @@ describe('GET object retention', () => {
             }
         });
 
-        it(
-            'should return InvalidRequest error getting retention to object ' + 'in bucket with no object lock enabled',
-            async () => {
-                try {
-                    await s3.send(
-                        new GetObjectRetentionCommand({
-                            Bucket: unlockedBucket,
-                            Key: objectName,
-                        }),
-                    );
-                    throw new Error('Expected InvalidRequest error');
-                } catch (err) {
-                    checkError(err, 'InvalidRequest', 400);
-                }
-            },
-        );
+        it('should return InvalidRequest error getting retention to object in bucket with no object lock enabled', async () => {
+            try {
+                await s3.send(
+                    new GetObjectRetentionCommand({
+                        Bucket: unlockedBucket,
+                        Key: objectName,
+                    }),
+                );
+                throw new Error('Expected InvalidRequest error');
+            } catch (err) {
+                checkError(err, 'InvalidRequest', 400);
+            }
+        });
 
         it('should return NoSuchObjectLockConfiguration if no retention set', async () => {
             try {

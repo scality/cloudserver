@@ -8,7 +8,7 @@ const objectKey = 'key';
 const objData = Buffer.alloc(1024, 'a');
 // note this is not the correct checksum in objDataWithTrailingChecksum
 const objDataWithTrailingChecksum =
-    '10\r\n0123456789abcdef\r\n' + '10\r\n0123456789abcdef\r\n' + '0\r\nx-amz-checksum-crc64nvme:YeIDuLa7tU0=\r\n';
+    '10\r\n0123456789abcdef\r\n10\r\n0123456789abcdef\r\n0\r\nx-amz-checksum-crc64nvme:YeIDuLa7tU0=\r\n';
 const objDataWithoutTrailingChecksum = '0123456789abcdef0123456789abcdef';
 
 const config = require('../../config.json');

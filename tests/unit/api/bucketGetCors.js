@@ -61,7 +61,7 @@ describe('getBucketCors API', () => {
     });
     afterEach(() => cleanup());
 
-    it('should return same XML as uploaded for AllowedMethod and ' + 'AllowedOrigin', done => {
+    it('should return same XML as uploaded for AllowedMethod and AllowedOrigin', done => {
         const sampleXml =
             '<CORSRule>' +
             '<AllowedMethod>PUT</AllowedMethod>' +

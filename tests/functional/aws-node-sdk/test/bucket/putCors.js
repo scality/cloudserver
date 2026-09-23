@@ -88,7 +88,7 @@ describe('PUT bucket cors', () => {
             await _testPutBucketCors(testCors, 400, 'MalformedXML');
         });
 
-        it('should return InvalidRequest if more than one asterisk in ' + 'AllowedOrigin', async () => {
+        it('should return InvalidRequest if more than one asterisk in AllowedOrigin', async () => {
             const testCors = _corsTemplate({ AllowedOrigins: ['http://*.*.com'] });
             await _testPutBucketCors(testCors, 400, 'InvalidRequest');
         });
@@ -113,13 +113,10 @@ describe('PUT bucket cors', () => {
             await _testPutBucketCors(testCors, 400, 'InvalidRequest');
         });
 
-        it(
-            'should return InvalidRequest if ExposeHeader has character ' + 'that is not dash or alphanumeric',
-            async () => {
-                const testCors = _corsTemplate({ ExposeHeaders: ['test header'] });
-                await _testPutBucketCors(testCors, 400, 'InvalidRequest');
-            },
-        );
+        it('should return InvalidRequest if ExposeHeader has character that is not dash or alphanumeric', async () => {
+            const testCors = _corsTemplate({ ExposeHeaders: ['test header'] });
+            await _testPutBucketCors(testCors, 400, 'InvalidRequest');
+        });
 
         it('should return InvalidRequest if ExposeHeader has wildcard', async () => {
             const testCors = _corsTemplate({ ExposeHeaders: ['x-amz-*'] });

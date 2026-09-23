@@ -58,7 +58,7 @@ function getVersioningParams(status) {
 
 // Get a complete replication configuration, or remove the specified property.
 const replicationConfig = {
-    Role: 'arn:aws:iam::account-id:role/src-resource,' + 'arn:aws:iam::account-id:role/dest-resource',
+    Role: 'arn:aws:iam::account-id:role/src-resource,arn:aws:iam::account-id:role/dest-resource',
     Rules: [
         {
             Destination: {
@@ -155,16 +155,15 @@ describe('aws-node-sdk test putBucketReplication bucket status', () => {
             }
         });
 
-        it("should not put configuration on bucket with 'Suspended'" + 'versioning', () =>
-            checkVersioningError(s3, 'Suspended', 'InvalidRequest'),
-        );
+        it("should not put configuration on bucket with 'Suspended'versioning", () =>
+            checkVersioningError(s3, 'Suspended', 'InvalidRequest'));
 
         it('should put configuration on a bucket with versioning', () => checkVersioningError(s3, 'Enabled', null));
 
         // S3C doesn't support service account. There is no cross account access for replication account.
         // (canonicalId looking like http://acs.zenko.io/accounts/service/replication)
         const itSkipS3C = process.env.S3_END_TO_END ? it.skip : it;
-        itSkipS3C('should put configuration on a bucket with versioning if ' + 'user is a replication user', () =>
+        itSkipS3C('should put configuration on a bucket with versioning if user is a replication user', () =>
             checkVersioningError(replicationAccountS3, 'Enabled', null),
         );
     });
@@ -248,7 +247,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
                 Status: 'Enabled',
             },
         ]);
-        config.Role = 'arn:aws:iam::account-id:role/resource,' + 'arn:aws:iam::account-id:role/resource1';
+        config.Role = 'arn:aws:iam::account-id:role/resource,arn:aws:iam::account-id:role/resource1';
         checkError(config, null);
     });
 
@@ -256,7 +255,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
         'should not allow a comma separated list of roles when' + ' a rule storageClass defines an external location',
         () => {
             const config = {
-                Role: 'arn:aws:iam::account-id:role/src-resource,' + 'arn:aws:iam::account-id:role/dest-resource',
+                Role: 'arn:aws:iam::account-id:role/src-resource,arn:aws:iam::account-id:role/dest-resource',
                 Rules: [
                     {
                         Destination: {
@@ -324,7 +323,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
         return checkError(config, 'InvalidRequest');
     });
 
-    it("should accept configuration when 'ID' is not provided for multiple " + 'rules', () => {
+    it("should accept configuration when 'ID' is not provided for multiple rules", () => {
         const replicationConfigWithoutID = Object.assign({}, replicationConfig);
         const rule1 = replicationConfigWithoutID.Rules[0];
         delete rule1.ID;
@@ -487,7 +486,7 @@ describe('aws-node-sdk test putBucketReplication CORS', () => {
         const replicationParams = {
             Bucket: bucket,
             ReplicationConfiguration: {
-                Role: 'arn:aws:iam::account-id:role/src-resource,' + 'arn:aws:iam::account-id:role/dest-resource',
+                Role: 'arn:aws:iam::account-id:role/src-resource,arn:aws:iam::account-id:role/dest-resource',
                 Rules: [],
             },
         };

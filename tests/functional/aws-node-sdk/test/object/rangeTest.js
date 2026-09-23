@@ -294,9 +294,8 @@ describe('aws-node-sdk range tests', () => {
                     .then(() => execAsync(`rm hashedFile.${fileSize}*`)),
             );
 
-            it('should get the final 90 bytes of a 2890 byte object for a ' + 'byte range of 2800-', () =>
-                checkRanges('2800-', fileSize),
-            );
+            it('should get the final 90 bytes of a 2890 byte object for a byte range of 2800-', () =>
+                checkRanges('2800-', fileSize));
 
             it(
                 'should get the final 90 bytes of a 2890 byte object for a ' +

@@ -93,7 +93,7 @@ const tests = [
         },
     },
     {
-        name: 'return name of common prefix of common prefix objects if ' + 'delimiter and prefix specified',
+        name: 'return name of common prefix of common prefix objects if delimiter and prefix specified',
         request: Object.assign(
             {
                 url: `/${bucketName}?delimiter=${delimiter}&prefix=${prefix}`,

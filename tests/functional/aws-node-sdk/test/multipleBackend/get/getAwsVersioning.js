@@ -79,7 +79,7 @@ describeSkipIfNotMultiple('AWS backend get object with versioning', function tes
                 });
         });
 
-        it('should not return version ids when versioning has not been ' + 'configured via CloudServer', done => {
+        it('should not return version ids when versioning has not been configured via CloudServer', done => {
             const key = `somekey-${genUniqID()}`;
             s3.send(
                 new PutObjectCommand({
@@ -127,49 +127,41 @@ describeSkipIfNotMultiple('AWS backend get object with versioning', function tes
             },
         );
 
-        it(
-            'should return version id for null version when versioning ' + 'has been configured via CloudServer',
-            done => {
-                const key = `somekey-${genUniqID()}`;
-                async.waterfall(
-                    [
-                        next =>
-                            s3
-                                .send(
-                                    new PutObjectCommand({
-                                        Bucket: bucket,
-                                        Key: key,
-                                        Body: someBody,
-                                        Metadata: { 'scal-location-constraint': awsLocation },
-                                    }),
-                                )
-                                .then(() => next())
-                                .catch(err => {
-                                    assert.strictEqual(
-                                        err,
-                                        null,
-                                        'Expected success ' + `putting object, got error ${err}`,
-                                    );
-                                    next(err);
+        it('should return version id for null version when versioning has been configured via CloudServer', done => {
+            const key = `somekey-${genUniqID()}`;
+            async.waterfall(
+                [
+                    next =>
+                        s3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucket,
+                                    Key: key,
+                                    Body: someBody,
+                                    Metadata: { 'scal-location-constraint': awsLocation },
                                 }),
-                        next => enableVersioning(s3, bucket, next),
-                        // get with version id specified
-                        next =>
-                            getAndAssertResult(
-                                s3,
-                                { bucket, key, body: someBody, versionId: 'null', expectedVersionId: 'null' },
-                                next,
-                            ),
-                        // get without version id specified
-                        next =>
-                            getAndAssertResult(s3, { bucket, key, body: someBody, expectedVersionId: 'null' }, next),
-                    ],
-                    done,
-                );
-            },
-        );
+                            )
+                            .then(() => next())
+                            .catch(err => {
+                                assert.strictEqual(err, null, 'Expected success ' + `putting object, got error ${err}`);
+                                next(err);
+                            }),
+                    next => enableVersioning(s3, bucket, next),
+                    // get with version id specified
+                    next =>
+                        getAndAssertResult(
+                            s3,
+                            { bucket, key, body: someBody, versionId: 'null', expectedVersionId: 'null' },
+                            next,
+                        ),
+                    // get without version id specified
+                    next => getAndAssertResult(s3, { bucket, key, body: someBody, expectedVersionId: 'null' }, next),
+                ],
+                done,
+            );
+        });
 
-        it('should overwrite the null version if putting object twice ' + 'before versioning is configured', done => {
+        it('should overwrite the null version if putting object twice before versioning is configured', done => {
             const key = `somekey-${genUniqID()}`;
             const data = ['data1', 'data2'];
             async.waterfall(
@@ -189,7 +181,7 @@ describeSkipIfNotMultiple('AWS backend get object with versioning', function tes
             );
         });
 
-        it('should overwrite existing null version if putting object ' + 'after suspending versioning', done => {
+        it('should overwrite existing null version if putting object after suspending versioning', done => {
             const key = `somekey-${genUniqID()}`;
             const data = ['data1', 'data2'];
             async.waterfall(

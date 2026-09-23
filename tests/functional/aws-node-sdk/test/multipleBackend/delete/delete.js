@@ -155,7 +155,7 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
             }
         });
 
-        it('should delete object from AWS location with bucketMatch set to ' + 'false', async () => {
+        it('should delete object from AWS location with bucketMatch set to false', async () => {
             try {
                 await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: mismatchObject }));
                 await s3.send(

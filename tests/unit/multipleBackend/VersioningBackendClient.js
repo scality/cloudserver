@@ -7,7 +7,7 @@ const DummyService = require('../DummyService');
 const { DummyRequestLogger } = require('../helpers');
 
 const missingVerIdInternalError = errorInstances.InternalError.customizeDescription(
-    'Invalid state. Please ensure versioning is enabled ' + 'in AWS for the location constraint and try again.',
+    'Invalid state. Please ensure versioning is enabled in AWS for the location constraint and try again.',
 );
 
 const log = new DummyRequestLogger();
@@ -67,7 +67,7 @@ const genTests = [
         callback: assertFailure,
     },
     {
-        msg: 'should return success if supportsVersioning === false ' + 'and backend versioning is disabled',
+        msg: 'should return success if supportsVersioning === false and backend versioning is disabled',
         input: { supportsVersioning: false, enableMockVersioning: false },
         callback: assertSuccess,
     },
@@ -172,7 +172,7 @@ describe('AwsClient::healthcheck', () => {
             callback: assertFailure,
         },
         {
-            msg: 'should return success if supportsVersioning === false ' + 'and backend versioning is disabled',
+            msg: 'should return success if supportsVersioning === false and backend versioning is disabled',
             input: { supportsVersioning: false, enableMockVersioning: false },
             callback: assertSuccessNonVersioned,
         },

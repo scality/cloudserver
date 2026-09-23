@@ -91,47 +91,41 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', function descri
                     .catch(done);
             });
 
-            it(
-                'should return a NotImplemented error if try to put ' + 'versioning to bucket with Azure location',
-                done => {
-                    const params = {
-                        Bucket: azureContainerName,
-                        VersioningConfiguration: {
-                            Status: 'Enabled',
-                        },
-                    };
-                    s3.send(new PutBucketVersioningCommand(params))
-                        .then(() => {
-                            done(new Error('Expected NotImplemented error'));
-                        })
-                        .catch(err => {
-                            assert.strictEqual(err.name, 'NotImplemented');
-                            done();
-                        });
-                },
-            );
+            it('should return a NotImplemented error if try to put versioning to bucket with Azure location', done => {
+                const params = {
+                    Bucket: azureContainerName,
+                    VersioningConfiguration: {
+                        Status: 'Enabled',
+                    },
+                };
+                s3.send(new PutBucketVersioningCommand(params))
+                    .then(() => {
+                        done(new Error('Expected NotImplemented error'));
+                    })
+                    .catch(err => {
+                        assert.strictEqual(err.name, 'NotImplemented');
+                        done();
+                    });
+            });
 
-            it(
-                'should put an object to Azure, with no object location ' + 'header, based on bucket location',
-                function it(done) {
-                    const params = {
-                        Bucket: azureContainerName,
-                        Key: this.test.keyName,
-                        Body: normalBody,
-                    };
-                    async.waterfall(
-                        [
-                            next => {
-                                s3.send(new PutObjectCommand(params))
-                                    .then(() => setTimeout(() => next(), azureTimeout))
-                                    .catch(next);
-                            },
-                            next => azureGetCheck(this.test.keyName, normalMD5, {}, next),
-                        ],
-                        done,
-                    );
-                },
-            );
+            it('should put an object to Azure, with no object location header, based on bucket location', function it(done) {
+                const params = {
+                    Bucket: azureContainerName,
+                    Key: this.test.keyName,
+                    Body: normalBody,
+                };
+                async.waterfall(
+                    [
+                        next => {
+                            s3.send(new PutObjectCommand(params))
+                                .then(() => setTimeout(() => next(), azureTimeout))
+                                .catch(next);
+                        },
+                        next => azureGetCheck(this.test.keyName, normalMD5, {}, next),
+                    ],
+                    done,
+                );
+            });
         });
 
         describe('with no bucket location header', () => {
@@ -189,7 +183,7 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', function descri
                     .catch(done);
             });
 
-            it('should return error ServiceUnavailable putting an invalid ' + 'key name to Azure', done => {
+            it('should return error ServiceUnavailable putting an invalid key name to Azure', done => {
                 const params = {
                     Bucket: azureContainerName,
                     Key: '.',
@@ -206,7 +200,7 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', function descri
                     });
             });
 
-            it('should return error NotImplemented putting a ' + 'version to Azure', function itF(done) {
+            it('should return error NotImplemented putting a version to Azure', function itF(done) {
                 s3.send(
                     new PutBucketVersioningCommand({
                         Bucket: azureContainerName,
@@ -231,118 +225,107 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', function descri
                     });
             });
 
-            it(
-                'should put two objects to Azure with same ' + 'key, and newest object should be returned',
-                function itF(done) {
-                    const params = {
-                        Bucket: azureContainerName,
-                        Key: this.test.keyName,
-                        Metadata: { 'scal-location-constraint': azureLocation },
-                    };
-                    async.waterfall(
-                        [
-                            next => {
-                                s3.send(new PutObjectCommand(params))
-                                    .then(() => next())
-                                    .catch(next);
-                            },
-                            next => {
-                                params.Body = normalBody;
-                                s3.send(new PutObjectCommand(params))
-                                    .then(() => setTimeout(() => next(), azureTimeout))
-                                    .catch(next);
-                            },
-                            next => {
-                                setTimeout(() => {
-                                    azureGetCheck(this.test.keyName, normalMD5, azureMetadata, next);
-                                }, azureTimeout);
-                            },
-                        ],
-                        done,
-                    );
-                },
-            );
+            it('should put two objects to Azure with same key, and newest object should be returned', function itF(done) {
+                const params = {
+                    Bucket: azureContainerName,
+                    Key: this.test.keyName,
+                    Metadata: { 'scal-location-constraint': azureLocation },
+                };
+                async.waterfall(
+                    [
+                        next => {
+                            s3.send(new PutObjectCommand(params))
+                                .then(() => next())
+                                .catch(next);
+                        },
+                        next => {
+                            params.Body = normalBody;
+                            s3.send(new PutObjectCommand(params))
+                                .then(() => setTimeout(() => next(), azureTimeout))
+                                .catch(next);
+                        },
+                        next => {
+                            setTimeout(() => {
+                                azureGetCheck(this.test.keyName, normalMD5, azureMetadata, next);
+                            }, azureTimeout);
+                        },
+                    ],
+                    done,
+                );
+            });
 
-            it(
-                'should put objects with same key to Azure ' + 'then file, and object should only be present in file',
-                function itF(done) {
-                    const params = {
-                        Bucket: azureContainerName,
-                        Key: this.test.keyName,
-                        Body: normalBody,
-                        Metadata: { 'scal-location-constraint': azureLocation },
-                    };
-                    async.waterfall(
-                        [
-                            next => {
-                                s3.send(new PutObjectCommand(params))
-                                    .then(() => next())
-                                    .catch(next);
-                            },
-                            next => {
-                                params.Metadata = { 'scal-location-constraint': fileLocation };
-                                s3.send(new PutObjectCommand(params))
-                                    .then(() => setTimeout(() => next(), azureTimeout))
-                                    .catch(next);
-                            },
-                            next => {
-                                s3.send(
-                                    new GetObjectCommand({
-                                        Bucket: azureContainerName,
-                                        Key: this.test.keyName,
-                                    }),
-                                )
-                                    .then(res => {
-                                        assert.strictEqual(res.Metadata['scal-location-constraint'], fileLocation);
-                                        next();
-                                    })
-                                    .catch(next);
-                            },
-                            next => {
-                                azureClient
-                                    .getContainerClient(azureContainerName)
-                                    .getBlobClient(this.test.keyName)
-                                    .getProperties()
-                                    .then(() => {
-                                        next(new Error('Expected NotFound error'));
-                                    })
-                                    .catch(err => {
-                                        assert.strictEqual(err.name, 'NotFound');
-                                        next();
-                                    });
-                            },
-                        ],
-                        done,
-                    );
-                },
-            );
+            it('should put objects with same key to Azure then file, and object should only be present in file', function itF(done) {
+                const params = {
+                    Bucket: azureContainerName,
+                    Key: this.test.keyName,
+                    Body: normalBody,
+                    Metadata: { 'scal-location-constraint': azureLocation },
+                };
+                async.waterfall(
+                    [
+                        next => {
+                            s3.send(new PutObjectCommand(params))
+                                .then(() => next())
+                                .catch(next);
+                        },
+                        next => {
+                            params.Metadata = { 'scal-location-constraint': fileLocation };
+                            s3.send(new PutObjectCommand(params))
+                                .then(() => setTimeout(() => next(), azureTimeout))
+                                .catch(next);
+                        },
+                        next => {
+                            s3.send(
+                                new GetObjectCommand({
+                                    Bucket: azureContainerName,
+                                    Key: this.test.keyName,
+                                }),
+                            )
+                                .then(res => {
+                                    assert.strictEqual(res.Metadata['scal-location-constraint'], fileLocation);
+                                    next();
+                                })
+                                .catch(next);
+                        },
+                        next => {
+                            azureClient
+                                .getContainerClient(azureContainerName)
+                                .getBlobClient(this.test.keyName)
+                                .getProperties()
+                                .then(() => {
+                                    next(new Error('Expected NotFound error'));
+                                })
+                                .catch(err => {
+                                    assert.strictEqual(err.name, 'NotFound');
+                                    next();
+                                });
+                        },
+                    ],
+                    done,
+                );
+            });
 
-            it(
-                'should put objects with same key to file ' + 'then Azure, and object should only be present on Azure',
-                function itF(done) {
-                    const params = {
-                        Bucket: azureContainerName,
-                        Key: this.test.keyName,
-                        Body: normalBody,
-                        Metadata: { 'scal-location-constraint': fileLocation },
-                    };
-                    async.waterfall(
-                        [
-                            next => s3.send(new PutObjectCommand(params)).then(() => next()),
-                            next => {
-                                params.Metadata = {
-                                    'scal-location-constraint': azureLocation,
-                                };
-                                s3.send(new PutObjectCommand(params)).then(() =>
-                                    setTimeout(() => next(), azureTimeout),
-                                );
-                            },
-                            next => azureGetCheck(this.test.keyName, normalMD5, azureMetadata, next),
-                        ],
-                        done,
-                    );
-                },
-            );
+            it('should put objects with same key to file then Azure, and object should only be present on Azure', function itF(done) {
+                const params = {
+                    Bucket: azureContainerName,
+                    Key: this.test.keyName,
+                    Body: normalBody,
+                    Metadata: { 'scal-location-constraint': fileLocation },
+                };
+                async.waterfall(
+                    [
+                        next => s3.send(new PutObjectCommand(params)).then(() => next()),
+                        next => {
+                            params.Metadata = {
+                                'scal-location-constraint': azureLocation,
+                            };
+                            s3.send(new PutObjectCommand(params)).then(() => setTimeout(() => next(), azureTimeout));
+                        },
+                        next => azureGetCheck(this.test.keyName, normalMD5, azureMetadata, next),
+                    ],
+                    done,
+                );
+            });
 
             describe('with ongoing MPU with same key name', () => {
                 beforeEach(function beFn(done) {

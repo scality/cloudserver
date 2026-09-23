@@ -302,70 +302,67 @@ describe('GET object', () => {
                 });
         });
 
-        describe(
-            'Additional headers: [Cache-Control, Content-Disposition, ' + 'Content-Encoding, Expires, Accept-Ranges]',
-            () => {
-                describe('if specified in put object request', () => {
-                    before(async () => {
-                        const params = {
-                            Bucket: bucketName,
-                            Key: objectName,
-                            CacheControl: cacheControl,
-                            ContentDisposition: contentDisposition,
-                            ContentEncoding: contentEncoding,
-                            ContentType: contentType,
-                            Expires: expires,
-                        };
-                        await s3.send(new PutObjectCommand(params));
-                    });
-                    it('should return additional headers', done => {
-                        s3.send(new GetObjectCommand({ Bucket: bucketName, Key: objectName }))
-                            .then(res => {
-                                assert.strictEqual(res.CacheControl, cacheControl);
-                                assert.strictEqual(res.ContentDisposition, contentDisposition);
-                                // Should remove V4 streaming value 'aws-chunked'
-                                // to be compatible with AWS behavior
-                                assert.strictEqual(res.ContentEncoding, 'gzip');
-                                assert.strictEqual(res.ContentType, contentType);
-                                assert.strictEqual(res.Expires.toGMTString(), new Date(expires).toGMTString());
-                                assert.strictEqual(res.AcceptRanges, 'bytes');
-                                return done();
-                            })
-                            .catch(done);
-                    });
+        describe('Additional headers: [Cache-Control, Content-Disposition, Content-Encoding, Expires, Accept-Ranges]', () => {
+            describe('if specified in put object request', () => {
+                before(async () => {
+                    const params = {
+                        Bucket: bucketName,
+                        Key: objectName,
+                        CacheControl: cacheControl,
+                        ContentDisposition: contentDisposition,
+                        ContentEncoding: contentEncoding,
+                        ContentType: contentType,
+                        Expires: expires,
+                    };
+                    await s3.send(new PutObjectCommand(params));
+                });
+                it('should return additional headers', done => {
+                    s3.send(new GetObjectCommand({ Bucket: bucketName, Key: objectName }))
+                        .then(res => {
+                            assert.strictEqual(res.CacheControl, cacheControl);
+                            assert.strictEqual(res.ContentDisposition, contentDisposition);
+                            // Should remove V4 streaming value 'aws-chunked'
+                            // to be compatible with AWS behavior
+                            assert.strictEqual(res.ContentEncoding, 'gzip');
+                            assert.strictEqual(res.ContentType, contentType);
+                            assert.strictEqual(res.Expires.toGMTString(), new Date(expires).toGMTString());
+                            assert.strictEqual(res.AcceptRanges, 'bytes');
+                            return done();
+                        })
+                        .catch(done);
+                });
+            });
+
+            describe('if response content headers are set in query', () => {
+                before(async () => {
+                    await s3.send(new PutObjectCommand({ Bucket: bucketName, Key: objectName }));
                 });
 
-                describe('if response content headers are set in query', () => {
-                    before(async () => {
-                        await s3.send(new PutObjectCommand({ Bucket: bucketName, Key: objectName }));
-                    });
-
-                    it('should return additional headers even if not set in ' + 'put object request', done => {
-                        const params = {
-                            Bucket: bucketName,
-                            Key: objectName,
-                            ResponseCacheControl: cacheControl,
-                            ResponseContentDisposition: contentDisposition,
-                            ResponseContentEncoding: contentEncoding,
-                            ResponseContentLanguage: contentLanguage,
-                            ResponseContentType: contentType,
-                            ResponseExpires: expires,
-                        };
-                        s3.send(new GetObjectCommand(params))
-                            .then(res => {
-                                assert.strictEqual(res.CacheControl, cacheControl);
-                                assert.strictEqual(res.ContentDisposition, contentDisposition);
-                                assert.strictEqual(res.ContentEncoding, contentEncoding);
-                                assert.strictEqual(res.ContentLanguage, contentLanguage);
-                                assert.strictEqual(res.ContentType, contentType);
-                                assert.strictEqual(res.Expires.toGMTString(), new Date(expires).toGMTString());
-                                return done();
-                            })
-                            .catch(done);
-                    });
+                it('should return additional headers even if not set in put object request', done => {
+                    const params = {
+                        Bucket: bucketName,
+                        Key: objectName,
+                        ResponseCacheControl: cacheControl,
+                        ResponseContentDisposition: contentDisposition,
+                        ResponseContentEncoding: contentEncoding,
+                        ResponseContentLanguage: contentLanguage,
+                        ResponseContentType: contentType,
+                        ResponseExpires: expires,
+                    };
+                    s3.send(new GetObjectCommand(params))
+                        .then(res => {
+                            assert.strictEqual(res.CacheControl, cacheControl);
+                            assert.strictEqual(res.ContentDisposition, contentDisposition);
+                            assert.strictEqual(res.ContentEncoding, contentEncoding);
+                            assert.strictEqual(res.ContentLanguage, contentLanguage);
+                            assert.strictEqual(res.ContentType, contentType);
+                            assert.strictEqual(res.Expires.toGMTString(), new Date(expires).toGMTString());
+                            return done();
+                        })
+                        .catch(done);
                 });
-            },
-        );
+            });
+        });
 
         describe('x-amz-website-redirect-location header', () => {
             before(async () => {
@@ -376,7 +373,7 @@ describe('GET object', () => {
                 };
                 await s3.send(new PutObjectCommand(params));
             });
-            it('should return website redirect header if specified in ' + 'objectPUT request', done => {
+            it('should return website redirect header if specified in objectPUT request', done => {
                 s3.send(new GetObjectCommand({ Bucket: bucketName, Key: objectName }))
                     .then(res => {
                         assert.strictEqual(res.WebsiteRedirectLocation, '/');
@@ -407,7 +404,7 @@ describe('GET object', () => {
                 await s3.send(new PutObjectCommand(params));
             });
 
-            it('should not return "x-amz-tagging-count" if no tag ' + 'associated with the object', done => {
+            it('should not return "x-amz-tagging-count" if no tag associated with the object', done => {
                 s3.send(new GetObjectCommand(params))
                     .then(data => {
                         assert.strictEqual(data.TagCount, undefined);
@@ -440,28 +437,28 @@ describe('GET object', () => {
             beforeEach(async () => {
                 await s3.send(new PutObjectCommand(params));
             });
-            it('If-Match: returns no error when ETag match, with double ' + 'quotes around ETag', done => {
+            it('If-Match: returns no error when ETag match, with double quotes around ETag', done => {
                 requestGet({ IfMatch: etag }, err => {
                     checkNoError(err);
                     done();
                 });
             });
 
-            it('If-Match: returns no error when one of ETags match, with ' + 'double quotes around ETag', done => {
+            it('If-Match: returns no error when one of ETags match, with double quotes around ETag', done => {
                 requestGet({ IfMatch: `non-matching,${etag}` }, err => {
                     checkNoError(err);
                     done();
                 });
             });
 
-            it('If-Match: returns no error when ETag match, without double ' + 'quotes around ETag', done => {
+            it('If-Match: returns no error when ETag match, without double quotes around ETag', done => {
                 requestGet({ IfMatch: etagTrim }, err => {
                     checkNoError(err);
                     done();
                 });
             });
 
-            it('If-Match: returns no error when one of ETags match, without ' + 'double quotes around ETag', done => {
+            it('If-Match: returns no error when one of ETags match, without double quotes around ETag', done => {
                 requestGet({ IfMatch: `non-matching,${etagTrim}` }, err => {
                     checkNoError(err);
                     done();
@@ -506,27 +503,24 @@ describe('GET object', () => {
                 );
             });
 
-            it('If-None-Match: returns NotModified when ETag match, with ' + 'double quotes around ETag', done => {
+            it('If-None-Match: returns NotModified when ETag match, with double quotes around ETag', done => {
                 requestGet({ IfNoneMatch: etag }, err => {
                     checkError(err, 'NotModified');
                     done();
                 });
             });
 
-            it(
-                'If-None-Match: returns NotModified when one of ETags match, ' + 'with double quotes around ETag',
-                done => {
-                    requestGet(
-                        {
-                            IfNoneMatch: `non-matching,${etag}`,
-                        },
-                        err => {
-                            checkError(err, 'NotModified');
-                            done();
-                        },
-                    );
-                },
-            );
+            it('If-None-Match: returns NotModified when one of ETags match, with double quotes around ETag', done => {
+                requestGet(
+                    {
+                        IfNoneMatch: `non-matching,${etag}`,
+                    },
+                    err => {
+                        checkError(err, 'NotModified');
+                        done();
+                    },
+                );
+            });
 
             it('If-None-Match: returns NotModified when value is "*"', done => {
                 requestGet(
@@ -540,29 +534,26 @@ describe('GET object', () => {
                 );
             });
 
-            it('If-None-Match: returns NotModified when ETag match, without ' + 'double quotes around ETag', done => {
+            it('If-None-Match: returns NotModified when ETag match, without double quotes around ETag', done => {
                 requestGet({ IfNoneMatch: etagTrim }, err => {
                     checkError(err, 'NotModified');
                     done();
                 });
             });
 
-            it(
-                'If-None-Match: returns NotModified when one of ETags match, ' + 'without double quotes around ETag',
-                done => {
-                    requestGet(
-                        {
-                            IfNoneMatch: `non-matching,${etagTrim}`,
-                        },
-                        err => {
-                            checkError(err, 'NotModified');
-                            done();
-                        },
-                    );
-                },
-            );
+            it('If-None-Match: returns NotModified when one of ETags match, without double quotes around ETag', done => {
+                requestGet(
+                    {
+                        IfNoneMatch: `non-matching,${etagTrim}`,
+                    },
+                    err => {
+                        checkError(err, 'NotModified');
+                        done();
+                    },
+                );
+            });
 
-            it('If-Modified-Since: returns no error if Last modified date is ' + 'greater', done => {
+            it('If-Modified-Since: returns no error if Last modified date is greater', done => {
                 requestGet({ IfModifiedSince: dateFromNow(-1) }, err => {
                     checkNoError(err);
                     done();
@@ -571,14 +562,14 @@ describe('GET object', () => {
 
             // Skipping this test, because real AWS does not provide error as
             // expected
-            it.skip('If-Modified-Since: returns NotModified if Last modified ' + 'date is lesser', done => {
+            it.skip('If-Modified-Since: returns NotModified if Last modified date is lesser', done => {
                 requestGet({ IfModifiedSince: dateFromNow(1) }, err => {
                     checkError(err, 'NotModified');
                     done();
                 });
             });
 
-            it('If-Modified-Since: returns NotModified if Last modified ' + 'date is equal', done => {
+            it('If-Modified-Since: returns NotModified if Last modified date is equal', done => {
                 s3.send(new HeadObjectCommand({ Bucket: bucketName, Key: objectName }))
                     .then(data => {
                         const lastModified = dateConvert(data.LastModified);
@@ -590,14 +581,14 @@ describe('GET object', () => {
                     .catch(done);
             });
 
-            it('If-Unmodified-Since: returns no error when lastModified date ' + 'is greater', done => {
+            it('If-Unmodified-Since: returns no error when lastModified date is greater', done => {
                 requestGet({ IfUnmodifiedSince: dateFromNow(1) }, err => {
                     checkNoError(err);
                     done();
                 });
             });
 
-            it('If-Unmodified-Since: returns no error when lastModified ' + 'date is equal', done => {
+            it('If-Unmodified-Since: returns no error when lastModified date is equal', done => {
                 s3.send(new HeadObjectCommand({ Bucket: bucketName, Key: objectName }))
                     .then(data => {
                         const lastModified = dateConvert(data.LastModified);
@@ -609,28 +600,25 @@ describe('GET object', () => {
                     .catch(done);
             });
 
-            it('If-Unmodified-Since: returns PreconditionFailed when ' + 'lastModified date is lesser', done => {
+            it('If-Unmodified-Since: returns PreconditionFailed when lastModified date is lesser', done => {
                 requestGet({ IfUnmodifiedSince: dateFromNow(-1) }, err => {
                     checkError(err, 'PreconditionFailed');
                     done();
                 });
             });
 
-            it(
-                'If-Match & If-Unmodified-Since: returns no error when match ' + 'Etag and lastModified is greater',
-                done => {
-                    requestGet(
-                        {
-                            IfMatch: etagTrim,
-                            IfUnmodifiedSince: dateFromNow(-1),
-                        },
-                        err => {
-                            checkNoError(err);
-                            done();
-                        },
-                    );
-                },
-            );
+            it('If-Match & If-Unmodified-Since: returns no error when match Etag and lastModified is greater', done => {
+                requestGet(
+                    {
+                        IfMatch: etagTrim,
+                        IfUnmodifiedSince: dateFromNow(-1),
+                    },
+                    err => {
+                        checkNoError(err);
+                        done();
+                    },
+                );
+            });
 
             it('If-Match match & If-Unmodified-Since match', done => {
                 requestGet(
@@ -893,15 +881,14 @@ describe('GET object', () => {
                     })),
             );
 
-            it('should not accept a part number greater than the total parts ' + 'uploaded for an MPU', done =>
+            it('should not accept a part number greater than the total parts uploaded for an MPU', done =>
                 completeMPU(orderedPartNumbers, err => {
                     checkNoError(err);
                     return requestGet({ PartNumber: 11 }, err => {
                         checkError(err, 'InvalidPartNumber');
                         done();
                     });
-                }),
-            );
+                }));
 
             it('should accept a part number of 1 for regular put object', async () => {
                 await s3.send(
@@ -944,7 +931,7 @@ describe('GET object', () => {
                 );
             });
 
-            it('should not accept a part number greater than 1 for regular ' + 'put object', async () => {
+            it('should not accept a part number greater than 1 for regular put object', async () => {
                 await s3.send(
                     new PutObjectCommand({
                         Bucket: bucketName,
@@ -977,7 +964,7 @@ describe('GET object', () => {
                     );
                 }));
 
-            it('should not include PartsCount response header for regular ' + 'put object', async () => {
+            it('should not include PartsCount response header for regular put object', async () => {
                 await s3.send(
                     new PutObjectCommand({
                         Bucket: bucketName,
@@ -1142,13 +1129,11 @@ describe('GET object', () => {
                     );
                 });
 
-                it('should retrieve a part that overwrote another part ' + 'originally copied from an MPU', done =>
-                    checkGetObjectPart(copyPartKey, 1, partSize, partOneBody, done),
-                );
+                it('should retrieve a part that overwrote another part originally copied from an MPU', done =>
+                    checkGetObjectPart(copyPartKey, 1, partSize, partOneBody, done));
 
-                it('should retrieve a part copied from an MPU after the ' + 'original part was overwritten', done =>
-                    checkGetObjectPart(copyPartKey, 2, partTwoSize, partTwoBody, done),
-                );
+                it('should retrieve a part copied from an MPU after the original part was overwritten', done =>
+                    checkGetObjectPart(copyPartKey, 2, partTwoSize, partTwoBody, done));
             });
         });
 
@@ -1160,7 +1145,7 @@ describe('GET object', () => {
                 };
                 await s3.send(new PutObjectCommand(params));
             });
-            it('should return website redirect header if specified in ' + 'objectPUT request', done => {
+            it('should return website redirect header if specified in objectPUT request', done => {
                 s3.send(new GetObjectCommand({ Bucket: bucketName, Key: objectName }))
                     .then(res => {
                         assert.strictEqual(res.WebsiteRedirectLocation, undefined);

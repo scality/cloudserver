@@ -62,7 +62,7 @@ const emptyContentsMd5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const testMd = {
     'md-model-version': 2,
     'owner-display-name': 'Bart',
-    'owner-id': '79a59df900b949e55d96a1e698fbaced' + 'fd6e09d98eacf8f8d5218e7cd47ef2be',
+    'owner-id': '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
     'last-modified': '2017-05-15T20:32:40.032Z',
     'content-length': testData.length,
     'content-md5': testDataMd5,
@@ -3059,76 +3059,73 @@ describe('backbeat routes', () => {
             );
         });
 
-        it(
-            'PUT metadata with "x-scal-replication-content: METADATA"' + 'header should replicate metadata only',
-            done => {
-                async.waterfall(
-                    [
-                        next => {
-                            makeBackbeatRequest(
-                                {
-                                    method: 'PUT',
-                                    bucket: TEST_ENCRYPTED_BUCKET,
-                                    objectKey: 'test-updatemd-key',
-                                    resourceType: 'data',
-                                    queryObj: { v2: '' },
-                                    headers: {
-                                        'content-length': testData.length,
-                                        'x-scal-canonical-id': testArn,
-                                    },
-                                    authCredentials: backbeatAuthCredentials,
-                                    requestBody: testData,
+        it('PUT metadata with "x-scal-replication-content: METADATA"header should replicate metadata only', done => {
+            async.waterfall(
+                [
+                    next => {
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                bucket: TEST_ENCRYPTED_BUCKET,
+                                objectKey: 'test-updatemd-key',
+                                resourceType: 'data',
+                                queryObj: { v2: '' },
+                                headers: {
+                                    'content-length': testData.length,
+                                    'x-scal-canonical-id': testArn,
                                 },
-                                next,
-                            );
-                        },
-                        (response, next) => {
-                            assert.strictEqual(response.statusCode, 200);
-                            const newMd = getMetadataToPut(response);
-                            makeBackbeatRequest(
-                                {
-                                    method: 'PUT',
-                                    bucket: TEST_ENCRYPTED_BUCKET,
-                                    objectKey: 'test-updatemd-key',
-                                    resourceType: 'metadata',
-                                    authCredentials: backbeatAuthCredentials,
-                                    requestBody: JSON.stringify(newMd),
-                                },
-                                next,
-                            );
-                        },
-                        (response, next) => {
-                            assert.strictEqual(response.statusCode, 200);
-                            // Don't update the sent metadata since it is sent by
-                            // backbeat as received from the replication queue,
-                            // without updated data location or encryption info
-                            // (since that info is not known by backbeat)
-                            const newMd = Object.assign({}, testMd);
-                            makeBackbeatRequest(
-                                {
-                                    method: 'PUT',
-                                    bucket: TEST_ENCRYPTED_BUCKET,
-                                    objectKey: 'test-updatemd-key',
-                                    resourceType: 'metadata',
-                                    headers: { 'x-scal-replication-content': 'METADATA' },
-                                    authCredentials: backbeatAuthCredentials,
-                                    requestBody: JSON.stringify(newMd),
-                                },
-                                next,
-                            );
-                        },
-                        (response, next) => {
-                            assert.strictEqual(response.statusCode, 200);
-                            checkObjectData(s3, TEST_ENCRYPTED_BUCKET, 'test-updatemd-key', testData, next);
-                        },
-                    ],
-                    err => {
-                        assert.ifError(err);
-                        done();
+                                authCredentials: backbeatAuthCredentials,
+                                requestBody: testData,
+                            },
+                            next,
+                        );
                     },
-                );
-            },
-        );
+                    (response, next) => {
+                        assert.strictEqual(response.statusCode, 200);
+                        const newMd = getMetadataToPut(response);
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                bucket: TEST_ENCRYPTED_BUCKET,
+                                objectKey: 'test-updatemd-key',
+                                resourceType: 'metadata',
+                                authCredentials: backbeatAuthCredentials,
+                                requestBody: JSON.stringify(newMd),
+                            },
+                            next,
+                        );
+                    },
+                    (response, next) => {
+                        assert.strictEqual(response.statusCode, 200);
+                        // Don't update the sent metadata since it is sent by
+                        // backbeat as received from the replication queue,
+                        // without updated data location or encryption info
+                        // (since that info is not known by backbeat)
+                        const newMd = Object.assign({}, testMd);
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                bucket: TEST_ENCRYPTED_BUCKET,
+                                objectKey: 'test-updatemd-key',
+                                resourceType: 'metadata',
+                                headers: { 'x-scal-replication-content': 'METADATA' },
+                                authCredentials: backbeatAuthCredentials,
+                                requestBody: JSON.stringify(newMd),
+                            },
+                            next,
+                        );
+                    },
+                    (response, next) => {
+                        assert.strictEqual(response.statusCode, 200);
+                        checkObjectData(s3, TEST_ENCRYPTED_BUCKET, 'test-updatemd-key', testData, next);
+                    },
+                ],
+                err => {
+                    assert.ifError(err);
+                    done();
+                },
+            );
+        });
 
         itIfLocationAws('should PUT tags for a non-versioned bucket (awslocation)', function test(done) {
             this.timeout(10000);
@@ -3317,7 +3314,7 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should refuse PUT data if no x-scal-canonical-id header ' + 'is provided', done =>
+        it('should refuse PUT data if no x-scal-canonical-id header is provided', done =>
             makeBackbeatRequest(
                 {
                     method: 'PUT',
@@ -3335,8 +3332,7 @@ describe('backbeat routes', () => {
                     assert.strictEqual(err.code, 'BadRequest');
                     done();
                 },
-            ),
-        );
+            ));
 
         it('should refuse PUT in metadata-only mode if object does not exist', done => {
             async.waterfall(
@@ -3364,7 +3360,7 @@ describe('backbeat routes', () => {
             );
         });
 
-        it('should remove old object data locations if version is overwritten ' + 'with same contents', done => {
+        it('should remove old object data locations if version is overwritten with same contents', done => {
             let oldLocation;
             const testKeyOldData = `${testKey}-old-data`;
             async.waterfall(
@@ -3483,7 +3479,7 @@ describe('backbeat routes', () => {
                                 Key: testKeyOldData,
                             }),
                         ).catch(err => {
-                            assert(err, 'expected error to get object with old data ' + 'locations, got success');
+                            assert(err, 'expected error to get object with old data locations, got success');
                             next();
                         });
                     },
@@ -3495,7 +3491,7 @@ describe('backbeat routes', () => {
             );
         });
 
-        it('should remove old object data locations if version is overwritten ' + 'with empty contents', done => {
+        it('should remove old object data locations if version is overwritten with empty contents', done => {
             let oldLocation;
             const testKeyOldData = `${testKey}-old-data`;
             async.waterfall(
@@ -3599,7 +3595,7 @@ describe('backbeat routes', () => {
                                 Key: testKeyOldData,
                             }),
                         ).catch(err => {
-                            assert(err, 'expected error to get object with old data ' + 'locations, got success');
+                            assert(err, 'expected error to get object with old data locations, got success');
                             next();
                         });
                     },
@@ -4070,193 +4066,187 @@ describe('backbeat routes', () => {
     describeIfLocationAws('backbeat multipart upload operations (external location)', function test() {
         this.timeout(10000);
 
-        it(
-            'should put tags if the source is AWS and tags are ' + 'provided when initiating the multipart upload',
-            done => {
-                const awsKey = uuidv4();
-                const multipleBackendPath = `/_/backbeat/multiplebackenddata/${awsBucket}/${awsKey}`;
-                let uploadId;
-                let partData;
-                async.series(
-                    [
-                        next =>
-                            makeRequest(
-                                {
-                                    authCredentials: backbeatAuthCredentials,
-                                    hostname: ipAddress,
-                                    port: 8000,
-                                    method: 'POST',
-                                    path: multipleBackendPath,
-                                    queryObj: { operation: 'initiatempu' },
-                                    headers: {
-                                        'x-scal-storage-class': awsLocation,
-                                        'x-scal-storage-type': 'aws_s3',
-                                        'x-scal-tags': JSON.stringify({ key1: 'value1' }),
+        it('should put tags if the source is AWS and tags are provided when initiating the multipart upload', done => {
+            const awsKey = uuidv4();
+            const multipleBackendPath = `/_/backbeat/multiplebackenddata/${awsBucket}/${awsKey}`;
+            let uploadId;
+            let partData;
+            async.series(
+                [
+                    next =>
+                        makeRequest(
+                            {
+                                authCredentials: backbeatAuthCredentials,
+                                hostname: ipAddress,
+                                port: 8000,
+                                method: 'POST',
+                                path: multipleBackendPath,
+                                queryObj: { operation: 'initiatempu' },
+                                headers: {
+                                    'x-scal-storage-class': awsLocation,
+                                    'x-scal-storage-type': 'aws_s3',
+                                    'x-scal-tags': JSON.stringify({ key1: 'value1' }),
+                                },
+                                jsonResponse: true,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                uploadId = JSON.parse(data.body).uploadId;
+                                return next();
+                            },
+                        ),
+                    next =>
+                        makeRequest(
+                            {
+                                authCredentials: backbeatAuthCredentials,
+                                hostname: ipAddress,
+                                port: 8000,
+                                method: 'PUT',
+                                path: multipleBackendPath,
+                                queryObj: { operation: 'putpart' },
+                                headers: {
+                                    'x-scal-storage-class': awsLocation,
+                                    'x-scal-storage-type': 'aws_s3',
+                                    'x-scal-upload-id': uploadId,
+                                    'x-scal-part-number': '1',
+                                    'content-length': testData.length,
+                                },
+                                requestBody: testData,
+                                jsonResponse: true,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                const body = JSON.parse(data.body);
+                                partData = [
+                                    {
+                                        PartNumber: [body.partNumber],
+                                        ETag: [body.ETag],
                                     },
-                                    jsonResponse: true,
+                                ];
+                                return next();
+                            },
+                        ),
+                    next =>
+                        makeRequest(
+                            {
+                                authCredentials: backbeatAuthCredentials,
+                                hostname: ipAddress,
+                                port: 8000,
+                                method: 'POST',
+                                path: multipleBackendPath,
+                                queryObj: { operation: 'completempu' },
+                                headers: {
+                                    'x-scal-storage-class': awsLocation,
+                                    'x-scal-storage-type': 'aws_s3',
+                                    'x-scal-upload-id': uploadId,
                                 },
-                                (err, data) => {
-                                    if (err) {
-                                        return next(err);
-                                    }
-                                    uploadId = JSON.parse(data.body).uploadId;
-                                    return next();
-                                },
-                            ),
-                        next =>
-                            makeRequest(
-                                {
-                                    authCredentials: backbeatAuthCredentials,
-                                    hostname: ipAddress,
-                                    port: 8000,
-                                    method: 'PUT',
-                                    path: multipleBackendPath,
-                                    queryObj: { operation: 'putpart' },
-                                    headers: {
-                                        'x-scal-storage-class': awsLocation,
-                                        'x-scal-storage-type': 'aws_s3',
-                                        'x-scal-upload-id': uploadId,
-                                        'x-scal-part-number': '1',
-                                        'content-length': testData.length,
+                                requestBody: JSON.stringify(partData),
+                                jsonResponse: true,
+                            },
+                            next,
+                        ),
+                    next =>
+                        awsClient.send(
+                            new GetObjectTaggingCommand({
+                                Bucket: awsBucket,
+                                Key: awsKey,
+                            }),
+                            (err, data) => {
+                                assert.ifError(err);
+                                assert.deepStrictEqual(data.TagSet, [
+                                    {
+                                        Key: 'key1',
+                                        Value: 'value1',
                                     },
-                                    requestBody: testData,
-                                    jsonResponse: true,
-                                },
-                                (err, data) => {
-                                    if (err) {
-                                        return next(err);
-                                    }
-                                    const body = JSON.parse(data.body);
-                                    partData = [
-                                        {
-                                            PartNumber: [body.partNumber],
-                                            ETag: [body.ETag],
-                                        },
-                                    ];
-                                    return next();
-                                },
-                            ),
-                        next =>
-                            makeRequest(
-                                {
-                                    authCredentials: backbeatAuthCredentials,
-                                    hostname: ipAddress,
-                                    port: 8000,
-                                    method: 'POST',
-                                    path: multipleBackendPath,
-                                    queryObj: { operation: 'completempu' },
-                                    headers: {
-                                        'x-scal-storage-class': awsLocation,
-                                        'x-scal-storage-type': 'aws_s3',
-                                        'x-scal-upload-id': uploadId,
-                                    },
-                                    requestBody: JSON.stringify(partData),
-                                    jsonResponse: true,
-                                },
-                                next,
-                            ),
-                        next =>
-                            awsClient.send(
-                                new GetObjectTaggingCommand({
-                                    Bucket: awsBucket,
-                                    Key: awsKey,
-                                }),
-                                (err, data) => {
-                                    assert.ifError(err);
-                                    assert.deepStrictEqual(data.TagSet, [
-                                        {
-                                            Key: 'key1',
-                                            Value: 'value1',
-                                        },
-                                    ]);
-                                    next();
-                                },
-                            ),
-                    ],
-                    done,
-                );
-            },
-        );
+                                ]);
+                                next();
+                            },
+                        ),
+                ],
+                done,
+            );
+        });
 
-        it(
-            'should put tags if the source is Azure and tags are provided ' + 'when completing the multipart upload',
-            done => {
-                const containerName = getAzureContainerName(azureLocation);
-                const blob = uuidv4();
-                const multipleBackendPath = `/_/backbeat/multiplebackenddata/${containerName}/${blob}`;
-                const uploadId = uuidv4().replace(/-/g, '');
-                let partData;
-                async.series(
-                    [
-                        next =>
-                            makeRequest(
-                                {
-                                    authCredentials: backbeatAuthCredentials,
-                                    hostname: ipAddress,
-                                    port: 8000,
-                                    method: 'PUT',
-                                    path: multipleBackendPath,
-                                    queryObj: { operation: 'putpart' },
-                                    headers: {
-                                        'x-scal-storage-class': azureLocation,
-                                        'x-scal-storage-type': 'azure',
-                                        'x-scal-upload-id': uploadId,
-                                        'x-scal-part-number': '1',
-                                        'content-length': testData.length,
+        it('should put tags if the source is Azure and tags are provided when completing the multipart upload', done => {
+            const containerName = getAzureContainerName(azureLocation);
+            const blob = uuidv4();
+            const multipleBackendPath = `/_/backbeat/multiplebackenddata/${containerName}/${blob}`;
+            const uploadId = uuidv4().replace(/-/g, '');
+            let partData;
+            async.series(
+                [
+                    next =>
+                        makeRequest(
+                            {
+                                authCredentials: backbeatAuthCredentials,
+                                hostname: ipAddress,
+                                port: 8000,
+                                method: 'PUT',
+                                path: multipleBackendPath,
+                                queryObj: { operation: 'putpart' },
+                                headers: {
+                                    'x-scal-storage-class': azureLocation,
+                                    'x-scal-storage-type': 'azure',
+                                    'x-scal-upload-id': uploadId,
+                                    'x-scal-part-number': '1',
+                                    'content-length': testData.length,
+                                },
+                                requestBody: testData,
+                                jsonResponse: true,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                const body = JSON.parse(data.body);
+                                partData = [
+                                    {
+                                        PartNumber: [body.partNumber],
+                                        ETag: [body.ETag],
+                                        NumberSubParts: [body.numberSubParts],
                                     },
-                                    requestBody: testData,
-                                    jsonResponse: true,
+                                ];
+                                return next();
+                            },
+                        ),
+                    next =>
+                        makeRequest(
+                            {
+                                authCredentials: backbeatAuthCredentials,
+                                hostname: ipAddress,
+                                port: 8000,
+                                method: 'POST',
+                                path: multipleBackendPath,
+                                queryObj: { operation: 'completempu' },
+                                headers: {
+                                    'x-scal-storage-class': azureLocation,
+                                    'x-scal-storage-type': 'azure',
+                                    'x-scal-upload-id': uploadId,
+                                    'x-scal-tags': JSON.stringify({ key1: 'value1' }),
                                 },
-                                (err, data) => {
-                                    if (err) {
-                                        return next(err);
-                                    }
-                                    const body = JSON.parse(data.body);
-                                    partData = [
-                                        {
-                                            PartNumber: [body.partNumber],
-                                            ETag: [body.ETag],
-                                            NumberSubParts: [body.numberSubParts],
-                                        },
-                                    ];
-                                    return next();
-                                },
-                            ),
-                        next =>
-                            makeRequest(
-                                {
-                                    authCredentials: backbeatAuthCredentials,
-                                    hostname: ipAddress,
-                                    port: 8000,
-                                    method: 'POST',
-                                    path: multipleBackendPath,
-                                    queryObj: { operation: 'completempu' },
-                                    headers: {
-                                        'x-scal-storage-class': azureLocation,
-                                        'x-scal-storage-type': 'azure',
-                                        'x-scal-upload-id': uploadId,
-                                        'x-scal-tags': JSON.stringify({ key1: 'value1' }),
-                                    },
-                                    requestBody: JSON.stringify(partData),
-                                    jsonResponse: true,
-                                },
-                                next,
-                            ),
-                        next =>
-                            azureClient
-                                .getContainerClient(containerName)
-                                .getBlobClient(blob)
-                                .getProperties()
-                                .then(result => {
-                                    const tags = JSON.parse(result.metadata.tags);
-                                    assert.deepStrictEqual(tags, { key1: 'value1' });
-                                    return next();
-                                }, next),
-                    ],
-                    done,
-                );
-            },
-        );
+                                requestBody: JSON.stringify(partData),
+                                jsonResponse: true,
+                            },
+                            next,
+                        ),
+                    next =>
+                        azureClient
+                            .getContainerClient(containerName)
+                            .getBlobClient(blob)
+                            .getProperties()
+                            .then(result => {
+                                const tags = JSON.parse(result.metadata.tags);
+                                assert.deepStrictEqual(tags, { key1: 'value1' });
+                                return next();
+                            }, next),
+                ],
+                done,
+            );
+        });
     });
     describe('Batch Delete Route', function test() {
         this.timeout(30000);
@@ -4436,7 +4426,7 @@ describe('backbeat routes', () => {
                             port: 8000,
                             method: 'POST',
                             path: '/_/backbeat/batchdelete',
-                            requestBody: '{"Locations":' + '[{"key":"abcdef","dataStoreName":"us-east-1"}]}',
+                            requestBody: '{"Locations":[{"key":"abcdef","dataStoreName":"us-east-1"}]}',
                             jsonResponse: true,
                         };
                         makeRequest(options, done);
@@ -4466,7 +4456,7 @@ describe('backbeat routes', () => {
         });
 
         itIfLocationAws(
-            'should not put delete tags if the source is not Azure and ' + 'if-unmodified-since header is not provided',
+            'should not put delete tags if the source is not Azure and if-unmodified-since header is not provided',
             done => {
                 const awsKey = uuidv4();
                 async.series(
@@ -4536,7 +4526,7 @@ describe('backbeat routes', () => {
         );
 
         itIfLocationAws(
-            'should not put tags if the source is not Azure and ' + 'if-unmodified-since condition is not met',
+            'should not put tags if the source is not Azure and if-unmodified-since condition is not met',
             done => {
                 const awsKey = uuidv4();
                 async.series(
@@ -4601,100 +4591,96 @@ describe('backbeat routes', () => {
             },
         );
 
-        itIfLocationAws(
-            'should put tags if the source is not Azure and ' + 'if-unmodified-since condition is met',
-            done => {
-                const awsKey = uuidv4();
-                let lastModified;
-                async.series(
-                    [
-                        next =>
-                            awsClient
-                                .send(
-                                    new PutObjectCommand({
-                                        Bucket: awsBucket,
-                                        Key: awsKey,
-                                    }),
-                                )
-                                .then(result => next(null, result))
-                                .catch(err => next(err)),
-                        next =>
-                            awsClient
-                                .send(
-                                    new HeadObjectCommand({
-                                        Bucket: awsBucket,
-                                        Key: awsKey,
-                                    }),
-                                )
-                                .then(data => {
-                                    lastModified = data.LastModified;
-                                    next(null, data);
-                                })
-                                .catch(err => next(err)),
-                        next =>
-                            makeRequest(
-                                {
-                                    authCredentials: backbeatAuthCredentials,
-                                    hostname: ipAddress,
-                                    port: 8000,
-                                    method: 'POST',
-                                    path: `/_/backbeat/batchdelete/${awsBucket}/${awsKey}`,
-                                    headers: {
-                                        'if-unmodified-since': lastModified,
-                                        'x-scal-storage-class': awsLocation,
-                                        'x-scal-tags': JSON.stringify({
-                                            'scal-delete-marker': 'true',
-                                            'scal-delete-service': 'lifecycle-transition',
-                                        }),
-                                    },
-                                    requestBody: JSON.stringify({
-                                        Locations: [
-                                            {
-                                                key: awsKey,
-                                                dataStoreName: awsLocation,
-                                            },
-                                        ],
-                                    }),
-                                    jsonResponse: true,
-                                },
-                                next,
-                            ),
-                        next =>
-                            awsClient
-                                .send(
-                                    new GetObjectTaggingCommand({
-                                        Bucket: awsBucket,
-                                        Key: awsKey,
-                                    }),
-                                )
-                                .then(data => {
-                                    assert.strictEqual(data.TagSet.length, 2);
-                                    data.TagSet.forEach(tag => {
-                                        const { Key, Value } = tag;
-                                        const isValidTag =
-                                            Key === 'scal-delete-marker' || Key === 'scal-delete-service';
-                                        assert(isValidTag);
-                                        if (Key === 'scal-delete-marker') {
-                                            assert.strictEqual(Value, 'true');
-                                        }
-                                        if (Key === 'scal-delete-service') {
-                                            assert.strictEqual(Value, 'lifecycle-transition');
-                                        }
-                                    });
-                                    next(null, data);
-                                })
-                                .catch(err => {
-                                    assert.ifError(err);
-                                    next(err);
+        itIfLocationAws('should put tags if the source is not Azure and if-unmodified-since condition is met', done => {
+            const awsKey = uuidv4();
+            let lastModified;
+            async.series(
+                [
+                    next =>
+                        awsClient
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: awsBucket,
+                                    Key: awsKey,
                                 }),
-                    ],
-                    done,
-                );
-            },
-        );
+                            )
+                            .then(result => next(null, result))
+                            .catch(err => next(err)),
+                    next =>
+                        awsClient
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: awsBucket,
+                                    Key: awsKey,
+                                }),
+                            )
+                            .then(data => {
+                                lastModified = data.LastModified;
+                                next(null, data);
+                            })
+                            .catch(err => next(err)),
+                    next =>
+                        makeRequest(
+                            {
+                                authCredentials: backbeatAuthCredentials,
+                                hostname: ipAddress,
+                                port: 8000,
+                                method: 'POST',
+                                path: `/_/backbeat/batchdelete/${awsBucket}/${awsKey}`,
+                                headers: {
+                                    'if-unmodified-since': lastModified,
+                                    'x-scal-storage-class': awsLocation,
+                                    'x-scal-tags': JSON.stringify({
+                                        'scal-delete-marker': 'true',
+                                        'scal-delete-service': 'lifecycle-transition',
+                                    }),
+                                },
+                                requestBody: JSON.stringify({
+                                    Locations: [
+                                        {
+                                            key: awsKey,
+                                            dataStoreName: awsLocation,
+                                        },
+                                    ],
+                                }),
+                                jsonResponse: true,
+                            },
+                            next,
+                        ),
+                    next =>
+                        awsClient
+                            .send(
+                                new GetObjectTaggingCommand({
+                                    Bucket: awsBucket,
+                                    Key: awsKey,
+                                }),
+                            )
+                            .then(data => {
+                                assert.strictEqual(data.TagSet.length, 2);
+                                data.TagSet.forEach(tag => {
+                                    const { Key, Value } = tag;
+                                    const isValidTag = Key === 'scal-delete-marker' || Key === 'scal-delete-service';
+                                    assert(isValidTag);
+                                    if (Key === 'scal-delete-marker') {
+                                        assert.strictEqual(Value, 'true');
+                                    }
+                                    if (Key === 'scal-delete-service') {
+                                        assert.strictEqual(Value, 'lifecycle-transition');
+                                    }
+                                });
+                                next(null, data);
+                            })
+                            .catch(err => {
+                                assert.ifError(err);
+                                next(err);
+                            }),
+                ],
+                done,
+            );
+        });
 
         itIfLocationAzure(
-            'should not delete the object if the source is Azure and ' + 'if-unmodified-since condition is not met',
+            'should not delete the object if the source is Azure and if-unmodified-since condition is not met',
             done => {
                 const blob = uuidv4();
                 async.series(
@@ -4754,7 +4740,7 @@ describe('backbeat routes', () => {
         );
 
         itIfLocationAzure(
-            'should delete the object if the source is Azure and ' + 'if-unmodified-since condition is met',
+            'should delete the object if the source is Azure and if-unmodified-since condition is met',
             done => {
                 const blob = uuidv4();
                 let lastModified;

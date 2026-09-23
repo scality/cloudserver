@@ -136,7 +136,7 @@ describe('Part size tests with object head', () => {
             );
         });
 
-        it('should return the total size of the object ' + 'when --part-number is not used', done => {
+        it('should return the total size of the object when --part-number is not used', done => {
             const totalSize = partNumbers.reduce((total, current) => total + (bodySize + current + 1), 0);
             headObject({}, (err, data) => {
                 checkNoError(err);
@@ -146,7 +146,7 @@ describe('Part size tests with object head', () => {
         });
 
         partNumbers.forEach(part => {
-            it(`should return the size of part ${part + 1} ` + `when --part-number is set to ${part + 1}`, done => {
+            it(`should return the size of part ${part + 1} when --part-number is set to ${part + 1}`, done => {
                 const partNumber = Number.parseInt(part, 10) + 1;
                 const partSize = bodySize + partNumber;
                 headObject({ PartNumber: partNumber }, (err, data) => {

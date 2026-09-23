@@ -286,7 +286,7 @@ describe('PUT object taggings', () => {
             },
         );
 
-        it('should put tag to an object in a bucket created with same ' + 'account', async () => {
+        it('should put tag to an object in a bucket created with same account', async () => {
             await s3.send(
                 new PutBucketAclCommand({
                     Bucket: bucketName,

@@ -218,7 +218,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
 
     const mpuRangeGetTests = [
         {
-            it: 'should get a range from the first part of an object ' + 'put by multipart upload',
+            it: 'should get a range from the first part of an object put by multipart upload',
             range: 'bytes=0-9',
             contentLength: 10,
             contentRange: 'bytes 0-9/10485760',
@@ -228,7 +228,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             expectedBuff: Buffer.alloc(10, 0),
         },
         {
-            it: 'should get a range from the second part of an object ' + 'put by multipart upload',
+            it: 'should get a range from the second part of an object put by multipart upload',
             // The completed MPU byte count starts at 0, so the first part ends
             // at byte 5242879 and the second part begins at byte 5242880
             range: 'bytes=5242880-5242889',
@@ -238,7 +238,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             expectedBuff: Buffer.alloc(10, 1),
         },
         {
-            it: 'should get a range that spans both parts of an object put ' + 'by multipart upload',
+            it: 'should get a range that spans both parts of an object put by multipart upload',
             range: 'bytes=5242875-5242884',
             contentLength: 10,
             contentRange: 'bytes 5242875-5242884/10485760',
@@ -308,7 +308,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         assert.ok(data);
     });
 
-    it('should return InvalidRange if the range of the resource does ' + 'not cover the byte range', async () => {
+    it('should return InvalidRange if the range of the resource does not cover the byte range', async () => {
         const params = {
             Bucket: bucket,
             Key: 'normalput',
@@ -382,7 +382,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             expectedBuff: Buffer.alloc(10, 1),
         },
         {
-            it: 'should get a range for an object using only a start offset ' + 'in the request',
+            it: 'should get a range for an object using only a start offset in the request',
             range: 'bytes=190-',
             contentLength: 10,
             contentRange: 'bytes 190-199/200',
