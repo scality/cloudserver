@@ -109,6 +109,8 @@ jobs:
       - name: Lint Javascript (strict, excluding async migration rules)
         run: |
           yarn run --silent lint -- --max-warnings 0 --rule "promise/prefer-await-to-then: off" --rule "n/callback-return: off"
+      - name: Prettier
+        run: yarn run --silent prettier:check
       - name: Lint Markdown
         run: yarn run --silent lint_md
       - name: Lint python
