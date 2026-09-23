@@ -2,7 +2,7 @@ const assert = require('assert');
 const sinon = require('sinon');
 const { ScubaClientImpl } = require('../../../../lib/utilization/scuba/wrapper');
 const monitoring = require('../../../../lib/utilities/monitoringHandler');
-const { default: ScubaClient } = require('scubaclient');
+const { default: ScubaClient } = require('@scality/scubaclient');
 
 describe('ScubaClientImpl', () => {
     let client;
