@@ -41,14 +41,7 @@ function _checkError(err, code, errorName) {
 
 function _generateSampleXml(key, value) {
     const xml =
-        '<Tagging>' +
-        '<TagSet>' +
-        '<Tag>' +
-        `<Key>${key}</Key>` +
-        `<Value>${value}</Value>` +
-        '</Tag>' +
-        '</TagSet>' +
-        '</Tagging>';
+        '<Tagging><TagSet><Tag>' + `<Key>${key}</Key>` + `<Value>${value}</Value>` + '</Tag></TagSet></Tagging>';
 
     return xml;
 }
@@ -116,7 +109,7 @@ describe('PUT object tagging :: helper validation functions ', () => {
         });
 
         describe('validateXMLStructure ', () => {
-            it('should return expected true if tag is valid false/undefined ' + 'if not', done => {
+            it('should return expected true if tag is valid false/undefined if not', done => {
                 const tags = [
                     { tagging: { Tagging: { TagSet: [{ Tag: [] }] } }, isValid: true },
                     { tagging: { Tagging: { TagSet: [''] } }, isValid: true },

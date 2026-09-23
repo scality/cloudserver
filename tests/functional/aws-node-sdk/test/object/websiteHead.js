@@ -98,7 +98,7 @@ describe('Head request on bucket website endpoint', () => {
         it('should return 404 when no website configuration', done => {
             const expectedHeaders = {
                 'x-amz-error-code': 'NoSuchWebsiteConfiguration',
-                'x-amz-error-message': 'The specified bucket does not ' + 'have a website configuration',
+                'x-amz-error-message': 'The specified bucket does not have a website configuration',
             };
             WebsiteConfigTester.makeHeadRequest(undefined, endpoint, 404, expectedHeaders, done);
         });
@@ -123,7 +123,7 @@ describe('Head request on bucket website endpoint', () => {
 
             afterEach(() => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'index.html' })));
 
-            it('should return indexDocument headers if no key ' + 'requested', done => {
+            it('should return indexDocument headers if no key requested', done => {
                 WebsiteConfigTester.makeHeadRequest(undefined, endpoint, 200, indexExpectedHeaders, done);
             });
 
@@ -264,40 +264,37 @@ describe('Head request on bucket website endpoint', () => {
             });
         });
 
-        describe(
-            'redirect all requests to https://www.google.com ' + 'since https protocol set in website config',
-            () => {
-                // Note: these tests will all redirect to https even if
-                // conf does not have https since protocol in website config
-                // specifies https
-                beforeEach(async () => {
-                    const redirectAllTo = {
-                        HostName: 'www.google.com',
-                        Protocol: 'https',
-                    };
-                    const webConfig = new WebsiteConfigTester(null, null, redirectAllTo);
-                    await s3
-                        .send(new PutBucketWebsiteCommand({ Bucket: bucket, WebsiteConfiguration: webConfig }))
-                        .catch(err => {
-                            assert.strictEqual(err, null, `Found unexpected err ${err}`);
-                        });
-                });
+        describe('redirect all requests to https://www.google.com since https protocol set in website config', () => {
+            // Note: these tests will all redirect to https even if
+            // conf does not have https since protocol in website config
+            // specifies https
+            beforeEach(async () => {
+                const redirectAllTo = {
+                    HostName: 'www.google.com',
+                    Protocol: 'https',
+                };
+                const webConfig = new WebsiteConfigTester(null, null, redirectAllTo);
+                await s3
+                    .send(new PutBucketWebsiteCommand({ Bucket: bucket, WebsiteConfiguration: webConfig }))
+                    .catch(err => {
+                        assert.strictEqual(err, null, `Found unexpected err ${err}`);
+                    });
+            });
 
-                it('should redirect to https://google.com', done => {
-                    const expectedHeaders = {
-                        location: 'https://www.google.com/',
-                    };
-                    WebsiteConfigTester.makeHeadRequest(undefined, endpoint, 301, expectedHeaders, done);
-                });
+            it('should redirect to https://google.com', done => {
+                const expectedHeaders = {
+                    location: 'https://www.google.com/',
+                };
+                WebsiteConfigTester.makeHeadRequest(undefined, endpoint, 301, expectedHeaders, done);
+            });
 
-                it('should redirect to https://google.com/about', done => {
-                    const expectedHeaders = {
-                        location: 'https://www.google.com/about/',
-                    };
-                    WebsiteConfigTester.makeHeadRequest(undefined, `${endpoint}/about/`, 301, expectedHeaders, done);
-                });
-            },
-        );
+            it('should redirect to https://google.com/about', done => {
+                const expectedHeaders = {
+                    location: 'https://www.google.com/about/',
+                };
+                WebsiteConfigTester.makeHeadRequest(undefined, `${endpoint}/about/`, 301, expectedHeaders, done);
+            });
+        });
 
         describe('with custom error document', () => {
             beforeEach(async () => {
@@ -324,7 +321,7 @@ describe('Head request on bucket website endpoint', () => {
 
             afterEach(() => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'error.html' })));
 
-            it('should return regular error headers regardless of whether ' + 'custom error document', done => {
+            it('should return regular error headers regardless of whether custom error document', done => {
                 const expectedHeaders = {
                     'x-amz-error-code': 'AccessDenied',
                     'x-amz-error-message': 'Access Denied',
@@ -459,7 +456,7 @@ describe('Head request on bucket website endpoint', () => {
                     });
             });
 
-            it('should redirect to https://www.google.com/about if ' + 'https protocol specified', done => {
+            it('should redirect to https://www.google.com/about if https protocol specified', done => {
                 const expectedHeaders = {
                     location: 'https://www.google.com/about/',
                 };
@@ -486,7 +483,7 @@ describe('Head request on bucket website endpoint', () => {
 
             afterEach(() => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'redirect.html' })));
 
-            it('should redirect to specified file if 403 error ' + 'error occured', done => {
+            it('should redirect to specified file if 403 error error occured', done => {
                 const expectedHeaders = {
                     location: `${endpoint}/redirect.html`,
                 };
@@ -539,7 +536,7 @@ describe('Head request on bucket website endpoint', () => {
 
             afterEach(async () => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'redirect/index.html' })));
 
-            it('should redirect to "redirect/" object if key prefix is equal ' + 'to "about/"', done => {
+            it('should redirect to "redirect/" object if key prefix is equal to "about/"', done => {
                 const expectedHeaders = {
                     location: `${endpoint}/redirect/`,
                 };
@@ -547,7 +544,7 @@ describe('Head request on bucket website endpoint', () => {
             });
         });
 
-        describe('redirect requests, with both prefix and error code ' + 'condition', () => {
+        describe('redirect requests, with both prefix and error code condition', () => {
             beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
@@ -568,9 +565,8 @@ describe('Head request on bucket website endpoint', () => {
             afterEach(() => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'redirect/index.html' })));
 
             it(
-                'should redirect to "redirect" object if key prefix is equal ' +
-                    'to "about/" and there is a 403 error satisfying the ' +
-                    'condition in the redirect rule',
+                'should redirect to "redirect" object if key prefix is equal to "about/" ' +
+                    'and there is a 403 error satisfying the condition in the redirect rule',
                 done => {
                     const expectedHeaders = {
                         location: `${endpoint}/redirect/`,
@@ -648,7 +644,7 @@ describe('Head request on bucket website endpoint', () => {
 
             afterEach(() => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'index.html' })));
 
-            it('should return indexDocument headers if no key ' + 'requested', done => {
+            it('should return indexDocument headers if no key requested', done => {
                 WebsiteConfigTester.makeHeadRequest(undefined, endpoint, 200, indexExpectedHeaders, done);
             });
 

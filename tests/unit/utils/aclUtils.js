@@ -27,7 +27,7 @@ describe('checkGrantHeaderValidity for acls', () => {
         {
             it: 'should allow valid x-amz-grant-write-acp grant',
             headers: {
-                'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e6' + '98fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
+                'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
             },
             result: true,
         },
@@ -35,16 +35,14 @@ describe('checkGrantHeaderValidity for acls', () => {
             it: 'should allow valid x-amz-grant-full-control grant',
             headers: {
                 'x-amz-grant-full-control':
-                    'id=79a59df900b949e55d96a1e6' +
-                    '98fbacedfd6e09d98eacf8f8d5218e7cd47ef2be,' +
-                    'emailaddress=foo@bar.com',
+                    'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be,emailaddress=foo@bar.com',
             },
             result: true,
         },
         {
             it: 'should deny grant without equal sign',
             headers: {
-                'x-amz-grant-full-control': 'id79a59df900b949e55d96a1e6' + '98fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
+                'x-amz-grant-full-control': 'id79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
             },
             result: false,
         },

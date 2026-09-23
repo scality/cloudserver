@@ -484,36 +484,33 @@ describeSkipIfNotMultiple('MultipleBackend object copy: Azure', function testSui
             },
         );
 
-        it(
-            'should copy an object from Azure to mem because bucket ' + 'destination location is mem',
-            function itFn(done) {
-                putSourceObj(this.test.key, azureLocation, null, bucket, () => {
-                    const copyParams = {
-                        Bucket: bucket,
-                        Key: this.test.copyKey,
-                        CopySource: `/${bucket}/${this.test.key}`,
-                        MetadataDirective: 'COPY',
-                    };
-                    s3.send(new CopyObjectCommand(copyParams))
-                        .then(result => {
-                            assert.strictEqual(result.CopyObjectResult.ETag, `"${normalMD5}"`);
-                            assertGetObjects(
-                                this.test.key,
-                                bucket,
-                                azureLocation,
-                                this.test.copyKey,
-                                bucket,
-                                memLocation,
-                                this.test.key,
-                                'COPY',
-                                null,
-                                done,
-                            );
-                        })
-                        .catch(err => done(new Error(`Expected success but got error: ${err}`)));
-                });
-            },
-        );
+        it('should copy an object from Azure to mem because bucket destination location is mem', function itFn(done) {
+            putSourceObj(this.test.key, azureLocation, null, bucket, () => {
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: this.test.copyKey,
+                    CopySource: `/${bucket}/${this.test.key}`,
+                    MetadataDirective: 'COPY',
+                };
+                s3.send(new CopyObjectCommand(copyParams))
+                    .then(result => {
+                        assert.strictEqual(result.CopyObjectResult.ETag, `"${normalMD5}"`);
+                        assertGetObjects(
+                            this.test.key,
+                            bucket,
+                            azureLocation,
+                            this.test.copyKey,
+                            bucket,
+                            memLocation,
+                            this.test.key,
+                            'COPY',
+                            null,
+                            done,
+                        );
+                    })
+                    .catch(err => done(new Error(`Expected success but got error: ${err}`)));
+            });
+        });
 
         it(
             'should copy an object on Azure to a different Azure ' + 'account without source object READ access',
@@ -798,7 +795,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy: Azure', function testSui
             });
         });
 
-        it('should return error if Azure source object has ' + 'been deleted', function itFn(done) {
+        it('should return error if Azure source object has been deleted', function itFn(done) {
             putSourceObj(this.test.key, azureLocation, null, bucket, () => {
                 azureClient.deleteBlob(azureContainerName, this.test.key, err => {
                     assert.equal(err, null, 'Error deleting object from ' + `Azure: ${err}`);

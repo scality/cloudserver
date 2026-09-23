@@ -13,7 +13,7 @@ describe('HEAD bucket', () => {
             s3 = new S3Client(config);
         });
 
-        it('should return an error to a head request without a ' + 'bucket name', async () => {
+        it('should return an error to a head request without a bucket name', async () => {
             try {
                 await s3.send(new HeadBucketCommand({ Bucket: '' }));
                 assert.fail('Expected failure but got success');

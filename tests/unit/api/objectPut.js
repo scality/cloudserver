@@ -555,7 +555,7 @@ describe('objectPut API', () => {
         });
     });
 
-    it('should not put object with retention configuration if object lock ' + 'is not enabled on the bucket', done => {
+    it('should not put object with retention configuration if object lock is not enabled on the bucket', done => {
         const testPutObjectRequest = new DummyRequest(
             {
                 bucketName,
@@ -1061,7 +1061,7 @@ describe('objectPut API with versioning', () => {
         versioningTestUtils.createPutObjectRequest(bucketName, objectName, data),
     );
 
-    it('should delete latest version when creating new null version ' + 'if latest version is null version', done => {
+    it('should delete latest version when creating new null version if latest version is null version', done => {
         async.series(
             [
                 callback => bucketPut(authInfo, testPutBucketRequest, log, callback),
@@ -1348,8 +1348,7 @@ describe('objectPut API in ingestion bucket', () => {
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             url: '/',
             post:
-                '<?xml version="1.0" encoding="UTF-8"?>' +
-                '<CreateBucketConfiguration ' +
+                '<?xml version="1.0" encoding="UTF-8"?><CreateBucketConfiguration ' +
                 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
                 `<LocationConstraint>${location}</LocationConstraint>` +
                 '</CreateBucketConfiguration>',

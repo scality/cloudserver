@@ -105,7 +105,7 @@ describeSkipIfNotMultiple('MultipleBackend put object', function testSuite() {
         });
 
         // aws-sdk now (v2.363.0) returns 'UriParameterError' error
-        it.skip('should return an error to put request without a valid ' + 'bucket name', async () => {
+        it.skip('should return an error to put request without a valid bucket name', async () => {
             const key = `somekey-${genUniqID()}`;
             try {
                 await s3.send(new PutObjectCommand({ Bucket: '', Key: key }));
@@ -116,13 +116,13 @@ describeSkipIfNotMultiple('MultipleBackend put object', function testSuite() {
         });
 
         describeSkipIfNotMultiple(
-            'with set location from "x-amz-meta-scal-' + 'location-constraint" header',
+            'with set location from "x-amz-meta-scal-location-constraint" header',
             function describe() {
                 if (!process.env.S3_END_TO_END) {
                     this.retries(2);
                 }
 
-                it('should return an error to put request without a valid ' + 'location constraint', async () => {
+                it('should return an error to put request without a valid location constraint', async () => {
                     const key = `somekey-${genUniqID()}`;
                     const params = {
                         Bucket: bucket,
@@ -305,7 +305,7 @@ describeSkipIfNotMultiple('MultipleBackend put object', function testSuite() {
                     await awsGetCheck(key, correctMD5, correctMD5, awsLocation);
                 });
 
-                it('should encrypt body only if bucket encrypted putting ' + 'object to AWS', async () => {
+                it('should encrypt body only if bucket encrypted putting object to AWS', async () => {
                     const key = `somekey-${genUniqID()}`;
                     const params = {
                         Bucket: bucket,
@@ -343,7 +343,7 @@ describeSkipIfNotMultiple('MultipleBackend put object', function testSuite() {
                     await awsGetCheck(key, correctMD5, correctMD5, awsLocationEncryption);
                 });
 
-                it('should return a version id putting object to ' + 'to AWS with versioning enabled', async () => {
+                it('should return a version id putting object to to AWS with versioning enabled', async () => {
                     const key = `somekey-${genUniqID()}`;
                     const params = {
                         Bucket: bucket,
@@ -447,38 +447,35 @@ describeSkipIfNotMultiple('MultipleBackend put object', function testSuite() {
                     },
                 );
 
-                it(
-                    'should put two objects to AWS with same ' + 'key, and newest object should be returned',
-                    async () => {
-                        const key = `somekey-${genUniqID()}`;
-                        const params = {
-                            Bucket: bucket,
-                            Key: key,
-                            Body: body,
-                            Metadata: { 'scal-location-constraint': awsLocation, 'unique-header': 'first object' },
-                        };
-                        await s3
-                            .send(new PutObjectCommand(params))
-                            .then(() => {
-                                process.stdout.write('Putting object succeeded\n');
-                            })
-                            .catch(err => {
-                                throw new Error(`Expected success, got error: ${err}`);
-                            });
-                        params.Metadata = { 'scal-location-constraint': awsLocation, 'unique-header': 'second object' };
-                        await s3
-                            .send(new PutObjectCommand(params))
-                            .then(() => {
-                                process.stdout.write('Putting object succeeded\n');
-                            })
-                            .catch(err => {
-                                throw new Error(`Expected success, got error: ${err}`);
-                            });
-                        await awsGetCheck(key, correctMD5, correctMD5, awsLocation, result => {
-                            assert.strictEqual(result.Metadata['unique-header'], 'second object');
+                it('should put two objects to AWS with same key, and newest object should be returned', async () => {
+                    const key = `somekey-${genUniqID()}`;
+                    const params = {
+                        Bucket: bucket,
+                        Key: key,
+                        Body: body,
+                        Metadata: { 'scal-location-constraint': awsLocation, 'unique-header': 'first object' },
+                    };
+                    await s3
+                        .send(new PutObjectCommand(params))
+                        .then(() => {
+                            process.stdout.write('Putting object succeeded\n');
+                        })
+                        .catch(err => {
+                            throw new Error(`Expected success, got error: ${err}`);
                         });
-                    },
-                );
+                    params.Metadata = { 'scal-location-constraint': awsLocation, 'unique-header': 'second object' };
+                    await s3
+                        .send(new PutObjectCommand(params))
+                        .then(() => {
+                            process.stdout.write('Putting object succeeded\n');
+                        })
+                        .catch(err => {
+                            throw new Error(`Expected success, got error: ${err}`);
+                        });
+                    await awsGetCheck(key, correctMD5, correctMD5, awsLocation, result => {
+                        assert.strictEqual(result.Metadata['unique-header'], 'second object');
+                    });
+                });
             },
         );
     });

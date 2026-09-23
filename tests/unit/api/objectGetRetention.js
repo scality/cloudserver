@@ -36,9 +36,7 @@ const putObjectRequest = new DummyRequest(
 );
 
 const objectRetentionXml =
-    '<Retention ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    '<Mode>GOVERNANCE</Mode>' +
+    '<Retention xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Mode>GOVERNANCE</Mode>' +
     `<RetainUntilDate>${date.toISOString()}</RetainUntilDate>` +
     '</Retention>';
 

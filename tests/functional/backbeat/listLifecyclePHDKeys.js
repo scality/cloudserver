@@ -419,7 +419,7 @@ describePHD('listLifecycle over a dangling-PHD desert', () => {
                 .map(entry => entry.VersionId);
             assert(
                 !survivorVersions.includes(survivorVersionIds[1]),
-                'newest surviving version under the PHD master listed as noncurrent: ' + 'NCVE would expire live data',
+                'newest surviving version under the PHD master listed as noncurrent: NCVE would expire live data',
             );
         });
     });

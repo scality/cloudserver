@@ -33,7 +33,7 @@ describe('Requests to ip endpoint not in config', () => {
         });
 
         it(
-            'should accept put bucket request ' + 'to IP address endpoint that is not in config using ' + 'path style',
+            'should accept put bucket request to IP address ' + 'endpoint that is not in config using path style',
             async () => {
                 await s3.send(new CreateBucketCommand({ Bucket: bucket }));
             },
@@ -44,9 +44,8 @@ describe('Requests to ip endpoint not in config', () => {
         // localhost which is in config. Once integration is using
         // different machines we can update this.
         itSkipIfE2E(
-            'should show us-east-1 as bucket location since' +
-                'IP address endpoint was not in config thereby ' +
-                'defaulting to us-east-1',
+            'should show us-east-1 as bucket location sinceIP address ' +
+                'endpoint was not in config thereby defaulting to us-east-1',
             async () => {
                 const res = await s3.send(new GetBucketLocationCommand({ Bucket: bucket }));
                 assert.strictEqual(res.LocationConstraint, undefined);
@@ -54,9 +53,8 @@ describe('Requests to ip endpoint not in config', () => {
         );
 
         it(
-            'should accept put object request ' +
-                'to IP address endpoint that is not in config using ' +
-                'path style and use the bucket location for the object',
+            'should accept put object request to IP address endpoint that is not ' +
+                'in config using path style and use the bucket location for the object',
             async () => {
                 await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body }));
                 await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
@@ -64,7 +62,7 @@ describe('Requests to ip endpoint not in config', () => {
         );
 
         it(
-            'should accept get object request ' + 'to IP address endpoint that is not in config using ' + 'path style',
+            'should accept get object request to IP address ' + 'endpoint that is not in config using path style',
             async () => {
                 const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
                 assert.strictEqual(res.ETag, expectedETag);

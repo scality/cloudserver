@@ -122,7 +122,7 @@ describe('GET object taggings', () => {
             }
         });
 
-        it('should return 403 AccessDenied getting tag set with another ' + 'account', async () => {
+        it('should return 403 AccessDenied getting tag set with another account', async () => {
             try {
                 await otherAccountS3.send(
                     new GetObjectTaggingCommand({
@@ -191,7 +191,7 @@ describe('GET object taggings', () => {
             },
         );
 
-        it('should get tag to an object in a bucket created with same ' + 'account', async () => {
+        it('should get tag to an object in a bucket created with same account', async () => {
             await s3.send(
                 new PutBucketAclCommand({
                     Bucket: bucketName,

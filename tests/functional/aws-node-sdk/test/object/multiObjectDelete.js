@@ -278,7 +278,7 @@ describe('Multi-Object Delete Access', function access() {
         await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
     });
 
-    it('should return access denied error for each object where no acl ' + 'permission', () => {
+    it('should return access denied error for each object where no acl permission', () => {
         const objects = createObjectsList(500);
         const errorList = createObjectsList(500);
         errorList.forEach(obj => {
@@ -486,7 +486,7 @@ describe('Multi-Object Delete with Object Lock', () => {
             });
     });
 
-    it('should delete locked objects with GOVERNANCE ' + 'retention mode and bypass header', () => {
+    it('should delete locked objects with GOVERNANCE retention mode and bypass header', () => {
         const objects = createObjectsList(5, versionIds);
         return s3
             .send(

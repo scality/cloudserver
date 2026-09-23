@@ -16,7 +16,7 @@ const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const ownerID = authInfo.getCanonicalID();
-const anotherID = '79a59df900b949e55d96a1e698fba' + 'cedfd6e09d98eacf8f8d5218e7cd47ef2bf';
+const anotherID = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
 const defaultAcpParams = {
     ownerID,
     ownerDisplayName: 'OwnerDisplayName',
@@ -97,7 +97,7 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should set a canned public-read ACL followed by' + ' a canned authenticated-read ACL', done => {
+    it('should set a canned public-read ACL followed by a canned authenticated-read ACL', done => {
         const testObjACLRequest1 = {
             bucketName,
             namespace,
@@ -146,7 +146,7 @@ describe('putObjectACL API', () => {
             objectKey: objectName,
             headers: {
                 'x-amz-grant-full-control':
-                    'emailaddress="sampleaccount1@sampling.com"' + ',emailaddress="sampleaccount2@sampling.com"',
+                    'emailaddress="sampleaccount1@sampling.com",emailaddress="sampleaccount2@sampling.com"',
                 'x-amz-grant-read': `uri=${constants.logId}`,
                 'x-amz-grant-read-acp': `id=${ownerID}`,
                 'x-amz-grant-write-acp': `id=${anotherID}`,
@@ -176,14 +176,14 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should return an error if invalid email ' + 'provided in ACL header request', done => {
+    it('should return an error if invalid email provided in ACL header request', done => {
         const testObjACLRequest = {
             bucketName,
             namespace,
             objectKey: objectName,
             headers: {
                 'x-amz-grant-full-control':
-                    'emailaddress="sampleaccount1@sampling.com"' + ',emailaddress="nonexistentemail@sampling.com"',
+                    'emailaddress="sampleaccount1@sampling.com",emailaddress="nonexistentemail@sampling.com"',
             },
             url: `/${bucketName}/${objectName}?acl`,
             query: { acl: '' },
@@ -236,7 +236,7 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should return an error if wrong owner ID ' + 'provided in ACLs set out in request body', done => {
+    it('should return an error if wrong owner ID provided in ACLs set out in request body', done => {
         const acp = new AccessControlPolicy({ ownerID: anotherID });
         const testObjACLRequest = {
             bucketName,
@@ -259,7 +259,7 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should ignore if WRITE ACL permission is ' + 'provided in request body', done => {
+    it('should ignore if WRITE ACL permission is provided in request body', done => {
         const acp = new AccessControlPolicy(defaultAcpParams);
         acp.addGrantee('CanonicalUser', ownerID, 'FULL_CONTROL', 'OwnerDisplayName');
         acp.addGrantee('Group', constants.publicId, 'WRITE');
@@ -293,7 +293,7 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should return an error if invalid email ' + 'address provided in ACLs set out in request body', done => {
+    it('should return an error if invalid email address provided in ACLs set out in request body', done => {
         const acp = new AccessControlPolicy(defaultAcpParams);
         acp.addGrantee('AmazonCustomerByEmail', 'xyz@amazon.com', 'WRITE_ACP');
         const testObjACLRequest = {
@@ -318,7 +318,7 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should return an error if xml provided does not match s3 ' + 'scheme for setting ACLs', done => {
+    it('should return an error if xml provided does not match s3 scheme for setting ACLs', done => {
         const acp = new AccessControlPolicy(defaultAcpParams);
         acp.addGrantee('AmazonCustomerByEmail', 'xyz@amazon.com', 'WRITE_ACP');
         const originalXml = acp.getXml();
@@ -372,9 +372,9 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should return an error if invalid group ' + 'uri provided in ACLs set out in request body', done => {
+    it('should return an error if invalid group uri provided in ACLs set out in request body', done => {
         const acp = new AccessControlPolicy(defaultAcpParams);
-        acp.addGrantee('Group', 'http://acs.amazonaws.com/groups/' + 'global/NOTAVALIDGROUP', 'WRITE_ACP');
+        acp.addGrantee('Group', 'http://acs.amazonaws.com/groups/global/NOTAVALIDGROUP', 'WRITE_ACP');
         const testObjACLRequest = {
             bucketName,
             namespace,
@@ -397,14 +397,14 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should return an error if invalid group uri ' + 'provided in ACL header request', done => {
+    it('should return an error if invalid group uri provided in ACL header request', done => {
         const testObjACLRequest = {
             bucketName,
             namespace,
             objectKey: objectName,
             headers: {
                 host: 's3.amazonaws.com',
-                'x-amz-grant-full-control': 'uri="http://acs.amazonaws.com/groups/' + 'global/NOTAVALIDGROUP"',
+                'x-amz-grant-full-control': 'uri="http://acs.amazonaws.com/groups/global/NOTAVALIDGROUP"',
             },
             url: `/${bucketName}/${objectName}?acl`,
             query: { acl: '' },

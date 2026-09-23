@@ -174,7 +174,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy: AWS', function testSuite
             await bucketUtil.deleteOne(bucketAws);
         });
 
-        it('should copy an object from mem to AWS relying on ' + 'destination bucket location', async () => {
+        it('should copy an object from mem to AWS relying on destination bucket location', async () => {
             const key = await putSourceObj(memLocation, false, bucket);
             const copyKey = `copyKey-${genUniqID()}`;
             const copyParams = {
@@ -201,7 +201,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy: AWS', function testSuite
             );
         });
 
-        it('should copy an object from Azure to AWS relying on ' + 'destination bucket location', async () => {
+        it('should copy an object from Azure to AWS relying on destination bucket location', async () => {
             const key = await putSourceObj(azureLocation, false, bucket);
             const copyKey = `copyKey-${genUniqID()}`;
             const copyParams = {
@@ -259,7 +259,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy: AWS', function testSuite
             },
         );
 
-        it('should copy an object from AWS to mem relying on destination ' + 'bucket location', async () => {
+        it('should copy an object from AWS to mem relying on destination bucket location', async () => {
             const key = await putSourceObj(awsLocation, false, bucketAws);
             const copyKey = `copyKey-${genUniqID()}`;
             const copyParams = {
@@ -316,7 +316,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy: AWS', function testSuite
             );
         });
 
-        it('should copy an object from mem to AWS with aws server ' + 'side encryption', async () => {
+        it('should copy an object from mem to AWS with aws server side encryption', async () => {
             const key = await putSourceObj(memLocation, false, bucket);
             const copyKey = `copyKey-${genUniqID()}`;
             const copyParams = {
@@ -377,7 +377,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy: AWS', function testSuite
             },
         );
 
-        it('should copy an object on AWS with aws server side ' + 'encryption', async () => {
+        it('should copy an object on AWS with aws server side encryption', async () => {
             const key = await putSourceObj(awsLocation, false, bucket);
             const copyKey = `copyKey-${genUniqID()}`;
             const copyParams = {
@@ -407,7 +407,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy: AWS', function testSuite
             );
         });
 
-        it('should copy an object on AWS with aws server side ' + 'encrypted bucket', async () => {
+        it('should copy an object on AWS with aws server side encrypted bucket', async () => {
             const key = await putSourceObj(awsLocation, false, awsServerSideEncryptionbucket);
             const copyKey = `copyKey-${genUniqID()}`;
             const copyParams = {
@@ -465,7 +465,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy: AWS', function testSuite
             },
         );
 
-        it('should copy an object from AWS to mem with "COPY" ' + 'directive and aws location metadata', async () => {
+        it('should copy an object from AWS to mem with "COPY" directive and aws location metadata', async () => {
             const key = await putSourceObj(awsLocation, false, bucket);
             const copyKey = `copyKey-${genUniqID()}`;
             const copyParams = {
@@ -557,7 +557,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy: AWS', function testSuite
             },
         );
 
-        it('should copy an object on AWS to a different AWS location ' + 'with source object READ access', async () => {
+        it('should copy an object on AWS to a different AWS location with source object READ access', async () => {
             const awsConfig2 = getRealAwsConfig(awsLocation2);
             const awsS3Two = new S3Client(awsConfig2);
             const copyKey = `copyKey-${genUniqID()}`;
@@ -714,7 +714,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy: AWS', function testSuite
             );
         });
 
-        it('should return error if AWS source object has ' + 'been deleted', async () => {
+        it('should return error if AWS source object has been deleted', async () => {
             const key = await putSourceObj(awsLocation, false, bucket);
             const awsBucket = config.locationConstraints[awsLocation].details.bucketName;
 

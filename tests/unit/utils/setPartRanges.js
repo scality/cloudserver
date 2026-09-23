@@ -16,9 +16,8 @@ describe('setPartRanges function', () => {
     });
 
     it(
-        'for a 3-part object, should include full first part, set range on ' +
-            'middle part and exclude last part if range request starts at 0' +
-            'and ends in the middle of the second part',
+        'for a 3-part object, should include full first part, set range on middle part and ' +
+            'exclude last part if range request starts at 0and ends in the middle of the second part',
         () => {
             const dataLocations = [
                 { key: '1', size: '4', start: '0' },
@@ -35,9 +34,8 @@ describe('setPartRanges function', () => {
     );
 
     it(
-        'for a 3-part object, should include part of first part, all of ' +
-            'second part and part of third part if range request starts within ' +
-            'first part and ends before end of last part',
+        'for a 3-part object, should include part of first part, all of second part and part of ' +
+            'third part if range request starts within first part and ends before end of last part',
         () => {
             const dataLocations = [
                 { key: '1', size: '4', start: '0' },
@@ -70,9 +68,8 @@ describe('setPartRanges function', () => {
     );
 
     it(
-        'for a 3-part object, should include only a range of the middle part ' +
-            'and all of the third part if the range excludes a portion of the ' +
-            'beginning',
+        'for a 3-part object, should include only a range of the middle part and ' +
+            'all of the third part if the range excludes a portion of the beginning',
         () => {
             const dataLocations = [
                 { key: '1', size: '4', start: '0' },

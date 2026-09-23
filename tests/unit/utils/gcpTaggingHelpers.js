@@ -119,7 +119,7 @@ describe('GcpUtils Tagging Helper Functions:', () => {
     describe('getPutTagsMetadata', () => {
         const tests = [
             {
-                it: 'should return correct object when' + ' given a tag query string and a metadata obj',
+                it: 'should return correct object when given a tag query string and a metadata obj',
                 input: { metadata: Object.assign({}, onlyMetadata), tagQuery },
                 output: tagMetadata,
             },

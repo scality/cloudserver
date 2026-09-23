@@ -50,7 +50,7 @@ const bucket = 'bucketcorsheadertest';
 const objectKey = 'objectKeyName';
 const allowedOrigin = 'http://www.allowedwebsite.com';
 const notAllowedOrigin = 'http://www.notallowedwebsite.com';
-const vary = 'Origin, Access-Control-Request-Headers, ' + 'Access-Control-Request-Method';
+const vary = 'Origin, Access-Control-Request-Headers, Access-Control-Request-Method';
 const defaultOptions = {
     allowedMethods: ['GET'],
     allowedOrigins: [allowedOrigin],
@@ -384,15 +384,12 @@ describe('Cross Origin Resource Sharing requests', () => {
     });
 
     describe('on bucket without CORS configuration', () => {
-        it(
-            'should not respond to request with CORS headers,' + ' even if request was sent with Origin header',
-            async () => {
-                await _checkHeaders(ListObjectsCommand, { Bucket: bucket }, allowedOrigin, null);
-            },
-        );
+        it('should not respond to request with CORS headers, even if request was sent with Origin header', async () => {
+            await _checkHeaders(ListObjectsCommand, { Bucket: bucket }, allowedOrigin, null);
+        });
     });
 
-    describe('on bucket with CORS configuration: ' + 'allow one origin and all methods', () => {
+    describe('on bucket with CORS configuration: allow one origin and all methods', () => {
         const corsParams = generateCorsParams(bucket, {
             allowedMethods: ['GET', 'PUT', 'HEAD', 'POST', 'DELETE'],
             allowedOrigins: [allowedOrigin],

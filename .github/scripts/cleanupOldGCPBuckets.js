@@ -21,7 +21,7 @@ function buildClient() {
 
     if (!accessKeyId || !secretAccessKey) {
         console.error(
-            'Missing required environment variables: ' + 'AWS_GCP_BACKEND_ACCESS_KEY and AWS_GCP_BACKEND_SECRET_KEY',
+            'Missing required environment variables: AWS_GCP_BACKEND_ACCESS_KEY and AWS_GCP_BACKEND_SECRET_KEY',
         );
         process.exit(1);
     }

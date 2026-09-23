@@ -197,7 +197,7 @@ describe('put and get object with versioning', function testSuite() {
                 },
             );
 
-            it('should get null version in versioning enabled bucket ' + 'when version id is specified', async () => {
+            it('should get null version in versioning enabled bucket when version id is specified', async () => {
                 const res = await s3.send(
                     new GetObjectCommand({
                         Bucket: bucket,
@@ -374,9 +374,8 @@ describe('put and get object with versioning', function testSuite() {
 
             // Jira issue: S3C-444
             it(
-                'put object after put object acl on null version which is ' +
-                    'latest version should not result in two null version with ' +
-                    'different version ids',
+                'put object after put object acl on null version which is latest version ' +
+                    'should not result in two null version with different version ids',
                 async () => {
                     // create new null version (master version in metadata)
                     await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: Buffer.from('') }));

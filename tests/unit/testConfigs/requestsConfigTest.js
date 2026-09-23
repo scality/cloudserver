@@ -19,8 +19,7 @@ describe('requestsConfigAssert', () => {
     });
     it(
         'should not throw an error if requests config via proxy is true, ' +
-            'trustedProxyCIDRs & extractClientIPFromHeader & ' +
-            'extractProtocolFromHeader are set',
+            'trustedProxyCIDRs & extractClientIPFromHeader & extractProtocolFromHeader are set',
         () => {
             assert.doesNotThrow(() => {
                 requestsConfigAssert({
@@ -29,7 +28,7 @@ describe('requestsConfigAssert', () => {
                     extractClientIPFromHeader: 'x-forwarded-for',
                     extractProtocolFromHeader: 'x-forwarded-proto',
                 });
-            }, 'should not throw an error if requests config ' + 'via proxy is set correctly');
+            }, 'should not throw an error if requests config via proxy is set correctly');
         },
     );
     it('should throw an error if requests.viaProxy is not a boolean', () => {
@@ -40,7 +39,7 @@ describe('requestsConfigAssert', () => {
                 extractClientIPFromHeader: 'x-forwarded-for',
                 extractProtocolFromHeader: 'x-forwarded-proto',
             });
-        }, '/config: invalid requests configuration. viaProxy must be a ' + 'boolean/');
+        }, '/config: invalid requests configuration. viaProxy must be a boolean/');
     });
     it('should throw an error if requests.trustedProxyCIDRs is not an array', () => {
         assert.throws(
@@ -72,7 +71,7 @@ describe('requestsConfigAssert', () => {
                 'and must be an array/',
         );
     });
-    it('should throw an error if requests.extractClientIPFromHeader ' + 'is not a string', () => {
+    it('should throw an error if requests.extractClientIPFromHeader is not a string', () => {
         assert.throws(
             () => {
                 requestsConfigAssert({
@@ -87,7 +86,7 @@ describe('requestsConfigAssert', () => {
                 'set to true and must be a string/',
         );
     });
-    it('should throw an error if requests.extractProtocolFromHeader ' + 'is not a string', () => {
+    it('should throw an error if requests.extractProtocolFromHeader is not a string', () => {
         assert.throws(
             () => {
                 requestsConfigAssert({
@@ -102,7 +101,7 @@ describe('requestsConfigAssert', () => {
                 'set to true and must be a string/',
         );
     });
-    it('should throw an error if requests.extractClientIPFromHeader ' + 'is empty', () => {
+    it('should throw an error if requests.extractClientIPFromHeader is empty', () => {
         assert.throws(
             () => {
                 requestsConfigAssert({
@@ -117,7 +116,7 @@ describe('requestsConfigAssert', () => {
                 'set to true and must be a string/',
         );
     });
-    it('should throw an error if requests.extractProtocolFromHeader ' + 'is empty', () => {
+    it('should throw an error if requests.extractProtocolFromHeader is empty', () => {
         assert.throws(
             () => {
                 requestsConfigAssert({

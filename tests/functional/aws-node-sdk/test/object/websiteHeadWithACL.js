@@ -54,71 +54,71 @@ const aclTests = [
         result: 'accessDenied',
     },
     {
-        it: 'should return 403 if public bucket - private index - public ' + 'error documents',
+        it: 'should return 403 if public bucket - private index - public error documents',
         bucketACL: 'public',
         objects: { index: 'private', error: 'private' },
         result: 'accessDenied',
     },
     {
-        it: 'should return 200 if private bucket - public index - ' + 'public error documents',
+        it: 'should return 200 if private bucket - public index - public error documents',
         bucketACL: 'private',
         objects: { index: 'public-read', error: 'private' },
         result: 'index',
     },
     {
-        it: 'should return 200 if public bucket - public index - ' + 'private error documents',
+        it: 'should return 200 if public bucket - public index - private error documents',
         bucketACL: 'public',
         objects: { index: 'public-read', error: 'private' },
         result: 'index',
     },
     {
-        it: 'should return 200 if private bucket - public index - ' + 'public error documents',
+        it: 'should return 200 if private bucket - public index - public error documents',
         bucketACL: 'private',
         objects: { index: 'public-read', error: 'public-read' },
         result: 'index',
     },
     {
-        it: 'should return 200 if public bucket - public index - ' + 'public error documents',
+        it: 'should return 200 if public bucket - public index - public error documents',
         bucketACL: 'public',
         objects: { index: 'public-read', error: 'public-read' },
         result: 'index',
     },
 
     {
-        it: 'should return 403 AccessDenied if private bucket - ' + 'without index - public error documents',
+        it: 'should return 403 AccessDenied if private bucket - without index - public error documents',
         bucketACL: 'private',
         objects: { error: 'public-read' },
         result: 'accessDenied',
     },
     {
-        it: 'should return 404 if public bucket - without index - ' + 'public error documents',
+        it: 'should return 404 if public bucket - without index - public error documents',
         bucketACL: 'public',
         objects: { error: 'public-read' },
         result: 'noSuchKey',
     },
 
     {
-        it: 'should return 403 if private bucket - without index - ' + 'private error documents',
+        it: 'should return 403 if private bucket - without index - private error documents',
         bucketACL: 'private',
         objects: { error: 'private' },
         result: 'accessDenied',
     },
 
     {
-        it: 'should return 404 if public bucket - without index - ' + 'private error documents',
+        it: 'should return 404 if public bucket - without index - private error documents',
         bucketACL: 'public',
         objects: { error: 'private' },
         result: 'noSuchKey',
     },
 
     {
-        it: 'should return 404 if public bucket - without index - ' + 'without error documents',
+        it: 'should return 404 if public bucket - without index - without error documents',
         bucketACL: 'public',
         objects: {},
         result: 'noSuchKey',
     },
     {
-        it: 'should return 403 if private bucket - without index - ' + 'without error documents',
+        it: 'should return 403 if private bucket - without index - without error documents',
         bucketACL: 'private',
         objects: {},
         result: 'accessDenied',

@@ -136,7 +136,7 @@ describe('Multi-Object Versioning Delete Success', function success() {
             assert.strictEqual(res.Errors, undefined);
         });
 
-        it('should return NoSuchVersion in errors if one versionId is ' + 'invalid', async () => {
+        it('should return NoSuchVersion in errors if one versionId is invalid', async () => {
             const objects = objectsRes.slice(0, 1000).map(obj => ({ Key: obj.Key, VersionId: obj.VersionId }));
             objects[0].VersionId = 'invalid-version-id';
 
@@ -220,7 +220,7 @@ describe('Multi-Object Versioning Delete - deleting delete marker', () => {
             });
         });
 
-        it('should send back VersionId and DeleteMarkerVersionId both equal ' + 'to deleteVersionId', async () => {
+        it('should send back VersionId and DeleteMarkerVersionId both equal to deleteVersionId', async () => {
             await s3.send(new PutObjectCommand({ Bucket: bucketName, Key: key }));
 
             const deleteRes = await s3.send(

@@ -156,7 +156,7 @@ describe('Delete object tagging with versioning', () => {
             assert.strictEqual(deleteResult.VersionId, 'null');
         });
 
-        it('should return InvalidArgument deleting tag set with a non ' + 'existing version id', async () => {
+        it('should return InvalidArgument deleting tag set with a non existing version id', async () => {
             await s3.send(
                 new PutObjectCommand({
                     Bucket: bucketName,

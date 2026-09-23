@@ -91,25 +91,22 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', function descri
                     .catch(done);
             });
 
-            it(
-                'should return a NotImplemented error if try to put ' + 'versioning to bucket with Azure location',
-                done => {
-                    const params = {
-                        Bucket: azureContainerName,
-                        VersioningConfiguration: {
-                            Status: 'Enabled',
-                        },
-                    };
-                    s3.send(new PutBucketVersioningCommand(params))
-                        .then(() => {
-                            done(new Error('Expected NotImplemented error'));
-                        })
-                        .catch(err => {
-                            assert.strictEqual(err.name, 'NotImplemented');
-                            done();
-                        });
-                },
-            );
+            it('should return a NotImplemented error if try to put versioning to bucket with Azure location', done => {
+                const params = {
+                    Bucket: azureContainerName,
+                    VersioningConfiguration: {
+                        Status: 'Enabled',
+                    },
+                };
+                s3.send(new PutBucketVersioningCommand(params))
+                    .then(() => {
+                        done(new Error('Expected NotImplemented error'));
+                    })
+                    .catch(err => {
+                        assert.strictEqual(err.name, 'NotImplemented');
+                        done();
+                    });
+            });
 
             it(
                 'should put an object to Azure, with no object location ' + 'header, based on bucket location',
@@ -189,7 +186,7 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', function descri
                     .catch(done);
             });
 
-            it('should return error ServiceUnavailable putting an invalid ' + 'key name to Azure', done => {
+            it('should return error ServiceUnavailable putting an invalid key name to Azure', done => {
                 const params = {
                     Bucket: azureContainerName,
                     Key: '.',
@@ -206,7 +203,7 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', function descri
                     });
             });
 
-            it('should return error NotImplemented putting a ' + 'version to Azure', function itF(done) {
+            it('should return error NotImplemented putting a version to Azure', function itF(done) {
                 s3.send(
                     new PutBucketVersioningCommand({
                         Bucket: azureContainerName,

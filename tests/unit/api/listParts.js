@@ -333,7 +333,7 @@ describe('List Parts API', () => {
         });
     });
 
-    it('should list only up to requested number ' + 'of max parts of a multipart upload', done => {
+    it('should list only up to requested number of max parts of a multipart upload', done => {
         const listRequest = {
             bucketName,
             namespace,
@@ -368,7 +368,7 @@ describe('List Parts API', () => {
         });
     });
 
-    it('should list all parts if requested max-parts ' + 'is greater than total number of parts', done => {
+    it('should list all parts if requested max-parts is greater than total number of parts', done => {
         const listRequest = {
             bucketName,
             namespace,
@@ -439,7 +439,7 @@ describe('List Parts API', () => {
         });
     });
 
-    it('should handle a part-number-marker specified ' + 'and a max-parts specified', done => {
+    it('should handle a part-number-marker specified and a max-parts specified', done => {
         const listRequest = {
             bucketName,
             namespace,

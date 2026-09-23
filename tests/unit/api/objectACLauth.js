@@ -79,7 +79,7 @@ describe('object acl authorization for objectGet and objectHead', () => {
         assert.deepStrictEqual(results, [true, true]);
     });
 
-    it('should not allow access to public user if ' + 'authenticated-read ACL', () => {
+    it('should not allow access to public user if authenticated-read ACL', () => {
         object.acl.Canned = 'authenticated-read';
         const publicResults = requestTypes.map(type =>
             isObjAuthorized(bucket, object, type, constants.publicId, null, log),
@@ -87,7 +87,7 @@ describe('object acl authorization for objectGet and objectHead', () => {
         assert.deepStrictEqual(publicResults, [false, false]);
     });
 
-    it('should allow access to any authenticated user if ' + 'authenticated-read ACL', () => {
+    it('should allow access to any authenticated user if authenticated-read ACL', () => {
         object.acl.Canned = 'authenticated-read';
         const results = requestTypes.map(type =>
             isObjAuthorized(bucket, object, type, accountToVet, altAcctAuthInfo, log),
@@ -95,7 +95,7 @@ describe('object acl authorization for objectGet and objectHead', () => {
         assert.deepStrictEqual(results, [true, true]);
     });
 
-    it('should allow access to bucket owner when object owner is alt account if ' + 'bucket-owner-read ACL', () => {
+    it('should allow access to bucket owner when object owner is alt account if bucket-owner-read ACL', () => {
         const altAcctObj = {
             'owner-id': accountToVet,
             acl: {
@@ -117,32 +117,29 @@ describe('object acl authorization for objectGet and objectHead', () => {
         assert.deepStrictEqual(authResults, [true, true]);
     });
 
-    it(
-        'should allow access to bucket owner when object owner is alt account if ' + 'bucket-owner-full-control ACL',
-        () => {
-            const altAcctObj = {
-                'owner-id': accountToVet,
-                acl: {
-                    Canned: 'private',
-                    FULL_CONTROL: [],
-                    WRITE_ACP: [],
-                    READ: [],
-                    READ_ACP: [],
-                },
-            };
-            const noAuthResults = requestTypes.map(type =>
-                isObjAuthorized(bucket, altAcctObj, type, bucketOwnerCanonicalId, authInfo, log),
-            );
-            assert.deepStrictEqual(noAuthResults, [false, false]);
-            altAcctObj.acl.Canned = 'bucket-owner-full-control';
-            const authResults = requestTypes.map(type =>
-                isObjAuthorized(bucket, altAcctObj, type, bucketOwnerCanonicalId, authInfo, log),
-            );
-            assert.deepStrictEqual(authResults, [true, true]);
-        },
-    );
+    it('should allow access to bucket owner when object owner is alt account if bucket-owner-full-control ACL', () => {
+        const altAcctObj = {
+            'owner-id': accountToVet,
+            acl: {
+                Canned: 'private',
+                FULL_CONTROL: [],
+                WRITE_ACP: [],
+                READ: [],
+                READ_ACP: [],
+            },
+        };
+        const noAuthResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, altAcctObj, type, bucketOwnerCanonicalId, authInfo, log),
+        );
+        assert.deepStrictEqual(noAuthResults, [false, false]);
+        altAcctObj.acl.Canned = 'bucket-owner-full-control';
+        const authResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, altAcctObj, type, bucketOwnerCanonicalId, authInfo, log),
+        );
+        assert.deepStrictEqual(authResults, [true, true]);
+    });
 
-    it('should allow access to account if ' + 'account was granted FULL_CONTROL', () => {
+    it('should allow access to account if account was granted FULL_CONTROL', () => {
         const noAuthResults = requestTypes.map(type =>
             isObjAuthorized(bucket, object, type, accountToVet, altAcctAuthInfo, log),
         );
@@ -154,7 +151,7 @@ describe('object acl authorization for objectGet and objectHead', () => {
         assert.deepStrictEqual(authResults, [true, true]);
     });
 
-    it('should allow access to account if ' + 'account was granted READ right', () => {
+    it('should allow access to account if account was granted READ right', () => {
         const noAuthResults = requestTypes.map(type =>
             isObjAuthorized(bucket, object, type, accountToVet, altAcctAuthInfo, log),
         );
@@ -250,7 +247,7 @@ describe('object authorization for objectPutACL and objectGetACL', () => {
         },
     );
 
-    it('should allow access to account if ' + 'account was granted FULL_CONTROL right', () => {
+    it('should allow access to account if account was granted FULL_CONTROL right', () => {
         const noAuthResults = requestTypes.map(type =>
             isObjAuthorized(bucket, object, type, accountToVet, altAcctAuthInfo, log),
         );
@@ -262,7 +259,7 @@ describe('object authorization for objectPutACL and objectGetACL', () => {
         assert.deepStrictEqual(authorizedResults, [true, true]);
     });
 
-    it('should allow objectPutACL access to account if ' + 'account was granted WRITE_ACP right', () => {
+    it('should allow objectPutACL access to account if account was granted WRITE_ACP right', () => {
         const noAuthResult = isObjAuthorized(bucket, object, 'objectPutACL', accountToVet, altAcctAuthInfo, log);
         assert.strictEqual(noAuthResult, false);
         object.acl.WRITE_ACP = [accountToVet];
@@ -270,7 +267,7 @@ describe('object authorization for objectPutACL and objectGetACL', () => {
         assert.strictEqual(authorizedResult, true);
     });
 
-    it('should allow objectGetACL access to account if ' + 'account was granted READ_ACP right', () => {
+    it('should allow objectGetACL access to account if account was granted READ_ACP right', () => {
         const noAuthResult = isObjAuthorized(bucket, object, 'objectGetACL', accountToVet, altAcctAuthInfo, log);
         assert.strictEqual(noAuthResult, false);
         object.acl.READ_ACP = [accountToVet];
@@ -350,14 +347,14 @@ describe('without object metadata', () => {
             response: allowedAccess,
         },
         {
-            it: 'should not allow public if bucket is canned ' + 'authenticated-read',
+            it: 'should not allow public if bucket is canned authenticated-read',
             canned: 'authenticated-read',
             id: constants.publicId,
             aclParam: null,
             response: deniedAccess,
         },
         {
-            it: 'should allow authenticated users if bucket is canned ' + 'authenticated-read',
+            it: 'should allow authenticated users if bucket is canned authenticated-read',
             canned: 'authenticated-read',
             id: accountToVet,
             aclParam: null,

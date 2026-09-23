@@ -112,28 +112,28 @@ describe('HEAD object, conditions', () => {
 
         after(() => bucketUtil.deleteOne(bucketName));
 
-        it('If-Match: returns no error when ETag match, with double quotes ' + 'around ETag', done => {
+        it('If-Match: returns no error when ETag match, with double quotes around ETag', done => {
             requestHead({ IfMatch: etag }, err => {
                 checkNoError(err);
                 done();
             });
         });
 
-        it('If-Match: returns no error when one of ETags match, with double ' + 'quotes around ETag', done => {
+        it('If-Match: returns no error when one of ETags match, with double quotes around ETag', done => {
             requestHead({ IfMatch: `non-matching,${etag}` }, err => {
                 checkNoError(err);
                 done();
             });
         });
 
-        it('If-Match: returns no error when ETag match, without double ' + 'quotes around ETag', done => {
+        it('If-Match: returns no error when ETag match, without double quotes around ETag', done => {
             requestHead({ IfMatch: etagTrim }, err => {
                 checkNoError(err);
                 done();
             });
         });
 
-        it('If-Match: returns no error when one of ETags match, without ' + 'double quotes around ETag', done => {
+        it('If-Match: returns no error when one of ETags match, without double quotes around ETag', done => {
             requestHead({ IfMatch: `non-matching,${etagTrim}` }, err => {
                 checkNoError(err);
                 done();
@@ -173,14 +173,14 @@ describe('HEAD object, conditions', () => {
             );
         });
 
-        it('If-None-Match: returns NotModified when ETag match, with double ' + 'quotes around ETag', done => {
+        it('If-None-Match: returns NotModified when ETag match, with double quotes around ETag', done => {
             requestHead({ IfNoneMatch: etag }, err => {
                 assert.equal(err.$metadata.httpStatusCode, 304);
                 done();
             });
         });
 
-        it('If-None-Match: returns NotModified when one of ETags match, with ' + 'double quotes around ETag', done => {
+        it('If-None-Match: returns NotModified when one of ETags match, with double quotes around ETag', done => {
             requestHead(
                 {
                     IfNoneMatch: `non-matching,${etag}`,
@@ -192,29 +192,26 @@ describe('HEAD object, conditions', () => {
             );
         });
 
-        it('If-None-Match: returns NotModified when ETag match, without ' + 'double quotes around ETag', done => {
+        it('If-None-Match: returns NotModified when ETag match, without double quotes around ETag', done => {
             requestHead({ IfNoneMatch: etagTrim }, err => {
                 assert.equal(err.$metadata.httpStatusCode, 304);
                 done();
             });
         });
 
-        it(
-            'If-None-Match: returns NotModified when one of ETags match, ' + 'without double quotes around ETag',
-            done => {
-                requestHead(
-                    {
-                        IfNoneMatch: `non-matching,${etagTrim}`,
-                    },
-                    err => {
-                        assert.equal(err.$metadata.httpStatusCode, 304);
-                        done();
-                    },
-                );
-            },
-        );
+        it('If-None-Match: returns NotModified when one of ETags match, without double quotes around ETag', done => {
+            requestHead(
+                {
+                    IfNoneMatch: `non-matching,${etagTrim}`,
+                },
+                err => {
+                    assert.equal(err.$metadata.httpStatusCode, 304);
+                    done();
+                },
+            );
+        });
 
-        it('If-Modified-Since: returns no error if Last modified date is ' + 'greater', done => {
+        it('If-Modified-Since: returns no error if Last modified date is greater', done => {
             requestHead({ IfModifiedSince: dateFromNow(-1) }, err => {
                 checkNoError(err);
                 done();
@@ -223,56 +220,53 @@ describe('HEAD object, conditions', () => {
 
         // Skipping this test, because real AWS does not provide error as
         // expected
-        it.skip('If-Modified-Since: returns NotModified if Last modified ' + 'date is lesser', done => {
+        it.skip('If-Modified-Since: returns NotModified if Last modified date is lesser', done => {
             requestHead({ IfModifiedSince: dateFromNow(1) }, err => {
                 checkError(err, errorInstances.NotModified.code);
                 done();
             });
         });
 
-        it('If-Modified-Since: returns NotModified if Last modified ' + 'date is equal', done => {
+        it('If-Modified-Since: returns NotModified if Last modified date is equal', done => {
             requestHead({ IfModifiedSince: dateConvert(lastModified) }, err => {
                 assert.equal(err.$metadata.httpStatusCode, 304);
                 done();
             });
         });
 
-        it('If-Unmodified-Since: returns no error when lastModified date is ' + 'greater', done => {
+        it('If-Unmodified-Since: returns no error when lastModified date is greater', done => {
             requestHead({ IfUnmodifiedSince: dateFromNow(1) }, err => {
                 checkNoError(err);
                 done();
             });
         });
 
-        it('If-Unmodified-Since: returns no error when lastModified ' + 'date is equal', done => {
+        it('If-Unmodified-Since: returns no error when lastModified date is equal', done => {
             requestHead({ IfUnmodifiedSince: dateConvert(lastModified) }, err => {
                 checkNoError(err);
                 done();
             });
         });
 
-        it('If-Unmodified-Since: returns PreconditionFailed when ' + 'lastModified date is lesser', done => {
+        it('If-Unmodified-Since: returns PreconditionFailed when lastModified date is lesser', done => {
             requestHead({ IfUnmodifiedSince: dateFromNow(-1) }, err => {
                 assert.equal(err.$metadata.httpStatusCode, 412);
                 done();
             });
         });
 
-        it(
-            'If-Match & If-Unmodified-Since: returns no error when match Etag ' + 'and lastModified is greater',
-            done => {
-                requestHead(
-                    {
-                        IfMatch: etagTrim,
-                        IfUnmodifiedSince: dateFromNow(-1),
-                    },
-                    err => {
-                        checkNoError(err);
-                        done();
-                    },
-                );
-            },
-        );
+        it('If-Match & If-Unmodified-Since: returns no error when match Etag and lastModified is greater', done => {
+            requestHead(
+                {
+                    IfMatch: etagTrim,
+                    IfUnmodifiedSince: dateFromNow(-1),
+                },
+                err => {
+                    checkNoError(err);
+                    done();
+                },
+            );
+        });
 
         it('If-Match match & If-Unmodified-Since match', done => {
             requestHead(
@@ -527,7 +521,7 @@ describe('HEAD object, conditions', () => {
             });
         });
 
-        it('PartNumber is set & PartsCount is absent because object is not ' + 'multipart', done => {
+        it('PartNumber is set & PartsCount is absent because object is not multipart', done => {
             requestHead({ PartNumber: 1 }, (err, data) => {
                 assert.ifError(err);
                 assert.strictEqual('PartsCount' in data, false, 'PartsCount header is present.');
@@ -535,7 +529,7 @@ describe('HEAD object, conditions', () => {
             });
         });
 
-        it('PartNumber is set & PartsCount appears in response for ' + 'multipart object', done => {
+        it('PartNumber is set & PartsCount appears in response for multipart object', done => {
             const mpuKey = 'mpukey';
             async.waterfall(
                 [

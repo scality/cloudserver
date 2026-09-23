@@ -97,7 +97,7 @@ const authTests = [
         expected: true,
     },
     {
-        name: 'should allow access if account id principal is contained in ' + 'user arn of non-',
+        name: 'should allow access if account id principal is contained in user arn of non-',
         bucketId: objectOwnerCanonicalId,
         bucketAuthInfo: user1AuthInfo,
         objectId: objectOwnerCanonicalId,
@@ -109,7 +109,7 @@ const authTests = [
         expected: true,
     },
     {
-        name: 'should allow access if account id principal is contained in ' + 'account arn of non-',
+        name: 'should allow access if account id principal is contained in account arn of non-',
         bucketId: altAcctCanonicalId,
         bucketAuthInfo: altAcctAuthInfo,
         objectId: altAcctCanonicalId,
@@ -121,7 +121,7 @@ const authTests = [
         expected: true,
     },
     {
-        name: 'should allow access if account arn principal is contained in ' + 'user arn of non-',
+        name: 'should allow access if account arn principal is contained in user arn of non-',
         bucketId: objectOwnerCanonicalId,
         bucketAuthInfo: user1AuthInfo,
         objectId: objectOwnerCanonicalId,
@@ -133,7 +133,7 @@ const authTests = [
         expected: true,
     },
     {
-        name: "should allow access even if user arn principal doesn't match " + 'user arn of user in account of ',
+        name: "should allow access even if user arn principal doesn't match user arn of user in account of ",
         bucketId: objectOwnerCanonicalId,
         bucketAuthInfo: user1AuthInfo,
         objectId: objectOwnerCanonicalId,
@@ -145,7 +145,7 @@ const authTests = [
         expected: true,
     },
     {
-        name: "should deny access if account arn principal doesn't match " + 'user arn of non-',
+        name: "should deny access if account arn principal doesn't match user arn of non-",
         bucketId: altAcctCanonicalId,
         bucketAuthInfo: altAcctUserAuthInfo,
         objectId: altAcctCanonicalId,
@@ -157,7 +157,7 @@ const authTests = [
         expected: false,
     },
     {
-        name: "should deny access if user arn principal doesn't match " + 'user arn of non-',
+        name: "should deny access if user arn principal doesn't match user arn of non-",
         bucketId: altAcctCanonicalId,
         bucketAuthInfo: altAcctUserAuthInfo,
         objectId: altAcctCanonicalId,
@@ -181,7 +181,7 @@ const authTests = [
         expected: false,
     },
     {
-        name: 'should allow access if principal and action match policy for ' + 'non-',
+        name: 'should allow access if principal and action match policy for non-',
         bucketId: altAcctCanonicalId,
         bucketAuthInfo: altAcctAuthInfo,
         objectId: altAcctCanonicalId,
@@ -193,7 +193,7 @@ const authTests = [
         expected: true,
     },
     {
-        name: 'should deny access if principal matches but action does not ' + 'match policy for non-',
+        name: 'should deny access if principal matches but action does not match policy for non-',
         bucketId: altAcctCanonicalId,
         bucketAuthInfo: altAcctAuthInfo,
         objectId: altAcctCanonicalId,
@@ -252,7 +252,7 @@ const resourceTests = [
         expected: false,
     },
     {
-        name: 'false if policy resource is array and any elements do not ' + 'match bucket arn',
+        name: 'false if policy resource is array and any elements do not match bucket arn',
         rValue: [`arn:aws:s3:::${bucketName}`, 'arn:aws:s3:::nomatch'],
         expected: false,
     },
@@ -566,7 +566,7 @@ describe('bucket policy authorization', () => {
             });
         });
 
-        it('should return false if any statement resource does not match ' + 'bucket arn', done => {
+        it('should return false if any statement resource does not match bucket arn', done => {
             const newPolicy = basePolicyObj;
             newPolicy.Statement = [newPolicy.Statement];
             newPolicy.Statement[1] = basePolicyObj.Statement;

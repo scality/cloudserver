@@ -196,13 +196,13 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should return an error if ACL set in header ' + 'with an invalid group URI', done => {
+    it('should return an error if ACL set in header with an invalid group URI', done => {
         const testRequest = {
             bucketName,
             namespace,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
-                'x-amz-grant-full-control': 'uri="http://acs.amazonaws.com/groups/' + 'global/NOTAVALIDGROUP"',
+                'x-amz-grant-full-control': 'uri="http://acs.amazonaws.com/groups/global/NOTAVALIDGROUP"',
             },
             url: '/',
             post: '',
@@ -216,7 +216,7 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should return an error if ACL set in header ' + 'with an invalid canned ACL', done => {
+    it('should return an error if ACL set in header with an invalid canned ACL', done => {
         const testRequest = {
             bucketName,
             namespace,
@@ -236,7 +236,7 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should return an error if ACL set in header ' + 'with an invalid email address', done => {
+    it('should return an error if ACL set in header with an invalid email address', done => {
         const testRequest = {
             bucketName,
             namespace,
@@ -256,7 +256,7 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should set a canned ACL while creating bucket' + ' if option set out in header', done => {
+    it('should set a canned ACL while creating bucket if option set out in header', done => {
         const testRequest = {
             bucketName,
             namespace,
@@ -277,18 +277,18 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should set specific ACL grants while creating bucket' + ' if options set out in header', done => {
+    it('should set specific ACL grants while creating bucket if options set out in header', done => {
         const testRequest = {
             bucketName,
             namespace,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
-                    'emailaddress="sampleaccount1@sampling.com"' + ',emailaddress="sampleaccount2@sampling.com"',
+                    'emailaddress="sampleaccount1@sampling.com",emailaddress="sampleaccount2@sampling.com"',
                 'x-amz-grant-read': `uri=${constants.logId}`,
                 'x-amz-grant-write': `uri=${constants.publicId}`,
-                'x-amz-grant-read-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2be',
-                'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2bf',
+                'x-amz-grant-read-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
+                'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf',
             },
             url: '/',
             post: '',
@@ -401,8 +401,7 @@ describe('bucketPut API', () => {
         const req = Object.assign({}, testRequest, {
             bucketName,
             post:
-                '<?xml version="1.0" encoding="UTF-8"?>' +
-                '<CreateBucketConfiguration ' +
+                '<?xml version="1.0" encoding="UTF-8"?><CreateBucketConfiguration ' +
                 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
                 `<LocationConstraint>${newLCKey}</LocationConstraint>` +
                 '</CreateBucketConfiguration>',

@@ -443,7 +443,7 @@ describeSkipIfNotMultiple('MultipleBackend put part to AZURE', function describe
 });
 
 describeSkipIfNotMultiple(
-    'MultipleBackend put part to AZURE ' + 'location with bucketMatch sets to false',
+    'MultipleBackend put part to AZURE location with bucketMatch sets to false',
     function describeF() {
         this.timeout(80000);
         withV4(sigCfg => {
@@ -515,7 +515,7 @@ describeSkipIfNotMultiple(
                     );
                 });
 
-                it('should put block to AZURE location with bucketMatch' + ' sets to false', function itFn(done) {
+                it('should put block to AZURE location with bucketMatch sets to false', function itFn(done) {
                     const body20 = Buffer.alloc(20);
                     const params = {
                         Bucket: azureContainerName,

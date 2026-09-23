@@ -442,8 +442,7 @@ describe('validatePolicyConditions', () => {
             expected: null,
         },
         {
-            description:
-                'Should return "Invalid IP address in Conditions" ' + 'if conditions have an invalid IP address',
+            description: 'Should return "Invalid IP address in Conditions" if conditions have an invalid IP address',
             inputPolicy: {
                 Statement: [
                     {
@@ -478,7 +477,7 @@ describe('validatePolicyConditions', () => {
             expected: null,
         },
         {
-            description: 'Should return a relevant error message ' + 'if the condition value is an empty string',
+            description: 'Should return a relevant error message if the condition value is an empty string',
             inputPolicy: {
                 Statement: [
                     {

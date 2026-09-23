@@ -49,8 +49,7 @@ function _createBucketPutVersioningReq(status) {
         actionImplicitDenies: false,
     };
     const xml =
-        '<VersioningConfiguration ' +
-        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+        '<VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
         `<Status>${status}</Status>` +
         '</VersioningConfiguration>';
     request.post = xml;

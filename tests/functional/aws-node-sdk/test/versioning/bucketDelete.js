@@ -60,19 +60,16 @@ describe('aws-node-sdk test delete bucket', () => {
             await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
         });
 
-        it(
-            'should return error 409 BucketNotEmpty if trying to delete bucket' + ' containing delete marker',
-            async () => {
-                await s3.send(new DeleteObjectCommand({ Bucket: bucketName, Key: key }));
+        it('should return error 409 BucketNotEmpty if trying to delete bucket containing delete marker', async () => {
+            await s3.send(new DeleteObjectCommand({ Bucket: bucketName, Key: key }));
 
-                try {
-                    await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
-                    assert.fail('Expected BucketNotEmpty error but got success');
-                } catch (err) {
-                    checkError(err, 'BucketNotEmpty');
-                }
-            },
-        );
+            try {
+                await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
+                assert.fail('Expected BucketNotEmpty error but got success');
+            } catch (err) {
+                checkError(err, 'BucketNotEmpty');
+            }
+        });
 
         it(
             'should return error 409 BucketNotEmpty if trying to delete bucket' +

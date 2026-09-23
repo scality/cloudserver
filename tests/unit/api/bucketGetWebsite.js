@@ -35,8 +35,7 @@ const testGetWebsiteRequest = _makeWebsiteRequest();
 
 function _comparePutGetXml(sampleXml, done) {
     const fullXml =
-        '<?xml version="1.0" encoding="UTF-8" ' +
-        'standalone="yes"?><WebsiteConfiguration ' +
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><WebsiteConfiguration ' +
         'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
         `${sampleXml}</WebsiteConfiguration>`;
     const testPutWebsiteRequest = _makeWebsiteRequest(fullXml);
@@ -72,10 +71,7 @@ describe('getBucketWebsite API', () => {
     });
     it('should return same RedirectAllRequestsTo as uploaded', done => {
         const sampleXml =
-            '<RedirectAllRequestsTo>' +
-            '<HostName>test</HostName>' +
-            '<Protocol>http</Protocol>' +
-            '</RedirectAllRequestsTo>';
+            '<RedirectAllRequestsTo><HostName>test</HostName><Protocol>http</Protocol></RedirectAllRequestsTo>';
         _comparePutGetXml(sampleXml, done);
     });
     it('should return same RoutingRules as uploaded', done => {

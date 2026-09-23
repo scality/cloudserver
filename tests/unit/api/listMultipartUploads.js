@@ -59,9 +59,8 @@ describe('listMultipartUploads API', () => {
     };
 
     it(
-        'should return the name of the common prefix ' +
-            'of common prefix object keys for multipart uploads if delimiter ' +
-            'and prefix specified',
+        'should return the name of the common prefix of common prefix ' +
+            'object keys for multipart uploads if delimiter and prefix specified',
         done => {
             const commonPrefix = `${prefix}${delimiter}`;
             const testListRequest = {
@@ -90,7 +89,7 @@ describe('listMultipartUploads API', () => {
         },
     );
 
-    it('should return list of all multipart uploads if ' + 'no delimiter specified', done => {
+    it('should return list of all multipart uploads if no delimiter specified', done => {
         const testListRequest = {
             bucketName,
             namespace,
@@ -117,7 +116,7 @@ describe('listMultipartUploads API', () => {
         );
     });
 
-    it('should return no more keys than ' + 'max-uploads specified', done => {
+    it('should return no more keys than max-uploads specified', done => {
         const testListRequest = {
             bucketName,
             namespace,
@@ -146,7 +145,7 @@ describe('listMultipartUploads API', () => {
         );
     });
 
-    it('should url encode object key name ' + 'if requested', done => {
+    it('should url encode object key name if requested', done => {
         const testListRequest = {
             bucketName,
             namespace,

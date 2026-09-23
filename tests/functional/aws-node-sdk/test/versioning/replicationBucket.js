@@ -30,7 +30,7 @@ function testVersioning(s3, versioningStatus, replicationStatus, removeReplicati
     const replicationParams = {
         Bucket: bucketName,
         ReplicationConfiguration: {
-            Role: 'arn:aws:iam::123456789012:role/examplerole,' + 'arn:aws:iam::123456789012:role/examplerole',
+            Role: 'arn:aws:iam::123456789012:role/examplerole,arn:aws:iam::123456789012:role/examplerole',
             Rules: [
                 {
                     Destination: {
