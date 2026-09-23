@@ -757,7 +757,7 @@ describeSkipIfNotMultiple('Put Copy Part to GCP with complete MPU', function des
                 );
             });
 
-            it('should copy two 5 MB part from GCP to MPU with GCPlocation', function ifF(done) {
+            it('should copy two 5 MB part from GCP to MPU with GCP location', function ifF(done) {
                 const uploadParams = {
                     Bucket: bucket,
                     CopySource: `${awsBucketName}/${this.test.keyNameAws}`,

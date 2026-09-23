@@ -261,7 +261,7 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('bucketGet request on transient bucket should return NoSuchBucketerror', done => {
+    it('bucketGet request on transient bucket should return NoSuchBucket error', done => {
         const bucketGetRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         bucketGetRequest.url = `/${bucketName}`;
         bucketGetRequest.query = {};
@@ -271,7 +271,7 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('bucketGetACL request on transient bucket should return NoSuchBucketerror', done => {
+    it('bucketGetACL request on transient bucket should return NoSuchBucket error', done => {
         const bucketGetACLRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         bucketGetACLRequest.url = '/?acl';
         bucketGetACLRequest.query = { acl: '' };
@@ -338,7 +338,7 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('bucketHead request on transient bucket should return NoSuchBucketerror', done => {
+    it('bucketHead request on transient bucket should return NoSuchBucket error', done => {
         bucketHead(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
@@ -419,7 +419,7 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('objectGet request on transient bucket shouldreturn NoSuchBucket error', done => {
+    it('objectGet request on transient bucket should return NoSuchBucket error', done => {
         objectGet(authInfo, baseTestRequest, false, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();

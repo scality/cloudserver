@@ -667,7 +667,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid group uriprovided in ACL header request', done => {
+    it('should return an error if invalid group uri provided in ACL header request', done => {
         const testACLRequest = {
             bucketName,
             namespace,

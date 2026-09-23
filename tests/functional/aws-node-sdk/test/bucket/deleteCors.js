@@ -92,7 +92,7 @@ describe('DELETE bucket cors', () => {
                 // to add a second set of real aws credentials under a profile
                 // named 'lisa' in ~/.aws/scality, then rename 'itSkipIfAWS' to
                 // 'it'.
-                itSkipIfAWS('should return AccessDenied if user is not bucketowner', async () => {
+                itSkipIfAWS('should return AccessDenied if user is not bucket owner', async () => {
                     try {
                         await otherAccountS3.send(new DeleteBucketCorsCommand({ Bucket: bucketName }));
                         throw new Error('Expected AccessDenied error');

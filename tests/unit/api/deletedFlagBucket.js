@@ -505,7 +505,7 @@ describe('deleted flag bucket handling', () => {
         });
     });
 
-    it('objectGet request on bucket with deleted flag shouldreturn NoSuchBucket error and finish deletion', done => {
+    it('objectGet request on bucket with deleted flag should return NoSuchBucket error and finish deletion', done => {
         objectGet(authInfo, baseTestRequest, false, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             confirmDeleted(done);

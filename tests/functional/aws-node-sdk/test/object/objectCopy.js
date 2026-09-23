@@ -1328,7 +1328,7 @@ describe('Object Copy', () => {
             );
         });
 
-        it('If-None-Match: returns PreconditionFailed when ETag match, withdouble quotes around ETag', done => {
+        it('If-None-Match: returns PreconditionFailed when ETag match, with double quotes around ETag', done => {
             requestCopy({ CopySourceIfNoneMatch: etag }, err => {
                 checkError(err, 'PreconditionFailed', 412);
                 done();

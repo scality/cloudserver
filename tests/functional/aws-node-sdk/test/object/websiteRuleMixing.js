@@ -170,7 +170,7 @@ describe(
             });
         });
 
-        describe('when key with header is privateand website config has error condition routing rule', () => {
+        describe('when key with header is private and website config has error condition routing rule', () => {
             beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
