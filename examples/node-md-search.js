@@ -32,12 +32,13 @@ command.middlewareStack.add(
     {
         step: 'build',
         name: 'addSearchParameter',
-        priority: 'high'
-    }
+        priority: 'high',
+    },
 );
 
 // Send command and handle response
-s3Client.send(command)
+s3Client
+    .send(command)
     .then(data => {
         process.stdout.write(`Result ${JSON.stringify(data)}`);
     })

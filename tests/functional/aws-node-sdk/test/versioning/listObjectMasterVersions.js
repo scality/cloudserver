@@ -16,22 +16,13 @@ const { removeAllVersions } = require('../../lib/utility/versioning-util');
 const bucket = `versioning-bucket-${Date.now()}`;
 const itSkipIfE2E = process.env.S3_END_TO_END ? it.skip : it;
 
-
 function _assertResultElements(entry) {
-    const elements = [
-        'LastModified',
-        'ETag',
-        'Size',
-        'Owner',
-        'StorageClass',
-    ];
+    const elements = ['LastModified', 'ETag', 'Size', 'Owner', 'StorageClass'];
     elements.forEach(elem => {
-        assert.notStrictEqual(entry[elem], undefined,
-            `Expected ${elem} in result but did not find it`);
+        assert.notStrictEqual(entry[elem], undefined, `Expected ${elem} in result but did not find it`);
         if (elem === 'Owner') {
             assert(entry.Owner.ID, 'Expected Owner ID but did not find it');
-            assert(entry.Owner.DisplayName,
-                'Expected Owner DisplayName but did not find it');
+            assert(entry.Owner.DisplayName, 'Expected Owner DisplayName but did not find it');
         }
     });
 }
@@ -53,8 +44,10 @@ describe('listObject - Delimiter master', function testSuite() {
                 if (err) {
                     return done(err);
                 }
-                return s3.send(new DeleteBucketCommand({ Bucket: bucket }))
-                .then(() => done()).catch(done);
+                return s3
+                    .send(new DeleteBucketCommand({ Bucket: bucket }))
+                    .then(() => done())
+                    .catch(done);
             });
         });
 
@@ -107,17 +100,21 @@ describe('listObject - Delimiter master', function testSuite() {
                 }
 
                 if (obj.value === null) {
-                        const result = await s3.send(new DeleteObjectCommand({
+                    const result = await s3.send(
+                        new DeleteObjectCommand({
                             Bucket: bucket,
                             Key: obj.name,
-                        }));
-                        assert.strictEqual(result.DeleteMarker, true, 'Expected delete marker to be true');
+                        }),
+                    );
+                    assert.strictEqual(result.DeleteMarker, true, 'Expected delete marker to be true');
                 } else {
-                    await s3.send(new PutObjectCommand({
-                        Bucket: bucket,
-                        Key: obj.name,
-                        Body: obj.value,
-                    }));
+                    await s3.send(
+                        new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: obj.name,
+                            Body: obj.value,
+                        }),
+                    );
                 }
             }
         });
@@ -168,11 +165,7 @@ describe('listObject - Delimiter master', function testSuite() {
             {
                 name: 'with maxKeys',
                 params: { MaxKeys: 3 },
-                expectedResult: [
-                    'Pâtisserie=中文-español-English',
-                    'notes/spring/1.txt',
-                    'notes/spring/march/1.txt',
-                ],
+                expectedResult: ['Pâtisserie=中文-español-English', 'notes/spring/1.txt', 'notes/spring/march/1.txt'],
                 commonPrefix: [],
                 isTruncated: true,
                 nextMarker: undefined,
@@ -198,9 +191,7 @@ describe('listObject - Delimiter master', function testSuite() {
             {
                 name: 'with delimiter',
                 params: { Delimiter: '/' },
-                expectedResult: [
-                    'Pâtisserie=中文-español-English',
-                ],
+                expectedResult: ['Pâtisserie=中文-español-English'],
                 commonPrefix: ['notes/'],
                 isTruncated: false,
                 nextMarker: undefined,
@@ -235,15 +226,8 @@ describe('listObject - Delimiter master', function testSuite() {
             {
                 name: 'delimiter and prefix (related to #147)',
                 params: { Delimiter: '/', Prefix: 'notes/' },
-                expectedResult: [
-                    'notes/year.txt',
-                    'notes/yore.rs',
-                ],
-                commonPrefix: [
-                    'notes/spring/',
-                    'notes/summer/',
-                    'notes/zaphod/',
-                ],
+                expectedResult: ['notes/year.txt', 'notes/yore.rs'],
+                commonPrefix: ['notes/spring/', 'notes/summer/', 'notes/zaphod/'],
                 isTruncated: false,
                 nextMarker: undefined,
             },
@@ -329,20 +313,16 @@ describe('listObject - Delimiter master', function testSuite() {
             runTest(test.name, async () => {
                 const expectedResult = test.expectedResult;
                 const res = await s3.send(new ListObjectsCommand(Object.assign({ Bucket: bucket }, test.params)));
-                
+
                 res.Contents?.forEach(result => {
-                    if (!expectedResult
-                        .find(key => key === result.Key)) {
-                        throw new Error('listing fail, ' +
-                        `unexpected key ${result.Key}`);
+                    if (!expectedResult.find(key => key === result.Key)) {
+                        throw new Error('listing fail, ' + `unexpected key ${result.Key}`);
                     }
                     _assertResultElements(result);
                 });
                 res.CommonPrefixes?.forEach(cp => {
-                    if (!test.commonPrefix
-                        .find(item => item === cp.Prefix)) {
-                        throw new Error('listing fail, ' +
-                        `unexpected prefix ${cp.Prefix}`);
+                    if (!test.commonPrefix.find(item => item === cp.Prefix)) {
+                        throw new Error('listing fail, ' + `unexpected prefix ${cp.Prefix}`);
                     }
                 });
                 assert.strictEqual(res.IsTruncated, test.isTruncated);

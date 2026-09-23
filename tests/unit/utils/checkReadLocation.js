@@ -1,8 +1,7 @@
 const assert = require('assert');
 
 const { ConfigObject } = require('../../../lib/Config');
-const checkReadLocation =
-    require('../../../lib/api/apiUtils/object/checkReadLocation');
+const checkReadLocation = require('../../../lib/api/apiUtils/object/checkReadLocation');
 
 const locationConstraints = {
     bucketmatch: {
@@ -38,14 +37,12 @@ describe('Testing checkReadLocation', () => {
     });
 
     it('should return null if location does not exist', () => {
-        const testResult = checkReadLocation(
-            config, 'nonexistloc', key, bucket);
+        const testResult = checkReadLocation(config, 'nonexistloc', key, bucket);
         assert.deepStrictEqual(testResult, null);
     });
 
     it('should return correct results for bucketMatch true location', () => {
-        const testResult = checkReadLocation(
-            config, 'bucketmatch', key, bucket);
+        const testResult = checkReadLocation(config, 'bucketmatch', key, bucket);
         const expectedResult = {
             location: 'bucketmatch',
             key,
@@ -55,8 +52,7 @@ describe('Testing checkReadLocation', () => {
     });
 
     it('should return correct results for bucketMatch false location', () => {
-        const testResult = checkReadLocation(
-            config, 'nobucketmatch', key, bucket);
+        const testResult = checkReadLocation(config, 'nobucketmatch', key, bucket);
         const expectedResult = {
             location: 'nobucketmatch',
             key: `${bucket}/${key}`,

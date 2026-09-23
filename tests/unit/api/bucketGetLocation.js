@@ -2,16 +2,10 @@ const assert = require('assert');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketGetLocation = require('../../../lib/api/bucketGetLocation');
-const { cleanup,
-    DummyRequestLogger,
-    makeAuthInfo }
-= require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const { config } = require('../../../lib/Config');
 
-const {
-    LOCATION_NAME_DMF,
-    LOCATION_NAME_CRR,
-} = require('../../constants');
+const { LOCATION_NAME_DMF, LOCATION_NAME_CRR } = require('../../constants');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
@@ -37,11 +31,13 @@ const testGetLocationRequest = {
 const locationConstraints = config.locationConstraints;
 
 function getBucketRequestObject(location) {
-    const post = location ? '<?xml version="1.0" encoding="UTF-8"?>' +
-        '<CreateBucketConfiguration ' +
-        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-        `<LocationConstraint>${location}</LocationConstraint>` +
-        '</CreateBucketConfiguration>' : undefined;
+    const post = location
+        ? '<?xml version="1.0" encoding="UTF-8"?>' +
+          '<CreateBucketConfiguration ' +
+          'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+          `<LocationConstraint>${location}</LocationConstraint>` +
+          '</CreateBucketConfiguration>'
+        : undefined;
     return Object.assign({ post }, testBucketPutRequest);
 }
 
@@ -64,13 +60,11 @@ describe('getBucketLocation API', () => {
             });
             afterEach(() => cleanup());
             it(`should return ${location} LocationConstraint xml`, done => {
-                bucketGetLocation(authInfo, testGetLocationRequest, log,
-                (err, res) => {
-                    assert.strictEqual(err, null,
-                      `Unexpected ${err} getting location constraint`);
-                    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-        <LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/">` +
-          `${location}</LocationConstraint>`;
+                bucketGetLocation(authInfo, testGetLocationRequest, log, (err, res) => {
+                    assert.strictEqual(err, null, `Unexpected ${err} getting location constraint`);
+                    const xml =
+                        `<?xml version="1.0" encoding="UTF-8"?>
+        <LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/">` + `${location}</LocationConstraint>`;
                     assert.deepStrictEqual(res, xml);
                     return done();
                 });
@@ -86,13 +80,11 @@ describe('getBucketLocation API', () => {
             });
             afterEach(() => cleanup());
             it('should return empty string LocationConstraint xml', done => {
-                bucketGetLocation(authInfo, testGetLocationRequest, log,
-                (err, res) => {
-                    assert.strictEqual(err, null,
-                      `Unexpected ${err} getting location constraint`);
-                    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-        <LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/">` +
-        '</LocationConstraint>';
+                bucketGetLocation(authInfo, testGetLocationRequest, log, (err, res) => {
+                    assert.strictEqual(err, null, `Unexpected ${err} getting location constraint`);
+                    const xml =
+                        `<?xml version="1.0" encoding="UTF-8"?>
+        <LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/">` + '</LocationConstraint>';
                     assert.deepStrictEqual(res, xml);
                     return done();
                 });

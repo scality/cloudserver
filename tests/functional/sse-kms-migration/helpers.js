@@ -1,5 +1,6 @@
 const getConfig = require('../aws-node-sdk/test/support/config');
-const { S3Client,
+const {
+    S3Client,
     CreateBucketCommand,
     DeleteBucketCommand,
     PutBucketEncryptionCommand,
@@ -52,7 +53,7 @@ const httpsAgent = new HttpsAgent({
     keepAliveMsecs: 30000,
     maxSockets: 50,
     maxFreeSockets: 10,
-    timeout: 120000, 
+    timeout: 120000,
 });
 
 const s3config = {
@@ -82,22 +83,24 @@ const s3 = {
     putBucketEncryption: params => wrap(() => s3Client.send(new PutBucketEncryptionCommand(params))),
     getBucketEncryption: params => wrap(() => s3Client.send(new GetBucketEncryptionCommand(params))),
     putObject: params => wrap(() => s3Client.send(new PutObjectCommand(params))),
-    getObject: params => wrap(async () => {
-        const response = await s3Client.send(new GetObjectCommand(params));
-        const body = await response.Body.transformToString();
-        return { ...response, Body: body };
-    }),
+    getObject: params =>
+        wrap(async () => {
+            const response = await s3Client.send(new GetObjectCommand(params));
+            const body = await response.Body.transformToString();
+            return { ...response, Body: body };
+        }),
     listBuckets: params => wrap(() => s3Client.send(new ListBucketsCommand(params || {}))),
     copyObject: params => wrap(() => s3Client.send(new CopyObjectCommand(params))),
-    listObjectVersions: params => wrap(async () => {
-        const response = await s3Client.send(new ListObjectVersionsCommand(params));
-        return {
-            ...response,
-            Versions: response.Versions || [],
-            DeleteMarkers: response.DeleteMarkers || [],
-            CommonPrefixes: response.CommonPrefixes || []
-        };
-    }),
+    listObjectVersions: params =>
+        wrap(async () => {
+            const response = await s3Client.send(new ListObjectVersionsCommand(params));
+            return {
+                ...response,
+                Versions: response.Versions || [],
+                DeleteMarkers: response.DeleteMarkers || [],
+                CommonPrefixes: response.CommonPrefixes || [],
+            };
+        }),
     headObject: params => wrap(() => s3Client.send(new HeadObjectCommand(params))),
     createMultipartUpload: params => wrap(() => s3Client.send(new CreateMultipartUploadCommand(params))),
     uploadPart: params => wrap(() => s3Client.send(new UploadPartCommand(params))),
@@ -105,14 +108,15 @@ const s3 = {
     completeMultipartUpload: params => wrap(() => s3Client.send(new CompleteMultipartUploadCommand(params))),
     putBucketVersioning: params => wrap(() => s3Client.send(new PutBucketVersioningCommand(params))),
     headBucket: params => wrap(() => s3Client.send(new HeadBucketCommand(params))),
-    listMultipartUploads: params => wrap(async () => {
-        const response = await s3Client.send(new ListMultipartUploadsCommand(params));
-        return {
-            ...response,
-            Uploads: response.Uploads || [],
-            CommonPrefixes: response.CommonPrefixes || []
-        };
-    }),
+    listMultipartUploads: params =>
+        wrap(async () => {
+            const response = await s3Client.send(new ListMultipartUploadsCommand(params));
+            return {
+                ...response,
+                Uploads: response.Uploads || [],
+                CommonPrefixes: response.CommonPrefixes || [],
+            };
+        }),
     listParts: params => wrap(() => s3Client.send(new ListPartsCommand(params))),
     _compat: bucketUtil.s3,
     config: {
@@ -129,13 +133,18 @@ const s3 = {
 
 function hydrateSSEConfig({ algo: SSEAlgorithm, masterKeyId: KMSMasterKeyID }) {
     // Stringify and parse to strip undefined values
-    return JSON.parse(JSON.stringify({ Rules: [{
-            ApplyServerSideEncryptionByDefault: {
-                SSEAlgorithm,
-                KMSMasterKeyID,
-            },
-        }],
-    }));
+    return JSON.parse(
+        JSON.stringify({
+            Rules: [
+                {
+                    ApplyServerSideEncryptionByDefault: {
+                        SSEAlgorithm,
+                        KMSMasterKeyID,
+                    },
+                },
+            ],
+        }),
+    );
 }
 
 function putObjParams(Bucket, Key, sseConfig, kmsKeyId) {

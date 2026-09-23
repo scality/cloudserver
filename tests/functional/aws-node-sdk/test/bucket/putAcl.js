@@ -1,9 +1,11 @@
 const assert = require('assert');
-const { S3Client,
+const {
+    S3Client,
     CreateBucketCommand,
     DeleteBucketCommand,
     PutBucketAclCommand,
-    GetBucketAclCommand } = require('@aws-sdk/client-s3');
+    GetBucketAclCommand,
+} = require('@aws-sdk/client-s3');
 const getConfig = require('../support/config');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -53,8 +55,7 @@ describe('aws-node-sdk test bucket put acl', () => {
             throw new Error('accepted xml body larger than 512 KB');
         } catch (error) {
             assert.strictEqual(error.$metadata.httpStatusCode, 400);
-            assert.strictEqual(
-                error.name, 'InvalidRequest');
+            assert.strictEqual(error.name, 'InvalidRequest');
         }
     });
 });
@@ -68,26 +69,30 @@ describe('PUT Bucket ACL', () => {
 
         afterEach(() => bucketUtil.deleteOne(bucketName));
 
-        it('should set multiple ACL permissions with same grantee specified' +
-        'using email', async () => {
-            await s3.send(new PutBucketAclCommand({
-                Bucket: bucketName,
-                GrantRead: 'emailAddress=sampleaccount1@sampling.com',
-                GrantWrite: 'emailAddress=sampleaccount1@sampling.com',
-            }));
-            const res = await s3.send(new GetBucketAclCommand({
-                Bucket: bucketName,
-            }));
+        it('should set multiple ACL permissions with same grantee specified' + 'using email', async () => {
+            await s3.send(
+                new PutBucketAclCommand({
+                    Bucket: bucketName,
+                    GrantRead: 'emailAddress=sampleaccount1@sampling.com',
+                    GrantWrite: 'emailAddress=sampleaccount1@sampling.com',
+                }),
+            );
+            const res = await s3.send(
+                new GetBucketAclCommand({
+                    Bucket: bucketName,
+                }),
+            );
             assert.strictEqual(res.Grants.length, 2);
         });
 
-        it('should return InvalidArgument if invalid grantee ' +
-            'user ID provided in ACL header request', async () => {
+        it('should return InvalidArgument if invalid grantee ' + 'user ID provided in ACL header request', async () => {
             try {
-                await s3.send(new PutBucketAclCommand({
-                    Bucket: bucketName,
-                    GrantRead: 'id=invalidUserID' 
-                }));
+                await s3.send(
+                    new PutBucketAclCommand({
+                        Bucket: bucketName,
+                        GrantRead: 'id=invalidUserID',
+                    }),
+                );
                 throw new Error('Expected InvalidArgument error');
             } catch (err) {
                 assert.strictEqual(err.$metadata.httpStatusCode, 400);
@@ -95,27 +100,28 @@ describe('PUT Bucket ACL', () => {
             }
         });
 
-        it('should return InvalidArgument if invalid grantee ' +
-            'user ID provided in ACL request body', async () => {
+        it('should return InvalidArgument if invalid grantee ' + 'user ID provided in ACL request body', async () => {
             try {
-                await s3.send(new PutBucketAclCommand({
-                    Bucket: bucketName,
-                    AccessControlPolicy: {
-                        Grants: [
-                            {
-                                Grantee: {
-                                    Type: 'CanonicalUser',
-                                    ID: 'invalidUserID',
+                await s3.send(
+                    new PutBucketAclCommand({
+                        Bucket: bucketName,
+                        AccessControlPolicy: {
+                            Grants: [
+                                {
+                                    Grantee: {
+                                        Type: 'CanonicalUser',
+                                        ID: 'invalidUserID',
+                                    },
+                                    Permission: 'WRITE_ACP',
                                 },
-                                Permission: 'WRITE_ACP',
-                            }],
-                        Owner: {
-                            DisplayName: 'Bart',
-                            ID: '79a59df900b949e55d96a1e698fbace' +
-                            'dfd6e09d98eacf8f8d5218e7cd47ef2be',
+                            ],
+                            Owner: {
+                                DisplayName: 'Bart',
+                                ID: '79a59df900b949e55d96a1e698fbace' + 'dfd6e09d98eacf8f8d5218e7cd47ef2be',
+                            },
                         },
-                    },
-                }));
+                    }),
+                );
                 throw new Error('Expected InvalidArgument error');
             } catch (err) {
                 assert.strictEqual(err.$metadata.httpStatusCode, 400);

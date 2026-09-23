@@ -75,10 +75,12 @@ describe('put and get object with versioning', function testSuite() {
 
         it('should put and get a non-versioned object without including version ids in response headers', async () => {
             const params = { Bucket: bucket, Key: key, Body: Buffer.from('') };
-            const putRes = await s3.send(new PutObjectCommand({
-                ...params,
-                Body: Buffer.from(''),
-            }));
+            const putRes = await s3.send(
+                new PutObjectCommand({
+                    ...params,
+                    Body: Buffer.from(''),
+                }),
+            );
             assert.strictEqual(putRes.VersionId, undefined);
 
             const getRes = await s3.send(new GetObjectCommand(params));
@@ -87,40 +89,47 @@ describe('put and get object with versioning', function testSuite() {
 
         it('version-specific get should still not return version id in response header', async () => {
             const params = { Bucket: bucket, Key: key, Body: Buffer.from('') };
-            const putRes = await s3.send(new PutObjectCommand({
-                ...params,
-                Body: Buffer.from(''),
-            }));
+            const putRes = await s3.send(
+                new PutObjectCommand({
+                    ...params,
+                    Body: Buffer.from(''),
+                }),
+            );
             assert.strictEqual(putRes.VersionId, undefined);
 
-            const getRes = await s3.send(new GetObjectCommand({
-                Bucket: bucket,
-                Key: key,
-                VersionId: 'null',
-            }));
+            const getRes = await s3.send(
+                new GetObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    VersionId: 'null',
+                }),
+            );
             assert.strictEqual(getRes.VersionId, undefined);
         });
 
         describe('on a version-enabled bucket', () => {
             beforeEach(async () => {
-                await s3.send(new PutBucketVersioningCommand({
-                    Bucket: bucket,
-                    VersioningConfiguration: versioningEnabled,
-                }));
+                await s3.send(
+                    new PutBucketVersioningCommand({
+                        Bucket: bucket,
+                        VersioningConfiguration: versioningEnabled,
+                    }),
+                );
             });
 
             it('should create a new version for an object', async () => {
                 const params = { Bucket: bucket, Key: key, Body: Buffer.from('') };
                 const putRes = await s3.send(new PutObjectCommand(params));
 
-                const getRes = await s3.send(new GetObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    VersionId: putRes.VersionId,
-                }));
+                const getRes = await s3.send(
+                    new GetObjectCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        VersionId: putRes.VersionId,
+                    }),
+                );
 
-                assert.strictEqual(putRes.VersionId, getRes.VersionId,
-                    'version ids are not equal');
+                assert.strictEqual(putRes.VersionId, getRes.VersionId, 'version ids are not equal');
             });
 
             it('should create a new version with tag set for an object', async () => {
@@ -134,14 +143,15 @@ describe('put and get object with versioning', function testSuite() {
 
                 const putRes = await s3.send(new PutObjectCommand(putParams));
 
-                const tagRes = await s3.send(new GetObjectTaggingCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    VersionId: putRes.VersionId,
-                }));
+                const tagRes = await s3.send(
+                    new GetObjectTaggingCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        VersionId: putRes.VersionId,
+                    }),
+                );
 
-                assert.strictEqual(tagRes.VersionId, putRes.VersionId,
-                    'version ids are not equal');
+                assert.strictEqual(tagRes.VersionId, putRes.VersionId, 'version ids are not equal');
                 assert.strictEqual(tagRes.TagSet[0].Key, tagKey);
                 assert.strictEqual(tagRes.TagSet[0].Value, tagValue);
             });
@@ -151,68 +161,82 @@ describe('put and get object with versioning', function testSuite() {
             const eTags = [];
 
             beforeEach(async () => {
-                const putRes = await s3.send(new PutObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    Body: data[0],
-                }));
+                const putRes = await s3.send(
+                    new PutObjectCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        Body: data[0],
+                    }),
+                );
                 eTags.length = 0;
                 eTags.push(putRes.ETag);
 
-                await s3.send(new PutBucketVersioningCommand({
-                    Bucket: bucket,
-                    VersioningConfiguration: versioningEnabled,
-                }));
+                await s3.send(
+                    new PutBucketVersioningCommand({
+                        Bucket: bucket,
+                        VersioningConfiguration: versioningEnabled,
+                    }),
+                );
             });
 
             afterEach(() => {
                 eTags.length = 0;
             });
 
-            it('should get null (latest) version in versioning enabled ' +
-            'bucket when version id is not specified', async () => {
-                const res = await s3.send(new GetObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                }));
+            it(
+                'should get null (latest) version in versioning enabled ' + 'bucket when version id is not specified',
+                async () => {
+                    const res = await s3.send(
+                        new GetObjectCommand({
+                            Bucket: bucket,
+                            Key: key,
+                        }),
+                    );
 
-                assert.strictEqual(res.VersionId, 'null');
-            });
+                    assert.strictEqual(res.VersionId, 'null');
+                },
+            );
 
-           it('should get null version in versioning enabled bucket ' +
-            'when version id is specified', async () => {
-                const res = await s3.send(new GetObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    VersionId: 'null',
-                }));
+            it('should get null version in versioning enabled bucket ' + 'when version id is specified', async () => {
+                const res = await s3.send(
+                    new GetObjectCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        VersionId: 'null',
+                    }),
+                );
 
                 assert.strictEqual(res.VersionId, 'null');
             });
 
             it('should keep null version and create a new version', async () => {
-                const putRes = await s3.send(new PutObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    Body: data[1],
-                }));
+                const putRes = await s3.send(
+                    new PutObjectCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        Body: data[1],
+                    }),
+                );
                 const newVersion = putRes.VersionId;
                 eTags.push(putRes.ETag);
 
-                const newVerRes = await s3.send(new GetObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    VersionId: newVersion,
-                }));
-                assert.strictEqual(newVerRes.VersionId, newVersion,
-                    'version ids are not equal');
+                const newVerRes = await s3.send(
+                    new GetObjectCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        VersionId: newVersion,
+                    }),
+                );
+                assert.strictEqual(newVerRes.VersionId, newVersion, 'version ids are not equal');
                 assert.strictEqual(newVerRes.ETag, eTags[1]);
 
-                const nullRes = await s3.send(new GetObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    VersionId: 'null',
-                }));
+                const nullRes = await s3.send(
+                    new GetObjectCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        VersionId: 'null',
+                    }),
+                );
                 assert.strictEqual(nullRes.VersionId, 'null');
                 assert.strictEqual(nullRes.ETag, eTags[0]);
             });
@@ -236,52 +260,67 @@ describe('put and get object with versioning', function testSuite() {
             });
 
             // S3C-5139
-            it('should not fail PUT on versioning-suspended bucket if nullVersionId refers ' +
-            'to deleted null version', async () => {                
-                // create a new version on top of non-versioned object
-                await s3.send(new PutObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                }));
+            it(
+                'should not fail PUT on versioning-suspended bucket if nullVersionId refers ' +
+                    'to deleted null version',
+                async () => {
+                    // create a new version on top of non-versioned object
+                    await s3.send(
+                        new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: key,
+                        }),
+                    );
 
-                // suspend versioning
-                await s3.send(new PutBucketVersioningCommand({
-                    Bucket: bucket,
-                    VersioningConfiguration: versioningSuspended,
-                }));
+                    // suspend versioning
+                    await s3.send(
+                        new PutBucketVersioningCommand({
+                            Bucket: bucket,
+                            VersioningConfiguration: versioningSuspended,
+                        }),
+                    );
 
-                // delete existing non-versioned object
-                await s3.send(new DeleteObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    VersionId: 'null',
-                }));
+                    // delete existing non-versioned object
+                    await s3.send(
+                        new DeleteObjectCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            VersionId: 'null',
+                        }),
+                    );
 
-                // put a new null version
-                const putRes = await s3.send(new PutObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    Body: data[0],
-                }));
-                eTags[0] = putRes.ETag;
+                    // put a new null version
+                    const putRes = await s3.send(
+                        new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            Body: data[0],
+                        }),
+                    );
+                    eTags[0] = putRes.ETag;
 
-                // get the new null version
-                const nullVerData = await s3.send(new GetObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    VersionId: 'null',
-                }));
-                assert.strictEqual(nullVerData.ETag, eTags[0]);
-                assert.strictEqual(nullVerData.VersionId, 'null');
-            });
+                    // get the new null version
+                    const nullVerData = await s3.send(
+                        new GetObjectCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            VersionId: 'null',
+                        }),
+                    );
+                    assert.strictEqual(nullVerData.ETag, eTags[0]);
+                    assert.strictEqual(nullVerData.VersionId, 'null');
+                },
+            );
         });
 
         describe('on version-suspended bucket', () => {
             beforeEach(async () => {
-                await s3.send(new PutBucketVersioningCommand({
-                    Bucket: bucket,
-                    VersioningConfiguration: versioningSuspended,
-                }));
+                await s3.send(
+                    new PutBucketVersioningCommand({
+                        Bucket: bucket,
+                        VersioningConfiguration: versioningSuspended,
+                    }),
+                );
             });
 
             it('should not return version id for new object', async () => {
@@ -334,86 +373,103 @@ describe('put and get object with versioning', function testSuite() {
             });
 
             // Jira issue: S3C-444
-            it('put object after put object acl on null version which is ' +
-            'latest version should not result in two null version with ' +
-            'different version ids', async () => {                
-                // create new null version (master version in metadata)
-                await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: Buffer.from('') }));
-                await checkOneVersion(s3, bucket, 'null');
+            it(
+                'put object after put object acl on null version which is ' +
+                    'latest version should not result in two null version with ' +
+                    'different version ids',
+                async () => {
+                    // create new null version (master version in metadata)
+                    await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: Buffer.from('') }));
+                    await checkOneVersion(s3, bucket, 'null');
 
-                // apply ACL on null version
-                await s3.send(new PutObjectAclCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    ACL: 'public-read-write',
-                    VersionId: 'null',
-                }));
+                    // apply ACL on null version
+                    await s3.send(
+                        new PutObjectAclCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            ACL: 'public-read-write',
+                            VersionId: 'null',
+                        }),
+                    );
 
-                // before overwriting master version, put object should clean up latest null version
-                await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: Buffer.from('') }));
+                    // before overwriting master version, put object should clean up latest null version
+                    await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: Buffer.from('') }));
 
-                // if clean-up did not occur, would see two null versions with different version IDs
-                await checkOneVersion(s3, bucket, 'null');
-            });
+                    // if clean-up did not occur, would see two null versions with different version IDs
+                    await checkOneVersion(s3, bucket, 'null');
+                },
+            );
 
             // Jira issue: S3C-444
-            it('put object after creating dual null version another way ' +
-            'should not result in two null version with different version ids', async () => {                
-                // create dual null version state another way   
-                await createDualNullVersionAsync(s3, bucket, key);
+            it(
+                'put object after creating dual null version another way ' +
+                    'should not result in two null version with different version ids',
+                async () => {
+                    // create dual null version state another way
+                    await createDualNullVersionAsync(s3, bucket, key);
 
-                // versioning is left enabled after above step
-                await s3.send(new PutBucketVersioningCommand({
-                    Bucket: bucket,
-                    VersioningConfiguration: versioningSuspended,
-                }));
+                    // versioning is left enabled after above step
+                    await s3.send(
+                        new PutBucketVersioningCommand({
+                            Bucket: bucket,
+                            VersioningConfiguration: versioningSuspended,
+                        }),
+                    );
 
-                // before overwriting master version, put object should clean up latest null version
-                await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: Buffer.from('') }));
+                    // before overwriting master version, put object should clean up latest null version
+                    await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: Buffer.from('') }));
 
-                // if clean-up did not occur, would see two null versions with different version IDs
-                await checkOneVersion(s3, bucket, 'null');
-            });
+                    // if clean-up did not occur, would see two null versions with different version IDs
+                    await checkOneVersion(s3, bucket, 'null');
+                },
+            );
         });
 
         describe('on a version-suspended bucket with non-versioned object', () => {
             const eTags = [];
 
             beforeEach(async () => {
-                const putRes = await s3.send(new PutObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    Body: data[0],
-                }));
+                const putRes = await s3.send(
+                    new PutObjectCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        Body: data[0],
+                    }),
+                );
                 eTags.length = 0;
                 eTags.push(putRes.ETag);
 
-                await s3.send(new PutBucketVersioningCommand({
-                    Bucket: bucket,
-                    VersioningConfiguration: versioningSuspended,
-                }));
+                await s3.send(
+                    new PutBucketVersioningCommand({
+                        Bucket: bucket,
+                        VersioningConfiguration: versioningSuspended,
+                    }),
+                );
             });
 
             afterEach(() => {
                 eTags.length = 0;
             });
 
-            it('should get null version (latest) in versioning suspended bucket without specifying version id',
-            async () => {
-                const res = await s3.send(new GetObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                }));
+            it('should get null version (latest) in versioning suspended bucket without specifying version id', async () => {
+                const res = await s3.send(
+                    new GetObjectCommand({
+                        Bucket: bucket,
+                        Key: key,
+                    }),
+                );
 
                 assert.strictEqual(res.VersionId, 'null');
             });
 
             it('should get null version in versioning suspended bucket specifying version id', async () => {
-                const res = await s3.send(new GetObjectCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    VersionId: 'null',
-                }));
+                const res = await s3.send(
+                    new GetObjectCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        VersionId: 'null',
+                    }),
+                );
 
                 assert.strictEqual(res.VersionId, 'null');
             });
@@ -450,19 +506,23 @@ describe('put and get object with versioning', function testSuite() {
             beforeEach(async () => {
                 const params = { Bucket: bucket, Key: key, Body: data[0] };
 
-                await s3.send(new PutBucketVersioningCommand({
-                    Bucket: bucket,
-                    VersioningConfiguration: versioningSuspended,
-                }));
+                await s3.send(
+                    new PutBucketVersioningCommand({
+                        Bucket: bucket,
+                        VersioningConfiguration: versioningSuspended,
+                    }),
+                );
 
                 const putRes = await s3.send(new PutObjectCommand(params));
                 eTags.length = 0;
                 eTags.push(putRes.ETag);
 
-                await s3.send(new PutBucketVersioningCommand({
-                    Bucket: bucket,
-                    VersioningConfiguration: versioningEnabled,
-                }));
+                await s3.send(
+                    new PutBucketVersioningCommand({
+                        Bucket: bucket,
+                        VersioningConfiguration: versioningEnabled,
+                    }),
+                );
             });
 
             afterEach(() => {

@@ -12,12 +12,13 @@ describe('malformed Date header:', () => {
             path: `/${bucket}/${objectKey}`,
             method: 'GET',
             headers: {
-                'Date': 'BAD_DATE',
-                'Authorization': 'AWS4-HMAC-SHA256 Credential=accessKey1/20260211/us-east-1/s3/aws4_request, ' +
+                Date: 'BAD_DATE',
+                Authorization:
+                    'AWS4-HMAC-SHA256 Credential=accessKey1/20260211/us-east-1/s3/aws4_request, ' +
                     'SignedHeaders=host, Signature=d459d5b2a2395b4c65d8f8aa2729b22c5abb04614fafbd93ab4fe203e76d21a3',
                 'X-Amz-Content-Sha256': 'fa8d015f89da2a769d1cea7e3bd77a5670d098d7844cda148a40c1304e5b778b',
-                'Host': 'localhost:8000'
-            }
+                Host: 'localhost:8000',
+            },
         };
 
         const req = http.request(options, res => {
@@ -49,12 +50,13 @@ describe('malformed Date header:', () => {
             method: 'GET',
             headers: {
                 'X-Amz-Date': 'BAD_DATE',
-                'Authorization': 'AWS4-HMAC-SHA256 Credential=accessKey1/20260211/us-east-1/s3/aws4_request, ' +
+                Authorization:
+                    'AWS4-HMAC-SHA256 Credential=accessKey1/20260211/us-east-1/s3/aws4_request, ' +
                     'SignedHeaders=host;x-amz-date, ' +
                     'Signature=d459d5b2a2395b4c65d8f8aa2729b22c5abb04614fafbd93ab4fe203e76d21a3',
                 'X-Amz-Content-Sha256': 'fa8d015f89da2a769d1cea7e3bd77a5670d098d7844cda148a40c1304e5b778b',
-                'Host': 'localhost:8000'
-            }
+                Host: 'localhost:8000',
+            },
         };
 
         const req = http.request(options, res => {

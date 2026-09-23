@@ -17,33 +17,20 @@ const { removeAllVersions } = require('../../lib/utility/versioning-util');
 const bucket = `versioning-bucket-${Date.now()}`;
 const removeAllVersionsAsync = promisify(removeAllVersions);
 
-const resultElements = [
-    'VersionId',
-    'IsLatest',
-    'LastModified',
-    'Owner',
-];
-const versionResultElements = [
-    'ETag',
-    'Size',
-    'StorageClass',
-];
+const resultElements = ['VersionId', 'IsLatest', 'LastModified', 'Owner'];
+const versionResultElements = ['ETag', 'Size', 'StorageClass'];
 
 function _assertResultElements(entry, type) {
-    const elements = type === 'DeleteMarker' ? resultElements :
-        resultElements.concat(versionResultElements);
+    const elements = type === 'DeleteMarker' ? resultElements : resultElements.concat(versionResultElements);
 
     elements.forEach(elem => {
-        assert.notStrictEqual(entry[elem], undefined,
-            `Expected ${elem} in result but did not find it`);
+        assert.notStrictEqual(entry[elem], undefined, `Expected ${elem} in result but did not find it`);
         if (elem === 'Owner') {
             assert(entry.Owner.ID, 'Expected Owner ID but did not find it');
-            assert(entry.Owner.DisplayName,
-                'Expected Owner DisplayName but did not find it');
+            assert(entry.Owner.DisplayName, 'Expected Owner DisplayName but did not find it');
         }
     });
 }
-
 
 describe('listObject - Delimiter version', function testSuite() {
     this.timeout(600000);
@@ -91,33 +78,41 @@ describe('listObject - Delimiter version', function testSuite() {
             for (const obj of objects) {
                 // Toggle bucket versioning state according to the original logic
                 if (!versioning && obj.isNull !== true) {
-                    await s3.send(new PutBucketVersioningCommand({
-                        Bucket: bucket,
-                        VersioningConfiguration: { Status: 'Enabled' },
-                    }));
+                    await s3.send(
+                        new PutBucketVersioningCommand({
+                            Bucket: bucket,
+                            VersioningConfiguration: { Status: 'Enabled' },
+                        }),
+                    );
                     versioning = true;
                 } else if (versioning && obj.isNull === true) {
-                    await s3.send(new PutBucketVersioningCommand({
-                        Bucket: bucket,
-                        VersioningConfiguration: { Status: 'Suspended' },
-                    }));
+                    await s3.send(
+                        new PutBucketVersioningCommand({
+                            Bucket: bucket,
+                            VersioningConfiguration: { Status: 'Suspended' },
+                        }),
+                    );
                     versioning = false;
                 }
 
                 if (obj.value === null) {
                     // Create a delete marker, capture headers as in original test
-                    const delRes = await s3.send(new DeleteObjectCommand({
-                        Bucket: bucket,
-                        Key: obj.name,
-                    }));
+                    const delRes = await s3.send(
+                        new DeleteObjectCommand({
+                            Bucket: bucket,
+                            Key: obj.name,
+                        }),
+                    );
                     assert.strictEqual(String(delRes.DeleteMarker), 'true');
                     obj.versionId = delRes.VersionId;
                 } else {
-                    const putRes = await s3.send(new PutObjectCommand({
-                        Bucket: bucket,
-                        Key: obj.name,
-                        Body: obj.value,
-                    }));
+                    const putRes = await s3.send(
+                        new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: obj.name,
+                            Body: obj.value,
+                        }),
+                    );
                     obj.versionId = putRes.VersionId || 'null';
                 }
             }
@@ -171,11 +166,7 @@ describe('listObject - Delimiter version', function testSuite() {
             {
                 name: 'with maxKeys',
                 params: { MaxKeys: 3 },
-                expectedResult: [
-                    objects[4],
-                    objects[5],
-                    objects[8],
-                ],
+                expectedResult: [objects[4], objects[5], objects[8]],
                 commonPrefix: [],
                 isTruncated: true,
                 nextKeyMarker: objects[8].name,
@@ -202,8 +193,7 @@ describe('listObject - Delimiter version', function testSuite() {
             {
                 name: 'with long delimiter',
                 params: { Delimiter: 'notes/summer' },
-                expectedResult: objects.filter(obj =>
-                    obj.name.indexOf('notes/summer') < 0),
+                expectedResult: objects.filter(obj => obj.name.indexOf('notes/summer') < 0),
                 commonPrefix: ['notes/summer'],
                 isTruncated: false,
                 nextKeyMarker: undefined,
@@ -225,15 +215,8 @@ describe('listObject - Delimiter version', function testSuite() {
             {
                 name: 'delimiter and prefix (related to #147)',
                 params: { Delimiter: '/', Prefix: 'notes/' },
-                expectedResult: [
-                    objects[1],
-                    objects[2],
-                ],
-                commonPrefix: [
-                    'notes/spring/',
-                    'notes/summer/',
-                    'notes/zaphod/',
-                ],
+                expectedResult: [objects[1], objects[2]],
+                commonPrefix: ['notes/spring/', 'notes/summer/', 'notes/zaphod/'],
                 isTruncated: false,
                 nextKeyMarker: undefined,
                 nextVersionIdMarker: undefined,
@@ -324,59 +307,52 @@ describe('listObject - Delimiter version', function testSuite() {
         ].forEach(test => {
             it(test.name, async () => {
                 const expectedResult = test.expectedResult;
-                const res = await s3.send(new ListObjectVersionsCommand({
-                    Bucket: bucket,
-                    ...test.params,
-                }));
+                const res = await s3.send(
+                    new ListObjectVersionsCommand({
+                        Bucket: bucket,
+                        ...test.params,
+                    }),
+                );
 
                 (res.Versions || []).forEach(result => {
-                    const item = expectedResult.find(obj => (
-                        obj.name === result.Key
-                        && obj.versionId === result.VersionId
-                        && obj.value !== null
-                    ));
+                    const item = expectedResult.find(
+                        obj => obj.name === result.Key && obj.versionId === result.VersionId && obj.value !== null,
+                    );
 
                     if (!item) {
-                        throw new Error('listing fail, '
-                            + `unexpected key ${result.Key} `
-                            + `with version ${result.VersionId}`);
+                        throw new Error(
+                            'listing fail, ' + `unexpected key ${result.Key} ` + `with version ${result.VersionId}`,
+                        );
                     }
                     _assertResultElements(result, 'Version');
                 });
 
                 (res.DeleteMarkers || []).forEach(result => {
-                    const item = expectedResult.find(obj => (
-                        obj.name === result.Key
-                        && obj.versionId === result.VersionId
-                        && obj.value === null
-                    ));
+                    const item = expectedResult.find(
+                        obj => obj.name === result.Key && obj.versionId === result.VersionId && obj.value === null,
+                    );
 
                     if (!item) {
-                        throw new Error('listing fail, '
-                            + `unexpected key ${result.Key} `
-                            + `with version ${result.VersionId}`);
+                        throw new Error(
+                            'listing fail, ' + `unexpected key ${result.Key} ` + `with version ${result.VersionId}`,
+                        );
                     }
                     _assertResultElements(result, 'DeleteMarker');
                 });
 
                 (res.CommonPrefixes || []).forEach(cp => {
-                    if (!test.commonPrefix.find(
-                        item => item === cp.Prefix,
-                    )) {
-                        throw new Error('listing fail, '
-                            + `unexpected prefix ${cp.Prefix}`);
+                    if (!test.commonPrefix.find(item => item === cp.Prefix)) {
+                        throw new Error('listing fail, ' + `unexpected prefix ${cp.Prefix}`);
                     }
                 });
 
                 assert.strictEqual(res.IsTruncated, test.isTruncated);
-                assert.strictEqual(res.NextKeyMarker,
-                    test.nextKeyMarker);
+                assert.strictEqual(res.NextKeyMarker, test.nextKeyMarker);
                 if (!test.nextVersionIdMarker) {
                     // eslint-disable-next-line no-param-reassign
                     test.nextVersionIdMarker = {};
                 }
-                assert.strictEqual(res.NextVersionIdMarker,
-                    test.nextVersionIdMarker.versionId);
+                assert.strictEqual(res.NextVersionIdMarker, test.nextVersionIdMarker.versionId);
             });
         });
     });

@@ -97,23 +97,23 @@ implementations:
 
 ### Data Backends (`S3DATA`)
 
-| Backend | Port | Description |
-|---------|------|-------------|
-| `file` | 9991 | Local filesystem via `dataserver.js` |
-| `multiple` | - | Multi-backend gateway (AWS S3, Azure, GCP, Sproxyd) |
-| `mem` | - | In-memory (testing only) |
+| Backend    | Port | Description                                         |
+| ---------- | ---- | --------------------------------------------------- |
+| `file`     | 9991 | Local filesystem via `dataserver.js`                |
+| `multiple` | -    | Multi-backend gateway (AWS S3, Azure, GCP, Sproxyd) |
+| `mem`      | -    | In-memory (testing only)                            |
 
 `scality` is an alias for `multiple`. With `multiple`, objects route to
 backends defined in `locationConfig.json` based on location constraints.
 
 ### Metadata Backends (`S3METADATA`)
 
-| Backend | Port | Description |
-|---------|------|-------------|
-| `file` (default) | 9990 | Local LevelDB via `mdserver.js` |
-| `scality` | 9000 | External bucketd service (production Scality RING) |
-| `mongodb` | 27017+ | MongoDB replica set |
-| `mem` | - | In-memory (testing only) |
+| Backend          | Port   | Description                                        |
+| ---------------- | ------ | -------------------------------------------------- |
+| `file` (default) | 9990   | Local LevelDB via `mdserver.js`                    |
+| `scality`        | 9000   | External bucketd service (production Scality RING) |
+| `mongodb`        | 27017+ | MongoDB replica set                                |
+| `mem`            | -      | In-memory (testing only)                           |
 
 **file vs scality**: The `file` backend runs a self-contained metadata server
 (`mdserver.js`) for development. The `scality` backend connects to external
@@ -122,20 +122,20 @@ HA deployments.
 
 ### Auth Backends (`S3VAULT`)
 
-| Backend | Port | Description |
-|---------|------|-------------|
-| `mem` (default) | - | In-memory accounts from `conf/authdata.json` |
-| `vault` | 8500 | External Vault IAM service (vaultd) |
+| Backend         | Port | Description                                  |
+| --------------- | ---- | -------------------------------------------- |
+| `mem` (default) | -    | In-memory accounts from `conf/authdata.json` |
+| `vault`         | 8500 | External Vault IAM service (vaultd)          |
 
 ### KMS Backends (`S3KMS`)
 
-| Backend | Description |
-|---------|-------------|
+| Backend          | Description                  |
+| ---------------- | ---------------------------- |
 | `file` (default) | Local file-based key storage |
-| `mem` | In-memory (testing only) |
-| `kmip` | External KMIP server |
-| `aws` | AWS KMS |
-| `scality` | Scality KMS |
+| `mem`            | In-memory (testing only)     |
+| `kmip`           | External KMIP server         |
+| `aws`            | AWS KMS                      |
+| `scality`        | Scality KMS                  |
 
 ### Path Configuration
 

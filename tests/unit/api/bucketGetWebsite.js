@@ -3,10 +3,7 @@ const assert = require('assert');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutWebsite = require('../../../lib/api/bucketPutWebsite');
 const bucketGetWebsite = require('../../../lib/api/bucketGetWebsite');
-const { cleanup,
-    DummyRequestLogger,
-    makeAuthInfo }
-= require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
@@ -37,18 +34,18 @@ function _makeWebsiteRequest(xml) {
 const testGetWebsiteRequest = _makeWebsiteRequest();
 
 function _comparePutGetXml(sampleXml, done) {
-    const fullXml = '<?xml version="1.0" encoding="UTF-8" ' +
-    'standalone="yes"?><WebsiteConfiguration ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    `${sampleXml}</WebsiteConfiguration>`;
+    const fullXml =
+        '<?xml version="1.0" encoding="UTF-8" ' +
+        'standalone="yes"?><WebsiteConfiguration ' +
+        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+        `${sampleXml}</WebsiteConfiguration>`;
     const testPutWebsiteRequest = _makeWebsiteRequest(fullXml);
     bucketPutWebsite(authInfo, testPutWebsiteRequest, log, err => {
         if (err) {
             process.stdout.write(`Err putting website config ${err}`);
             return done(err);
         }
-        return bucketGetWebsite(authInfo, testGetWebsiteRequest, log,
-        (err, res) => {
+        return bucketGetWebsite(authInfo, testGetWebsiteRequest, log, (err, res) => {
             assert.strictEqual(err, null, `Unexpected err ${err}`);
             assert.strictEqual(res, fullXml);
             done();
@@ -64,8 +61,7 @@ describe('getBucketWebsite API', () => {
     afterEach(() => cleanup());
 
     it('should return same IndexDocument XML as uploaded', done => {
-        const sampleXml =
-            '<IndexDocument><Suffix>index.html</Suffix></IndexDocument>';
+        const sampleXml = '<IndexDocument><Suffix>index.html</Suffix></IndexDocument>';
         _comparePutGetXml(sampleXml, done);
     });
     it('should return same ErrorDocument XML as uploaded', done => {

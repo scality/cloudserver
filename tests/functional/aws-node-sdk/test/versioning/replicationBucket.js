@@ -23,15 +23,14 @@ function checkNoError(err) {
 }
 
 function testVersioning(s3, versioningStatus, replicationStatus, removeReplication, cb) {
-    const versioningParams = { 
+    const versioningParams = {
         Bucket: bucketName,
-        VersioningConfiguration: { Status: versioningStatus } 
+        VersioningConfiguration: { Status: versioningStatus },
     };
     const replicationParams = {
         Bucket: bucketName,
         ReplicationConfiguration: {
-            Role: 'arn:aws:iam::123456789012:role/examplerole,' +
-            'arn:aws:iam::123456789012:role/examplerole',
+            Role: 'arn:aws:iam::123456789012:role/examplerole,' + 'arn:aws:iam::123456789012:role/examplerole',
             Rules: [
                 {
                     Destination: {
@@ -44,23 +43,31 @@ function testVersioning(s3, versioningStatus, replicationStatus, removeReplicati
             ],
         },
     };
-    
-    async.waterfall([
-        cb => s3.send(new PutBucketReplicationCommand(replicationParams))
-            .then(() => cb())
-            .catch(cb),
-        cb => {
-            if (removeReplication) {
-                return s3.send(new DeleteBucketReplicationCommand({ Bucket: bucketName }))
+
+    async.waterfall(
+        [
+            cb =>
+                s3
+                    .send(new PutBucketReplicationCommand(replicationParams))
                     .then(() => cb())
-                    .catch(cb);
-            }
-            return process.nextTick(() => cb());
-        },
-        cb => s3.send(new PutBucketVersioningCommand(versioningParams))
-            .then(() => cb())
-            .catch(cb),
-    ], cb);
+                    .catch(cb),
+            cb => {
+                if (removeReplication) {
+                    return s3
+                        .send(new DeleteBucketReplicationCommand({ Bucket: bucketName }))
+                        .then(() => cb())
+                        .catch(cb);
+                }
+                return process.nextTick(() => cb());
+            },
+            cb =>
+                s3
+                    .send(new PutBucketVersioningCommand(versioningParams))
+                    .then(() => cb())
+                    .catch(cb),
+        ],
+        cb,
+    );
 }
 
 describe('Versioning on a replication source bucket', () => {
@@ -69,35 +76,42 @@ describe('Versioning on a replication source bucket', () => {
         const s3 = bucketUtil.s3;
 
         beforeEach(done => {
-            async.waterfall([
-                cb => s3.send(new CreateBucketCommand({ Bucket: bucketName }))
-                    .then(() => cb())
-                    .catch(cb),
-                cb => s3.send(new PutBucketVersioningCommand({
-                    Bucket: bucketName,
-                    VersioningConfiguration: {
-                        Status: 'Enabled',
-                    },
-                }))
-                    .then(() => cb())
-                    .catch(cb),
-            ], done);
+            async.waterfall(
+                [
+                    cb =>
+                        s3
+                            .send(new CreateBucketCommand({ Bucket: bucketName }))
+                            .then(() => cb())
+                            .catch(cb),
+                    cb =>
+                        s3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucketName,
+                                    VersioningConfiguration: {
+                                        Status: 'Enabled',
+                                    },
+                                }),
+                            )
+                            .then(() => cb())
+                            .catch(cb),
+                ],
+                done,
+            );
         });
 
         afterEach(async () => {
             await s3.send(new DeleteBucketCommand({ Bucket: bucketName }));
         });
 
-        it('should not be able to disable versioning if replication enabled',
-        done => {
+        it('should not be able to disable versioning if replication enabled', done => {
             testVersioning(s3, 'Suspended', 'Enabled', false, err => {
                 checkError(err, 'InvalidBucketState');
                 done();
             });
         });
 
-        it('should be able to suspend versioning if replication disabled',
-        done => {
+        it('should be able to suspend versioning if replication disabled', done => {
             testVersioning(s3, 'Suspended', 'Disabled', false, err => {
                 checkNoError(err);
                 done();

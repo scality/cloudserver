@@ -2,15 +2,15 @@ const assert = require('assert');
 const async = require('async');
 const arsenal = require('arsenal');
 const { GCP } = arsenal.storage.data.external.GCP;
-const { genUniqID, genBucketName, gcpRetry, gcpUploadWithRetry, waitForBucketReady } =
-    require('../../../utils/gcpUtils');
-const { getRealAwsConfig } =
-    require('../../../../aws-node-sdk/test/support/awsConfig');
 const {
-    CreateBucketCommand,
-    DeleteBucketCommand,
-    ListObjectsCommand,
-} = require('@aws-sdk/client-s3');
+    genUniqID,
+    genBucketName,
+    gcpRetry,
+    gcpUploadWithRetry,
+    waitForBucketReady,
+} = require('../../../utils/gcpUtils');
+const { getRealAwsConfig } = require('../../../../aws-node-sdk/test/support/awsConfig');
+const { CreateBucketCommand, DeleteBucketCommand, ListObjectsCommand } = require('@aws-sdk/client-s3');
 
 const credentialOne = 'gcpbackend';
 const bucketNames = {
@@ -36,39 +36,27 @@ describe('GCP: Upload Object', function testSuite() {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
         const buckets = Object.values(bucketNames);
-        await async.eachSeries(
-            buckets,
-            async bucket => {
-                await gcpRetry(
-                    gcpClient,
-                    new CreateBucketCommand({ Bucket: bucket.Name }),
-                );
-                await waitForBucketReady(gcpClient, bucket.Name);
-            },
-        );
+        await async.eachSeries(buckets, async bucket => {
+            await gcpRetry(gcpClient, new CreateBucketCommand({ Bucket: bucket.Name }));
+            await waitForBucketReady(gcpClient, bucket.Name);
+        });
     });
 
     after(async () => {
         const buckets = Object.values(bucketNames);
-        await async.eachSeries(
-            buckets,
-            async bucket => {
-                const listCmd = new ListObjectsCommand({
+        await async.eachSeries(buckets, async bucket => {
+            const listCmd = new ListObjectsCommand({
+                Bucket: bucket.Name,
+            });
+            const listRes = await gcpClient.send(listCmd);
+            await async.map(listRes.Contents || [], async object => {
+                await gcpClient.deleteObject({
                     Bucket: bucket.Name,
+                    Key: object.Key,
                 });
-                const listRes = await gcpClient.send(listCmd);
-                await async.map(listRes.Contents || [], async object => {
-                    await gcpClient.deleteObject({
-                        Bucket: bucket.Name,
-                        Key: object.Key,
-                    });
-                });
-                await gcpRetry(
-                    gcpClient,
-                    new DeleteBucketCommand({ Bucket: bucket.Name }),
-                );
-            },
-        );
+            });
+            await gcpRetry(gcpClient, new DeleteBucketCommand({ Bucket: bucket.Name }));
+        });
     });
 
     it('should put an object to GCP', async () => {

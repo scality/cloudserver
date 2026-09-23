@@ -13,27 +13,29 @@ function safeJSONParse(s) {
 }
 
 function createEncryptedBucket(bucketParams, cb) {
-    process.stdout.write('Creating encrypted bucket' +
-    `${bucketParams.Bucket}`);
+    process.stdout.write('Creating encrypted bucket' + `${bucketParams.Bucket}`);
     const config = getConfig();
     const endpointWithoutHttp = config.endpoint.split('//')[1];
     const host = endpointWithoutHttp.split(':')[0];
     const port = endpointWithoutHttp.split(':')[1];
     let locationConstraint;
-    if (bucketParams.CreateBucketConfiguration &&
-        bucketParams.CreateBucketConfiguration.LocationConstraint) {
-        locationConstraint = bucketParams.CreateBucketConfiguration
-        .LocationConstraint;
+    if (bucketParams.CreateBucketConfiguration && bucketParams.CreateBucketConfiguration.LocationConstraint) {
+        locationConstraint = bucketParams.CreateBucketConfiguration.LocationConstraint;
     }
 
     const prog = `${__dirname}/../../../../../bin/create_encrypted_bucket.js`;
     let args = [
         prog,
-        '-a', config.credentials.accessKeyId,
-        '-k', config.credentials.secretAccessKey,
-        '-b', bucketParams.Bucket,
-        '-h', host,
-        '-p', port,
+        '-a',
+        config.credentials.accessKeyId,
+        '-k',
+        config.credentials.secretAccessKey,
+        '-b',
+        bucketParams.Bucket,
+        '-h',
+        host,
+        '-p',
+        port,
         '-v',
     ];
     if (locationConstraint) {
@@ -43,24 +45,27 @@ function createEncryptedBucket(bucketParams, cb) {
         args = args.concat('-s');
     }
     const body = [];
-    const child = childProcess.spawn(args[0], args)
-    .on('exit', () => {
-        const hasSucceed = body.join('').split('\n').find(item => {
-            const json = safeJSONParse(item);
-            const test = !(json instanceof Error) && json.name === 'S3' &&
-                json.statusCode === 200;
-            if (test) {
-                return true;
+    const child = childProcess
+        .spawn(args[0], args)
+        .on('exit', () => {
+            const hasSucceed = body
+                .join('')
+                .split('\n')
+                .find(item => {
+                    const json = safeJSONParse(item);
+                    const test = !(json instanceof Error) && json.name === 'S3' && json.statusCode === 200;
+                    if (test) {
+                        return true;
+                    }
+                    return false;
+                });
+            if (!hasSucceed) {
+                process.stderr.write(`${body.join('')}\n`);
+                return cb(new Error('Cannot create encrypted bucket'));
             }
-            return false;
-        });
-        if (!hasSucceed) {
-            process.stderr.write(`${body.join('')}\n`);
-            return cb(new Error('Cannot create encrypted bucket'));
-        }
-        return cb();
-    })
-    .on('error', cb);
+            return cb();
+        })
+        .on('error', cb);
     child.stdout.on('data', chunk => body.push(chunk.toString()));
 }
 
