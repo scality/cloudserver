@@ -18,9 +18,6 @@ jobs:
   review:
     if: github.event_name != 'pull_request_target' && github.actor != 'dependabot[bot]'
     uses: scality/workflows/.github/workflows/claude-code-review.yml@v2
-    with:
-      allowed-tools: >-
-        ${{ github.event_name == 'workflow_dispatch' && '"Bash(gh api repos/*/contents)"' || '' }}
     secrets: inherit
 
   review-dependency-bump:
