@@ -206,7 +206,6 @@ describe('dataStore', () => {
             });
         });
 
-        // eslint-disable-next-line max-len
         it('should wait for finish before validating when checksumedStream is not yet writableFinished after data.put', done => {
             let capturedStream;
             putStub.callsFake((cipher, stream, size, ctx, backend, log2, cb) => {
@@ -233,7 +232,6 @@ describe('dataStore', () => {
             });
         });
 
-        // eslint-disable-next-line max-len
         it('should delete stored data and call cb with the error when checksumedStream emits error after data.put', done => {
             batchDeleteSucceeds();
             let capturedStream;
@@ -364,7 +362,6 @@ describe('dataStore', () => {
     });
 
     describe('x-amz-content-sha256 body validation', () => {
-        // eslint-disable-next-line max-len
         it('should call cb with XAmzContentSHA256Mismatch and delete stored data when the hash does not match', done => {
             batchDeleteSucceeds();
             putSucceeds();
@@ -406,7 +403,6 @@ describe('dataStore', () => {
             });
         });
 
-        // eslint-disable-next-line max-len
         it('should call cb with XAmzContentSHA256Mismatch when the hash mismatches and batchDelete also fails', done => {
             batchDeleteStub.callsFake((keys, a, b, log2, cb) => cb(errors.InternalError));
             putSucceeds();
@@ -516,7 +512,6 @@ describe('dataStore', () => {
             });
         });
 
-        // eslint-disable-next-line max-len
         it('should call cb with stream error when checksumedStream errors after data.put and batchDelete also fails', done => {
             batchDeleteStub.callsFake((keys, a, b, log2, cb) => cb(errors.BadRequest));
             let capturedStream;

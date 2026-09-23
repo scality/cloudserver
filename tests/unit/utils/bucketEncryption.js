@@ -1,14 +1,12 @@
 const metadata = require('../../../lib/metadata/wrapper');
 
-
 function templateSSEConfig({ algorithm, keyId }) {
     const xml = [];
     xml.push(`
     <?xml version="1.0" encoding="UTF-8"?>
     <ServerSideEncryptionConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
         <Rule>
-            <ApplyServerSideEncryptionByDefault>`
-    );
+            <ApplyServerSideEncryptionByDefault>`);
 
     if (algorithm) {
         xml.push(`<SSEAlgorithm>${algorithm}</SSEAlgorithm>`);

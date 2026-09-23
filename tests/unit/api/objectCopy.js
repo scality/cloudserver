@@ -560,8 +560,7 @@ describe('objectCopy in ingestion bucket', () => {
             headers: { host: `${destBucketName}.s3.amazonaws.com` },
             url: '/',
             post:
-                '<?xml version="1.0" encoding="UTF-8"?>' +
-                '<CreateBucketConfiguration ' +
+                '<?xml version="1.0" encoding="UTF-8"?><CreateBucketConfiguration ' +
                 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
                 `<LocationConstraint>${location}</LocationConstraint>` +
                 '</CreateBucketConfiguration>',

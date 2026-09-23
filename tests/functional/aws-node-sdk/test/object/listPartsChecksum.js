@@ -14,10 +14,7 @@ const { algorithms } = require('../../../../../lib/api/apiUtils/integrity/valida
 
 const bucket = `list-parts-checksum-test-${Date.now()}`;
 const defaultKey = 'default-no-checksum';
-const checksumBodies = [
-    Buffer.from('first checksummed part', 'utf8'),
-    Buffer.from('second checksummed part', 'utf8'),
-];
+const checksumBodies = [Buffer.from('first checksummed part', 'utf8'), Buffer.from('second checksummed part', 'utf8')];
 const defaultBodies = [
     Buffer.from('first default checksum part', 'utf8'),
     Buffer.from('second default checksum part', 'utf8'),
@@ -56,13 +53,14 @@ describe('ListParts checksum fields', () =>
         const openMPUs = [];
 
         async function abortUpload(key, uploadId) {
-            await s3.send(new AbortMultipartUploadCommand({
-                Bucket: bucket,
-                Key: key,
-                UploadId: uploadId,
-            }));
-            const index = openMPUs.findIndex(upload =>
-                upload.key === key && upload.uploadId === uploadId);
+            await s3.send(
+                new AbortMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    UploadId: uploadId,
+                }),
+            );
+            const index = openMPUs.findIndex(upload => upload.key === key && upload.uploadId === uploadId);
             if (index !== -1) {
                 openMPUs.splice(index, 1);
             }
@@ -78,97 +76,116 @@ describe('ListParts checksum fields', () =>
         });
 
         after(async () => {
-            await Promise.all(openMPUs.map(upload =>
-                s3.send(new AbortMultipartUploadCommand({
-                    Bucket: bucket,
-                    Key: upload.key,
-                    UploadId: upload.uploadId,
-                })).catch(() => undefined)));
+            await Promise.all(
+                openMPUs.map(upload =>
+                    s3
+                        .send(
+                            new AbortMultipartUploadCommand({
+                                Bucket: bucket,
+                                Key: upload.key,
+                                UploadId: upload.uploadId,
+                            }),
+                        )
+                        .catch(() => undefined),
+                ),
+            );
             await bucketUtil.empty(bucket);
             await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
         });
 
-        for (const [checksumAlgorithm, checksumTypes] of
-            Object.entries(checksumTypesByAlgorithm)) {
+        for (const [checksumAlgorithm, checksumTypes] of Object.entries(checksumTypesByAlgorithm)) {
             for (const checksumType of checksumTypes) {
-                it(`should include ${checksumAlgorithm}/${checksumType} root ` +
-                'and part checksum fields', async () => {
-                    const key = `explicit-${checksumAlgorithm}-${checksumType}`;
-                    const checksumField =
-                        checksumFieldByAlgorithm[checksumAlgorithm];
-                    const internalAlgorithm = checksumAlgorithm.toLowerCase();
-                    const { UploadId } =
-                        await s3.send(new CreateMultipartUploadCommand({
-                            Bucket: bucket,
-                            Key: key,
-                            ChecksumAlgorithm: checksumAlgorithm,
-                            ChecksumType: checksumType,
-                        }));
-                    openMPUs.push({ key, uploadId: UploadId });
+                it(
+                    `should include ${checksumAlgorithm}/${checksumType} root ` + 'and part checksum fields',
+                    async () => {
+                        const key = `explicit-${checksumAlgorithm}-${checksumType}`;
+                        const checksumField = checksumFieldByAlgorithm[checksumAlgorithm];
+                        const internalAlgorithm = checksumAlgorithm.toLowerCase();
+                        const { UploadId } = await s3.send(
+                            new CreateMultipartUploadCommand({
+                                Bucket: bucket,
+                                Key: key,
+                                ChecksumAlgorithm: checksumAlgorithm,
+                                ChecksumType: checksumType,
+                            }),
+                        );
+                        openMPUs.push({ key, uploadId: UploadId });
 
-                    const partChecksums = await Promise.all(
-                        checksumBodies.map(body =>
-                            algorithms[internalAlgorithm].digest(body)));
+                        const partChecksums = await Promise.all(
+                            checksumBodies.map(body => algorithms[internalAlgorithm].digest(body)),
+                        );
 
-                    await Promise.all(checksumBodies.map((body, index) =>
-                        s3.send(new UploadPartCommand({
-                            Bucket: bucket,
-                            Key: key,
-                            UploadId,
-                            PartNumber: index + 1,
-                            Body: body,
-                            [checksumField]: partChecksums[index],
-                        }))));
+                        await Promise.all(
+                            checksumBodies.map((body, index) =>
+                                s3.send(
+                                    new UploadPartCommand({
+                                        Bucket: bucket,
+                                        Key: key,
+                                        UploadId,
+                                        PartNumber: index + 1,
+                                        Body: body,
+                                        [checksumField]: partChecksums[index],
+                                    }),
+                                ),
+                            ),
+                        );
 
-                    const partList = await s3.send(new ListPartsCommand({
-                        Bucket: bucket,
-                        Key: key,
-                        UploadId,
-                    }));
+                        const partList = await s3.send(
+                            new ListPartsCommand({
+                                Bucket: bucket,
+                                Key: key,
+                                UploadId,
+                            }),
+                        );
 
-                    assert.strictEqual(partList.ChecksumAlgorithm,
-                        checksumAlgorithm);
-                    assert.strictEqual(partList.ChecksumType, checksumType);
-                    assert.strictEqual(partList.Parts.length,
-                        checksumBodies.length);
-                    partList.Parts.forEach((part, index) => {
-                        assert.strictEqual(part.PartNumber, index + 1);
-                        assert.strictEqual(part[checksumField],
-                            partChecksums[index]);
-                    });
+                        assert.strictEqual(partList.ChecksumAlgorithm, checksumAlgorithm);
+                        assert.strictEqual(partList.ChecksumType, checksumType);
+                        assert.strictEqual(partList.Parts.length, checksumBodies.length);
+                        partList.Parts.forEach((part, index) => {
+                            assert.strictEqual(part.PartNumber, index + 1);
+                            assert.strictEqual(part[checksumField], partChecksums[index]);
+                        });
 
-                    await abortUpload(key, UploadId);
-                });
+                        await abortUpload(key, UploadId);
+                    },
+                );
             }
         }
 
-        it('should omit default checksum fields when no checksum headers are sent',
-        async () => {
-            const { UploadId } = await s3.send(new CreateMultipartUploadCommand({
-                Bucket: bucket,
-                Key: defaultKey,
-            }));
+        it('should omit default checksum fields when no checksum headers are sent', async () => {
+            const { UploadId } = await s3.send(
+                new CreateMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: defaultKey,
+                }),
+            );
             openMPUs.push({ key: defaultKey, uploadId: UploadId });
 
-            await Promise.all(defaultBodies.map((body, index) =>
-                s3.send(new UploadPartCommand({
+            await Promise.all(
+                defaultBodies.map((body, index) =>
+                    s3.send(
+                        new UploadPartCommand({
+                            Bucket: bucket,
+                            Key: defaultKey,
+                            UploadId,
+                            PartNumber: index + 1,
+                            Body: body,
+                        }),
+                    ),
+                ),
+            );
+
+            const partList = await s3.send(
+                new ListPartsCommand({
                     Bucket: bucket,
                     Key: defaultKey,
                     UploadId,
-                    PartNumber: index + 1,
-                    Body: body,
-                }))));
-
-            const partList = await s3.send(new ListPartsCommand({
-                Bucket: bucket,
-                Key: defaultKey,
-                UploadId,
-            }));
+                }),
+            );
 
             assert.strictEqual(partList.Parts.length, defaultBodies.length);
             assertNoListPartsChecksum(partList);
 
             await abortUpload(defaultKey, UploadId);
         });
-    })
-);
+    }));

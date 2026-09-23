@@ -120,7 +120,7 @@ before(async () => {
         new PutBucketReplicationCommand({
             Bucket: TEST_BUCKET_CRR,
             ReplicationConfiguration: {
-                Role: 'arn:aws:iam::account-id:role/src-resource,' + 'arn:aws:iam::account-id:role/dest-resource',
+                Role: 'arn:aws:iam::account-id:role/src-resource,arn:aws:iam::account-id:role/dest-resource',
                 Rules: [
                     {
                         Status: 'Enabled',

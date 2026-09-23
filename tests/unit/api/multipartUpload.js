@@ -695,12 +695,9 @@ describe('Multipart Upload API', () => {
                 );
                 objectPutPart(authInfo, partRequest, undefined, log, () => {
                     const completeBody =
-                        '<CompleteMultipartUpload>' +
-                        '<Part>' +
-                        '<PartNumber>1</PartNumber>' +
+                        '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                         `<ETag>"${partHash}"</ETag>` +
-                        '</Part>' +
-                        '</CompleteMultipartUpload>';
+                        '</Part></CompleteMultipartUpload>';
                     const completeRequest = {
                         bucketName,
                         namespace,
@@ -774,9 +771,7 @@ describe('Multipart Upload API', () => {
                 );
                 objectPutPart(authInfo, partRequest, undefined, log, () => {
                     const completeBody =
-                        '<CompleteMultipartUpload>' +
-                        '<Part>' +
-                        '<PartNumber>1</PartNumber>' +
+                        '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                         // ETag without quotes
                         `<ETag>${partHash}</ETag></Part></CompleteMultipartUpload>`;
                     const completeRequest = {
@@ -976,16 +971,11 @@ describe('Multipart Upload API', () => {
                     objectPutPart(authInfo, partRequest1, undefined, log, () => {
                         objectPutPart(authInfo, partRequest2, undefined, log, () => {
                             const completeBody =
-                                '<CompleteMultipartUpload>' +
-                                '<Part>' +
-                                '<PartNumber>2</PartNumber>' +
+                                '<CompleteMultipartUpload><Part><PartNumber>2</PartNumber>' +
                                 `<ETag>"${partHash}"</ETag>` +
-                                '</Part>' +
-                                '<Part>' +
-                                '<PartNumber>1</PartNumber>' +
+                                '</Part><Part><PartNumber>1</PartNumber>' +
                                 `<ETag>"${partHash}"</ETag>` +
-                                '</Part>' +
-                                '</CompleteMultipartUpload>';
+                                '</Part></CompleteMultipartUpload>';
                             const completeRequest = {
                                 bucketName,
                                 namespace,
@@ -1045,12 +1035,9 @@ describe('Multipart Upload API', () => {
                     );
                     objectPutPart(authInfo, partRequest, undefined, log, () => {
                         const completeBody =
-                            '<CompleteMultipartUpload>' +
-                            '<Part>' +
-                            '<PartNumber>99999</PartNumber>' +
+                            '<CompleteMultipartUpload><Part><PartNumber>99999</PartNumber>' +
                             `<ETag>"${partHash}"</ETag>` +
-                            '</Part>' +
-                            '</CompleteMultipartUpload>';
+                            '</Part></CompleteMultipartUpload>';
                         const completeRequest = {
                             bucketName,
                             namespace,
@@ -1123,16 +1110,11 @@ describe('Multipart Upload API', () => {
                         objectPutPart(authInfo, partRequest2, undefined, log, err => {
                             assert.deepStrictEqual(err, null);
                             const completeBody =
-                                '<CompleteMultipartUpload>' +
-                                '<Part>' +
-                                '<PartNumber>1</PartNumber>' +
+                                '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                                 `<ETag>"${partHash}"</ETag>` +
-                                '</Part>' +
-                                '<Part>' +
-                                '<PartNumber>2</PartNumber>' +
+                                '</Part><Part><PartNumber>2</PartNumber>' +
                                 `<ETag>${wrongMD5}</ETag>` +
-                                '</Part>' +
-                                '</CompleteMultipartUpload>';
+                                '</Part></CompleteMultipartUpload>';
                             const completeRequest = {
                                 bucketName,
                                 namespace,
@@ -1212,16 +1194,11 @@ describe('Multipart Upload API', () => {
                 objectPutPart(authInfo, partRequest1, undefined, log, () => {
                     objectPutPart(authInfo, partRequest2, undefined, log, () => {
                         const completeBody =
-                            '<CompleteMultipartUpload>' +
-                            '<Part>' +
-                            '<PartNumber>1</PartNumber>' +
+                            '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                             `<ETag>"${partHash}"</ETag>` +
-                            '</Part>' +
-                            '<Part>' +
-                            '<PartNumber>2</PartNumber>' +
+                            '</Part><Part><PartNumber>2</PartNumber>' +
                             `<ETag>"${partHash}"</ETag>` +
-                            '</Part>' +
-                            '</CompleteMultipartUpload>';
+                            '</Part></CompleteMultipartUpload>';
                         const completeRequest = {
                             bucketName,
                             namespace,
@@ -1301,16 +1278,11 @@ describe('Multipart Upload API', () => {
                 objectPutPart(authInfo, partRequest1, undefined, log, () => {
                     objectPutPart(authInfo, partRequest2, undefined, log, () => {
                         const completeBody =
-                            '<CompleteMultipartUpload>' +
-                            '<Part>' +
-                            '<PartNumber>1</PartNumber>' +
+                            '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                             `<ETag>"${partHash}"</ETag>` +
-                            '</Part>' +
-                            '<Part>' +
-                            '<PartNumber>2</PartNumber>' +
+                            '</Part><Part><PartNumber>2</PartNumber>' +
                             `<ETag>"${partHash}"</ETag>` +
-                            '</Part>' +
-                            '</CompleteMultipartUpload>';
+                            '</Part></CompleteMultipartUpload>';
                         const completeRequest = {
                             bucketName,
                             namespace,
@@ -1405,16 +1377,11 @@ describe('Multipart Upload API', () => {
                 objectPutPart(authInfo, partRequest1, undefined, log, () => {
                     objectPutPart(authInfo, partRequest2, undefined, log, () => {
                         const completeBody =
-                            '<CompleteMultipartUpload>' +
-                            '<Part>' +
-                            '<PartNumber>1</PartNumber>' +
+                            '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                             `<ETag>"${partHash}"</ETag>` +
-                            '</Part>' +
-                            '<Part>' +
-                            '<PartNumber>2</PartNumber>' +
+                            '</Part><Part><PartNumber>2</PartNumber>' +
                             `<ETag>"${partHash}"</ETag>` +
-                            '</Part>' +
-                            '</CompleteMultipartUpload>';
+                            '</Part></CompleteMultipartUpload>';
                         const completeRequest = {
                             bucketName,
                             namespace,
@@ -1512,16 +1479,11 @@ describe('Multipart Upload API', () => {
                 objectPutPart(authInfo, partRequest1, undefined, log, () => {
                     objectPutPart(authInfo, partRequest2, undefined, log, () => {
                         const completeBody =
-                            '<CompleteMultipartUpload>' +
-                            '<Part>' +
-                            '<PartNumber>1</PartNumber>' +
+                            '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                             `<ETag>"${partHash}"</ETag>` +
-                            '</Part>' +
-                            '<Part>' +
-                            '<PartNumber>2</PartNumber>' +
+                            '</Part><Part><PartNumber>2</PartNumber>' +
                             `<ETag>"${partHash}"</ETag>` +
-                            '</Part>' +
-                            '</CompleteMultipartUpload>';
+                            '</Part></CompleteMultipartUpload>';
                         const completeRequest = {
                             bucketName,
                             namespace,
@@ -1705,16 +1667,11 @@ describe('Multipart Upload API', () => {
                 },
                 (testUploadId, part1partHash, part2partHash, next) => {
                     const completeBody =
-                        '<CompleteMultipartUpload>' +
-                        '<Part>' +
-                        '<PartNumber>1</PartNumber>' +
+                        '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                         `<ETag>"${part1partHash}"</ETag>` +
-                        '</Part>' +
-                        '<Part>' +
-                        '<PartNumber>2</PartNumber>' +
+                        '</Part><Part><PartNumber>2</PartNumber>' +
                         `<ETag>"${part2partHash}"</ETag>` +
-                        '</Part>' +
-                        '</CompleteMultipartUpload>';
+                        '</Part></CompleteMultipartUpload>';
                     const completeRequest = {
                         bucketName,
                         namespace,
@@ -1762,12 +1719,9 @@ describe('Multipart Upload API', () => {
                 },
                 (testUploadId, partHash, next) => {
                     const completeBody =
-                        '<CompleteMultipartUpload>' +
-                        '<Part>' +
-                        '<PartNumber>1</PartNumber>' +
+                        '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                         `<ETag>"${partHash}"</ETag>` +
-                        '</Part>' +
-                        '</CompleteMultipartUpload>';
+                        '</Part></CompleteMultipartUpload>';
                     const completeRequest = {
                         bucketName,
                         namespace,
@@ -1832,12 +1786,9 @@ describe('Multipart Upload API', () => {
                 },
                 (partpartHash, next) => {
                     const completeBody =
-                        '<CompleteMultipartUpload>' +
-                        '<Part>' +
-                        '<PartNumber>1</PartNumber>' +
+                        '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                         `<ETag>"${partpartHash}"</ETag>` +
-                        '</Part>' +
-                        '</CompleteMultipartUpload>';
+                        '</Part></CompleteMultipartUpload>';
 
                     const completeRequest = {
                         bucketName,
@@ -1905,12 +1856,9 @@ describe('Multipart Upload API', () => {
                             },
                             done => {
                                 const completeBody =
-                                    '<CompleteMultipartUpload>' +
-                                    '<Part>' +
-                                    '<PartNumber>1</PartNumber>' +
+                                    '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                                     `<ETag>"${partpartHash}"</ETag>` +
-                                    '</Part>' +
-                                    '</CompleteMultipartUpload>';
+                                    '</Part></CompleteMultipartUpload>';
 
                                 const completeRequest = {
                                     bucketName,
@@ -2010,12 +1958,9 @@ describe('Multipart Upload API', () => {
                     objectPutPart(authInfo, partRequest2, undefined, log, err => {
                         assert.deepStrictEqual(err, null);
                         const completeBody =
-                            '<CompleteMultipartUpload>' +
-                            '<Part>' +
-                            '<PartNumber>1</PartNumber>' +
+                            '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                             `<ETag>"${partHash}"</ETag>` +
-                            '</Part>' +
-                            '</CompleteMultipartUpload>';
+                            '</Part></CompleteMultipartUpload>';
                         const completeRequest = {
                             bucketName,
                             namespace,
@@ -2129,12 +2074,9 @@ describe('Multipart Upload API', () => {
                 );
                 objectPutPart(authInfo, partRequest, undefined, log, () => {
                     const completeBody =
-                        '<CompleteMultipartUpload>' +
-                        '<Part>' +
-                        '<PartNumber>1</PartNumber>' +
+                        '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                         `<ETag>"${partHash}"</ETag>` +
-                        '</Part>' +
-                        '</CompleteMultipartUpload>';
+                        '</Part></CompleteMultipartUpload>';
                     const completeRequest = {
                         bucketName,
                         namespace,
@@ -2207,12 +2149,9 @@ describe('Multipart Upload API', () => {
                 );
                 objectPutPart(authInfo, partRequest, undefined, log, () => {
                     const completeBody =
-                        '<CompleteMultipartUpload>' +
-                        '<Part>' +
-                        '<PartNumber>1</PartNumber>' +
+                        '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                         `<ETag>"${partHash}"</ETag>` +
-                        '</Part>' +
-                        '</CompleteMultipartUpload>';
+                        '</Part></CompleteMultipartUpload>';
                     const completeRequest = {
                         bucketName,
                         namespace,
@@ -2387,12 +2326,9 @@ describe('Multipart Upload API', () => {
                         );
 
                     const completeBody =
-                        '<CompleteMultipartUpload>' +
-                        '<Part>' +
-                        '<PartNumber>1</PartNumber>' +
+                        '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                         `<ETag>"${partHash}"</ETag>` +
-                        '</Part>' +
-                        '</CompleteMultipartUpload>';
+                        '</Part></CompleteMultipartUpload>';
                     const completeRequest = {
                         bucketName,
                         namespace,
@@ -2488,12 +2424,9 @@ describe('Multipart Upload API', () => {
 
                         // Complete MPU with only part 1 (part 2 becomes "extra part")
                         const completeBody =
-                            '<CompleteMultipartUpload>' +
-                            '<Part>' +
-                            '<PartNumber>1</PartNumber>' +
+                            '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                             `<ETag>"${part1ETag}"</ETag>` +
-                            '</Part>' +
-                            '</CompleteMultipartUpload>';
+                            '</Part></CompleteMultipartUpload>';
                         const completeRequest = {
                             bucketName,
                             namespace,
@@ -2762,12 +2695,9 @@ describe('complete mpu with versioning', () => {
                     );
                     objectPutPart(authInfo, partRequest, undefined, log, () => {
                         const completeBody =
-                            '<CompleteMultipartUpload>' +
-                            '<Part>' +
-                            '<PartNumber>1</PartNumber>' +
+                            '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                             `<ETag>"${partHash}"</ETag>` +
-                            '</Part>' +
-                            '</CompleteMultipartUpload>';
+                            '</Part></CompleteMultipartUpload>';
                         const completeRequest = {
                             bucketName,
                             namespace,
@@ -2975,12 +2905,9 @@ describe('complete mpu with bucket policy', () => {
     const md5Hash = crypto.createHash('md5').update(partBody);
     const partHash = md5Hash.digest('hex');
     const completeBody =
-        '<CompleteMultipartUpload>' +
-        '<Part>' +
-        '<PartNumber>1</PartNumber>' +
+        '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
         `<ETag>"${partHash}"</ETag>` +
-        '</Part>' +
-        '</CompleteMultipartUpload>';
+        '</Part></CompleteMultipartUpload>';
 
     beforeEach(done => {
         cleanup();
@@ -3124,12 +3051,9 @@ describe('complete mpu with bucket policy', () => {
                 objectPutPart(authInfoOtherAcc, partRequest, undefined, log, err => {
                     assert.ifError(err);
                     const completeBody =
-                        '<CompleteMultipartUpload>' +
-                        '<Part>' +
-                        '<PartNumber>1</PartNumber>' +
+                        '<CompleteMultipartUpload><Part><PartNumber>1</PartNumber>' +
                         `<ETag>"${partHash}"</ETag>` +
-                        '</Part>' +
-                        '</CompleteMultipartUpload>';
+                        '</Part></CompleteMultipartUpload>';
                     const completeRequest = new DummyRequest(
                         Object.assign(
                             {
@@ -3233,8 +3157,7 @@ describe('multipart upload in ingestion bucket', () => {
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             url: '/',
             post:
-                '<?xml version="1.0" encoding="UTF-8"?>' +
-                '<CreateBucketConfiguration ' +
+                '<?xml version="1.0" encoding="UTF-8"?><CreateBucketConfiguration ' +
                 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
                 `<LocationConstraint>${location}</LocationConstraint>` +
                 '</CreateBucketConfiguration>',
@@ -3701,9 +3624,8 @@ describe('validatePerPartChecksums', () => {
                     // or part number in the wording.
                     assert.strictEqual(
                         err.description,
-                        'One or more of the specified parts could not be ' +
-                            'found.  The part may not have been uploaded, or ' +
-                            "the specified entity tag may not match the part's entity tag.",
+                        'One or more of the specified parts could not be found.  The part may not have ' +
+                            "been uploaded, or the specified entity tag may not match the part's entity tag.",
                     );
                 });
 
@@ -3741,9 +3663,8 @@ describe('validatePerPartChecksums', () => {
             makeStoredPart(2, { algorithm: 'crc64nvme', value: d2 }),
         ];
         const invalidPartMessage =
-            'One or more of the specified parts could not be ' +
-            'found.  The part may not have been uploaded, or ' +
-            "the specified entity tag may not match the part's entity tag.";
+            'One or more of the specified parts could not be found.  The part may not have ' +
+            "been uploaded, or the specified entity tag may not match the part's entity tag.";
 
         it('should accept when no parts include a checksum field', () => {
             const jsonList = { Part: [makeJsonPart(1, 'etag1'), makeJsonPart(2, 'etag2')] };
@@ -4498,8 +4419,7 @@ describe('CompleteMultipartUpload per-part validation on external backends', () 
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             url: '/',
             post:
-                '<?xml version="1.0" encoding="UTF-8"?>' +
-                '<CreateBucketConfiguration ' +
+                '<?xml version="1.0" encoding="UTF-8"?><CreateBucketConfiguration ' +
                 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
                 `<LocationConstraint>${location}</LocationConstraint>` +
                 '</CreateBucketConfiguration>',
@@ -4744,8 +4664,7 @@ describe('CompleteMultipartUpload final checksum on azure-style external backend
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             url: '/',
             post:
-                '<?xml version="1.0" encoding="UTF-8"?>' +
-                '<CreateBucketConfiguration ' +
+                '<?xml version="1.0" encoding="UTF-8"?><CreateBucketConfiguration ' +
                 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
                 `<LocationConstraint>${location}</LocationConstraint>` +
                 '</CreateBucketConfiguration>',

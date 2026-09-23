@@ -46,18 +46,20 @@ function createLoggingRequest(bucketName, post, headers = {}) {
 }
 
 function createValidLoggingXML(targetBucket, targetPrefix = 'logs/') {
-    return '<?xml version="1.0" encoding="UTF-8"?>' +
-        '<BucketLoggingStatus xmlns="http://doc.s3.amazonaws.com/2006-03-01">' +
-        '<LoggingEnabled>' +
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?><BucketLoggingStatus ' +
+        'xmlns="http://doc.s3.amazonaws.com/2006-03-01"><LoggingEnabled>' +
         `<TargetBucket>${targetBucket}</TargetBucket>` +
         `<TargetPrefix>${targetPrefix}</TargetPrefix>` +
-        '</LoggingEnabled>' +
-        '</BucketLoggingStatus>';
+        '</LoggingEnabled></BucketLoggingStatus>'
+    );
 }
 
 function createEmptyLoggingXML() {
-    return '<?xml version="1.0" encoding="UTF-8"?>' +
-        '<BucketLoggingStatus xmlns="http://doc.s3.amazonaws.com/2006-03-01" />';
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<BucketLoggingStatus xmlns="http://doc.s3.amazonaws.com/2006-03-01" />'
+    );
 }
 
 describe('bucketPutLogging API', () => {
@@ -189,9 +191,9 @@ describe('bucketPutLogging API', () => {
     });
 
     it('should return error for malformed XML - missing closing tag', done => {
-        const malformedXML = '<?xml version="1.0" encoding="UTF-8"?>' +
-            '<BucketLoggingStatus xmlns="http://doc.s3.amazonaws.com/2006-03-01">' +
-            '<LoggingEnabled>' +
+        const malformedXML =
+            '<?xml version="1.0" encoding="UTF-8"?><BucketLoggingStatus ' +
+            'xmlns="http://doc.s3.amazonaws.com/2006-03-01"><LoggingEnabled>' +
             `<TargetBucket>${targetBucket}</TargetBucket>` +
             '<TargetPrefix>logs/</TargetPrefix>' +
             // Missing </LoggingEnabled> and </BucketLoggingStatus>
@@ -206,12 +208,12 @@ describe('bucketPutLogging API', () => {
     });
 
     it('should return error for malformed XML - invalid structure', done => {
-        const malformedXML = '<?xml version="1.0" encoding="UTF-8"?>' +
+        const malformedXML =
+            '<?xml version="1.0" encoding="UTF-8"?>' +
             '<BucketLoggingStatus xmlns="http://doc.s3.amazonaws.com/2006-03-01">' +
             '<LoggingEnabled>' +
             '<InvalidTag>invalid</InvalidTag>' + // Invalid tag
-            '</LoggingEnabled>' +
-            '</BucketLoggingStatus>';
+            '</LoggingEnabled></BucketLoggingStatus>';
         const request = createLoggingRequest(bucketName, malformedXML);
 
         bucketPutLogging(authInfo, request, log, err => {
@@ -234,9 +236,9 @@ describe('bucketPutLogging API', () => {
     });
 
     it('should return NotImplemented error when TargetGrants is present', done => {
-        const loggingXMLWithGrants = '<?xml version="1.0" encoding="UTF-8"?>' +
-            '<BucketLoggingStatus xmlns="http://doc.s3.amazonaws.com/2006-03-01">' +
-            '<LoggingEnabled>' +
+        const loggingXMLWithGrants =
+            '<?xml version="1.0" encoding="UTF-8"?><BucketLoggingStatus ' +
+            'xmlns="http://doc.s3.amazonaws.com/2006-03-01"><LoggingEnabled>' +
             `<TargetBucket>${targetBucket}</TargetBucket>` +
             '<TargetPrefix>logs/</TargetPrefix>' +
             '<TargetGrants>' +

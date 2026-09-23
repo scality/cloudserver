@@ -1,9 +1,6 @@
 const assert = require('assert');
 const { errors } = require('arsenal');
-const { S3Client,
-    CreateBucketCommand,
-    DeleteBucketCommand,
-    PutBucketPolicyCommand } = require('@aws-sdk/client-s3');
+const { S3Client, CreateBucketCommand, DeleteBucketCommand, PutBucketPolicyCommand } = require('@aws-sdk/client-s3');
 
 const getConfig = require('../support/config');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -55,9 +52,7 @@ function generateRandomString(length) {
     const allowedCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+=,.@ -/';
     const allowedCharactersLength = allowedCharacters.length;
 
-    return [...Array(length)]
-      .map(() => allowedCharacters[~~(Math.random() * allowedCharactersLength)])
-      .join('');
+    return [...Array(length)].map(() => allowedCharacters[~~(Math.random() * allowedCharactersLength)]).join('');
 }
 
 // Check for the expected error response code and status code.
@@ -65,14 +60,19 @@ function assertError(err, expectedErr) {
     if (expectedErr === null) {
         assert.strictEqual(err, null, `expected no error but got '${err}'`);
     } else {
-        assert.strictEqual(err.name, expectedErr, 'incorrect error response ' +
-            `code: should be '${expectedErr}' but got '${err.name}'`);
-        assert.strictEqual(err.$metadata.httpStatusCode, errors[expectedErr].code,
+        assert.strictEqual(
+            err.name,
+            expectedErr,
+            'incorrect error response ' + `code: should be '${expectedErr}' but got '${err.name}'`,
+        );
+        assert.strictEqual(
+            err.$metadata.httpStatusCode,
+            errors[expectedErr].code,
             'incorrect error status code: should be  ' +
-            `${errors[expectedErr].code}, but got '${err.$metadata.httpStatusCode}'`);
+                `${errors[expectedErr].code}, but got '${err.$metadata.httpStatusCode}'`,
+        );
     }
 }
-
 
 describe('aws-sdk test put bucket policy', () => {
     let s3;
@@ -170,12 +170,18 @@ describe('aws-sdk test put bucket policy', () => {
         });
 
         it('should allow bucket policy with pincipal arn less than 2048 characters', async () => {
-            const params = getPolicyParams({ key: 'Principal', value: { AWS: `arn:aws:iam::767707094035:user/${generateRandomString(150)}` } }); // eslint-disable-line max-len
+            const params = getPolicyParams({
+                key: 'Principal',
+                value: { AWS: `arn:aws:iam::767707094035:user/${generateRandomString(150)}` },
+            });
             await s3.send(new PutBucketPolicyCommand(params));
         });
 
         it('should not allow bucket policy with pincipal arn more than 2048 characters', async () => {
-            const params = getPolicyParams({ key: 'Principal', value: { AWS: `arn:aws:iam::767707094035:user/${generateRandomString(2020)}` } }); // eslint-disable-line max-len
+            const params = getPolicyParams({
+                key: 'Principal',
+                value: { AWS: `arn:aws:iam::767707094035:user/${generateRandomString(2020)}` },
+            });
             try {
                 await s3.send(new PutBucketPolicyCommand(params));
                 throw new Error('Expected MalformedPolicy error');
@@ -186,7 +192,8 @@ describe('aws-sdk test put bucket policy', () => {
 
         it('should allow bucket policy with valid SourceIp condition', async () => {
             const params = getPolicyParams({
-                key: 'Condition', value: {
+                key: 'Condition',
+                value: {
                     IpAddress: {
                         'aws:SourceIp': '192.168.100.0/24',
                     },
@@ -197,7 +204,8 @@ describe('aws-sdk test put bucket policy', () => {
 
         it('should not allow bucket policy with invalid SourceIp format', async () => {
             const params = getPolicyParams({
-                key: 'Condition', value: {
+                key: 'Condition',
+                value: {
                     IpAddress: {
                         'aws:SourceIp': '192.168.100', // Invalid IP format
                     },
@@ -213,7 +221,8 @@ describe('aws-sdk test put bucket policy', () => {
 
         it('should allow bucket policy with valid s3:object-lock-remaining-retention-days condition', async () => {
             const params = getPolicyParams({
-                key: 'Condition', value: {
+                key: 'Condition',
+                value: {
                     NumericGreaterThanEquals: {
                         's3:object-lock-remaining-retention-days': '30',
                     },
@@ -225,7 +234,8 @@ describe('aws-sdk test put bucket policy', () => {
         // yep, this is the expected behaviour
         it('should not reject policy with invalid s3:object-lock-remaining-retention-days value', async () => {
             const params = getPolicyParams({
-                key: 'Condition', value: {
+                key: 'Condition',
+                value: {
                     NumericGreaterThanEquals: {
                         's3:object-lock-remaining-retention-days': '-1', // Invalid value
                     },
@@ -237,7 +247,8 @@ describe('aws-sdk test put bucket policy', () => {
         // this too ¯\_(ツ)_/¯
         it('should not reject policy with a key starting with aws:', async () => {
             const params = getPolicyParams({
-                key: 'Condition', value: {
+                key: 'Condition',
+                value: {
                     NumericGreaterThanEquals: {
                         'aws:have-a-nice-day': 'blabla', // Invalid value
                     },
@@ -248,7 +259,8 @@ describe('aws-sdk test put bucket policy', () => {
 
         it('should reject policy with a key that does not exist that does not start with aws:', async () => {
             const params = getPolicyParams({
-                key: 'Condition', value: {
+                key: 'Condition',
+                value: {
                     NumericGreaterThanEquals: {
                         'have-a-nice-day': 'blabla', // Invalid value
                     },
@@ -264,7 +276,8 @@ describe('aws-sdk test put bucket policy', () => {
 
         it('should enforce policies with both SourceIp and s3:object-lock conditions together', async () => {
             const params = getPolicyParams({
-                key: 'Condition', value: {
+                key: 'Condition',
+                value: {
                     IpAddress: {
                         'aws:SourceIp': '192.168.100.0/24',
                     },
@@ -278,7 +291,8 @@ describe('aws-sdk test put bucket policy', () => {
 
         it('should return error if a condition one of the condition values is invalid', async () => {
             const params = getPolicyParams({
-                key: 'Condition', value: {
+                key: 'Condition',
+                value: {
                     IpAddress: {
                         'aws:SourceIp': '192.168.100',
                     },

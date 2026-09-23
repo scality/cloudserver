@@ -85,8 +85,7 @@ function restoreObjectRequest(days) {
         post:
             '<RestoreRequest xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
             `<Days>${days}</Days>` +
-            '<Tier>Standard</Tier>' +
-            '</RestoreRequest>',
+            '<Tier>Standard</Tier></RestoreRequest>',
     };
 }
 

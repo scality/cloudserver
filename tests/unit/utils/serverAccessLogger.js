@@ -477,7 +477,7 @@ describe('serverAccessLogger utility functions', () => {
         it('should return Content-Length from response for objectGet', () => {
             const request = { apiMethod: 'objectGet' };
             const response = {
-                getHeader: name => name === 'Content-Length' ? '12345' : null,
+                getHeader: name => (name === 'Content-Length' ? '12345' : null),
             };
             const result = getObjectSize(request, response);
             assert.strictEqual(result, 12345);
@@ -510,7 +510,7 @@ describe('serverAccessLogger utility functions', () => {
         it('should handle Content-Length of 0 for objectGet', () => {
             const request = { apiMethod: 'objectGet' };
             const response = {
-                getHeader: name => name === 'Content-Length' ? '0' : null,
+                getHeader: name => (name === 'Content-Length' ? '0' : null),
             };
             const result = getObjectSize(request, response);
             assert.strictEqual(result, 0);
@@ -519,7 +519,7 @@ describe('serverAccessLogger utility functions', () => {
         it('should handle Content-Length of number 0 for objectGet', () => {
             const request = { apiMethod: 'objectGet' };
             const response = {
-                getHeader: name => name === 'Content-Length' ? 0 : null,
+                getHeader: name => (name === 'Content-Length' ? 0 : null),
             };
             const result = getObjectSize(request, response);
             assert.strictEqual(result, 0);
@@ -604,7 +604,7 @@ describe('serverAccessLogger utility functions', () => {
 
         it('should return Content-Length from response when bytesSent is not provided', () => {
             const res = {
-                getHeader: name => name === 'Content-Length' ? '67890' : null,
+                getHeader: name => (name === 'Content-Length' ? '67890' : null),
             };
             const result = getBytesSent(res, null);
             assert.strictEqual(result, '67890');
@@ -625,7 +625,7 @@ describe('serverAccessLogger utility functions', () => {
 
         it('should prefer bytesSent over Content-Length', () => {
             const res = {
-                getHeader: name => name === 'Content-Length' ? '99999' : null,
+                getHeader: name => (name === 'Content-Length' ? '99999' : null),
             };
             const bytesSent = 11111;
             const result = getBytesSent(res, bytesSent);
@@ -634,7 +634,7 @@ describe('serverAccessLogger utility functions', () => {
 
         it('should handle bytesSent as 0', () => {
             const res = {
-                getHeader: name => name === 'Content-Length' ? '99999' : null,
+                getHeader: name => (name === 'Content-Length' ? '99999' : null),
             };
             const bytesSent = 0;
             const result = getBytesSent(res, bytesSent);
@@ -643,7 +643,7 @@ describe('serverAccessLogger utility functions', () => {
 
         it('should handle Content-Length as number 0', () => {
             const res = {
-                getHeader: name => name === 'Content-Length' ? 0 : null,
+                getHeader: name => (name === 'Content-Length' ? 0 : null),
             };
             const result = getBytesSent(res, null);
             assert.strictEqual(result, 0);
@@ -651,7 +651,7 @@ describe('serverAccessLogger utility functions', () => {
 
         it('should handle Content-Length as string "0"', () => {
             const res = {
-                getHeader: name => name === 'Content-Length' ? '0' : null,
+                getHeader: name => (name === 'Content-Length' ? '0' : null),
             };
             const result = getBytesSent(res, null);
             assert.strictEqual(result, '0');
@@ -893,10 +893,10 @@ describe('serverAccessLogger utility functions', () => {
                     analyticsAccountName: 'testAccount',
                     analyticsUserName: 'testUser',
                     analyticsBytesDeleted: 0,
-                    startTime:           1000000000n,
-                    onFinishEndTime:     1009000000n,
+                    startTime: 1000000000n,
+                    onFinishEndTime: 1009000000n,
                     startTurnAroundTime: 1003000000n,
-                    onCloseEndTime:      1020500000n,
+                    onCloseEndTime: 1020500000n,
                     startTimeUnixMS: 1234567890000,
                     bucketOwner: 'bucketOwner123',
                     bucketName: 'test-bucket',
@@ -915,8 +915,8 @@ describe('serverAccessLogger utility functions', () => {
                 headers: {
                     'content-length': '1024',
                     'user-agent': 'aws-cli/2.0.0',
-                    'referer': 'https://example.com',
-                    'host': 's3.amazonaws.com',
+                    referer: 'https://example.com',
+                    host: 's3.amazonaws.com',
                     'x-forwarded-for': '192.168.1.100',
                 },
                 parsedContentLength: 1024,
@@ -938,7 +938,9 @@ describe('serverAccessLogger utility functions', () => {
                 },
                 statusCode: 200,
                 getHeader: name => {
-                    if (name === 'Content-Length') {return '2048';}
+                    if (name === 'Content-Length') {
+                        return '2048';
+                    }
                     return null;
                 },
             };
@@ -1213,7 +1215,7 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(mockLogger.write.callCount, 1);
             const writtenData = mockLogger.write.firstCall.args[0];
             assert.strictEqual(writtenData.endsWith('\n'), true);
-            
+
             // Should be valid JSON without the newline
             const jsonData = writtenData.trim();
             assert.doesNotThrow(() => JSON.parse(jsonData));
@@ -1437,7 +1439,7 @@ describe('serverAccessLogger utility functions', () => {
 
             assert.strictEqual(mockLogger.write.callCount, 1);
             const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
-            
+
             // Verify operation is REST.GET.BACKBEAT
             assert.strictEqual(loggedData.operation, 'REST.GET.BACKBEAT');
         });
@@ -1467,7 +1469,7 @@ describe('serverAccessLogger utility functions', () => {
 
             assert.strictEqual(mockLogger.write.callCount, 1);
             const loggedData = JSON.parse(mockLogger.write.firstCall.args[0].trim());
-            
+
             // Verify loggingEnabled is false (overridden by backbeat)
             assert.strictEqual(loggedData.loggingEnabled, false);
             // But TargetBucket and TargetPrefix should still be logged
@@ -1760,8 +1762,7 @@ describe('serverAccessLogger utility functions', () => {
                 getCanonicalID: () => 'replication-canonical-id',
                 isRequesterPublicUser: () => false,
                 isRequesterAnIAMUser: () => false,
-                getArn: () =>
-                    'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication',
+                getArn: () => 'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication',
                 getAuthVersion: () => 'AWS4-HMAC-SHA256',
                 getAuthType: () => 'REST-HEADER',
                 getAccessKey: () => 'replication-access-key',
@@ -1832,13 +1833,14 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.objectKey, 'replicated.txt');
 
             // Requester is the assumed-role ARN from auth
-            assert.strictEqual(loggedData.requester,
-                'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication');
+            assert.strictEqual(
+                loggedData.requester,
+                'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication',
+            );
 
             // requestURI is synthesized to look like a normal S3 PUT,
             // not the internal /_/backbeat/data path
-            assert.strictEqual(loggedData.requestURI,
-                'PUT /dest-bucket/replicated.txt HTTP/1.1');
+            assert.strictEqual(loggedData.requestURI, 'PUT /dest-bucket/replicated.txt HTTP/1.1');
 
             // HTTP-layer fields that AWS blanks for replication
             assert.strictEqual(loggedData.clientIP, undefined);
@@ -1861,8 +1863,7 @@ describe('serverAccessLogger utility functions', () => {
                 getCanonicalID: () => 'replication-canonical-id',
                 isRequesterPublicUser: () => false,
                 isRequesterAnIAMUser: () => false,
-                getArn: () =>
-                    'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication',
+                getArn: () => 'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication',
                 getAuthVersion: () => 'AWS4-HMAC-SHA256',
                 getAuthType: () => 'REST-HEADER',
                 getAccessKey: () => 'replication-access-key',
@@ -1910,8 +1911,7 @@ describe('serverAccessLogger utility functions', () => {
 
             assert.strictEqual(loggedData.operation, 'REST.DELETE.OBJECT');
             assert.strictEqual(loggedData.loggingEnabled, true);
-            assert.strictEqual(loggedData.requestURI,
-                'DELETE /dest-bucket/replicated.txt HTTP/1.1');
+            assert.strictEqual(loggedData.requestURI, 'DELETE /dest-bucket/replicated.txt HTTP/1.1');
 
             // HTTP-layer fields that AWS blanks for replication
             assert.strictEqual(loggedData.clientIP, undefined);
@@ -1919,8 +1919,10 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.referer, undefined);
 
             // Replication identity preserved
-            assert.strictEqual(loggedData.requester,
-                'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication');
+            assert.strictEqual(
+                loggedData.requester,
+                'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication',
+            );
         });
 
         it('should produce a REST.PUT.OBJECT_TAGGING entry for tag-only replication', () => {
@@ -1930,8 +1932,7 @@ describe('serverAccessLogger utility functions', () => {
                 getCanonicalID: () => 'replication-canonical-id',
                 isRequesterPublicUser: () => false,
                 isRequesterAnIAMUser: () => false,
-                getArn: () =>
-                    'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication',
+                getArn: () => 'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication',
                 getAuthVersion: () => 'AWS4-HMAC-SHA256',
                 getAuthType: () => 'REST-HEADER',
                 getAccessKey: () => 'replication-access-key',
@@ -1981,8 +1982,10 @@ describe('serverAccessLogger utility functions', () => {
 
             assert.strictEqual(loggedData.operation, 'REST.PUT.OBJECT_TAGGING');
             assert.strictEqual(loggedData.loggingEnabled, true);
-            assert.strictEqual(loggedData.requestURI,
-                `PUT /dest-bucket/replicated.txt?tagging&versionId=${versionId} HTTP/1.1`);
+            assert.strictEqual(
+                loggedData.requestURI,
+                `PUT /dest-bucket/replicated.txt?tagging&versionId=${versionId} HTTP/1.1`,
+            );
             assert.strictEqual(loggedData.versionId, versionId);
 
             // HTTP-layer fields that AWS blanks for replication
@@ -1991,8 +1994,10 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.referer, undefined);
 
             // Replication identity preserved
-            assert.strictEqual(loggedData.requester,
-                'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication');
+            assert.strictEqual(
+                loggedData.requester,
+                'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication',
+            );
         });
 
         it('should produce a REST.PUT.ACL entry for ACL-only replication', () => {
@@ -2002,8 +2007,7 @@ describe('serverAccessLogger utility functions', () => {
                 getCanonicalID: () => 'replication-canonical-id',
                 isRequesterPublicUser: () => false,
                 isRequesterAnIAMUser: () => false,
-                getArn: () =>
-                    'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication',
+                getArn: () => 'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication',
                 getAuthVersion: () => 'AWS4-HMAC-SHA256',
                 getAuthType: () => 'REST-HEADER',
                 getAccessKey: () => 'replication-access-key',
@@ -2054,8 +2058,10 @@ describe('serverAccessLogger utility functions', () => {
 
             assert.strictEqual(loggedData.operation, 'REST.PUT.ACL');
             assert.strictEqual(loggedData.loggingEnabled, true);
-            assert.strictEqual(loggedData.requestURI,
-                `PUT /dest-bucket/replicated.txt?acl&versionId=${versionId} HTTP/1.1`);
+            assert.strictEqual(
+                loggedData.requestURI,
+                `PUT /dest-bucket/replicated.txt?acl&versionId=${versionId} HTTP/1.1`,
+            );
             assert.strictEqual(loggedData.versionId, versionId);
             assert.strictEqual(loggedData.aclRequired, 'Yes');
 
@@ -2065,8 +2071,10 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.referer, undefined);
 
             // Replication identity preserved
-            assert.strictEqual(loggedData.requester,
-                'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication');
+            assert.strictEqual(
+                loggedData.requester,
+                'arn:aws:sts::123456789012:assumed-role/replication-role/backbeat-replication',
+            );
         });
 
         it('should log replication with error code on failure', () => {
@@ -2109,7 +2117,5 @@ describe('serverAccessLogger utility functions', () => {
             assert.strictEqual(loggedData.errorCode, 'InternalError');
             assert.strictEqual(loggedData.httpCode, 500);
         });
-
     });
 });
-
