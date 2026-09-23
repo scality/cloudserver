@@ -326,7 +326,7 @@ describe('objectDelete API', () => {
                     assert.strictEqual(err, null);
                     sinon.assert.calledWith(
                         warnStub,
-                        'expiration is trying to delete a master version ' + 'of an object with versioning enabled',
+                        'expiration is trying to delete a master version of an object with versioning enabled',
                     );
                     done();
                 });
@@ -341,22 +341,19 @@ describe('objectDelete API', () => {
             });
         });
 
-        it(
-            "should return error if request includes 'if-unmodified-since' " + 'header and object has been modified',
-            done => {
-                const testDeleteRequest = new DummyRequest({
-                    bucketName,
-                    namespace,
-                    objectKey,
-                    headers: { 'if-unmodified-since': earlyDate },
-                    url: `/${bucketName}/${objectKey}`,
-                });
-                objectDelete(authInfo, testDeleteRequest, log, err => {
-                    assert.strictEqual(err.is.PreconditionFailed, true);
-                    done();
-                });
-            },
-        );
+        it("should return error if request includes 'if-unmodified-since' header and object has been modified", done => {
+            const testDeleteRequest = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey,
+                headers: { 'if-unmodified-since': earlyDate },
+                url: `/${bucketName}/${objectKey}`,
+            });
+            objectDelete(authInfo, testDeleteRequest, log, err => {
+                assert.strictEqual(err.is.PreconditionFailed, true);
+                done();
+            });
+        });
 
         it("should delete an object with 'if-unmodified-since' header", done => {
             const testDeleteRequest = new DummyRequest({
@@ -375,22 +372,19 @@ describe('objectDelete API', () => {
             });
         });
 
-        it(
-            "should return error if request includes 'if-modified-since' " + 'header and object has not been modified',
-            done => {
-                const testDeleteRequest = new DummyRequest({
-                    bucketName,
-                    namespace,
-                    objectKey,
-                    headers: { 'if-modified-since': lateDate },
-                    url: `/${bucketName}/${objectKey}`,
-                });
-                objectDelete(authInfo, testDeleteRequest, log, err => {
-                    assert.strictEqual(err.is.NotModified, true);
-                    done();
-                });
-            },
-        );
+        it("should return error if request includes 'if-modified-since' header and object has not been modified", done => {
+            const testDeleteRequest = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey,
+                headers: { 'if-modified-since': lateDate },
+                url: `/${bucketName}/${objectKey}`,
+            });
+            objectDelete(authInfo, testDeleteRequest, log, err => {
+                assert.strictEqual(err.is.NotModified, true);
+                done();
+            });
+        });
 
         it("should delete an object with 'if-modified-since' header", done => {
             const testDeleteRequest = new DummyRequest({

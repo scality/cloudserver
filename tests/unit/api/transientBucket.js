@@ -94,7 +94,7 @@ describe('transient bucket handling', () => {
         },
     );
 
-    it('putBucket request should return error if ' + 'transient bucket created by different account', done => {
+    it('putBucket request should return error if transient bucket created by different account', done => {
         bucketPut(otherAccountAuthInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.BucketAlreadyExists, true);
             serviceGet(otherAccountAuthInfo, serviceGetRequest, log, (err, data) => {
@@ -214,13 +214,13 @@ describe('transient bucket handling', () => {
         const objName = 'objectName';
         after(done => {
             metadata.deleteObjectMD(`${constants.mpuBucketPrefix}` + `${bucketName}`, objName, {}, log, () => {
-                metadata.deleteBucket(`${constants.mpuBucketPrefix}` + `${bucketName}`, log, () => {
+                metadata.deleteBucket(`${constants.mpuBucketPrefix}${bucketName}`, log, () => {
                     done();
                 });
             });
         });
 
-        it('initiateMultipartUpload request should complete ' + 'creation of transient bucket', done => {
+        it('initiateMultipartUpload request should complete creation of transient bucket', done => {
             const initiateRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
             initiateRequest.objectKey = objName;
             initiateRequest.url = `/${objName}?uploads`;
@@ -230,7 +230,7 @@ describe('transient bucket handling', () => {
                     assert.strictEqual(data._transient, false);
                     assert.strictEqual(data._owner, authInfo.getCanonicalID());
                     metadata.listObject(
-                        `${constants.mpuBucketPrefix}` + `${bucketName}`,
+                        `${constants.mpuBucketPrefix}${bucketName}`,
                         { prefix: `overview${constants.splitter}${objName}` },
                         log,
                         (err, results) => {
@@ -244,7 +244,7 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('deleteBucket request should delete transient bucket if ' + 'request is from owner', done => {
+    it('deleteBucket request should delete transient bucket if request is from owner', done => {
         bucketDelete(authInfo, baseTestRequest, log, err => {
             assert.ifError(err);
             metadata.getBucket(bucketName, log, err => {
@@ -254,14 +254,14 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('deleteBucket request should return error if ' + 'request is not from owner', done => {
+    it('deleteBucket request should return error if request is not from owner', done => {
         bucketDelete(otherAccountAuthInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.AccessDenied, true);
             done();
         });
     });
 
-    it('bucketGet request on transient bucket should return NoSuchBucket' + 'error', done => {
+    it('bucketGet request on transient bucket should return NoSuchBucketerror', done => {
         const bucketGetRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         bucketGetRequest.url = `/${bucketName}`;
         bucketGetRequest.query = {};
@@ -271,7 +271,7 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('bucketGetACL request on transient bucket should return NoSuchBucket' + 'error', done => {
+    it('bucketGetACL request on transient bucket should return NoSuchBucketerror', done => {
         const bucketGetACLRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         bucketGetACLRequest.url = '/?acl';
         bucketGetACLRequest.query = { acl: '' };
@@ -281,14 +281,14 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('bucketGetCors request on transient bucket should return ' + 'NoSuchBucket error', done => {
+    it('bucketGetCors request on transient bucket should return NoSuchBucket error', done => {
         bucketGetCors(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('bucketPutCors request on transient bucket should return ' + 'NoSuchBucket error', done => {
+    it('bucketPutCors request on transient bucket should return NoSuchBucket error', done => {
         const bucketPutCorsRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         bucketPutCorsRequest.post =
             '<CORSConfiguration><CORSRule>' +
@@ -305,21 +305,21 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('bucketDeleteCors request on transient bucket should return ' + 'NoSuchBucket error', done => {
+    it('bucketDeleteCors request on transient bucket should return NoSuchBucket error', done => {
         bucketDeleteCors(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('bucketGetWebsite request on transient bucket should return ' + 'NoSuchBucket error', done => {
+    it('bucketGetWebsite request on transient bucket should return NoSuchBucket error', done => {
         bucketGetWebsite(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('bucketPutWebsite request on transient bucket should return ' + 'NoSuchBucket error', done => {
+    it('bucketPutWebsite request on transient bucket should return NoSuchBucket error', done => {
         const bucketPutWebsiteRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         bucketPutWebsiteRequest.post =
             '<WebsiteConfiguration>' +
@@ -331,21 +331,21 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('bucketDeleteWebsite request on transient bucket should return ' + 'NoSuchBucket error', done => {
+    it('bucketDeleteWebsite request on transient bucket should return NoSuchBucket error', done => {
         bucketDeleteWebsite(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('bucketHead request on transient bucket should return NoSuchBucket' + 'error', done => {
+    it('bucketHead request on transient bucket should return NoSuchBucketerror', done => {
         bucketHead(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('completeMultipartUpload request on transient bucket should ' + 'return NoSuchUpload error', done => {
+    it('completeMultipartUpload request on transient bucket should return NoSuchUpload error', done => {
         const completeMpuRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         const uploadId = '5555';
         completeMpuRequest.objectKey = 'objectName';
@@ -356,7 +356,7 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('listParts request on transient bucket should ' + 'return NoSuchUpload error', done => {
+    it('listParts request on transient bucket should return NoSuchUpload error', done => {
         const listRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         const uploadId = '5555';
         listRequest.objectKey = 'objectName';
@@ -396,7 +396,7 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('objectPutPart request on transient bucket should ' + 'return NoSuchUpload error', done => {
+    it('objectPutPart request on transient bucket should return NoSuchUpload error', done => {
         const putPartRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         const uploadId = '5555';
         putPartRequest.objectKey = 'objectName';
@@ -410,7 +410,7 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('list multipartUploads request on transient bucket should ' + 'return NoSuchBucket error', done => {
+    it('list multipartUploads request on transient bucket should return NoSuchBucket error', done => {
         const listRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         listRequest.query = {};
         listMultipartUploads(authInfo, listRequest, log, err => {
@@ -419,35 +419,35 @@ describe('transient bucket handling', () => {
         });
     });
 
-    it('objectGet request on transient bucket should' + 'return NoSuchBucket error', done => {
+    it('objectGet request on transient bucket shouldreturn NoSuchBucket error', done => {
         objectGet(authInfo, baseTestRequest, false, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('objectGetACL request on transient bucket should return ' + 'NoSuchBucket error', done => {
+    it('objectGetACL request on transient bucket should return NoSuchBucket error', done => {
         objectGetACL(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('objectHead request on transient bucket should return ' + 'NoSuchBucket error', done => {
+    it('objectHead request on transient bucket should return NoSuchBucket error', done => {
         objectHead(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('objectPutACL request on transient bucket should return ' + 'NoSuchBucket error', done => {
+    it('objectPutACL request on transient bucket should return NoSuchBucket error', done => {
         objectPutACL(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
 
-    it('objectDelete request on transient bucket should return ' + 'NoSuchBucket error', done => {
+    it('objectDelete request on transient bucket should return NoSuchBucket error', done => {
         objectDelete(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             done();

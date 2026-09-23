@@ -184,7 +184,7 @@ describe('s3curl put delete buckets', () => {
             },
         );
 
-        it('should not be able to put a bucket with invalid xml' + ' in the post body', done => {
+        it('should not be able to put a bucket with invalid xml in the post body', done => {
             provideRawOutput(
                 ['--createBucket', '--', '--data', 'malformedxml', bucketPath, '-v'],
                 (httpCode, rawOutput) => {
@@ -194,18 +194,15 @@ describe('s3curl put delete buckets', () => {
             );
         });
 
-        it(
-            'should not be able to put a bucket with xml that does' + ' not conform to s3 docs for locationConstraint',
-            done => {
-                provideRawOutput(
-                    ['--createBucket', '--', '--data', '<Hello>a</Hello>', bucketPath, '-v'],
-                    (httpCode, rawOutput) => {
-                        assert.strictEqual(httpCode, '400 BAD REQUEST');
-                        assertError(rawOutput.stdout, 'MalformedXML', done);
-                    },
-                );
-            },
-        );
+        it('should not be able to put a bucket with xml that does not conform to s3 docs for locationConstraint', done => {
+            provideRawOutput(
+                ['--createBucket', '--', '--data', '<Hello>a</Hello>', bucketPath, '-v'],
+                (httpCode, rawOutput) => {
+                    assert.strictEqual(httpCode, '400 BAD REQUEST');
+                    assertError(rawOutput.stdout, 'MalformedXML', done);
+                },
+            );
+        });
 
         it('should not be able to put a bucket with an invalid name', done => {
             provideRawOutput(['--createBucket', '--', `${endpoint}/2`, '-v'], (httpCode, rawOutput) => {
@@ -245,7 +242,7 @@ describe('s3curl put delete buckets', () => {
             });
         });
 
-        it('should be able to create a bucket with a name' + 'of a bucket that has previously been deleted', done => {
+        it('should be able to create a bucket with a nameof a bucket that has previously been deleted', done => {
             provideRawOutput(['--createBucket', '--', bucketPath, '-v'], httpCode => {
                 assert.strictEqual(httpCode, '200 OK');
                 done();
@@ -378,7 +375,7 @@ describe('s3curl putObject', () => {
 
     // curl behavior is not consistent across the environments
     // skipping the test for now
-    it.skip('should not be able to put an object if request does not have ' + 'content-length header', done => {
+    it.skip('should not be able to put an object if request does not have content-length header', done => {
         provideRawOutput(
             ['--debug', `--put=${upload}`, '--', '-H', 'content-length:', `${prefixedPath}${upload}1`, '-v'],
             (httpCode, rawOutput) => {
@@ -388,7 +385,7 @@ describe('s3curl putObject', () => {
         );
     });
 
-    it('should not be able to put an object if content-md5 header is ' + 'invalid', done => {
+    it('should not be able to put an object if content-md5 header is invalid', done => {
         provideRawOutput(
             [
                 '--debug',
@@ -407,7 +404,7 @@ describe('s3curl putObject', () => {
     });
 
     // skip until we figure out how to parse the response in the CI
-    it.skip('should not be able to put an object if content-md5 header is ' + 'mismatched MD5', done => {
+    it.skip('should not be able to put an object if content-md5 header is mismatched MD5', done => {
         provideRawOutput(
             [
                 '--debug',
@@ -425,7 +422,7 @@ describe('s3curl putObject', () => {
         );
     });
 
-    it('should not be able to put an object if using streaming ' + 'chunked-upload with a valid V2 signature', done => {
+    it('should not be able to put an object if using streaming chunked-upload with a valid V2 signature', done => {
         provideRawOutput(
             [
                 '--debug',
@@ -473,21 +470,21 @@ describe('s3curl putObject', () => {
         );
     });
 
-    it('should put first object in existing bucket with prefix ' + 'and delimiter', done => {
+    it('should put first object in existing bucket with prefix and delimiter', done => {
         provideRawOutput(['--debug', `--put=${upload}`, '--', `${prefixedPath}${upload}1`, '-v'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
     });
 
-    it('should put second object in existing bucket with prefix ' + 'and delimiter', done => {
+    it('should put second object in existing bucket with prefix and delimiter', done => {
         provideRawOutput([`--put=${upload}`, '--', `${prefixedPath}${upload}2`, '-v'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
     });
 
-    it('should put third object in existing bucket with prefix ' + 'and delimiter', done => {
+    it('should put third object in existing bucket with prefix and delimiter', done => {
         provideRawOutput([`--put=${upload}`, '--', `${prefixedPath}${upload}3`, '-v'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
@@ -527,7 +524,7 @@ describe('s3curl getBucket', () => {
         });
     });
 
-    it('should list a common prefix if a common prefix and delimiter are ' + 'specified', done => {
+    it('should list a common prefix if a common prefix and delimiter are specified', done => {
         provideRawOutput(
             ['--', `${bucketPath}?delimiter=${delimiter}&prefix=${prefix}`, '-v'],
             (httpCode, rawOutput) => {
@@ -559,7 +556,7 @@ describe('s3curl getBucket', () => {
         });
     });
 
-    it('should provide a next marker if maxs keys exceeded ' + 'and delimiter specified', done => {
+    it('should provide a next marker if maxs keys exceeded and delimiter specified', done => {
         provideRawOutput(['--', `${bucketPath}?delimiter=x&max-keys=2`, '-v'], (httpCode, rawOutput) => {
             assert.strictEqual(httpCode, '200 OK');
             parseString(rawOutput.stdout, (err, result) => {
@@ -600,7 +597,7 @@ describe('s3curl getBucket', () => {
         });
     });
 
-    it('should return an InvalidArgument error when given an invalid ' + 'encoding type', done => {
+    it('should return an InvalidArgument error when given an invalid encoding type', done => {
         provideRawOutput(['--', bucketPath, '-G', '-d', 'encoding-type=invalidURI', '-v'], (httpCode, rawOutput) => {
             assert.strictEqual(httpCode, '400 BAD REQUEST');
             parseString(rawOutput.stdout, (err, result) => {
@@ -634,7 +631,7 @@ describe('s3curl head bucket', () => {
         });
     });
 
-    it('should return a 200 response if bucket exists' + ' and user is authorized', done => {
+    it('should return a 200 response if bucket exists and user is authorized', done => {
         provideRawOutput(['--head', '--', bucketPath, '-v'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
@@ -815,7 +812,7 @@ describe('s3curl object ACLs', () => {
         });
     });
 
-    it('should return a NoSuchKey error if try to get an object' + 'ACL for an object that does not exist', done => {
+    it('should return a NoSuchKey error if try to get an objectACL for an object that does not exist', done => {
         provideRawOutput(['--', `${bucketPath}/keydoesnotexist?acl`, '-v'], (httpCode, rawOutput) => {
             assert.strictEqual(httpCode, '404 NOT FOUND');
             assertError(rawOutput.stdout, 'NoSuchKey', done);

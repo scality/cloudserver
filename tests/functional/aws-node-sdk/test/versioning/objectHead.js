@@ -44,26 +44,23 @@ describe('put and head object with versioning', function testSuite() {
             await s3.send(new DeleteBucketCommand({ Bucket: bucket }));
         });
 
-        it(
-            'should put and head a non-versioned object without including ' + 'version ids in response headers',
-            done => {
-                const params = { Bucket: bucket, Key: key };
-                s3.send(new PutObjectCommand(params))
-                    .then(data => {
-                        _assertNoError(null, 'putting object');
-                        assert.strictEqual(data.VersionId, undefined);
-                        return s3.send(new HeadObjectCommand(params));
-                    })
-                    .then(data => {
-                        _assertNoError(null, 'heading object');
-                        assert.strictEqual(data.VersionId, undefined);
-                        done();
-                    })
-                    .catch(done);
-            },
-        );
+        it('should put and head a non-versioned object without including version ids in response headers', done => {
+            const params = { Bucket: bucket, Key: key };
+            s3.send(new PutObjectCommand(params))
+                .then(data => {
+                    _assertNoError(null, 'putting object');
+                    assert.strictEqual(data.VersionId, undefined);
+                    return s3.send(new HeadObjectCommand(params));
+                })
+                .then(data => {
+                    _assertNoError(null, 'heading object');
+                    assert.strictEqual(data.VersionId, undefined);
+                    done();
+                })
+                .catch(done);
+        });
 
-        it('version-specific head should still not return version id in ' + 'response header', done => {
+        it('version-specific head should still not return version id in response header', done => {
             const params = { Bucket: bucket, Key: key };
             s3.send(new PutObjectCommand(params))
                 .then(data => {

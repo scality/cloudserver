@@ -105,7 +105,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                     bucketUtil
                         .createOne(bucketName)
                         .then(() => {
-                            const e = new Error('Expect failure in creation, ' + 'but it succeeded');
+                            const e = new Error('Expect failure in creation, but it succeeded');
 
                             return done(e);
                         })

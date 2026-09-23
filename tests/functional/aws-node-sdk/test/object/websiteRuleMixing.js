@@ -147,7 +147,7 @@ describe(
 
             afterEach(async () => await bucketUtil.empty(bucket));
 
-            it('should return 403 instead of x-amz-website-redirect-location ' + 'header location', done => {
+            it('should return 403 instead of x-amz-website-redirect-location header location', done => {
                 WebsiteConfigTester.checkHTML(
                     {
                         method: 'GET',
@@ -158,22 +158,19 @@ describe(
                 );
             });
 
-            it(
-                'should return 403 instead of x-amz-website-redirect-location ' + 'header location on HEAD request',
-                done => {
-                    WebsiteConfigTester.checkHTML(
-                        {
-                            method: 'HEAD',
-                            url: endpoint,
-                            responseType: '403-access-denied',
-                        },
-                        done,
-                    );
-                },
-            );
+            it('should return 403 instead of x-amz-website-redirect-location header location on HEAD request', done => {
+                WebsiteConfigTester.checkHTML(
+                    {
+                        method: 'HEAD',
+                        url: endpoint,
+                        responseType: '403-access-denied',
+                    },
+                    done,
+                );
+            });
         });
 
-        describe('when key with header is private' + 'and website config has error condition routing rule', () => {
+        describe('when key with header is privateand website config has error condition routing rule', () => {
             beforeEach(async () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {

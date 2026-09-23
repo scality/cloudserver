@@ -357,67 +357,61 @@ describeSkipIfNotMultiple('MultipleBackend object copy: Azure', function testSui
             });
         });
 
-        it(
-            'should copy an object from Azure to mem with "REPLACE" directive ' + 'and no location constraint md',
-            function itFn(done) {
-                putSourceObj(this.test.key, azureLocation, null, bucket, () => {
-                    const copyParams = {
-                        Bucket: bucket,
-                        Key: this.test.copyKey,
-                        CopySource: `/${bucket}/${this.test.key}`,
-                        MetadataDirective: 'REPLACE',
-                    };
-                    s3.send(new CopyObjectCommand(copyParams))
-                        .then(result => {
-                            assert.strictEqual(result.CopyObjectResult.ETag, `"${normalMD5}"`);
-                            assertGetObjects(
-                                this.test.key,
-                                bucket,
-                                azureLocation,
-                                this.test.copyKey,
-                                bucket,
-                                undefined,
-                                this.test.key,
-                                'REPLACE',
-                                null,
-                                done,
-                            );
-                        })
-                        .catch(err => done(new Error(`Expected success but got error: ${err}`)));
-                });
-            },
-        );
+        it('should copy an object from Azure to mem with "REPLACE" directive and no location constraint md', function itFn(done) {
+            putSourceObj(this.test.key, azureLocation, null, bucket, () => {
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: this.test.copyKey,
+                    CopySource: `/${bucket}/${this.test.key}`,
+                    MetadataDirective: 'REPLACE',
+                };
+                s3.send(new CopyObjectCommand(copyParams))
+                    .then(result => {
+                        assert.strictEqual(result.CopyObjectResult.ETag, `"${normalMD5}"`);
+                        assertGetObjects(
+                            this.test.key,
+                            bucket,
+                            azureLocation,
+                            this.test.copyKey,
+                            bucket,
+                            undefined,
+                            this.test.key,
+                            'REPLACE',
+                            null,
+                            done,
+                        );
+                    })
+                    .catch(err => done(new Error(`Expected success but got error: ${err}`)));
+            });
+        });
 
-        it(
-            'should copy an object from mem to Azure with "REPLACE" directive ' + 'and no location constraint md',
-            function itFn(done) {
-                putSourceObj(this.test.key, null, null, bucket, () => {
-                    const copyParams = {
-                        Bucket: bucketAzure,
-                        Key: this.test.copyKey,
-                        CopySource: `/${bucket}/${this.test.key}`,
-                        MetadataDirective: 'REPLACE',
-                    };
-                    s3.send(new CopyObjectCommand(copyParams))
-                        .then(result => {
-                            assert.strictEqual(result.CopyObjectResult.ETag, `"${normalMD5}"`);
-                            assertGetObjects(
-                                this.test.key,
-                                bucket,
-                                undefined,
-                                this.test.copyKey,
-                                bucketAzure,
-                                undefined,
-                                this.test.copyKey,
-                                'REPLACE',
-                                null,
-                                done,
-                            );
-                        })
-                        .catch(err => done(new Error(`Expected success but got error: ${err}`)));
-                });
-            },
-        );
+        it('should copy an object from mem to Azure with "REPLACE" directive and no location constraint md', function itFn(done) {
+            putSourceObj(this.test.key, null, null, bucket, () => {
+                const copyParams = {
+                    Bucket: bucketAzure,
+                    Key: this.test.copyKey,
+                    CopySource: `/${bucket}/${this.test.key}`,
+                    MetadataDirective: 'REPLACE',
+                };
+                s3.send(new CopyObjectCommand(copyParams))
+                    .then(result => {
+                        assert.strictEqual(result.CopyObjectResult.ETag, `"${normalMD5}"`);
+                        assertGetObjects(
+                            this.test.key,
+                            bucket,
+                            undefined,
+                            this.test.copyKey,
+                            bucketAzure,
+                            undefined,
+                            this.test.copyKey,
+                            'REPLACE',
+                            null,
+                            done,
+                        );
+                    })
+                    .catch(err => done(new Error(`Expected success but got error: ${err}`)));
+            });
+        });
 
         it(
             'should copy an object from Azure to Azure showing sending ' +
@@ -484,100 +478,91 @@ describeSkipIfNotMultiple('MultipleBackend object copy: Azure', function testSui
             },
         );
 
-        it(
-            'should copy an object from Azure to mem because bucket ' + 'destination location is mem',
-            function itFn(done) {
-                putSourceObj(this.test.key, azureLocation, null, bucket, () => {
-                    const copyParams = {
-                        Bucket: bucket,
-                        Key: this.test.copyKey,
-                        CopySource: `/${bucket}/${this.test.key}`,
-                        MetadataDirective: 'COPY',
-                    };
-                    s3.send(new CopyObjectCommand(copyParams))
-                        .then(result => {
-                            assert.strictEqual(result.CopyObjectResult.ETag, `"${normalMD5}"`);
-                            assertGetObjects(
-                                this.test.key,
-                                bucket,
-                                azureLocation,
-                                this.test.copyKey,
-                                bucket,
-                                memLocation,
-                                this.test.key,
-                                'COPY',
-                                null,
-                                done,
-                            );
-                        })
-                        .catch(err => done(new Error(`Expected success but got error: ${err}`)));
-                });
-            },
-        );
+        it('should copy an object from Azure to mem because bucket destination location is mem', function itFn(done) {
+            putSourceObj(this.test.key, azureLocation, null, bucket, () => {
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: this.test.copyKey,
+                    CopySource: `/${bucket}/${this.test.key}`,
+                    MetadataDirective: 'COPY',
+                };
+                s3.send(new CopyObjectCommand(copyParams))
+                    .then(result => {
+                        assert.strictEqual(result.CopyObjectResult.ETag, `"${normalMD5}"`);
+                        assertGetObjects(
+                            this.test.key,
+                            bucket,
+                            azureLocation,
+                            this.test.copyKey,
+                            bucket,
+                            memLocation,
+                            this.test.key,
+                            'COPY',
+                            null,
+                            done,
+                        );
+                    })
+                    .catch(err => done(new Error(`Expected success but got error: ${err}`)));
+            });
+        });
 
-        it(
-            'should copy an object on Azure to a different Azure ' + 'account without source object READ access',
-            function itFn(done) {
-                putSourceObj(this.test.key, azureLocation2, null, bucket, () => {
-                    const copyParams = {
-                        Bucket: bucket,
-                        Key: this.test.copyKey,
-                        CopySource: `/${bucket}/${this.test.key}`,
-                        MetadataDirective: 'REPLACE',
-                        Metadata: { 'scal-location-constraint': azureLocation },
-                    };
-                    s3.send(new CopyObjectCommand(copyParams))
-                        .then(result => {
-                            assert.strictEqual(result.CopyObjectResult.ETag, `"${normalMD5}"`);
-                            assertGetObjects(
-                                this.test.key,
-                                bucket,
-                                azureLocation2,
-                                this.test.copyKey,
-                                bucket,
-                                azureLocation,
-                                this.test.copyKey,
-                                'REPLACE',
-                                null,
-                                done,
-                            );
-                        })
-                        .catch(err => done(new Error(`Expected success but got error: ${err}`)));
-                });
-            },
-        );
+        it('should copy an object on Azure to a different Azure account without source object READ access', function itFn(done) {
+            putSourceObj(this.test.key, azureLocation2, null, bucket, () => {
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: this.test.copyKey,
+                    CopySource: `/${bucket}/${this.test.key}`,
+                    MetadataDirective: 'REPLACE',
+                    Metadata: { 'scal-location-constraint': azureLocation },
+                };
+                s3.send(new CopyObjectCommand(copyParams))
+                    .then(result => {
+                        assert.strictEqual(result.CopyObjectResult.ETag, `"${normalMD5}"`);
+                        assertGetObjects(
+                            this.test.key,
+                            bucket,
+                            azureLocation2,
+                            this.test.copyKey,
+                            bucket,
+                            azureLocation,
+                            this.test.copyKey,
+                            'REPLACE',
+                            null,
+                            done,
+                        );
+                    })
+                    .catch(err => done(new Error(`Expected success but got error: ${err}`)));
+            });
+        });
 
-        it(
-            'should copy a 5MB object on Azure to a different Azure ' + 'account without source object READ access',
-            function itFn(done) {
-                putSourceObj(this.test.key, azureLocation2, { big: true }, bucket, () => {
-                    const copyParams = {
-                        Bucket: bucket,
-                        Key: this.test.copyKey,
-                        CopySource: `/${bucket}/${this.test.key}`,
-                        MetadataDirective: 'REPLACE',
-                        Metadata: { 'scal-location-constraint': azureLocation },
-                    };
-                    s3.send(new CopyObjectCommand(copyParams))
-                        .then(result => {
-                            assert.strictEqual(result.CopyObjectResult.ETag, `"${bigMD5}"`);
-                            assertGetObjects(
-                                this.test.key,
-                                bucket,
-                                azureLocation2,
-                                this.test.copyKey,
-                                bucket,
-                                azureLocation,
-                                this.test.copyKey,
-                                'REPLACE',
-                                { big: true },
-                                done,
-                            );
-                        })
-                        .catch(err => done(new Error(`Expected success but got error: ${err}`)));
-                });
-            },
-        );
+        it('should copy a 5MB object on Azure to a different Azure account without source object READ access', function itFn(done) {
+            putSourceObj(this.test.key, azureLocation2, { big: true }, bucket, () => {
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: this.test.copyKey,
+                    CopySource: `/${bucket}/${this.test.key}`,
+                    MetadataDirective: 'REPLACE',
+                    Metadata: { 'scal-location-constraint': azureLocation },
+                };
+                s3.send(new CopyObjectCommand(copyParams))
+                    .then(result => {
+                        assert.strictEqual(result.CopyObjectResult.ETag, `"${bigMD5}"`);
+                        assertGetObjects(
+                            this.test.key,
+                            bucket,
+                            azureLocation2,
+                            this.test.copyKey,
+                            bucket,
+                            azureLocation,
+                            this.test.copyKey,
+                            'REPLACE',
+                            { big: true },
+                            done,
+                        );
+                    })
+                    .catch(err => done(new Error(`Expected success but got error: ${err}`)));
+            });
+        });
 
         it(
             'should copy an object from bucketmatch=false ' +

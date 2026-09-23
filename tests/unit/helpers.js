@@ -67,7 +67,7 @@ function timeDiff(startTime) {
 function makeAuthInfo(accessKey, userName) {
     const canIdMap = {
         accessKey1: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7' + 'cd47ef2be',
-        accessKey2: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7' + 'cd47ef2bf',
+        accessKey2: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf',
         lifecycleKey1: '0123456789abcdef/lifecycle',
         default: crypto.randomBytes(32).toString('hex'),
     };
@@ -135,7 +135,7 @@ class WebsiteConfig {
             });
         }
 
-        xml.push('<WebsiteConfiguration xmlns=' + '"http://s3.amazonaws.com/doc/2006-03-01/">');
+        xml.push('<WebsiteConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">');
 
         if (this.IndexDocument) {
             xml.push('<IndexDocument>', `<Suffix>${this.IndexDocument.Suffix}</Suffix>`, '</IndexDocument>');
@@ -482,7 +482,7 @@ class AccessControlPolicy {
                 }
             });
         }
-        xml.push('<AccessControlPolicy xmlns=' + '"http://s3.amazonaws.com/doc/2006-03-01/">', '<Owner>');
+        xml.push('<AccessControlPolicy xmlns="http://s3.amazonaws.com/doc/2006-03-01/">', '<Owner>');
         _pushChildren(this.Owner);
         xml.push('</Owner>', '<AccessControlList>');
         this.AccessControlList.forEach(grant => {

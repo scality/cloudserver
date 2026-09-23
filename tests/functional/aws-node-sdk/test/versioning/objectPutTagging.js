@@ -208,7 +208,7 @@ describe('Put object tagging with versioning', () => {
             );
         });
 
-        it('should return InvalidArgument putting tag with a non existing ' + 'version id', done => {
+        it('should return InvalidArgument putting tag with a non existing version id', done => {
             async.waterfall(
                 [
                     next =>

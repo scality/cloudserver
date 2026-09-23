@@ -42,7 +42,7 @@ describe('Preflight CORS request on non-existing bucket', () => {
         const headers = {};
         methodRequest({ method: 'OPTIONS', bucket, headers, code: 'BadRequest', headersResponse: null }, done);
     });
-    it('should return BadRequest for OPTIONS request without ' + 'Access-Control-Request-Method', done => {
+    it('should return BadRequest for OPTIONS request without Access-Control-Request-Method', done => {
         const headers = {
             Origin: allowedOrigin,
         };
@@ -62,19 +62,19 @@ describe('Preflight CORS request with existing bucket', () => {
             .catch(err => _waitForAWS(done, err));
     });
 
-    it('should allow GET on bucket without cors configuration even if ' + 'Origin header sent', done => {
+    it('should allow GET on bucket without cors configuration even if Origin header sent', done => {
         const headers = {
             Origin: allowedOrigin,
         };
         methodRequest({ method: 'GET', bucket, headers, code: 200, headersResponse: null }, done);
     });
-    it('should allow HEAD on bucket without cors configuration even if ' + 'Origin header sent', done => {
+    it('should allow HEAD on bucket without cors configuration even if Origin header sent', done => {
         const headers = {
             Origin: allowedOrigin,
         };
         methodRequest({ method: 'HEAD', bucket, headers, code: 200, headersResponse: null }, done);
     });
-    it('should respond AccessForbidden for OPTIONS request on bucket without ' + 'CORSConfiguration', done => {
+    it('should respond AccessForbidden for OPTIONS request on bucket without CORSConfiguration', done => {
         const headers = {
             Origin: allowedOrigin,
             'Access-Control-Request-Method': 'GET',
@@ -82,7 +82,7 @@ describe('Preflight CORS request with existing bucket', () => {
         methodRequest({ method: 'OPTIONS', bucket, headers, code: 'AccessForbidden', headersResponse: null }, done);
     });
 
-    describe('allow PUT, POST, DELETE, GET methods and allow only ' + 'one origin', () => {
+    describe('allow PUT, POST, DELETE, GET methods and allow only one origin', () => {
         const corsParams = {
             Bucket: bucket,
             CORSConfiguration: {
@@ -126,7 +126,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 },
             );
         });
-        it('should respond AccessForbidden to OPTIONS request from ' + 'not allowed origin', done => {
+        it('should respond AccessForbidden to OPTIONS request from not allowed origin', done => {
             const headers = {
                 Origin: allowedOrigin,
                 'Access-Control-Request-Method': 'GET',
@@ -134,19 +134,13 @@ describe('Preflight CORS request with existing bucket', () => {
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 'AccessForbidden', headersResponse: null }, done);
         });
-        it(
-            'should respond AccessForbidden to OPTIONS request with ' + 'not allowed Access-Control-Request-Headers',
-            done => {
-                const headers = {
-                    Origin: 'http://www.forbiddenwebsite.com',
-                    'Access-Control-Request-Method': 'GET',
-                };
-                methodRequest(
-                    { method: 'OPTIONS', bucket, headers, code: 'AccessForbidden', headersResponse: null },
-                    done,
-                );
-            },
-        );
+        it('should respond AccessForbidden to OPTIONS request with not allowed Access-Control-Request-Headers', done => {
+            const headers = {
+                Origin: 'http://www.forbiddenwebsite.com',
+                'Access-Control-Request-Method': 'GET',
+            };
+            methodRequest({ method: 'OPTIONS', bucket, headers, code: 'AccessForbidden', headersResponse: null }, done);
+        });
     });
 
     describe('CORS allows method GET and allows one origin', () => {
@@ -190,19 +184,13 @@ describe('Preflight CORS request with existing bucket', () => {
                 methodRequest({ method: 'OPTIONS', bucket, headers, code: 200, headersResponse }, done);
             },
         );
-        it(
-            'should respond AccessForbidden to OPTIONS request with allowed ' + 'method but not from allowed origin',
-            done => {
-                const headers = {
-                    Origin: 'http://www.forbiddenwebsite.com',
-                    'Access-Control-Request-Method': 'GET',
-                };
-                methodRequest(
-                    { method: 'OPTIONS', bucket, headers, code: 'AccessForbidden', headersResponse: null },
-                    done,
-                );
-            },
-        );
+        it('should respond AccessForbidden to OPTIONS request with allowed method but not from allowed origin', done => {
+            const headers = {
+                Origin: 'http://www.forbiddenwebsite.com',
+                'Access-Control-Request-Method': 'GET',
+            };
+            methodRequest({ method: 'OPTIONS', bucket, headers, code: 'AccessForbidden', headersResponse: null }, done);
+        });
         it(
             'should respond AccessForbidden to OPTIONS request from allowed ' +
                 'origin and method but with not allowed Access-Control-Request-Headers',

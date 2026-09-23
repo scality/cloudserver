@@ -99,23 +99,20 @@ describe('PUT object retention', () => {
             }
         });
 
-        it(
-            'should return InvalidRequest error putting retention to object in bucket with no object lock ' + 'enabled',
-            async () => {
-                try {
-                    await s3.send(
-                        new PutObjectRetentionCommand({
-                            Bucket: unlockedBucket,
-                            Key: objectName,
-                            Retention: retentionConfig,
-                        }),
-                    );
-                    assert.fail('Expected error');
-                } catch (err) {
-                    checkError(err, 'InvalidRequest', 400);
-                }
-            },
-        );
+        it('should return InvalidRequest error putting retention to object in bucket with no object lock enabled', async () => {
+            try {
+                await s3.send(
+                    new PutObjectRetentionCommand({
+                        Bucket: unlockedBucket,
+                        Key: objectName,
+                        Retention: retentionConfig,
+                    }),
+                );
+                assert.fail('Expected error');
+            } catch (err) {
+                checkError(err, 'InvalidRequest', 400);
+            }
+        });
 
         it('should return MethodNotAllowed if object version is delete marker', async () => {
             await s3.send(new DeleteObjectCommand({ Bucket: bucketName, Key: objectName }));

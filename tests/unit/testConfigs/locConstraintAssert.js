@@ -50,7 +50,7 @@ describe('locationConstraintAssert', () => {
                 locationConstraintAssert({ notObject: '' });
             },
             err => {
-                assert.strictEqual(err.message, 'bad config: ' + 'locationConstraints[region] must be an object');
+                assert.strictEqual(err.message, 'bad config: locationConstraints[region] must be an object');
                 return true;
             },
         );
@@ -133,7 +133,7 @@ describe('locationConstraintAssert', () => {
         const locationConstraint = new LocationConstraint();
         assert.throws(() => {
             locationConstraintAssert({ 'not-us-east-1': locationConstraint });
-        }, '/bad locationConfig: must ' + 'include us-east-1 as a locationConstraint/');
+        }, '/bad locationConfig: must include us-east-1 as a locationConstraint/');
     });
     it('should not throw error for a valid azure location constraint', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
@@ -142,7 +142,7 @@ describe('locationConstraintAssert', () => {
             locationConstraintAssert({ azurefaketest: locationConstraint, 'us-east-1': usEast1 });
         }, '/should not throw for a valid azure location constraint/');
     });
-    it('should throw error if type is azure and azureContainerName is ' + 'not specified', () => {
+    it('should throw error if type is azure and azureContainerName is not specified', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure',
@@ -155,9 +155,9 @@ describe('locationConstraintAssert', () => {
                 'us-east-1': usEast1,
                 azurefaketest: locationConstraint,
             });
-        }, '/bad location constraint: ' + '"azurefaketest" azureContainerName must be defined/');
+        }, '/bad location constraint: "azurefaketest" azureContainerName must be defined/');
     });
-    it('should throw error if type is azure and azureContainerName is ' + 'invalid value', () => {
+    it('should throw error if type is azure and azureContainerName is invalid value', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure',
@@ -170,9 +170,9 @@ describe('locationConstraintAssert', () => {
                 'us-east-1': usEast1,
                 azurefaketest: locationConstraint,
             });
-        }, '/bad location constraint: "azurefaketest" ' + 'azureContainerName is an invalid container name/');
+        }, '/bad location constraint: "azurefaketest" azureContainerName is an invalid container name/');
     });
-    it('should throw error if type is azure and azureStorageEndpoint ' + 'is not specified', () => {
+    it('should throw error if type is azure and azureStorageEndpoint is not specified', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure',
@@ -192,7 +192,7 @@ describe('locationConstraintAssert', () => {
                 'or environment variable/',
         );
     });
-    it('should throw error if type is azure and azureStorageAccountName ' + 'is not specified', () => {
+    it('should throw error if type is azure and azureStorageAccountName is not specified', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure',
@@ -212,7 +212,7 @@ describe('locationConstraintAssert', () => {
                 'or environment variable/',
         );
     });
-    it('should throw error if type is azure and azureStorageAccountName ' + 'is invalid value', () => {
+    it('should throw error if type is azure and azureStorageAccountName is invalid value', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure',
@@ -227,7 +227,7 @@ describe('locationConstraintAssert', () => {
             });
         }, '/bad location constraint: "azurefaketest" ' + 'azureStorageAccountName "invalid!!!" is an invalid value/');
     });
-    it('should throw error if type is azure and azureStorageAccessKey ' + 'is not specified', () => {
+    it('should throw error if type is azure and azureStorageAccessKey is not specified', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure',
@@ -247,7 +247,7 @@ describe('locationConstraintAssert', () => {
                 'or environment variable/',
         );
     });
-    it('should throw error if type is azure and azureStorageAccessKey ' + 'is not a valid base64 string', () => {
+    it('should throw error if type is azure and azureStorageAccessKey is not a valid base64 string', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure',
@@ -260,7 +260,7 @@ describe('locationConstraintAssert', () => {
                 'us-east-1': usEast1,
                 azurefaketest: locationConstraint,
             });
-        }, '/bad location constraint: "azurefaketest" ' + 'azureStorageAccessKey is not a valid base64 string/');
+        }, '/bad location constraint: "azurefaketest" azureStorageAccessKey is not a valid base64 string/');
     });
 
     it('should set https to true by default', () => {
@@ -271,7 +271,7 @@ describe('locationConstraintAssert', () => {
                 'us-east-1': usEast1,
                 awshttpsDefault: locationConstraint,
             });
-        }, '/bad location constraint awshttpsDefault,' + 'incorrect default config for https');
+        }, '/bad location constraint awshttpsDefault,incorrect default config for https');
         assert.strictEqual(locationConstraint.details.https, true, 'https config should be true');
     });
 
@@ -285,7 +285,7 @@ describe('locationConstraintAssert', () => {
                 'us-east-1': usEast1,
                 awshttpsFalse: locationConstraint,
             });
-        }, '/bad location constraint awshttpsFalse,' + 'incorrect config for https');
+        }, '/bad location constraint awshttpsFalse,incorrect config for https');
         assert.strictEqual(locationConstraint.details.https, false, 'https config should be false');
     });
 
@@ -321,7 +321,7 @@ describe('locationConstraintAssert', () => {
                 'us-east-1': usEast1,
                 awsstoragesizelimit: locationConstraint,
             });
-        }, '/bad config: locationConstraints[region].sizeLimitGB ' + 'must be a number (in gigabytes)');
+        }, '/bad config: locationConstraints[region].sizeLimitGB must be a number (in gigabytes)');
     });
 
     it('should throw error if objectId is not set', () => {
@@ -329,7 +329,7 @@ describe('locationConstraintAssert', () => {
         const locationConstraint = new LocationConstraint('azure', undefined, true, getAzureDetails());
         assert.throws(() => {
             locationConstraintAssert({ azurefaketest: locationConstraint, 'us-east-1': usEast1 });
-        }, '/bad config: locationConstraints[region].objectId is mandatory ' + 'and must be a unique string across locations');
+        }, '/bad config: locationConstraints[region].objectId is mandatory and must be a unique string across locations');
     });
 
     it('should throw error if objectId is duplicated', () => {
@@ -337,6 +337,6 @@ describe('locationConstraintAssert', () => {
         const locationConstraint = new LocationConstraint('azure', 'locId1', true, getAzureDetails());
         assert.throws(() => {
             locationConstraintAssert({ azurefaketest: locationConstraint, 'us-east-1': usEast1 });
-        }, '/bad config: location constraint objectId "locId1" is not unique ' + 'across configured locations');
+        }, '/bad config: location constraint objectId "locId1" is not unique across configured locations');
     });
 });

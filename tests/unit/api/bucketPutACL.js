@@ -94,7 +94,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should set a canned public-read ACL followed by ' + 'a canned authenticated-read ACL', done => {
+    it('should set a canned public-read ACL followed by a canned authenticated-read ACL', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -132,7 +132,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should set a canned private ACL ' + 'followed by a log-delivery-write ACL', done => {
+    it('should set a canned private ACL followed by a log-delivery-write ACL', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -255,7 +255,7 @@ describe('putBucketACL API', () => {
         );
     });
 
-    it('should return an error if invalid email ' + 'provided in ACL header request', done => {
+    it('should return an error if invalid email provided in ACL header request', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -448,7 +448,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid grantee user ID ' + 'provided in ACL request body', done => {
+    it('should return an error if invalid grantee user ID provided in ACL request body', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -481,7 +481,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid email ' + 'address provided in ACLs set out in request body', done => {
+    it('should return an error if invalid email address provided in ACLs set out in request body', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -513,7 +513,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if xml provided does not match s3 ' + 'scheme for setting ACLs', done => {
+    it('should return an error if xml provided does not match s3 scheme for setting ACLs', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -635,7 +635,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid group ' + 'uri provided in ACLs set out in request body', done => {
+    it('should return an error if invalid group uri provided in ACLs set out in request body', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -670,7 +670,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid group uri' + 'provided in ACL header request', done => {
+    it('should return an error if invalid group uriprovided in ACL header request', done => {
         const testACLRequest = {
             bucketName,
             namespace,

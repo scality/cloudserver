@@ -130,19 +130,16 @@ describe('delete marker creation', () => {
         });
     }
 
-    it(
-        'should create a delete marker if versioning enabled and deleting ' + 'object without specifying version id',
-        done => {
-            objectDelete(authInfo, testDeleteRequest, log, (err, delResHeaders) => {
-                if (err) {
-                    return done(err);
-                }
-                assert.strictEqual(delResHeaders['x-amz-delete-marker'], true);
-                assert(delResHeaders['x-amz-version-id']);
-                return _assertDeleteMarkerMd(delResHeaders['x-amz-version-id'], true, done);
-            });
-        },
-    );
+    it('should create a delete marker if versioning enabled and deleting object without specifying version id', done => {
+        objectDelete(authInfo, testDeleteRequest, log, (err, delResHeaders) => {
+            if (err) {
+                return done(err);
+            }
+            assert.strictEqual(delResHeaders['x-amz-delete-marker'], true);
+            assert(delResHeaders['x-amz-version-id']);
+            return _assertDeleteMarkerMd(delResHeaders['x-amz-version-id'], true, done);
+        });
+    });
 
     it(
         'multi-object delete should create delete markers if versioning ' +

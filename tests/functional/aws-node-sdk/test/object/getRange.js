@@ -56,13 +56,10 @@ describe('aws-node-sdk range test of large end position', () => {
             await bucketUtil.deleteOne(bucketName);
         });
 
-        it('should get the final 90 bytes of a 2890 byte object for a byte ' + 'range of 2800-', done =>
-            endRangeTest('bytes=2800-', 'bytes 2800-2889/2890', done),
-        );
+        it('should get the final 90 bytes of a 2890 byte object for a byte range of 2800-', done =>
+            endRangeTest('bytes=2800-', 'bytes 2800-2889/2890', done));
 
-        it(
-            'should get the final 90 bytes of a 2890 byte object for a byte ' + 'range of 2800-Number.MAX_SAFE_INTEGER',
-            done => endRangeTest(`bytes=2800-${Number.MAX_SAFE_INTEGER}`, 'bytes 2800-2889/2890', done),
-        );
+        it('should get the final 90 bytes of a 2890 byte object for a byte range of 2800-Number.MAX_SAFE_INTEGER', done =>
+            endRangeTest(`bytes=2800-${Number.MAX_SAFE_INTEGER}`, 'bytes 2800-2889/2890', done));
     });
 });

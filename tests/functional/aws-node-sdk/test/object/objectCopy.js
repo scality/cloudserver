@@ -554,21 +554,18 @@ describe('Object Copy', () => {
             await successCopyCheck(null, res.CopyObjectResult, newMetadata, sourceBucketName, sourceObjName);
         });
 
-        it(
-            'should copy an object and replace the metadata if replace ' + 'included as metadata directive header',
-            async () => {
-                const res = await s3.send(
-                    new CopyObjectCommand({
-                        Bucket: destBucketName,
-                        Key: destObjName,
-                        CopySource: `${sourceBucketName}/${sourceObjName}`,
-                        MetadataDirective: 'REPLACE',
-                        Metadata: newMetadata,
-                    }),
-                );
-                await successCopyCheck(null, res.CopyObjectResult, newMetadata, destBucketName, destObjName);
-            },
-        );
+        it('should copy an object and replace the metadata if replace included as metadata directive header', async () => {
+            const res = await s3.send(
+                new CopyObjectCommand({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    MetadataDirective: 'REPLACE',
+                    Metadata: newMetadata,
+                }),
+            );
+            await successCopyCheck(null, res.CopyObjectResult, newMetadata, destBucketName, destObjName);
+        });
 
         it(
             'should copy an object and replace ContentType if replace ' +

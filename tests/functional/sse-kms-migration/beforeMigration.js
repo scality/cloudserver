@@ -519,42 +519,39 @@ describe('SSE KMS before migration', () => {
         }),
     );
 
-    it(
-        'should prepare encrypted MPU and copy parts from ' + 'every buckets and objects matrice without completion',
-        async () => {
-            await helpers.s3.putBucketEncryption({
-                Bucket: mpuCopyBkt,
-                // AES256 because input key is broken for now
-                ServerSideEncryptionConfiguration: helpers.hydrateSSEConfig({ algo: 'AES256' }),
-            });
-            const mpuKey = 'mpucopy';
-            const mpu = await helpers.s3.createMultipartUpload(helpers.putObjParams(mpuCopyBkt, mpuKey, {}, null));
-            const copyPartArg = {
-                UploadId: mpu.UploadId,
-                Bucket: mpuCopyBkt,
-                Key: mpuKey,
-            };
-            // For each test Case bucket and object copy a part
-            const uploadPromises = scenarios.testCases.reduce((acc, bktConf, bktIdx) => {
-                const bkt = bkts[bktConf.name];
+    it('should prepare encrypted MPU and copy parts from every buckets and objects matrice without completion', async () => {
+        await helpers.s3.putBucketEncryption({
+            Bucket: mpuCopyBkt,
+            // AES256 because input key is broken for now
+            ServerSideEncryptionConfiguration: helpers.hydrateSSEConfig({ algo: 'AES256' }),
+        });
+        const mpuKey = 'mpucopy';
+        const mpu = await helpers.s3.createMultipartUpload(helpers.putObjParams(mpuCopyBkt, mpuKey, {}, null));
+        const copyPartArg = {
+            UploadId: mpu.UploadId,
+            Bucket: mpuCopyBkt,
+            Key: mpuKey,
+        };
+        // For each test Case bucket and object copy a part
+        const uploadPromises = scenarios.testCases.reduce((acc, bktConf, bktIdx) => {
+            const bkt = bkts[bktConf.name];
 
-                return acc.concat(
-                    scenarios.testCasesObj.map(async (objConf, objIdx) => {
-                        const obj = bkt.objs[objConf.name];
+            return acc.concat(
+                scenarios.testCasesObj.map(async (objConf, objIdx) => {
+                    const obj = bkt.objs[objConf.name];
 
-                        const partNumber = bktIdx * scenarios.testCasesObj.length + objIdx + 1;
-                        const res = await helpers.s3.uploadPartCopy({
-                            ...copyPartArg,
-                            PartNumber: partNumber,
-                            CopySource: `${bkt.name}/${obj.name}`,
-                        });
+                    const partNumber = bktIdx * scenarios.testCasesObj.length + objIdx + 1;
+                    const res = await helpers.s3.uploadPartCopy({
+                        ...copyPartArg,
+                        PartNumber: partNumber,
+                        CopySource: `${bkt.name}/${obj.name}`,
+                    });
 
-                        return { partNumber, body: obj.body, res: res.CopyPartResult };
-                    }),
-                );
-            }, []);
+                    return { partNumber, body: obj.body, res: res.CopyPartResult };
+                }),
+            );
+        }, []);
 
-            await Promise.all(uploadPromises);
-        },
-    );
+        await Promise.all(uploadPromises);
+    });
 });

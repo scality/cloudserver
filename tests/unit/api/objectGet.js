@@ -269,7 +269,7 @@ describe('objectGet API', () => {
                                 'content-length': '5242880',
                             },
                             parsedContentLength: 5242880,
-                            url: `/${objectName}?partNumber=1&uploadId` + `=${testUploadId}`,
+                            url: `/${objectName}?partNumber=1&uploadId=${testUploadId}`,
                             query: {
                                 partNumber: '1',
                                 uploadId: testUploadId,
@@ -293,7 +293,7 @@ describe('objectGet API', () => {
                                 'content-length': '12',
                             },
                             parsedContentLength: 12,
-                            url: `/${objectName}?partNumber=2&uploadId=` + `${testUploadId}`,
+                            url: `/${objectName}?partNumber=2&uploadId=${testUploadId}`,
                             query: {
                                 partNumber: '2',
                                 uploadId: testUploadId,

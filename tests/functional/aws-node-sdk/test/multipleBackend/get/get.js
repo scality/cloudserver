@@ -64,7 +64,7 @@ describe('Multiple backend get object', function testSuite() {
         });
 
         // aws-sdk now (v2.363.0) returns 'UriParameterError' error
-        it.skip('should return an error to get request without a valid ' + 'bucket name', done => {
+        it.skip('should return an error to get request without a valid bucket name', done => {
             const command = new GetObjectCommand({ Bucket: '', Key: 'somekey' });
             s3.send(command)
                 .then(() => done(new Error('Expected failure but got success')))
@@ -85,7 +85,7 @@ describe('Multiple backend get object', function testSuite() {
                 });
         });
 
-        describeSkipIfNotMultiple('Complete MPU then get object on AWS ' + 'location with bucketMatch: true ', () => {
+        describeSkipIfNotMultiple('Complete MPU then get object on AWS location with bucketMatch: true ', () => {
             beforeEach(function beforeEachFn() {
                 this.currentTest.key = `somekey-${genUniqID()}`;
                 bucketUtil = new BucketUtility('default', sigCfg);
@@ -146,7 +146,7 @@ describe('Multiple backend get object', function testSuite() {
                         throw err;
                     });
             });
-            it('should get object from MPU on AWS ' + 'location with bucketMatch: true ', function it(done) {
+            it('should get object from MPU on AWS location with bucketMatch: true ', function it(done) {
                 const command = new GetObjectCommand({
                     Bucket: bucket,
                     Key: this.test.key,
@@ -165,7 +165,7 @@ describe('Multiple backend get object', function testSuite() {
             });
         });
 
-        describeSkipIfNotMultiple('Complete MPU then get object on AWS ' + 'location with bucketMatch: false ', () => {
+        describeSkipIfNotMultiple('Complete MPU then get object on AWS location with bucketMatch: false ', () => {
             beforeEach(function beforeEachFn() {
                 this.currentTest.key = `somekey-${genUniqID()}`;
                 bucketUtil = new BucketUtility('default', sigCfg);
@@ -226,7 +226,7 @@ describe('Multiple backend get object', function testSuite() {
                         throw err;
                     });
             });
-            it('should get object from MPU on AWS ' + 'location with bucketMatch: false ', function it(done) {
+            it('should get object from MPU on AWS location with bucketMatch: false ', function it(done) {
                 const command = new GetObjectCommand({
                     Bucket: bucket,
                     Key: this.test.key,
@@ -245,7 +245,7 @@ describe('Multiple backend get object', function testSuite() {
             });
         });
 
-        describeSkipIfNotMultiple('with objects in all available backends ' + '(mem/file/AWS)', () => {
+        describeSkipIfNotMultiple('with objects in all available backends (mem/file/AWS)', () => {
             before(() => {
                 process.stdout.write('Putting object to mem\n');
                 const memCommand = new PutObjectCommand({

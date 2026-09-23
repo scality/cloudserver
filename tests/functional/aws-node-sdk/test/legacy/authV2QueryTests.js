@@ -48,7 +48,7 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
     // AWS allows an expiry further in the future
     // 604810 seconds is higher that the Expires time limit: 604800 seconds
     // ( seven days)
-    itSkipAWS('should return an error code if expires header is too far ' + 'in the future', async () => {
+    itSkipAWS('should return an error code if expires header is too far in the future', async () => {
         // First, get a valid signed URL with maximum allowed expiry
         const command = new CreateBucketCommand({ Bucket: bucket });
         const validUrl = await getSignedUrl(s3, command, { expiresIn: 604800 }); // Exactly 7 days

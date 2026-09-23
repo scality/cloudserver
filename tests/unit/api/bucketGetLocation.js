@@ -62,9 +62,8 @@ describe('getBucketLocation API', () => {
             it(`should return ${location} LocationConstraint xml`, done => {
                 bucketGetLocation(authInfo, testGetLocationRequest, log, (err, res) => {
                     assert.strictEqual(err, null, `Unexpected ${err} getting location constraint`);
-                    const xml =
-                        `<?xml version="1.0" encoding="UTF-8"?>
-        <LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/">` + `${location}</LocationConstraint>`;
+                    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/">${location}</LocationConstraint>`;
                     assert.deepStrictEqual(res, xml);
                     return done();
                 });
@@ -82,9 +81,8 @@ describe('getBucketLocation API', () => {
             it('should return empty string LocationConstraint xml', done => {
                 bucketGetLocation(authInfo, testGetLocationRequest, log, (err, res) => {
                     assert.strictEqual(err, null, `Unexpected ${err} getting location constraint`);
-                    const xml =
-                        `<?xml version="1.0" encoding="UTF-8"?>
-        <LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/">` + '</LocationConstraint>';
+                    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/"></LocationConstraint>`;
                     assert.deepStrictEqual(res, xml);
                     return done();
                 });

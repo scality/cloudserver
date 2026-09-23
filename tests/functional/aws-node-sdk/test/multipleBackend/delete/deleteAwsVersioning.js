@@ -182,7 +182,7 @@ function _awsGetAssertDeleted(params, cb) {
 }
 
 describeSkipIfNotMultiple(
-    'AWS backend delete object w. versioning: ' + 'using object location constraint',
+    'AWS backend delete object w. versioning: using object location constraint',
     function testSuite() {
         this.timeout(120000);
         withV4(sigCfg => {
@@ -271,7 +271,7 @@ describeSkipIfNotMultiple(
                 },
             );
 
-            it('versioning suspended: should delete a specific version in AWS ' + 'backend successfully', done => {
+            it('versioning suspended: should delete a specific version in AWS backend successfully', done => {
                 const key = `somekey-${genUniqID()}`;
                 async.waterfall(
                     [
@@ -290,7 +290,7 @@ describeSkipIfNotMultiple(
                 );
             });
 
-            it('versioning enabled: should delete a specific version in AWS ' + 'backend successfully', done => {
+            it('versioning enabled: should delete a specific version in AWS backend successfully', done => {
                 const key = `somekey-${genUniqID()}`;
                 async.waterfall(
                     [
@@ -478,7 +478,7 @@ describeSkipIfNotMultiple(
                 },
             );
 
-            it('versioning enabled: should delete a delete marker in s3 and ' + 'aws successfully', done => {
+            it('versioning enabled: should delete a delete marker in s3 and aws successfully', done => {
                 const key = `somekey-${genUniqID()}`;
                 async.waterfall(
                     [
@@ -536,29 +536,26 @@ describeSkipIfNotMultiple(
                 },
             );
 
-            it(
-                'multiple delete markers: should get NoSuchObject if only ' + 'one of the delete markers is deleted',
-                done => {
-                    const key = `somekey-${genUniqID()}`;
-                    async.waterfall(
-                        [
-                            next => putVersionsToAws(s3, bucket, key, [someBody], err => next(err)),
-                            next => _createDeleteMarkers(s3, bucket, key, 3, (err, dmVids) => next(err, dmVids[2])),
-                            (lastDmVid, next) =>
-                                delAndAssertResult(
-                                    s3,
-                                    { bucket, key, versionId: lastDmVid, resultType: deleteDeleteMarker },
-                                    err => next(err),
-                                ),
-                            next => _getAssertDeleted(s3, { key, errorCode: 'NoSuchKey' }, next),
-                            next => _awsGetAssertDeleted({ key, errorCode: 'NoSuchKey' }, next),
-                        ],
-                        done,
-                    );
-                },
-            );
+            it('multiple delete markers: should get NoSuchObject if only one of the delete markers is deleted', done => {
+                const key = `somekey-${genUniqID()}`;
+                async.waterfall(
+                    [
+                        next => putVersionsToAws(s3, bucket, key, [someBody], err => next(err)),
+                        next => _createDeleteMarkers(s3, bucket, key, 3, (err, dmVids) => next(err, dmVids[2])),
+                        (lastDmVid, next) =>
+                            delAndAssertResult(
+                                s3,
+                                { bucket, key, versionId: lastDmVid, resultType: deleteDeleteMarker },
+                                err => next(err),
+                            ),
+                        next => _getAssertDeleted(s3, { key, errorCode: 'NoSuchKey' }, next),
+                        next => _awsGetAssertDeleted({ key, errorCode: 'NoSuchKey' }, next),
+                    ],
+                    done,
+                );
+            });
 
-            it('should get the new latest version after deleting the latest' + 'specific version', done => {
+            it('should get the new latest version after deleting the latestspecific version', done => {
                 const key = `somekey-${genUniqID()}`;
                 const data = [...Array(4).keys()].map(i => i.toString());
                 async.waterfall(
@@ -590,101 +587,89 @@ describeSkipIfNotMultiple(
                 );
             });
 
-            it(
-                'should delete the correct version even if other versions or ' + 'delete markers put directly on aws',
-                done => {
-                    const key = `somekey-${genUniqID()}`;
-                    async.waterfall(
-                        [
-                            next =>
-                                putVersionsToAws(s3, bucket, key, [someBody], (err, versionIds) =>
-                                    next(err, versionIds[0]),
-                                ),
-                            (s3vid, next) =>
-                                awsGetLatestVerId(key, someBody, (err, awsVid) => next(err, s3vid, awsVid)),
-                            // put an object in AWS
-                            (s3vid, awsVid, next) =>
-                                awsS3
-                                    .send(
-                                        new PutObjectCommand({
-                                            Bucket: awsBucket,
-                                            Key: key,
-                                        }),
-                                    )
-                                    .then(() => next(null, s3vid, awsVid))
-                                    .catch(err => next(err)),
-                            // create a delete marker in AWS
-                            (s3vid, awsVid, next) =>
-                                awsS3
-                                    .send(
-                                        new DeleteObjectCommand({
-                                            Bucket: awsBucket,
-                                            Key: key,
-                                        }),
-                                    )
-                                    .then(() => next(null, s3vid, awsVid))
-                                    .catch(err => next(err)),
-                            // delete original version in s3
-                            (s3vid, awsVid, next) =>
-                                delAndAssertResult(
-                                    s3,
-                                    { bucket, key, versionId: s3vid, resultType: deleteVersion },
-                                    err => next(err, awsVid),
-                                ),
-                            (awsVid, next) =>
-                                _getAssertDeleted(s3, { key, errorCode: 'NoSuchKey' }, () => next(null, awsVid)),
-                            (awsVerId, next) => {
-                                _awsGetAssertDeleted({ key, versionId: awsVerId, errorCode: 'NoSuchVersion' }, next);
-                            },
-                        ],
-                        done,
-                    );
-                },
-            );
+            it('should delete the correct version even if other versions or delete markers put directly on aws', done => {
+                const key = `somekey-${genUniqID()}`;
+                async.waterfall(
+                    [
+                        next =>
+                            putVersionsToAws(s3, bucket, key, [someBody], (err, versionIds) =>
+                                next(err, versionIds[0]),
+                            ),
+                        (s3vid, next) => awsGetLatestVerId(key, someBody, (err, awsVid) => next(err, s3vid, awsVid)),
+                        // put an object in AWS
+                        (s3vid, awsVid, next) =>
+                            awsS3
+                                .send(
+                                    new PutObjectCommand({
+                                        Bucket: awsBucket,
+                                        Key: key,
+                                    }),
+                                )
+                                .then(() => next(null, s3vid, awsVid))
+                                .catch(err => next(err)),
+                        // create a delete marker in AWS
+                        (s3vid, awsVid, next) =>
+                            awsS3
+                                .send(
+                                    new DeleteObjectCommand({
+                                        Bucket: awsBucket,
+                                        Key: key,
+                                    }),
+                                )
+                                .then(() => next(null, s3vid, awsVid))
+                                .catch(err => next(err)),
+                        // delete original version in s3
+                        (s3vid, awsVid, next) =>
+                            delAndAssertResult(s3, { bucket, key, versionId: s3vid, resultType: deleteVersion }, err =>
+                                next(err, awsVid),
+                            ),
+                        (awsVid, next) =>
+                            _getAssertDeleted(s3, { key, errorCode: 'NoSuchKey' }, () => next(null, awsVid)),
+                        (awsVerId, next) => {
+                            _awsGetAssertDeleted({ key, versionId: awsVerId, errorCode: 'NoSuchVersion' }, next);
+                        },
+                    ],
+                    done,
+                );
+            });
 
-            it(
-                'should not return an error deleting a version that was already ' + 'deleted directly from AWS backend',
-                done => {
-                    const key = `somekey-${genUniqID()}`;
-                    async.waterfall(
-                        [
-                            next =>
-                                putVersionsToAws(s3, bucket, key, [someBody], (err, versionIds) =>
-                                    next(err, versionIds[0]),
-                                ),
-                            (s3vid, next) =>
-                                awsGetLatestVerId(key, someBody, (err, awsVid) => next(err, s3vid, awsVid)),
-                            // delete the object in AWS
-                            (s3vid, awsVid, next) =>
-                                awsS3
-                                    .send(
-                                        new DeleteObjectCommand({
-                                            Bucket: awsBucket,
-                                            Key: key,
-                                            VersionId: awsVid,
-                                        }),
-                                    )
-                                    .then(() => next(null, s3vid))
-                                    .catch(err => next(err)),
-                            // then try to delete in S3
-                            (s3vid, next) =>
-                                delAndAssertResult(
-                                    s3,
-                                    { bucket, key, versionId: s3vid, resultType: deleteVersion },
-                                    err => next(err),
-                                ),
-                            next => _getAssertDeleted(s3, { key, errorCode: 'NoSuchKey' }, next),
-                        ],
-                        done,
-                    );
-                },
-            );
+            it('should not return an error deleting a version that was already deleted directly from AWS backend', done => {
+                const key = `somekey-${genUniqID()}`;
+                async.waterfall(
+                    [
+                        next =>
+                            putVersionsToAws(s3, bucket, key, [someBody], (err, versionIds) =>
+                                next(err, versionIds[0]),
+                            ),
+                        (s3vid, next) => awsGetLatestVerId(key, someBody, (err, awsVid) => next(err, s3vid, awsVid)),
+                        // delete the object in AWS
+                        (s3vid, awsVid, next) =>
+                            awsS3
+                                .send(
+                                    new DeleteObjectCommand({
+                                        Bucket: awsBucket,
+                                        Key: key,
+                                        VersionId: awsVid,
+                                    }),
+                                )
+                                .then(() => next(null, s3vid))
+                                .catch(err => next(err)),
+                        // then try to delete in S3
+                        (s3vid, next) =>
+                            delAndAssertResult(s3, { bucket, key, versionId: s3vid, resultType: deleteVersion }, err =>
+                                next(err),
+                            ),
+                        next => _getAssertDeleted(s3, { key, errorCode: 'NoSuchKey' }, next),
+                    ],
+                    done,
+                );
+            });
         });
     },
 );
 
 describeSkipIfNotMultiple(
-    'AWS backend delete object w. versioning: ' + 'using bucket location constraint',
+    'AWS backend delete object w. versioning: using bucket location constraint',
     function testSuite() {
         this.timeout(120000);
         const createBucketParams = {
@@ -780,7 +765,7 @@ describeSkipIfNotMultiple(
 );
 
 describeSkipIfNotMultiple(
-    'AWS backend delete multiple objects w. versioning: ' + 'using object location constraint',
+    'AWS backend delete multiple objects w. versioning: using object location constraint',
     function testSuite() {
         this.timeout(120000);
         withV4(sigCfg => {

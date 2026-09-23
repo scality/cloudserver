@@ -219,7 +219,7 @@ describe('CORS headers on 403 via handler (fast path)', () => {
 
     afterEach(() => sandbox.restore());
 
-    it('forwards handler-provided corsHeaders without setting headers ' + 'on the response directly', done => {
+    it('forwards handler-provided corsHeaders without setting headers on the response directly', done => {
         const request = buildRequest({
             apiMethod: 'bucketGet',
             httpMethod: 'GET',

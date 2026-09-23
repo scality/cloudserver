@@ -59,88 +59,70 @@ describeSkipIfNotMultiple('AWS backend object put/get tagging with versioning', 
             });
         });
 
-        it(
-            'versioning not configured: should put/get a tag set on the ' + 'latest version if no version is specified',
-            done => {
-                const key = `somekey-${genUniqID()}`;
-                async.waterfall(
-                    [
-                        next => {
-                            const command = new PutObjectCommand({ Bucket: bucket, Key: key });
-                            s3.send(command)
-                                .then(data => next(null, data))
-                                .catch(err => next(err));
-                        },
-                        (putData, next) =>
-                            putTaggingAndAssert(s3, { bucket, key, tags, expectedVersionId: false }, next),
-                        (versionId, next) =>
-                            getTaggingAndAssert(
-                                s3,
-                                { bucket, key, expectedTags: tags, expectedVersionId: false },
-                                next,
-                            ),
-                        (versionId, next) => awsGetAssertTags({ key, expectedTags: tags }, next),
-                    ],
-                    done,
-                );
-            },
-        );
+        it('versioning not configured: should put/get a tag set on the latest version if no version is specified', done => {
+            const key = `somekey-${genUniqID()}`;
+            async.waterfall(
+                [
+                    next => {
+                        const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                        s3.send(command)
+                            .then(data => next(null, data))
+                            .catch(err => next(err));
+                    },
+                    (putData, next) => putTaggingAndAssert(s3, { bucket, key, tags, expectedVersionId: false }, next),
+                    (versionId, next) =>
+                        getTaggingAndAssert(s3, { bucket, key, expectedTags: tags, expectedVersionId: false }, next),
+                    (versionId, next) => awsGetAssertTags({ key, expectedTags: tags }, next),
+                ],
+                done,
+            );
+        });
 
-        it(
-            'versioning not configured: should put/get a tag set on a ' + 'specific version if specified (null)',
-            done => {
-                const key = `somekey-${genUniqID()}`;
-                async.waterfall(
-                    [
-                        next => {
-                            const command = new PutObjectCommand({ Bucket: bucket, Key: key });
-                            s3.send(command)
-                                .then(data => next(null, data))
-                                .catch(err => next(err));
-                        },
-                        (putData, next) =>
-                            putTaggingAndAssert(
-                                s3,
-                                { bucket, key, tags, versionId: 'null', expectedVersionId: false },
-                                next,
-                            ),
-                        (versionId, next) =>
-                            getTaggingAndAssert(
-                                s3,
-                                { bucket, key, versionId: 'null', expectedTags: tags, expectedVersionId: false },
-                                next,
-                            ),
-                        (versionId, next) => awsGetAssertTags({ key, expectedTags: tags }, next),
-                    ],
-                    done,
-                );
-            },
-        );
+        it('versioning not configured: should put/get a tag set on a specific version if specified (null)', done => {
+            const key = `somekey-${genUniqID()}`;
+            async.waterfall(
+                [
+                    next => {
+                        const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                        s3.send(command)
+                            .then(data => next(null, data))
+                            .catch(err => next(err));
+                    },
+                    (putData, next) =>
+                        putTaggingAndAssert(
+                            s3,
+                            { bucket, key, tags, versionId: 'null', expectedVersionId: false },
+                            next,
+                        ),
+                    (versionId, next) =>
+                        getTaggingAndAssert(
+                            s3,
+                            { bucket, key, versionId: 'null', expectedTags: tags, expectedVersionId: false },
+                            next,
+                        ),
+                    (versionId, next) => awsGetAssertTags({ key, expectedTags: tags }, next),
+                ],
+                done,
+            );
+        });
 
-        it(
-            'versioning suspended: should put/get a tag set on the latest ' + 'version if no version is specified',
-            done => {
-                const data = [undefined, 'test1', 'test2'];
-                const key = `somekey-${genUniqID()}`;
-                async.waterfall(
-                    [
-                        next => putNullVersionsToAws(s3, bucket, key, data, next),
-                        (versionIds, next) =>
-                            putTaggingAndAssert(s3, { bucket, key, tags, expectedVersionId: 'null' }, next),
-                        (versionId, next) =>
-                            getTaggingAndAssert(
-                                s3,
-                                { bucket, key, expectedTags: tags, expectedVersionId: 'null' },
-                                next,
-                            ),
-                        (versionId, next) => awsGetAssertTags({ key, expectedTags: tags }, next),
-                    ],
-                    done,
-                );
-            },
-        );
+        it('versioning suspended: should put/get a tag set on the latest version if no version is specified', done => {
+            const data = [undefined, 'test1', 'test2'];
+            const key = `somekey-${genUniqID()}`;
+            async.waterfall(
+                [
+                    next => putNullVersionsToAws(s3, bucket, key, data, next),
+                    (versionIds, next) =>
+                        putTaggingAndAssert(s3, { bucket, key, tags, expectedVersionId: 'null' }, next),
+                    (versionId, next) =>
+                        getTaggingAndAssert(s3, { bucket, key, expectedTags: tags, expectedVersionId: 'null' }, next),
+                    (versionId, next) => awsGetAssertTags({ key, expectedTags: tags }, next),
+                ],
+                done,
+            );
+        });
 
-        it('versioning suspended: should put/get a tag set on a specific ' + 'version (null)', done => {
+        it('versioning suspended: should put/get a tag set on a specific version (null)', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall(
                 [
@@ -200,33 +182,30 @@ describeSkipIfNotMultiple('AWS backend object put/get tagging with versioning', 
             },
         );
 
-        it(
-            'versioning enabled: should put/get a tag set on the latest ' + 'version if no version is specified',
-            done => {
-                const key = `somekey-${genUniqID()}`;
-                async.waterfall(
-                    [
-                        next => enableVersioning(s3, bucket, next),
-                        next => {
-                            const command = new PutObjectCommand({ Bucket: bucket, Key: key });
-                            s3.send(command)
-                                .then(data => next(null, data))
-                                .catch(err => next(err));
-                        },
-                        (putData, next) =>
-                            putTaggingAndAssert(s3, { bucket, key, tags, expectedVersionId: putData.VersionId }, next),
-                        (versionId, next) =>
-                            getTaggingAndAssert(
-                                s3,
-                                { bucket, key, expectedTags: tags, expectedVersionId: versionId },
-                                next,
-                            ),
-                        (versionId, next) => awsGetAssertTags({ key, expectedTags: tags }, next),
-                    ],
-                    done,
-                );
-            },
-        );
+        it('versioning enabled: should put/get a tag set on the latest version if no version is specified', done => {
+            const key = `somekey-${genUniqID()}`;
+            async.waterfall(
+                [
+                    next => enableVersioning(s3, bucket, next),
+                    next => {
+                        const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                        s3.send(command)
+                            .then(data => next(null, data))
+                            .catch(err => next(err));
+                    },
+                    (putData, next) =>
+                        putTaggingAndAssert(s3, { bucket, key, tags, expectedVersionId: putData.VersionId }, next),
+                    (versionId, next) =>
+                        getTaggingAndAssert(
+                            s3,
+                            { bucket, key, expectedTags: tags, expectedVersionId: versionId },
+                            next,
+                        ),
+                    (versionId, next) => awsGetAssertTags({ key, expectedTags: tags }, next),
+                ],
+                done,
+            );
+        });
 
         it('versioning enabled: should put/get a tag set on a specific version', done => {
             const key = `somekey-${genUniqID()}`;
@@ -282,50 +261,47 @@ describeSkipIfNotMultiple('AWS backend object put/get tagging with versioning', 
             );
         });
 
-        it(
-            'versioning enabled: should put/get a tag set on a specific ' + 'version that is not the latest version',
-            done => {
-                const key = `somekey-${genUniqID()}`;
-                async.waterfall(
-                    [
-                        next => enableVersioning(s3, bucket, next),
-                        next => {
-                            const command = new PutObjectCommand({ Bucket: bucket, Key: key });
-                            s3.send(command)
-                                .then(data => next(null, data))
-                                .catch(err => next(err));
-                        },
-                        (putData, next) =>
-                            awsGetLatestVerId(key, '', (err, awsVid) => next(err, putData.VersionId, awsVid)),
-                        // put another version
-                        (s3Vid, awsVid, next) => {
-                            const command = new PutObjectCommand({
-                                Bucket: bucket,
-                                Key: key,
-                                Body: someBody,
-                            });
-                            s3.send(command)
-                                .then(() => next(null, s3Vid, awsVid))
-                                .catch(err => next(err, s3Vid, awsVid));
-                        },
-                        (s3Vid, awsVid, next) =>
-                            putTaggingAndAssert(
-                                s3,
-                                { bucket, key, tags, versionId: s3Vid, expectedVersionId: s3Vid },
-                                err => next(err, s3Vid, awsVid),
-                            ),
-                        (s3Vid, awsVid, next) =>
-                            getTaggingAndAssert(
-                                s3,
-                                { bucket, key, versionId: s3Vid, expectedTags: tags, expectedVersionId: s3Vid },
-                                () => next(null, awsVid),
-                            ),
-                        (awsVid, next) => awsGetAssertTags({ key, versionId: awsVid, expectedTags: tags }, next),
-                    ],
-                    done,
-                );
-            },
-        );
+        it('versioning enabled: should put/get a tag set on a specific version that is not the latest version', done => {
+            const key = `somekey-${genUniqID()}`;
+            async.waterfall(
+                [
+                    next => enableVersioning(s3, bucket, next),
+                    next => {
+                        const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                        s3.send(command)
+                            .then(data => next(null, data))
+                            .catch(err => next(err));
+                    },
+                    (putData, next) =>
+                        awsGetLatestVerId(key, '', (err, awsVid) => next(err, putData.VersionId, awsVid)),
+                    // put another version
+                    (s3Vid, awsVid, next) => {
+                        const command = new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            Body: someBody,
+                        });
+                        s3.send(command)
+                            .then(() => next(null, s3Vid, awsVid))
+                            .catch(err => next(err, s3Vid, awsVid));
+                    },
+                    (s3Vid, awsVid, next) =>
+                        putTaggingAndAssert(
+                            s3,
+                            { bucket, key, tags, versionId: s3Vid, expectedVersionId: s3Vid },
+                            err => next(err, s3Vid, awsVid),
+                        ),
+                    (s3Vid, awsVid, next) =>
+                        getTaggingAndAssert(
+                            s3,
+                            { bucket, key, versionId: s3Vid, expectedTags: tags, expectedVersionId: s3Vid },
+                            () => next(null, awsVid),
+                        ),
+                    (awsVid, next) => awsGetAssertTags({ key, versionId: awsVid, expectedTags: tags }, next),
+                ],
+                done,
+            );
+        });
 
         it(
             'versioning suspended then enabled: should put/get a tag set on ' +
@@ -356,45 +332,42 @@ describeSkipIfNotMultiple('AWS backend object put/get tagging with versioning', 
             },
         );
 
-        it(
-            'should get tags for an object even if it was deleted from ' + 'AWS directly (we rely on s3 metadata)',
-            done => {
-                const key = `somekey-${genUniqID()}`;
-                async.waterfall(
-                    [
-                        next => {
-                            const command = new PutObjectCommand({ Bucket: bucket, Key: key });
-                            s3.send(command)
-                                .then(data => next(null, data))
-                                .catch(err => next(err));
-                        },
-                        (putData, next) => awsGetLatestVerId(key, '', next),
-                        (awsVid, next) =>
-                            putTaggingAndAssert(s3, { bucket, key, tags, expectedVersionId: false }, () =>
-                                next(null, awsVid),
-                            ),
-                        (awsVid, next) => {
-                            const command = new DeleteObjectCommand({
-                                Bucket: awsBucket,
-                                Key: key,
-                                VersionId: awsVid,
-                            });
-                            awsS3
-                                .send(command)
-                                .then(data => next(null, data))
-                                .catch(err => next(err));
-                        },
-                        (delData, next) =>
-                            getTaggingAndAssert(
-                                s3,
-                                { bucket, key, expectedTags: tags, expectedVersionId: false, getObject: false },
-                                next,
-                            ),
-                    ],
-                    done,
-                );
-            },
-        );
+        it('should get tags for an object even if it was deleted from AWS directly (we rely on s3 metadata)', done => {
+            const key = `somekey-${genUniqID()}`;
+            async.waterfall(
+                [
+                    next => {
+                        const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                        s3.send(command)
+                            .then(data => next(null, data))
+                            .catch(err => next(err));
+                    },
+                    (putData, next) => awsGetLatestVerId(key, '', next),
+                    (awsVid, next) =>
+                        putTaggingAndAssert(s3, { bucket, key, tags, expectedVersionId: false }, () =>
+                            next(null, awsVid),
+                        ),
+                    (awsVid, next) => {
+                        const command = new DeleteObjectCommand({
+                            Bucket: awsBucket,
+                            Key: key,
+                            VersionId: awsVid,
+                        });
+                        awsS3
+                            .send(command)
+                            .then(data => next(null, data))
+                            .catch(err => next(err));
+                    },
+                    (delData, next) =>
+                        getTaggingAndAssert(
+                            s3,
+                            { bucket, key, expectedTags: tags, expectedVersionId: false, getObject: false },
+                            next,
+                        ),
+                ],
+                done,
+            );
+        });
 
         it(
             'should return an ServiceUnavailable if trying to put ' +
@@ -429,56 +402,51 @@ describeSkipIfNotMultiple('AWS backend object put/get tagging with versioning', 
             },
         );
 
-        it(
-            'should get tags for an version even if it was deleted from ' + 'AWS directly (we rely on s3 metadata)',
-            done => {
-                const key = `somekey-${genUniqID()}`;
-                async.waterfall(
-                    [
-                        next => enableVersioning(s3, bucket, next),
-                        next => {
-                            const command = new PutObjectCommand({ Bucket: bucket, Key: key });
-                            s3.send(command)
-                                .then(data => next(null, data))
-                                .catch(err => next(err));
-                        },
-                        (putData, next) =>
-                            awsGetLatestVerId(key, '', (err, awsVid) => next(err, putData.VersionId, awsVid)),
-                        (s3Vid, awsVid, next) =>
-                            putTaggingAndAssert(
-                                s3,
-                                { bucket, key, tags, versionId: s3Vid, expectedVersionId: s3Vid },
-                                () => next(null, s3Vid, awsVid),
-                            ),
-                        (s3Vid, awsVid, next) => {
-                            const command = new DeleteObjectCommand({
-                                Bucket: awsBucket,
-                                Key: key,
-                                VersionId: awsVid,
-                            });
-                            awsS3
-                                .send(command)
-                                .then(() => next(null, s3Vid))
-                                .catch(err => next(err, s3Vid));
-                        },
-                        (s3Vid, next) =>
-                            getTaggingAndAssert(
-                                s3,
-                                {
-                                    bucket,
-                                    key,
-                                    versionId: s3Vid,
-                                    expectedTags: tags,
-                                    expectedVersionId: s3Vid,
-                                    getObject: false,
-                                },
-                                next,
-                            ),
-                    ],
-                    done,
-                );
-            },
-        );
+        it('should get tags for an version even if it was deleted from AWS directly (we rely on s3 metadata)', done => {
+            const key = `somekey-${genUniqID()}`;
+            async.waterfall(
+                [
+                    next => enableVersioning(s3, bucket, next),
+                    next => {
+                        const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+                        s3.send(command)
+                            .then(data => next(null, data))
+                            .catch(err => next(err));
+                    },
+                    (putData, next) =>
+                        awsGetLatestVerId(key, '', (err, awsVid) => next(err, putData.VersionId, awsVid)),
+                    (s3Vid, awsVid, next) =>
+                        putTaggingAndAssert(s3, { bucket, key, tags, versionId: s3Vid, expectedVersionId: s3Vid }, () =>
+                            next(null, s3Vid, awsVid),
+                        ),
+                    (s3Vid, awsVid, next) => {
+                        const command = new DeleteObjectCommand({
+                            Bucket: awsBucket,
+                            Key: key,
+                            VersionId: awsVid,
+                        });
+                        awsS3
+                            .send(command)
+                            .then(() => next(null, s3Vid))
+                            .catch(err => next(err, s3Vid));
+                    },
+                    (s3Vid, next) =>
+                        getTaggingAndAssert(
+                            s3,
+                            {
+                                bucket,
+                                key,
+                                versionId: s3Vid,
+                                expectedTags: tags,
+                                expectedVersionId: s3Vid,
+                                getObject: false,
+                            },
+                            next,
+                        ),
+                ],
+                done,
+            );
+        });
 
         it(
             'should return an ServiceUnavailable if trying to put ' +

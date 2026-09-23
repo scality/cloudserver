@@ -97,7 +97,7 @@ describeSkipIfNotMultiple('Multiple backend delete', function testSuite() {
                 Key: bigObject,
             },
             {
-                msg: 'should delete object from GCP location with ' + 'bucketMatch set to false',
+                msg: 'should delete object from GCP location with bucketMatch set to false',
                 Bucket: bucket,
                 Key: mismatchObject,
             },
@@ -112,7 +112,7 @@ describeSkipIfNotMultiple('Multiple backend delete', function testSuite() {
                             assert.fail('Expected error but got success');
                         })
                         .catch(err => {
-                            assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' + 'error but got success');
+                            assert.strictEqual(err.code, 'NoSuchKey', 'Expected error but got success');
                             return done();
                         }),
                 ),

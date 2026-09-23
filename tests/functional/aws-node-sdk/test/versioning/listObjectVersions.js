@@ -321,7 +321,7 @@ describe('listObject - Delimiter version', function testSuite() {
 
                     if (!item) {
                         throw new Error(
-                            'listing fail, ' + `unexpected key ${result.Key} ` + `with version ${result.VersionId}`,
+                            'listing fail, ' + `unexpected key ${result.Key} with version ${result.VersionId}`,
                         );
                     }
                     _assertResultElements(result, 'Version');
@@ -334,7 +334,7 @@ describe('listObject - Delimiter version', function testSuite() {
 
                     if (!item) {
                         throw new Error(
-                            'listing fail, ' + `unexpected key ${result.Key} ` + `with version ${result.VersionId}`,
+                            'listing fail, ' + `unexpected key ${result.Key} with version ${result.VersionId}`,
                         );
                     }
                     _assertResultElements(result, 'DeleteMarker');

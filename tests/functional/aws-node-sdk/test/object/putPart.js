@@ -44,24 +44,21 @@ describe('PUT object', () => {
             await bucketUtil.deleteOne(bucket);
         });
 
-        it(
-            'should return Not Implemented error for obj. encryption using ' + 'customer-provided encryption keys',
-            async () => {
-                const params = {
-                    Bucket: bucket,
-                    Key: 'key',
-                    PartNumber: 0,
-                    UploadId: uploadId,
-                    SSECustomerAlgorithm: 'AES256',
-                };
-                try {
-                    await s3.send(new UploadPartCommand(params));
-                    throw new Error('Expected NotImplemented error');
-                } catch (err) {
-                    assert.strictEqual(err.name, 'NotImplemented');
-                }
-            },
-        );
+        it('should return Not Implemented error for obj. encryption using customer-provided encryption keys', async () => {
+            const params = {
+                Bucket: bucket,
+                Key: 'key',
+                PartNumber: 0,
+                UploadId: uploadId,
+                SSECustomerAlgorithm: 'AES256',
+            };
+            try {
+                await s3.send(new UploadPartCommand(params));
+                throw new Error('Expected NotImplemented error');
+            } catch (err) {
+                assert.strictEqual(err.name, 'NotImplemented');
+            }
+        });
 
         it('should return InvalidArgument if negative PartNumber', async () => {
             const params = {

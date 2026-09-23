@@ -10,7 +10,7 @@ describe('validate search where clause', () => {
             result: undefined,
         },
         {
-            it: 'should allow a simple search with known ' + 'column attribute',
+            it: 'should allow a simple search with known column attribute',
             searchParams: '`content-length`="10"',
             result: undefined,
         },
@@ -26,8 +26,7 @@ describe('validate search where clause', () => {
         },
         {
             it: 'should allow valid search with double AND',
-            searchParams:
-                '`x-amz-meta-dog`="labrador" ' + 'AND `x-amz-meta-age`="5" ' + 'AND `x-amz-meta-whatever`="ok"',
+            searchParams: '`x-amz-meta-dog`="labrador" AND `x-amz-meta-age`="5" AND `x-amz-meta-whatever`="ok"',
             result: undefined,
         },
         {
@@ -42,8 +41,7 @@ describe('validate search where clause', () => {
         },
         {
             it: 'should allow valid LIKE search',
-            searchParams:
-                '`x-amz-meta-dog` LIKE "lab%" ' + 'AND `x-amz-meta-age` LIKE "5%" ' + 'AND `content-length`="10"',
+            searchParams: '`x-amz-meta-dog` LIKE "lab%" AND `x-amz-meta-age` LIKE "5%" AND `content-length`="10"',
             result: undefined,
         },
         {
@@ -86,7 +84,7 @@ describe('validate search where clause', () => {
             it: 'should disallow a simple search with unknown ' + 'column attribute',
             searchParams: 'whatever="labrador"',
             result: errorInstances.InvalidArgument.customizeDescription(
-                'Search ' + 'param contains unknown attribute: whatever',
+                'Search param contains unknown attribute: whatever',
             ),
         },
         {
@@ -97,7 +95,7 @@ describe('validate search where clause', () => {
                 'OR madeUp="something"' +
                 'OR `x-amz-meta-whatever`="ok"',
             result: errorInstances.InvalidArgument.customizeDescription(
-                'Search ' + 'param contains unknown attribute: madeUp',
+                'Search param contains unknown attribute: madeUp',
             ),
         },
         {

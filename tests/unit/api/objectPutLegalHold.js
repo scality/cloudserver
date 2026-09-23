@@ -34,7 +34,7 @@ const putObjectRequest = new DummyRequest(
 );
 
 const objectLegalHoldXml = status =>
-    '<LegalHold ' + 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' + `<Status>${status}</Status>` + '</LegalHold>';
+    '<LegalHold xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' + `<Status>${status}</Status>` + '</LegalHold>';
 
 const putLegalHoldReq = status => ({
     bucketName,

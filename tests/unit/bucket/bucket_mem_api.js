@@ -12,7 +12,7 @@ const bucketName = 'Zaphod';
 const objMD = { test: '8' };
 const log = new DummyRequestLogger();
 
-describe('bucket API for getting, putting and deleting ' + 'objects in a bucket', () => {
+describe('bucket API for getting, putting and deleting objects in a bucket', () => {
     let bucket;
     before(done => {
         cleanup();
@@ -21,7 +21,7 @@ describe('bucket API for getting, putting and deleting ' + 'objects in a bucket'
         metadata.createBucket(bucketName, bucket, log, done);
     });
 
-    it('should be able to add an object to a bucket ' + 'and get the object by key', done => {
+    it('should be able to add an object to a bucket and get the object by key', done => {
         metadata.putObjectMD(bucketName, 'sampleKey', objMD, {}, log, () => {
             metadata.getObjectMD(bucketName, 'sampleKey', {}, log, (err, value) => {
                 assert.deepStrictEqual(value, objMD);
@@ -30,7 +30,7 @@ describe('bucket API for getting, putting and deleting ' + 'objects in a bucket'
         });
     });
 
-    it('should return an error in response ' + 'to getObjectMD when no such key', done => {
+    it('should return an error in response to getObjectMD when no such key', done => {
         metadata.getObjectMD(bucketName, 'notThere', {}, log, (err, value) => {
             assert.strictEqual(err.is.NoSuchKey, true);
             assert.strictEqual(value, undefined);
@@ -99,7 +99,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
         metadata.createBucket(bucketName, bucket, log, done);
     });
 
-    it('should return individual key if key does not contain ' + 'the delimiter even if key contains prefix', done => {
+    it('should return individual key if key does not contain the delimiter even if key contains prefix', done => {
         async.waterfall(
             [
                 next => metadata.putObjectMD(bucketName, 'key1', '{}', {}, log, next),
@@ -141,7 +141,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
         },
     );
 
-    it('should return grouped keys if no prefix ' + 'given and keys match before delimiter', done => {
+    it('should return grouped keys if no prefix given and keys match before delimiter', done => {
         metadata.putObjectMD(bucketName, 'noPrefix/one', '{}', {}, log, () => {
             metadata.putObjectMD(bucketName, 'noPrefix/two', '{}', {}, log, () => {
                 metadata.listObject(bucketName, { delimiter, maxKeys: defaultLimit }, log, (err, response) => {
@@ -153,14 +153,14 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
         });
     });
 
-    it('should return no grouped keys if no ' + 'delimiter specified in getBucketListObjects', done => {
+    it('should return no grouped keys if no delimiter specified in getBucketListObjects', done => {
         metadata.listObject(bucketName, { prefix: 'key', maxKeys: defaultLimit }, log, (err, response) => {
             assert.strictEqual(response.CommonPrefixes.length, 0);
             done();
         });
     });
 
-    it('should only return keys occurring alphabetically ' + 'AFTER marker when no delimiter specified', done => {
+    it('should only return keys occurring alphabetically AFTER marker when no delimiter specified', done => {
         metadata.putObjectMD(bucketName, 'a', '{}', {}, log, () => {
             metadata.putObjectMD(bucketName, 'b', '{}', {}, log, () => {
                 metadata.listObject(bucketName, { marker: 'a', maxKeys: defaultLimit }, log, (err, response) => {
@@ -172,7 +172,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
         });
     });
 
-    it('should only return keys occurring alphabetically AFTER ' + 'marker when delimiter specified', done => {
+    it('should only return keys occurring alphabetically AFTER marker when delimiter specified', done => {
         metadata.listObject(bucketName, { marker: 'a', delimiter, maxKeys: defaultLimit }, log, (err, response) => {
             assert(isKeyInContents(response, 'b'));
             assert.strictEqual(isKeyInContents(response, 'a'), false);
@@ -180,21 +180,18 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
         });
     });
 
-    it(
-        'should only return keys occurring alphabetically AFTER ' + 'marker when delimiter and prefix specified',
-        done => {
-            metadata.listObject(
-                bucketName,
-                { prefix: 'b', marker: 'a', delimiter, maxKeys: defaultLimit },
-                log,
-                (err, response) => {
-                    assert(isKeyInContents(response, 'b'));
-                    assert.strictEqual(isKeyInContents(response, 'a'), false);
-                    done();
-                },
-            );
-        },
-    );
+    it('should only return keys occurring alphabetically AFTER marker when delimiter and prefix specified', done => {
+        metadata.listObject(
+            bucketName,
+            { prefix: 'b', marker: 'a', delimiter, maxKeys: defaultLimit },
+            log,
+            (err, response) => {
+                assert(isKeyInContents(response, 'b'));
+                assert.strictEqual(isKeyInContents(response, 'a'), false);
+                done();
+            },
+        );
+    });
     // Next marker should be the last common prefix or contents key returned
     it('should return a NextMarker if maxKeys reached', done => {
         async.waterfall(
@@ -245,62 +242,59 @@ describe('stress test for bucket API', function describe() {
         metadata.createBucket(bucketName, bucket, log, done);
     });
 
-    it(
-        `should put ${numKeys} keys into bucket and retrieve bucket list ` + `in under ${maxMilliseconds} milliseconds`,
-        done => {
-            const data = {};
-            const keys = [];
+    it(`should put ${numKeys} keys into bucket and retrieve bucket list in under ${maxMilliseconds} milliseconds`, done => {
+        const data = {};
+        const keys = [];
 
-            // Create dictionary entries based on prefixes array
-            for (let i = 0; i < prefixes.length; i++) {
-                data[prefixes[i]] = [];
-            }
-            // Populate dictionary with random key extensions
-            let prefix;
-            for (let j = 0; j < numKeys; j++) {
-                prefix = prefixes[j % prefixes.length];
-                data[prefix].push(makeid(10));
-            }
+        // Create dictionary entries based on prefixes array
+        for (let i = 0; i < prefixes.length; i++) {
+            data[prefixes[i]] = [];
+        }
+        // Populate dictionary with random key extensions
+        let prefix;
+        for (let j = 0; j < numKeys; j++) {
+            prefix = prefixes[j % prefixes.length];
+            data[prefix].push(makeid(10));
+        }
 
-            // Populate keys array with all keys including prefixes
-            Object.keys(data).forEach(dkey => {
-                data[dkey].forEach(key => {
-                    keys.push(dkey + delimiter + key);
-                });
+        // Populate keys array with all keys including prefixes
+        Object.keys(data).forEach(dkey => {
+            data[dkey].forEach(key => {
+                keys.push(dkey + delimiter + key);
             });
+        });
 
-            // Shuffle the keys array so the keys appear in random order
-            shuffle(keys);
+        // Shuffle the keys array so the keys appear in random order
+        shuffle(keys);
 
-            // Start timing
-            const startTime = process.hrtime();
+        // Start timing
+        const startTime = process.hrtime();
 
-            async.each(
-                keys,
-                (item, next) => {
-                    metadata.putObjectMD(bucketName, item, '{}', {}, log, next);
-                },
-                err => {
-                    if (err) {
-                        assert.strictEqual(err, undefined);
-                        done();
-                    } else {
-                        metadata.listObject(bucketName, { delimiter }, log, (err, response) => {
-                            // Stop timing and calculate millisecond time difference
-                            const diff = timeDiff(startTime);
-                            assert(diff < maxMilliseconds);
-                            prefixes.forEach(prefix => {
-                                assert(response.CommonPrefixes.indexOf(prefix + delimiter) > -1);
-                            });
-                            done();
+        async.each(
+            keys,
+            (item, next) => {
+                metadata.putObjectMD(bucketName, item, '{}', {}, log, next);
+            },
+            err => {
+                if (err) {
+                    assert.strictEqual(err, undefined);
+                    done();
+                } else {
+                    metadata.listObject(bucketName, { delimiter }, log, (err, response) => {
+                        // Stop timing and calculate millisecond time difference
+                        const diff = timeDiff(startTime);
+                        assert(diff < maxMilliseconds);
+                        prefixes.forEach(prefix => {
+                            assert(response.CommonPrefixes.indexOf(prefix + delimiter) > -1);
                         });
-                    }
-                },
-            );
-        },
-    );
+                        done();
+                    });
+                }
+            },
+        );
+    });
 
-    it('should return all keys as Contents if delimiter ' + 'does not match and specify NextMarker', done => {
+    it('should return all keys as Contents if delimiter does not match and specify NextMarker', done => {
         metadata.listObject(bucketName, { delimiter: oddDelimiter, maxKeys: testLimit }, log, (err, response) => {
             assert.strictEqual(response.CommonPrefixes.length, 0);
             assert.strictEqual(response.Contents.length, testLimit);
@@ -310,7 +304,7 @@ describe('stress test for bucket API', function describe() {
         });
     });
 
-    it('should return only keys occurring ' + 'after specified marker', done => {
+    it('should return only keys occurring after specified marker', done => {
         metadata.listObject(bucketName, { marker: testMarker, delimiter }, log, (err, res) => {
             assert.strictEqual(res.CommonPrefixes.length, prefixes.length - 1);
             assert.strictEqual(res.CommonPrefixes.indexOf(testPrefix), -1);

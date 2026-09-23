@@ -205,7 +205,7 @@ describe('objectHead API', () => {
                         assert.strictEqual(err.is.InvalidRequest, true);
                         assert.strictEqual(
                             err.description,
-                            'Cannot specify both Range header and ' + 'partNumber query parameter.',
+                            'Cannot specify both Range header and partNumber query parameter.',
                         );
                         done();
                     });

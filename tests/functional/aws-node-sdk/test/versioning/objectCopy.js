@@ -301,14 +301,14 @@ describe('Object Version Copy', () => {
             },
         );
 
-        it('should copy an object from a source bucket to a different ' + 'key in the same bucket', async () => {
+        it('should copy an object from a source bucket to a different key in the same bucket', async () => {
             const res = await s3.send(
                 new CopyObjectCommand({ Bucket: sourceBucketName, Key: destObjName, CopySource: copySource }),
             );
             await successCopyCheck(null, res, originalMetadata, sourceBucketName, destObjName);
         });
 
-        it('should copy an object from a source to the same destination ' + '(update metadata)', async () => {
+        it('should copy an object from a source to the same destination (update metadata)', async () => {
             const res = await s3.send(
                 new CopyObjectCommand({
                     Bucket: sourceBucketName,
@@ -321,21 +321,18 @@ describe('Object Version Copy', () => {
             await successCopyCheck(null, res, newMetadata, sourceBucketName, sourceObjName);
         });
 
-        it(
-            'should copy an object and replace the metadata if replace ' + 'included as metadata directive header',
-            async () => {
-                const res = await s3.send(
-                    new CopyObjectCommand({
-                        Bucket: destBucketName,
-                        Key: destObjName,
-                        CopySource: copySource,
-                        MetadataDirective: 'REPLACE',
-                        Metadata: newMetadata,
-                    }),
-                );
-                await successCopyCheck(null, res, newMetadata, destBucketName, destObjName);
-            },
-        );
+        it('should copy an object and replace the metadata if replace included as metadata directive header', async () => {
+            const res = await s3.send(
+                new CopyObjectCommand({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: copySource,
+                    MetadataDirective: 'REPLACE',
+                    Metadata: newMetadata,
+                }),
+            );
+            await successCopyCheck(null, res, newMetadata, destBucketName, destObjName);
+        });
 
         it(
             'should copy an object and replace ContentType if replace ' +
@@ -571,23 +568,20 @@ describe('Object Version Copy', () => {
             },
         );
 
-        it(
-            'should return Not Implemented error for obj. encryption using ' + 'customer-provided encryption keys',
-            async () => {
-                const params = {
-                    Bucket: destBucketName,
-                    Key: 'key',
-                    CopySource: copySource,
-                    SSECustomerAlgorithm: 'AES256',
-                };
-                try {
-                    await s3.send(new CopyObjectCommand(params));
-                    assert.fail('Expected NotImplemented error');
-                } catch (err) {
-                    assert.strictEqual(err.name, 'NotImplemented');
-                }
-            },
-        );
+        it('should return Not Implemented error for obj. encryption using customer-provided encryption keys', async () => {
+            const params = {
+                Bucket: destBucketName,
+                Key: 'key',
+                CopySource: copySource,
+                SSECustomerAlgorithm: 'AES256',
+            };
+            try {
+                await s3.send(new CopyObjectCommand(params));
+                assert.fail('Expected NotImplemented error');
+            } catch (err) {
+                assert.strictEqual(err.name, 'NotImplemented');
+            }
+        });
 
         it('should copy an object and set the acl on the new object', async () => {
             await s3.send(
@@ -627,7 +621,7 @@ describe('Object Version Copy', () => {
             },
         );
 
-        it('should copy a version to same object name to restore ' + 'version of object', async () => {
+        it('should copy a version to same object name to restore version of object', async () => {
             const res = await s3.send(
                 new CopyObjectCommand({ Bucket: sourceBucketName, Key: sourceObjName, CopySource: copySource }),
             );
@@ -758,23 +752,20 @@ describe('Object Version Copy', () => {
                 await otherAccountBucketUtility.deleteOne(otherAccountBucket);
             });
 
-            it(
-                'should not allow an account without read permission on the ' + 'source object to copy the object',
-                async () => {
-                    try {
-                        await otherAccountS3.send(
-                            new CopyObjectCommand({
-                                Bucket: otherAccountBucket,
-                                Key: otherAccountKey,
-                                CopySource: copySource,
-                            }),
-                        );
-                        assert.fail('Expected error');
-                    } catch (err) {
-                        checkError(err, 'AccessDenied');
-                    }
-                },
-            );
+            it('should not allow an account without read permission on the source object to copy the object', async () => {
+                try {
+                    await otherAccountS3.send(
+                        new CopyObjectCommand({
+                            Bucket: otherAccountBucket,
+                            Key: otherAccountKey,
+                            CopySource: copySource,
+                        }),
+                    );
+                    assert.fail('Expected error');
+                } catch (err) {
+                    checkError(err, 'AccessDenied');
+                }
+            });
 
             it(
                 'should not allow an account without write permission on the ' +
@@ -822,19 +813,19 @@ describe('Object Version Copy', () => {
             );
         });
 
-        it('If-Match: returns no error when ETag match, with double quotes ' + 'around ETag', async () => {
+        it('If-Match: returns no error when ETag match, with double quotes around ETag', async () => {
             await requestCopy({ CopySourceIfMatch: etag });
         });
 
-        it('If-Match: returns no error when one of ETags match, with double ' + 'quotes around ETag', async () => {
+        it('If-Match: returns no error when one of ETags match, with double quotes around ETag', async () => {
             await requestCopy({ CopySourceIfMatch: `non-matching,${etag}` });
         });
 
-        it('If-Match: returns no error when ETag match, without double ' + 'quotes around ETag', async () => {
+        it('If-Match: returns no error when ETag match, without double quotes around ETag', async () => {
             await requestCopy({ CopySourceIfMatch: etagTrim });
         });
 
-        it('If-Match: returns no error when one of ETags match, without ' + 'double quotes around ETag', async () => {
+        it('If-Match: returns no error when one of ETags match, without double quotes around ETag', async () => {
             await requestCopy({ CopySourceIfMatch: `non-matching,${etagTrim}` });
         });
 
@@ -859,7 +850,7 @@ describe('Object Version Copy', () => {
             await requestCopy({ CopySourceIfNoneMatch: 'non-matching,non-matching-either' });
         });
 
-        it('If-None-Match: returns NotModified when ETag match, with double ' + 'quotes around ETag', async () => {
+        it('If-None-Match: returns NotModified when ETag match, with double quotes around ETag', async () => {
             try {
                 await requestCopy({ CopySourceIfNoneMatch: etag });
                 assert.fail('Expected error');
@@ -868,19 +859,16 @@ describe('Object Version Copy', () => {
             }
         });
 
-        it(
-            'If-None-Match: returns NotModified when one of ETags match, with ' + 'double quotes around ETag',
-            async () => {
-                try {
-                    await requestCopy({ CopySourceIfNoneMatch: `non-matching,${etag}` });
-                    assert.fail('Expected error');
-                } catch (err) {
-                    checkError(err, 'PreconditionFailed');
-                }
-            },
-        );
+        it('If-None-Match: returns NotModified when one of ETags match, with double quotes around ETag', async () => {
+            try {
+                await requestCopy({ CopySourceIfNoneMatch: `non-matching,${etag}` });
+                assert.fail('Expected error');
+            } catch (err) {
+                checkError(err, 'PreconditionFailed');
+            }
+        });
 
-        it('If-None-Match: returns NotModified when ETag match, without ' + 'double quotes around ETag', async () => {
+        it('If-None-Match: returns NotModified when ETag match, without double quotes around ETag', async () => {
             try {
                 await requestCopy({ CopySourceIfNoneMatch: etagTrim });
                 assert.fail('Expected error');
@@ -889,24 +877,21 @@ describe('Object Version Copy', () => {
             }
         });
 
-        it(
-            'If-None-Match: returns NotModified when one of ETags match, ' + 'without double quotes around ETag',
-            async () => {
-                try {
-                    await requestCopy({ CopySourceIfNoneMatch: `non-matching,${etagTrim}` });
-                    assert.fail('Expected error');
-                } catch (err) {
-                    checkError(err, 'PreconditionFailed');
-                }
-            },
-        );
+        it('If-None-Match: returns NotModified when one of ETags match, without double quotes around ETag', async () => {
+            try {
+                await requestCopy({ CopySourceIfNoneMatch: `non-matching,${etagTrim}` });
+                assert.fail('Expected error');
+            } catch (err) {
+                checkError(err, 'PreconditionFailed');
+            }
+        });
 
-        it('If-Modified-Since: returns no error if Last modified date is ' + 'greater', async () => {
+        it('If-Modified-Since: returns no error if Last modified date is greater', async () => {
             await requestCopy({ CopySourceIfModifiedSince: dateFromNow(-1) });
         });
         // Skipping this test, because real AWS does not provide error as
         // expected
-        it.skip('If-Modified-Since: returns NotModified if Last modified ' + 'date is lesser', async () => {
+        it.skip('If-Modified-Since: returns NotModified if Last modified date is lesser', async () => {
             try {
                 await requestCopy({ CopySourceIfModifiedSince: dateFromNow(1) });
                 assert.fail('Expected error');
@@ -915,7 +900,7 @@ describe('Object Version Copy', () => {
             }
         });
 
-        it('If-Modified-Since: returns NotModified if Last modified ' + 'date is equal', async () => {
+        it('If-Modified-Since: returns NotModified if Last modified date is equal', async () => {
             try {
                 await requestCopy({ CopySourceIfModifiedSince: dateConvert(lastModified) });
                 assert.fail('Expected error');
@@ -924,15 +909,15 @@ describe('Object Version Copy', () => {
             }
         });
 
-        it('If-Unmodified-Since: returns no error when lastModified date is ' + 'greater', async () => {
+        it('If-Unmodified-Since: returns no error when lastModified date is greater', async () => {
             await requestCopy({ CopySourceIfUnmodifiedSince: dateFromNow(1) });
         });
 
-        it('If-Unmodified-Since: returns no error when lastModified ' + 'date is equal', async () => {
+        it('If-Unmodified-Since: returns no error when lastModified date is equal', async () => {
             await requestCopy({ CopySourceIfUnmodifiedSince: dateConvert(lastModified) });
         });
 
-        it('If-Unmodified-Since: returns PreconditionFailed when ' + 'lastModified date is lesser', async () => {
+        it('If-Unmodified-Since: returns PreconditionFailed when lastModified date is lesser', async () => {
             try {
                 await requestCopy({ CopySourceIfUnmodifiedSince: dateFromNow(-1) });
                 assert.fail('Expected error');
@@ -941,12 +926,9 @@ describe('Object Version Copy', () => {
             }
         });
 
-        it(
-            'If-Match & If-Unmodified-Since: returns no error when match Etag ' + 'and lastModified is greater',
-            async () => {
-                await requestCopy({ CopySourceIfMatch: etagTrim, CopySourceIfUnmodifiedSince: dateFromNow(-1) });
-            },
-        );
+        it('If-Match & If-Unmodified-Since: returns no error when match Etag and lastModified is greater', async () => {
+            await requestCopy({ CopySourceIfMatch: etagTrim, CopySourceIfUnmodifiedSince: dateFromNow(-1) });
+        });
 
         it('If-Match match & If-Unmodified-Since match', async () => {
             await requestCopy({ CopySourceIfMatch: etagTrim, CopySourceIfUnmodifiedSince: dateFromNow(1) });

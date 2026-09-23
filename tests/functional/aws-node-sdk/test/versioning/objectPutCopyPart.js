@@ -118,7 +118,7 @@ describe('Object Part Copy with Versioning', () => {
                 done();
             });
 
-            it('should not return a version id when put part by copying ' + 'without specifying version id', done => {
+            it('should not return a version id when put part by copying without specifying version id', done => {
                 s3.send(
                     new UploadPartCopyCommand({
                         Bucket: destBucket,
@@ -136,7 +136,7 @@ describe('Object Part Copy with Versioning', () => {
                     .catch(done);
             });
 
-            it('should return NoSuchKey if copy source version id is invalid ' + 'id', done => {
+            it('should return NoSuchKey if copy source version id is invalid id', done => {
                 s3.send(
                     new UploadPartCopyCommand({
                         Bucket: destBucket,
@@ -253,28 +253,25 @@ describe('Object Part Copy with Versioning', () => {
                 done();
             });
 
-            it(
-                'copy part without specifying version should return data and ' + 'version id of latest version',
-                done => {
-                    const lastVersion = versionIds[versionIds.length - 1];
-                    const lastETag = eTags[eTags.length - 1];
-                    s3.send(
-                        new UploadPartCopyCommand({
-                            Bucket: destBucket,
-                            CopySource: `${sourceBucket}/${sourceKey}`,
-                            Key: destKey,
-                            PartNumber: 1,
-                            UploadId: uploadId,
-                        }),
-                    )
-                        .then(data => {
-                            assert.strictEqual(data.CopySourceVersionId, lastVersion);
-                            assert.strictEqual(data.CopyPartResult.ETag, lastETag);
-                            done();
-                        })
-                        .catch(done);
-                },
-            );
+            it('copy part without specifying version should return data and version id of latest version', done => {
+                const lastVersion = versionIds[versionIds.length - 1];
+                const lastETag = eTags[eTags.length - 1];
+                s3.send(
+                    new UploadPartCopyCommand({
+                        Bucket: destBucket,
+                        CopySource: `${sourceBucket}/${sourceKey}`,
+                        Key: destKey,
+                        PartNumber: 1,
+                        UploadId: uploadId,
+                    }),
+                )
+                    .then(data => {
+                        assert.strictEqual(data.CopySourceVersionId, lastVersion);
+                        assert.strictEqual(data.CopyPartResult.ETag, lastETag);
+                        done();
+                    })
+                    .catch(done);
+            });
 
             it(
                 'copy part without specifying version should return NoSuchKey ' +
@@ -309,57 +306,54 @@ describe('Object Part Copy with Versioning', () => {
                 },
             );
 
-            it(
-                'copy part with specific version id should return ' + 'InvalidRequest if that id is a delete marker',
-                done => {
-                    async.waterfall(
-                        [
-                            next =>
-                                s3
-                                    .send(
-                                        new DeleteObjectCommand({
-                                            Bucket: sourceBucket,
-                                            Key: sourceKey,
-                                        }),
-                                    )
-                                    .then(() => next())
-                                    .catch(next),
-                            next =>
-                                s3
-                                    .send(
-                                        new ListObjectVersionsCommand({
-                                            Bucket: sourceBucket,
-                                        }),
-                                    )
-                                    .then(data => next(null, data))
-                                    .catch(next),
-                            (data, next) => {
-                                const deleteMarkerId = data.DeleteMarkers[0].VersionId;
-                                return s3
-                                    .send(
-                                        new UploadPartCopyCommand({
-                                            Bucket: destBucket,
-                                            CopySource: `${sourceBucket}/${sourceKey}` + `?versionId=${deleteMarkerId}`,
-                                            Key: destKey,
-                                            PartNumber: 1,
-                                            UploadId: uploadId,
-                                        }),
-                                    )
-                                    .then(data => next(null, data))
-                                    .catch(next);
-                            },
-                        ],
-                        err => {
-                            assert(err, 'Expected err but did not find one');
-                            assert.strictEqual(err.name, 'InvalidRequest');
-                            assert.strictEqual(err.$metadata?.httpStatusCode, 400);
-                            done();
+            it('copy part with specific version id should return InvalidRequest if that id is a delete marker', done => {
+                async.waterfall(
+                    [
+                        next =>
+                            s3
+                                .send(
+                                    new DeleteObjectCommand({
+                                        Bucket: sourceBucket,
+                                        Key: sourceKey,
+                                    }),
+                                )
+                                .then(() => next())
+                                .catch(next),
+                        next =>
+                            s3
+                                .send(
+                                    new ListObjectVersionsCommand({
+                                        Bucket: sourceBucket,
+                                    }),
+                                )
+                                .then(data => next(null, data))
+                                .catch(next),
+                        (data, next) => {
+                            const deleteMarkerId = data.DeleteMarkers[0].VersionId;
+                            return s3
+                                .send(
+                                    new UploadPartCopyCommand({
+                                        Bucket: destBucket,
+                                        CopySource: `${sourceBucket}/${sourceKey}?versionId=${deleteMarkerId}`,
+                                        Key: destKey,
+                                        PartNumber: 1,
+                                        UploadId: uploadId,
+                                    }),
+                                )
+                                .then(data => next(null, data))
+                                .catch(next);
                         },
-                    );
-                },
-            );
+                    ],
+                    err => {
+                        assert(err, 'Expected err but did not find one');
+                        assert.strictEqual(err.name, 'InvalidRequest');
+                        assert.strictEqual(err.$metadata?.httpStatusCode, 400);
+                        done();
+                    },
+                );
+            });
 
-            it('copy part with specific version should return NoSuchVersion ' + 'if version does not exist', done => {
+            it('copy part with specific version should return NoSuchVersion if version does not exist', done => {
                 const versionId = versionIds[1];
                 s3.send(
                     new DeleteObjectCommand({
@@ -373,7 +367,7 @@ describe('Object Part Copy with Versioning', () => {
                         return s3.send(
                             new UploadPartCopyCommand({
                                 Bucket: destBucket,
-                                CopySource: `${sourceBucket}/${sourceKey}` + `?versionId=${versionId}`,
+                                CopySource: `${sourceBucket}/${sourceKey}?versionId=${versionId}`,
                                 Key: destKey,
                                 PartNumber: 1,
                                 UploadId: uploadId,
@@ -391,12 +385,12 @@ describe('Object Part Copy with Versioning', () => {
                     });
             });
 
-            it('copy part with specific version should return copy source ' + 'version id if it exists', done => {
+            it('copy part with specific version should return copy source version id if it exists', done => {
                 const versionId = versionIds[1];
                 s3.send(
                     new UploadPartCopyCommand({
                         Bucket: destBucket,
-                        CopySource: `${sourceBucket}/${sourceKey}` + `?versionId=${versionId}`,
+                        CopySource: `${sourceBucket}/${sourceKey}?versionId=${versionId}`,
                         Key: destKey,
                         PartNumber: 1,
                         UploadId: uploadId,
@@ -410,26 +404,23 @@ describe('Object Part Copy with Versioning', () => {
                     .catch(done);
             });
 
-            it(
-                'copy part with specific version "null" should return copy ' + 'source version id "null" if it exists',
-                done => {
-                    s3.send(
-                        new UploadPartCopyCommand({
-                            Bucket: destBucket,
-                            CopySource: `${sourceBucket}/${sourceKey}?versionId=null`,
-                            Key: destKey,
-                            PartNumber: 1,
-                            UploadId: uploadId,
-                        }),
-                    )
-                        .then(data => {
-                            assert.strictEqual(data.CopySourceVersionId, 'null');
-                            assert.strictEqual(data.CopyPartResult.ETag, eTags[0]);
-                            done();
-                        })
-                        .catch(done);
-                },
-            );
+            it('copy part with specific version "null" should return copy source version id "null" if it exists', done => {
+                s3.send(
+                    new UploadPartCopyCommand({
+                        Bucket: destBucket,
+                        CopySource: `${sourceBucket}/${sourceKey}?versionId=null`,
+                        Key: destKey,
+                        PartNumber: 1,
+                        UploadId: uploadId,
+                    }),
+                )
+                    .then(data => {
+                        assert.strictEqual(data.CopySourceVersionId, 'null');
+                        assert.strictEqual(data.CopyPartResult.ETag, eTags[0]);
+                        done();
+                    })
+                    .catch(done);
+            });
         });
 
         describe('on bucket with versioning suspended', () => {
@@ -515,7 +506,7 @@ describe('Object Part Copy with Versioning', () => {
                 done();
             });
 
-            it('copy part without specifying version should still return ' + 'version id of latest version', done => {
+            it('copy part without specifying version should still return version id of latest version', done => {
                 const lastVersion = versionIds[versionIds.length - 1];
                 const lastETag = eTags[eTags.length - 1];
                 s3.send(
@@ -535,7 +526,7 @@ describe('Object Part Copy with Versioning', () => {
                     .catch(done);
             });
 
-            it('copy part with specific version should still return copy ' + 'source version id if it exists', done => {
+            it('copy part with specific version should still return copy source version id if it exists', done => {
                 const versionId = versionIds[1];
                 s3.send(
                     new UploadPartCopyCommand({

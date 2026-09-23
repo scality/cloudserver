@@ -129,7 +129,7 @@ function createBucket() {
 function createBucketWithReplication(hasStorageClass) {
     createBucket();
     const config = {
-        role: 'arn:aws:iam::account-id:role/src-resource,' + 'arn:aws:iam::account-id:role/dest-resource',
+        role: 'arn:aws:iam::account-id:role/src-resource,arn:aws:iam::account-id:role/dest-resource',
         destination: 'arn:aws:s3:::source-bucket',
         rules: [
             {
@@ -150,7 +150,7 @@ function createBucketWithReplication(hasStorageClass) {
 
 // Create the shadow bucket in metadata for MPUs with a recent model number.
 function createShadowBucket(key, uploadId) {
-    const overviewKey = `overview${constants.splitter}` + `${key}${constants.splitter}${uploadId}`;
+    const overviewKey = `overview${constants.splitter}${key}${constants.splitter}${uploadId}`;
     metadata.buckets.set(mpuShadowBucket, new BucketInfo(mpuShadowBucket, ownerID, '', ''));
     // Set modelVersion to use the most recent splitter.
     Object.assign(metadata.buckets.get(mpuShadowBucket), {
@@ -341,13 +341,11 @@ describe('Replication object MD without bucket replication config', () => {
                 delete config.locationConstraints['zenko'];
             });
 
-            it('should update metadata when replication config prefix matches ' + 'an object key', done =>
-                putObjectAndCheckMD(keyA, newReplicationMD, done),
-            );
+            it('should update metadata when replication config prefix matches an object key', done =>
+                putObjectAndCheckMD(keyA, newReplicationMD, done));
 
-            it('should update metadata when replication config prefix matches ' + 'the start of an object key', done =>
-                putObjectAndCheckMD(`${keyA}abc`, newReplicationMD, done),
-            );
+            it('should update metadata when replication config prefix matches the start of an object key', done =>
+                putObjectAndCheckMD(`${keyA}abc`, newReplicationMD, done));
 
             it(
                 'should not update metadata when replication config prefix does ' +
@@ -355,9 +353,8 @@ describe('Replication object MD without bucket replication config', () => {
                 done => putObjectAndCheckMD(`abc${keyA}`, emptyReplicationMD, done),
             );
 
-            it('should not update metadata when replication config prefix does ' + 'not apply', done =>
-                putObjectAndCheckMD(keyB, emptyReplicationMD, done),
-            );
+            it('should not update metadata when replication config prefix does not apply', done =>
+                putObjectAndCheckMD(keyB, emptyReplicationMD, done));
 
             it("should update status to 'PENDING' if putting a new version", done =>
                 putObjectAndCheckMD(keyA, newReplicationMD, err => {
@@ -370,15 +367,14 @@ describe('Replication object MD without bucket replication config', () => {
                     return putObjectAndCheckMD(keyA, newReplicationMD, done);
                 }));
 
-            it("should update status to 'PENDING' and content to '['METADATA']' " + 'if putting 0 byte object', done =>
+            it("should update status to 'PENDING' and content to '['METADATA']' if putting 0 byte object", done =>
                 objectPut(authInfo, getObjectPutReq(keyA, false), undefined, log, err => {
                     if (err) {
                         return done(err);
                     }
                     checkObjectReplicationInfo(keyA, replicateMetadataOnly);
                     return done();
-                }),
-            );
+                }));
 
             it('should update metadata if putting object ACL and CRR replication', done => {
                 // Set 'zenko' as a typical CRR location (i.e. no type)
@@ -473,7 +469,7 @@ describe('Replication object MD without bucket replication config', () => {
                     },
                 ));
 
-            it('should not update metadata if putting a delete marker owned by ' + 'Lifecycle service account', done =>
+            it('should not update metadata if putting a delete marker owned by Lifecycle service account', done =>
                 async.series(
                     [
                         next => putObjectAndCheckMD(keyA, newReplicationMD, next),
@@ -488,8 +484,7 @@ describe('Replication object MD without bucket replication config', () => {
                         checkObjectReplicationInfo(keyA, emptyReplicationMD);
                         return done();
                     },
-                ),
-            );
+                ));
 
             describe('Object tagging', () => {
                 beforeEach(done =>
@@ -502,12 +497,12 @@ describe('Replication object MD without bucket replication config', () => {
                     ),
                 );
 
-                it("should update status to 'PENDING' and content to " + "'['METADATA']'if putting tag", done => {
+                it("should update status to 'PENDING' and content to '['METADATA']'if putting tag", done => {
                     checkObjectReplicationInfo(keyA, replicateMetadataOnly);
                     return done();
                 });
 
-                it("should update status to 'PENDING' and content to " + "'['METADATA']' if deleting tag", done =>
+                it("should update status to 'PENDING' and content to '['METADATA']' if deleting tag", done =>
                     async.series(
                         [
                             // Put a new version to update replication MD content array.
@@ -521,22 +516,18 @@ describe('Replication object MD without bucket replication config', () => {
                             checkObjectReplicationInfo(keyA, replicateMetadataOnly);
                             return done();
                         },
-                    ),
-                );
+                    ));
             });
 
             describe('Complete MPU', () => {
-                it(
-                    "should update status to 'PENDING' and content to " + "'['DATA, METADATA']' if completing MPU",
-                    done =>
-                        putMPU(keyA, 'content', err => {
-                            if (err) {
-                                return done(err);
-                            }
-                            checkObjectReplicationInfo(keyA, newReplicationMD);
-                            return done();
-                        }),
-                );
+                it("should update status to 'PENDING' and content to '['DATA, METADATA']' if completing MPU", done =>
+                    putMPU(keyA, 'content', err => {
+                        if (err) {
+                            return done(err);
+                        }
+                        checkObjectReplicationInfo(keyA, newReplicationMD);
+                        return done();
+                    }));
 
                 it(
                     "should update status to 'PENDING' and content to " +
@@ -562,17 +553,14 @@ describe('Replication object MD without bucket replication config', () => {
             });
 
             describe('Object copy', () => {
-                it(
-                    "should update status to 'PENDING' and content to " + "'['DATA, METADATA']' if copying object",
-                    done =>
-                        copyObject(keyB, keyA, true, err => {
-                            if (err) {
-                                return done(err);
-                            }
-                            checkObjectReplicationInfo(keyA, newReplicationMD);
-                            return done();
-                        }),
-                );
+                it("should update status to 'PENDING' and content to '['DATA, METADATA']' if copying object", done =>
+                    copyObject(keyB, keyA, true, err => {
+                        if (err) {
+                            return done(err);
+                        }
+                        checkObjectReplicationInfo(keyA, newReplicationMD);
+                        return done();
+                    }));
 
                 it(
                     "should update status to 'PENDING' and content to " +

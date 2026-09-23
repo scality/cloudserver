@@ -5,7 +5,7 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const constants = require('../../../../../constants');
 
-const notOwnerCanonicalID = '79a59df900b949e55d96a1e698fba' + 'cedfd6e09d98eacf8f8d5218e7cd47ef2bf';
+const notOwnerCanonicalID = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
 const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
 
 class _AccessControlPolicy {
@@ -76,7 +76,7 @@ describe('PUT Object ACL', () => {
             assert(data);
         });
 
-        it('should return NoSuchKey if try to put object ACLs ' + 'for nonexistent object', async () => {
+        it('should return NoSuchKey if try to put object ACLs for nonexistent object', async () => {
             const s3 = bucketUtil.s3;
             const Bucket = bucketName;
 
@@ -108,7 +108,7 @@ describe('PUT Object ACL', () => {
 
             // The supplied canonical ID is not associated with a real AWS
             // account, so AWS_ON_AIR will raise a 400 InvalidArgument
-            itSkipIfAWS('should return AccessDenied if try to change owner ' + 'ID in ACL request body', async () => {
+            itSkipIfAWS('should return AccessDenied if try to change owner ID in ACL request body', async () => {
                 const acp = new _AccessControlPolicy({ ownerID: notOwnerCanonicalID });
                 acp.addGrantee('Group', constants.publicId, 'READ');
                 const putAclParams = {

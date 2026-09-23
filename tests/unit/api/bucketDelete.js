@@ -71,8 +71,7 @@ function createMPU(testRequest, initiateRequest, deleteOverviewMPUObj, cb) {
             const mpuBucketKeyMap = metadataMem.metadata.keyMaps.get(mpuBucket);
             assert.strictEqual(mpuBucketKeyMap.size, 2);
             if (deleteOverviewMPUObj) {
-                const overviewKey =
-                    `overview${constants.splitter}` + `${objectName}${constants.splitter}${testUploadId}`;
+                const overviewKey = `overview${constants.splitter}${objectName}${constants.splitter}${testUploadId}`;
                 // remove overview key from in mem mpu bucket
                 mpuBucketKeyMap.delete(overviewKey);
                 assert.strictEqual(mpuBucketKeyMap.size, 1);

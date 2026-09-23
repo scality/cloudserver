@@ -69,7 +69,7 @@ describe('PUT Bucket ACL', () => {
 
         afterEach(() => bucketUtil.deleteOne(bucketName));
 
-        it('should set multiple ACL permissions with same grantee specified' + 'using email', async () => {
+        it('should set multiple ACL permissions with same grantee specifiedusing email', async () => {
             await s3.send(
                 new PutBucketAclCommand({
                     Bucket: bucketName,
@@ -85,7 +85,7 @@ describe('PUT Bucket ACL', () => {
             assert.strictEqual(res.Grants.length, 2);
         });
 
-        it('should return InvalidArgument if invalid grantee ' + 'user ID provided in ACL header request', async () => {
+        it('should return InvalidArgument if invalid grantee user ID provided in ACL header request', async () => {
             try {
                 await s3.send(
                     new PutBucketAclCommand({
@@ -100,7 +100,7 @@ describe('PUT Bucket ACL', () => {
             }
         });
 
-        it('should return InvalidArgument if invalid grantee ' + 'user ID provided in ACL request body', async () => {
+        it('should return InvalidArgument if invalid grantee user ID provided in ACL request body', async () => {
             try {
                 await s3.send(
                     new PutBucketAclCommand({
@@ -117,7 +117,7 @@ describe('PUT Bucket ACL', () => {
                             ],
                             Owner: {
                                 DisplayName: 'Bart',
-                                ID: '79a59df900b949e55d96a1e698fbace' + 'dfd6e09d98eacf8f8d5218e7cd47ef2be',
+                                ID: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
                             },
                         },
                     }),

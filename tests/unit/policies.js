@@ -334,7 +334,7 @@ describe('Policies: permission checks for S3 APIs', () => {
             },
         );
 
-        it('should return s3:CreateBucket and s3:PutBucketAcl' + ' with ACL headers', () => {
+        it('should return s3:CreateBucket and s3:PutBucketAcl with ACL headers', () => {
             assert.deepStrictEqual(putBucketApiMethods({ 'x-amz-grant-read': 'private' }), [
                 'bucketPut',
                 'bucketPutACL',

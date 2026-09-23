@@ -104,7 +104,7 @@ describe('Multipart Delete API', () => {
         cleanup();
     });
 
-    it('should not return error if mpu exists with uploadId and at least ' + 'one part', done => {
+    it('should not return error if mpu exists with uploadId and at least one part', done => {
         _createAndAbortMpu(true, false, eastLocation, err => {
             assert.ifError(err);
             done(err);

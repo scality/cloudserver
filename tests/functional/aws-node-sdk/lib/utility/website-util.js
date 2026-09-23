@@ -157,7 +157,7 @@ function _assertResponseHtml403(method, response, type) {
             _assertResponseHtml(
                 response.body,
                 'h3',
-                'An Error Occurred While Attempting to ' + 'Retrieve a Custom Error Document',
+                'An Error Occurred While Attempting to Retrieve a Custom Error Document',
             );
             // start searching for second `ul` element after `h3` element
             const startingTag = '</h3>';
@@ -187,7 +187,7 @@ function _assertResponseHtmlErrorUser(response, type) {
 function _assertResponseHtmlIndexUser(response) {
     assert.strictEqual(response.statusCode, 200);
     _assertResponseHtml(response.body, 'title', 'Best testing website ever');
-    _assertResponseHtml(response.body, 'h1', 'Welcome to my ' + 'extraordinary bucket website testing page');
+    _assertResponseHtml(response.body, 'h1', 'Welcome to my extraordinary bucket website testing page');
 }
 
 function _assertResponseHtmlRedirect(response, type, redirectUrl, method, expectedHeaders) {

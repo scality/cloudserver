@@ -425,7 +425,7 @@ describe('bucket authorization for objectDelete and objectPut', () => {
 });
 
 describe('bucket authorization for objectPutACL and objectGetACL', () => {
-    it('should allow access to anyone since checks ' + 'are done at object level', done => {
+    it('should allow access to anyone since checks are done at object level', done => {
         const requestTypes = ['objectPutACL', 'objectGetACL'];
         const results = requestTypes.map(type => isBucketAuthorized(bucket, type, accountToVet, altAcctAuthInfo));
         assert.deepStrictEqual(results, [true, true]);

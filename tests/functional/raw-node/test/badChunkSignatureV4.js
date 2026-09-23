@@ -101,32 +101,29 @@ describe('streaming V4 signature with bad chunk signature', () => {
 
     before(done => createBucket(bucketUtil, done));
     after(done => cleanupBucket(bucketUtil, done));
-    it(
-        'Cloudserver should be robust against bad signature in streaming ' + 'payload',
-        function badSignatureInStreamingPayload(cb) {
-            this.timeout(120000);
-            async.timesLimit(
-                N_PUTS,
-                10,
-                (n, done) => {
-                    // multiple test cases depend on the value of
-                    // alterSignatureChunkId:
-                    // alterSignatureChunkId >= 0 &&
-                    // alterSignatureChunkId < N_DATA_CHUNKS
-                    //    <=> alter the signature of the target data chunk
-                    // alterSignatureChunkId == N_DATA_CHUNKS
-                    //    <=> alter the signature of the last empty chunk that
-                    //        carries the last payload signature
-                    // alterSignatureChunkId > N_DATA_CHUNKS
-                    //    <=> no signature is altered (regular test case)
-                    // By making n go from 0 to nDatachunks+1, we cover all
-                    // above cases.
+    it('Cloudserver should be robust against bad signature in streaming payload', function badSignatureInStreamingPayload(cb) {
+        this.timeout(120000);
+        async.timesLimit(
+            N_PUTS,
+            10,
+            (n, done) => {
+                // multiple test cases depend on the value of
+                // alterSignatureChunkId:
+                // alterSignatureChunkId >= 0 &&
+                // alterSignatureChunkId < N_DATA_CHUNKS
+                //    <=> alter the signature of the target data chunk
+                // alterSignatureChunkId == N_DATA_CHUNKS
+                //    <=> alter the signature of the last empty chunk that
+                //        carries the last payload signature
+                // alterSignatureChunkId > N_DATA_CHUNKS
+                //    <=> no signature is altered (regular test case)
+                // By making n go from 0 to nDatachunks+1, we cover all
+                // above cases.
 
-                    const alterSignatureChunkId = ALTER_CHUNK_SIGNATURE ? n % (N_DATA_CHUNKS + 2) : null;
-                    testChunkedPutWithBadSignature(n, alterSignatureChunkId, done);
-                },
-                err => cb(err),
-            );
-        },
-    );
+                const alterSignatureChunkId = ALTER_CHUNK_SIGNATURE ? n % (N_DATA_CHUNKS + 2) : null;
+                testChunkedPutWithBadSignature(n, alterSignatureChunkId, done);
+            },
+            err => cb(err),
+        );
+    });
 });

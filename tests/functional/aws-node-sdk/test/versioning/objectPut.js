@@ -183,21 +183,18 @@ describe('put and get object with versioning', function testSuite() {
                 eTags.length = 0;
             });
 
-            it(
-                'should get null (latest) version in versioning enabled ' + 'bucket when version id is not specified',
-                async () => {
-                    const res = await s3.send(
-                        new GetObjectCommand({
-                            Bucket: bucket,
-                            Key: key,
-                        }),
-                    );
+            it('should get null (latest) version in versioning enabled bucket when version id is not specified', async () => {
+                const res = await s3.send(
+                    new GetObjectCommand({
+                        Bucket: bucket,
+                        Key: key,
+                    }),
+                );
 
-                    assert.strictEqual(res.VersionId, 'null');
-                },
-            );
+                assert.strictEqual(res.VersionId, 'null');
+            });
 
-            it('should get null version in versioning enabled bucket ' + 'when version id is specified', async () => {
+            it('should get null version in versioning enabled bucket when version id is specified', async () => {
                 const res = await s3.send(
                     new GetObjectCommand({
                         Bucket: bucket,
