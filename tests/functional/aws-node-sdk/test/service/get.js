@@ -78,7 +78,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                 };
             });
 
-            it('should return 403 and InvalidAccessKeyId ' + 'if accessKeyId is invalid', async () => {
+            it('should return 403 and InvalidAccessKeyId if accessKeyId is invalid', async () => {
                 const invalidAccess = getConfig(
                     'default',
                     Object.assign(
@@ -98,7 +98,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                 await testFn(invalidAccess, expectedCode, expectedStatus);
             });
 
-            it('should return 403 and SignatureDoesNotMatch ' + 'if credential is polluted', async () => {
+            it('should return 403 and SignatureDoesNotMatch if credential is polluted', async () => {
                 const pollutedConfig = getConfig('default', sigCfg);
                 pollutedConfig.credentials.secretAccessKey = 'wrong';
 

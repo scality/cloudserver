@@ -79,9 +79,8 @@ describe('objectHead API', () => {
     );
 
     it(
-        'should return PreconditionFailed if request header ' +
-            'includes "if-unmodified-since" and object has ' +
-            'been modified since specified time',
+        'should return PreconditionFailed if request header includes ' +
+            '"if-unmodified-since" and object has been modified since specified time',
         done => {
             const testGetRequest = {
                 bucketName,
@@ -106,9 +105,8 @@ describe('objectHead API', () => {
     );
 
     it(
-        'should return PreconditionFailed if request header ' +
-            'includes "if-match" and ETag of object ' +
-            'does not match specified ETag',
+        'should return PreconditionFailed if request header includes ' +
+            '"if-match" and ETag of object does not match specified ETag',
         done => {
             const testGetRequest = {
                 bucketName,
@@ -132,9 +130,8 @@ describe('objectHead API', () => {
     );
 
     it(
-        'should return NotModified if request header ' +
-            'includes "if-none-match" and ETag of object does ' +
-            'match specified ETag',
+        'should return NotModified if request header includes ' +
+            '"if-none-match" and ETag of object does match specified ETag',
         done => {
             const testGetRequest = {
                 bucketName,

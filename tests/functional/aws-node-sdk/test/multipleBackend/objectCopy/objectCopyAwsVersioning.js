@@ -285,8 +285,7 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
             const { isEmptyObj, directive } = testParams;
             it(
                 `should copy ${isEmptyObj ? 'an empty' : ''} ` +
-                    'object from AWS backend non-versioned bucket' +
-                    'to AWS backend versioned bucket ' +
+                    'object from AWS backend non-versioned bucketto AWS backend versioned bucket ' +
                     `with ${directive} directive`,
                 done => {
                     Object.assign(testParams, {
@@ -502,9 +501,8 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
             const { sourceLocation, directive, isEmptyObj } = testParams;
 
             it(
-                `should copy ${isEmptyObj ? 'empty ' : ''}object from ` +
-                    `${sourceLocation} to bucket on AWS backend with ` +
-                    `versioning with ${directive}`,
+                `should copy ${isEmptyObj ? 'empty ' : ''}object from ${sourceLocation} ` +
+                    `to bucket on AWS backend with versioning with ${directive}`,
                 done => {
                     async.waterfall(
                         [
@@ -520,9 +518,8 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
             );
 
             it(
-                `should copy ${isEmptyObj ? 'an empty ' : ''}version from ` +
-                    `${sourceLocation} to bucket on AWS backend with ` +
-                    `versioning with ${directive} directive`,
+                `should copy ${isEmptyObj ? 'an empty ' : ''}version from ${sourceLocation} ` +
+                    `to bucket on AWS backend with versioning with ${directive} directive`,
                 done => {
                     async.waterfall(
                         [

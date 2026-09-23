@@ -472,10 +472,8 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                 const listParams = getListParams(objectKey, uploadId);
                 listParts(authInfo, listParams, log, err => {
                     const wantedDesc =
-                        'Error returned from AWS: ' +
-                        'The specified upload does not exist. The upload ID ' +
-                        'may be invalid, or the upload may have been aborted' +
-                        ' or completed.';
+                        'Error returned from AWS: The specified upload does not exist. The upload ' +
+                        'ID may be invalid, or the upload may have been aborted or completed.';
                     assert.strictEqual(err.is.ServiceUnavailable, true);
                     assert.deepStrictEqual(err.description, wantedDesc);
                     done();

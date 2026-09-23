@@ -290,9 +290,8 @@ describe('Object Copy', () => {
         );
 
         it(
-            'should copy an object and tag set if COPY ' +
-                'included as tag directive header (and ignore any new ' +
-                'tag set sent with copy request)',
+            'should copy an object and tag set if COPY included as tag ' +
+                'directive header (and ignore any new tag set sent with copy request)',
             done => {
                 s3.send(
                     new CopyObjectCommand({
@@ -613,9 +612,8 @@ describe('Object Copy', () => {
         );
 
         it(
-            'should also replace additional headers if replace ' +
-                'included as metadata directive header and new headers are ' +
-                'specified',
+            'should also replace additional headers if replace included ' +
+                'as metadata directive header and new headers are specified',
             done => {
                 s3.send(
                     new CopyObjectCommand({

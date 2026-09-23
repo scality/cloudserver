@@ -1134,8 +1134,8 @@ describe('objectPut API with versioning', () => {
     });
 
     it(
-        'should return BadDigest error and not leave orphans in data when ' +
-            'contentMD5 and completedHash do not match',
+        'should return BadDigest error and not leave orphans ' +
+            'in data when contentMD5 and completedHash do not match',
         done => {
             const testPutObjectRequest = new DummyRequest(
                 {

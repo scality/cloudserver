@@ -530,8 +530,8 @@ describe('Replication object MD without bucket replication config', () => {
                     }));
 
                 it(
-                    "should update status to 'PENDING' and content to " +
-                        "'['METADATA']' if completing MPU with 0 bytes",
+                    "should update status to 'PENDING' and content " +
+                        "to '['METADATA']' if completing MPU with 0 bytes",
                     done =>
                         putMPU(keyA, '', err => {
                             if (err) {
@@ -563,8 +563,8 @@ describe('Replication object MD without bucket replication config', () => {
                     }));
 
                 it(
-                    "should update status to 'PENDING' and content to " +
-                        "'['METADATA']' if copying object with 0 bytes",
+                    "should update status to 'PENDING' and content " +
+                        "to '['METADATA']' if copying object with 0 bytes",
                     done =>
                         copyObject(keyB, keyA, false, err => {
                             if (err) {

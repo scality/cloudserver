@@ -536,8 +536,8 @@ describe('validatePolicyConditions', () => {
         },
         {
             description:
-                'Should return null or a relevant error message ' +
-                'if multiple conditions are provided in a single statement',
+                'Should return null or a relevant error message if ' +
+                'multiple conditions are provided in a single statement',
             inputPolicy: {
                 Statement: [
                     {

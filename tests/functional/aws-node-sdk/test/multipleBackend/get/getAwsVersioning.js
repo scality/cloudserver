@@ -232,8 +232,8 @@ describeSkipIfNotMultiple('AWS backend get object with versioning', function tes
         });
 
         it(
-            'should overwrite null version if putting object when ' +
-                'versioning is suspended after versioning enabled',
+            'should overwrite null version if putting object ' +
+                'when versioning is suspended after versioning enabled',
             done => {
                 const key = `somekey-${genUniqID()}`;
                 const data = [...Array(3).keys()].map(i => `data${i}`);

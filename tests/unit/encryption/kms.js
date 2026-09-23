@@ -50,8 +50,7 @@ describe('KMS unit tests', () => {
 
     it(
         'should not construct a sse info object if ' +
-            'x-amz-scal-server-side-encryption header contains invalid ' +
-            'algorithm option',
+            'x-amz-scal-server-side-encryption header contains invalid algorithm option',
         done => {
             const algorithm = 'garbage';
             const masterKeyId = 'foobarbaz';
