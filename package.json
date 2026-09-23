@@ -57,7 +57,7 @@
         "request": "^2.88.2",
         "scubaclient": "git+https://github.com/scality/scubaclient.git#1.1.4",
         "sql-where-parser": "^2.2.1",
-        "utapi": "github:scality/utapi#8.2.4",
+        "utapi": "github:scality/utapi#8.2.7",
         "utf-8-validate": "^6.0.5",
         "utf8": "^3.0.0",
         "uuid": "^11.0.3",
