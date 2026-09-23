@@ -415,7 +415,8 @@ describe('checkBucketPolicy Principal logic', () => {
         },
         {
             description:
-                'bucket owner and requester don\'t share the same account, wildcard "*" principal, string typeof principal, Allow policy should return CROSS_ACCOUNT_ALLOW',
+                'bucket owner and requester don\'t share the same account, wildcard "*" ' +
+                'principal, string typeof principal, Allow policy should return CROSS_ACCOUNT_ALLOW',
             policy: {
                 Statement: [
                     {
@@ -439,7 +440,8 @@ describe('checkBucketPolicy Principal logic', () => {
         },
         {
             description:
-                "bucket owner and requester don't share the same account, no bucket policy for user, canonical user principal, Allow policy should return DEFAULT_DENY",
+                "bucket owner and requester don't share the same account, no bucket policy " +
+                'for user, canonical user principal, Allow policy should return DEFAULT_DENY',
             policy: {
                 Statement: [
                     {
@@ -465,7 +467,8 @@ describe('checkBucketPolicy Principal logic', () => {
         },
         {
             description:
-                "bucket owner and requester don't share the same account, canonical user principal, Allow policy should return CROSS_ACCOUNT_ALLOW",
+                "bucket owner and requester don't share the same account, canonical " +
+                'user principal, Allow policy should return CROSS_ACCOUNT_ALLOW',
             policy: {
                 Statement: [
                     {

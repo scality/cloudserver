@@ -189,9 +189,8 @@ describe('Object Version Copy', () => {
         );
 
         it(
-            'should copy an object from a source bucket to a different ' +
-                'destination bucket and copy the tag set if COPY tagging ' +
-                'directive header provided',
+            'should copy an object from a source bucket to a different destination ' +
+                'bucket and copy the tag set if COPY tagging directive header provided',
             async () => {
                 await s3.send(
                     new CopyObjectCommand({
@@ -261,7 +260,7 @@ describe('Object Version Copy', () => {
             }
         });
 
-        it('should return InvalidArgument for a request with empty string ' + 'versionId query', async () => {
+        it('should return InvalidArgument for a request with empty string versionId query', async () => {
             const params = { Bucket: destBucketName, Key: destObjName, CopySource: copySource };
             const query = { versionId: '' };
             try {
@@ -274,9 +273,8 @@ describe('Object Version Copy', () => {
         });
 
         it(
-            'should copy a version from a source bucket to a different' +
-                'destination bucket and copy the metadata if no metadata directive' +
-                'header provided',
+            'should copy a version from a source bucket to a differentdestination ' +
+                'bucket and copy the metadata if no metadata directiveheader provided',
             async () => {
                 const res = await s3.send(
                     new CopyObjectCommand({ Bucket: destBucketName, Key: destObjName, CopySource: copySource }),
@@ -335,9 +333,8 @@ describe('Object Version Copy', () => {
         });
 
         it(
-            'should copy an object and replace ContentType if replace ' +
-                'included as a metadata directive header, and new ContentType is ' +
-                'provided',
+            'should copy an object and replace ContentType if replace included ' +
+                'as a metadata directive header, and new ContentType is provided',
             async () => {
                 await s3.send(
                     new CopyObjectCommand({
@@ -354,9 +351,8 @@ describe('Object Version Copy', () => {
         );
 
         it(
-            'should copy an object and keep ContentType if replace ' +
-                'included as a metadata directive header, but no new ContentType ' +
-                'is provided',
+            'should copy an object and keep ContentType if replace included ' +
+                'as a metadata directive header, but no new ContentType is provided',
             async () => {
                 await s3.send(
                     new CopyObjectCommand({
@@ -372,9 +368,8 @@ describe('Object Version Copy', () => {
         );
 
         it(
-            'should also replace additional headers if replace ' +
-                'included as metadata directive header and new headers are ' +
-                'specified',
+            'should also replace additional headers if replace included ' +
+                'as metadata directive header and new headers are specified',
             async () => {
                 await s3.send(
                     new CopyObjectCommand({
@@ -601,8 +596,7 @@ describe('Object Version Copy', () => {
 
         it(
             'should copy an object and default the acl on the new object ' +
-                'to private even if the copied object had a ' +
-                'different acl',
+                'to private even if the copied object had a different acl',
             async () => {
                 await s3.send(
                     new PutObjectAclCommand({

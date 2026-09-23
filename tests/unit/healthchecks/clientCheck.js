@@ -255,8 +255,8 @@ describe('clientCheck - failure detection logic', () => {
         });
 
         it(
-            'should succeed when external backend fails but internal backend is healthy ' +
-                '(flightCheckOnStartUp=false)',
+            'should succeed when external backend fails but ' +
+                'internal backend is healthy (flightCheckOnStartUp=false)',
             done => {
                 dataStub.callsFake((log, cb) =>
                     cb(null, {

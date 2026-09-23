@@ -452,9 +452,8 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         );
         it(
-            'if OPTIONS request matches rule that allows all origins, ' +
-                'e.g. "*", response access-control-request-origin header should ' +
-                'return "*"',
+            'if OPTIONS request matches rule that allows all origins, e.g. "*", ' +
+                'response access-control-request-origin header should return "*"',
             done => {
                 const headers = {
                     Origin: anotherOrigin,
@@ -470,7 +469,7 @@ describe('Preflight CORS request with existing bucket', () => {
         );
     });
 
-    describe('CORS allows method GET, allows all origins and allows ' + 'header Content-Type', () => {
+    describe('CORS allows method GET, allows all origins and allows header Content-Type', () => {
         const corsParams = {
             Bucket: bucket,
             CORSConfiguration: {
@@ -513,9 +512,8 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         );
         it(
-            'should respond with 200 and access control headers to OPTIONS ' +
-                'request from allowed origin and method with Access-Control-' +
-                "Request-Headers 'Content-Type'",
+            'should respond with 200 and access control headers to OPTIONS request from ' +
+                "allowed origin and method with Access-Control-Request-Headers 'Content-Type'",
             done => {
                 const headers = {
                     Origin: allowedOrigin,
@@ -716,9 +714,8 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         );
         it(
-            'should respond with 200 and access control headers to OPTIONS ' +
-                'request from allowed origin, allowed method, even with non-existing ' +
-                'object key',
+            'should respond with 200 and access control headers to OPTIONS request ' +
+                'from allowed origin, allowed method, even with non-existing object key',
             done => {
                 const headers = {
                     Origin: allowedOrigin,

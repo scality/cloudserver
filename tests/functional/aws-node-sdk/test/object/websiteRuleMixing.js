@@ -336,8 +336,7 @@ describe(
 
             it(
                 `should redirect HEAD request to ${redirectEndpoint}about ` +
-                    'instead of about/ key x-amz-website-redirect-location ' +
-                    'header location',
+                    'instead of about/ key x-amz-website-redirect-location header location',
                 done => {
                     WebsiteConfigTester.checkHTML(
                         {

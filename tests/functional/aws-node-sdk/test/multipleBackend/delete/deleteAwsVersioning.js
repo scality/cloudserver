@@ -216,8 +216,8 @@ describeSkipIfNotMultiple(
             });
 
             it(
-                'versioning not configured: if specifying "null" version, should ' +
-                    'delete specific version in AWS backend',
+                'versioning not configured: if specifying "null" ' +
+                    'version, should delete specific version in AWS backend',
                 done => {
                     const key = `somekey-${genUniqID()}`;
                     async.waterfall(

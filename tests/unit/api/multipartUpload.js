@@ -1518,9 +1518,8 @@ describe('Multipart Upload API', () => {
     });
 
     it(
-        'should return no error if attempt to abort/delete ' +
-            'a multipart upload that does not exist and not using ' +
-            'legacyAWSBehavior',
+        'should return no error if attempt to abort/delete a multipart ' +
+            'upload that does not exist and not using legacyAWSBehavior',
         done => {
             async.waterfall(
                 [

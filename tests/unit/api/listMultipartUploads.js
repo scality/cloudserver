@@ -59,9 +59,8 @@ describe('listMultipartUploads API', () => {
     };
 
     it(
-        'should return the name of the common prefix ' +
-            'of common prefix object keys for multipart uploads if delimiter ' +
-            'and prefix specified',
+        'should return the name of the common prefix of common prefix ' +
+            'object keys for multipart uploads if delimiter and prefix specified',
         done => {
             const commonPrefix = `${prefix}${delimiter}`;
             const testListRequest = {
