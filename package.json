@@ -36,7 +36,7 @@
         "@opentelemetry/instrumentation-mongodb": "~0.69.0",
         "@scality/cloudserverclient": "1.0.12",
         "@smithy/node-http-handler": "^3.0.0",
-        "arsenal": "git+https://github.com/scality/arsenal#8.5.17",
+        "arsenal": "git+https://github.com/scality/arsenal#8.6.0-preview.1",
         "async": "2.6.4",
         "aws-crt": "^1.24.0",
         "bucketclient": "scality/bucketclient#8.2.10",
