@@ -170,12 +170,12 @@ describe('aws-sdk test put bucket policy', () => {
         });
 
         it('should allow bucket policy with pincipal arn less than 2048 characters', async () => {
-            const params = getPolicyParams({ key: 'Principal', value: { AWS: `arn:aws:iam::767707094035:user/${generateRandomString(150)}` } }); // eslint-disable-line max-len
+            const params = getPolicyParams({ key: 'Principal', value: { AWS: `arn:aws:iam::767707094035:user/${generateRandomString(150)}` } });
             await s3.send(new PutBucketPolicyCommand(params));
         });
 
         it('should not allow bucket policy with pincipal arn more than 2048 characters', async () => {
-            const params = getPolicyParams({ key: 'Principal', value: { AWS: `arn:aws:iam::767707094035:user/${generateRandomString(2020)}` } }); // eslint-disable-line max-len
+            const params = getPolicyParams({ key: 'Principal', value: { AWS: `arn:aws:iam::767707094035:user/${generateRandomString(2020)}` } });
             try {
                 await s3.send(new PutBucketPolicyCommand(params));
                 throw new Error('Expected MalformedPolicy error');
