@@ -74,6 +74,7 @@ export default [
             'max-len': 'off',
             'mocha/no-exclusive-tests': 'error',
             'no-redeclare': ['error', { builtinGlobals: false }],
+            'no-useless-concat': 'error',
             'promise/prefer-await-to-then': 'warn',
             'n/callback-return': 'warn',
         },
