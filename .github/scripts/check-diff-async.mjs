@@ -11,7 +11,9 @@ import { Project, SyntaxKind } from 'ts-morph';
 const CALLBACK_PARAM_PATTERN = /^(cb|callback|next|done)$/i;
 
 function getChangedJsFiles() {
-    const base = process.env.GITHUB_BASE_REF ? `origin/${process.env.GITHUB_BASE_REF}` : 'HEAD';
+    const base = process.env.GITHUB_BASE_REF //
+        ? `origin/${process.env.GITHUB_BASE_REF}`
+        : 'HEAD';
     const output = execFileSync('git', ['diff', '--name-only', '--diff-filter=ACMR', base, '--', '**/*.js'], {
         encoding: 'utf8',
     }).trim();

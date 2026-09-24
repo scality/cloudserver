@@ -60,7 +60,7 @@ function createReplicationXML(missingTag, tagValue) {
     );
 }
 
-describe("'getReplicationConfiguration' function", () => {
+describe('getReplicationConfiguration function', () => {
     it('should not return error when putting valid XML', done => checkError(createReplicationXML(), null, done));
 
     it('should not accept empty replication configuration', done =>
@@ -100,7 +100,7 @@ describe("'getReplicationConfiguration' function", () => {
     });
 });
 
-describe("'validateReplicationConfig' function", () => {
+describe('validateReplicationConfig function', () => {
     const nonTransientBucket = {
         getLocationConstraint: () => 'us-east-1',
     };

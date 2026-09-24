@@ -37,12 +37,14 @@ describe('Healthcheck response', function describeHealthcheck() {
             });
         },
     );
+
     it('should return no error with flightCheckOnStartUp set to false', done => {
         clientCheck(false, log, err => {
             assert.strictEqual(err, null, `Expected success but got error ${err}`);
             done();
         });
     });
+
     it(
         'should return result for every location constraint in ' +
             'locationConfig and at least one of every external locations with ' +

@@ -53,7 +53,7 @@ function getReplicationConfig() {
     };
 }
 
-describe("'getReplicationConfigurationXML' function", () => {
+describe('getReplicationConfigurationXML function', () => {
     it('should return XML from the bucket replication configuration', done =>
         getAndCheckXML(getReplicationConfig(), done));
 

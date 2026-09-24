@@ -156,24 +156,20 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         assert.strictEqual(data.StorageClass, 'STANDARD');
     });
 
-    it(
-        'should return an error if do not provide correct ' +
-            // completempu test
-            'xml when completing a multipart upload',
-        async () => {
-            const params = {
-                Bucket: bucket,
-                Key: 'toComplete',
-                UploadId: multipartUploadData.secondUploadId,
-            };
-            try {
-                await s3.send(new CompleteMultipartUploadCommand(params));
-                throw new Error('Expected MalformedXML error');
-            } catch (err) {
-                assert.strictEqual(err.Code, 'MalformedXML');
-            }
-        },
-    );
+    // completempu test
+    it('should return an error if do not provide correct xml when completing a multipart upload', async () => {
+        const params = {
+            Bucket: bucket,
+            Key: 'toComplete',
+            UploadId: multipartUploadData.secondUploadId,
+        };
+        try {
+            await s3.send(new CompleteMultipartUploadCommand(params));
+            throw new Error('Expected MalformedXML error');
+        } catch (err) {
+            assert.strictEqual(err.Code, 'MalformedXML');
+        }
+    });
 
     // completempu test
     it('should complete a multipart upload', async () => {
