@@ -414,7 +414,7 @@ describe('s3cmd copyObject without MPU to different bucket (always unencrypted)'
         exec(['mb', `s3://${copyBucket}`], done);
     });
 
-    after('delete downloaded file and receiver bucketcopied', done => {
+    after('delete downloaded file and receiver bucket copied', done => {
         deleteFile(downloadCopy, () => {
             exec(['rb', `s3://${copyBucket}`], done);
         });
