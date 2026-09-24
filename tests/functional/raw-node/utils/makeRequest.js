@@ -143,15 +143,21 @@ function makeRequest(params, callback) {
         return callback(err);
     });
     // generate v4 headers if authentication credentials are provided
-    const savedPath = req.path;
     const encodedPath = urlForSignature || req.path;
-    // decode path because signing code re-encodes it
-    req.path = _decodeURI(encodedPath);
     if (authCredentials && !params.GCP) {
+        // Signing needs the decoded path (the signing code re-encodes it), but
+        // assigning it to req.path would hit ClientRequest's setter, which
+        // rejects raw multi-byte UTF-8 with ERR_UNESCAPED_CHARACTERS on Node
+        // >= 24. Sign through a delegate exposing the decoded path instead:
+        // header mutations still land on the real request via the prototype,
+        // while req.path keeps its URL-encoded value.
+        const signingReq = Object.create(req, {
+            path: { value: _decodeURI(encodedPath), enumerable: true },
+        });
         // Pass an explicit payload (never undefined) so generateV4Headers signs
         // the real body for POST instead of falling back to the querystring.
         auth.client.generateV4Headers(
-            req,
+            signingReq,
             queryObj || '',
             authCredentials.accessKey,
             authCredentials.secretKey,
@@ -161,8 +167,6 @@ function makeRequest(params, callback) {
             requestBody || '',
         );
     }
-    // restore original URL-encoded path
-    req.path = savedPath;
     if (queryObj) {
         req.path = `${options.path}?${qs}`;
     }
