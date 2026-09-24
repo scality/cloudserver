@@ -83,6 +83,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Enable Corepack
+        run: corepack enable
       - uses: actions/setup-node@v4
         id: node
         with:
@@ -96,10 +98,10 @@ jobs:
       - name: install typescript
         shell: bash
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: yarn global add typescript@4.9.5
+        run: npm install -g typescript@4.9.5
       - name: install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: yarn install --frozen-lockfile --network-concurrency 1
+        run: yarn install --immutable
       - uses: actions/setup-python@v5
         with:
           python-version: '3.9'
@@ -108,9 +110,9 @@ jobs:
         run: pip install flake8
       - name: Lint Javascript (strict, excluding async migration rules)
         run: |
-          yarn run --silent lint -- --max-warnings 0 --rule "promise/prefer-await-to-then: off" --rule "n/callback-return: off"
+          yarn lint --max-warnings 0 --rule "promise/prefer-await-to-then: off" --rule "n/callback-return: off"
       - name: Lint Markdown
-        run: yarn run --silent lint_md
+        run: yarn lint_md
       - name: Lint python
         run: flake8 $(git ls-files "*.py")
       - name: Lint Yaml
@@ -132,6 +134,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Enable Corepack
+        run: corepack enable
       - uses: actions/setup-node@v4
         id: node
         with:
@@ -144,7 +148,7 @@ jobs:
           key: ${{ runner.os }}-node-${{ steps.node.outputs.node-version }}-modules-${{ hashFiles('yarn.lock') }}
       - name: install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: yarn install --frozen-lockfile --network-concurrency 1
+        run: yarn install --immutable
       - name: Count async/await migration progress
         run: yarn run count-async
 
@@ -153,6 +157,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Enable Corepack
+        run: corepack enable
       - uses: actions/setup-node@v4
         id: node
         with:
@@ -166,15 +172,18 @@ jobs:
       - name: install typescript
         shell: bash
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: yarn global add typescript@4.9.5
+        run: npm install -g typescript@4.9.5
       - name: install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: yarn install --frozen-lockfile --network-concurrency 1
+        run: yarn install --immutable
       - name: Unit Coverage
         run: |
           set -ex
           yarn run cover test
           yarn run cover test_legacy_location
+          # Berry does not run post* lifecycle scripts, so postcover
+          # (which writes the lcov report) has to be invoked explicitly.
+          yarn run postcover
         env:
           S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
           NO_PROXY: 'test.scality.com,scality.com'
@@ -1171,6 +1180,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Enable Corepack
+        run: corepack enable
       - uses: actions/setup-node@v4
         id: node
         with:
@@ -1183,7 +1194,7 @@ jobs:
           key: ${{ runner.os }}-node-${{ steps.node.outputs.node-version }}-modules-${{ hashFiles('yarn.lock') }}
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: yarn install --frozen-lockfile --network-concurrency 1
+        run: yarn install --immutable
       - name: Delete stale GCP CI buckets
         run: yarn run cleanup_gcp_buckets
         env:

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-nyc --clean --silent yarn start > /artifacts/s3.log 2> /artifacts/s3-stderr.log &
+nyc --clean --silent npm run start > /artifacts/s3.log 2> /artifacts/s3-stderr.log &
 
 PID=$!
 
