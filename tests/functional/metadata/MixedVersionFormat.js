@@ -10,7 +10,7 @@ const {
 const withV4 = require('../aws-node-sdk/test/support/withV4');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const MongoClient = require('mongodb').MongoClient;
-const errors = require('arsenal');
+const errors = require('@scality/arsenal');
 
 const replicaSetHosts = 'localhost:27017,localhost:27018,localhost:27019';
 const writeConcern = 'majority';

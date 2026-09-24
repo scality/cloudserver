@@ -17,7 +17,7 @@ const {
 const async = require('async');
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
-const { versioning } = require('arsenal');
+const { versioning } = require('@scality/arsenal');
 const versionIdUtils = versioning.VersionID;
 
 const { makeid } = require('../../unit/helpers');

@@ -2,7 +2,7 @@ const async = require('async');
 const assert = require('assert');
 const crypto = require('crypto');
 
-const { versioning } = require('arsenal');
+const { versioning } = require('@scality/arsenal');
 const { parseString } = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');

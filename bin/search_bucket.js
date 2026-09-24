@@ -2,7 +2,7 @@
 // 2>/dev/null ; exec "$(which nodejs 2>/dev/null || which node)" "$0" "$@"
 'use strict';
 
-const { auth } = require('arsenal');
+const { auth } = require('@scality/arsenal');
 const commander = require('commander');
 
 const http = require('http');

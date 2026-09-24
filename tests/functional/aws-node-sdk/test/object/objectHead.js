@@ -1,7 +1,7 @@
 const { promisify } = require('util');
 const assert = require('assert');
 const async = require('async');
-const { errorInstances } = require('arsenal');
+const { errorInstances } = require('@scality/arsenal');
 const moment = require('moment');
 const {
     HeadObjectCommand,

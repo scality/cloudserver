@@ -5,7 +5,7 @@ const { parseString } = require('xml2js');
 const { S3Client, 
     ListPartsCommand,
     AbortMultipartUploadCommand } = require('@aws-sdk/client-s3');
-const { storage } = require('arsenal');
+const { storage } = require('@scality/arsenal');
 
 const { config } = require('../../lib/Config');
 const { cleanup, DummyRequestLogger, makeAuthInfo }

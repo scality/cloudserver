@@ -4,7 +4,7 @@ const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
 const objectPutTagging = require('../../../lib/api/objectPutTagging');
 const { _validator, parseTagXml }
-    = require('arsenal').s3middleware.tagging;
+    = require('@scality/arsenal').s3middleware.tagging;
 const { cleanup,
     DummyRequestLogger,
     makeAuthInfo,

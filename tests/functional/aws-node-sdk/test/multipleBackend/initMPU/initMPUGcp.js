@@ -1,6 +1,6 @@
 const async = require('async');
 const assert = require('assert');
-const arsenal = require('arsenal');
+const arsenal = require('@scality/arsenal');
 const {
     CreateBucketCommand,
     AbortMultipartUploadCommand,

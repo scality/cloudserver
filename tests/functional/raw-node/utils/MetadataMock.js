@@ -1,4 +1,4 @@
-const BucketInfo = require('arsenal').models.BucketInfo;
+const BucketInfo = require('@scality/arsenal').models.BucketInfo;
 
 const dummyBucketMD = {
     bucket1: {

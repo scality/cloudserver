@@ -1,6 +1,6 @@
 const assert = require('assert');
 const sinon = require('sinon');
-const { errors } = require('arsenal');
+const { errors } = require('@scality/arsenal');
 const constants = require('../../../../../constants');
 const { config } = require('../../../../../lib/Config');
 const vault = require('../../../../../lib/auth/vault');

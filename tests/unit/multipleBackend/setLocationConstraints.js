@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { parseLC } = require('arsenal').storage.data;
+const { parseLC } = require('@scality/arsenal').storage.data;
 const { config } = require('../../../lib/Config');
 
 const newLC = {};

@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 
-const { errorInstances } = require('arsenal');
+const { errorInstances } = require('@scality/arsenal');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 const bucketPutReplication = require('../../../lib/api/bucketPutReplication');

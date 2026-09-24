@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const util = require('util');
-const arsenal = require('arsenal');
+const arsenal = require('@scality/arsenal');
 const {
     HeadBucketCommand,
     ListObjectsCommand,

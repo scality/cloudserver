@@ -3,11 +3,11 @@ const async = require('async');
 const crypto = require('crypto');
 const { promisify } = require('util');
 
-const BucketInfo = require('arsenal').models.BucketInfo;
+const BucketInfo = require('@scality/arsenal').models.BucketInfo;
 
 const { cleanup, DummyRequestLogger, makeAuthInfo, TaggingConfigTester } = require('../helpers');
 const constants = require('../../../constants');
-const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
+const { metadata } = require('@scality/arsenal').storage.metadata.inMemory.metadata;
 const DummyRequest = require('../DummyRequest');
 const { objectDelete } = require('../../../lib/api/objectDelete');
 const objectPut = require('../../../lib/api/objectPut');

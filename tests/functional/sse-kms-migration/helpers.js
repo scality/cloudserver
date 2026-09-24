@@ -29,8 +29,8 @@ const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const metadata = require('../../../lib/metadata/wrapper');
 const log = new DummyRequestLogger();
 const { config } = require('../../../lib/Config');
-const { getKeyIdFromArn } = require('arsenal/build/lib/network/KMSInterface');
-const { ArsenalError } = require('arsenal/build/lib/errors');
+const { getKeyIdFromArn } = require('@scality/arsenal/build/lib/network/KMSInterface');
+const { ArsenalError } = require('@scality/arsenal/build/lib/errors');
 
 function getKey(key) {
     return config.kmsHideScalityArn ? getKeyIdFromArn(key) : key;

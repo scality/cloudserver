@@ -1,6 +1,6 @@
 const assert = require('assert');
 const crypto = require('crypto');
-const { storage } = require('arsenal');
+const { storage } = require('@scality/arsenal');
 const {
     S3Client,
     PutObjectCommand,

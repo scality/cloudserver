@@ -1,9 +1,9 @@
 const crypto = require('crypto');
 const assert = require('assert');
-const { storage } = require('arsenal');
+const { storage } = require('@scality/arsenal');
 
-const AuthInfo = require('arsenal').auth.AuthInfo;
-const { RequestContext } = require('arsenal').policies;
+const AuthInfo = require('@scality/arsenal').auth.AuthInfo;
+const { RequestContext } = require('@scality/arsenal').policies;
 const constants = require('../../constants');
 const DummyRequest = require('./DummyRequest');
 

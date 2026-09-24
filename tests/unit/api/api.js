@@ -1,10 +1,10 @@
 const sinon = require('sinon');
-const { errors, auth } = require('arsenal');
+const { errors, auth } = require('@scality/arsenal');
 const api = require('../../../lib/api/api');
 const { config } = require('../../../lib/Config');
 const rateLimitCache = require('../../../lib/api/apiUtils/rateLimit/cache');
 const DummyRequest = require('../DummyRequest');
-const { default: AuthInfo } = require('arsenal/build/lib/auth/AuthInfo');
+const { default: AuthInfo } = require('@scality/arsenal/build/lib/auth/AuthInfo');
 const assert = require('assert');
 const crypto = require('crypto');
 

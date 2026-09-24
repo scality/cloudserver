@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
-const { errorInstances } = require('arsenal');
-const AuthInfo = require('arsenal').auth.AuthInfo;
+const { errorInstances } = require('@scality/arsenal');
+const AuthInfo = require('@scality/arsenal').auth.AuthInfo;
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');

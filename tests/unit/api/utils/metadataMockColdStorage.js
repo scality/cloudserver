@@ -2,7 +2,7 @@ const assert = require('assert');
 const metadata = require('../../metadataswitch');
 const { DummyRequestLogger } = require('../../helpers');
 const log = new DummyRequestLogger();
-const { BucketInfo, ObjectMD, ObjectMDAmzRestore, ObjectMDArchive } = require('arsenal').models;
+const { BucketInfo, ObjectMD, ObjectMDAmzRestore, ObjectMDArchive } = require('@scality/arsenal').models;
 
 const {
     LOCATION_NAME_DMF,

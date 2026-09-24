@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { checkExternalBackend } = require('arsenal').storage.data.external.backendUtils;
+const { checkExternalBackend } = require('@scality/arsenal').storage.data.external.backendUtils;
 const sinon = require('sinon');
 const awsLocations = [
     'awsbackend',

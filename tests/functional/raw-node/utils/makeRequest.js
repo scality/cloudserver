@@ -1,4 +1,4 @@
-const { auth } = require('arsenal');
+const { auth } = require('@scality/arsenal');
 
 const http = require('http');
 const https = require('https');
@@ -7,7 +7,7 @@ const crypto = require('crypto');
 
 const conf = require('../../../../lib/Config').config;
 
-const constructStringToSignV2 = require('arsenal/build/lib/auth/v2/constructStringToSign').default;
+const constructStringToSignV2 = require('@scality/arsenal/build/lib/auth/v2/constructStringToSign').default;
 
 function signGcpRequest(request, credentials, date) {
     if (!credentials || !credentials.secretKey || !credentials.accessKey) {
