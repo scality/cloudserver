@@ -39,7 +39,7 @@ function assertError(err, expectedErr) {
         assert.strictEqual(
             err.name,
             expectedErr,
-            'incorrect error response ' + `code: should be '${expectedErr}' but got '${err.name}'`,
+            `incorrect error response code: should be '${expectedErr}' but got '${err.name}'`,
         );
         assert.strictEqual(
             err.$metadata.httpStatusCode,

@@ -11,8 +11,7 @@ const replicaSetHosts = 'localhost:27017,localhost:27018,localhost:27019';
 const writeConcern = 'majority';
 const replicaSet = 'rs0';
 const readPreference = 'primary';
-const mongoUrl =
-    `mongodb://${replicaSetHosts}/?w=${writeConcern}&` + `replicaSet=${replicaSet}&readPreference=${readPreference}`;
+const mongoUrl = `mongodb://${replicaSetHosts}/?w=${writeConcern}&replicaSet=${replicaSet}&readPreference=${readPreference}`;
 
 const VID_SEP = '\0';
 const TEST_DB = 'test';

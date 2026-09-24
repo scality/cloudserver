@@ -251,7 +251,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
     });
 
     itSkipIfE2E(
-        'should not allow a comma separated list of roles when' + ' a rule storageClass defines an external location',
+        'should not allow a comma separated list of roles when a rule storageClass defines an external location',
         () => {
             const config = {
                 Role: 'arn:aws:iam::account-id:role/src-resource,arn:aws:iam::account-id:role/dest-resource',

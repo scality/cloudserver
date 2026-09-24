@@ -84,53 +84,50 @@ describe('More MPU tests', () => {
         });
 
         testsOrder.forEach(testOrder => {
-            it(
-                'should complete MPU by concatenating the parts in ' + `the following order: ${testOrder.values}`,
-                async function itF() {
-                    try {
+            it(`should complete MPU by concatenating the parts in the following order: ${testOrder.values}`, async function itF() {
+                try {
+                    await s3.send(
+                        new CompleteMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: object,
+                            MultipartUpload: {
+                                Parts: [
+                                    {
+                                        ETag: this.test.Etag,
+                                        PartNumber: testOrder.values[0],
+                                    },
+                                    {
+                                        ETag: this.test.Etag,
+                                        PartNumber: testOrder.values[1],
+                                    },
+                                    {
+                                        ETag: this.test.Etag,
+                                        PartNumber: testOrder.values[2],
+                                    },
+                                ],
+                            },
+                            UploadId: this.test.UploadId,
+                        }),
+                    );
+
+                    if (testOrder.err) {
+                        throw new Error('Expected InvalidPartOrder error but operation succeeded');
+                    }
+                } catch (err) {
+                    if (testOrder.err) {
+                        checkError(err, 400, 'InvalidPartOrder');
                         await s3.send(
-                            new CompleteMultipartUploadCommand({
+                            new AbortMultipartUploadCommand({
                                 Bucket: bucket,
                                 Key: object,
-                                MultipartUpload: {
-                                    Parts: [
-                                        {
-                                            ETag: this.test.Etag,
-                                            PartNumber: testOrder.values[0],
-                                        },
-                                        {
-                                            ETag: this.test.Etag,
-                                            PartNumber: testOrder.values[1],
-                                        },
-                                        {
-                                            ETag: this.test.Etag,
-                                            PartNumber: testOrder.values[2],
-                                        },
-                                    ],
-                                },
                                 UploadId: this.test.UploadId,
                             }),
                         );
-
-                        if (testOrder.err) {
-                            throw new Error('Expected InvalidPartOrder error but operation succeeded');
-                        }
-                    } catch (err) {
-                        if (testOrder.err) {
-                            checkError(err, 400, 'InvalidPartOrder');
-                            await s3.send(
-                                new AbortMultipartUploadCommand({
-                                    Bucket: bucket,
-                                    Key: object,
-                                    UploadId: this.test.UploadId,
-                                }),
-                            );
-                        } else {
-                            throw err;
-                        }
+                    } else {
+                        throw err;
                     }
-                },
-            );
+                }
+            });
         });
     });
 });

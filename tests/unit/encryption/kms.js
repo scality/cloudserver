@@ -172,7 +172,7 @@ describe('KMS unit tests', () => {
         });
     });
 
-    it('should increment the IV by modifying the last two positions of ' + 'the buffer', () => {
+    it('should increment the IV by modifying the last two positions of the buffer', () => {
         const derivedIV = Buffer.from('aaaaaaff', 'hex');
         const counter = 6;
         const incrementedIV = Common._incrementIV(derivedIV, counter);
@@ -180,7 +180,7 @@ describe('KMS unit tests', () => {
         assert.deepStrictEqual(incrementedIV, expected);
     });
 
-    it('should increment the IV by incrementing the last position of the ' + 'buffer', () => {
+    it('should increment the IV by incrementing the last position of the buffer', () => {
         const derivedIV = Buffer.from('aaaaaaf0', 'hex');
         const counter = 6;
         const incrementedIV = Common._incrementIV(derivedIV, counter);

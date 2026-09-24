@@ -668,11 +668,7 @@ describeSkipIfNotMultiple('Put Copy Part to AZURE', function describeF() {
                                             next();
                                         },
                                         err => {
-                                            assert.equal(
-                                                err,
-                                                null,
-                                                'listBlocks: Expected ' + `success, got error: ${err}`,
-                                            );
+                                            assert.equal(err, null, `listBlocks: Expected success, got error: ${err}`);
                                             next();
                                         },
                                     ),
@@ -760,7 +756,7 @@ describeSkipIfNotMultiple('Put Copy Part to AZURE with large object', function d
                     .catch(done);
             });
 
-            it('should copy 105 MB part from Azure to MPU with Azure ' + 'location', function ifF(done) {
+            it('should copy 105 MB part from Azure to MPU with Azure location', function ifF(done) {
                 const params = {
                     Bucket: azureContainerName,
                     CopySource: `${azureContainerName}/${this.test.keyNameOneHundredAndFiveMbAzure}`,

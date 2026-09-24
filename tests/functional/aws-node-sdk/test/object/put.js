@@ -71,7 +71,7 @@ describe('PUT object', () => {
                     done();
                 })
                 .catch(err => {
-                    assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                    assert.equal(err, null, `Expected success, got error ${JSON.stringify(err)}`);
                     done(err);
                 });
         });
@@ -109,7 +109,7 @@ describe('PUT object', () => {
                         });
                 })
                 .catch(err => {
-                    assert.equal(err, null, 'Expected success, ' + `got error ${JSON.stringify(err)}`);
+                    assert.equal(err, null, `Expected success, got error ${JSON.stringify(err)}`);
                     done(err);
                 });
         });
@@ -273,7 +273,7 @@ describe('PUT object', () => {
                     });
             });
 
-            it('should return InvalidArgument if using the same key twice ' + 'and empty tags', done => {
+            it('should return InvalidArgument if using the same key twice and empty tags', done => {
                 s3.send(
                     new PutObjectCommand({
                         Bucket: bucket,
@@ -301,7 +301,7 @@ describe('PUT object', () => {
                     });
             });
 
-            it('should return InvalidArgument putting object with ' + 'bad encoded tags', done => {
+            it('should return InvalidArgument putting object with bad encoded tags', done => {
                 s3.send(new PutObjectCommand({ Bucket: bucket, Key: object, Tagging: 'key1==value1' }))
                     .then(() => {
                         assert(false, 'Expected failure but got success');

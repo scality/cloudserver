@@ -79,7 +79,7 @@ describe('object acl authorization for objectGet and objectHead', () => {
         assert.deepStrictEqual(results, [true, true]);
     });
 
-    it('should not allow access to public user if ' + 'authenticated-read ACL', () => {
+    it('should not allow access to public user if authenticated-read ACL', () => {
         object.acl.Canned = 'authenticated-read';
         const publicResults = requestTypes.map(type =>
             isObjAuthorized(bucket, object, type, constants.publicId, null, log),
@@ -87,7 +87,7 @@ describe('object acl authorization for objectGet and objectHead', () => {
         assert.deepStrictEqual(publicResults, [false, false]);
     });
 
-    it('should allow access to any authenticated user if ' + 'authenticated-read ACL', () => {
+    it('should allow access to any authenticated user if authenticated-read ACL', () => {
         object.acl.Canned = 'authenticated-read';
         const results = requestTypes.map(type =>
             isObjAuthorized(bucket, object, type, accountToVet, altAcctAuthInfo, log),

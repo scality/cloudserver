@@ -22,7 +22,7 @@ const aclBucket = 'acluniverse';
 const nonexist = 'nonexist';
 const prefix = 'topLevel';
 const delimiter = '/';
-let ownerCanonicalId = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d52' + '18e7cd47ef2be';
+let ownerCanonicalId = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
 const endpoint = `${transport}://${ipAddress}:8000`;
 
 // Let's precompute a few paths
@@ -295,7 +295,7 @@ describe('s3curl put and get bucket ACLs', () => {
                 '--createBucket',
                 '--',
                 '-H',
-                'x-amz-grant-read:uri=' + 'http://acs.amazonaws.com/groups/global/AllUsers',
+                'x-amz-grant-read:uri=http://acs.amazonaws.com/groups/global/AllUsers',
                 `${endpoint}/${aclBucket}2`,
                 '-v',
             ],
@@ -393,7 +393,7 @@ describe('s3curl putObject', () => {
                 '--contentMd5',
                 'toto',
                 '--',
-                `${endpoint}/${bucket}/` + `${prefix}${delimiter}${upload}1`,
+                `${endpoint}/${bucket}/${prefix}${delimiter}${upload}1`,
                 '-v',
             ],
             (httpCode, rawOutput) => {
@@ -412,7 +412,7 @@ describe('s3curl putObject', () => {
                 '--contentMd5',
                 'rL0Y20zC+Fzt72VPzMSk2A==',
                 '--',
-                `${endpoint}/${bucket}/` + `${prefix}${delimiter}${upload}1`,
+                `${endpoint}/${bucket}/${prefix}${delimiter}${upload}1`,
                 '-v',
             ],
             (httpCode, rawOutput) => {
@@ -783,7 +783,7 @@ describe('s3curl object ACLs', () => {
                 `--put=${aclUpload}`,
                 '--',
                 '-H',
-                'x-amz-grant-read:uri=' + 'http://acs.amazonaws.com/groups/global/AuthenticatedUsers',
+                'x-amz-grant-read:uri=http://acs.amazonaws.com/groups/global/AuthenticatedUsers',
                 `${bucketPath}/${aclUpload}withspecificacl`,
                 '-v',
             ],
@@ -804,7 +804,7 @@ describe('s3curl object ACLs', () => {
                 assert.strictEqual(result.AccessControlPolicy.Owner[0].ID[0], ownerCanonicalId);
                 assert.strictEqual(
                     result.AccessControlPolicy.AccessControlList[0].Grant[0].Grantee[0].URI[0],
-                    'http://acs.amazonaws.com/groups/global/' + 'AuthenticatedUsers',
+                    'http://acs.amazonaws.com/groups/global/AuthenticatedUsers',
                 );
                 assert.strictEqual(result.AccessControlPolicy.AccessControlList[0].Grant[0].Permission[0], 'READ');
                 done();

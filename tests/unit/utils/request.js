@@ -135,7 +135,7 @@ function createProxyServer(proto, targetHost, hostname, port, callback) {
     proxy.on('connect', (req, clnt) => {
         const svr = net.connect(target.port, target.hostname, () => {
             // handle http -> https
-            clnt.write(`HTTP/${req.httpVersion} 200 Connection Established\r\n` + '\r\n');
+            clnt.write(`HTTP/${req.httpVersion} 200 Connection Established\r\n\r\n`);
             svr.pipe(clnt);
             clnt.pipe(svr);
         });

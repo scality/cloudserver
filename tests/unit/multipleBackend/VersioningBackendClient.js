@@ -52,17 +52,17 @@ const assertFailure = (err, cb) => {
 };
 const genTests = [
     {
-        msg: 'should return success if supportsVersioning === true ' + 'and backend versioning is enabled',
+        msg: 'should return success if supportsVersioning === true and backend versioning is enabled',
         input: { supportsVersioning: true, enableMockVersioning: true },
         callback: assertSuccess,
     },
     {
-        msg: 'should return success if supportsVersioning === false ' + 'and backend versioning is enabled',
+        msg: 'should return success if supportsVersioning === false and backend versioning is enabled',
         input: { supportsVersioning: false, enableMockVersioning: true },
         callback: assertSuccess,
     },
     {
-        msg: 'should return error if supportsVersioning === true ' + 'and backend versioning is disabled',
+        msg: 'should return error if supportsVersioning === true and backend versioning is disabled',
         input: { supportsVersioning: true, enableMockVersioning: false },
         callback: assertFailure,
     },
@@ -157,17 +157,17 @@ describe('AwsClient::healthcheck', () => {
 
     const tests = [
         {
-            msg: 'should return success if supportsVersioning === true ' + 'and backend versioning is enabled',
+            msg: 'should return success if supportsVersioning === true and backend versioning is enabled',
             input: { supportsVersioning: true, enableMockVersioning: true },
             callback: assertSuccessVersioned,
         },
         {
-            msg: 'should return success if supportsVersioning === false ' + 'and backend versioning is enabled',
+            msg: 'should return success if supportsVersioning === false and backend versioning is enabled',
             input: { supportsVersioning: false, enableMockVersioning: true },
             callback: assertSuccessNonVersioned,
         },
         {
-            msg: 'should return error if supportsVersioning === true ' + ' and backend versioning is disabled',
+            msg: 'should return error if supportsVersioning === true  and backend versioning is disabled',
             input: { supportsVersioning: true, enableMockVersioning: false },
             callback: assertFailure,
         },

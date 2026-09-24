@@ -75,7 +75,7 @@ const legalHoldReq = {
     bucketName,
     objectKey: keyA,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
-    post: '<LegalHold xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' + '<Status>ON</Status></LegalHold>',
+    post: '<LegalHold xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Status>ON</Status></LegalHold>',
     actionImplicitDenies: false,
 };
 
@@ -770,7 +770,7 @@ describe('Replication object MD with CRR and cloud destinations on the same obje
         Object.assign(metadata.buckets.get(bucketName), {
             _versioningConfiguration: { status: 'Enabled' },
             _replicationConfiguration: {
-                role: 'arn:aws:iam::account-id:role/src-role,' + 'arn:aws:iam::account-id:role/dst-role',
+                role: 'arn:aws:iam::account-id:role/src-role,arn:aws:iam::account-id:role/dst-role',
                 rules,
             },
         });
@@ -852,7 +852,7 @@ describe('Replication object MD with CRR and cloud destinations on the same obje
         );
     });
 
-    it('should add a newly configured CRR destination to backends on ' + 'putObjectACL', done => {
+    it('should add a newly configured CRR destination to backends on putObjectACL', done => {
         setupBucket([cloudRule]);
         async.series(
             [

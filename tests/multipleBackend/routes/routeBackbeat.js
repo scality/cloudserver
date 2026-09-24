@@ -98,7 +98,7 @@ if (process.env.S3_TESTVAL_OWNERCANONICALID) {
 
 const nonVersionedTestMd = {
     'owner-display-name': 'Bart',
-    'owner-id': '79a59df900b949e55d96a1e698fbaced' + 'fd6e09d98eacf8f8d5218e7cd47ef2be',
+    'owner-id': '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
     'content-length': testData.length,
     'content-md5': testDataMd5,
     'x-amz-version-id': 'null',
@@ -2464,208 +2464,205 @@ describe('backbeat routes', () => {
             );
         });
 
-        it(
-            'should update current null version if versioning suspended and put a null version ' + 'afterwards',
-            done => {
-                let objMD;
-                let deletedVersionId;
-                return async.series(
-                    [
-                        next =>
-                            s3
-                                .send(
-                                    new PutObjectCommand({
-                                        Bucket: bucket,
-                                        Key: keyName,
-                                        Body: Buffer.from(testData),
-                                    }),
-                                )
-                                .then(result => {
-                                    next(null, result);
-                                })
-                                .catch(err => {
-                                    next(err);
+        it('should update current null version if versioning suspended and put a null version afterwards', done => {
+            let objMD;
+            let deletedVersionId;
+            return async.series(
+                [
+                    next =>
+                        s3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucket,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
                                 }),
-                        next =>
-                            s3
-                                .send(
-                                    new PutBucketVersioningCommand({
-                                        Bucket: bucket,
-                                        VersioningConfiguration: { Status: 'Enabled' },
-                                    }),
-                                )
-                                .then(result => {
-                                    next(null, result);
-                                })
-                                .catch(err => {
-                                    next(err);
+                            )
+                            .then(result => {
+                                next(null, result);
+                            })
+                            .catch(err => {
+                                next(err);
+                            }),
+                    next =>
+                        s3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucket,
+                                    VersioningConfiguration: { Status: 'Enabled' },
                                 }),
-                        next =>
-                            s3
-                                .send(
-                                    new PutObjectCommand({
-                                        Bucket: bucket,
-                                        Key: keyName,
-                                        Body: Buffer.from(testData),
-                                    }),
-                                )
-                                .then(data => {
-                                    deletedVersionId = data.VersionId;
-                                    return next(null, data);
-                                })
-                                .catch(err => {
-                                    next(err);
+                            )
+                            .then(result => {
+                                next(null, result);
+                            })
+                            .catch(err => {
+                                next(err);
+                            }),
+                    next =>
+                        s3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucket,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
                                 }),
-                        next =>
-                            s3
-                                .send(
-                                    new PutBucketVersioningCommand({
-                                        Bucket: bucket,
-                                        VersioningConfiguration: { Status: 'Suspended' },
-                                    }),
-                                )
-                                .then(result => {
-                                    next(null, result);
-                                })
-                                .catch(err => {
-                                    next(err);
+                            )
+                            .then(data => {
+                                deletedVersionId = data.VersionId;
+                                return next(null, data);
+                            })
+                            .catch(err => {
+                                next(err);
+                            }),
+                    next =>
+                        s3
+                            .send(
+                                new PutBucketVersioningCommand({
+                                    Bucket: bucket,
+                                    VersioningConfiguration: { Status: 'Suspended' },
                                 }),
-                        next =>
-                            s3
-                                .send(
-                                    new DeleteObjectCommand({
-                                        Bucket: bucket,
-                                        Key: keyName,
-                                        VersionId: deletedVersionId,
-                                    }),
-                                )
-                                .then(result => {
-                                    next(null, result);
-                                })
-                                .catch(err => {
-                                    next(err);
+                            )
+                            .then(result => {
+                                next(null, result);
+                            })
+                            .catch(err => {
+                                next(err);
+                            }),
+                    next =>
+                        s3
+                            .send(
+                                new DeleteObjectCommand({
+                                    Bucket: bucket,
+                                    Key: keyName,
+                                    VersionId: deletedVersionId,
                                 }),
-                        next =>
-                            makeBackbeatRequest(
-                                {
-                                    method: 'GET',
-                                    resourceType: 'metadata',
-                                    bucket,
-                                    objectKey: keyName,
-                                    queryObj: {
-                                        versionId: 'null',
-                                    },
-                                    authCredentials: backbeatAuthCredentials,
+                            )
+                            .then(result => {
+                                next(null, result);
+                            })
+                            .catch(err => {
+                                next(err);
+                            }),
+                    next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'GET',
+                                resourceType: 'metadata',
+                                bucket,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
                                 },
-                                (err, data) => {
-                                    if (err) {
-                                        return next(err);
-                                    }
-                                    const { error, result } = updateStorageClass(data, storageClass);
-                                    if (error) {
-                                        return next(error);
-                                    }
-                                    objMD = result;
-                                    return next();
+                                authCredentials: backbeatAuthCredentials,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    return next(err);
+                                }
+                                const { error, result } = updateStorageClass(data, storageClass);
+                                if (error) {
+                                    return next(error);
+                                }
+                                objMD = result;
+                                return next();
+                            },
+                        ),
+                    next =>
+                        makeBackbeatRequest(
+                            {
+                                method: 'PUT',
+                                resourceType: 'metadata',
+                                bucket,
+                                objectKey: keyName,
+                                queryObj: {
+                                    versionId: 'null',
                                 },
-                            ),
-                        next =>
-                            makeBackbeatRequest(
-                                {
-                                    method: 'PUT',
-                                    resourceType: 'metadata',
-                                    bucket,
-                                    objectKey: keyName,
-                                    queryObj: {
-                                        versionId: 'null',
-                                    },
-                                    authCredentials: backbeatAuthCredentials,
-                                    requestBody: objMD,
-                                },
-                                next,
-                            ),
-                        next =>
-                            s3
-                                .send(
-                                    new PutObjectCommand({
-                                        Bucket: bucket,
-                                        Key: keyName,
-                                        Body: Buffer.from(testData),
-                                    }),
-                                )
-                                .then(result => {
-                                    next(null, result);
-                                })
-                                .catch(err => {
-                                    next(err);
+                                authCredentials: backbeatAuthCredentials,
+                                requestBody: objMD,
+                            },
+                            next,
+                        ),
+                    next =>
+                        s3
+                            .send(
+                                new PutObjectCommand({
+                                    Bucket: bucket,
+                                    Key: keyName,
+                                    Body: Buffer.from(testData),
                                 }),
-                        next =>
-                            s3
-                                .send(
-                                    new HeadObjectCommand({
-                                        Bucket: bucket,
-                                        Key: keyName,
-                                        VersionId: 'null',
-                                    }),
-                                )
-                                .then(result => {
-                                    next(null, result);
-                                })
-                                .catch(err => {
-                                    next(err);
+                            )
+                            .then(result => {
+                                next(null, result);
+                            })
+                            .catch(err => {
+                                next(err);
+                            }),
+                    next =>
+                        s3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucket,
+                                    Key: keyName,
+                                    VersionId: 'null',
                                 }),
-                        next =>
-                            s3
-                                .send(
-                                    new ListObjectVersionsCommand({
-                                        Bucket: bucket,
-                                    }),
-                                )
-                                .then(result => {
-                                    next(null, result);
-                                })
-                                .catch(err => {
-                                    next(err);
+                            )
+                            .then(result => {
+                                next(null, result);
+                            })
+                            .catch(err => {
+                                next(err);
+                            }),
+                    next =>
+                        s3
+                            .send(
+                                new ListObjectVersionsCommand({
+                                    Bucket: bucket,
                                 }),
-                        next =>
-                            s3
-                                .send(
-                                    new HeadObjectCommand({
-                                        Bucket: bucket,
-                                        Key: keyName,
-                                        VersionId: 'null',
-                                    }),
-                                )
-                                .then(result => {
-                                    next(null, result);
-                                })
-                                .catch(err => {
-                                    next(err);
+                            )
+                            .then(result => {
+                                next(null, result);
+                            })
+                            .catch(err => {
+                                next(err);
+                            }),
+                    next =>
+                        s3
+                            .send(
+                                new HeadObjectCommand({
+                                    Bucket: bucket,
+                                    Key: keyName,
+                                    VersionId: 'null',
                                 }),
-                    ],
-                    (err, data) => {
-                        if (err) {
-                            return done(err);
-                        }
+                            )
+                            .then(result => {
+                                next(null, result);
+                            })
+                            .catch(err => {
+                                next(err);
+                            }),
+                ],
+                (err, data) => {
+                    if (err) {
+                        return done(err);
+                    }
 
-                        const headObjectRes = data[8];
-                        assert.strictEqual(headObjectRes.VersionId, 'null');
-                        assert(!headObjectRes.StorageClass);
+                    const headObjectRes = data[8];
+                    assert.strictEqual(headObjectRes.VersionId, 'null');
+                    assert(!headObjectRes.StorageClass);
 
-                        const listObjectVersionsRes = data[9];
-                        const { DeleteMarkers, Versions } = listObjectVersionsRes;
-                        assert.strictEqual(DeleteMarkers, undefined);
-                        assert.strictEqual(Versions.length, 1);
+                    const listObjectVersionsRes = data[9];
+                    const { DeleteMarkers, Versions } = listObjectVersionsRes;
+                    assert.strictEqual(DeleteMarkers, undefined);
+                    assert.strictEqual(Versions.length, 1);
 
-                        const currentVersion = Versions[0];
-                        assert(currentVersion.IsLatest);
-                        assertVersionHasNotBeenUpdated(currentVersion, 'null');
+                    const currentVersion = Versions[0];
+                    assert(currentVersion.IsLatest);
+                    assertVersionHasNotBeenUpdated(currentVersion, 'null');
 
-                        return done();
-                    },
-                );
-            },
-        );
+                    return done();
+                },
+            );
+        });
 
         it('should update current null version if versioning suspended and put a version afterwards', done => {
             let objMD;

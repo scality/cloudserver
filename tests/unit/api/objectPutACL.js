@@ -16,7 +16,7 @@ const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const ownerID = authInfo.getCanonicalID();
-const anotherID = '79a59df900b949e55d96a1e698fba' + 'cedfd6e09d98eacf8f8d5218e7cd47ef2bf';
+const anotherID = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
 const defaultAcpParams = {
     ownerID,
     ownerDisplayName: 'OwnerDisplayName',
@@ -372,7 +372,7 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should return an error if invalid group ' + 'uri provided in ACLs set out in request body', done => {
+    it('should return an error if invalid group uri provided in ACLs set out in request body', done => {
         const acp = new AccessControlPolicy(defaultAcpParams);
         acp.addGrantee('Group', 'http://acs.amazonaws.com/groups/global/NOTAVALIDGROUP', 'WRITE_ACP');
         const testObjACLRequest = {

@@ -98,7 +98,7 @@ runIfMongo('Basic search', () => {
         });
 
         it('should list object with searched for updated user metadata', done => {
-            const encodedSearch = encodeURIComponent('x-amz-meta-food' + `="${updatedUserMetadata.food}"`);
+            const encodedSearch = encodeURIComponent(`x-amz-meta-food="${updatedUserMetadata.food}"`);
             return runAndCheckSearch(s3Client, bucketName, encodedSearch, false, objectKey, done);
         });
     });

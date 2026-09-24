@@ -107,7 +107,7 @@ describe('PUT bucket cors :: helper validation functions ', () => {
 
         it('should return MalformedXML if more than one ID per rule', done => {
             const testValue = 'testid';
-            const xml = _generateSampleXml(`<ID>${testValue}</ID>` + `<ID>${testValue}</ID>`);
+            const xml = _generateSampleXml(`<ID>${testValue}</ID><ID>${testValue}</ID>`);
             parseCorsXml(xml, log, err => {
                 assert(err, 'Expected error but found none');
                 assert.strictEqual(err.is.MalformedXML, true);
@@ -138,7 +138,7 @@ describe('PUT bucket cors :: helper validation functions ', () => {
     describe('validateMaxAgeSeconds ', () => {
         it('should validate successfully for valid value', done => {
             const testValue = 60;
-            const xml = _generateSampleXml(`<MaxAgeSeconds>${testValue}` + '</MaxAgeSeconds>');
+            const xml = _generateSampleXml(`<MaxAgeSeconds>${testValue}</MaxAgeSeconds>`);
             parseCorsXml(xml, log, (err, result) => {
                 assert.strictEqual(err, null, `Found unexpected err ${err}`);
                 assert.strictEqual(typeof result[0].maxAgeSeconds, 'number');
@@ -150,7 +150,7 @@ describe('PUT bucket cors :: helper validation functions ', () => {
         it('should return MalformedXML if more than one MaxAgeSeconds per rule', done => {
             const testValue = '60';
             const xml = _generateSampleXml(
-                `<MaxAgeSeconds>${testValue}</MaxAgeSeconds>` + `<MaxAgeSeconds>${testValue}</MaxAgeSeconds>`,
+                `<MaxAgeSeconds>${testValue}</MaxAgeSeconds><MaxAgeSeconds>${testValue}</MaxAgeSeconds>`,
             );
             parseCorsXml(xml, log, err => {
                 assert(err, 'Expected error but found none');
@@ -161,7 +161,7 @@ describe('PUT bucket cors :: helper validation functions ', () => {
 
         it('should validate & return undefined if empty value', done => {
             const testValue = '';
-            const xml = _generateSampleXml(`<MaxAgeSeconds>${testValue}` + '</MaxAgeSeconds>');
+            const xml = _generateSampleXml(`<MaxAgeSeconds>${testValue}</MaxAgeSeconds>`);
             parseCorsXml(xml, log, (err, result) => {
                 assert.strictEqual(err, null, `Found unexpected err ${err}`);
                 assert.strictEqual(result[0].MaxAgeSeconds, undefined);

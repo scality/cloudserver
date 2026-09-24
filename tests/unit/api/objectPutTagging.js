@@ -116,7 +116,7 @@ describe('PUT object tagging :: helper validation functions ', () => {
         });
 
         describe('validateXMLStructure ', () => {
-            it('should return expected true if tag is valid false/undefined ' + 'if not', done => {
+            it('should return expected true if tag is valid false/undefined if not', done => {
                 const tags = [
                     { tagging: { Tagging: { TagSet: [{ Tag: [] }] } }, isValid: true },
                     { tagging: { Tagging: { TagSet: [''] } }, isValid: true },

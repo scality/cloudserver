@@ -148,7 +148,7 @@ const tests = [
         },
     },
     {
-        name: 'return max-keys number from request even if greater than ' + 'actual keys returned',
+        name: 'return max-keys number from request even if greater than actual keys returned',
         request: Object.assign({ query: { 'max-keys': '99999' }, url: baseUrl }, baseGetRequest),
         assertion: result => assert.strictEqual(result.ListBucketResult.MaxKeys[0], '99999'),
     },

@@ -18,7 +18,7 @@ const accountToVet = altAcctAuthInfo.getCanonicalID();
 const bucket = new BucketInfo('niftyBucket', ownerCanonicalId, authInfo.getAccountDisplayName(), creationDate);
 const log = new DummyRequestLogger();
 
-describe('bucket authorization for bucketGet, bucketHead, ' + 'objectGet, and objectHead', () => {
+describe('bucket authorization for bucketGet, bucketHead, objectGet, and objectHead', () => {
     // Reset the bucket ACLs
     afterEach(() => {
         bucket.setFullAcl({
@@ -61,7 +61,7 @@ describe('bucket authorization for bucketGet, bucketHead, ' + 'objectGet, and ob
             response: trueArray,
         },
         {
-            it: 'should allow public-user access for unknown ' + 'service account and private canned ACL',
+            it: 'should allow public-user access for unknown service account and private canned ACL',
             canned: '',
             id: unknownServiceAccountId,
             response: falseArrayBucketTrueArrayObject,
@@ -91,7 +91,7 @@ describe('bucket authorization for bucketGet, bucketHead, ' + 'objectGet, and ob
             auth: altAcctAuthInfo,
         },
         {
-            it: 'should allow access to any authenticated user if authenticated' + '-read ACL',
+            it: 'should allow access to any authenticated user if authenticated-read ACL',
             canned: 'authenticated-read',
             id: accountToVet,
             response: trueArray,
@@ -118,7 +118,7 @@ describe('bucket authorization for bucketGet, bucketHead, ' + 'objectGet, and ob
             auth: altAcctAuthInfo,
         },
         {
-            it: 'should allow access to user if account was granted' + ' FULL_CONTROL',
+            it: 'should allow access to user if account was granted FULL_CONTROL',
             canned: '',
             id: accountToVet,
             response: trueArray,
@@ -126,7 +126,7 @@ describe('bucket authorization for bucketGet, bucketHead, ' + 'objectGet, and ob
             auth: altAcctAuthInfo,
         },
         {
-            it: 'should not allow access to just any user if private' + ' canned ACL',
+            it: 'should not allow access to just any user if private canned ACL',
             canned: '',
             id: accountToVet,
             response: trueArray,
@@ -232,7 +232,7 @@ describe('bucket authorization for bucketPutACL', () => {
 
     const orders = ['FULL_CONTROL', 'WRITE_ACP'];
     orders.forEach(value => {
-        it('should allow access to account if ' + `account was granted ${value} right`, done => {
+        it(`should allow access to account if account was granted ${value} right`, done => {
             const noAuthResult = isBucketAuthorized(bucket, 'bucketPutACL', accountToVet, altAcctAuthInfo);
             assert.strictEqual(noAuthResult, false);
             bucket.setSpecificAcl(accountToVet, value);
@@ -268,7 +268,7 @@ describe('bucket authorization for bucketOwnerAction', () => {
 
     const orders = [
         {
-            it: 'other account (even if other account has FULL_CONTROL rights' + ' in bucket)',
+            it: 'other account (even if other account has FULL_CONTROL rights in bucket)',
             id: accountToVet,
             canned: '',
             aclParam: ['FULL_CONTROL', accountToVet],
@@ -319,7 +319,7 @@ describe('bucket authorization for bucketDelete', () => {
 
     const orders = [
         {
-            it: 'other account (even if other account has FULL_CONTROL rights ' + 'in bucket)',
+            it: 'other account (even if other account has FULL_CONTROL rights in bucket)',
             id: accountToVet,
             canned: '',
             aclParam: ['FULL_CONTROL', accountToVet],

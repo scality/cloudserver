@@ -81,31 +81,26 @@ describe('Healthcheck response', function describeHealthcheck() {
             await azureClient.getContainerClient(containerName).deleteIfExists();
         });
 
-        it(
-            "should create an azure location's container if it is missing " + 'and the check is a flightCheckOnStartUp',
-            done => {
-                clientCheck(true, log, (err, results) => {
-                    const azureLocationNonExistContainerError = results[azureLocationNonExistContainer].error;
-                    if (err) {
-                        assert(err.is.InternalError, `got unexpected err in clientCheck: ${err}`);
-                        assert(
-                            azureLocationNonExistContainerError.startsWith('The specified container is being deleted.'),
-                        );
+        it("should create an azure location's container if it is missing and the check is a flightCheckOnStartUp", done => {
+            clientCheck(true, log, (err, results) => {
+                const azureLocationNonExistContainerError = results[azureLocationNonExistContainer].error;
+                if (err) {
+                    assert(err.is.InternalError, `got unexpected err in clientCheck: ${err}`);
+                    assert(azureLocationNonExistContainerError.startsWith('The specified container is being deleted.'));
+                    return done();
+                }
+                return azureClient.getContainerClient(containerName).getProperties(
+                    azureResult => {
+                        assert.strictEqual(azureResult.metadata.name, containerName);
                         return done();
-                    }
-                    return azureClient.getContainerClient(containerName).getProperties(
-                        azureResult => {
-                            assert.strictEqual(azureResult.metadata.name, containerName);
-                            return done();
-                        },
-                        err => {
-                            assert.strictEqual(err, null, 'got unexpected err ' + `heading azure container: ${err}`);
-                            return done();
-                        },
-                    );
-                });
-            },
-        );
+                    },
+                    err => {
+                        assert.strictEqual(err, null, `got unexpected err heading azure container: ${err}`);
+                        return done();
+                    },
+                );
+            });
+        });
 
         it(
             "should not create an azure location's container even if it is " +

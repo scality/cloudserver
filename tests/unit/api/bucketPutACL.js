@@ -178,11 +178,11 @@ describe('putBucketACL API', () => {
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
-                    'emailaddress="sampleaccount1@sampling.com"' + ',emailaddress="sampleaccount2@sampling.com"',
+                    'emailaddress="sampleaccount1@sampling.com",emailaddress="sampleaccount2@sampling.com"',
                 'x-amz-grant-read': `uri=${constants.logId}`,
                 'x-amz-grant-write': `uri=${constants.publicId}`,
-                'x-amz-grant-read-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2be',
-                'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2bf',
+                'x-amz-grant-read-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
+                'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf',
             },
             url: '/?acl',
             query: { acl: '' },
@@ -208,11 +208,11 @@ describe('putBucketACL API', () => {
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
-                    'emailaddress="sampleaccount1@sampling.com"' + ',emailaddress="sampleaccount2@sampling.com"',
+                    'emailaddress="sampleaccount1@sampling.com",emailaddress="sampleaccount2@sampling.com"',
                 'x-amz-grant-read': 'emailaddress="sampleaccount1@sampling.com"',
                 'x-amz-grant-write': 'emailaddress="sampleaccount1@sampling.com"',
-                'x-amz-grant-read-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2be',
-                'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' + 'f8f8d5218e7cd47ef2bf',
+                'x-amz-grant-read-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
+                'x-amz-grant-write-acp': 'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf',
             },
             url: '/?acl',
             query: { acl: '' },
@@ -259,7 +259,7 @@ describe('putBucketACL API', () => {
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
-                    'emailaddress="sampleaccount1@sampling.com"' + ',emailaddress="nonexistentEmail@sampling.com"',
+                    'emailaddress="sampleaccount1@sampling.com",emailaddress="nonexistentEmail@sampling.com"',
             },
             url: '/?acl',
             query: { acl: '' },
@@ -673,7 +673,7 @@ describe('putBucketACL API', () => {
             namespace,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
-                'x-amz-grant-full-control': 'uri="http://acs.amazonaws.com/groups/' + 'global/NOTAVALIDGROUP"',
+                'x-amz-grant-full-control': 'uri="http://acs.amazonaws.com/groups/global/NOTAVALIDGROUP"',
             },
             url: '/?acl',
             query: { acl: '' },

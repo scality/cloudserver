@@ -191,7 +191,7 @@ describe('KMIP backed server-side encryption', () => {
         );
     });
 
-    it('should allow creating mpu with SSE header ' + 'in encrypted bucket', done => {
+    it('should allow creating mpu with SSE header in encrypted bucket', done => {
         async.waterfall(
             [
                 next => _createBucket(bucketName, true, err => next(err)),

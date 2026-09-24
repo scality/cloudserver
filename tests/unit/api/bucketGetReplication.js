@@ -69,7 +69,7 @@ describe("'getReplicationConfigurationXML' function", () => {
         return getAndCheckXML(config, done);
     });
 
-    it('should return XML with a self-closing Prefix tag if `prefix` ' + "property is ''", done => {
+    it("should return XML with a self-closing Prefix tag if `prefix` property is ''", done => {
         const config = getReplicationConfig();
         config.rules[0].prefix = '';
         return getAndCheckXML(config, done);

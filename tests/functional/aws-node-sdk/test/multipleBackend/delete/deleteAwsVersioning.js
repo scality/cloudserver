@@ -700,7 +700,7 @@ describeSkipIfNotMultiple(
                         return bucketUtil.deleteOne(bucket);
                     })
                     .catch(err => {
-                        process.stdout.write('Error emptying/deleting bucket: ' + `${err}\n`);
+                        process.stdout.write(`Error emptying/deleting bucket: ${err}\n`);
                         throw err;
                     });
             });
@@ -790,7 +790,7 @@ describeSkipIfNotMultiple(
                         return bucketUtil.deleteOne(bucket);
                     })
                     .catch(err => {
-                        process.stdout.write('Error emptying/deleting bucket: ' + `${err}\n`);
+                        process.stdout.write(`Error emptying/deleting bucket: ${err}\n`);
                         throw err;
                     });
             });
@@ -819,7 +819,7 @@ describeSkipIfNotMultiple(
                 },
             );
 
-            it('versioning suspended: should delete a specific version in AWS ' + 'backend successfully', done => {
+            it('versioning suspended: should delete a specific version in AWS backend successfully', done => {
                 const key = `somekey-${Date.now()}`;
                 async.waterfall(
                     [
@@ -839,7 +839,7 @@ describeSkipIfNotMultiple(
                 );
             });
 
-            it('versioning enabled: should delete a specific version in AWS ' + 'backend successfully', done => {
+            it('versioning enabled: should delete a specific version in AWS backend successfully', done => {
                 const key = `somekey-${Date.now()}`;
                 async.waterfall(
                     [

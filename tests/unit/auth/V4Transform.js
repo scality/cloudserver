@@ -33,7 +33,7 @@ describe('V4Transform class', () => {
             assert.strictEqual(err, null);
         });
         const filler1 =
-            '8;chunk-signature=51d2511f7c6887907dff20474d8db6' + '7d557e5f515a6fa6a8466bb12f8833bcca\r\ncontents\r\n';
+            '8;chunk-signature=51d2511f7c6887907dff20474d8db67d557e5f515a6fa6a8466bb12f8833bcca\r\ncontents\r\n';
         const filler2 = '0;chunk-signature=c0eac24b7ce72141ec077df9753db4cc8b7991491806689da0395c8bd0231e48\r\n';
         const chunks = [Buffer.from(filler1), Buffer.from(filler2), null];
         const authMe = new AuthMe(chunks);
@@ -49,7 +49,7 @@ describe('V4Transform class', () => {
             done();
         });
         const filler1 =
-            '8;chunk-signature=51d2511f7c6887907dff20474d8db6' + '7d557e5f515a6fa6a8466bb12f8833bcca\r\ncontents\r\n';
+            '8;chunk-signature=51d2511f7c6887907dff20474d8db67d557e5f515a6fa6a8466bb12f8833bcca\r\ncontents\r\n';
         const filler2 = '0;chunk-signature=baadc0debaadc0debaadc0debaadc0debaadc0debaadc0debaadc0debaadc0de\r\n';
         const chunks = [Buffer.from(filler1), Buffer.from(filler2), null];
         const authMe = new AuthMe(chunks);
@@ -61,7 +61,7 @@ describe('V4Transform class', () => {
             assert(false);
         });
         const filler1 =
-            '8;chunk-signature=51d2511f7c6887907dff20474d8db6' + '7d557e5f515a6fa6a8466bb12f8833bcca\r\ncontents\r\n';
+            '8;chunk-signature=51d2511f7c6887907dff20474d8db67d557e5f515a6fa6a8466bb12f8833bcca\r\ncontents\r\n';
         const filler2 = '0;chunk-signature=c0eac24b7ce72141ec077df9753db4cc8b7991491806689da0395c8bd0231e48\r\n';
         const filler3 = '\r\n';
         const chunks = [Buffer.from(filler1), Buffer.from(filler2), Buffer.from(filler3), null];

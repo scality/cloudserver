@@ -501,7 +501,7 @@ describe('GET object', () => {
             it('If-None-Match: returns no error when all ETags do not match', done => {
                 requestGet(
                     {
-                        IfNoneMatch: 'non-matching,' + 'non-matching-either',
+                        IfNoneMatch: 'non-matching,non-matching-either',
                     },
                     err => {
                         checkNoError(err);

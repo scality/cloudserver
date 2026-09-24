@@ -35,7 +35,7 @@ describe('PUT bucket website', () => {
             s3.send(new PutBucketWebsiteCommand({ Bucket: bucketName, WebsiteConfiguration: config }));
         });
 
-        it('should return InvalidArgument if IndexDocument or ' + 'RedirectAllRequestsTo is not provided', done => {
+        it('should return InvalidArgument if IndexDocument or RedirectAllRequestsTo is not provided', done => {
             const config = new WebsiteConfigTester();
             _testPutBucketWebsite(config, 400, 'InvalidArgument', done);
         });
@@ -75,7 +75,7 @@ describe('PUT bucket website', () => {
             },
         );
 
-        it('should return InvalidRequest if Redirect Protocol is ' + 'not http or https', done => {
+        it('should return InvalidRequest if Redirect Protocol is not http or https', done => {
             const config = new WebsiteConfigTester('index.html');
             config.addRoutingRule({ Protocol: 'notvalidprotocol' });
             _testPutBucketWebsite(config, 400, 'InvalidRequest', done);

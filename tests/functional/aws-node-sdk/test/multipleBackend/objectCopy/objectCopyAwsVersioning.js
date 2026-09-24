@@ -252,7 +252,7 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
                 .then(() => bucketUtil.deleteOne(destBucketName))
                 .catch(err => {
                     if (err.code === 'NoSuchBucket') {
-                        process.stdout.write('Warning: did not find dest bucket ' + 'for deletion');
+                        process.stdout.write('Warning: did not find dest bucket for deletion');
                         // we do not throw err since dest bucket may not exist
                         // if we are using source as dest
                     } else {
@@ -422,7 +422,7 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
                                 new CopyObjectCommand({
                                     Bucket: testParams.destBucket,
                                     Key: destKey,
-                                    CopySource: `/${testParams.sourceBucket}` + `/${testParams.sourceKey}`,
+                                    CopySource: `/${testParams.sourceBucket}/${testParams.sourceKey}`,
                                     MetadataDirective: testParams.directive,
                                     Metadata: {
                                         'scal-location-constraint': testParams.destLocation,

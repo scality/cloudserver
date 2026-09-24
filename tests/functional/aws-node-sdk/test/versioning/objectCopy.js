@@ -709,7 +709,7 @@ describe('Object Version Copy', () => {
                     new CopyObjectCommand({
                         Bucket: destBucketName,
                         Key: destObjName,
-                        CopySource: `${sourceBucketName}/${sourceObjName}` + `?versionId=${deleteMarkerId}`,
+                        CopySource: `${sourceBucketName}/${sourceObjName}?versionId=${deleteMarkerId}`,
                     }),
                 );
                 assert.fail('Expected error');

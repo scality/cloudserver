@@ -99,7 +99,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
             await s3.send(new PutBucketLifecycleConfigurationCommand(params));
         });
 
-        it('should allow Expiration Days=0 (explicit bucket-emptying intent) ' + 'and round-trip it', async () => {
+        it('should allow Expiration Days=0 (explicit bucket-emptying intent) and round-trip it', async () => {
             const params = getLifecycleParams({ key: 'Expiration', value: { Days: 0 } });
             await s3.send(new PutBucketLifecycleConfigurationCommand(params));
             const got = await s3.send(new GetBucketLifecycleConfigurationCommand({ Bucket: bucket }));
@@ -168,17 +168,15 @@ describe('aws-sdk test put bucket lifecycle', () => {
             assert.strictEqual(got.Rules[0].AbortIncompleteMultipartUpload.DaysAfterInitiation, 0);
         });
 
-        it(
-            'should not allow lifecycle configuration with duplicated rule id ' + 'and with Origin header set',
-            async () => {
-                const origin = 'http://www.allowedwebsite.com';
-                const lifecycleConfig = {
-                    Rules: [expirationRule, expirationRule],
-                };
-                const params = {
-                    Bucket: bucket,
-                    LifecycleConfiguration: lifecycleConfig,
-                };
+        it('should not allow lifecycle configuration with duplicated rule id and with Origin header set', async () => {
+            const origin = 'http://www.allowedwebsite.com';
+            const lifecycleConfig = {
+                Rules: [expirationRule, expirationRule],
+            };
+            const params = {
+                Bucket: bucket,
+                LifecycleConfiguration: lifecycleConfig,
+            };
 
             const clientConfig = getConfig('default', { signatureVersion: 'v4' });
             const clientWithOrigin = new S3Client({

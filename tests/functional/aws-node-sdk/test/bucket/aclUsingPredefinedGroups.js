@@ -102,7 +102,7 @@ withV4(sigCfg => {
         const grantUri = `uri=${auth ? constants.allAuthedUsersId : constants.publicId}`;
 
         // TODO fix flakiness on E2E and re-enable, see CLDSRV-254
-        describeSkipIfE2E('PUT Bucket ACL using predefined groups - ' + `${authType} request`, () => {
+        describeSkipIfE2E(`PUT Bucket ACL using predefined groups - ${authType} request`, () => {
             const aclParam = {
                 Bucket: testBucket,
                 ACL: 'private',

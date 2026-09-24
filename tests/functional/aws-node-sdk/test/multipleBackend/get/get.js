@@ -159,7 +159,7 @@ describe('Multiple backend get object', function testSuite() {
                         done();
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success but got ' + `error ${err}`);
+                        assert.equal(err, null, `Expected success but got error ${err}`);
                         done(err);
                     });
             });
@@ -239,7 +239,7 @@ describe('Multiple backend get object', function testSuite() {
                         done();
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success but got ' + `error ${err}`);
+                        assert.equal(err, null, `Expected success but got error ${err}`);
                         done(err);
                     });
             });

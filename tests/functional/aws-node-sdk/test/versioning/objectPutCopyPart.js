@@ -140,7 +140,7 @@ describe('Object Part Copy with Versioning', () => {
                 s3.send(
                     new UploadPartCopyCommand({
                         Bucket: destBucket,
-                        CopySource: `${sourceBucket}/${sourceKey}?` + `versionId=${invalidId}`,
+                        CopySource: `${sourceBucket}/${sourceKey}?versionId=${invalidId}`,
                         Key: destKey,
                         PartNumber: 1,
                         UploadId: uploadId,
@@ -531,7 +531,7 @@ describe('Object Part Copy with Versioning', () => {
                 s3.send(
                     new UploadPartCopyCommand({
                         Bucket: destBucket,
-                        CopySource: `${sourceBucket}/${sourceKey}` + `?versionId=${versionId}`,
+                        CopySource: `${sourceBucket}/${sourceKey}?versionId=${versionId}`,
                         Key: destKey,
                         PartNumber: 1,
                         UploadId: uploadId,

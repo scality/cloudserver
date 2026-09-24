@@ -1336,20 +1336,17 @@ describe('Object Copy', () => {
             });
         });
 
-        it(
-            'If-None-Match: returns PreconditionFailed when one of ETags ' + 'match, with double quotes around ETag',
-            done => {
-                requestCopy(
-                    {
-                        CopySourceIfNoneMatch: `non-matching,${etag}`,
-                    },
-                    err => {
-                        checkError(err, 'PreconditionFailed', 412);
-                        done();
-                    },
-                );
-            },
-        );
+        it('If-None-Match: returns PreconditionFailed when one of ETags match, with double quotes around ETag', done => {
+            requestCopy(
+                {
+                    CopySourceIfNoneMatch: `non-matching,${etag}`,
+                },
+                err => {
+                    checkError(err, 'PreconditionFailed', 412);
+                    done();
+                },
+            );
+        });
 
         it('If-None-Match: returns PreconditionFailed when ETag match, without double quotes around ETag', done => {
             requestCopy({ CopySourceIfNoneMatch: etagTrim }, err => {
@@ -1358,20 +1355,17 @@ describe('Object Copy', () => {
             });
         });
 
-        it(
-            'If-None-Match: returns PreconditionFailed when one of ETags ' + 'match, without double quotes around ETag',
-            done => {
-                requestCopy(
-                    {
-                        CopySourceIfNoneMatch: `non-matching,${etagTrim}`,
-                    },
-                    err => {
-                        checkError(err, 'PreconditionFailed', 412);
-                        done();
-                    },
-                );
-            },
-        );
+        it('If-None-Match: returns PreconditionFailed when one of ETags match, without double quotes around ETag', done => {
+            requestCopy(
+                {
+                    CopySourceIfNoneMatch: `non-matching,${etagTrim}`,
+                },
+                err => {
+                    checkError(err, 'PreconditionFailed', 412);
+                    done();
+                },
+            );
+        });
 
         it('If-Modified-Since: returns no error if Last modified date is greater', done => {
             requestCopy({ CopySourceIfModifiedSince: dateFromNow(-1) }, err => {

@@ -13,7 +13,7 @@ function safeJSONParse(s) {
 }
 
 function createEncryptedBucket(bucketParams, cb) {
-    process.stdout.write('Creating encrypted bucket' + `${bucketParams.Bucket}`);
+    process.stdout.write(`Creating encrypted bucket${bucketParams.Bucket}`);
     const config = getConfig();
     const endpointWithoutHttp = config.endpoint.split('//')[1];
     const host = endpointWithoutHttp.split(':')[0];

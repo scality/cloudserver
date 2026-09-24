@@ -66,7 +66,7 @@ function timeDiff(startTime) {
 
 function makeAuthInfo(accessKey, userName) {
     const canIdMap = {
-        accessKey1: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7' + 'cd47ef2be',
+        accessKey1: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
         accessKey2: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf',
         lifecycleKey1: '0123456789abcdef/lifecycle',
         default: crypto.randomBytes(32).toString('hex'),
@@ -310,7 +310,7 @@ class CorsConfigTester {
                 xml.push(`<ID>${rule.id}</ID>`);
             }
             if (rule.maxAgeSeconds && !Array.isArray(rule.maxAgeSeconds)) {
-                xml.push(`<MaxAgeSeconds>${rule.maxAgeSeconds}` + '</MaxAgeSeconds>');
+                xml.push(`<MaxAgeSeconds>${rule.maxAgeSeconds}</MaxAgeSeconds>`);
             }
             xml.push('</CORSRule>');
         });
@@ -400,7 +400,7 @@ class TaggingConfigTester {
 
     constructXml() {
         const xml = [];
-        xml.push('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' + '<Tagging> <TagSet>');
+        xml.push('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Tagging> <TagSet>');
         Object.keys(this._tags).forEach(key => {
             const value = this._tags[key];
             xml.push(`<Tag><Key>${key}</Key><Value>${value}</Value></Tag>`);

@@ -375,7 +375,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             expectedBuff: Buffer.allocUnsafe(90).fill(0, 0, 40).fill(1, 40),
         },
         {
-            it: 'should get a range for an object using only an end ' + 'offset in the request',
+            it: 'should get a range for an object using only an end offset in the request',
             range: 'bytes=-10',
             contentLength: 10,
             contentRange: 'bytes 190-199/200',

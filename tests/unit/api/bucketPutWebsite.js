@@ -79,7 +79,7 @@ describe('putBucketWebsite API', () => {
                 return done();
             });
         });
-        it('xmlContainsElem should return false if xml does not contain ' + 'specified element', done => {
+        it('xmlContainsElem should return false if xml does not contain specified element', done => {
             const xml = '<Toplevel><Parent><ElementA>value</ElementA></Parent></Toplevel>';
             parseString(xml, (err, result) => {
                 if (err) {

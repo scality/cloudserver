@@ -290,7 +290,7 @@ describe('deleted flag bucket handling', () => {
     describe('initiateMultipartUpload on a bucket with deleted flag', () => {
         const objName = 'objectName';
         after(done => {
-            metadata.deleteObjectMD(`${constants.mpuBucketPrefix}` + `${bucketName}`, objName, {}, log, () => {
+            metadata.deleteObjectMD(`${constants.mpuBucketPrefix}${bucketName}`, objName, {}, log, () => {
                 metadata.deleteBucket(`${constants.mpuBucketPrefix}${bucketName}`, log, () => {
                     done();
                 });

@@ -19,7 +19,7 @@ const bucket = 'bucketcorstester';
 const methods = ['PUT', 'POST', 'DELETE', 'GET'];
 const originsWithWildcards = ['*.allowedorigin.com', 'http://*.allowedorigin.com', 'http://www.allowedorigin.*'];
 const allowedOrigin = 'http://www.allowedwebsite.com';
-const vary = 'Origin, Access-Control-Request-Headers, ' + 'Access-Control-Request-Method';
+const vary = 'Origin, Access-Control-Request-Headers, Access-Control-Request-Method';
 
 // AWS seems to take a bit long so sometimes by the time we send the request
 // the bucket has not yet been created or the bucket has been deleted.
@@ -130,7 +130,7 @@ describe('Preflight CORS request with existing bucket', () => {
             const headers = {
                 Origin: allowedOrigin,
                 'Access-Control-Request-Method': 'GET',
-                'Access-Control-Request-Headers': 'Origin, Accept, ' + 'Content-Type',
+                'Access-Control-Request-Headers': 'Origin, Accept, Content-Type',
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 'AccessForbidden', headersResponse: null }, done);
         });
@@ -198,7 +198,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 const headers = {
                     Origin: allowedOrigin,
                     'Access-Control-Request-Method': 'GET',
-                    'Access-Control-Request-Headers': 'Origin, Accept, ' + 'Content-Type',
+                    'Access-Control-Request-Headers': 'Origin, Accept, Content-Type',
                 };
                 methodRequest(
                     { method: 'OPTIONS', bucket, headers, code: 'AccessForbidden', headersResponse: null },
@@ -273,7 +273,7 @@ describe('Preflight CORS request with existing bucket', () => {
                     const headers = {
                         Origin: allowedOrigin,
                         'Access-Control-Request-Method': allowedMethod,
-                        'Access-Control-Request-Headers': 'Origin, Accept, ' + 'Content-Type',
+                        'Access-Control-Request-Headers': 'Origin, Accept, Content-Type',
                     };
                     methodRequest(
                         { method: 'OPTIONS', bucket, headers, code: 'AccessForbidden', headersResponse: null },
@@ -537,7 +537,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 const headers = {
                     Origin: allowedOrigin,
                     'Access-Control-Request-Method': 'GET',
-                    'Access-Control-Request-Headers': 'Origin, Accept, ' + 'content-type',
+                    'Access-Control-Request-Headers': 'Origin, Accept, content-type',
                 };
                 methodRequest(
                     { method: 'OPTIONS', bucket, headers, code: 'AccessForbidden', headersResponse: null },

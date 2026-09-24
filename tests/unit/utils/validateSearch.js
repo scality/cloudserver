@@ -16,12 +16,12 @@ describe('validate search where clause', () => {
         },
         {
             it: 'should allow valid search with AND',
-            searchParams: '`x-amz-meta-dog`="labrador" ' + 'AND `x-amz-meta-age`="5"',
+            searchParams: '`x-amz-meta-dog`="labrador" AND `x-amz-meta-age`="5"',
             result: undefined,
         },
         {
             it: 'should allow valid search with OR',
-            searchParams: '`x-amz-meta-dog`="labrador" ' + 'OR `x-amz-meta-age`="5"',
+            searchParams: '`x-amz-meta-dog`="labrador" OR `x-amz-meta-age`="5"',
             result: undefined,
         },
         {
@@ -48,47 +48,46 @@ describe('validate search where clause', () => {
             it: 'should disallow a LIKE search with invalid attribute',
             searchParams: '`x-zma-meta-dog` LIKE "labrador"',
             result: errorInstances.InvalidArgument.customizeDescription(
-                'Search ' + 'param contains unknown attribute: x-zma-meta-dog',
+                'Search param contains unknown attribute: x-zma-meta-dog',
             ),
         },
         {
             it: 'should disallow a simple search with unknown attribute',
             searchParams: '`x-zma-meta-dog`="labrador"',
             result: errorInstances.InvalidArgument.customizeDescription(
-                'Search ' + 'param contains unknown attribute: x-zma-meta-dog',
+                'Search param contains unknown attribute: x-zma-meta-dog',
             ),
         },
         {
-            it: 'should disallow a compound search with unknown ' + 'attribute on right',
-            searchParams: '`x-amz-meta-dog`="labrador" AND ' + '`x-zma-meta-dog`="labrador"',
+            it: 'should disallow a compound search with unknown attribute on right',
+            searchParams: '`x-amz-meta-dog`="labrador" AND `x-zma-meta-dog`="labrador"',
             result: errorInstances.InvalidArgument.customizeDescription(
-                'Search ' + 'param contains unknown attribute: x-zma-meta-dog',
+                'Search param contains unknown attribute: x-zma-meta-dog',
             ),
         },
         {
-            it: 'should disallow a compound search with unknown ' + 'attribute on left',
-            searchParams: '`x-zma-meta-dog`="labrador" AND ' + '`x-amz-meta-dog`="labrador"',
+            it: 'should disallow a compound search with unknown attribute on left',
+            searchParams: '`x-zma-meta-dog`="labrador" AND `x-amz-meta-dog`="labrador"',
             result: errorInstances.InvalidArgument.customizeDescription(
-                'Search ' + 'param contains unknown attribute: x-zma-meta-dog',
+                'Search param contains unknown attribute: x-zma-meta-dog',
             ),
         },
         {
-            it: 'should disallow a chained search with one invalid ' + 'table attribute',
-            searchParams:
-                '`x-amz-meta-dog`="labrador" ' + 'AND `x-amz-meta-age`="5" ' + 'OR `x-zma-meta-whatever`="ok"',
+            it: 'should disallow a chained search with one invalid table attribute',
+            searchParams: '`x-amz-meta-dog`="labrador" AND `x-amz-meta-age`="5" OR `x-zma-meta-whatever`="ok"',
             result: errorInstances.InvalidArgument.customizeDescription(
-                'Search ' + 'param contains unknown attribute: x-zma-meta-whatever',
+                'Search param contains unknown attribute: x-zma-meta-whatever',
             ),
         },
         {
-            it: 'should disallow a simple search with unknown ' + 'column attribute',
+            it: 'should disallow a simple search with unknown column attribute',
             searchParams: 'whatever="labrador"',
             result: errorInstances.InvalidArgument.customizeDescription(
                 'Search param contains unknown attribute: whatever',
             ),
         },
         {
-            it: 'should disallow a chained search with one invalid ' + 'column attribute',
+            it: 'should disallow a chained search with one invalid column attribute',
             searchParams:
                 '`x-amz-meta-dog`="labrador" ' +
                 'AND `x-amz-meta-age`="5" ' +

@@ -50,7 +50,7 @@ const bucket = 'bucketcorsheadertest';
 const objectKey = 'objectKeyName';
 const allowedOrigin = 'http://www.allowedwebsite.com';
 const notAllowedOrigin = 'http://www.notallowedwebsite.com';
-const vary = 'Origin, Access-Control-Request-Headers, ' + 'Access-Control-Request-Method';
+const vary = 'Origin, Access-Control-Request-Headers, Access-Control-Request-Method';
 const defaultOptions = {
     allowedMethods: ['GET'],
     allowedOrigins: [allowedOrigin],

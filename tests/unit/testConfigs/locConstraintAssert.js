@@ -225,7 +225,7 @@ describe('locationConstraintAssert', () => {
                 'us-east-1': usEast1,
                 azurefaketest: locationConstraint,
             });
-        }, '/bad location constraint: "azurefaketest" ' + 'azureStorageAccountName "invalid!!!" is an invalid value/');
+        }, '/bad location constraint: "azurefaketest" azureStorageAccountName "invalid!!!" is an invalid value/');
     });
     it('should throw error if type is azure and azureStorageAccessKey is not specified', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');

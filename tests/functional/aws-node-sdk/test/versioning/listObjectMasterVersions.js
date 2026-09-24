@@ -316,13 +316,13 @@ describe('listObject - Delimiter master', function testSuite() {
 
                 res.Contents?.forEach(result => {
                     if (!expectedResult.find(key => key === result.Key)) {
-                        throw new Error('listing fail, ' + `unexpected key ${result.Key}`);
+                        throw new Error(`listing fail, unexpected key ${result.Key}`);
                     }
                     _assertResultElements(result);
                 });
                 res.CommonPrefixes?.forEach(cp => {
                     if (!test.commonPrefix.find(item => item === cp.Prefix)) {
-                        throw new Error('listing fail, ' + `unexpected prefix ${cp.Prefix}`);
+                        throw new Error(`listing fail, unexpected prefix ${cp.Prefix}`);
                     }
                 });
                 assert.strictEqual(res.IsTruncated, test.isTruncated);

@@ -240,7 +240,7 @@ function assertObjOnBackend(expectedBackend, objectKey, cb) {
                     return cb();
                 })
                 .catch(err => {
-                    assert.equal(err, null, 'Error on headObject call to AWS: ' + `${err}`);
+                    assert.equal(err, null, `Error on headObject call to AWS: ${err}`);
                     return cb();
                 });
         }
@@ -583,7 +583,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             mpuSetup(awsLocation, objectKey, uploadId => {
                 const compParams = getCompleteParams(objectKey, uploadId);
                 completeMultipartUpload(authInfo, compParams, log, (err, result) => {
-                    assert.equal(err, null, 'Error completing mpu on AWS ' + `${err}`);
+                    assert.equal(err, null, `Error completing mpu on AWS ${err}`);
                     assertMpuCompleteResults(result, objectKey);
                     assertObjOnBackend(awsLocation, objectKey, done);
                 });
@@ -597,7 +597,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             mpuSetup(fileLocation, objectKey, uploadId => {
                 const compParams = getCompleteParams(objectKey, uploadId);
                 completeMultipartUpload(authInfo, compParams, log, (err, result) => {
-                    assert.equal(err, null, 'Error completing mpu on file ' + `${err}`);
+                    assert.equal(err, null, `Error completing mpu on file ${err}`);
                     assertMpuCompleteResults(result, objectKey);
                     assertObjOnBackend(fileLocation, objectKey, done);
                 });
@@ -611,7 +611,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         putObject(awsLocation, objectKey, () => {
             const enableVersioningRequest = versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
             bucketPutVersioning(authInfo, enableVersioningRequest, log, err => {
-                assert.equal(err, null, 'Error enabling bucket versioning: ' + `${err}`);
+                assert.equal(err, null, `Error enabling bucket versioning: ${err}`);
                 const initiateRequest = {
                     bucketName,
                     namespace,

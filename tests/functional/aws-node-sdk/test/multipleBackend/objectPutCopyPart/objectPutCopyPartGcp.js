@@ -107,7 +107,7 @@ function assertCopyPart(infos, cb) {
                         UploadId: uploadId,
                     },
                     (err, res) => {
-                        assert.ifError(err, 'GCP listParts: Expected success,' + `got error: ${err}`);
+                        assert.ifError(err, `GCP listParts: Expected success,got error: ${err}`);
                         assert.strictEqual(res.Contents[0].ETag, `"${md5}"`);
                         next();
                     },

@@ -213,7 +213,7 @@ describe('transient bucket handling', () => {
     describe('initiateMultipartUpload on a transient bucket', () => {
         const objName = 'objectName';
         after(done => {
-            metadata.deleteObjectMD(`${constants.mpuBucketPrefix}` + `${bucketName}`, objName, {}, log, () => {
+            metadata.deleteObjectMD(`${constants.mpuBucketPrefix}${bucketName}`, objName, {}, log, () => {
                 metadata.deleteBucket(`${constants.mpuBucketPrefix}${bucketName}`, log, () => {
                     done();
                 });

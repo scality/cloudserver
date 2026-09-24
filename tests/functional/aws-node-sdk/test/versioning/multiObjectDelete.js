@@ -134,7 +134,7 @@ describe('Multi-Object Versioning Delete Success', function success() {
             assert.strictEqual(res.Errors, undefined);
         });
 
-        it('should return NoSuchVersion in errors if one versionId is ' + 'invalid', async () => {
+        it('should return NoSuchVersion in errors if one versionId is invalid', async () => {
             const objects = objectsRes.slice(0, 1000).map(obj => ({ Key: obj.Key, VersionId: obj.VersionId }));
             objects[0].VersionId = 'invalid-version-id';
 

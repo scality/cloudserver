@@ -98,17 +98,17 @@ describe('PUT bucket cors', () => {
             await _testPutBucketCors(testCors, 400, 'MalformedXML');
         });
 
-        it('should return InvalidRequest if AllowedMethod is not a valid ' + 'method', async () => {
+        it('should return InvalidRequest if AllowedMethod is not a valid method', async () => {
             const testCors = _corsTemplate({ AllowedMethods: ['test'] });
             await _testPutBucketCors(testCors, 400, 'InvalidRequest');
         });
 
-        it('should return InvalidRequest for lowercase value for ' + 'AllowedMethod', async () => {
+        it('should return InvalidRequest for lowercase value for AllowedMethod', async () => {
             const testCors = _corsTemplate({ AllowedMethods: ['put', 'get'] });
             await _testPutBucketCors(testCors, 400, 'InvalidRequest');
         });
 
-        it('should return InvalidRequest if more than one asterisk in ' + 'AllowedHeader', async () => {
+        it('should return InvalidRequest if more than one asterisk in AllowedHeader', async () => {
             const testCors = _corsTemplate({ AllowedHeaders: ['*-amz-*'] });
             await _testPutBucketCors(testCors, 400, 'InvalidRequest');
         });

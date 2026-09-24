@@ -252,11 +252,7 @@ describeSkipIfNotMultiple('AWS backend get object with versioning', function tes
                                 )
                                 .then(() => next())
                                 .catch(err => {
-                                    assert.strictEqual(
-                                        err,
-                                        null,
-                                        'Expected success ' + `putting object, got error ${err}`,
-                                    );
+                                    assert.strictEqual(err, null, `Expected success putting object, got error ${err}`);
                                     next(err);
                                 }),
                         next => enableVersioning(s3, bucket, next),

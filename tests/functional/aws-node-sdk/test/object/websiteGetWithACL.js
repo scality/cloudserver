@@ -89,7 +89,7 @@ const aclTests = [
     },
 
     {
-        it: 'should return 404 if public bucket - without index - ' + 'without error documents',
+        it: 'should return 404 if public bucket - without index - without error documents',
         bucketACL: 'public',
         objects: {},
         html: '404-not-found',

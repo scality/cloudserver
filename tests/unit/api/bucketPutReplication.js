@@ -113,7 +113,7 @@ describe("'validateReplicationConfig' function", () => {
             'not transient and preferred read location is not specified',
         () => {
             const withoutPreferredRead = {
-                role: 'arn:aws:iam::account-id:role/src-resource,' + 'arn:aws:iam::account-id:role/dest-resource',
+                role: 'arn:aws:iam::account-id:role/src-resource,arn:aws:iam::account-id:role/dest-resource',
                 destination: 'arn:aws:s3:::destination-bucket',
                 rules: [
                     {

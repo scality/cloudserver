@@ -95,60 +95,57 @@ describe('ListParts checksum fields', () =>
 
         for (const [checksumAlgorithm, checksumTypes] of Object.entries(checksumTypesByAlgorithm)) {
             for (const checksumType of checksumTypes) {
-                it(
-                    `should include ${checksumAlgorithm}/${checksumType} root ` + 'and part checksum fields',
-                    async () => {
-                        const key = `explicit-${checksumAlgorithm}-${checksumType}`;
-                        const checksumField = checksumFieldByAlgorithm[checksumAlgorithm];
-                        const internalAlgorithm = checksumAlgorithm.toLowerCase();
-                        const { UploadId } = await s3.send(
-                            new CreateMultipartUploadCommand({
-                                Bucket: bucket,
-                                Key: key,
-                                ChecksumAlgorithm: checksumAlgorithm,
-                                ChecksumType: checksumType,
-                            }),
-                        );
-                        openMPUs.push({ key, uploadId: UploadId });
+                it(`should include ${checksumAlgorithm}/${checksumType} root and part checksum fields`, async () => {
+                    const key = `explicit-${checksumAlgorithm}-${checksumType}`;
+                    const checksumField = checksumFieldByAlgorithm[checksumAlgorithm];
+                    const internalAlgorithm = checksumAlgorithm.toLowerCase();
+                    const { UploadId } = await s3.send(
+                        new CreateMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            ChecksumAlgorithm: checksumAlgorithm,
+                            ChecksumType: checksumType,
+                        }),
+                    );
+                    openMPUs.push({ key, uploadId: UploadId });
 
-                        const partChecksums = await Promise.all(
-                            checksumBodies.map(body => algorithms[internalAlgorithm].digest(body)),
-                        );
+                    const partChecksums = await Promise.all(
+                        checksumBodies.map(body => algorithms[internalAlgorithm].digest(body)),
+                    );
 
-                        await Promise.all(
-                            checksumBodies.map((body, index) =>
-                                s3.send(
-                                    new UploadPartCommand({
-                                        Bucket: bucket,
-                                        Key: key,
-                                        UploadId,
-                                        PartNumber: index + 1,
-                                        Body: body,
-                                        [checksumField]: partChecksums[index],
-                                    }),
-                                ),
+                    await Promise.all(
+                        checksumBodies.map((body, index) =>
+                            s3.send(
+                                new UploadPartCommand({
+                                    Bucket: bucket,
+                                    Key: key,
+                                    UploadId,
+                                    PartNumber: index + 1,
+                                    Body: body,
+                                    [checksumField]: partChecksums[index],
+                                }),
                             ),
-                        );
+                        ),
+                    );
 
-                        const partList = await s3.send(
-                            new ListPartsCommand({
-                                Bucket: bucket,
-                                Key: key,
-                                UploadId,
-                            }),
-                        );
+                    const partList = await s3.send(
+                        new ListPartsCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            UploadId,
+                        }),
+                    );
 
-                        assert.strictEqual(partList.ChecksumAlgorithm, checksumAlgorithm);
-                        assert.strictEqual(partList.ChecksumType, checksumType);
-                        assert.strictEqual(partList.Parts.length, checksumBodies.length);
-                        partList.Parts.forEach((part, index) => {
-                            assert.strictEqual(part.PartNumber, index + 1);
-                            assert.strictEqual(part[checksumField], partChecksums[index]);
-                        });
+                    assert.strictEqual(partList.ChecksumAlgorithm, checksumAlgorithm);
+                    assert.strictEqual(partList.ChecksumType, checksumType);
+                    assert.strictEqual(partList.Parts.length, checksumBodies.length);
+                    partList.Parts.forEach((part, index) => {
+                        assert.strictEqual(part.PartNumber, index + 1);
+                        assert.strictEqual(part[checksumField], partChecksums[index]);
+                    });
 
-                        await abortUpload(key, UploadId);
-                    },
-                );
+                    await abortUpload(key, UploadId);
+                });
             }
         }
 

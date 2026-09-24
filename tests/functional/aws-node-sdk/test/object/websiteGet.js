@@ -155,7 +155,7 @@ describe('User visits bucket website endpoint', () => {
                     (err, res) => {
                         assert.strictEqual(err, null, `Err with request ${err}`);
                         assert.strictEqual(res.statusCode, 405);
-                        assert(res.body.indexOf('<head><title>405 ' + 'Method Not Allowed</title></head>') > -1);
+                        assert(res.body.indexOf('<head><title>405 Method Not Allowed</title></head>') > -1);
                         return done();
                     },
                 );

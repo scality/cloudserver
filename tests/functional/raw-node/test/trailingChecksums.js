@@ -7,7 +7,7 @@ const bucket = 'testunsupportedchecksumsbucket';
 const objectKey = 'key';
 const objData = Buffer.alloc(1024, 'a');
 const objDataWithTrailingChecksum =
-    '10\r\n0123456789abcdef\r\n' + '10\r\n0123456789abcdef\r\n' + '0\r\nx-amz-checksum-crc64nvme:skQv82y5rgE=\r\n';
+    '10\r\n0123456789abcdef\r\n10\r\n0123456789abcdef\r\n0\r\nx-amz-checksum-crc64nvme:skQv82y5rgE=\r\n';
 const objDataWithoutTrailingChecksum = '0123456789abcdef0123456789abcdef';
 
 const config = require('../../config.json');

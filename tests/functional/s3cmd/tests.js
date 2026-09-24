@@ -406,7 +406,7 @@ describe('s3cmd copyObject without MPU to same bucket', function copyStuff() {
     });
 });
 
-describe('s3cmd copyObject without MPU to different bucket ' + '(always unencrypted)', function copyStuff() {
+describe('s3cmd copyObject without MPU to different bucket (always unencrypted)', function copyStuff() {
     const copyBucket = 'receiverbucket';
     this.timeout(40000);
 
@@ -414,7 +414,7 @@ describe('s3cmd copyObject without MPU to different bucket ' + '(always unencryp
         exec(['mb', `s3://${copyBucket}`], done);
     });
 
-    after('delete downloaded file and receiver bucket' + 'copied', done => {
+    after('delete downloaded file and receiver bucketcopied', done => {
         deleteFile(downloadCopy, () => {
             exec(['rb', `s3://${copyBucket}`], done);
         });

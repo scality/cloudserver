@@ -57,7 +57,7 @@ describeSkipIfNotMultiple('Multiple backend delete object from Azure', function 
                     return bucketUtil.deleteOne(azureContainerName);
                 })
                 .catch(err => {
-                    process.stdout.write('Error emptying/deleting bucket: ' + `${err}\n`);
+                    process.stdout.write(`Error emptying/deleting bucket: ${err}\n`);
                     throw err;
                 });
         });
@@ -102,7 +102,7 @@ describeSkipIfNotMultiple('Multiple backend delete object from Azure', function 
                             );
                         })
                         .catch(err => {
-                            assert.equal(err, null, 'Expected success ' + `but got error ${err}`);
+                            assert.equal(err, null, `Expected success but got error ${err}`);
                         });
                 });
             });
@@ -148,7 +148,7 @@ describeSkipIfNotMultiple('Multiple backend delete object from Azure', function 
                         );
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success ' + `but got error ${err}`);
+                        assert.equal(err, null, `Expected success but got error ${err}`);
                     });
             });
         });
@@ -171,17 +171,17 @@ describeSkipIfNotMultiple('Multiple backend delete object from Azure', function 
                             .getContainerClient(azureContainerName)
                             .deleteBlob(this.currentTest.azureObject)
                             .then(done, err => {
-                                assert.equal(err, null, 'Expected success but got ' + `error ${err}`);
+                                assert.equal(err, null, `Expected success but got error ${err}`);
                                 done(err);
                             });
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success but got ' + `error ${err}`);
+                        assert.equal(err, null, `Expected success but got error ${err}`);
                         done();
                     });
             });
 
-            it('should return no error on deleting an object deleted ' + 'from Azure', function itF(done) {
+            it('should return no error on deleting an object deleted from Azure', function itF(done) {
                 s3.send(
                     new DeleteObjectCommand({
                         Bucket: azureContainerName,
@@ -192,7 +192,7 @@ describeSkipIfNotMultiple('Multiple backend delete object from Azure', function 
                         done();
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Expected success but got ' + `error ${err}`);
+                        assert.equal(err, null, `Expected success but got error ${err}`);
                         done();
                     });
             });
@@ -213,7 +213,7 @@ describeSkipIfNotMultiple('Multiple backend delete object from Azure', function 
                 ).then(() => done());
             });
 
-            it('should not delete object when deleting a non-existing ' + 'version from Azure', function itF(done) {
+            it('should not delete object when deleting a non-existing version from Azure', function itF(done) {
                 async.waterfall(
                     [
                         next =>
@@ -242,7 +242,7 @@ describeSkipIfNotMultiple('Multiple backend delete object from Azure', function 
                                     return next();
                                 })
                                 .catch(err => {
-                                    assert.equal(err, null, 'getObject: Expected success ' + `but got error ${err}`);
+                                    assert.equal(err, null, `getObject: Expected success but got error ${err}`);
                                     next(err);
                                 }),
                         next =>
@@ -256,11 +256,7 @@ describeSkipIfNotMultiple('Multiple backend delete object from Azure', function 
                                         return next();
                                     },
                                     err => {
-                                        assert.equal(
-                                            err,
-                                            null,
-                                            'getBlobToText: Expected ' + `successbut got error ${err}`,
-                                        );
+                                        assert.equal(err, null, `getBlobToText: Expected successbut got error ${err}`);
                                         return next();
                                     },
                                 ),
@@ -292,12 +288,12 @@ describeSkipIfNotMultiple('Multiple backend delete object from Azure', function 
                                 setTimeout(() => done(), azureTimeout);
                             })
                             .catch(err => {
-                                assert.equal(err, null, 'Err initiating MPU on ' + `Azure: ${err}`);
+                                assert.equal(err, null, `Err initiating MPU on Azure: ${err}`);
                                 done();
                             });
                     })
                     .catch(err => {
-                        assert.equal(err, null, 'Err putting object to Azure: ' + `${err}`);
+                        assert.equal(err, null, `Err putting object to Azure: ${err}`);
                         done();
                     });
             });

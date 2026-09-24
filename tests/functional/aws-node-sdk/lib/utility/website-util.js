@@ -107,7 +107,7 @@ function _assertResponseHtml404(method, response, type) {
             assert.strictEqual(response.headers['x-amz-error-message'], 'The specified key does not exist.');
         } else {
             throw new Error(
-                `'${type}' is not a recognized 404 ` + 'error checked in the WebsiteConfigTester.checkHTML function',
+                `'${type}' is not a recognized 404 error checked in the WebsiteConfigTester.checkHTML function`,
             );
         }
         // don't need to check HTML for head requests
@@ -125,7 +125,7 @@ function _assertResponseHtml404(method, response, type) {
     } else if (type === '404-no-such-website-configuration') {
         _assertResponseHtml(response.body, 'ul', [
             'Code: NoSuchWebsiteConfiguration',
-            'Message: The specified bucket does not have a ' + 'website configuration',
+            'Message: The specified bucket does not have a website configuration',
             `BucketName: ${bucketName}`,
         ]);
     } else if (type === '404-not-found') {
