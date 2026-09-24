@@ -1,4 +1,3 @@
-
 const assert = require('assert');
 const {
     CreateBucketCommand,
@@ -42,22 +41,22 @@ function getExpectedObj(res, data) {
         NextUploadIdMarker: uploadId,
         MaxUploads: maxUploads,
         IsTruncated: false,
-        Uploads: [{
-            UploadId: uploadId,
-            Key: objectKey,
-            Initiated: initiated,
-            StorageClass: 'STANDARD',
-            Owner:
+        Uploads: [
             {
-                DisplayName: displayName,
-                ID: userId,
+                UploadId: uploadId,
+                Key: objectKey,
+                Initiated: initiated,
+                StorageClass: 'STANDARD',
+                Owner: {
+                    DisplayName: displayName,
+                    ID: userId,
+                },
+                Initiator: {
+                    DisplayName: displayName,
+                    ID: userId,
+                },
             },
-            Initiator:
-            {
-                DisplayName: displayName,
-                ID: userId,
-            },
-        }],
+        ],
     };
 
     // If no `prefixVal` is given, it should not be included in the response.
@@ -93,20 +92,24 @@ describe('aws-node-sdk test suite of listMultipartUploads', () =>
             // The owner of the bucket will also be the MPU upload owner.
             data.displayName = ownerRes.DisplayName;
             data.userId = ownerRes.ID;
-            
-            const mpuRes = await s3.send(new CreateMultipartUploadCommand({
-                Bucket: bucket,
-                Key: objectKey,
-            }));
-            data.uploadId = mpuRes.UploadId; 
+
+            const mpuRes = await s3.send(
+                new CreateMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: objectKey,
+                }),
+            );
+            data.uploadId = mpuRes.UploadId;
         });
 
         afterEach(async () => {
-            await s3.send(new AbortMultipartUploadCommand({
-                Bucket: bucket,
-                Key: objectKey,
-                UploadId: data.uploadId,
-            }));
+            await s3.send(
+                new AbortMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: objectKey,
+                    UploadId: data.uploadId,
+                }),
+            );
             await bucketUtil.empty(bucket);
             await bucketUtil.deleteOne(bucket);
         });
@@ -122,23 +125,26 @@ describe('aws-node-sdk test suite of listMultipartUploads', () =>
             data.delimiter = 'test-delimiter';
             data.maxUploads = 1;
             // eslint-disable-next-line no-unused-vars
-            const {$metadata, ...res } = await s3.send(new ListMultipartUploadsCommand({
-                Bucket: bucket,
-                Prefix: 'to',
-                Delimiter: 'test-delimiter',
-                MaxUploads: 1,
-            }));
+            const { $metadata, ...res } = await s3.send(
+                new ListMultipartUploadsCommand({
+                    Bucket: bucket,
+                    Prefix: 'to',
+                    Delimiter: 'test-delimiter',
+                    MaxUploads: 1,
+                }),
+            );
             checkValues(res, data);
         });
 
         it('should list 0 multipart uploads when MaxUploads is 0', async () => {
             data.maxUploads = 0;
             // eslint-disable-next-line no-unused-vars
-            const { $metadata , ...res } = await s3.send(new ListMultipartUploadsCommand({
-                Bucket: bucket,
-                MaxUploads: 0,
-            }));
+            const { $metadata, ...res } = await s3.send(
+                new ListMultipartUploadsCommand({
+                    Bucket: bucket,
+                    MaxUploads: 0,
+                }),
+            );
             checkValues(res, data);
         });
-    })
-);
+    }));

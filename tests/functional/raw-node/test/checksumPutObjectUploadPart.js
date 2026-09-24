@@ -142,7 +142,7 @@ function assertStatus(expectedStatus, expectedCode, expectedMessage) {
 }
 
 const msgMalformedTrailer =
-    'The request contained trailing data that was not well-formed' + ' or did not conform to our published schema.';
+    'The request contained trailing data that was not well-formed or did not conform to our published schema.';
 const msgSdkMissingTrailer =
     'x-amz-sdk-checksum-algorithm specified, but no corresponding' +
     ' x-amz-checksum-* or x-amz-trailer headers were found.';
@@ -637,7 +637,6 @@ function makeScenarioTests(urlFn, { expectsImplicitChecksum = true } = {}) {
 
     itSkipIfAWS('should return 200 for trailer line with whitespace around name and value', done => {
         // TrailingChecksumTransform trims both name and value, so whitespace is accepted.
-        // eslint-disable-next-line max-len -- prettier keeps this fixture template on one line (121 > 120)
         const body = `f\r\ntrailer content\r\n0\r\n x-amz-checksum-sha256  :    ${trailerContentSha256}  \n\r\n\r\n\r\n`;
         doPutRequest(
             urlFn(),
@@ -825,7 +824,7 @@ describe('UploadPart: bad checksum is rejected', () => {
             itSkipIfAWS(
                 `should return 400 BadDigest for ${protocol.name} with wrong x-amz-checksum-${algo.name}`,
                 done => {
-                    const url = `http://localhost:8000/${bucket}/${objectKey}` + `?partNumber=1&uploadId=${uploadId}`;
+                    const url = `http://localhost:8000/${bucket}/${objectKey}?partNumber=1&uploadId=${uploadId}`;
                     doPutRequest(url, protocol.buildHeaders(algo), protocol.buildBody(algo), (err, res) =>
                         assertBadDigest(err, res, done),
                     );

@@ -309,7 +309,7 @@ function assertDesertWasScanned(pages, seededAt, label) {
             : `only ${elapsed}ms elapsed, well inside the ${PHD_REPAIR_WINDOW_MS}ms repair window: the ` +
               'desert was never created, so this backend did not write PHD masters (v0 buckets only)';
     assert.fail(
-        `${label}: no resume marker landed inside the desert ` + `(markers: ${JSON.stringify(markers)}) -- ${cause}`,
+        `${label}: no resume marker landed inside the desert (markers: ${JSON.stringify(markers)}) -- ${cause}`,
     );
 }
 
@@ -419,7 +419,7 @@ describePHD('listLifecycle over a dangling-PHD desert', () => {
                 .map(entry => entry.VersionId);
             assert(
                 !survivorVersions.includes(survivorVersionIds[1]),
-                'newest surviving version under the PHD master listed as noncurrent: ' + 'NCVE would expire live data',
+                'newest surviving version under the PHD master listed as noncurrent: NCVE would expire live data',
             );
         });
     });

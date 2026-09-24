@@ -10,8 +10,8 @@ parsers:
     enable_partials: yes
 
 comment:
-  layout: newheader, reach, files, components, diff, flags  # show component info in the PR comment
-  hide_comment_details: true  # hide the comment details (e.g. coverage targets) in the PR comment
+  layout: newheader, reach, files, components, diff, flags # show component info in the PR comment
+  hide_comment_details: true # hide the comment details (e.g. coverage targets) in the PR comment
 
 # Setting coverage targets
 coverage:
@@ -29,11 +29,11 @@ coverage:
         target: 80%
 
 component_management:
-  default_rules:  # default rules that will be inherited by all components
+  default_rules: # default rules that will be inherited by all components
     statuses: []
 
 flag_management:
-  default_rules:  # the rules that will be followed for any flag added, generally
+  default_rules: # the rules that will be followed for any flag added, generally
     carryforward: true
     statuses: []
 

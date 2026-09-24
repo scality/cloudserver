@@ -10,9 +10,7 @@ const fakeDataSource = {
     generateManyBucketNames(numberOfBuckets) {
         const random = Math.round(Math.random() * 100).toString();
 
-        return Array
-            .from(Array(numberOfBuckets).keys())
-            .map(i => `${baseName}-${random}-${i}`);
+        return Array.from(Array(numberOfBuckets).keys()).map(i => `${baseName}-${random}-${i}`);
     },
 };
 

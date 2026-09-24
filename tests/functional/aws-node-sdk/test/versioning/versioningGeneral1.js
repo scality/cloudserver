@@ -63,111 +63,134 @@ describe('aws-node-sdk test bucket versioning listing', function testSuite() {
         const keycount = 20;
         const versioncount = 20;
         const value = '{"foo":"bar"}';
-        async.timesLimit(keycount, 10, (i, next1) => {
-            const key = `foo${i}`;
-            masterVersions.push(key);
-            const params = { Bucket: bucket, Key: key, Body: value };
-            async.timesLimit(versioncount, 10, (j, next2) =>
-                s3.send(new PutObjectCommand(params))
-                    .then(data => {
-                        assert(data.VersionId, 'invalid versionId');
-                        allVersions.push({ Key: key, VersionId: data.VersionId });
-                        next2();
-                    })
-                    .catch(next2),
-                next1);
-        }, err => {
-            assert.strictEqual(err, null);
-            assert.strictEqual(allVersions.length, keycount * versioncount);
-            done();
-        });
+        async.timesLimit(
+            keycount,
+            10,
+            (i, next1) => {
+                const key = `foo${i}`;
+                masterVersions.push(key);
+                const params = { Bucket: bucket, Key: key, Body: value };
+                async.timesLimit(
+                    versioncount,
+                    10,
+                    (j, next2) =>
+                        s3
+                            .send(new PutObjectCommand(params))
+                            .then(data => {
+                                assert(data.VersionId, 'invalid versionId');
+                                allVersions.push({ Key: key, VersionId: data.VersionId });
+                                next2();
+                            })
+                            .catch(next2),
+                    next1,
+                );
+            },
+            err => {
+                assert.strictEqual(err, null);
+                assert.strictEqual(allVersions.length, keycount * versioncount);
+                done();
+            },
+        );
     });
 
     it('should list all latest versions', async () => {
         const params = { Bucket: bucket, MaxKeys: 1000, Delimiter: '/' };
         const data = await s3.send(new ListObjectsCommand(params));
         const keys = data.Contents.map(entry => entry.Key);
-        assert.deepStrictEqual(keys.sort(), masterVersions.sort(),
-                'not same keys');
+        assert.deepStrictEqual(keys.sort(), masterVersions.sort(), 'not same keys');
     });
 
     it('should create some delete markers', done => {
         const keycount = 15;
-        async.times(keycount, (i, next) => {
-            const key = masterVersions[i];
-            const params = { Bucket: bucket, Key: key };
-            s3.send(new DeleteObjectCommand(params))
-                .then(data => {
-                    assert(data.VersionId, 'invalid versionId');
-                    allVersions.push({ Key: key, VersionId: data.VersionId });
-                    next();
-                })
-                .catch(next);
-        }, done);
+        async.times(
+            keycount,
+            (i, next) => {
+                const key = masterVersions[i];
+                const params = { Bucket: bucket, Key: key };
+                s3.send(new DeleteObjectCommand(params))
+                    .then(data => {
+                        assert(data.VersionId, 'invalid versionId');
+                        allVersions.push({ Key: key, VersionId: data.VersionId });
+                        next();
+                    })
+                    .catch(next);
+            },
+            done,
+        );
     });
 
     it('should list all latest versions', async () => {
         const params = { Bucket: bucket, MaxKeys: 1000, Delimiter: '/' };
         const data = await s3.send(new ListObjectsCommand(params));
         const keys = data.Contents.map(entry => entry.Key);
-        assert.deepStrictEqual(keys.sort(), masterVersions.sort().slice(15),
-                'not same keys');
+        assert.deepStrictEqual(keys.sort(), masterVersions.sort().slice(15), 'not same keys');
     });
 
     it('should list all versions', done => {
         const versions = [];
         const params = { Bucket: bucket, MaxKeys: 15, Delimiter: '/' };
-    
-        async.retry(100, done => {
-            s3.send(new ListObjectVersionsCommand(params))
-                .then(data => {
-                    if (data.Versions) {
-                        data.Versions.forEach(version => versions.push({
-                            Key: version.Key, VersionId: version.VersionId }));
-                    }
-                    if (data.DeleteMarkers) {
-                        data.DeleteMarkers.forEach(version => versions.push({
-                            Key: version.Key, VersionId: version.VersionId }));
-                    }
-                    if (data.IsTruncated) {
-                        params.KeyMarker = data.NextKeyMarker;
-                        params.VersionIdMarker = data.NextVersionIdMarker;
-                        return done('not done yet');
-                    }
-                    return done();
-                })
-                .catch(err => {
-                    done(err);
-                });
-        }, err => {
-            if (err) {
-                return done(err);
-            }
 
-            assert.deepStrictEqual(versions.sort(comp), allVersions.sort(comp),
-                    'not same versions');
-            
-            const objectsToDelete = versions
-                .filter(v => v && v.Key && v.VersionId)
-                .map(v => ({
-                    Key: String(v.Key),
-                    VersionId: String(v.VersionId),
-                }));
+        async.retry(
+            100,
+            done => {
+                s3.send(new ListObjectVersionsCommand(params))
+                    .then(data => {
+                        if (data.Versions) {
+                            data.Versions.forEach(version =>
+                                versions.push({
+                                    Key: version.Key,
+                                    VersionId: version.VersionId,
+                                }),
+                            );
+                        }
+                        if (data.DeleteMarkers) {
+                            data.DeleteMarkers.forEach(version =>
+                                versions.push({
+                                    Key: version.Key,
+                                    VersionId: version.VersionId,
+                                }),
+                            );
+                        }
+                        if (data.IsTruncated) {
+                            params.KeyMarker = data.NextKeyMarker;
+                            params.VersionIdMarker = data.NextVersionIdMarker;
+                            return done('not done yet');
+                        }
+                        return done();
+                    })
+                    .catch(err => {
+                        done(err);
+                    });
+            },
+            err => {
+                if (err) {
+                    return done(err);
+                }
 
-            const deleteParams = { 
-                Bucket: bucket, 
-                Delete: { 
-                    Objects: objectsToDelete,
-                } 
-            };            
-            return s3.send(new DeleteObjectsCommand(deleteParams))
-                .then(() => {
-                    done();
-                })
-                .catch(err => {
-                    done(err);
-                });
-        });
+                assert.deepStrictEqual(versions.sort(comp), allVersions.sort(comp), 'not same versions');
+
+                const objectsToDelete = versions
+                    .filter(v => v && v.Key && v.VersionId)
+                    .map(v => ({
+                        Key: String(v.Key),
+                        VersionId: String(v.VersionId),
+                    }));
+
+                const deleteParams = {
+                    Bucket: bucket,
+                    Delete: {
+                        Objects: objectsToDelete,
+                    },
+                };
+                return s3
+                    .send(new DeleteObjectsCommand(deleteParams))
+                    .then(() => {
+                        done();
+                    })
+                    .catch(err => {
+                        done(err);
+                    });
+            },
+        );
     });
 });
-

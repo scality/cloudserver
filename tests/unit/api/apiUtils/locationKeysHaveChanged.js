@@ -1,6 +1,5 @@
 const assert = require('assert');
-const locationKeysHaveChanged =
-      require('../../../../lib/api/apiUtils/object/locationKeysHaveChanged');
+const locationKeysHaveChanged = require('../../../../lib/api/apiUtils/object/locationKeysHaveChanged');
 
 describe('Check if location keys have changed between object locations', () => {
     it('should return true for no match ', () => {

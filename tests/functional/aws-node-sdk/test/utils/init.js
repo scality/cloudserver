@@ -4,12 +4,9 @@ const metadata = require('../../../../../lib/metadata/wrapper');
 const { config } = require('../../../../../lib/Config');
 const { DummyRequestLogger } = require('../../../../unit/helpers');
 const log = new DummyRequestLogger();
-const nonVersionedObjId =
-    versionIdUtils.getInfVid(config.replicationGroupId);
+const nonVersionedObjId = versionIdUtils.getInfVid(config.replicationGroupId);
 
-const {
-    LOCATION_NAME_DMF,
-} = require('../../../../constants');
+const { LOCATION_NAME_DMF } = require('../../../../constants');
 
 const isMetadataOrFile = ['file', 'scality'].includes(config.backends.metadata);
 /**
@@ -57,13 +54,11 @@ function initMetadata(cb) {
 }
 
 function getMetadata(bucketName, objectName, versionId, cb) {
-    const promise = new Promise((resolve, reject) => metadata.getObjectMD(
-        bucketName,
-        objectName,
-        { versionId: decodeVersionId(versionId) },
-        log,
-        (err, data) => (err ? reject(err) : resolve(data)),
-    ));
+    const promise = new Promise((resolve, reject) =>
+        metadata.getObjectMD(bucketName, objectName, { versionId: decodeVersionId(versionId) }, log, (err, data) =>
+            err ? reject(err) : resolve(data),
+        ),
+    );
     return cb ? promise.then(res => cb(null, res), cb) : promise;
 }
 
@@ -80,14 +75,11 @@ function fakeMetadataTransition(bucketName, objectName, versionId, cb) {
     const promise = (async () => {
         const objMD = await getMetadata(bucketName, objectName, versionId);
         objMD['x-amz-scal-transition-in-progress'] = true;
-        await new Promise((resolve, reject) => metadata.putObjectMD(
-            bucketName,
-            objectName,
-            objMD,
-            { versionId: decodeVersionId(versionId) },
-            log,
-            err => (err ? reject(err) : resolve()),
-        ));
+        await new Promise((resolve, reject) =>
+            metadata.putObjectMD(bucketName, objectName, objMD, { versionId: decodeVersionId(versionId) }, log, err =>
+                err ? reject(err) : resolve(),
+            ),
+        );
     })();
     return cb ? promise.then(() => cb(), cb) : promise;
 }
@@ -108,14 +100,11 @@ function fakeMetadataArchive(bucketName, objectName, versionId, archive, cb) {
         objMD['x-amz-storage-class'] = LOCATION_NAME_DMF;
         objMD.dataStoreName = LOCATION_NAME_DMF;
         objMD.archive = archive;
-        await new Promise((resolve, reject) => metadata.putObjectMD(
-            bucketName,
-            objectName,
-            objMD,
-            { versionId: decodeVersionId(versionId) },
-            log,
-            err => (err ? reject(err) : resolve()),
-        ));
+        await new Promise((resolve, reject) =>
+            metadata.putObjectMD(bucketName, objectName, objMD, { versionId: decodeVersionId(versionId) }, log, err =>
+                err ? reject(err) : resolve(),
+            ),
+        );
     })();
     return cb ? promise.then(() => cb(), cb) : promise;
 }
