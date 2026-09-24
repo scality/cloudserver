@@ -331,51 +331,42 @@ class WebsiteConfigTester {
     }
 
     static createPutBucketWebsite(s3, bucket, bucketACL, objects, done) {
+        const webConfig = new WebsiteConfigTester('index.html', 'error.html');
         s3.send(new CreateBucketCommand({ Bucket: bucket, ACL: bucketACL }))
-            .then(() => {
-                const webConfig = new WebsiteConfigTester('index.html', 'error.html');
-                return s3
-                    .send(new PutBucketWebsiteCommand({ Bucket: bucket, WebsiteConfiguration: webConfig }))
-                    .then(() =>
-                        async.forEachOf(
-                            objects,
-                            (acl, object, next) => {
-                                s3.send(
-                                    new PutObjectCommand({
-                                        Bucket: bucket,
-                                        Key: `${object}.html`,
-                                        ACL: acl,
-                                        Body: fs.readFileSync(
-                                            path.join(__dirname, `/../../test/object/websiteFiles/${object}.html`),
-                                        ),
-                                    }),
-                                )
-                                    .then(() => next())
-                                    .catch(next);
-                            },
-                            done,
-                        ),
-                    );
-            })
-            .catch(err => done(err));
+            .then(() => s3.send(new PutBucketWebsiteCommand({ Bucket: bucket, WebsiteConfiguration: webConfig })))
+            .then(
+                () =>
+                    async.forEachOf(
+                        objects,
+                        (acl, object, next) => {
+                            s3.send(
+                                new PutObjectCommand({
+                                    Bucket: bucket,
+                                    Key: `${object}.html`,
+                                    ACL: acl,
+                                    Body: fs.readFileSync(
+                                        path.join(__dirname, `/../../test/object/websiteFiles/${object}.html`),
+                                    ),
+                                }),
+                            ).then(() => next(), next);
+                        },
+                        done,
+                    ),
+                done,
+            );
     }
 
     static deleteObjectsThenBucket(s3, bucket, objects, done) {
         async.forEachOf(
             objects,
             (acl, object, next) => {
-                s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: `${object}.html` }))
-                    .then(() => next())
-                    .catch(next);
+                s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: `${object}.html` })).then(() => next(), next);
             },
             err => {
                 if (err) {
                     return done(err);
                 }
-                return s3
-                    .send(new DeleteBucketCommand({ Bucket: bucket }))
-                    .then(() => done())
-                    .catch(done);
+                return s3.send(new DeleteBucketCommand({ Bucket: bucket })).then(() => done(), done);
             },
         );
     }

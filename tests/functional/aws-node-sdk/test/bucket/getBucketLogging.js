@@ -14,21 +14,17 @@ const validLoggingConfig = {
     },
 };
 
-function cleanUp(bucketUtil, cb) {
-    Promise.all([
-        bucketUtil.deleteOne(bucketName).catch(err => {
-            if (err && err.name !== 'NoSuchBucket') {
-                throw err;
-            }
-        }),
-        bucketUtil.deleteOne(targetBucket).catch(err => {
-            if (err && err.name !== 'NoSuchBucket') {
-                throw err;
-            }
-        }),
-    ])
-        .then(() => cb())
-        .catch(err => cb(err));
+function ignoreNoSuchBucket(err) {
+    if (err.name !== 'NoSuchBucket') {
+        throw err;
+    }
+}
+
+function cleanUp(bucketUtil) {
+    return Promise.all([
+        bucketUtil.deleteOne(bucketName).catch(ignoreNoSuchBucket),
+        bucketUtil.deleteOne(targetBucket).catch(ignoreNoSuchBucket),
+    ]);
 }
 
 describe('GET bucket logging', () => {
@@ -36,14 +32,10 @@ describe('GET bucket logging', () => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
 
-        after(done => {
-            cleanUp(bucketUtil, done);
-        });
+        after(() => cleanUp(bucketUtil));
 
         describe('without existing bucket', () => {
-            afterEach(done => {
-                cleanUp(bucketUtil, done);
-            });
+            afterEach(() => cleanUp(bucketUtil));
 
             it('should return NoSuchBucket', done => {
                 s3.send(new GetBucketLoggingCommand({ Bucket: bucketName }))
@@ -60,9 +52,7 @@ describe('GET bucket logging', () => {
         });
 
         describe('on bucket without logging configuration', () => {
-            afterEach(done => {
-                cleanUp(bucketUtil, done);
-            });
+            afterEach(() => cleanUp(bucketUtil));
 
             beforeEach(done => {
                 process.stdout.write('Creating bucket without logging\n');
@@ -90,9 +80,7 @@ describe('GET bucket logging', () => {
         });
 
         describe('with existing logging configuration', () => {
-            afterEach(done => {
-                cleanUp(bucketUtil, done);
-            });
+            afterEach(() => cleanUp(bucketUtil));
 
             beforeEach(done => {
                 process.stdout.write('Creating buckets and setting logging\n');
@@ -106,8 +94,7 @@ describe('GET bucket logging', () => {
                             }),
                         ),
                     )
-                    .then(() => done())
-                    .catch(done);
+                    .then(() => done(), done);
             });
 
             it('should return bucket logging configuration successfully', done => {
