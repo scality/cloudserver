@@ -1,4 +1,4 @@
-const { errors, s3middleware, storage, versioning } = require('arsenal');
+const { errors, s3middleware, storage, versioning } = require('@scality/arsenal');
 
 const assert = require('assert');
 const async = require('async');

@@ -1,7 +1,7 @@
 'use strict';
 
 const { config } = require('./lib/Config.js');
-const MetadataFileServer = require('arsenal').storage.metadata.file.MetadataFileServer;
+const MetadataFileServer = require('@scality/arsenal').storage.metadata.file.MetadataFileServer;
 const logger = require('./lib/utilities/logger');
 
 process.on('uncaughtException', err => {

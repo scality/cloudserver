@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
 const { S3Client, ListPartsCommand, AbortMultipartUploadCommand } = require('@aws-sdk/client-s3');
-const { storage, errors } = require('arsenal');
+const { storage, errors } = require('@scality/arsenal');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../unit/helpers');
 const { bucketPut } = require('../../lib/api/bucketPut');

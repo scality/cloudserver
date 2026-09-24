@@ -1,6 +1,6 @@
 const assert = require('assert');
 const async = require('async');
-const arsenal = require('arsenal');
+const arsenal = require('@scality/arsenal');
 const { promisify } = require('util');
 const { ListObjectsCommand } = require('@aws-sdk/client-s3');
 const { GCP, GcpUtils } = arsenal.storage.data.external.GCP;

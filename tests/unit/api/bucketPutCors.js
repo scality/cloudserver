@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
+const { errors } = require('@scality/arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutCors = require('../../../lib/api/bucketPutCors');

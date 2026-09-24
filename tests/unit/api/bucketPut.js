@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { auth, errors } = require('arsenal');
+const { auth, errors } = require('@scality/arsenal');
 const sinon = require('sinon');
 const inMemory = require('../../../lib/kms/in_memory/backend').backend;
 const vault = require('../../../lib/auth/vault');

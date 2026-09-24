@@ -1,7 +1,7 @@
 const assert = require('assert');
 const moment = require('moment');
-const { errorInstances } = require('arsenal');
-const BucketInfo = require('arsenal').models.BucketInfo;
+const { errorInstances } = require('@scality/arsenal');
+const BucketInfo = require('@scality/arsenal').models.BucketInfo;
 const { DummyRequestLogger } = require('../../helpers');
 const {
     calculateRetainUntilDate,

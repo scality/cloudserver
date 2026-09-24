@@ -2,10 +2,10 @@ const assert = require('assert');
 
 const { parseString } = require('xml2js');
 
-const BucketInfo = require('arsenal').models.BucketInfo;
+const BucketInfo = require('@scality/arsenal').models.BucketInfo;
 const constants = require('../../../constants');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
-const { metadata: inMemMetadata } = require('arsenal').storage.metadata.inMemory.metadata;
+const { metadata: inMemMetadata } = require('@scality/arsenal').storage.metadata.inMemory.metadata;
 const listParts = require('../../../lib/api/listParts');
 const { data } = require('../../../lib/data/wrapper');
 const metadata = require('../metadataswitch');

@@ -9,7 +9,7 @@ const {
     DeleteObjectCommand,
     PutObjectCommand,
 } = require('@aws-sdk/client-s3');
-const arsenal = require('arsenal');
+const arsenal = require('@scality/arsenal');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');

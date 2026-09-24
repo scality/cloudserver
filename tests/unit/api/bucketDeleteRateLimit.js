@@ -6,7 +6,7 @@ const bucketDeleteRateLimit = require('../../../lib/api/bucketDeleteRateLimit');
 const bucketPutRateLimit = require('../../../lib/api/bucketPutRateLimit');
 const bucketGetRateLimit = require('../../../lib/api/bucketGetRateLimit');
 const { config } = require('../../../lib/Config');
-const AuthInfo = require('arsenal').auth.AuthInfo;
+const AuthInfo = require('@scality/arsenal').auth.AuthInfo;
 const metadata = require('../../../lib/metadata/wrapper');
 
 const log = new DummyRequestLogger();

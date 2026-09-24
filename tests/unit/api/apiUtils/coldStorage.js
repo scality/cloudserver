@@ -1,6 +1,6 @@
 const assert = require('assert');
 
-const { errors } = require('arsenal');
+const { errors } = require('@scality/arsenal');
 const {
     getAmzRestoreResHeader,
     setArchiveInfoHeaders,
@@ -9,7 +9,7 @@ const {
     verifyColdObjectAvailable,
 } = require('../../../../lib/api/apiUtils/object/coldStorage');
 const { DummyRequestLogger } = require('../../helpers');
-const { ObjectMD, ObjectMDArchive } = require('arsenal/build/lib/models');
+const { ObjectMD, ObjectMDArchive } = require('@scality/arsenal/build/lib/models');
 const { config } = require('../../../../lib/Config');
 const { scaledMsPerDay } = config.getTimeOptions();
 const log = new DummyRequestLogger();

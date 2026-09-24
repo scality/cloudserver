@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
+const { errors } = require('@scality/arsenal');
 
 const { algorithms, ChecksumError } = require('../../../lib/api/apiUtils/integrity/validateChecksums');
 const ChecksumTransform = require('../../../lib/auth/streamingV4/ChecksumTransform');

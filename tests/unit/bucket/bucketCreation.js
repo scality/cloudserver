@@ -1,7 +1,7 @@
 const assert = require('assert');
 const sinon = require('sinon');
 
-const { errors } = require('arsenal');
+const { errors } = require('@scality/arsenal');
 const metadata = require('../../../lib/metadata/wrapper');
 const { cleanup, DummyRequestLogger } = require('../helpers');
 const { createBucket } = require('../../../lib/api/apiUtils/bucket/bucketCreation');

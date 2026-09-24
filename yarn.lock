@@ -3290,7 +3290,7 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
-"@scality/arsenal@^8.6.0-0":
+"@scality/arsenal@8.6.0-preview.1", "@scality/arsenal@^8.6.0-0":
   version "8.6.0-preview.1"
   resolved "https://registry.yarnpkg.com/@scality/arsenal/-/arsenal-8.6.0-preview.1.tgz#351314c469aac8ff133d9cdd7d0024afafce87cb"
   integrity sha512-vKYVAusgjPxwQt/DyEtswKWyHLFElmSUX5LqWbEfP5+IaNa7872r6H6IG8BuzGNIV4tMLgFNe9y2iO5tzr1b8w==
@@ -5971,55 +5971,6 @@ arraybuffer.prototype.slice@^1.0.4:
     es-errors "^1.3.0"
     get-intrinsic "^1.2.6"
     is-array-buffer "^3.0.4"
-
-"arsenal@npm:@scality/arsenal@8.6.0-preview.1":
-  version "8.6.0-preview.1"
-  resolved "https://registry.yarnpkg.com/@scality/arsenal/-/arsenal-8.6.0-preview.1.tgz#351314c469aac8ff133d9cdd7d0024afafce87cb"
-  integrity sha512-vKYVAusgjPxwQt/DyEtswKWyHLFElmSUX5LqWbEfP5+IaNa7872r6H6IG8BuzGNIV4tMLgFNe9y2iO5tzr1b8w==
-  dependencies:
-    "@aws-sdk/client-kms" "^3.975.0"
-    "@aws-sdk/client-s3" "^3.975.0"
-    "@aws-sdk/credential-providers" "^3.975.0"
-    "@aws-sdk/lib-storage" "^3.975.0"
-    "@azure/identity" "^4.13.0"
-    "@azure/storage-blob" "^12.31.0"
-    "@js-sdsl/ordered-set" "^4.4.2"
-    "@opentelemetry/api" "^1.9.1"
-    "@opentelemetry/exporter-trace-otlp-http" "^0.220.0"
-    "@opentelemetry/resources" "^2.9.0"
-    "@opentelemetry/sdk-node" "^0.220.0"
-    "@opentelemetry/sdk-trace-base" "^2.9.0"
-    "@scality/hdclient" "^1.3.2"
-    "@smithy/node-http-handler" "^4.3.0"
-    "@smithy/protocol-http" "^5.3.5"
-    JSONStream "^1.3.5"
-    agentkeepalive "^4.6.0"
-    ajv "6.15.0"
-    async "~2.6.4"
-    base-x "3.0.11"
-    base62 "^2.0.2"
-    debug "^4.4.3"
-    fcntl "github:scality/node-fcntl#0.3.1"
-    httpagent scality/httpagent#1.1.1
-    https-proxy-agent "^7.0.6"
-    ioredis "^5.8.1"
-    ipaddr.js "^2.2.0"
-    joi "^18.0.1"
-    level "~5.0.1"
-    level-sublevel "~6.6.5"
-    mongodb "^6.20.0"
-    node-forge "^1.3.1"
-    prom-client "^15.1.3"
-    simple-glob "^0.2.0"
-    socket.io "^4.8.0"
-    socket.io-client "^4.8.0"
-    sproxydclient "github:scality/sproxydclient#8.2.3"
-    utf8 "^3.0.0"
-    uuid "^11.1.0"
-    werelogs scality/werelogs#8.2.5
-    xml2js "^0.6.2"
-  optionalDependencies:
-    ioctl "^2.0.2"
 
 asn1@~0.2.3:
   version "0.2.6"

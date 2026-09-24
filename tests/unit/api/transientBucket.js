@@ -1,7 +1,7 @@
 const assert = require('assert');
 const crypto = require('crypto');
 
-const BucketInfo = require('arsenal').models.BucketInfo;
+const BucketInfo = require('@scality/arsenal').models.BucketInfo;
 const { bucketGet } = require('../../../lib/api/bucketGet');
 const bucketGetACL = require('../../../lib/api/bucketGetACL');
 const bucketGetCors = require('../../../lib/api/bucketGetCors');

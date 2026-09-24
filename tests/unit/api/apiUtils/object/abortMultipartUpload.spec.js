@@ -1,7 +1,7 @@
 const assert = require('assert');
 const sinon = require('sinon');
 const { parseString } = require('xml2js');
-const { errors } = require('arsenal');
+const { errors } = require('@scality/arsenal');
 const async = require('async');
 const crypto = require('crypto');
 

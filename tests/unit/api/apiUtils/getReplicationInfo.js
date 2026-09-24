@@ -1,7 +1,7 @@
 const assert = require('assert');
 
-const BucketInfo = require('arsenal').models.BucketInfo;
-const AuthInfo = require('arsenal').auth.AuthInfo;
+const BucketInfo = require('@scality/arsenal').models.BucketInfo;
+const AuthInfo = require('@scality/arsenal').auth.AuthInfo;
 const getReplicationInfo = require('../../../../lib/api/apiUtils/object/getReplicationInfo');
 
 function _getObjectReplicationInfo(s3config, replicationConfig, key, objectMD) {

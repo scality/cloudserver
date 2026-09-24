@@ -10,13 +10,13 @@ const {
     CreateMultipartUploadCommand,
     UploadPartCommand,
 } = require('@aws-sdk/client-s3');
-const BucketInfo = require('arsenal').models.BucketInfo;
+const BucketInfo = require('@scality/arsenal').models.BucketInfo;
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const kms = require('../../../../../lib/kms/wrapper');
 const { DummyRequestLogger } = require('../../../../unit/helpers');
 const { config } = require('../../../../../lib/Config');
-const { getKeyIdFromArn } = require('arsenal/build/lib/network/KMSInterface');
+const { getKeyIdFromArn } = require('@scality/arsenal/build/lib/network/KMSInterface');
 
 // For this test env S3_CONFIG_FILE should be the same as running cloudserver
 // to have the same config.kmsHideScalityArn value

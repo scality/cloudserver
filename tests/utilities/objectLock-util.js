@@ -1,6 +1,6 @@
 const assert = require('assert');
 const async = require('async');
-const { versioning } = require('arsenal');
+const { versioning } = require('@scality/arsenal');
 
 const { metadataGetObject } = require('../../lib/metadata/metadataUtils');
 const metadata = require('../../lib/metadata/wrapper');

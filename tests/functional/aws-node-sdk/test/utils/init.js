@@ -1,4 +1,4 @@
-const { versioning } = require('arsenal');
+const { versioning } = require('@scality/arsenal');
 const versionIdUtils = versioning.VersionID;
 const metadata = require('../../../../../lib/metadata/wrapper');
 const { config } = require('../../../../../lib/Config');

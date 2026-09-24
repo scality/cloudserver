@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const assert = require('assert');
-const { auth, errors, storage } = require('arsenal');
+const { auth, errors, storage } = require('@scality/arsenal');
 
 const {
     decodeObjectVersion,
@@ -32,7 +32,7 @@ const objectKey2 = 'objectName2';
 const metadataUtils = require('../../../lib/metadata/metadataUtils');
 const services = require('../../../lib/services');
 const vault = require('../../../lib/auth/vault');
-const { BucketInfo } = require('arsenal/build/lib/models');
+const { BucketInfo } = require('@scality/arsenal/build/lib/models');
 const testBucketPutRequest = new DummyRequest({
     bucketName,
     namespace,

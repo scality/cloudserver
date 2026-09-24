@@ -11,7 +11,7 @@ const {
     PutObjectTaggingCommand,
 } = require('@aws-sdk/client-s3');
 
-const { versioning, models } = require('arsenal');
+const { versioning, models } = require('@scality/arsenal');
 const { ObjectMD } = models;
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 

@@ -1,6 +1,6 @@
 const assert = require('assert');
 const async = require('async');
-const { errors } = require('arsenal');
+const { errors } = require('@scality/arsenal');
 const {
     CreateBucketCommand,
     DeleteObjectCommand,

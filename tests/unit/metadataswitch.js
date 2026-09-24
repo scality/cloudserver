@@ -1,5 +1,5 @@
 const wrapper = require('../../lib/metadata/wrapper');
-const backend = require('arsenal').storage.metadata.inMemory.metastore;
+const backend = require('@scality/arsenal').storage.metadata.inMemory.metastore;
 
 wrapper.switch(backend, () => {});
 

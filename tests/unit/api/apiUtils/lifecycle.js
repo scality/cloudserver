@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { versioning } = require('arsenal');
+const { versioning } = require('@scality/arsenal');
 const { validateMaxScannedEntries, decodeVersionIdMarker } = require('../../../../lib/api/apiUtils/object/lifecycle');
 
 const versionIdUtils = versioning.VersionID;

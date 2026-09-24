@@ -1,6 +1,6 @@
 const assert = require('assert');
 
-const { versioning } = require('arsenal');
+const { versioning } = require('@scality/arsenal');
 const { config } = require('../../../../lib/Config');
 const INF_VID = versioning.VersionID.getInfVid(config.replicationGroupId);
 const { scaledMsPerDay } = config.getTimeOptions();

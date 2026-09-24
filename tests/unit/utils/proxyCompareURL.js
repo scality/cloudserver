@@ -1,5 +1,5 @@
 const assert = require('assert');
-const arsenal = require('arsenal');
+const arsenal = require('@scality/arsenal');
 const { proxyCompareUrl } = arsenal.storage.data.external.backendUtils;
 
 // TODO ARSN-464 remove the file: this function should be tested in Arsenal

@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
 const moment = require('moment');
-const { s3middleware, storage, versioning } = require('arsenal');
+const { s3middleware, storage, versioning } = require('@scality/arsenal');
 const sinon = require('sinon');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');

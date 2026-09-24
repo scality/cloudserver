@@ -5,7 +5,7 @@
 
 const assert = require('assert');
 const { promisify } = require('util');
-const { storage } = require('arsenal');
+const { storage } = require('@scality/arsenal');
 const sinon = require('sinon');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');

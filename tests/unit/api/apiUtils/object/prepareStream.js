@@ -1,6 +1,6 @@
 const assert = require('assert');
 const crypto = require('crypto');
-const { errors } = require('arsenal');
+const { errors } = require('@scality/arsenal');
 
 const { prepareStream } = require('../../../../../lib/api/apiUtils/object/prepareStream');
 const ChecksumTransform = require('../../../../../lib/auth/streamingV4/ChecksumTransform');

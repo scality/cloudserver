@@ -4,7 +4,7 @@
 // - deduplicate with Vault's seed script at https://github.com/scality/Vault/pull/1627
 // - add permission boundaries to user when https://scality.atlassian.net/browse/VAULT-4 is implemented
 process.env.AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE = '1';
-const { errors } = require('arsenal');
+const { errors } = require('@scality/arsenal');
 const { program } = require('commander');
 const werelogs = require('werelogs');
 const async = require('async');

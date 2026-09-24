@@ -4,11 +4,11 @@ const assert = require('assert');
 const sinon = require('sinon');
 const http = require('http');
 const https = require('https');
-const arsenal = require('arsenal');
+const arsenal = require('@scality/arsenal');
 const uuid = require('uuid');
 const logger = require('../../lib/utilities/logger');
 const { config: defaultConfig } = require('../../lib/Config');
-const tracing = require('arsenal/build/lib/tracing');
+const tracing = require('@scality/arsenal/build/lib/tracing');
 const { S3Server } = require('../../lib/server');
 
 describe('S3Server', () => {

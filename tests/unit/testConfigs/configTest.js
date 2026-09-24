@@ -1,6 +1,6 @@
 const assert = require('assert');
-const utils = require('arsenal').storage.data.external.backendUtils;
-const BucketInfo = require('arsenal').models.BucketInfo;
+const utils = require('@scality/arsenal').storage.data.external.backendUtils;
+const BucketInfo = require('@scality/arsenal').models.BucketInfo;
 
 const { config } = require('../../../lib/Config');
 

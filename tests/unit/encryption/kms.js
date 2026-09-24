@@ -1,5 +1,5 @@
 const assert = require('assert');
-const BucketInfo = require('arsenal').models.BucketInfo;
+const BucketInfo = require('@scality/arsenal').models.BucketInfo;
 const KMS = require('../../../lib/kms/wrapper');
 const { parseBucketEncryptionHeaders } = require('../../../lib/api/apiUtils/bucket/bucketEncryption');
 const Common = require('../../../lib/kms/common');

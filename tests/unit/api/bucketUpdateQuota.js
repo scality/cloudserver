@@ -1,6 +1,6 @@
 const assert = require('assert');
 const sinon = require('sinon');
-const { errors } = require('arsenal');
+const { errors } = require('@scality/arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketUpdateQuota = require('../../../lib/api/bucketUpdateQuota');

@@ -1,6 +1,6 @@
 const async = require('async');
 const assert = require('assert');
-const { s3middleware } = require('arsenal');
+const { s3middleware } = require('@scality/arsenal');
 const {
     CreateBucketCommand,
     PutObjectCommand,

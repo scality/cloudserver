@@ -15,7 +15,7 @@ const { LOCATION_NAME_DMF } = require('../constants');
 const constants = require('../../constants');
 const allOptsQuota = require('./testConfigs/allOptsConfig/config.json').quota;
 
-const { ValidLifecycleRules: supportedLifecycleRules } = require('arsenal').models;
+const { ValidLifecycleRules: supportedLifecycleRules } = require('@scality/arsenal').models;
 
 describe('Config', () => {
     const defaultConfig = JSON.parse(fs.readFileSync('config.json'), { encoding: 'utf-8' });

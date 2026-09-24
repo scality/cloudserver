@@ -1,6 +1,6 @@
 const assert = require('assert');
 const async = require('async');
-const { models } = require('arsenal');
+const { models } = require('@scality/arsenal');
 const { ObjectMD } = models;
 const { v4: uuidv4 } = require('uuid');
 const {

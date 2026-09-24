@@ -1,7 +1,7 @@
 const assert = require('assert');
 const sinon = require('sinon');
 
-const { errors, models } = require('arsenal');
+const { errors, models } = require('@scality/arsenal');
 const { BucketInfo } = models;
 const { DummyRequestLogger, makeAuthInfo } = require('../helpers');
 

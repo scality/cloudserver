@@ -1,7 +1,7 @@
 const { S3Client, PutObjectCommand, CopyObjectCommand, CreateMultipartUploadCommand } = require('@aws-sdk/client-s3');
 const { v4: uuidv4 } = require('uuid');
 const config = require('../config.json');
-const { auth } = require('arsenal');
+const { auth } = require('@scality/arsenal');
 const http = require('http');
 const https = require('https');
 const assert = require('assert');

@@ -8,7 +8,7 @@ const {
     DeleteBucketReplicationCommand,
     GetBucketReplicationCommand,
 } = require('@aws-sdk/client-s3');
-const { errorInstances } = require('arsenal');
+const { errorInstances } = require('@scality/arsenal');
 
 const getConfig = require('../support/config');
 const BucketUtility = require('../../lib/utility/bucket-util');
