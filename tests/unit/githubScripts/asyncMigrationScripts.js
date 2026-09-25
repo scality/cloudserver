@@ -72,12 +72,10 @@ describe('CI async migration scripts', () => {
         tempDirs.push(dir);
 
         fs.mkdirSync(path.join(dir, 'lib'), { recursive: true });
-        fs.writeFileSync(path.join(dir, 'lib/newFile.js'), [
-            'function badStyle(param, cb) {',
-            '    return cb(null, param);',
-            '}',
-            '',
-        ].join('\n'));
+        fs.writeFileSync(
+            path.join(dir, 'lib/newFile.js'),
+            ['function badStyle(param, cb) {', '    return cb(null, param);', '}', ''].join('\n'),
+        );
         run('git', ['add', 'lib/newFile.js'], dir);
 
         const result = runNodeScript(checkDiffScript, dir);

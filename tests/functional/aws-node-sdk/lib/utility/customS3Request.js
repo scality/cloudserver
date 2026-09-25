@@ -6,7 +6,6 @@ const getConfig = require('../../test/support/config');
 
 const config = getConfig('default');
 const customRequestMiddleware = buildParams => next => async args => {
-
     const { headers, query } = buildParams;
 
     const prevReq = args.request;
@@ -35,10 +34,11 @@ const customRequestMiddleware = buildParams => next => async args => {
 async function customS3Request(CommandClass, params, buildParams) {
     const customS3 = new S3Client({ ...config });
 
-    customS3.middlewareStack.add(
-        customRequestMiddleware(buildParams),
-        { step: 'build', name: 'customRequestMiddleware', tags: ['CUSTOM'] }
-    );
+    customS3.middlewareStack.add(customRequestMiddleware(buildParams), {
+        step: 'build',
+        name: 'customRequestMiddleware',
+        tags: ['CUSTOM'],
+    });
 
     const command = new CommandClass(params);
     const response = await customS3.send(command);
@@ -50,7 +50,6 @@ async function customS3Request(CommandClass, params, buildParams) {
     };
 
     return resData;
-
 }
 
 module.exports = customS3Request;

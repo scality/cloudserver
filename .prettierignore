@@ -2,3 +2,9 @@ coverage/
 localData/
 localMetadata/
 junit/
+
+# Website fixtures: their exact bytes are asserted as ETags in tests
+tests/functional/aws-node-sdk/test/object/websiteFiles/
+
+# Generated from monitoring/dashboard.py by grafanalib
+monitoring/dashboard.json

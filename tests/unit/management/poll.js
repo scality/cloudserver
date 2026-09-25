@@ -15,7 +15,7 @@ describe('management poll loadRemoteOverlay', () => {
         sinon.restore();
     });
 
-    it('should forward the werelogs request uids under the ' + 'x-scal-request-uids header', done => {
+    it('should forward the werelogs request uids under the x-scal-request-uids header', done => {
         const getStub = sinon.stub(request, 'get').callsFake((url, opts, cb) => cb(null, { statusCode: 200 }, {}));
 
         loadRemoteOverlay(managementEndpoint, instanceId, remoteToken, {}, log, err => {

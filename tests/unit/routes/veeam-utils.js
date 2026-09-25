@@ -271,7 +271,7 @@ describe('receiveData', () => {
     // functional trailing checksum tests)
     const payloadCrc64 = 'skQv82y5rgE=';
     const chunkedBody = digest =>
-        '10\r\n0123456789abcdef\r\n' + '10\r\n0123456789abcdef\r\n' + `0\r\nx-amz-checksum-crc64nvme:${digest}\r\n\r\n`;
+        `10\r\n0123456789abcdef\r\n10\r\n0123456789abcdef\r\n0\r\nx-amz-checksum-crc64nvme:${digest}\r\n\r\n`;
 
     const makeRequest = (body, headers, parsedContentLength, streamingV4Params) => {
         const request = new Readable({ read() {} });

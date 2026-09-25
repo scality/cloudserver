@@ -288,7 +288,7 @@ describe('api.callApiMethod', () => {
                 const body = '<xml></xml>';
                 const headers = {
                     'content-md5': '1B2M2Y8AsgTpgAmY7PhCfg==', // Wrong MD5
-                    'content-length': body.length.toString()
+                    'content-length': body.length.toString(),
                 };
 
                 const requestWithBody = new DummyRequest(
@@ -317,14 +317,17 @@ describe('api.callApiMethod', () => {
                 const body = '<xml></xml>';
                 const headers = {
                     'content-md5': 'x', // Invalid MD5
-                    'content-length': body.length.toString()
+                    'content-length': body.length.toString(),
                 };
 
-                const requestWithBody = new DummyRequest({
-                    headers,
-                    query: {},
-                    socket: { remoteAddress: '127.0.0.1', destroy: sandbox.stub() }
-                }, body);
+                const requestWithBody = new DummyRequest(
+                    {
+                        headers,
+                        query: {},
+                        socket: { remoteAddress: '127.0.0.1', destroy: sandbox.stub() },
+                    },
+                    body,
+                );
 
                 sandbox.stub(api, method).callsFake(() => {
                     done(new Error(`${method} was called despite bad checksum`));

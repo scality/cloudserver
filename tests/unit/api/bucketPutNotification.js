@@ -2,10 +2,7 @@ const assert = require('assert');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutNotification = require('../../../lib/api/bucketPutNotification');
-const { cleanup,
-    DummyRequestLogger,
-    makeAuthInfo }
-    = require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const metadata = require('../../../lib/metadata/wrapper');
 
 const log = new DummyRequestLogger();
@@ -22,11 +19,7 @@ const expectedNotifConfig = {
     queueConfig: [
         {
             id: 'notification-id',
-            events: [
-                's3:ObjectCreated:*',
-                's3:ObjectTagging:*',
-                's3:ObjectAcl:Put',
-            ],
+            events: ['s3:ObjectCreated:*', 's3:ObjectTagging:*', 's3:ObjectAcl:Put'],
             queueArn: 'arn:scality:bucketnotif:::target1',
             filterRules: undefined,
         },
@@ -34,16 +27,18 @@ const expectedNotifConfig = {
 };
 
 function getNotifRequest(empty) {
-    const queueConfig = empty ? '' :
-        '<QueueConfiguration>' +
-        '<Id>notification-id</Id>' +
-        '<Queue>arn:scality:bucketnotif:::target1</Queue>' +
-        '<Event>s3:ObjectCreated:*</Event>' +
-        '<Event>s3:ObjectTagging:*</Event>' +
-        '<Event>s3:ObjectAcl:Put</Event>' +
-        '</QueueConfiguration>';
+    const queueConfig = empty
+        ? ''
+        : '<QueueConfiguration>' +
+          '<Id>notification-id</Id>' +
+          '<Queue>arn:scality:bucketnotif:::target1</Queue>' +
+          '<Event>s3:ObjectCreated:*</Event>' +
+          '<Event>s3:ObjectTagging:*</Event>' +
+          '<Event>s3:ObjectAcl:Put</Event>' +
+          '</QueueConfiguration>';
 
-    const notifXml = '<NotificationConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+    const notifXml =
+        '<NotificationConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
         `${queueConfig}` +
         '</NotificationConfiguration>';
 
