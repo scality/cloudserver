@@ -94,7 +94,8 @@
     },
     "resolutions": {
         "jsonwebtoken": "^9.0.0",
-        "fast-xml-parser": "^5.5.6"
+        "fast-xml-parser": "^5.5.6",
+        "express": "^4.22.3"
     },
     "countAsyncSourcePaths": [
         "lib/**/*.js",
