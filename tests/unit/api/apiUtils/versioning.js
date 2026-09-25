@@ -527,8 +527,7 @@ describe('versioning helpers', () => {
                         () => {
                             const mst = getMasterState(testCase.objMD);
                             const res = processVersioningState(mst, versioningStatus, nullVersionCompatMode);
-                            const resultName =
-                                `versioning${versioningStatus}` + `${nullVersionCompatMode ? 'Compat' : ''}ExpectedRes`;
+                            const resultName = `versioning${versioningStatus}${nullVersionCompatMode ? 'Compat' : ''}ExpectedRes`;
                             const expectedRes = testCase[resultName];
                             assert.deepStrictEqual(res, expectedRes);
                         },

@@ -1,6 +1,4 @@
-const { S3Client,
-    CreateBucketCommand,
-    DeleteBucketCommand } = require('@aws-sdk/client-s3');
+const { S3Client, CreateBucketCommand, DeleteBucketCommand } = require('@aws-sdk/client-s3');
 const assert = require('assert');
 const getConfig = require('../support/config');
 const sendRequest = require('../quota/tooling').sendRequest;
@@ -49,7 +47,7 @@ describe('Test get bucket quota', () => {
             await sendRequest('GET', '127.0.0.1:8000', `/${bucket}/?quota=true`);
             assert.fail('Expected NoSuchQuota error');
         } catch (err) {
-                assert.strictEqual(err.Error.Code[0], 'NoSuchQuota');
+            assert.strictEqual(err.Error.Code[0], 'NoSuchQuota');
         }
     });
 

@@ -290,9 +290,8 @@ describe('Object Copy', () => {
         );
 
         it(
-            'should copy an object and tag set if COPY ' +
-                'included as tag directive header (and ignore any new ' +
-                'tag set sent with copy request)',
+            'should copy an object and tag set if COPY included as tag ' +
+                'directive header (and ignore any new tag set sent with copy request)',
             done => {
                 s3.send(
                     new CopyObjectCommand({
@@ -554,21 +553,18 @@ describe('Object Copy', () => {
             await successCopyCheck(null, res.CopyObjectResult, newMetadata, sourceBucketName, sourceObjName);
         });
 
-        it(
-            'should copy an object and replace the metadata if replace ' + 'included as metadata directive header',
-            async () => {
-                const res = await s3.send(
-                    new CopyObjectCommand({
-                        Bucket: destBucketName,
-                        Key: destObjName,
-                        CopySource: `${sourceBucketName}/${sourceObjName}`,
-                        MetadataDirective: 'REPLACE',
-                        Metadata: newMetadata,
-                    }),
-                );
-                await successCopyCheck(null, res.CopyObjectResult, newMetadata, destBucketName, destObjName);
-            },
-        );
+        it('should copy an object and replace the metadata if replace included as metadata directive header', async () => {
+            const res = await s3.send(
+                new CopyObjectCommand({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    MetadataDirective: 'REPLACE',
+                    Metadata: newMetadata,
+                }),
+            );
+            await successCopyCheck(null, res.CopyObjectResult, newMetadata, destBucketName, destObjName);
+        });
 
         it(
             'should copy an object and replace ContentType if replace ' +
@@ -616,9 +612,8 @@ describe('Object Copy', () => {
         );
 
         it(
-            'should also replace additional headers if replace ' +
-                'included as metadata directive header and new headers are ' +
-                'specified',
+            'should also replace additional headers if replace included ' +
+                'as metadata directive header and new headers are specified',
             done => {
                 s3.send(
                     new CopyObjectCommand({
@@ -1341,20 +1336,17 @@ describe('Object Copy', () => {
             });
         });
 
-        it(
-            'If-None-Match: returns PreconditionFailed when one of ETags ' + 'match, with double quotes around ETag',
-            done => {
-                requestCopy(
-                    {
-                        CopySourceIfNoneMatch: `non-matching,${etag}`,
-                    },
-                    err => {
-                        checkError(err, 'PreconditionFailed', 412);
-                        done();
-                    },
-                );
-            },
-        );
+        it('If-None-Match: returns PreconditionFailed when one of ETags match, with double quotes around ETag', done => {
+            requestCopy(
+                {
+                    CopySourceIfNoneMatch: `non-matching,${etag}`,
+                },
+                err => {
+                    checkError(err, 'PreconditionFailed', 412);
+                    done();
+                },
+            );
+        });
 
         it('If-None-Match: returns PreconditionFailed when ETag match, without double quotes around ETag', done => {
             requestCopy({ CopySourceIfNoneMatch: etagTrim }, err => {
@@ -1363,20 +1355,17 @@ describe('Object Copy', () => {
             });
         });
 
-        it(
-            'If-None-Match: returns PreconditionFailed when one of ETags ' + 'match, without double quotes around ETag',
-            done => {
-                requestCopy(
-                    {
-                        CopySourceIfNoneMatch: `non-matching,${etagTrim}`,
-                    },
-                    err => {
-                        checkError(err, 'PreconditionFailed', 412);
-                        done();
-                    },
-                );
-            },
-        );
+        it('If-None-Match: returns PreconditionFailed when one of ETags match, without double quotes around ETag', done => {
+            requestCopy(
+                {
+                    CopySourceIfNoneMatch: `non-matching,${etagTrim}`,
+                },
+                err => {
+                    checkError(err, 'PreconditionFailed', 412);
+                    done();
+                },
+            );
+        });
 
         it('If-Modified-Since: returns no error if Last modified date is greater', done => {
             requestCopy({ CopySourceIfModifiedSince: dateFromNow(-1) }, err => {
