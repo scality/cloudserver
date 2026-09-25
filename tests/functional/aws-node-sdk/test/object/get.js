@@ -24,7 +24,9 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
 const { algorithms } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
 
-const { crc64NvmeCrtContainer } = require('@aws-sdk/middleware-flexible-checksums');
+// The container is only exported while the SDK still needs a CRT-backed
+// CRC64NVME implementation registered by the caller.
+const { crc64NvmeCrtContainer } = require('@aws-sdk/checksums');
 if (crc64NvmeCrtContainer) {
     const { CrtCrc64Nvme } = require('@aws-sdk/crc64-nvme-crt');
     crc64NvmeCrtContainer.CrtCrc64Nvme = CrtCrc64Nvme;

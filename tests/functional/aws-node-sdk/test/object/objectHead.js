@@ -14,11 +14,9 @@ const {
     UploadPartCommand,
     CompleteMultipartUploadCommand,
 } = require('@aws-sdk/client-s3');
-// In older versions of @aws-sdk/middleware-flexible-checksums (<3.972), the
-// CRC64NVME implementation must be patched in manually from the CRT package.
-// Newer versions handle this internally via @aws-sdk/crc64-nvme, so the export
-// no longer exists and no registration is needed.
-const { crc64NvmeCrtContainer } = require('@aws-sdk/middleware-flexible-checksums');
+// The container is only exported while the SDK still needs a CRT-backed
+// CRC64NVME implementation registered by the caller.
+const { crc64NvmeCrtContainer } = require('@aws-sdk/checksums');
 if (crc64NvmeCrtContainer) {
     const { CrtCrc64Nvme } = require('@aws-sdk/crc64-nvme-crt');
     crc64NvmeCrtContainer.CrtCrc64Nvme = CrtCrc64Nvme;

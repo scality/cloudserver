@@ -2022,14 +2022,6 @@
     "@smithy/service-error-classification" "^1.1.0"
     tslib "^2.5.0"
 
-"@smithy/util-stream@^4.8.2":
-  version "4.8.2"
-  resolved "https://registry.yarnpkg.com/@smithy/util-stream/-/util-stream-4.8.2.tgz#6b657383dcc418018c0eeab0e7e5923cd80ca56d"
-  integrity sha512-R+S7jmu8VdbtOygMUSIGfkmOBp0SowT8+8LZdk21oXdmmKfN4G/bwN5IGIi0UH3RwWc9KJWDH1Dzm45DClyUvw==
-  dependencies:
-    "@smithy/core" "^3.33.2"
-    tslib "^2.6.2"
-
 "@smithy/util-uri-escape@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@smithy/util-uri-escape/-/util-uri-escape-1.1.0.tgz#a8c5edaf19c0efdb9b51661e840549cf600a1808"
