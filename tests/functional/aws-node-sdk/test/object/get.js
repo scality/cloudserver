@@ -24,7 +24,9 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
 const { algorithms } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
 
-const { crc64NvmeCrtContainer } = require('@aws-sdk/middleware-flexible-checksums');
+// The CRC64NVME container moved from @aws-sdk/middleware-flexible-checksums
+// to @aws-sdk/checksums in more recent @aws-sdk/client-s3 releases.
+const { crc64NvmeCrtContainer } = require('@aws-sdk/checksums');
 if (crc64NvmeCrtContainer) {
     const { CrtCrc64Nvme } = require('@aws-sdk/crc64-nvme-crt');
     crc64NvmeCrtContainer.CrtCrc64Nvme = CrtCrc64Nvme;
