@@ -103,6 +103,10 @@ if [[ "$MONGODB_DATABASE" ]]; then
    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.database=\"$MONGODB_DATABASE\""
 fi
 
+if [[ "$MONGODB_SHARD_COLLECTIONS" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.shardCollections=true"
+fi
+
 if [ -z "$REDIS_HA_NAME" ]; then
     REDIS_HA_NAME='mymaster'
 fi
