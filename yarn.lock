@@ -1669,6 +1669,39 @@
     "@smithy/signature-v4" "^5.3.7"
     axios "~1.18.1"
 
+"@scality/utapi@github:scality/utapi#8.4.0":
+  version "8.4.0"
+  resolved "https://codeload.github.com/scality/utapi/tar.gz/9fe53ab037072ad76e02237784052eb55bc6aaa0"
+  dependencies:
+    "@aws-sdk/client-iam" "^3.975.0"
+    "@hapi/joi" "^17.1.1"
+    "@scality/arsenal" "^8.6.0-0"
+    "@scality/bucketclient" scality/bucketclient#8.3.0
+    "@senx/warp10" "1.0.14"
+    async "^3.2.6"
+    aws4 "^1.13.2"
+    backo "^1.1.0"
+    body-parser "^1.20.3"
+    byte-size "^9.0.1"
+    commander "^12.1.0"
+    cron-parser "^4.9.0"
+    diskusage "^1.2.0"
+    encoding-down "^6.3.0"
+    express "^4.21.2"
+    get-folder-size "^2.0.1"
+    ioredis "^5.4.2"
+    js-yaml "^4.1.0"
+    level-mem "^5.0.1"
+    levelup "^4.3.2"
+    memdown "^5.0.0"
+    needle "^3.3.1"
+    node-schedule "^2.1.1"
+    oas-tools "^2.2.2"
+    prom-client "^15.1.3"
+    uuid "^11.0.3"
+    vaultclient scality/vaultclient#8.5.9
+    werelogs scality/werelogs#8.2.5
+
 "@senx/warp10@1.0.14":
   version "1.0.14"
   resolved "https://registry.yarnpkg.com/@senx/warp10/-/warp10-1.0.14.tgz#9a25007786b3dbc050f9a545a88291a6180fff8f"
@@ -8411,39 +8444,6 @@ uri-js@^4.2.2:
   integrity sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==
   dependencies:
     punycode "^2.1.0"
-
-"utapi@github:scality/utapi#8.4.0":
-  version "8.4.0"
-  resolved "https://codeload.github.com/scality/utapi/tar.gz/9fe53ab037072ad76e02237784052eb55bc6aaa0"
-  dependencies:
-    "@aws-sdk/client-iam" "^3.975.0"
-    "@hapi/joi" "^17.1.1"
-    "@scality/arsenal" "^8.6.0-0"
-    "@scality/bucketclient" scality/bucketclient#8.3.0
-    "@senx/warp10" "1.0.14"
-    async "^3.2.6"
-    aws4 "^1.13.2"
-    backo "^1.1.0"
-    body-parser "^1.20.3"
-    byte-size "^9.0.1"
-    commander "^12.1.0"
-    cron-parser "^4.9.0"
-    diskusage "^1.2.0"
-    encoding-down "^6.3.0"
-    express "^4.21.2"
-    get-folder-size "^2.0.1"
-    ioredis "^5.4.2"
-    js-yaml "^4.1.0"
-    level-mem "^5.0.1"
-    levelup "^4.3.2"
-    memdown "^5.0.0"
-    needle "^3.3.1"
-    node-schedule "^2.1.1"
-    oas-tools "^2.2.2"
-    prom-client "^15.1.3"
-    uuid "^11.0.3"
-    vaultclient scality/vaultclient#8.5.9
-    werelogs scality/werelogs#8.2.5
 
 utf-8-validate@^6.0.5:
   version "6.0.6"
