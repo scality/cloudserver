@@ -1,6 +1,6 @@
 'use strict';
 
-const arsenal = require('arsenal');
+const arsenal = require('@scality/arsenal');
 const { config } = require('./lib/Config.js');
 const logger = require('./lib/utilities/logger');
 

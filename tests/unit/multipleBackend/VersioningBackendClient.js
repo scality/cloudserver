@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { errorInstances, storage } = require('arsenal');
+const { errorInstances, storage } = require('@scality/arsenal');
 
 const AwsClient = storage.data.external.AwsClient;
 const { config } = require('../../../lib/Config');

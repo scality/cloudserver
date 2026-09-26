@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
+const { errors } = require('@scality/arsenal');
 
 const constants = require('../../../../../constants');
 const { parseRateLimitConfig } = require('../../../../../lib/api/apiUtils/rateLimit/config');

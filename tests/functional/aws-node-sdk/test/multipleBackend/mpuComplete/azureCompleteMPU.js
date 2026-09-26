@@ -6,7 +6,7 @@ const { CreateBucketCommand,
     CompleteMultipartUploadCommand,
     PutObjectCommand,
     GetObjectCommand } = require('@aws-sdk/client-s3');
-const { s3middleware } = require('arsenal');
+const { s3middleware } = require('@scality/arsenal');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const {

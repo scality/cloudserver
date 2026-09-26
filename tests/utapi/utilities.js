@@ -482,7 +482,7 @@ const testEvents = [{
 
 describe('utapi v2 pushmetrics utility', () => {
     const log = new werelogs.Logger('utapi-utility');
-    const { UtapiClient, utapiVersion } = require('utapi');
+    const { UtapiClient, utapiVersion } = require('@scality/utapi');
     let pushMetric;
 
     function pushMetricStub(event) {

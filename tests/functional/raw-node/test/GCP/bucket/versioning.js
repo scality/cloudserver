@@ -1,5 +1,5 @@
 const assert = require('assert');
-const arsenal = require('arsenal');
+const arsenal = require('@scality/arsenal');
 const {
     PutBucketVersioningCommand,
     GetBucketVersioningCommand,

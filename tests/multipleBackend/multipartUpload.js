@@ -5,7 +5,7 @@ const { S3Client,
     AbortMultipartUploadCommand,
     ListPartsCommand } = require('@aws-sdk/client-s3');
 const { parseString } = require('xml2js');
-const { models } = require('arsenal');
+const { models } = require('@scality/arsenal');
 
 const BucketInfo = models.BucketInfo;
 const { getRealAwsConfig } =
@@ -14,7 +14,7 @@ const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils } =
     require('../unit/helpers');
 const DummyRequest = require('../unit/DummyRequest');
 const { config } = require('../../lib/Config');
-const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
+const { metadata } = require('@scality/arsenal').storage.metadata.inMemory.metadata;
 
 const { bucketPut } = require('../../lib/api/bucketPut');
 const objectPut = require('../../lib/api/objectPut');

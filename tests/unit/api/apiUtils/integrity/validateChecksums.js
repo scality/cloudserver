@@ -19,7 +19,7 @@ const {
     areChecksumsEnabled,
 } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
 const { config } = require('../../../../../lib/Config');
-const { errors: ArsenalErrors } = require('arsenal');
+const { errors: ArsenalErrors } = require('@scality/arsenal');
 
 describe('validateChecksumsNoChunking MD5', () => {
     describe('with valid Content-MD5 header', () => {

@@ -1,6 +1,6 @@
 const assert = require('assert');
 const async = require('async');
-const { storage } = require('arsenal');
+const { storage } = require('@scality/arsenal');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo }
     = require('../unit/helpers');

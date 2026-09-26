@@ -1,6 +1,6 @@
 const assert = require('assert');
 const validateCapacitySchema = require('../../../../../lib/routes/veeam/schemas/capacity');
-const { errorInstances } = require('arsenal');
+const { errorInstances } = require('@scality/arsenal');
 
 describe('RouteVeeam: validateCapacitySchema', () => {
     [

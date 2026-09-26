@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { errorInstances } = require('arsenal');
+const { errorInstances } = require('@scality/arsenal');
 const validateSearch =
     require('../../../lib/api/apiUtils/bucket/validateSearch');
 

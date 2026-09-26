@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { errorInstances } = require('arsenal');
+const { errorInstances } = require('@scality/arsenal');
 
 const locationHeaderCheck =
     require('../../../lib/api/apiUtils/object/locationHeaderCheck');

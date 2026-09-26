@@ -1,6 +1,6 @@
 const assert = require('assert');
 
-const { BucketInfo, BackendInfo } = require('arsenal').models;
+const { BucketInfo, BackendInfo } = require('@scality/arsenal').models;
 const DummyRequest = require('../DummyRequest');
 const { DummyRequestLogger } = require('../helpers');
 const locationConstraintCheck

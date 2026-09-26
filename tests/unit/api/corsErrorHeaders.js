@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const sinon = require('sinon');
-const { errors, auth } = require('arsenal');
+const { errors, auth } = require('@scality/arsenal');
 
 const api = require('../../../lib/api/api');
 const { bucketGet } = require('../../../lib/api/bucketGet');

@@ -1,7 +1,7 @@
 const assert = require('assert');
 const crypto = require('crypto');
 const sinon = require('sinon');
-const { errors } = require('arsenal');
+const { errors } = require('@scality/arsenal');
 
 const { dataStore } = require('../../../../../lib/api/apiUtils/object/storeObject');
 const dataWrapper = require('../../../../../lib/data/wrapper');

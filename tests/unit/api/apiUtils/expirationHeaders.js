@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { LifecycleDateTime } = require('arsenal').s3middleware.lifecycleHelpers;
+const { LifecycleDateTime } = require('@scality/arsenal').s3middleware.lifecycleHelpers;
 
 
 const {

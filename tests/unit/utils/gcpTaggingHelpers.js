@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { errorInstances, storage } = require('arsenal');
+const { errorInstances, storage } = require('@scality/arsenal');
 const { gcpTaggingPrefix } = require('../../../constants');
 const { genPutTagObj } =
     require('../../../tests/functional/raw-node/utils/gcpUtils');

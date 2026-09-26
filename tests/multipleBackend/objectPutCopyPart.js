@@ -6,7 +6,7 @@ const {
     ListPartsCommand,
     AbortMultipartUploadCommand,
 } = require('@aws-sdk/client-s3');
-const { storage, errors } = require('arsenal');
+const { storage, errors } = require('@scality/arsenal');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo }
     = require('../unit/helpers');

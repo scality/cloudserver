@@ -1,5 +1,5 @@
 const assert = require('assert');
-const arsenal = require('arsenal');
+const arsenal = require('@scality/arsenal');
 const { v4: uuidv4 } = require('uuid');
 const { createMpuKey, createMpuList } = arsenal.storage.data.external.GcpUtils;
 

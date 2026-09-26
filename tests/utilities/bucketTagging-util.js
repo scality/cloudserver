@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
+const { errors } = require('@scality/arsenal');
 
 function assertError(err, expectedErr) {
     if (expectedErr === null) {

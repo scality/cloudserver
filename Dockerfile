@@ -22,9 +22,6 @@ RUN apt-get update \
     && ssh-keyscan -H github.com > /root/ssh/known_hosts
 
 ENV PYTHON=python3
-RUN npm install -g \
-    node-gyp \
-    typescript@4.9.5
 COPY package.json yarn.lock /usr/src/app/
 
 RUN yarn install --production --frozen-lockfile --network-concurrency 1

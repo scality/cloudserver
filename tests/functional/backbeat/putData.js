@@ -5,7 +5,7 @@ const { createHash } = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const { CreateBucketCommand, PutBucketVersioningCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 
-const { versioning } = require('arsenal');
+const { versioning } = require('@scality/arsenal');
 const { ExternalNullVersionId } = versioning.VersioningConstants;
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 

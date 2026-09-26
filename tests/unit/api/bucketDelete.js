@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
-const { errors } = require('arsenal');
+const { errors } = require('@scality/arsenal');
 const sinon = require('sinon');
 
 const inMemory = require('../../../lib/kms/in_memory/backend').backend;
@@ -14,7 +14,7 @@ const constants = require('../../../constants');
 const initiateMultipartUpload
     = require('../../../lib/api/initiateMultipartUpload');
 const metadata = require('../metadataswitch');
-const metadataMem = require('arsenal').storage.metadata.inMemory.metadata;
+const metadataMem = require('@scality/arsenal').storage.metadata.inMemory.metadata;
 const objectPut = require('../../../lib/api/objectPut');
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');

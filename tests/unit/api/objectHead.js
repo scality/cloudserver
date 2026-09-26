@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { models } = require('arsenal');
+const { models } = require('@scality/arsenal');
 const { ObjectMD, ObjectMDChecksum } = models;
 const { algorithms } = require('../../../lib/api/apiUtils/integrity/validateChecksums');
 

@@ -7,8 +7,8 @@ const {
     isMetricStale,
 } = require('../../../../../lib/api/apiUtils/quotas/quotaUtils');
 const QuotaService = require('../../../../../lib/utilization/instance');
-const BucketInfo = require('arsenal').models.BucketInfo;
-const { default: ScubaClient } = require('scubaclient');
+const BucketInfo = require('@scality/arsenal').models.BucketInfo;
+const { default: ScubaClient } = require('@scality/scubaclient');
 
 const mockLog = {
     warn: sinon.stub(),

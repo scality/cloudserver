@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { ObjectMD } = require('arsenal').models;
+const { ObjectMD } = require('@scality/arsenal').models;
 
 const { getMetricToPush } = require('../../../lib/routes/utilities/pushReplicationMetric');
 

@@ -5,7 +5,7 @@ const { splitter, mpuBucketPrefix } = require('../../../constants');
 const { DummyRequestLogger } = require('../../unit/helpers');
 const assert = require('assert');
 const log = new DummyRequestLogger();
-const { isScalityKmsArn, SCAL_KMS_ARN } = require('arsenal/build/lib/network/KMSInterface');
+const { isScalityKmsArn, SCAL_KMS_ARN } = require('@scality/arsenal/build/lib/network/KMSInterface');
 const helpers = require('./helpers');
 const scenarios = require('./scenarios');
 

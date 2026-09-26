@@ -1,6 +1,6 @@
 const assert = require('assert');
-const { BucketInfo, BucketPolicy } = require('arsenal').models;
-const AuthInfo = require('arsenal').auth.AuthInfo;
+const { BucketInfo, BucketPolicy } = require('@scality/arsenal').models;
+const AuthInfo = require('@scality/arsenal').auth.AuthInfo;
 const constants = require('../../../constants');
 const { isBucketAuthorized, isObjAuthorized, validatePolicyResource }
     = require('../../../lib/api/apiUtils/authorization/permissionChecks');

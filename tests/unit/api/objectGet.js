@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
 const { parseString } = require('xml2js');
-const { models } = require('arsenal');
+const { models } = require('@scality/arsenal');
 const { ObjectMD, ObjectMDChecksum } = models;
 const { algorithms } = require('../../../lib/api/apiUtils/integrity/validateChecksums');
 

@@ -1,7 +1,7 @@
 const assert = require('assert');
 const sinon = require('sinon');
 const { config } = require('../../../../lib/Config');
-const errors = require('arsenal').errors;
+const errors = require('@scality/arsenal').errors;
 
 const getNotificationConfiguration =
     require('../../../../lib/api/apiUtils/bucket/getNotificationConfiguration');

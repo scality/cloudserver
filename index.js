@@ -7,7 +7,7 @@ require('werelogs').stderrUtils.catchAndTimestampStderr(
     require('cluster').isPrimary ? 1 : null,
 );
 
-const tracing = require('arsenal/build/lib/tracing');
+const tracing = require('@scality/arsenal/build/lib/tracing');
 
 // Gated on isEnabled() so the OTEL-off path doesn't load Config early.
 if (tracing.isEnabled() && !(require('./lib/Config').config.isCluster && require('cluster').isPrimary)) {
