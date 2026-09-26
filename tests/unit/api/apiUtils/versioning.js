@@ -698,6 +698,16 @@ describe('versioning helpers', () => {
             archiveID: '126783123678',
         };
         const now = Date.now();
+        // always taken from the archived object, so cleared when it had none
+        const clearedSystemMD = {
+            contentType: undefined,
+            cacheControl: undefined,
+            contentDisposition: undefined,
+            contentEncoding: undefined,
+            expires: undefined,
+            retentionMode: undefined,
+            retentionDate: undefined,
+        };
         let clock;
 
         beforeEach(() => {
@@ -939,6 +949,125 @@ describe('versioning helpers', () => {
                 },
             },
             {
+                description: 'Should keep the system metadata of the archived object',
+                objMD: {
+                    versionId: '2345678',
+                    'creation-time': now,
+                    'last-modified': now,
+                    originOp: 's3:PutObject',
+                    'content-type': 'application/zip',
+                    'cache-control': 'no-cache',
+                    'content-disposition': 'attachment; filename="archive.zip"',
+                    'content-encoding': 'gzip',
+                    expires: 'Wed, 21 Oct 2026 07:28:00 GMT',
+                    'x-amz-website-redirect-location': '/elsewhere',
+                    'x-amz-storage-class': 'cold-location',
+                    archive: {
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        archiveInfo,
+                    },
+                },
+                metadataStoreParams: {
+                    contentType: 'binary/octet-stream',
+                    headers: {},
+                },
+                expectedRes: {
+                    creationTime: now,
+                    lastModifiedDate: now,
+                    updateMicroVersionId: true,
+                    originOp: 's3:ObjectRestore:Completed',
+                    contentType: 'application/zip',
+                    cacheControl: 'no-cache',
+                    contentDisposition: 'attachment; filename="archive.zip"',
+                    contentEncoding: 'gzip',
+                    expires: 'Wed, 21 Oct 2026 07:28:00 GMT',
+                    headers: {
+                        'x-amz-website-redirect-location': '/elsewhere',
+                    },
+                    taggingCopy: undefined,
+                    amzStorageClass: 'cold-location',
+                    archive: {
+                        archiveInfo,
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        restoreCompletedAt: new Date(now),
+                        restoreWillExpireAt: new Date(now + days * scaledMsPerDay),
+                    },
+                },
+            },
+            {
+                description: 'Should drop the system metadata sent with the restore request',
+                objMD: {
+                    versionId: '2345678',
+                    'creation-time': now,
+                    'last-modified': now,
+                    originOp: 's3:PutObject',
+                    'x-amz-storage-class': 'cold-location',
+                    archive: {
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        archiveInfo,
+                    },
+                },
+                metadataStoreParams: {
+                    contentType: 'binary/octet-stream',
+                    cacheControl: 'no-store',
+                    contentDisposition: 'inline',
+                    contentEncoding: 'identity',
+                    expires: 'Wed, 21 Oct 2026 07:28:00 GMT',
+                },
+                expectedRes: {
+                    creationTime: now,
+                    lastModifiedDate: now,
+                    updateMicroVersionId: true,
+                    originOp: 's3:ObjectRestore:Completed',
+                    taggingCopy: undefined,
+                    amzStorageClass: 'cold-location',
+                    archive: {
+                        archiveInfo,
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        restoreCompletedAt: new Date(now),
+                        restoreWillExpireAt: new Date(now + days * scaledMsPerDay),
+                    },
+                },
+            },
+            {
+                description: 'Should keep the object lock retention',
+                objMD: {
+                    versionId: '2345678',
+                    'creation-time': now,
+                    'last-modified': now,
+                    originOp: 's3:PutObject',
+                    retentionMode: 'GOVERNANCE',
+                    retentionDate: '2026-10-21T07:28:00.000Z',
+                    'x-amz-storage-class': 'cold-location',
+                    archive: {
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        archiveInfo,
+                    },
+                },
+                expectedRes: {
+                    creationTime: now,
+                    lastModifiedDate: now,
+                    updateMicroVersionId: true,
+                    originOp: 's3:ObjectRestore:Completed',
+                    retentionMode: 'GOVERNANCE',
+                    retentionDate: '2026-10-21T07:28:00.000Z',
+                    taggingCopy: undefined,
+                    amzStorageClass: 'cold-location',
+                    archive: {
+                        archiveInfo,
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        restoreCompletedAt: new Date(now),
+                        restoreWillExpireAt: new Date(now + days * scaledMsPerDay),
+                    },
+                },
+            },
+            {
                 description: 'Should keep ACLs',
                 objMD: {
                     versionId: '2345678',
@@ -1031,7 +1160,7 @@ describe('versioning helpers', () => {
                 }
                 const options = overwritingVersioning(testCase.objMD, metadataStoreParams);
                 assert.deepStrictEqual(options.versionId, testCase.objMD.versionId);
-                assert.deepStrictEqual(metadataStoreParams, testCase.expectedRes);
+                assert.deepStrictEqual(metadataStoreParams, { ...clearedSystemMD, ...testCase.expectedRes });
 
                 if (testCase.objMD.isNull) {
                     assert.deepStrictEqual(options.extraMD.nullVersionId, 'vnull');
