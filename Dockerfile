@@ -1,4 +1,4 @@
-ARG NODE_VERSION=22.14.0-bookworm-slim
+ARG NODE_VERSION=24.21.0-bookworm-slim
 
 FROM node:${NODE_VERSION} AS builder
 
@@ -27,7 +27,7 @@ RUN npm install -g \
     typescript@4.9.5
 COPY package.json yarn.lock /usr/src/app/
 
-RUN yarn install --production --frozen-lockfile --ignore-engines --network-concurrency 1
+RUN yarn install --production --frozen-lockfile --network-concurrency 1
 
 ################################################################################
 FROM node:${NODE_VERSION} AS production

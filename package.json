@@ -4,7 +4,7 @@
     "description": "Zenko CloudServer, an open-source Node.js implementation of a server handling the Amazon S3 protocol",
     "main": "index.js",
     "engines": {
-        "node": ">=22"
+        "node": ">=24"
     },
     "repository": "scality/S3",
     "keywords": [
@@ -34,11 +34,12 @@
         "@opentelemetry/instrumentation-http": "~0.218.0",
         "@opentelemetry/instrumentation-ioredis": "~0.64.0",
         "@opentelemetry/instrumentation-mongodb": "~0.69.0",
+        "@scality/cloudserverclient": "1.0.12",
         "@smithy/node-http-handler": "^3.0.0",
-        "arsenal": "git+https://github.com/scality/arsenal#8.5.17",
+        "arsenal": "git+https://github.com/scality/arsenal#8.6.0-preview.1",
         "async": "2.6.4",
         "aws-crt": "^1.24.0",
-        "bucketclient": "scality/bucketclient#8.2.7",
+        "bucketclient": "scality/bucketclient#8.2.10",
         "bufferutil": "^4.0.8",
         "commander": "^12.1.0",
         "cron-parser": "^4.9.0",
@@ -57,14 +58,13 @@
         "request": "^2.88.2",
         "scubaclient": "git+https://github.com/scality/scubaclient.git#1.1.4",
         "sql-where-parser": "^2.2.1",
-        "utapi": "github:scality/utapi#8.2.4",
+        "utapi": "github:scality/utapi#8.4.0",
         "utf-8-validate": "^6.0.5",
         "utf8": "^3.0.0",
         "uuid": "^11.0.3",
-        "vaultclient": "scality/vaultclient#8.5.8",
+        "vaultclient": "scality/vaultclient#8.5.9",
         "werelogs": "scality/werelogs#semver:^8.2.4",
         "ws": "^8.18.0",
-        "@scality/cloudserverclient": "1.0.12",
         "xml2js": "^0.6.2"
     },
     "devDependencies": {
@@ -94,10 +94,8 @@
     },
     "resolutions": {
         "jsonwebtoken": "^9.0.0",
-        "nan": "v2.22.0",
         "fast-xml-parser": "^5.5.6",
-        "ts-morph/**/brace-expansion": "^5.0.5",
-        "ts-morph/**/picomatch": "^4.0.4"
+        "express": "^4.22.3"
     },
     "countAsyncSourcePaths": [
         "lib/**/*.js",
