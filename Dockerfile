@@ -25,9 +25,14 @@ ENV PYTHON=python3
 RUN npm install -g \
     node-gyp \
     typescript@4.9.5
-COPY package.json yarn.lock /usr/src/app/
+COPY package.json yarn.lock .yarnrc.yml /usr/src/app/
 
-RUN yarn install --production --frozen-lockfile --ignore-engines --network-concurrency 1
+# `workspaces focus` cannot enforce lockfile immutability (it silently
+# re-resolves), so validate the lockfile first with a cheap build-less
+# install. Together these preserve what --frozen-lockfile used to give us.
+RUN corepack enable \
+    && yarn install --immutable --mode=skip-build \
+    && yarn workspaces focus --production
 
 ################################################################################
 FROM node:${NODE_VERSION} AS production
@@ -56,11 +61,11 @@ VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 
 ENTRYPOINT ["tini", "-g", "--", "/usr/src/app/docker-entrypoint.sh"]
 
-CMD [ "yarn", "start" ]
+CMD [ "npm", "run", "start" ]
 
 ################################################################################
 FROM production AS testcoverage
 
-RUN yarn global add nyc
+RUN npm install -g nyc
 
 CMD [ "./docker-test-with-coverage.sh" ]

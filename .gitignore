@@ -39,3 +39,11 @@ junit
 
 # config file build using jq to merge configs json
 tests/functional/sse-kms-migration/config.json
+
+# Yarn (Berry) — see .yarnrc.yml
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions

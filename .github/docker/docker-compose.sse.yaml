@@ -5,7 +5,7 @@ services:
     # root because S3C images needs ownership permission on files and mounted paths
     user: root
     command: sh -c "chmod 400 tests/utils/keyfile && yarn start > /artifacts/vault.log 2> /artifacts/vault-stderr.log"
-    network_mode: "host"
+    network_mode: 'host'
     volumes:
       - /tmp/artifacts/${JOB_NAME}:/artifacts
       - ./vault-config.json:/conf/config.json:ro
@@ -41,4 +41,4 @@ services:
   cloudserver-sse-migration:
     extends: cloudserver-sse-before-migration
     profiles: [sse-migration]
-    command: sh -c "yarn start > /artifacts/s3.migration.log 2> /artifacts/s3-stderr.migration.log"
+    command: sh -c "npm run start > /artifacts/s3.migration.log 2> /artifacts/s3-stderr.migration.log"
