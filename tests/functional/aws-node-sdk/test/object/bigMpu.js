@@ -144,6 +144,14 @@ describe('large mpu', function tester() {
                     s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
                         .then(data => {
                             assert.strictEqual(data.ETag, `"${finalETag}-${partCount}"`);
+                            // Drain the body: the response resolves on headers
+                            // while the server is still streaming the parts, and
+                            // deleting the object in `after` mid-stream aborts the
+                            // socket, which the SDK surfaces as an error on Body.
+                            return data.Body.transformToString();
+                        })
+                        .then(content => {
+                            assert.strictEqual(content, body.repeat(partCount));
                             process.stdout.write('get object successful\n');
                             return next();
                         })
