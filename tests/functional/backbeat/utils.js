@@ -1,7 +1,9 @@
 const { makeRequest } = require('../raw-node/utils/makeRequest');
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
-const { models: { ObjectMD } } = require('arsenal');
+const {
+    models: { ObjectMD },
+} = require('arsenal');
 
 // NOTE: The routes "getMetadata" and "putMetadata" are utilized for modifying the metadata of an object.
 // This approach is preferred over directly updating the metadata in MongoDB,

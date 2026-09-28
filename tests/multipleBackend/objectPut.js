@@ -2,8 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const { storage } = require('arsenal');
 
-const { cleanup, DummyRequestLogger, makeAuthInfo }
-    = require('../unit/helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../unit/helpers');
 const { bucketPut } = require('../../lib/api/bucketPut');
 const objectPut = require('../../lib/api/objectPut');
 const DummyRequest = require('../unit/DummyRequest');
@@ -24,11 +23,13 @@ const sproxydLocation = 'scality-internal-sproxyd';
 const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
 function put(bucketLoc, objLoc, requestHost, objectName, cb, errorDescription) {
-    const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
-        '<CreateBucketConfiguration ' +
-        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-        `<LocationConstraint>${bucketLoc}</LocationConstraint>` +
-        '</CreateBucketConfiguration>' : '';
+    const post = bucketLoc
+        ? '<?xml version="1.0" encoding="UTF-8"?>' +
+          '<CreateBucketConfiguration ' +
+          'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+          `<LocationConstraint>${bucketLoc}</LocationConstraint>` +
+          '</CreateBucketConfiguration>'
+        : '';
     const bucketPutReq = new DummyRequest({
         bucketName,
         namespace,
@@ -57,8 +58,7 @@ function put(bucketLoc, objLoc, requestHost, objectName, cb, errorDescription) {
         testPutObjReq.parsedHost = requestHost;
     }
     bucketPut(authInfo, bucketPutReq, log, () => {
-        objectPut(authInfo, testPutObjReq, undefined, log, (err,
-            resHeaders) => {
+        objectPut(authInfo, testPutObjReq, undefined, log, (err, resHeaders) => {
             if (errorDescription) {
                 assert.strictEqual(err.code, 400);
                 assert(err.is.InvalidArgument);
@@ -130,8 +130,7 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
     });
 
     function isDataStoredInMem(testCase) {
-        return testCase.objLoc === memLocation
-               || (testCase.objLoc === null && testCase.bucketLoc === memLocation);
+        return testCase.objLoc === memLocation || (testCase.objLoc === null && testCase.bucketLoc === memLocation);
     }
 
     function checkPut(testCase) {
@@ -148,28 +147,31 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
 
     putCases.forEach(testCase => {
         it(`should put an object to ${testCase.name}`, done => {
-            async.series([
-                next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', 'obj1', next),
-                next => {
-                    checkPut(testCase);
-                    // Increase the probability of the first request having released
-                    // the socket, so that it can be reused for the next request.
-                    // This tests how HTTP connection reuse behaves.
-                    setTimeout(next, 10);
-                },
-                // Second put should work as well
-                next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', 'obj2', next),
-                next => {
-                    checkPut(testCase);
-                    setTimeout(next, 10);
-                },
-                // Overwriting PUT
-                next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', 'obj2', next),
-                next => {
-                    checkPut(testCase);
-                    next();
-                },
-            ], done);
+            async.series(
+                [
+                    next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', 'obj1', next),
+                    next => {
+                        checkPut(testCase);
+                        // Increase the probability of the first request having released
+                        // the socket, so that it can be reused for the next request.
+                        // This tests how HTTP connection reuse behaves.
+                        setTimeout(next, 10);
+                    },
+                    // Second put should work as well
+                    next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', 'obj2', next),
+                    next => {
+                        checkPut(testCase);
+                        setTimeout(next, 10);
+                    },
+                    // Overwriting PUT
+                    next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', 'obj2', next),
+                    next => {
+                        checkPut(testCase);
+                        next();
+                    },
+                ],
+                done,
+            );
         });
     });
 });

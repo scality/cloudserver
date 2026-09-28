@@ -29,10 +29,12 @@ describe('Test get object attributes with versioning', () => {
 
         beforeEach(async () => {
             await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-            await s3.send(new PutBucketVersioningCommand({
-                Bucket: bucket,
-                VersioningConfiguration: versioningEnabled,
-            }));
+            await s3.send(
+                new PutBucketVersioningCommand({
+                    Bucket: bucket,
+                    VersioningConfiguration: versioningEnabled,
+                }),
+            );
         });
 
         afterEach(done => {
@@ -40,28 +42,33 @@ describe('Test get object attributes with versioning', () => {
                 if (err) {
                     return done(err);
                 }
-                return s3.send(new DeleteBucketCommand({ Bucket: bucket }))
+                return s3
+                    .send(new DeleteBucketCommand({ Bucket: bucket }))
                     .then(() => done())
                     .catch(done);
             });
         });
 
         it('should return NoSuchVersion for non-existent versionId', async () => {
-            await s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: key,
-                Body: body,
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    Body: body,
+                }),
+            );
 
             const fakeVersionId = '111111111111111111111111111111111111111175636f7270';
 
             try {
-                await s3.send(new GetObjectAttributesCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    VersionId: fakeVersionId,
-                    ObjectAttributes: ['ETag'],
-                }));
+                await s3.send(
+                    new GetObjectAttributesCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        VersionId: fakeVersionId,
+                        ObjectAttributes: ['ETag'],
+                    }),
+                );
                 assert.fail('Expected NoSuchVersion error');
             } catch (err) {
                 assert.strictEqual(err.name, 'NoSuchVersion');
@@ -73,23 +80,29 @@ describe('Test get object attributes with versioning', () => {
         });
 
         it('should return MethodNotAllowed for delete marker', async () => {
-            await s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: key,
-                Body: body,
-            }));
-
-            await s3.send(new DeleteObjectCommand({
-                Bucket: bucket,
-                Key: key,
-            }));
-
-            try {
-                await s3.send(new GetObjectAttributesCommand({
+            await s3.send(
+                new PutObjectCommand({
                     Bucket: bucket,
                     Key: key,
-                    ObjectAttributes: ['ETag'],
-                }));
+                    Body: body,
+                }),
+            );
+
+            await s3.send(
+                new DeleteObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                }),
+            );
+
+            try {
+                await s3.send(
+                    new GetObjectAttributesCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        ObjectAttributes: ['ETag'],
+                    }),
+                );
                 assert.fail('Expected MethodNotAllowed error');
             } catch (err) {
                 assert.strictEqual(err.name, 'MethodNotAllowed');
@@ -98,19 +111,23 @@ describe('Test get object attributes with versioning', () => {
         });
 
         it('should return attributes for specific version', async () => {
-            const putResult = await s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: key,
-                Body: body,
-            }));
+            const putResult = await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    Body: body,
+                }),
+            );
             const versionId = putResult.VersionId;
 
-            const data = await s3.send(new GetObjectAttributesCommand({
-                Bucket: bucket,
-                Key: key,
-                VersionId: versionId,
-                ObjectAttributes: ['ETag', 'ObjectSize'],
-            }));
+            const data = await s3.send(
+                new GetObjectAttributesCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    VersionId: versionId,
+                    ObjectAttributes: ['ETag', 'ObjectSize'],
+                }),
+            );
 
             assert.strictEqual(data.ETag, expectedMD5);
             assert.strictEqual(data.ObjectSize, body.length);
@@ -118,18 +135,22 @@ describe('Test get object attributes with versioning', () => {
         });
 
         it('should return VersionId for versioned object', async () => {
-            const putResult = await s3.send(new PutObjectCommand({
-                Bucket: bucket,
-                Key: key,
-                Body: body,
-            }));
+            const putResult = await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    Body: body,
+                }),
+            );
             const versionId = putResult.VersionId;
 
-            const data = await s3.send(new GetObjectAttributesCommand({
-                Bucket: bucket,
-                Key: key,
-                ObjectAttributes: ['ETag'],
-            }));
+            const data = await s3.send(
+                new GetObjectAttributesCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    ObjectAttributes: ['ETag'],
+                }),
+            );
 
             assert.strictEqual(data.VersionId, versionId);
         });

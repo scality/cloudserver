@@ -1,9 +1,11 @@
-const { S3Client,
+const {
+    S3Client,
     CreateBucketCommand,
     DeleteBucketCommand,
     PutObjectCommand,
     ListObjectsCommand,
-    DeleteObjectCommand } = require('@aws-sdk/client-s3');
+    DeleteObjectCommand,
+} = require('@aws-sdk/client-s3');
 const assert = require('assert');
 
 const getConfig = require('../support/config');
@@ -45,7 +47,7 @@ describe('Skip scan cases tests', () => {
     let s3;
     before(async () => {
         const config = getConfig('default', { signatureVersion: 'v4' });
-        s3 = new S3Client(config);        
+        s3 = new S3Client(config);
         await s3.send(new CreateBucketCommand({ Bucket }));
         const x = 120;
         const promises = [];
@@ -54,30 +56,27 @@ describe('Skip scan cases tests', () => {
                 const o = {};
                 o.Bucket = Bucket;
                 // eslint-disable-next-line
-                o.Key = String.fromCharCode(65 + n / x) +
-                    '/' + n % x;
+                o.Key = String.fromCharCode(65 + n / x) + '/' + (n % x);
                 o.Body = '';
                 await s3.send(new PutObjectCommand(o));
             };
             promises.push(putObjectPromise);
-        }        
+        }
         for (let i = 0; i < promises.length; i += 10) {
             const batch = promises.slice(i, i + 10);
             await Promise.all(batch.map(fn => fn()));
         }
     });
-    
+
     after(async () => {
         const data = await s3.send(new ListObjectsCommand({ Bucket }));
-        const deletePromises = data.Contents.map(o => 
-            s3.send(new DeleteObjectCommand({ Bucket, Key: o.Key }))
-        );
+        const deletePromises = data.Contents.map(o => s3.send(new DeleteObjectCommand({ Bucket, Key: o.Key })));
         await Promise.all(deletePromises);
         await s3.send(new DeleteBucketCommand({ Bucket }));
     });
-    
+
     it('should find all common prefixes in one shot', async () => {
-        const { $metadata , ...data } = await s3.send(new ListObjectsCommand({ Bucket, Delimiter: '/' }));
+        const { $metadata, ...data } = await s3.send(new ListObjectsCommand({ Bucket, Delimiter: '/' }));
         cutAttributes(data);
         assert.deepStrictEqual(data, {
             IsTruncated: false,
@@ -86,13 +85,7 @@ describe('Skip scan cases tests', () => {
             Name: Bucket,
             Prefix: '',
             MaxKeys: 1000,
-            CommonPrefixes: [
-                'A/',
-                'B/',
-                'C/',
-                'D/',
-                'E/',
-            ],
+            CommonPrefixes: ['A/', 'B/', 'C/', 'D/', 'E/'],
         });
         assert.strictEqual($metadata.httpStatusCode, 200);
     });

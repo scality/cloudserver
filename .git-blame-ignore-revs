@@ -1,0 +1,6 @@
+# Commits listed here are skipped by git blame. GitHub reads this file
+# automatically; locally, run once:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# CLDSRV-1002: whole-repo Prettier reformat, no behaviour change
+cad223258128a7e811befe9fef826efb6b97c476

@@ -1,10 +1,6 @@
 const assert = require('assert');
 
-const {
-    ChannelMessageV0,
-    MessageType,
-    TargetType,
-} = require('../../../lib/management/ChannelMessageV0');
+const { ChannelMessageV0, MessageType, TargetType } = require('../../../lib/management/ChannelMessageV0');
 
 const {
     CONFIG_OVERLAY_MESSAGE,

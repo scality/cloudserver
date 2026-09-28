@@ -170,6 +170,7 @@
         "count-async": "node .github/scripts/count-async-functions.mjs",
         "check-diff-async": "node .github/scripts/check-diff-async.mjs",
         "prettier": "prettier",
-        "prettier:diff": "bash scripts/prettier-diff.sh"
+        "prettier:check": "prettier --check .",
+        "prettier:write": "prettier --write ."
     }
 }

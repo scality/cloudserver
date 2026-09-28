@@ -17,14 +17,14 @@ function getAwsCredentials(profile, credFile = '/.aws/credentials') {
     // Parse the INI file manually for synchronous access
     const content = fs.readFileSync(filename, 'utf-8');
     const profileMatch = content.match(new RegExp(`\\[${profile}\\][\\s\\S]*?(?=\\n\\[|$)`));
-    
+
     if (!profileMatch) {
         throw new Error(`Profile "${profile}" not found in ${filename}`);
     }
-    
+
     const accessKeyMatch = profileMatch[0].match(/aws_access_key_id\s*=\s*(.+)/);
     const secretKeyMatch = profileMatch[0].match(/aws_secret_access_key\s*=\s*(.+)/);
-    
+
     if (!accessKeyMatch || !secretKeyMatch) {
         throw new Error(`Missing credentials in profile "${profile}"`);
     }
@@ -36,25 +36,30 @@ function getAwsCredentials(profile, credFile = '/.aws/credentials') {
 }
 
 function getRealAwsConfig(location) {
-    const { awsEndpoint, gcpEndpoint, credentialsProfile,
-        credentials: locCredentials, bucketName, mpuBucketName, pathStyle } =
-        config.locationConstraints[location].details;
+    const {
+        awsEndpoint,
+        gcpEndpoint,
+        credentialsProfile,
+        credentials: locCredentials,
+        bucketName,
+        mpuBucketName,
+        pathStyle,
+    } = config.locationConstraints[location].details;
     const useHTTPS = config.locationConstraints[location].details.https;
     const proto = useHTTPS ? 'https' : 'http';
     const isGcp = config.locationConstraints[location].type === 'gcp';
     const params = {
         region: 'us-east-1',
-        endpoint: gcpEndpoint ?
-            `${proto}://${gcpEndpoint}` : `${proto}://${awsEndpoint}`,
+        endpoint: gcpEndpoint ? `${proto}://${gcpEndpoint}` : `${proto}://${awsEndpoint}`,
     };
-    
+
     if (isGcp) {
         params.disableS3ExpressSessionAuth = true;
         params.useGlobalEndpoint = false;
         params.s3DisableBodySigning = true;
         params.mainBucket = bucketName;
         params.mpuBucket = mpuBucketName;
-    }  
+    }
     if (useHTTPS) {
         params.requestHandler = {
             httpsAgent: new https.Agent({ keepAlive: true }),
@@ -64,25 +69,26 @@ function getRealAwsConfig(location) {
             httpAgent: new http.Agent({ keepAlive: true }),
         };
     }
-    
+
     if (pathStyle) {
         params.forcePathStyle = true;
     }
-    
+
     if (!useHTTPS) {
         params.sslEnabled = false;
     }
-    
+
     if (credentialsProfile) {
         const credentials = getAwsCredentials(credentialsProfile, '/.aws/credentials');
         params.credentials = credentials;
-        
+
         if (isGcp) {
             return {
                 s3Params: params,
                 bucketName,
                 mpuBucket: mpuBucketName || bucketName,
-                credentials: {  // For raw HTTP requests (GCP format)
+                credentials: {
+                    // For raw HTTP requests (GCP format)
                     accessKey: credentials.accessKeyId,
                     secretKey: credentials.secretAccessKey,
                 },
@@ -90,11 +96,11 @@ function getRealAwsConfig(location) {
         }
         return params;
     }
-   params.credentials = {
+    params.credentials = {
         accessKeyId: locCredentials.accessKey,
         secretAccessKey: locCredentials.secretKey,
     };
-    
+
     // For GCP with plain credentials, return nested structure
     if (isGcp) {
         return {
@@ -113,7 +119,7 @@ function getRealAwsConfig(location) {
             },
         };
     }
-    
+
     return params;
 }
 

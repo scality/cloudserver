@@ -3,10 +3,7 @@ const assert = require('assert');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutCors = require('../../../lib/api/bucketPutCors');
 const bucketDeleteCors = require('../../../lib/api/bucketDeleteCors');
-const { cleanup,
-    DummyRequestLogger,
-    makeAuthInfo,
-    CorsConfigTester } = require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo, CorsConfigTester } = require('../helpers');
 const metadata = require('../../../lib/metadata/wrapper');
 
 const log = new DummyRequestLogger();
@@ -21,10 +18,8 @@ const testBucketPutRequest = {
     url: '/',
     actionImplicitDenies: false,
 };
-const testBucketPutCorsRequest =
-    corsUtil.createBucketCorsRequest('PUT', bucketName);
-const testBucketDeleteCorsRequest =
-    corsUtil.createBucketCorsRequest('DELETE', bucketName);
+const testBucketPutCorsRequest = corsUtil.createBucketCorsRequest('PUT', bucketName);
+const testBucketDeleteCorsRequest = corsUtil.createBucketCorsRequest('DELETE', bucketName);
 
 describe('deleteBucketCors API', () => {
     beforeEach(done => {
@@ -35,9 +30,8 @@ describe('deleteBucketCors API', () => {
     });
     afterEach(() => cleanup());
 
-    it('should delete a bucket\'s cors configuration in metadata', done => {
-        bucketDeleteCors(authInfo, testBucketDeleteCorsRequest, log,
-        err => {
+    it("should delete a bucket's cors configuration in metadata", done => {
+        bucketDeleteCors(authInfo, testBucketDeleteCorsRequest, log, err => {
             if (err) {
                 process.stdout.write(`Unexpected err ${err}`);
                 return done(err);

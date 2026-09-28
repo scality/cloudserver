@@ -1,15 +1,15 @@
 const assert = require('assert');
-const { 
-    S3Client, 
-    PutObjectCommand, 
+const {
+    S3Client,
+    PutObjectCommand,
     GetObjectCommand,
     PutBucketPolicyCommand,
     DeleteBucketPolicyCommand,
 } = require('@aws-sdk/client-s3');
-const { 
-    IAMClient, 
-    CreatePolicyCommand, 
-    CreateUserCommand, 
+const {
+    IAMClient,
+    CreatePolicyCommand,
+    CreateUserCommand,
     AttachUserPolicyCommand,
     DetachUserPolicyCommand,
     DeletePolicyCommand,
@@ -18,12 +18,9 @@ const {
     CreateRoleCommand,
     AttachRolePolicyCommand,
     DetachRolePolicyCommand,
-    DeleteRoleCommand
+    DeleteRoleCommand,
 } = require('@aws-sdk/client-iam');
-const { 
-    STSClient, 
-    AssumeRoleCommand 
-} = require('@aws-sdk/client-sts');
+const { STSClient, AssumeRoleCommand } = require('@aws-sdk/client-sts');
 const { v4: uuid } = require('uuid');
 
 const getConfig = require('../support/config');
@@ -55,50 +52,58 @@ describeBypass('Bucket Policy Bypass Port', () => {
 
     before(async () => {
         await bucketUtilAccount.createOne(bucketName);
-        await s3ClientAccount.send(new PutObjectCommand({
-            Bucket: bucketName,
-            Key: objectKey,
-            Body: objectContent,
-        }));
-
-        await s3ClientAccount.send(new PutBucketPolicyCommand({
-            Bucket: bucketName,
-            Policy: JSON.stringify({
-                Version: '2012-10-17',
-                Statement: [
-                    {
-                        Sid: 'DenyAllAccess',
-                        Effect: 'Deny',
-                        Principal: '*',
-                        Action: 's3:*',
-                        Resource: [`arn:aws:s3:::${bucketName}`, `arn:aws:s3:::${bucketName}/*`],
-                    },
-                ],
+        await s3ClientAccount.send(
+            new PutObjectCommand({
+                Bucket: bucketName,
+                Key: objectKey,
+                Body: objectContent,
             }),
-        }));
+        );
+
+        await s3ClientAccount.send(
+            new PutBucketPolicyCommand({
+                Bucket: bucketName,
+                Policy: JSON.stringify({
+                    Version: '2012-10-17',
+                    Statement: [
+                        {
+                            Sid: 'DenyAllAccess',
+                            Effect: 'Deny',
+                            Principal: '*',
+                            Action: 's3:*',
+                            Resource: [`arn:aws:s3:::${bucketName}`, `arn:aws:s3:::${bucketName}/*`],
+                        },
+                    ],
+                }),
+            }),
+        );
 
         // create iam policy allow all actions for user and role
-        const policyRes = await iamClient.send(new CreatePolicyCommand({
-            PolicyName: 'bp-bypass-policy',
-            PolicyDocument: JSON.stringify({
-                Version: '2012-10-17',
-                Statement: [
-                    {
-                        Sid: 'AllowAllActions',
-                        Effect: 'Allow',
-                        Action: '*',
-                        Resource: ['*'],
-                    },
-                ],
+        const policyRes = await iamClient.send(
+            new CreatePolicyCommand({
+                PolicyName: 'bp-bypass-policy',
+                PolicyDocument: JSON.stringify({
+                    Version: '2012-10-17',
+                    Statement: [
+                        {
+                            Sid: 'AllowAllActions',
+                            Effect: 'Allow',
+                            Action: '*',
+                            Resource: ['*'],
+                        },
+                    ],
+                }),
             }),
-        }));
+        );
 
         policyAllowAllActions = policyRes.Policy;
         await iamClient.send(new CreateUserCommand({ UserName: userName }));
-        await iamClient.send(new AttachUserPolicyCommand({
-            UserName: userName,
-            PolicyArn: policyAllowAllActions.Arn,
-        }));
+        await iamClient.send(
+            new AttachUserPolicyCommand({
+                UserName: userName,
+                PolicyArn: policyAllowAllActions.Arn,
+            }),
+        );
     });
 
     after(async () => {
@@ -108,20 +113,24 @@ describeBypass('Bucket Policy Bypass Port', () => {
         await bucketUtilAccount.deleteOne(bucketName);
 
         if (policyAllowAllActions) {
-            await iamClient.send(new DetachUserPolicyCommand({
-                UserName: userName,
-                PolicyArn: policyAllowAllActions.Arn,
-            }));
+            await iamClient.send(
+                new DetachUserPolicyCommand({
+                    UserName: userName,
+                    PolicyArn: policyAllowAllActions.Arn,
+                }),
+            );
             await iamClient.send(new DeletePolicyCommand({ PolicyArn: policyAllowAllActions.Arn }));
         }
         await iamClient.send(new DeleteUserCommand({ UserName: userName }));
     });
 
     it('should allow account root access on s3 port', async () => {
-        const getResponse = await s3ClientAccount.send(new GetObjectCommand({
-            Bucket: bucketName,
-            Key: objectKey,
-        }));
+        const getResponse = await s3ClientAccount.send(
+            new GetObjectCommand({
+                Bucket: bucketName,
+                Key: objectKey,
+            }),
+        );
         assert(getResponse.Body, 'Should be able to get object');
         const bodyString = await getResponse.Body.transformToString();
         assert.strictEqual(bodyString, objectContent);
@@ -157,10 +166,12 @@ describeBypass('Bucket Policy Bypass Port', () => {
 
         it('should deny user access on s3 port', async () => {
             try {
-                await userS3Client.send(new GetObjectCommand({
-                    Bucket: bucketName,
-                    Key: objectKey,
-                }));
+                await userS3Client.send(
+                    new GetObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                    }),
+                );
                 assert.fail('Expected AccessDenied error for getObject');
             } catch (err) {
                 assert.strictEqual(err.name, 'AccessDenied');
@@ -168,10 +179,12 @@ describeBypass('Bucket Policy Bypass Port', () => {
         });
 
         it('should bypass user bucket policy on internal port', async () => {
-            const getResponse = await userInternalBypassBPS3Client.send(new GetObjectCommand({
-                Bucket: bucketName,
-                Key: objectKey,
-            }));
+            const getResponse = await userInternalBypassBPS3Client.send(
+                new GetObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectKey,
+                }),
+            );
             assert(getResponse.Body, 'Should be able to get object on internal port');
             const bodyString = await getResponse.Body.transformToString();
             assert.strictEqual(bodyString, objectContent);
@@ -184,24 +197,28 @@ describeBypass('Bucket Policy Bypass Port', () => {
         let stsClient;
 
         before(async () => {
-            const roleRes = await iamClient.send(new CreateRoleCommand({
-                RoleName: roleName,
-                AssumeRolePolicyDocument: JSON.stringify({
-                    Version: '2012-10-17',
-                    Statement: [
-                        {
-                            Effect: 'Allow',
-                            Principal: '*',
-                            Action: 'sts:AssumeRole',
-                        },
-                    ],
+            const roleRes = await iamClient.send(
+                new CreateRoleCommand({
+                    RoleName: roleName,
+                    AssumeRolePolicyDocument: JSON.stringify({
+                        Version: '2012-10-17',
+                        Statement: [
+                            {
+                                Effect: 'Allow',
+                                Principal: '*',
+                                Action: 'sts:AssumeRole',
+                            },
+                        ],
+                    }),
                 }),
-            }));
+            );
 
-            await iamClient.send(new AttachRolePolicyCommand({
-                RoleName: roleName,
-                PolicyArn: policyAllowAllActions.Arn,
-            }));
+            await iamClient.send(
+                new AttachRolePolicyCommand({
+                    RoleName: roleName,
+                    PolicyArn: policyAllowAllActions.Arn,
+                }),
+            );
 
             const accessKeyResponse = await iamClient.send(new CreateAccessKeyCommand({ UserName: userName }));
 
@@ -216,10 +233,12 @@ describeBypass('Bucket Policy Bypass Port', () => {
             stsClient = new STSClient(stsConfig);
 
             // Assume role to get temporary credentials
-            const assumeRoleResponse = await stsClient.send(new AssumeRoleCommand({
-                RoleArn: roleRes.Role.Arn,
-                RoleSessionName: 'bp-bypass-session',
-            }));
+            const assumeRoleResponse = await stsClient.send(
+                new AssumeRoleCommand({
+                    RoleArn: roleRes.Role.Arn,
+                    RoleSessionName: 'bp-bypass-session',
+                }),
+            );
             const credentials = assumeRoleResponse.Credentials;
 
             // Create S3 client for role (regular port)
@@ -245,19 +264,23 @@ describeBypass('Bucket Policy Bypass Port', () => {
         });
 
         after(async () => {
-            await iamClient.send(new DetachRolePolicyCommand({
-                RoleName: roleName,
-                PolicyArn: policyAllowAllActions.Arn,
-            }));
+            await iamClient.send(
+                new DetachRolePolicyCommand({
+                    RoleName: roleName,
+                    PolicyArn: policyAllowAllActions.Arn,
+                }),
+            );
             await iamClient.send(new DeleteRoleCommand({ RoleName: roleName }));
         });
 
         it('should deny role access on s3 port', async () => {
             try {
-                await roleS3Client.send(new GetObjectCommand({
-                    Bucket: bucketName,
-                    Key: objectKey,
-                }));
+                await roleS3Client.send(
+                    new GetObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                    }),
+                );
                 assert.fail('Expected AccessDenied error for getObject');
             } catch (err) {
                 assert.strictEqual(err.name, 'AccessDenied');
@@ -265,10 +288,12 @@ describeBypass('Bucket Policy Bypass Port', () => {
         });
 
         it('should bypass role bucket policy on internal port', async () => {
-            const getResponse = await roleInternalBypassBPS3Client.send(new GetObjectCommand({
-                Bucket: bucketName,
-                Key: objectKey,
-            }));
+            const getResponse = await roleInternalBypassBPS3Client.send(
+                new GetObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectKey,
+                }),
+            );
             assert(getResponse.Body, 'Should be able to get object on internal port');
             const bodyString = await getResponse.Body.transformToString();
             assert.strictEqual(bodyString, objectContent);

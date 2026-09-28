@@ -3,19 +3,14 @@ const assert = require('assert');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutWebsite = require('../../../lib/api/bucketPutWebsite');
 const bucketDeleteWebsite = require('../../../lib/api/bucketDeleteWebsite');
-const { cleanup,
-    DummyRequestLogger,
-    makeAuthInfo,
-    WebsiteConfig }
-= require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo, WebsiteConfig } = require('../helpers');
 const metadata = require('../../../lib/metadata/wrapper');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
 const config = new WebsiteConfig('index.html', 'error.html');
-config.addRoutingRule({ ReplaceKeyPrefixWith: 'documents/' },
-{ KeyPrefixEquals: 'docs/' });
+config.addRoutingRule({ ReplaceKeyPrefixWith: 'documents/' }, { KeyPrefixEquals: 'docs/' });
 const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
@@ -31,8 +26,7 @@ const testBucketDeleteWebsiteRequest = {
     query: { website: '' },
     actionImplicitDenies: false,
 };
-const testBucketPutWebsiteRequest = Object.assign({ post: config.getXml() },
-    testBucketDeleteWebsiteRequest);
+const testBucketPutWebsiteRequest = Object.assign({ post: config.getXml() }, testBucketDeleteWebsiteRequest);
 
 describe('deleteBucketWebsite API', () => {
     beforeEach(done => {
@@ -43,9 +37,8 @@ describe('deleteBucketWebsite API', () => {
     });
     afterEach(() => cleanup());
 
-    it('should delete a bucket\'s website configuration in metadata', done => {
-        bucketDeleteWebsite(authInfo, testBucketDeleteWebsiteRequest, log,
-        err => {
+    it("should delete a bucket's website configuration in metadata", done => {
+        bucketDeleteWebsite(authInfo, testBucketDeleteWebsiteRequest, log, err => {
             if (err) {
                 process.stdout.write(`Unexpected err ${err}`);
                 return done(err);
@@ -55,8 +48,7 @@ describe('deleteBucketWebsite API', () => {
                     process.stdout.write(`Err retrieving bucket MD ${err}`);
                     return done(err);
                 }
-                assert.strictEqual(bucket.getWebsiteConfiguration(),
-                    null);
+                assert.strictEqual(bucket.getWebsiteConfiguration(), null);
                 return done();
             });
         });

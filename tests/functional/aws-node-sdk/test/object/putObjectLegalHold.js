@@ -48,7 +48,6 @@ function createLegalHoldParams(bucket, key, status, versionId) {
     return params;
 }
 
-
 describe('PUT object legal hold', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
@@ -58,10 +57,12 @@ describe('PUT object legal hold', () => {
         let versionId;
 
         beforeEach(async () => {
-            await s3.send(new CreateBucketCommand({
-                Bucket: bucket,
-                ObjectLockEnabledForBucket: true,
-            }));
+            await s3.send(
+                new CreateBucketCommand({
+                    Bucket: bucket,
+                    ObjectLockEnabledForBucket: true,
+                }),
+            );
             await s3.send(new CreateBucketCommand({ Bucket: unlockedBucket }));
             await s3.send(new PutObjectCommand({ Bucket: unlockedBucket, Key: key }));
             await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key }));
@@ -76,71 +77,83 @@ describe('PUT object legal hold', () => {
                     resolve();
                 });
             })
-            .then(() => bucketUtil.empty(bucket, true))
-            .then(() => bucketUtil.empty(unlockedBucket, true))
-            .then(() => bucketUtil.deleteMany([bucket, unlockedBucket]));
+                .then(() => bucketUtil.empty(bucket, true))
+                .then(() => bucketUtil.empty(unlockedBucket, true))
+                .then(() => bucketUtil.deleteMany([bucket, unlockedBucket]));
         });
 
-        it('should return AccessDenied putting legal hold with another account',
-        done => {
+        it('should return AccessDenied putting legal hold with another account', done => {
             const params = createLegalHoldParams(bucket, key, 'ON');
-            otherAccountS3.send(new PutObjectLegalHoldCommand(params)).then(() => {
-                throw new Error('Expected AccessDenied error');
-            }).catch(err => {
-                checkError(err, 'AccessDenied', 403);
-                done();
-            });
+            otherAccountS3
+                .send(new PutObjectLegalHoldCommand(params))
+                .then(() => {
+                    throw new Error('Expected AccessDenied error');
+                })
+                .catch(err => {
+                    checkError(err, 'AccessDenied', 403);
+                    done();
+                });
         });
 
         it('should return NoSuchKey error if key does not exist', done => {
             const params = createLegalHoldParams(bucket, 'keynotexist', 'ON');
-            s3.send(new PutObjectLegalHoldCommand(params)).then(() => {
-                throw new Error('Expected NoSuchKey error');
-            }).catch(err => {
-                checkError(err, 'NoSuchKey', 404);
-                done();
-            });
+            s3.send(new PutObjectLegalHoldCommand(params))
+                .then(() => {
+                    throw new Error('Expected NoSuchKey error');
+                })
+                .catch(err => {
+                    checkError(err, 'NoSuchKey', 404);
+                    done();
+                });
         });
 
         it('should return NoSuchVersion error if version does not exist', done => {
-            s3.send(new PutObjectLegalHoldCommand({
-                Bucket: bucket,
-                Key: key,
-                VersionId: '012345678901234567890123456789012',
-                LegalHold: mockLegalHold.on,
-            })).then(() => {
-                throw new Error('Expected NoSuchVersion error');
-            }).catch(err => {
-                checkError(err, 'NoSuchVersion', 404);
-                done();
-            });
+            s3.send(
+                new PutObjectLegalHoldCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    VersionId: '012345678901234567890123456789012',
+                    LegalHold: mockLegalHold.on,
+                }),
+            )
+                .then(() => {
+                    throw new Error('Expected NoSuchVersion error');
+                })
+                .catch(err => {
+                    checkError(err, 'NoSuchVersion', 404);
+                    done();
+                });
         });
 
-        it('should return InvalidRequest error putting legal hold to object ' +
-        'in bucket with no object lock enabled', done => {
-            const params = createLegalHoldParams(unlockedBucket, key, 'ON');
-            s3.send(new PutObjectLegalHoldCommand(params)).then(() => {
-                throw new Error('Expected InvalidRequest error');
-            }).catch(err => {
-                checkError(err, 'InvalidRequest', 400);
-                done();
-            });
-        });
+        it(
+            'should return InvalidRequest error putting legal hold to object ' +
+                'in bucket with no object lock enabled',
+            done => {
+                const params = createLegalHoldParams(unlockedBucket, key, 'ON');
+                s3.send(new PutObjectLegalHoldCommand(params))
+                    .then(() => {
+                        throw new Error('Expected InvalidRequest error');
+                    })
+                    .catch(err => {
+                        checkError(err, 'InvalidRequest', 400);
+                        done();
+                    });
+            },
+        );
 
-        it('should return MethodNotAllowed if object version is delete marker',
-        done => {
+        it('should return MethodNotAllowed if object version is delete marker', done => {
             s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }))
-            .then(() => {
-                const params = createLegalHoldParams(bucket, key, 'ON');
-                return s3.send(new PutObjectLegalHoldCommand(params));
-            })
-            .then(() => {
-                throw new Error('Expected MethodNotAllowed error');
-            })
-            .catch(err => {
-                checkError(err, 'MethodNotAllowed', 405);
-                done();
-            });
+                .then(() => {
+                    const params = createLegalHoldParams(bucket, key, 'ON');
+                    return s3.send(new PutObjectLegalHoldCommand(params));
+                })
+                .then(() => {
+                    throw new Error('Expected MethodNotAllowed error');
+                })
+                .catch(err => {
+                    checkError(err, 'MethodNotAllowed', 405);
+                    done();
+                });
         });
 
         it('should put object legal hold ON', done => {
@@ -150,55 +163,64 @@ describe('PUT object legal hold', () => {
             });
         });
 
-
         it('should put object legal hold OFF', done => {
             const params = createLegalHoldParams(bucket, key, 'OFF');
             s3.send(new PutObjectLegalHoldCommand(params)).then(() => {
-                 changeObjectLock([{ bucket, key, versionId }], '', done);
+                changeObjectLock([{ bucket, key, versionId }], '', done);
             });
         });
 
         it('should return error if request has empty or undefined Status', done => {
             const params = createLegalHoldParams(bucket, key, '');
-            s3.send(new PutObjectLegalHoldCommand(params)).then(() => {
-                throw new Error('Expected MalformedXML error');
-            }).catch(err => {
-                checkError(err, 'MalformedXML', 400);
-                changeObjectLock([{ bucket, key, versionId }], '', done);
-            });
+            s3.send(new PutObjectLegalHoldCommand(params))
+                .then(() => {
+                    throw new Error('Expected MalformedXML error');
+                })
+                .catch(err => {
+                    checkError(err, 'MalformedXML', 400);
+                    changeObjectLock([{ bucket, key, versionId }], '', done);
+                });
         });
 
         it('should return error if request does not contain Status', done => {
-            s3.send(new PutObjectLegalHoldCommand({
-                Bucket: bucket,
-                Key: key,
-                LegalHold: {},
-            })).then(() => {
-                throw new Error('Expected MalformedXML error');
-            }).catch(err => {
-                checkError(err, 'MalformedXML', 400);
-                changeObjectLock([{ bucket, key, versionId }], '', done);
-            });
+            s3.send(
+                new PutObjectLegalHoldCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    LegalHold: {},
+                }),
+            )
+                .then(() => {
+                    throw new Error('Expected MalformedXML error');
+                })
+                .catch(err => {
+                    checkError(err, 'MalformedXML', 400);
+                    changeObjectLock([{ bucket, key, versionId }], '', done);
+                });
         });
 
         it('expects params.LegalHold.Status to be a string', done => {
             const params = createLegalHoldParams(bucket, key, true);
-            s3.send(new PutObjectLegalHoldCommand(params)).then(() => {
-                throw new Error('Expected InvalidParameterType error');
-            }).catch(err => {
-                checkError(err, 'MalformedXML', 400);
-                changeObjectLock([{ bucket, key, versionId }], '', done);
-            });
+            s3.send(new PutObjectLegalHoldCommand(params))
+                .then(() => {
+                    throw new Error('Expected InvalidParameterType error');
+                })
+                .catch(err => {
+                    checkError(err, 'MalformedXML', 400);
+                    changeObjectLock([{ bucket, key, versionId }], '', done);
+                });
         });
 
         it('expects Status request xml must be one of "ON", "OFF"', done => {
             const params = createLegalHoldParams(bucket, key, 'on');
-            s3.send(new PutObjectLegalHoldCommand(params)).then(() => {
-                throw new Error('Expected MalformedXML error');
-            }).catch(err => {
-                checkError(err, 'MalformedXML', 400);
-                changeObjectLock([{ bucket, key, versionId }], '', done);
-            });
+            s3.send(new PutObjectLegalHoldCommand(params))
+                .then(() => {
+                    throw new Error('Expected MalformedXML error');
+                })
+                .catch(err => {
+                    checkError(err, 'MalformedXML', 400);
+                    changeObjectLock([{ bucket, key, versionId }], '', done);
+                });
         });
 
         it('should support request with versionId parameter', done => {
@@ -232,7 +254,8 @@ describe('PUT object legal hold iam action and version id', () => {
                 const unauthBucketUtil = new BucketUtility('default', sigCfg, true);
                 const unauthS3 = unauthBucketUtil.s3;
                 const CommandClass = eval(operation);
-                unauthS3.send(new CommandClass(params))
+                unauthS3
+                    .send(new CommandClass(params))
                     .then(data => callback(null, data))
                     .catch(err => callback(err));
             }
@@ -254,18 +277,21 @@ describe('PUT object legal hold iam action and version id', () => {
 
         beforeEach(() => {
             process.stdout.write('Setting up bucket policy legal hold tests\n');
-            return s3.send(new CreateBucketCommand({
-                Bucket: testBucket,
-                ObjectLockEnabledForBucket: true,
-            }))
-            .then(() => s3.send(new PutObjectCommand({ Bucket: testBucket, Key: key })))
-            .then(res => {
-                versionId = res.VersionId;
-            })
-            .catch(err => {
-                process.stdout.write('Error in beforeEach\n');
-                throw err;
-            });
+            return s3
+                .send(
+                    new CreateBucketCommand({
+                        Bucket: testBucket,
+                        ObjectLockEnabledForBucket: true,
+                    }),
+                )
+                .then(() => s3.send(new PutObjectCommand({ Bucket: testBucket, Key: key })))
+                .then(res => {
+                    versionId = res.VersionId;
+                })
+                .catch(err => {
+                    process.stdout.write('Error in beforeEach\n');
+                    throw err;
+                });
         });
 
         afterEach(async () => {
@@ -300,30 +326,41 @@ describe('PUT object legal hold iam action and version id', () => {
                         Version: '2012-10-17',
                         Statement: [statement],
                     };
-                    s3.send(new PutBucketPolicyCommand({
-                        Bucket: testBucket,
-                        Policy: JSON.stringify(bucketPolicy),
-                    })).then(() => {
-                        done();
-                    }).catch(err => {
-                        assert.ifError(err);
-                        done();
-                    });
+                    s3.send(
+                        new PutBucketPolicyCommand({
+                            Bucket: testBucket,
+                            Policy: JSON.stringify(bucketPolicy),
+                        }),
+                    )
+                        .then(() => {
+                            done();
+                        })
+                        .catch(err => {
+                            assert.ifError(err);
+                            done();
+                        });
                 });
 
                 if (testCase.expectedResult === 'allow') {
                     afterEach(() =>
-                        s3.send(new PutObjectLegalHoldCommand({
-                            Bucket: testBucket,
-                            Key: key,
-                            LegalHold: { Status: 'OFF' },
-                        }))
-                        .then(() => s3.send(new PutObjectLegalHoldCommand({
-                            Bucket: testBucket,
-                            Key: key,
-                            VersionId: versionId,
-                            LegalHold: { Status: 'OFF' },
-                        })))
+                        s3
+                            .send(
+                                new PutObjectLegalHoldCommand({
+                                    Bucket: testBucket,
+                                    Key: key,
+                                    LegalHold: { Status: 'OFF' },
+                                }),
+                            )
+                            .then(() =>
+                                s3.send(
+                                    new PutObjectLegalHoldCommand({
+                                        Bucket: testBucket,
+                                        Key: key,
+                                        VersionId: versionId,
+                                        LegalHold: { Status: 'OFF' },
+                                    }),
+                                ),
+                            ),
                     );
                 }
 

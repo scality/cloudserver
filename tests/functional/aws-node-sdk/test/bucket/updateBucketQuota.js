@@ -1,6 +1,4 @@
-const { S3Client,
-    CreateBucketCommand,
-    DeleteBucketCommand } = require('@aws-sdk/client-s3');
+const { S3Client, CreateBucketCommand, DeleteBucketCommand } = require('@aws-sdk/client-s3');
 
 const assert = require('assert');
 const getConfig = require('../support/config');
@@ -25,19 +23,21 @@ describe('Test update bucket quota', () => {
 
     afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
-    it('should update the quota, using json parsing by default', () => sendRequest('PUT', 
-        '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota)));
+    it('should update the quota, using json parsing by default', () =>
+        sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota)));
 
     it('should update quota with explicit JSON content-type', async () => {
-        await sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, 
-            JSON.stringify(quota), null, new Date(), { 'Content-Type': 'application/json' });
+        await sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota), null, new Date(), {
+            'Content-Type': 'application/json',
+        });
     });
 
     it('should update quota with XML format', async () => {
         try {
             const xmlQuota = '<QuotaConfiguration><Quota>3000</Quota></QuotaConfiguration>';
-            await sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, 
-                xmlQuota, null, new Date(), { 'Content-Type': 'application/xml' });
+            await sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, xmlQuota, null, new Date(), {
+                'Content-Type': 'application/xml',
+            });
             assert.ok(true);
         } catch (err) {
             assert.fail(`Expected no error, but got ${err}`);
@@ -70,6 +70,6 @@ describe('Test update bucket quota', () => {
         }
     });
 
-    it('should accept large quota', () => sendRequest('PUT', 
-        '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(largeQuota)));
+    it('should accept large quota', () =>
+        sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(largeQuota)));
 });

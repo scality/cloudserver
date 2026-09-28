@@ -46,7 +46,7 @@ const constants = {
     // only public resources
     publicId: 'http://acs.amazonaws.com/groups/global/AllUsers',
     // All Authenticated Users is an ACL group.
-    allAuthedUsersId: 'http://acs.amazonaws.com/groups/' + 'global/AuthenticatedUsers',
+    allAuthedUsersId: 'http://acs.amazonaws.com/groups/global/AuthenticatedUsers',
     // LogId is used for the AWS logger to write the logs
     // to the destination bucket.  This style of logging is
     // to be implemented later but the logId is used in the
@@ -161,7 +161,7 @@ const constants = {
     /* eslint-enable camelcase */
     mpuMDStoredOnS3Backend: { azure: true },
     azureAccountNameRegex: /^[a-z0-9]{3,24}$/,
-    base64Regex: new RegExp('^(?:[A-Za-z0-9+/]{4})*' + '(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$'),
+    base64Regex: new RegExp('^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$'),
     productName: 'APN/1.0 Scality/1.0 Scality CloudServer for Zenko',
     // location constraint delimiter
     zenkoSeparator: ':',

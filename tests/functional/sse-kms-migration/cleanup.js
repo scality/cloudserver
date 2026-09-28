@@ -16,8 +16,10 @@ describe('SSE KMS Cleanup', () => {
     const mpuCopyBkt = 'enc-bkt-mpu-copy';
 
     it('Empty and delete buckets for SSE KMS Migration', async () => {
-        console.log('Run cleanup',
-            { profile: helpers.credsProfile, accessKeyId: helpers.s3.config.credentials.accessKeyId });
+        console.log('Run cleanup', {
+            profile: helpers.credsProfile,
+            accessKeyId: helpers.s3.config.credentials.accessKeyId,
+        });
         const allBuckets = ((await helpers.s3.listBuckets()).Buckets || []).map(b => b.Name);
         console.log('List buckets:', allBuckets);
 
@@ -26,10 +28,14 @@ describe('SSE KMS Cleanup', () => {
         try {
             await cleanup(copyBkt);
             await cleanup(mpuCopyBkt);
-            await Promise.all(scenarios.testCases.map(async bktConf => {
-                await cleanup(`enc-bkt-${bktConf.name}`);
-                return await cleanup(`versioned-enc-bkt-${bktConf.name}`);
-            }));
-        } catch (e) { void e; }
+            await Promise.all(
+                scenarios.testCases.map(async bktConf => {
+                    await cleanup(`enc-bkt-${bktConf.name}`);
+                    return await cleanup(`versioned-enc-bkt-${bktConf.name}`);
+                }),
+            );
+        } catch (e) {
+            void e;
+        }
     });
 });

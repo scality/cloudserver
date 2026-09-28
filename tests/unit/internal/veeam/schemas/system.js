@@ -18,7 +18,7 @@ describe('RouteVeeam: validateSystemSchema 1.0', () => {
                     CapacityInfo: true,
                     UploadSessions: true,
                     IAMSTS: true,
-                }
+                },
             },
             SystemRecommendations: {
                 S3ConcurrentTaskLimit: 0,
@@ -89,7 +89,6 @@ describe('RouteVeeam: validateSystemSchema 1.0', () => {
     });
 });
 
-
 describe('RouteVeeam: validateSystemSchema unknown version', () => {
     const protocolVersion = '"1.1"';
     [
@@ -101,7 +100,7 @@ describe('RouteVeeam: validateSystemSchema unknown version', () => {
                     CapacityInfo: true,
                     UploadSessions: true,
                     IAMSTS: true,
-                }
+                },
             },
             SystemRecommendations: {
                 S3ConcurrentTaskLimit: 0,

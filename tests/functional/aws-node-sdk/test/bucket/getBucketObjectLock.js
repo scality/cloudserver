@@ -1,9 +1,11 @@
 const assert = require('assert');
-const { S3Client,
+const {
+    S3Client,
     CreateBucketCommand,
     DeleteBucketCommand,
     GetObjectLockConfigurationCommand,
-    PutObjectLockConfigurationCommand } = require('@aws-sdk/client-s3');
+    PutObjectLockConfigurationCommand,
+} = require('@aws-sdk/client-s3');
 
 const checkError = require('../../lib/utility/checkError');
 const getConfig = require('../support/config');
@@ -61,10 +63,14 @@ describe('aws-sdk test get bucket object lock', () => {
     });
 
     describe('config rules', () => {
-        beforeEach(() => s3.send(new CreateBucketCommand({
-            Bucket: bucket,
-            ObjectLockEnabledForBucket: true,
-        })));
+        beforeEach(() =>
+            s3.send(
+                new CreateBucketCommand({
+                    Bucket: bucket,
+                    ObjectLockEnabledForBucket: true,
+                }),
+            ),
+        );
 
         afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
@@ -78,10 +84,12 @@ describe('aws-sdk test get bucket object lock', () => {
         });
 
         it('should get bucket object lock config', async () => {
-            await s3.send(new PutObjectLockConfigurationCommand({
-                Bucket: bucket,
-                ObjectLockConfiguration: objectLockConfig,
-            }));
+            await s3.send(
+                new PutObjectLockConfigurationCommand({
+                    Bucket: bucket,
+                    ObjectLockConfiguration: objectLockConfig,
+                }),
+            );
             const res = await s3.send(new GetObjectLockConfigurationCommand({ Bucket: bucket }));
             assert.deepStrictEqual(res.ObjectLockConfiguration, objectLockConfig);
         });

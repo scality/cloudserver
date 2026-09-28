@@ -1,8 +1,10 @@
 const assert = require('assert');
-const { S3Client,
+const {
+    S3Client,
     CreateBucketCommand,
     DeleteBucketCommand,
-    GetBucketEncryptionCommand } = require('@aws-sdk/client-s3');
+    GetBucketEncryptionCommand,
+} = require('@aws-sdk/client-s3');
 
 const checkError = require('../../lib/utility/checkError');
 const getConfig = require('../support/config');
@@ -38,9 +40,9 @@ describe('aws-sdk test get bucket encryption', () => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3Client(config);
         await new Promise((resolve, reject) => {
-            metadata.setup(err => err ? reject(err) : resolve());
+            metadata.setup(err => (err ? reject(err) : resolve()));
         });
-    }); 
+    });
 
     beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucketName })));
 
@@ -75,8 +77,13 @@ describe('aws-sdk test get bucket encryption', () => {
     });
 
     it('should include KMSMasterKeyID if user has configured a custom master key', async () => {
-        await  setEncryptionInfo({ cryptoScheme: 1, algorithm: 'aws:kms', masterKeyId: '12345',
-                configuredMasterKeyId: '54321', mandatory: true });
+        await setEncryptionInfo({
+            cryptoScheme: 1,
+            algorithm: 'aws:kms',
+            masterKeyId: '12345',
+            configuredMasterKeyId: '54321',
+            mandatory: true,
+        });
         const { $metadata, ...res } = await s3.send(new GetBucketEncryptionCommand({ Bucket: bucketName }));
         assert.deepStrictEqual(res, {
             ServerSideEncryptionConfiguration: {

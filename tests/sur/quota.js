@@ -1159,7 +1159,6 @@ function multiObjectDelete(bucket, keys, size, callback) {
         );
     });
 
-    // eslint-disable-next-line max-len
     it('should only evaluate quota and not update inflights for PutObject with the x-scal-s3-version-id header', done => {
         const bucket = 'quota-test-bucket13';
         const key = 'quota-test-object';

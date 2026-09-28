@@ -14,7 +14,7 @@ jobs:
         tests:
           - name: 1 minute interval tests
             file: monitoring/alerts.test.yaml
-          
+
           - name: 10 seconds interval tests
             file: monitoring/alerts.10s.test.yaml
 

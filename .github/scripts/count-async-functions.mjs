@@ -67,13 +67,12 @@ for (const sourceFile of project.getSourceFiles()) {
     }
 }
 
-const asyncFunctionPercent = totalFunctions > 0
-    ? ((asyncFunctions / totalFunctions) * 100).toFixed(1)
-    : '0.0';
+const asyncFunctionPercent = totalFunctions > 0 ? ((asyncFunctions / totalFunctions) * 100).toFixed(1) : '0.0';
 
-const migrationPercent = (asyncFunctions + callbackFunctions) > 0
-    ? ((asyncFunctions / (asyncFunctions + callbackFunctions)) * 100).toFixed(1)
-    : '0.0';
+const migrationPercent =
+    asyncFunctions + callbackFunctions > 0
+        ? ((asyncFunctions / (asyncFunctions + callbackFunctions)) * 100).toFixed(1)
+        : '0.0';
 
 console.log('=== Async/Await Migration Progress ===');
 console.log(`Total functions:      ${totalFunctions}`);
@@ -84,18 +83,21 @@ console.log('');
 console.log(`Migration (trend):    ${asyncFunctions}/${asyncFunctions + callbackFunctions} (${migrationPercent}%)`);
 
 if (process.env.GITHUB_STEP_SUMMARY) {
-    appendFileSync(process.env.GITHUB_STEP_SUMMARY, [
-        '## Async/Await Migration Progress',
-        '',
-        `| Metric | Count |`,
-        `|--------|-------|`,
-        `| Total functions | ${totalFunctions} |`,
-        `| Async functions | ${asyncFunctions} (${asyncFunctionPercent}%) |`,
-        `| Callback-style functions | ${callbackFunctions} |`,
-        `| Remaining \`.then()\` chains | ${thenChains} |`,
-        `| Migration trend (async / (async + callback)) | ${asyncFunctions}/${asyncFunctions + callbackFunctions} (${migrationPercent}%) |`,
-        '',
-    ].join('\n'));
+    appendFileSync(
+        process.env.GITHUB_STEP_SUMMARY,
+        [
+            '## Async/Await Migration Progress',
+            '',
+            `| Metric | Count |`,
+            `|--------|-------|`,
+            `| Total functions | ${totalFunctions} |`,
+            `| Async functions | ${asyncFunctions} (${asyncFunctionPercent}%) |`,
+            `| Callback-style functions | ${callbackFunctions} |`,
+            `| Remaining \`.then()\` chains | ${thenChains} |`,
+            `| Migration trend (async / (async + callback)) | ${asyncFunctions}/${asyncFunctions + callbackFunctions} (${migrationPercent}%) |`,
+            '',
+        ].join('\n'),
+    );
 
     // Output benchmark JSON for visualization
     const benchmarkData = [
@@ -113,7 +115,7 @@ if (process.env.GITHUB_STEP_SUMMARY) {
             name: 'Total callback functions',
             unit: 'count',
             value: callbackFunctions,
-        }
+        },
     ];
     writeFileSync('async-migration-benchmark.json', JSON.stringify(benchmarkData, null, 2));
 }

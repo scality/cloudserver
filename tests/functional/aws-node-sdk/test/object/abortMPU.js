@@ -8,7 +8,7 @@ const async = require('async');
 const { initMetadata, getMetadata } = require('../utils/init');
 const metadata = require('../../../../../lib/metadata/wrapper');
 const { DummyRequestLogger } = require('../../../../unit/helpers');
-const { 
+const {
     CreateBucketCommand,
     CreateMultipartUploadCommand,
     UploadPartCommand,
@@ -20,7 +20,7 @@ const {
     DeleteObjectCommand,
     PutBucketVersioningCommand,
     HeadObjectCommand,
-    PutObjectCommand
+    PutObjectCommand,
 } = require('@aws-sdk/client-s3');
 
 const date = Date.now();
@@ -38,17 +38,23 @@ async function cleanupVersionedBucket(bucketUtil, bucketName) {
     // Clean up all multipart uploads
     const listMPUResponse = await bucketUtil.s3.send(new ListMultipartUploadsCommand({ Bucket: bucketName }));
     if (listMPUResponse.Uploads && listMPUResponse.Uploads.length > 0) {
-        await Promise.all(listMPUResponse.Uploads.map(async upload => {
-                bucketUtil.s3.send(new AbortMultipartUploadCommand({
-                    Bucket: bucketName,
-                    Key: upload.Key,
-                    UploadId: upload.UploadId,
-                })).catch(err => {
-                    if (err.name !== 'NoSuchUpload') {
-                        throw err;
-                    }
-                });
-        }));
+        await Promise.all(
+            listMPUResponse.Uploads.map(async upload => {
+                bucketUtil.s3
+                    .send(
+                        new AbortMultipartUploadCommand({
+                            Bucket: bucketName,
+                            Key: upload.Key,
+                            UploadId: upload.UploadId,
+                        }),
+                    )
+                    .catch(err => {
+                        if (err.name !== 'NoSuchUpload') {
+                            throw err;
+                        }
+                    });
+            }),
+        );
     }
 
     // Clean up all object versions
@@ -67,15 +73,22 @@ describe('Abort MPU', () => {
             s3 = bucketUtil.s3;
             try {
                 await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-                const mpu = await s3.send(new CreateMultipartUploadCommand({
-                    Bucket: bucket,
-                    Key: key,
-                }));
+                const mpu = await s3.send(
+                    new CreateMultipartUploadCommand({
+                        Bucket: bucket,
+                        Key: key,
+                    }),
+                );
                 uploadId = mpu.UploadId;
-                await s3.send(new UploadPartCommand({
-                    Bucket: bucket, Key: key,
-                    PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart,
-                }));
+                await s3.send(
+                    new UploadPartCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        PartNumber: 1,
+                        UploadId: uploadId,
+                        Body: bodyFirstPart,
+                    }),
+                );
             } catch (err) {
                 process.stdout.write(`Error in beforeEach: ${err}\n`);
                 throw err;
@@ -83,32 +96,35 @@ describe('Abort MPU', () => {
         });
 
         afterEach(async () => {
-            await s3.send(new AbortMultipartUploadCommand({
-                Bucket: bucket,
-                Key: key,
-                UploadId: uploadId,
-            }));
+            await s3.send(
+                new AbortMultipartUploadCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    UploadId: uploadId,
+                }),
+            );
             await bucketUtil.empty(bucket);
             await bucketUtil.deleteOne(bucket);
         });
 
         // aws-sdk now (v2.363.0) returns 'UriParameterError' error
         // this test was not replaced in any other suite
-        it.skip('should return InvalidRequest error if aborting without key',
-            done => {
-                s3.send(new AbortMultipartUploadCommand({
+        it.skip('should return InvalidRequest error if aborting without key', done => {
+            s3.send(
+                new AbortMultipartUploadCommand({
                     Bucket: bucket,
                     Key: '',
-                    UploadId: uploadId
-                }))
-                    .then(() => {
-                        done(new Error('Expected failure but got success'));
-                    })
-                    .catch(err => {
-                        checkError(err, 'InvalidRequest', 'A key must be specified');
-                        done();
-                    });
-            });
+                    UploadId: uploadId,
+                }),
+            )
+                .then(() => {
+                    done(new Error('Expected failure but got success'));
+                })
+                .catch(err => {
+                    checkError(err, 'InvalidRequest', 'A key must be specified');
+                    done();
+                });
+        });
     });
 });
 
@@ -137,86 +153,105 @@ describe('Abort MPU with existing object', function AbortMPUExistingObject() {
             let uploadId1;
             let uploadId2;
             let etag1;
-            async.waterfall([
-                next => {
-                    s3.send(new CreateMultipartUploadCommand({
-                        Bucket: bucketName,
-                        Key: objectKey,
-                    }))
-                        .then(data => {
-                            uploadId1 = data.UploadId;
-                            return s3.send(new UploadPartCommand({
+            async.waterfall(
+                [
+                    next => {
+                        s3.send(
+                            new CreateMultipartUploadCommand({
                                 Bucket: bucketName,
                                 Key: objectKey,
-                                PartNumber: 1,
-                                UploadId: uploadId1,
-                                Body: part1,
-                            }));
-                        })
-                        .then(data => {
-                            etag1 = data.ETag;
-                            return s3.send(new CompleteMultipartUploadCommand({
+                            }),
+                        )
+                            .then(data => {
+                                uploadId1 = data.UploadId;
+                                return s3.send(
+                                    new UploadPartCommand({
+                                        Bucket: bucketName,
+                                        Key: objectKey,
+                                        PartNumber: 1,
+                                        UploadId: uploadId1,
+                                        Body: part1,
+                                    }),
+                                );
+                            })
+                            .then(data => {
+                                etag1 = data.ETag;
+                                return s3.send(
+                                    new CompleteMultipartUploadCommand({
+                                        Bucket: bucketName,
+                                        Key: objectKey,
+                                        UploadId: uploadId1,
+                                        MultipartUpload: { Parts: [{ ETag: etag1, PartNumber: 1 }] },
+                                    }),
+                                );
+                            })
+                            .then(() => next())
+                            .catch(err => next(err));
+                    },
+                    next => {
+                        s3.send(
+                            new GetObjectCommand({
                                 Bucket: bucketName,
                                 Key: objectKey,
-                                UploadId: uploadId1,
-                                MultipartUpload: { Parts: [{ ETag: etag1, PartNumber: 1 }] },
-                            }));
-                        })
-                        .then(() => next())
-                        .catch(err => next(err));
-                },
-                next => {
-                    s3.send(new GetObjectCommand({
-                        Bucket: bucketName,
-                        Key: objectKey,
-                    }))
-                        .then(async data => {
-                            const bodyText = await data.Body.transformToString();
-                            assert.strictEqual(bodyText, part1.toString());
-                            next();
-                        })
-                        .catch(err => next(err));
-                },
-                next => {
-                    s3.send(new CreateMultipartUploadCommand({
-                        Bucket: bucketName,
-                        Key: objectKey,
-                    }))
-                        .then(data => {
-                            uploadId2 = data.UploadId;
-                            return s3.send(new UploadPartCommand({
+                            }),
+                        )
+                            .then(async data => {
+                                const bodyText = await data.Body.transformToString();
+                                assert.strictEqual(bodyText, part1.toString());
+                                next();
+                            })
+                            .catch(err => next(err));
+                    },
+                    next => {
+                        s3.send(
+                            new CreateMultipartUploadCommand({
                                 Bucket: bucketName,
                                 Key: objectKey,
-                                PartNumber: 1,
+                            }),
+                        )
+                            .then(data => {
+                                uploadId2 = data.UploadId;
+                                return s3.send(
+                                    new UploadPartCommand({
+                                        Bucket: bucketName,
+                                        Key: objectKey,
+                                        PartNumber: 1,
+                                        UploadId: uploadId2,
+                                        Body: part2,
+                                    }),
+                                );
+                            })
+                            .then(() => next())
+                            .catch(err => next(err));
+                    },
+                    next => {
+                        s3.send(
+                            new AbortMultipartUploadCommand({
+                                Bucket: bucketName,
+                                Key: objectKey,
                                 UploadId: uploadId2,
-                                Body: part2,
-                            }));
-                        })
-                        .then(() => next())
-                        .catch(err => next(err));
-                },
-                next => {
-                    s3.send(new AbortMultipartUploadCommand({
-                        Bucket: bucketName,
-                        Key: objectKey,
-                        UploadId: uploadId2,
-                    }))
-                        .then(() => next())
-                        .catch(err => next(err));
-                },
-                next => {
-                    s3.send(new GetObjectCommand({
-                        Bucket: bucketName,
-                        Key: objectKey,
-                    }))
-                        .then(async data => {
-                            const bodyText = await data.Body.transformToString();
-                            assert.strictEqual(bodyText, part1.toString());
-                            next();
-                        })
-                        .catch(err => next(err));
-                },
-            ], done);
+                            }),
+                        )
+                            .then(() => next())
+                            .catch(err => next(err));
+                    },
+                    next => {
+                        s3.send(
+                            new GetObjectCommand({
+                                Bucket: bucketName,
+                                Key: objectKey,
+                            }),
+                        )
+                            .then(async data => {
+                                const bodyText = await data.Body.transformToString();
+                                assert.strictEqual(bodyText, part1.toString());
+                                next();
+                            })
+                            .catch(err => next(err));
+                    },
+                ],
+                done,
+            );
         });
 
         it('should not delete existing object data when aborting an old MPU for same key', done => {
@@ -225,86 +260,105 @@ describe('Abort MPU with existing object', function AbortMPUExistingObject() {
             let uploadId1;
             let uploadId2;
             let etag2;
-            async.waterfall([
-                next => {
-                    s3.send(new CreateMultipartUploadCommand({
-                        Bucket: bucketName,
-                        Key: objectKey,
-                    }))
-                        .then(data => {
-                            uploadId1 = data.UploadId;
-                            return s3.send(new UploadPartCommand({
+            async.waterfall(
+                [
+                    next => {
+                        s3.send(
+                            new CreateMultipartUploadCommand({
                                 Bucket: bucketName,
                                 Key: objectKey,
-                                PartNumber: 1,
+                            }),
+                        )
+                            .then(data => {
+                                uploadId1 = data.UploadId;
+                                return s3.send(
+                                    new UploadPartCommand({
+                                        Bucket: bucketName,
+                                        Key: objectKey,
+                                        PartNumber: 1,
+                                        UploadId: uploadId1,
+                                        Body: part1,
+                                    }),
+                                );
+                            })
+                            .then(() => next())
+                            .catch(err => next(err));
+                    },
+                    next => {
+                        s3.send(
+                            new CreateMultipartUploadCommand({
+                                Bucket: bucketName,
+                                Key: objectKey,
+                            }),
+                        )
+                            .then(data => {
+                                uploadId2 = data.UploadId;
+                                return s3.send(
+                                    new UploadPartCommand({
+                                        Bucket: bucketName,
+                                        Key: objectKey,
+                                        PartNumber: 1,
+                                        UploadId: uploadId2,
+                                        Body: part2,
+                                    }),
+                                );
+                            })
+                            .then(data => {
+                                etag2 = data.ETag;
+                                return s3.send(
+                                    new CompleteMultipartUploadCommand({
+                                        Bucket: bucketName,
+                                        Key: objectKey,
+                                        UploadId: uploadId2,
+                                        MultipartUpload: { Parts: [{ ETag: etag2, PartNumber: 1 }] },
+                                    }),
+                                );
+                            })
+                            .then(() => next())
+                            .catch(err => next(err));
+                    },
+                    next => {
+                        s3.send(
+                            new GetObjectCommand({
+                                Bucket: bucketName,
+                                Key: objectKey,
+                            }),
+                        )
+                            .then(async data => {
+                                const bodyText = await data.Body.transformToString();
+                                assert.strictEqual(bodyText, part2.toString());
+                                next();
+                            })
+                            .catch(err => next(err));
+                    },
+                    next => {
+                        s3.send(
+                            new AbortMultipartUploadCommand({
+                                Bucket: bucketName,
+                                Key: objectKey,
                                 UploadId: uploadId1,
-                                Body: part1,
-                            }));
-                        })
-                        .then(() => next())
-                        .catch(err => next(err));
-                },
-                next => {
-                    s3.send(new CreateMultipartUploadCommand({
-                        Bucket: bucketName,
-                        Key: objectKey,
-                    }))
-                        .then(data => {
-                            uploadId2 = data.UploadId;
-                            return s3.send(new UploadPartCommand({
+                            }),
+                        )
+                            .then(() => next())
+                            .catch(err => next(err));
+                    },
+                    next => {
+                        s3.send(
+                            new GetObjectCommand({
                                 Bucket: bucketName,
                                 Key: objectKey,
-                                PartNumber: 1,
-                                UploadId: uploadId2,
-                                Body: part2,
-                            }));
-                        })
-                        .then(data => {
-                            etag2 = data.ETag;
-                            return s3.send(new CompleteMultipartUploadCommand({
-                                Bucket: bucketName,
-                                Key: objectKey,
-                                UploadId: uploadId2,
-                                MultipartUpload: { Parts: [{ ETag: etag2, PartNumber: 1 }] },
-                            }));
-                        })
-                        .then(() => next())
-                        .catch(err => next(err));
-                },
-                next => {
-                    s3.send(new GetObjectCommand({
-                        Bucket: bucketName,
-                        Key: objectKey,
-                    }))
-                        .then(async data => {
-                            const bodyText = await data.Body.transformToString();
-                            assert.strictEqual(bodyText, part2.toString());
-                            next();
-                        })
-                        .catch(err => next(err));
-                },
-                next => {
-                    s3.send(new AbortMultipartUploadCommand({
-                        Bucket: bucketName,
-                        Key: objectKey,
-                        UploadId: uploadId1,
-                    }))
-                        .then(() => next())
-                        .catch(err => next(err));
-                },
-                next => {
-                    s3.send(new GetObjectCommand({
-                        Bucket: bucketName,
-                        Key: objectKey,
-                    }))
-                        .then(async data => {
-                            const bodyText = await data.Body.transformToString();
-                            assert.strictEqual(bodyText, part2.toString());
-                            next();
-                        })
-                        .catch(err => next(err));
-                },
-            ], done);
+                            }),
+                        )
+                            .then(async data => {
+                                const bodyText = await data.Body.transformToString();
+                                assert.strictEqual(bodyText, part2.toString());
+                                next();
+                            })
+                            .catch(err => next(err));
+                    },
+                ],
+                done,
+            );
         });
     });
 });
@@ -322,22 +376,23 @@ describe('Abort MPU - No Such Upload', () => {
 
         afterEach(() => bucketUtil.deleteOne(bucket));
 
-        it('should return NoSuchUpload error when aborting non-existent mpu',
-            done => {
-                s3.send(new AbortMultipartUploadCommand({
+        it('should return NoSuchUpload error when aborting non-existent mpu', done => {
+            s3.send(
+                new AbortMultipartUploadCommand({
                     Bucket: bucket,
                     Key: key,
-                    UploadId: uuidv4().replace(/-/g, '')
-                }))
-                    .then(() => {
-                        done(new Error('Expected failure but got success'));
-                    })
-                    .catch(err => {
-                        assert.notEqual(err, null, 'Expected failure but got success');
-                        assert.strictEqual(err.name, 'NoSuchUpload');
-                        done();
-                    });
-            });
+                    UploadId: uuidv4().replace(/-/g, ''),
+                }),
+            )
+                .then(() => {
+                    done(new Error('Expected failure but got success'));
+                })
+                .catch(err => {
+                    assert.notEqual(err, null, 'Expected failure but got success');
+                    assert.strictEqual(err.name, 'NoSuchUpload');
+                    done();
+                });
+        });
     });
 });
 
@@ -355,10 +410,12 @@ describe('Abort MPU - Versioned Bucket Cleanup', function testSuite() {
             s3 = bucketUtil.s3;
 
             await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
-            await s3.send(new PutBucketVersioningCommand({
-                Bucket: bucketName,
-                VersioningConfiguration: { Status: 'Enabled' },
-            }));
+            await s3.send(
+                new PutBucketVersioningCommand({
+                    Bucket: bucketName,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }),
+            );
         });
 
         afterEach(async () => {
@@ -377,68 +434,83 @@ describe('Abort MPU - Versioned Bucket Cleanup', function testSuite() {
                     currentVersion++;
                     const data = Buffer.from(`Version ${currentVersion} data`);
 
-                    async.waterfall([
-                        next => {
-                            s3.send(new CreateMultipartUploadCommand({
-                                Bucket: bucketName,
-                                Key: objectKey,
-                            }))
-                                .then(result => {
-                                    if (currentVersion === numberOfVersions) {
-                                        finalUploadId = result.UploadId; // Save the last one for aborting
-                                    }
-                                    next(null, result.UploadId);
-                                })
-                                .catch(err => next(err));
-                        },
-                        (uploadId, next) => {
-                            s3.send(new UploadPartCommand({
-                                Bucket: bucketName,
-                                Key: objectKey,
-                                PartNumber: 1,
-                                UploadId: uploadId,
-                                Body: data,
-                            }))
-                                .then(result => next(null, uploadId, result.ETag))
-                                .catch(err => next(err));
-                        },
-                        (uploadId, etag, next) => {
-                            if (currentVersion === numberOfVersions) {
-                                // Don't complete the last one - we'll abort it
-                                return next();
-                            }
+                    async.waterfall(
+                        [
+                            next => {
+                                s3.send(
+                                    new CreateMultipartUploadCommand({
+                                        Bucket: bucketName,
+                                        Key: objectKey,
+                                    }),
+                                )
+                                    .then(result => {
+                                        if (currentVersion === numberOfVersions) {
+                                            finalUploadId = result.UploadId; // Save the last one for aborting
+                                        }
+                                        next(null, result.UploadId);
+                                    })
+                                    .catch(err => next(err));
+                            },
+                            (uploadId, next) => {
+                                s3.send(
+                                    new UploadPartCommand({
+                                        Bucket: bucketName,
+                                        Key: objectKey,
+                                        PartNumber: 1,
+                                        UploadId: uploadId,
+                                        Body: data,
+                                    }),
+                                )
+                                    .then(result => next(null, uploadId, result.ETag))
+                                    .catch(err => next(err));
+                            },
+                            (uploadId, etag, next) => {
+                                if (currentVersion === numberOfVersions) {
+                                    // Don't complete the last one - we'll abort it
+                                    return next();
+                                }
 
-                            return s3.send(new CompleteMultipartUploadCommand({
-                                Bucket: bucketName,
-                                Key: objectKey,
-                                UploadId: uploadId,
-                                MultipartUpload: {
-                                    Parts: [{ ETag: etag, PartNumber: 1 }],
-                                },
-                            }))
-                                .then(() => next())
-                                .catch(err => next(err));
-                        },
-                    ], callback);
+                                return s3
+                                    .send(
+                                        new CompleteMultipartUploadCommand({
+                                            Bucket: bucketName,
+                                            Key: objectKey,
+                                            UploadId: uploadId,
+                                            MultipartUpload: {
+                                                Parts: [{ ETag: etag, PartNumber: 1 }],
+                                            },
+                                        }),
+                                    )
+                                    .then(() => next())
+                                    .catch(err => next(err));
+                            },
+                        ],
+                        callback,
+                    );
                 },
                 err => {
                     assert.ifError(err);
 
                     // Now abort the final MPU
-                    s3.send(new AbortMultipartUploadCommand({
-                        Bucket: bucketName,
-                        Key: objectKey,
-                        UploadId: finalUploadId,
-                    }))
+                    s3.send(
+                        new AbortMultipartUploadCommand({
+                            Bucket: bucketName,
+                            Key: objectKey,
+                            UploadId: finalUploadId,
+                        }),
+                    )
                         .then(() => s3.send(new ListObjectVersionsCommand({ Bucket: bucketName })))
                         .then(data => {
                             const objectVersions = data.Versions.filter(v => v.Key === objectKey);
-                            assert.strictEqual(objectVersions.length, numberOfVersions - 1,
-                                `Expected ${numberOfVersions - 1} versions after abort, got ${objectVersions.length}`);
+                            assert.strictEqual(
+                                objectVersions.length,
+                                numberOfVersions - 1,
+                                `Expected ${numberOfVersions - 1} versions after abort, got ${objectVersions.length}`,
+                            );
                             done();
                         })
                         .catch(err => done(err));
-                }
+                },
             );
         });
 
@@ -446,69 +518,83 @@ describe('Abort MPU - Versioned Bucket Cleanup', function testSuite() {
             let uploadId;
             const data = Buffer.from('test data for single MPU abort');
 
-            async.waterfall([
-                // Create and upload part for MPU
-                next => {
-                    s3.send(new CreateMultipartUploadCommand({
-                        Bucket: bucketName,
-                        Key: objectKey,
-                    }))
-                        .then(result => {
-                            uploadId = result.UploadId;
-                            next();
-                        })
-                        .catch(err => next(err));
-                },
-                next => {
-                    s3.send(new UploadPartCommand({
-                        Bucket: bucketName,
-                        Key: objectKey,
-                        PartNumber: 1,
-                        UploadId: uploadId,
-                        Body: data,
-                    }))
-                        .then(() => next())
-                        .catch(err => next(err));
-                },
+            async.waterfall(
+                [
+                    // Create and upload part for MPU
+                    next => {
+                        s3.send(
+                            new CreateMultipartUploadCommand({
+                                Bucket: bucketName,
+                                Key: objectKey,
+                            }),
+                        )
+                            .then(result => {
+                                uploadId = result.UploadId;
+                                next();
+                            })
+                            .catch(err => next(err));
+                    },
+                    next => {
+                        s3.send(
+                            new UploadPartCommand({
+                                Bucket: bucketName,
+                                Key: objectKey,
+                                PartNumber: 1,
+                                UploadId: uploadId,
+                                Body: data,
+                            }),
+                        )
+                            .then(() => next())
+                            .catch(err => next(err));
+                    },
 
-                // Abort the MPU
-                next => {
-                    s3.send(new AbortMultipartUploadCommand({
-                        Bucket: bucketName,
-                        Key: objectKey,
-                        UploadId: uploadId,
-                    }))
-                        .then(() => next())
-                        .catch(err => next(err));
-                },
+                    // Abort the MPU
+                    next => {
+                        s3.send(
+                            new AbortMultipartUploadCommand({
+                                Bucket: bucketName,
+                                Key: objectKey,
+                                UploadId: uploadId,
+                            }),
+                        )
+                            .then(() => next())
+                            .catch(err => next(err));
+                    },
 
-                // Verify no object exists
-                next => {
-                    s3.send(new GetObjectCommand({
-                        Bucket: bucketName,
-                        Key: objectKey,
-                    }))
-                        .then(() => {
-                            next(new Error('Expected NoSuchKey error'));
-                        })
-                        .catch(err => {
-                            assert.strictEqual(err.name, 'NoSuchKey');
-                            next();
-                        });
-                },
+                    // Verify no object exists
+                    next => {
+                        s3.send(
+                            new GetObjectCommand({
+                                Bucket: bucketName,
+                                Key: objectKey,
+                            }),
+                        )
+                            .then(() => {
+                                next(new Error('Expected NoSuchKey error'));
+                            })
+                            .catch(err => {
+                                assert.strictEqual(err.name, 'NoSuchKey');
+                                next();
+                            });
+                    },
 
-                // Verify no versions exist
-                next => {
-                    s3.send(new ListObjectVersionsCommand({ Bucket: bucketName }))
-                        .then(data => {
-                            const objectVersions = (data.Versions || []).filter(v => v.Key === objectKey);
-                            assert.strictEqual(objectVersions.length, 0,
-                                `Expected 0 versions after abort, got ${objectVersions.length}`);
-                            next();
-                        })
-                        .catch(err => next(err));
-                },
-            ], done);
+                    // Verify no versions exist
+                    next => {
+                        s3.send(new ListObjectVersionsCommand({ Bucket: bucketName }))
+                            .then(data => {
+                                const objectVersions = (data.Versions || []).filter(v => v.Key === objectKey);
+                                assert.strictEqual(
+                                    objectVersions.length,
+                                    0,
+                                    `Expected 0 versions after abort, got ${objectVersions.length}`,
+                                );
+                                next();
+                            })
+                            .catch(err => next(err));
+                    },
+                ],
+                done,
+            );
         });
     });
 });
@@ -531,32 +617,44 @@ describe('Abort MPU - Orphan Cleanup', function testSuite() {
      * @param {boolean} isVersioned - Whether to create versioned metadata
      * @returns {Promise} Promise that resolves when orphaned metadata is created
      */
-    async function createOrphanedObjectMetadata(s3Client, bucketName, objectKey, uploadIdToSimulate,
-        data, isVersioned) {
+    async function createOrphanedObjectMetadata(
+        s3Client,
+        bucketName,
+        objectKey,
+        uploadIdToSimulate,
+        data,
+        isVersioned,
+    ) {
         const tempObjectKey = `temp-object-for-metadata-${Date.now()}`;
 
         // Create temporary MPU and complete it to get real object metadata
-        const createResult = await s3Client.send(new CreateMultipartUploadCommand({
-            Bucket: bucketName,
-            Key: tempObjectKey,
-        }));
+        const createResult = await s3Client.send(
+            new CreateMultipartUploadCommand({
+                Bucket: bucketName,
+                Key: tempObjectKey,
+            }),
+        );
         const tempUploadId = createResult.UploadId;
 
-        const uploadResult = await s3Client.send(new UploadPartCommand({
-            Bucket: bucketName,
-            Key: tempObjectKey,
-            PartNumber: 1,
-            UploadId: tempUploadId,
-            Body: data,
-        }));
+        const uploadResult = await s3Client.send(
+            new UploadPartCommand({
+                Bucket: bucketName,
+                Key: tempObjectKey,
+                PartNumber: 1,
+                UploadId: tempUploadId,
+                Body: data,
+            }),
+        );
         const tempEtag = uploadResult.ETag;
 
-        const completeResult = await s3Client.send(new CompleteMultipartUploadCommand({
-            Bucket: bucketName,
-            Key: tempObjectKey,
-            UploadId: tempUploadId,
-            MultipartUpload: { Parts: [{ ETag: tempEtag, PartNumber: 1 }] },
-        }));
+        const completeResult = await s3Client.send(
+            new CompleteMultipartUploadCommand({
+                Bucket: bucketName,
+                Key: tempObjectKey,
+                UploadId: tempUploadId,
+                MultipartUpload: { Parts: [{ ETag: tempEtag, PartNumber: 1 }] },
+            }),
+        );
 
         let tempVersionId;
         if (isVersioned && completeResult.VersionId) {
@@ -569,14 +667,15 @@ describe('Abort MPU - Orphan Cleanup', function testSuite() {
 
         // Create a copy and override uploadId to match our test MPU
         // (simulating orphaned object)
-        const orphanedObjectMD = Object.assign({}, objMD,
+        const orphanedObjectMD = Object.assign(
+            {},
+            objMD,
             // let metadata generate a new versionId
-            { uploadId: uploadIdToSimulate, versionId: undefined });
+            { uploadId: uploadIdToSimulate, versionId: undefined },
+        );
 
         // Store this modified metadata as orphaned object
-        const putOptions = isVersioned && objMD.versionId
-            ? { versioning: true }
-            : {};
+        const putOptions = isVersioned && objMD.versionId ? { versioning: true } : {};
         await putObjectMDAsync(bucketName, objectKey, orphanedObjectMD, putOptions, log);
 
         // Clean up temporary object
@@ -600,11 +699,17 @@ describe('Abort MPU - Orphan Cleanup', function testSuite() {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
 
-            async.series([
-                next => s3.send(new CreateBucketCommand({ Bucket: bucketName })).then(() => 
-                    next()).catch(err => next(err)),
-                next => initMetadata(next),
-            ], done);
+            async.series(
+                [
+                    next =>
+                        s3
+                            .send(new CreateBucketCommand({ Bucket: bucketName }))
+                            .then(() => next())
+                            .catch(err => next(err)),
+                    next => initMetadata(next),
+                ],
+                done,
+            );
         });
 
         afterEach(async () => {
@@ -615,19 +720,23 @@ describe('Abort MPU - Orphan Cleanup', function testSuite() {
             const data = Buffer.from('test data for orphan cleanup');
 
             // Create MPU and upload a part
-            const createResult = await s3.send(new CreateMultipartUploadCommand({
-                Bucket: bucketName,
-                Key: objectKey,
-            }));
+            const createResult = await s3.send(
+                new CreateMultipartUploadCommand({
+                    Bucket: bucketName,
+                    Key: objectKey,
+                }),
+            );
             const uploadId = createResult.UploadId;
 
-            await s3.send(new UploadPartCommand({
-                Bucket: bucketName,
-                Key: objectKey,
-                PartNumber: 1,
-                UploadId: uploadId,
-                Body: data,
-            }));
+            await s3.send(
+                new UploadPartCommand({
+                    Bucket: bucketName,
+                    Key: objectKey,
+                    PartNumber: 1,
+                    UploadId: uploadId,
+                    Body: data,
+                }),
+            );
 
             // Create realistic orphaned object metadata like a CompleteMPU would when failing before cleanup
             await createOrphanedObjectMetadata(s3, bucketName, objectKey, uploadId, data, false);
@@ -636,11 +745,13 @@ describe('Abort MPU - Orphan Cleanup', function testSuite() {
             await s3.send(new HeadObjectCommand({ Bucket: bucketName, Key: objectKey }));
 
             // Abort MPU - should clean up the orphaned object
-            await s3.send(new AbortMultipartUploadCommand({
-                Bucket: bucketName,
-                Key: objectKey,
-                UploadId: uploadId,
-            }));
+            await s3.send(
+                new AbortMultipartUploadCommand({
+                    Bucket: bucketName,
+                    Key: objectKey,
+                    UploadId: uploadId,
+                }),
+            );
 
             // Verify the orphaned object was cleaned up
             try {
@@ -657,63 +768,85 @@ describe('Abort MPU - Orphan Cleanup', function testSuite() {
             const data = Buffer.from('test versioned orphan cleanup');
 
             // Enable versioning
-            await s3.send(new PutBucketVersioningCommand({
-                Bucket: bucketName,
-                VersioningConfiguration: { Status: 'Enabled' },
-            }));
+            await s3.send(
+                new PutBucketVersioningCommand({
+                    Bucket: bucketName,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }),
+            );
 
             // Create MPU
-            const createResult = await s3.send(new CreateMultipartUploadCommand({
-                Bucket: bucketName,
-                Key: objectKey,
-            }));
+            const createResult = await s3.send(
+                new CreateMultipartUploadCommand({
+                    Bucket: bucketName,
+                    Key: objectKey,
+                }),
+            );
             const uploadId = createResult.UploadId;
 
-            await s3.send(new UploadPartCommand({
-                Bucket: bucketName,
-                Key: objectKey,
-                PartNumber: 1,
-                UploadId: uploadId,
-                Body: data,
-            }));
+            await s3.send(
+                new UploadPartCommand({
+                    Bucket: bucketName,
+                    Key: objectKey,
+                    PartNumber: 1,
+                    UploadId: uploadId,
+                    Body: data,
+                }),
+            );
 
             // Create realistic orphaned object metadata like a CompleteMPU would when failing before cleanup
             const orphanedObjectMD = await createOrphanedObjectMetadata(
-                s3, bucketName, objectKey, uploadId, data, true);
+                s3,
+                bucketName,
+                objectKey,
+                uploadId,
+                data,
+                true,
+            );
 
             // Put a new master version on top of the orphaned version
             // The abort will fetch this during standardMetadataValidateBucketAndObj
             // It will force abort to findObjectVersionByUploadId
-            await s3.send(new PutObjectCommand({
-                Bucket: bucketName,
-                Key: objectKey,
-                Body: 'version 2 data',
-            }));
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectKey,
+                    Body: 'version 2 data',
+                }),
+            );
 
             // Verify we have 2 versions (1 regular + 1 orphaned)
             let listResult = await s3.send(new ListObjectVersionsCommand({ Bucket: bucketName }));
             let objectVersions = listResult.Versions.filter(v => v.Key === objectKey);
-            assert.strictEqual(objectVersions.length, 2,
-                'Expected 2 versions before abort, 1 regular + 1 orphaned'
-            );
+            assert.strictEqual(objectVersions.length, 2, 'Expected 2 versions before abort, 1 regular + 1 orphaned');
 
             // Abort MPU - should find and clean up only the orphaned version
-            await s3.send(new AbortMultipartUploadCommand({
-                Bucket: bucketName,
-                Key: objectKey,
-                UploadId: uploadId,
-            }));
+            await s3.send(
+                new AbortMultipartUploadCommand({
+                    Bucket: bucketName,
+                    Key: objectKey,
+                    UploadId: uploadId,
+                }),
+            );
 
             // Verify only the orphaned version was deleted
             listResult = await s3.send(new ListObjectVersionsCommand({ Bucket: bucketName }));
             objectVersions = listResult.Versions.filter(v => v.Key === objectKey);
-            assert.strictEqual(objectVersions.length, 1,
-                'Should have 1 version after abort (orphaned version cleaned up)');
+            assert.strictEqual(
+                objectVersions.length,
+                1,
+                'Should have 1 version after abort (orphaned version cleaned up)',
+            );
 
             // ensure orphanedObj doesn't exist
             try {
-                await s3.send(new HeadObjectCommand({ Bucket: bucketName, Key: objectKey,
-                    VersionId: orphanedObjectMD.versionId }));
+                await s3.send(
+                    new HeadObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                        VersionId: orphanedObjectMD.versionId,
+                    }),
+                );
                 assert.fail('Orphaned object should be deleted after abort');
             } catch (err) {
                 assert(err);
@@ -746,38 +879,48 @@ describe('Abort MPU - Race Conditions', function testSuite() {
             const data = Buffer.from('test concurrent complete and abort');
 
             // Create MPU and upload part
-            const createResult = await s3.send(new CreateMultipartUploadCommand({
-                Bucket: bucketName,
-                Key: objectKey,
-            }));
+            const createResult = await s3.send(
+                new CreateMultipartUploadCommand({
+                    Bucket: bucketName,
+                    Key: objectKey,
+                }),
+            );
             const uploadId = createResult.UploadId;
 
-            const uploadResult = await s3.send(new UploadPartCommand({
-                Bucket: bucketName,
-                Key: objectKey,
-                PartNumber: 1,
-                UploadId: uploadId,
-                Body: data,
-            }));
+            const uploadResult = await s3.send(
+                new UploadPartCommand({
+                    Bucket: bucketName,
+                    Key: objectKey,
+                    PartNumber: 1,
+                    UploadId: uploadId,
+                    Body: data,
+                }),
+            );
             const etag = uploadResult.ETag;
 
             // Start concurrent operations: CompleteMPU and AbortMPU
             const [completeResult, abortResult] = await Promise.allSettled([
-                s3.send(new CompleteMultipartUploadCommand({
-                    Bucket: bucketName,
-                    Key: objectKey,
-                    UploadId: uploadId,
-                    MultipartUpload: {
-                        Parts: [{ ETag: etag, PartNumber: 1 }],
-                    },
-                })),
+                s3.send(
+                    new CompleteMultipartUploadCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                        UploadId: uploadId,
+                        MultipartUpload: {
+                            Parts: [{ ETag: etag, PartNumber: 1 }],
+                        },
+                    }),
+                ),
 
                 // Add small delay to create race condition
-                scheduler.wait(10).then(() => s3.send(new AbortMultipartUploadCommand({
-                    Bucket: bucketName,
-                    Key: objectKey,
-                    UploadId: uploadId,
-                })))
+                scheduler.wait(10).then(() =>
+                    s3.send(
+                        new AbortMultipartUploadCommand({
+                            Bucket: bucketName,
+                            Key: objectKey,
+                            UploadId: uploadId,
+                        }),
+                    ),
+                ),
             ]);
 
             // Verify final state is consistent
@@ -821,43 +964,51 @@ describe('Abort MPU - Race Conditions', function testSuite() {
             const data = Buffer.from('test multiple concurrent aborts');
 
             // Create MPU and upload part
-            const createResult = await s3.send(new CreateMultipartUploadCommand({
-                Bucket: bucketName,
-                Key: objectKey,
-            }));
+            const createResult = await s3.send(
+                new CreateMultipartUploadCommand({
+                    Bucket: bucketName,
+                    Key: objectKey,
+                }),
+            );
             const uploadId = createResult.UploadId;
 
-            await s3.send(new UploadPartCommand({
-                Bucket: bucketName,
-                Key: objectKey,
-                PartNumber: 1,
-                UploadId: uploadId,
-                Body: data,
-            }));
+            await s3.send(
+                new UploadPartCommand({
+                    Bucket: bucketName,
+                    Key: objectKey,
+                    PartNumber: 1,
+                    UploadId: uploadId,
+                    Body: data,
+                }),
+            );
 
             // Launch 3 concurrent abort operations
             const abortResults = await Promise.allSettled([
-                s3.send(new AbortMultipartUploadCommand({
-                    Bucket: bucketName,
-                    Key: objectKey,
-                    UploadId: uploadId,
-                })),
-                s3.send(new AbortMultipartUploadCommand({
-                    Bucket: bucketName,
-                    Key: objectKey,
-                    UploadId: uploadId,
-                })),
-                s3.send(new AbortMultipartUploadCommand({
-                    Bucket: bucketName,
-                    Key: objectKey,
-                    UploadId: uploadId,
-                }))
+                s3.send(
+                    new AbortMultipartUploadCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                        UploadId: uploadId,
+                    }),
+                ),
+                s3.send(
+                    new AbortMultipartUploadCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                        UploadId: uploadId,
+                    }),
+                ),
+                s3.send(
+                    new AbortMultipartUploadCommand({
+                        Bucket: bucketName,
+                        Key: objectKey,
+                        UploadId: uploadId,
+                    }),
+                ),
             ]);
 
             // Verify results
-            const abortErrors = abortResults.map(result =>
-                result.status === 'rejected' ? result.reason : null
-            );
+            const abortErrors = abortResults.map(result => (result.status === 'rejected' ? result.reason : null));
 
             // At least one abort should succeed
             const successfulAborts = abortErrors.filter(err => !err);
@@ -883,8 +1034,7 @@ describe('Abort MPU - Race Conditions', function testSuite() {
             // Verify no MPU metadata remains
             const listResult = await s3.send(new ListMultipartUploadsCommand({ Bucket: bucketName }));
             const remainingUploads = (listResult.Uploads || []).filter(upload => upload.UploadId === uploadId);
-            assert.strictEqual(remainingUploads.length, 0,
-                'No MPU metadata should remain after concurrent aborts');
+            assert.strictEqual(remainingUploads.length, 0, 'No MPU metadata should remain after concurrent aborts');
         });
     });
 });

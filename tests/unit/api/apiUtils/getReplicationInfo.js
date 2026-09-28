@@ -178,7 +178,7 @@ describe('getReplicationInfo helper', () => {
             });
         });
 
-        it('should get replication info with multiple cloud targets and ' + 'preferred read location', () => {
+        it('should get replication info with multiple cloud targets and preferred read location', () => {
             const replicationConfig = {
                 role: TWO_PART_ROLE,
                 rules: [
@@ -213,7 +213,7 @@ describe('getReplicationInfo helper', () => {
             });
         });
 
-        it('should not get replication info when service account type ' + 'cannot trigger replication', () => {
+        it('should not get replication info when service account type cannot trigger replication', () => {
             const replicationConfig = {
                 role: TWO_PART_ROLE,
                 rules: [
@@ -256,7 +256,7 @@ describe('getReplicationInfo helper', () => {
             assert.deepStrictEqual(replicationInfo, undefined);
         });
 
-        it('should get replication info when service account type can ' + 'trigger replication', () => {
+        it('should get replication info when service account type can trigger replication', () => {
             const replicationConfig = {
                 role: TWO_PART_ROLE,
                 rules: [

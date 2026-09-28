@@ -1,6 +1,4 @@
-const { S3Client,
-    CreateBucketCommand,
-    DeleteBucketCommand } = require('@aws-sdk/client-s3');
+const { S3Client, CreateBucketCommand, DeleteBucketCommand } = require('@aws-sdk/client-s3');
 const assert = require('assert');
 const getConfig = require('../support/config');
 const sendRequest = require('../quota/tooling').sendRequest;

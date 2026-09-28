@@ -35,7 +35,7 @@ describe('getMetricToPush', () => {
         assert.strictEqual(result, 'replicateTags');
     });
 
-    it('should not push metrics for replica operations with tagging ' + 'if tags are equal', () => {
+    it('should not push metrics for replica operations with tagging if tags are equal', () => {
         const prevObjectMD = new ObjectMD().setVersionId('1').setTags({ 'object-tag-key': 'object-tag-value' });
         const objectMD = new ObjectMD()
             .setVersionId('1')
@@ -68,7 +68,7 @@ describe('getMetricToPush', () => {
         assert.strictEqual(result, 'replicateTags');
     });
 
-    it('should not push metrics for replica operations with acl ' + 'when they are equal', () => {
+    it('should not push metrics for replica operations with acl when they are equal', () => {
         const objectMD = new ObjectMD();
         const publicACL = objectMD.getAcl();
         publicACL.Canned = 'public-read';

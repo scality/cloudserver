@@ -55,11 +55,7 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
 
     it('should create a bucket', async () => {
         const params = { Bucket: bucket };
-        const url = await getSignedUrl(
-            s3,
-            new CreateBucketCommand(params),
-            { expiresIn: 900 }
-        );
+        const url = await getSignedUrl(s3, new CreateBucketCommand(params), { expiresIn: 900 });
         const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url]);
         assert.strictEqual(httpCode, '200 OK');
     });
@@ -69,16 +65,14 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
         const { httpCode, rawOutput } = await provideRawOutputAsync(['-verbose', url]);
         assert.strictEqual(httpCode, '200 OK');
         const xml = await parseStringAsync(rawOutput.stdout);
-        const bucketNames = xml.ListAllMyBucketsResult
-            .Buckets[0].Bucket.map(item => item.Name[0]);
+        const bucketNames = xml.ListAllMyBucketsResult.Buckets[0].Bucket.map(item => item.Name[0]);
         assert(bucketNames.indexOf(bucket) > -1);
     });
 
     it('should put an object', async () => {
         const params = { Bucket: bucket, Key: 'key' };
         const url = await getSignedUrl(s3, new PutObjectCommand(params), { expiresIn: 900 });
-        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url,
-            '--upload-file', 'uploadFile']);
+        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url, '--upload-file', 'uploadFile']);
         assert.strictEqual(httpCode, '200 OK');
     });
 
@@ -91,18 +85,17 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
             ContentType: 'text/plain',
         };
         const url = await getSignedUrl(s3, new PutObjectCommand(params), { expiresIn: 900 });
-        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url,
-            '--upload-file', 'uploadFile']);
+        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url, '--upload-file', 'uploadFile']);
         assert.strictEqual(httpCode, '200 OK');
     });
 
     it('should put an object with native characters', async () => {
-        const Key = 'key-pâtisserie-中文-español-English-हिन्दी-العربية-' +
-        'português-বাংলা-русский-日本語-ਪੰਜਾਬੀ-한국어-தமிழ்';
+        const Key =
+            'key-pâtisserie-中文-español-English-हिन्दी-العربية-' +
+            'português-বাংলা-русский-日本語-ਪੰਜਾਬੀ-한국어-தமிழ்';
         const params = { Bucket: bucket, Key };
         const url = await getSignedUrl(s3, new PutObjectCommand(params), { expiresIn: 900 });
-        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url,
-            '--upload-file', 'uploadFile']);
+        const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'PUT', url, '--upload-file', 'uploadFile']);
         assert.strictEqual(httpCode, '200 OK');
     });
 
@@ -153,8 +146,9 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
     });
 
     it('should delete an object with native characters', async () => {
-        const Key = 'key-pâtisserie-中文-español-English-हिन्दी-العربية-' +
-        'português-বাংলা-русский-日本語-ਪੰਜਾਬੀ-한국어-தமிழ்';
+        const Key =
+            'key-pâtisserie-中文-español-English-हिन्दी-العربية-' +
+            'português-বাংলা-русский-日本語-ਪੰਜਾਬੀ-한국어-தமிழ்';
         const params = { Bucket: bucket, Key };
         const url = await getSignedUrl(s3, new DeleteObjectCommand(params), { expiresIn: 900 });
         const { httpCode } = await provideRawOutputAsync(['-verbose', '-X', 'DELETE', url]);
