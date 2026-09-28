@@ -51,7 +51,8 @@ describe('bucketDeleteEncryption API', () => {
                     });
                 });
             });
-        }));
+        }),
+    );
 
     it('should remove sse and clear key for aws:kms with a configured master key id', done => {
         const post = templateSSEConfig({ algorithm: 'aws:kms', keyId: '12345' });

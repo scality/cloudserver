@@ -1,9 +1,5 @@
 const assert = require('assert');
-const {
-    S3Client,
-    CreateBucketCommand,
-    DeleteBucketCommand,
-} = require('@aws-sdk/client-s3');
+const { S3Client, CreateBucketCommand, DeleteBucketCommand } = require('@aws-sdk/client-s3');
 const getConfig = require('../support/config');
 const { sendRateLimitRequest, skipIfRateLimitDisabled } = require('../rateLimit/tooling');
 
@@ -35,12 +31,15 @@ skipIfRateLimitDisabled('Test get bucket rate limit', () => {
     it('should return the rate limit config', async () => {
         try {
             // First set the rate limit config
-            await sendRateLimitRequest('PUT', '127.0.0.1:8000',
-                `/${bucket}/?rate-limit`, JSON.stringify(rateLimitConfig));
+            await sendRateLimitRequest(
+                'PUT',
+                '127.0.0.1:8000',
+                `/${bucket}/?rate-limit`,
+                JSON.stringify(rateLimitConfig),
+            );
 
             // Then get it
-            const data = await sendRateLimitRequest('GET', '127.0.0.1:8000',
-                `/${bucket}/?rate-limit`);
+            const data = await sendRateLimitRequest('GET', '127.0.0.1:8000', `/${bucket}/?rate-limit`);
             assert.strictEqual(data.RequestsPerSecond.Limit, 100);
         } catch (err) {
             assert.ifError(err);

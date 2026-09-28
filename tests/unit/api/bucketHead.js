@@ -37,8 +37,7 @@ describe('bucketHead API', () => {
         });
     });
 
-    it('should return no error if bucket exists and user is authorized',
-    done => {
+    it('should return no error if bucket exists and user is authorized', done => {
         bucketPut(authInfo, testRequest, log, () => {
             bucketHead(authInfo, testRequest, log, err => {
                 assert.strictEqual(err, null);

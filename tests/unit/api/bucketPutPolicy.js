@@ -2,10 +2,7 @@ const assert = require('assert');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');
-const { cleanup,
-    DummyRequestLogger,
-    makeAuthInfo }
-    = require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const metadata = require('../../../lib/metadata/wrapper');
 
 const log = new DummyRequestLogger();
@@ -48,9 +45,8 @@ describe('putBucketPolicy API', () => {
     });
     afterEach(() => cleanup());
 
-    it('should update a bucket\'s metadata with bucket policy obj', done => {
-        bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy),
-        log, err => {
+    it("should update a bucket's metadata with bucket policy obj", done => {
+        bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy), log, err => {
             if (err) {
                 process.stdout.write(`Err putting bucket policy ${err}`);
                 return done(err);
@@ -67,11 +63,9 @@ describe('putBucketPolicy API', () => {
         });
     });
 
-    it('should return error if policy resource does not include bucket name',
-    done => {
+    it('should return error if policy resource does not include bucket name', done => {
         expectedBucketPolicy.Statement[0].Resource = 'arn:aws::s3:::badname';
-        bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy),
-        log, err => {
+        bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy), log, err => {
             assert.strictEqual(err.is.MalformedPolicy, true);
             assert.strictEqual(err.description, 'Policy has invalid resource');
             return done();
@@ -79,10 +73,8 @@ describe('putBucketPolicy API', () => {
     });
 
     it('should not return error if policy contains conditions', done => {
-        expectedBucketPolicy.Statement[0].Condition =
-        { IpAddress: { 'aws:SourceIp': '123.123.123.123' } };
-        bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy), log,
-        err => {
+        expectedBucketPolicy.Statement[0].Condition = { IpAddress: { 'aws:SourceIp': '123.123.123.123' } };
+        bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy), log, err => {
             assert.ifError(err);
             done();
         });
@@ -90,18 +82,15 @@ describe('putBucketPolicy API', () => {
 
     it('should return error if policy contains service principal', done => {
         expectedBucketPolicy.Statement[0].Principal = { Service: ['test.com'] };
-        bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy), log,
-        err => {
+        bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy), log, err => {
             assert.strictEqual(err.is.NotImplemented, true);
             done();
         });
     });
 
     it('should return error if policy contains federated principal', done => {
-        expectedBucketPolicy.Statement[0].Principal =
-            { Federated: 'www.test.com' };
-        bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy), log,
-        err => {
+        expectedBucketPolicy.Statement[0].Principal = { Federated: 'www.test.com' };
+        bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy), log, err => {
             assert.strictEqual(err.is.NotImplemented, true);
             done();
         });

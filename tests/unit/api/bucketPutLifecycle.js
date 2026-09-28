@@ -2,12 +2,8 @@ const assert = require('assert');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutLifecycle = require('../../../lib/api/bucketPutLifecycle');
-const { cleanup,
-    DummyRequestLogger,
-    makeAuthInfo }
-    = require('../helpers');
-const { getLifecycleRequest, getLifecycleXml } =
-    require('../utils/lifecycleHelpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
+const { getLifecycleRequest, getLifecycleXml } = require('../utils/lifecycleHelpers');
 const metadata = require('../../../lib/metadata/wrapper');
 
 const log = new DummyRequestLogger();
@@ -82,9 +78,8 @@ describe('putBucketLifecycle API', () => {
     beforeEach(done => bucketPut(authInfo, testBucketPutRequest, log, done));
     afterEach(() => cleanup());
 
-    it('should update a bucket\'s metadata with lifecycle config obj', done => {
-        const testPutLifecycleRequest = getLifecycleRequest(bucketName,
-            getLifecycleXml());
+    it("should update a bucket's metadata with lifecycle config obj", done => {
+        const testPutLifecycleRequest = getLifecycleRequest(bucketName, getLifecycleXml());
         bucketPutLifecycle(authInfo, testPutLifecycleRequest, log, err => {
             if (err) {
                 process.stdout.write(`Err putting lifecycle config ${err}`);
@@ -95,10 +90,8 @@ describe('putBucketLifecycle API', () => {
                     process.stdout.write(`Err retrieving bucket MD ${err}`);
                     return done(err);
                 }
-                const bucketLifecycleConfig =
-                    bucket.getLifecycleConfiguration();
-                assert.deepStrictEqual(
-                    bucketLifecycleConfig, expectedLifecycleConfig);
+                const bucketLifecycleConfig = bucket.getLifecycleConfiguration();
+                assert.deepStrictEqual(bucketLifecycleConfig, expectedLifecycleConfig);
                 return done();
             });
         });

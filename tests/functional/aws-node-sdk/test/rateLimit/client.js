@@ -30,7 +30,7 @@ skipIfRateLimitDisabled('RateLimitClient', () => {
             assert.strictEqual(client.isReady(), true);
         });
 
-       it('should return true when the client is waiting to connect or the first time', () => {
+        it('should return true when the client is waiting to connect or the first time', () => {
             const client = new RateLimitClient(config.localCache);
             assert.strictEqual(client.isReady(), true);
         });

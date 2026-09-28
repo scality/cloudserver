@@ -12,8 +12,7 @@ const {
 } = require('@aws-sdk/client-s3');
 const { GCP } = arsenal.storage.data.external.GCP;
 const { genUniqID, genBucketName, gcpRetry } = require('../../../utils/gcpUtils');
-const { getRealAwsConfig } =
-    require('../../../../aws-node-sdk/test/support/awsConfig');
+const { getRealAwsConfig } = require('../../../../aws-node-sdk/test/support/awsConfig');
 const { listingHardLimit } = require('../../../../../../constants');
 
 const credentialOne = 'gcpbackend';
@@ -54,10 +53,7 @@ describe('GCP: Bucket', function testSuite() {
             const { $metadata, ...data } = res;
             assert.strictEqual($metadata?.httpStatusCode, 200);
             // Ensure MetaVersionId is present and non-empty
-            assert.ok(
-                typeof data.MetaVersionId === 'string'
-                && data.MetaVersionId.length > 0
-            );
+            assert.ok(typeof data.MetaVersionId === 'string' && data.MetaVersionId.length > 0);
         });
     });
 
@@ -66,81 +62,82 @@ describe('GCP: Bucket', function testSuite() {
         const bigSize = listingHardLimit + 1;
 
         function populateBucket(createdObjects, callback) {
-            process.stdout.write(
-                `Putting ${createdObjects.length} objects into bucket\n`);
+            process.stdout.write(`Putting ${createdObjects.length} objects into bucket\n`);
             async.mapLimit(
                 createdObjects,
                 10,
-                async object => gcpClient.send(new PutObjectCommand({
-                    Bucket: bucketName,
-                    Key: object,
-                })),
+                async object =>
+                    gcpClient.send(
+                        new PutObjectCommand({
+                            Bucket: bucketName,
+                            Key: object,
+                        }),
+                    ),
                 err => {
                     if (err) {
                         process.stdout.write(`err putting objects ${err}\n`);
                     }
                     return callback(err);
-                }
+                },
             );
         }
 
         function removeObjects(createdObjects, callback) {
-            process.stdout.write(
-                `Deleting ${createdObjects.length} objects from bucket\n`);
+            process.stdout.write(`Deleting ${createdObjects.length} objects from bucket\n`);
             async.mapLimit(
                 createdObjects,
                 10,
-                async object => gcpClient.send(new DeleteObjectCommand({
-                    Bucket: bucketName,
-                    Key: object,
-                })),
+                async object =>
+                    gcpClient.send(
+                        new DeleteObjectCommand({
+                            Bucket: bucketName,
+                            Key: object,
+                        }),
+                    ),
                 err => {
                     if (err) {
                         process.stdout.write(`err deleting objects ${err}\n`);
                     }
                     return callback(err);
-                }
+                },
             );
         }
 
         it('should return 200', async () => {
-            const res = await gcpClient.send(
-                new ListObjectsCommand({ Bucket: bucketName }));
+            const res = await gcpClient.send(new ListObjectsCommand({ Bucket: bucketName }));
             assert.strictEqual(res.$metadata?.httpStatusCode, 200);
         });
 
         describe('with less than listingHardLimit number of objects', () => {
-            const createdObjects = Array.from(
-                Array(smallSize).keys()).map(i => `someObject-${i}`);
+            const createdObjects = Array.from(Array(smallSize).keys()).map(i => `someObject-${i}`);
 
             before(done => populateBucket(createdObjects, done));
             after(done => removeObjects(createdObjects, done));
 
             it(`should list all ${smallSize} created objects`, async () => {
-                const res = await gcpClient.send(
-                    new ListObjectsCommand({ Bucket: bucketName }));
+                const res = await gcpClient.send(new ListObjectsCommand({ Bucket: bucketName }));
                 assert.strictEqual(res.Contents.length, smallSize);
             });
 
             it('should list MaxKeys number of objects with MaxKeys at 10', async () => {
-                const res = await gcpClient.send(new ListObjectsCommand({
-                    Bucket: bucketName,
-                    MaxKeys: 10,
-                }));
+                const res = await gcpClient.send(
+                    new ListObjectsCommand({
+                        Bucket: bucketName,
+                        MaxKeys: 10,
+                    }),
+                );
                 assert.strictEqual(res.Contents.length, 10);
             });
         });
 
         describe('with more than listingHardLimit number of objects', () => {
-            const createdObjects = Array.from(
-                Array(bigSize).keys()).map(i => `someObject-${i}`);
+            const createdObjects = Array.from(Array(bigSize).keys()).map(i => `someObject-${i}`);
 
             before(done => populateBucket(createdObjects, done));
             after(done => removeObjects(createdObjects, done));
 
             it('should list at max 1000 of objects created', async () => {
-                const res = await gcpClient.send(
-                    new ListObjectsCommand({ Bucket: bucketName }));
+                const res = await gcpClient.send(new ListObjectsCommand({ Bucket: bucketName }));
                 assert.strictEqual(res.Contents.length, listingHardLimit);
             });
 
@@ -157,10 +154,12 @@ describe('GCP: Bucket', function testSuite() {
                 // Actual behavior: it returns a list longer than 1000 objects when
                 // max-keys is greater than 1000
                 it.skip('should list at max 1000, ignoring MaxKeys', async () => {
-                    const res = await gcpClient.send(new ListObjectsCommand({
-                        Bucket: bucketName,
-                        MaxKeys: 1001,
-                    }));
+                    const res = await gcpClient.send(
+                        new ListObjectsCommand({
+                            Bucket: bucketName,
+                            MaxKeys: 1001,
+                        }),
+                    );
                     assert.strictEqual(res.Contents.length, listingHardLimit);
                 });
             });

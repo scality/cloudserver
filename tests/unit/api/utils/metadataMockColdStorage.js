@@ -4,9 +4,7 @@ const { DummyRequestLogger } = require('../../helpers');
 const log = new DummyRequestLogger();
 const { BucketInfo, ObjectMD, ObjectMDAmzRestore, ObjectMDArchive } = require('arsenal').models;
 
-const {
-    LOCATION_NAME_DMF,
-} = require('../../../constants');
+const { LOCATION_NAME_DMF } = require('../../../constants');
 
 const defaultLocation = LOCATION_NAME_DMF;
 const defaultOwnerId = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
@@ -30,7 +28,7 @@ const baseMd = {
         FULL_CONTROL: [],
         WRITE_ACP: [],
         READ: [],
-        READ_ACP: []
+        READ_ACP: [],
     },
     key: 'objectName',
     location: [
@@ -39,8 +37,8 @@ const baseMd = {
             size: 11,
             start: 0,
             dataStoreName: 'mem',
-            dataStoreETag: '1:be747eb4b75517bf6b3cf7c5fbb62f3a'
-        }
+            dataStoreETag: '1:be747eb4b75517bf6b3cf7c5fbb62f3a',
+        },
     ],
     isDeleteMarker: false,
     tags: {},
@@ -53,13 +51,13 @@ const baseMd = {
         role: '',
         storageType: '',
         dataStoreVersionId: '',
-        isNFS: null
+        isNFS: null,
     },
     dataStoreName: 'mem',
     originOp: 's3:ObjectCreated:Put',
     'last-modified': '2022-05-10T08:31:51.878Z',
     'md-model-version': 5,
-    'x-amz-meta-test': 'some metadata'
+    'x-amz-meta-test': 'some metadata',
 };
 
 /**
@@ -81,7 +79,8 @@ function putBucketMock(bucketName, location, cb) {
         null,
         null,
         null,
-        location);
+        location,
+    );
     return metadata.createBucket(bucketName, bucket, log, cb);
 }
 
@@ -117,9 +116,11 @@ function getTransitionInProgressObjectMD() {
  */
 function getArchivedObjectMD() {
     return getTransitionInProgressObjectMD()
-        .setArchive(new ObjectMDArchive(
-            { foo: 0, bar: 'stuff' }, // opaque, can be anything...
-        ))
+        .setArchive(
+            new ObjectMDArchive(
+                { foo: 0, bar: 'stuff' }, // opaque, can be anything...
+            ),
+        )
         .setDataStoreName(defaultLocation)
         .setAmzStorageClass(defaultLocation)
         .setTransitionInProgress(false)
@@ -133,14 +134,8 @@ function getArchivedObjectMD() {
 function getRestoringObjectMD() {
     const archivedObjectMD = getArchivedObjectMD();
     return archivedObjectMD
-        .setAmzRestore(new ObjectMDAmzRestore(
-            true,
-        ))
-        .setArchive(new ObjectMDArchive(
-            archivedObjectMD.getArchive().getArchiveInfo(),
-            new Date(Date.now() - 60),
-            5,
-        ))
+        .setAmzRestore(new ObjectMDAmzRestore(true))
+        .setArchive(new ObjectMDArchive(archivedObjectMD.getArchive().getArchiveInfo(), new Date(Date.now() - 60), 5))
         .setOriginOp('s3:ObjectRestore:Post');
 }
 
@@ -155,21 +150,20 @@ function getRestoredObjectMD(date) {
     const expiryDate = date || new Date(restoreDate.getTime() + 1000 * 60 * 60 * 24 * restoreDays);
 
     const restoringObjectMD = getRestoringObjectMD();
-    const restoreInfo = new ObjectMDAmzRestore(
-        false,
-        expiryDate,
-    );
+    const restoreInfo = new ObjectMDAmzRestore(false, expiryDate);
     restoreInfo['content-md5'] = restoredEtag;
 
     return restoringObjectMD
         .setAmzRestore(restoreInfo)
-        .setArchive(new ObjectMDArchive(
-            restoringObjectMD.getArchive().getArchiveInfo(),
-            new Date(Date.now() - 60000),
-            restoreDays,
-            restoreDate,
-            expiryDate,
-        ))
+        .setArchive(
+            new ObjectMDArchive(
+                restoringObjectMD.getArchive().getArchiveInfo(),
+                new Date(Date.now() - 60000),
+                restoreDays,
+                restoreDate,
+                expiryDate,
+            ),
+        )
         .setDataStoreName('mem')
         .setOriginOp('s3:ObjectRestore:Completed');
 }

@@ -6,7 +6,7 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     ignore:
-      - dependency-name: "scality/vault"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "scality/metadata"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: 'scality/vault'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'scality/metadata'
+        update-types: ['version-update:semver-major']

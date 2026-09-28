@@ -3,7 +3,8 @@ const {
     PutBucketPolicyCommand,
     ListObjectsCommand,
     GetObjectCommand,
-    PutObjectCommand } = require('@aws-sdk/client-s3');
+    PutObjectCommand,
+} = require('@aws-sdk/client-s3');
 const { errorInstances } = require('arsenal');
 
 const withV4 = require('../support/withV4');
@@ -18,12 +19,13 @@ withV4(sigCfg => {
         if (auth) {
             // Use authenticated client
             const commandMap = {
-                'listObjects': ListObjectsCommand,
-                'getObject': GetObjectCommand,
-                'putObject': PutObjectCommand,
+                listObjects: ListObjectsCommand,
+                getObject: GetObjectCommand,
+                putObject: PutObjectCommand,
             };
             const CommandCtor = commandMap[operation];
-            ownerAccountBucketUtil.s3.send(new CommandCtor(params))
+            ownerAccountBucketUtil.s3
+                .send(new CommandCtor(params))
                 .then(data => callback(null, data))
                 .catch(err => callback(err));
         } else {
@@ -35,12 +37,13 @@ withV4(sigCfg => {
                 signer: { sign: async request => request },
             });
             const commandMap = {
-                'listObjects': ListObjectsCommand,
-                'getObject': GetObjectCommand,
-                'putObject': PutObjectCommand,
+                listObjects: ListObjectsCommand,
+                getObject: GetObjectCommand,
+                putObject: PutObjectCommand,
             };
             const CommandCtor = commandMap[operation];
-            unauthClient.s3.send(new CommandCtor(params))
+            unauthClient.s3
+                .send(new CommandCtor(params))
                 .then(data => callback(null, data))
                 .catch(err => callback(err));
         }
@@ -62,8 +65,9 @@ withV4(sigCfg => {
 
     describe('Bucket policies with resource statement', () => {
         beforeEach(() => ownerAccountBucketUtil.createMany(testBuckets));
-        afterEach(() => ownerAccountBucketUtil.emptyMany(testBuckets)
-            .then(() => ownerAccountBucketUtil.deleteMany(testBuckets)));
+        afterEach(() =>
+            ownerAccountBucketUtil.emptyMany(testBuckets).then(() => ownerAccountBucketUtil.deleteMany(testBuckets)),
+        );
 
         it('should allow action on a bucket specified in the policy', done => {
             const statement = {
@@ -77,11 +81,12 @@ withV4(sigCfg => {
                 Version: '2012-10-17',
                 Statement: [statement],
             };
-            s3.send(new PutBucketPolicyCommand({
-                Bucket: testBuckets[0],
-                Policy: JSON.stringify(bucketPolicy),
-            }))
-            .then(() => {
+            s3.send(
+                new PutBucketPolicyCommand({
+                    Bucket: testBuckets[0],
+                    Policy: JSON.stringify(bucketPolicy),
+                }),
+            ).then(() => {
                 const param = { Bucket: testBuckets[0] };
                 awsRequest(true, 'listObjects', param, cbNoError(done));
             });
@@ -99,11 +104,12 @@ withV4(sigCfg => {
                 Version: '2012-10-17',
                 Statement: [statement],
             };
-            s3.send(new PutBucketPolicyCommand({
-                Bucket: testBuckets[0],
-                Policy: JSON.stringify(bucketPolicy),
-            }))
-            .then(() => {
+            s3.send(
+                new PutBucketPolicyCommand({
+                    Bucket: testBuckets[0],
+                    Policy: JSON.stringify(bucketPolicy),
+                }),
+            ).then(() => {
                 const param = { Bucket: testBuckets[1] };
                 awsRequest(false, 'listObjects', param, cbWithError(done));
             });
@@ -121,11 +127,12 @@ withV4(sigCfg => {
                 Version: '2012-10-17',
                 Statement: [statement],
             };
-            s3.send(new PutBucketPolicyCommand({
-                Bucket: testBuckets[0],
-                Policy: JSON.stringify(bucketPolicy),
-            }))
-            .then(() => {
+            s3.send(
+                new PutBucketPolicyCommand({
+                    Bucket: testBuckets[0],
+                    Policy: JSON.stringify(bucketPolicy),
+                }),
+            ).then(() => {
                 const param = { Bucket: testBuckets[0] };
                 awsRequest(false, 'listObjects', param, cbWithError(done));
             });
@@ -145,22 +152,28 @@ withV4(sigCfg => {
                 Version: '2012-10-17',
                 Statement: [statement],
             };
-            s3.send(new PutBucketPolicyCommand({
-                Bucket: testBuckets[0],
-                Policy: JSON.stringify(bucketPolicy),
-            }))
-            .then(() => s3.send(new PutObjectCommand({
+            s3.send(
+                new PutBucketPolicyCommand({
                     Bucket: testBuckets[0],
-                    Body: testBody,
-                    Key: testKey,
-                })))
-            .then(() => {
-                const param = {
-                    Bucket: testBuckets[0],
-                    Key: testKey,
-                };
-                awsRequest(false, 'getObject', param, cbNoError(done));
-            });
+                    Policy: JSON.stringify(bucketPolicy),
+                }),
+            )
+                .then(() =>
+                    s3.send(
+                        new PutObjectCommand({
+                            Bucket: testBuckets[0],
+                            Body: testBody,
+                            Key: testKey,
+                        }),
+                    ),
+                )
+                .then(() => {
+                    const param = {
+                        Bucket: testBuckets[0],
+                        Key: testKey,
+                    };
+                    awsRequest(false, 'getObject', param, cbNoError(done));
+                });
         });
 
         it('should allow action on an object satisfying the wildcard in the policy', done => {
@@ -177,22 +190,28 @@ withV4(sigCfg => {
                 Version: '2012-10-17',
                 Statement: [statement],
             };
-            s3.send(new PutBucketPolicyCommand({
-                Bucket: testBuckets[0],
-                Policy: JSON.stringify(bucketPolicy),
-            }))
-            .then(() => s3.send(new PutObjectCommand({
+            s3.send(
+                new PutBucketPolicyCommand({
                     Bucket: testBuckets[0],
-                    Body: testBody,
-                    Key: testKey,
-                })))
-            .then(() => {
-                const param = {
-                    Bucket: testBuckets[0],
-                    Key: testKey,
-                };
-                awsRequest(false, 'getObject', param, cbNoError(done));
-            });
+                    Policy: JSON.stringify(bucketPolicy),
+                }),
+            )
+                .then(() =>
+                    s3.send(
+                        new PutObjectCommand({
+                            Bucket: testBuckets[0],
+                            Body: testBody,
+                            Key: testKey,
+                        }),
+                    ),
+                )
+                .then(() => {
+                    const param = {
+                        Bucket: testBuckets[0],
+                        Key: testKey,
+                    };
+                    awsRequest(false, 'getObject', param, cbNoError(done));
+                });
         });
 
         it('should deny action on an object specified in the policy', done => {
@@ -209,22 +228,28 @@ withV4(sigCfg => {
                 Version: '2012-10-17',
                 Statement: [statement],
             };
-            s3.send(new PutBucketPolicyCommand({
-                Bucket: testBuckets[0],
-                Policy: JSON.stringify(bucketPolicy),
-            }))
-            .then(() => s3.send(new PutObjectCommand({
+            s3.send(
+                new PutBucketPolicyCommand({
                     Bucket: testBuckets[0],
-                    Body: testBody,
-                    Key: testKey,
-                })))
-            .then(() => {
-                const param = {
-                    Bucket: testBuckets[0],
-                    Key: testKey,
-                };
-                awsRequest(false, 'getObject', param, cbWithError(done));
-            });
+                    Policy: JSON.stringify(bucketPolicy),
+                }),
+            )
+                .then(() =>
+                    s3.send(
+                        new PutObjectCommand({
+                            Bucket: testBuckets[0],
+                            Body: testBody,
+                            Key: testKey,
+                        }),
+                    ),
+                )
+                .then(() => {
+                    const param = {
+                        Bucket: testBuckets[0],
+                        Key: testKey,
+                    };
+                    awsRequest(false, 'getObject', param, cbWithError(done));
+                });
         });
 
         it('should deny action on an object not specified in the policy', done => {
@@ -240,11 +265,12 @@ withV4(sigCfg => {
                 Version: '2012-10-17',
                 Statement: [statement],
             };
-            s3.send(new PutBucketPolicyCommand({
-                Bucket: testBuckets[0],
-                Policy: JSON.stringify(bucketPolicy),
-            }))
-            .then(() => {
+            s3.send(
+                new PutBucketPolicyCommand({
+                    Bucket: testBuckets[0],
+                    Policy: JSON.stringify(bucketPolicy),
+                }),
+            ).then(() => {
                 const param = {
                     Bucket: testBuckets[0],
                     Key: 'invalidkey',
@@ -266,11 +292,12 @@ withV4(sigCfg => {
                 Version: '2012-10-17',
                 Statement: [statement],
             };
-            s3.send(new PutBucketPolicyCommand({
-                Bucket: testBuckets[0],
-                Policy: JSON.stringify(bucketPolicy),
-            }))
-            .then(() => {
+            s3.send(
+                new PutBucketPolicyCommand({
+                    Bucket: testBuckets[0],
+                    Policy: JSON.stringify(bucketPolicy),
+                }),
+            ).then(() => {
                 const param = {
                     Bucket: testBuckets[1],
                     Key: 'invalidkey',

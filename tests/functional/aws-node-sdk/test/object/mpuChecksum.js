@@ -37,9 +37,13 @@ describe('CreateMultipartUpload checksum headers', () =>
             });
 
             after(async () => {
-                await s3.send(new AbortMultipartUploadCommand({
-                    Bucket: bucket, Key: key, UploadId: res.UploadId,
-                }));
+                await s3.send(
+                    new AbortMultipartUploadCommand({
+                        Bucket: bucket,
+                        Key: key,
+                        UploadId: res.UploadId,
+                    }),
+                );
             });
 
             it('should not return ChecksumAlgorithm and ChecksumType', () => {
@@ -70,15 +74,23 @@ describe('CreateMultipartUpload checksum headers', () =>
                     let res;
 
                     before(async () => {
-                        res = await s3.send(new CreateMultipartUploadCommand({
-                            Bucket: bucket, Key: key, ChecksumAlgorithm: algo,
-                        }));
+                        res = await s3.send(
+                            new CreateMultipartUploadCommand({
+                                Bucket: bucket,
+                                Key: key,
+                                ChecksumAlgorithm: algo,
+                            }),
+                        );
                     });
 
                     after(async () => {
-                        await s3.send(new AbortMultipartUploadCommand({
-                            Bucket: bucket, Key: key, UploadId: res.UploadId,
-                        }));
+                        await s3.send(
+                            new AbortMultipartUploadCommand({
+                                Bucket: bucket,
+                                Key: key,
+                                UploadId: res.UploadId,
+                            }),
+                        );
                     });
 
                     it(`should return ChecksumAlgorithm ${algo} and default ChecksumType to ${expectedType}`, () => {
@@ -113,15 +125,24 @@ describe('CreateMultipartUpload checksum headers', () =>
                     let res;
 
                     before(async () => {
-                        res = await s3.send(new CreateMultipartUploadCommand({
-                            Bucket: bucket, Key: key, ChecksumAlgorithm: algo, ChecksumType: type,
-                        }));
+                        res = await s3.send(
+                            new CreateMultipartUploadCommand({
+                                Bucket: bucket,
+                                Key: key,
+                                ChecksumAlgorithm: algo,
+                                ChecksumType: type,
+                            }),
+                        );
                     });
 
                     after(async () => {
-                        await s3.send(new AbortMultipartUploadCommand({
-                            Bucket: bucket, Key: key, UploadId: res.UploadId,
-                        }));
+                        await s3.send(
+                            new AbortMultipartUploadCommand({
+                                Bucket: bucket,
+                                Key: key,
+                                UploadId: res.UploadId,
+                            }),
+                        );
                     });
 
                     it(`should return ChecksumAlgorithm ${algo} and ChecksumType ${type}`, () => {
@@ -143,9 +164,14 @@ describe('CreateMultipartUpload checksum headers', () =>
         describe('error cases', () => {
             it('should reject FULL_OBJECT with SHA256', async () => {
                 try {
-                    await s3.send(new CreateMultipartUploadCommand({
-                        Bucket: bucket, Key: key, ChecksumAlgorithm: 'SHA256', ChecksumType: 'FULL_OBJECT',
-                    }));
+                    await s3.send(
+                        new CreateMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            ChecksumAlgorithm: 'SHA256',
+                            ChecksumType: 'FULL_OBJECT',
+                        }),
+                    );
                     assert.fail('Expected error');
                 } catch (err) {
                     assert.strictEqual(err.name, 'InvalidRequest');
@@ -154,9 +180,14 @@ describe('CreateMultipartUpload checksum headers', () =>
 
             it('should reject FULL_OBJECT with SHA1', async () => {
                 try {
-                    await s3.send(new CreateMultipartUploadCommand({
-                        Bucket: bucket, Key: key, ChecksumAlgorithm: 'SHA1', ChecksumType: 'FULL_OBJECT',
-                    }));
+                    await s3.send(
+                        new CreateMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            ChecksumAlgorithm: 'SHA1',
+                            ChecksumType: 'FULL_OBJECT',
+                        }),
+                    );
                     assert.fail('Expected error');
                 } catch (err) {
                     assert.strictEqual(err.name, 'InvalidRequest');
@@ -165,14 +196,18 @@ describe('CreateMultipartUpload checksum headers', () =>
 
             it('should reject COMPOSITE with CRC64NVME', async () => {
                 try {
-                    await s3.send(new CreateMultipartUploadCommand({
-                        Bucket: bucket, Key: key, ChecksumAlgorithm: 'CRC64NVME', ChecksumType: 'COMPOSITE',
-                    }));
+                    await s3.send(
+                        new CreateMultipartUploadCommand({
+                            Bucket: bucket,
+                            Key: key,
+                            ChecksumAlgorithm: 'CRC64NVME',
+                            ChecksumType: 'COMPOSITE',
+                        }),
+                    );
                     assert.fail('Expected error');
                 } catch (err) {
                     assert.strictEqual(err.name, 'InvalidRequest');
                 }
             });
         });
-    })
-);
+    }));

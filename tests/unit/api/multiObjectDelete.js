@@ -94,7 +94,7 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
         sinon.restore();
     });
 
-    it('should successfully get object metadata and then ' + 'delete metadata and data', done => {
+    it('should successfully get object metadata and then delete metadata and data', done => {
         getObjMetadataAndDelete(
             authInfo,
             'foo',
@@ -148,7 +148,7 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
         );
     });
 
-    it('should return error results if err from metadata getting object' + 'is error other than NoSuchKey', done => {
+    it('should return error results if err from metadata getting object is error other than NoSuchKey', done => {
         // we fake an error by calling on an imaginary bucket
         // even though the getObjMetadataAndDelete function would
         // never be called if there was no bucket (would error out earlier

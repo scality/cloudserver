@@ -47,13 +47,14 @@ describe('aws-node-sdk test bucket complete mpu', () => {
                 Parts: parts,
             },
         };
-        s3.send(new CompleteMultipartUploadCommand(params)).then(() => {
-            done('accepted xml body larger than 1 MB');
-        }).catch(error => {
-            assert.strictEqual(error.$metadata.httpStatusCode, 400);
-            assert.strictEqual(
-                error.name, 'InvalidRequest');
-            done();
-        });
+        s3.send(new CompleteMultipartUploadCommand(params))
+            .then(() => {
+                done('accepted xml body larger than 1 MB');
+            })
+            .catch(error => {
+                assert.strictEqual(error.$metadata.httpStatusCode, 400);
+                assert.strictEqual(error.name, 'InvalidRequest');
+                done();
+            });
     });
 });

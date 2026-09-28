@@ -1,7 +1,9 @@
 const assert = require('assert');
 
-const { isServiceAccount, getServiceAccountProperties } =
-      require('../../../../../lib/api/apiUtils/authorization/permissionChecks');
+const {
+    isServiceAccount,
+    getServiceAccountProperties,
+} = require('../../../../../lib/api/apiUtils/authorization/permissionChecks');
 
 describe('aclChecks', () => {
     it('should return whether a canonical ID is a service account', () => {
@@ -12,15 +14,11 @@ describe('aclChecks', () => {
     });
 
     it('should return properties of a service account by canonical ID', () => {
-        assert.strictEqual(
-            getServiceAccountProperties('abcdefghijkl'), undefined);
-        assert.strictEqual(
-            getServiceAccountProperties('abcdefghijkl/notaservice'), undefined);
-        assert.deepStrictEqual(
-            getServiceAccountProperties('abcdefghijkl/lifecycle'), {});
-        assert.deepStrictEqual(
-            getServiceAccountProperties('abcdefghijkl/md-ingestion'), {
-                canReplicate: true,
-            });
+        assert.strictEqual(getServiceAccountProperties('abcdefghijkl'), undefined);
+        assert.strictEqual(getServiceAccountProperties('abcdefghijkl/notaservice'), undefined);
+        assert.deepStrictEqual(getServiceAccountProperties('abcdefghijkl/lifecycle'), {});
+        assert.deepStrictEqual(getServiceAccountProperties('abcdefghijkl/md-ingestion'), {
+            canReplicate: true,
+        });
     });
 });

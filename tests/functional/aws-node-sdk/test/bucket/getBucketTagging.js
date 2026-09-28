@@ -1,9 +1,11 @@
 const assertError = require('../../../../utilities/bucketTagging-util');
-const { S3Client,
+const {
+    S3Client,
     CreateBucketCommand,
     DeleteBucketCommand,
     GetBucketTaggingCommand,
-    PutBucketTaggingCommand } = require('@aws-sdk/client-s3');
+    PutBucketTaggingCommand,
+} = require('@aws-sdk/client-s3');
 const assert = require('assert');
 const getConfig = require('../support/config');
 
@@ -19,16 +21,18 @@ describe('aws-sdk test get bucket tagging', () => {
     });
 
     beforeEach(() => s3.send(new CreateBucketCommand({ Bucket: bucket })));
-    
+
     afterEach(() => s3.send(new DeleteBucketCommand({ Bucket: bucket })));
 
     it('should return accessDenied if expected bucket owner does not match', async () => {
         try {
-            await s3.send(new GetBucketTaggingCommand({
-                AccountId: s3.AccountId,
-                Bucket: bucket,
-                ExpectedBucketOwner: '944690102203',
-            }));
+            await s3.send(
+                new GetBucketTaggingCommand({
+                    AccountId: s3.AccountId,
+                    Bucket: bucket,
+                    ExpectedBucketOwner: '944690102203',
+                }),
+            );
             throw new Error('Expected AccessDenied error');
         } catch (err) {
             assertError(err, 'AccessDenied');
@@ -37,11 +41,13 @@ describe('aws-sdk test get bucket tagging', () => {
 
     it('should not return accessDenied if expected bucket owner matches', async () => {
         try {
-            await s3.send(new GetBucketTaggingCommand({ 
-                AccountId: s3.AccountId, 
-                Bucket: bucket, 
-                ExpectedBucketOwner: s3.AccountId 
-            }));
+            await s3.send(
+                new GetBucketTaggingCommand({
+                    AccountId: s3.AccountId,
+                    Bucket: bucket,
+                    ExpectedBucketOwner: s3.AccountId,
+                }),
+            );
             throw new Error('Expected NoSuchTagSet error');
         } catch (err) {
             assertError(err, 'NoSuchTagSet');
@@ -57,17 +63,21 @@ describe('aws-sdk test get bucket tagging', () => {
                 },
             ],
         };
-        await s3.send(new PutBucketTaggingCommand({
-            AccountId: s3.AccountId,
-            Tagging: tagSet,
-            Bucket: bucket,
-            ExpectedBucketOwner: s3.AccountId
-        }));
-        const result = await s3.send(new GetBucketTaggingCommand({
-            AccountId: s3.AccountId,
-            Bucket: bucket,
-            ExpectedBucketOwner: s3.AccountId
-        }));
+        await s3.send(
+            new PutBucketTaggingCommand({
+                AccountId: s3.AccountId,
+                Tagging: tagSet,
+                Bucket: bucket,
+                ExpectedBucketOwner: s3.AccountId,
+            }),
+        );
+        const result = await s3.send(
+            new GetBucketTaggingCommand({
+                AccountId: s3.AccountId,
+                Bucket: bucket,
+                ExpectedBucketOwner: s3.AccountId,
+            }),
+        );
 
         assert.deepStrictEqual(result.TagSet, tagSet.TagSet);
     });

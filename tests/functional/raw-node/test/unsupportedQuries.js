@@ -12,10 +12,8 @@ describe('unsupported query requests:', () => {
         const queryObj = {};
         queryObj[query] = '';
 
-        itSkipIfAWS(`should respond with NotImplemented for ?${query} request`,
-        done => {
-            makeS3Request({ method: 'GET', queryObj, bucket, objectKey },
-            err => {
+        itSkipIfAWS(`should respond with NotImplemented for ?${query} request`, done => {
+            makeS3Request({ method: 'GET', queryObj, bucket, objectKey }, err => {
                 assert.strictEqual(err.code, 'NotImplemented');
                 assert.strictEqual(err.statusCode, 501);
                 done();
@@ -29,10 +27,8 @@ describe('unsupported bucket query requests:', () => {
         const queryObj = {};
         queryObj[query] = '';
 
-        itSkipIfAWS(`should respond with NotImplemented for ?${query} request`,
-        done => {
-            makeS3Request({ method: 'GET', queryObj, bucket },
-            err => {
+        itSkipIfAWS(`should respond with NotImplemented for ?${query} request`, done => {
+            makeS3Request({ method: 'GET', queryObj, bucket }, err => {
                 assert.strictEqual(err.code, 'NotImplemented');
                 assert.strictEqual(err.statusCode, 501);
                 done();

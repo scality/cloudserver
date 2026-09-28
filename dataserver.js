@@ -14,9 +14,10 @@ process.on('uncaughtException', err => {
     process.exit(1);
 });
 
-if (config.backends.data === 'file' ||
-    (config.backends.data === 'multiple' &&
-     config.backends.metadata !== 'scality')) {
+if (
+    config.backends.data === 'file' ||
+    (config.backends.data === 'multiple' && config.backends.metadata !== 'scality')
+) {
     const dataServer = new arsenal.network.rest.RESTServer({
         bindAddress: config.dataDaemon.bindAddress,
         port: config.dataDaemon.port,
@@ -30,8 +31,7 @@ if (config.backends.data === 'file' ||
     });
     dataServer.setup(err => {
         if (err) {
-            logger.error('Error initializing REST data server',
-                         { error: err });
+            logger.error('Error initializing REST data server', { error: err });
             return;
         }
         dataServer.start();

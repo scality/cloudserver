@@ -27,15 +27,13 @@ function provideRawOutput(args, cb) {
             httpCode = lines.find(line => {
                 const trimmed = line.trim().toUpperCase();
                 // ignore 100 Continue HTTP code
-                if (trimmed.startsWith('HTTP/1.1 ') &&
-                    !trimmed.includes('100 CONTINUE')) {
+                if (trimmed.startsWith('HTTP/1.1 ') && !trimmed.includes('100 CONTINUE')) {
                     return true;
                 }
                 return false;
             });
             if (httpCode) {
-                httpCode = httpCode.trim().replace('HTTP/1.1 ', '')
-                    .toUpperCase();
+                httpCode = httpCode.trim().replace('HTTP/1.1 ', '').toUpperCase();
             }
         }
         return cb(httpCode, procData);
@@ -46,8 +44,6 @@ function provideRawOutput(args, cb) {
 }
 
 provideRawOutput[util.promisify.custom] = args =>
-    new Promise(resolve =>
-        provideRawOutput(args, (httpCode, rawOutput) => resolve({ httpCode, rawOutput }))
-    );
+    new Promise(resolve => provideRawOutput(args, (httpCode, rawOutput) => resolve({ httpCode, rawOutput })));
 
 module.exports = provideRawOutput;

@@ -143,18 +143,15 @@ describe('objectPut API', () => {
         });
     });
 
-    it(
-        'should return error if the upload size exceeds the ' + 'maximum allowed upload size for a single PUT request',
-        done => {
-            testPutObjectRequest.parsedContentLength = maximumAllowedUploadSize + 1;
-            bucketPut(authInfo, testPutBucketRequest, log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-                    assert.strictEqual(err.is.EntityTooLarge, true);
-                    done();
-                });
+    it('should return error if the upload size exceeds the maximum allowed upload size for a single PUT request', done => {
+        testPutObjectRequest.parsedContentLength = maximumAllowedUploadSize + 1;
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert.strictEqual(err.is.EntityTooLarge, true);
+                done();
             });
-        },
-    );
+        });
+    });
 
     it('should put object if user has FULL_CONTROL grant on bucket', done => {
         const bucketOwner = makeAuthInfo('accessKey2');
@@ -555,7 +552,7 @@ describe('objectPut API', () => {
         });
     });
 
-    it('should not put object with retention configuration if object lock ' + 'is not enabled on the bucket', done => {
+    it('should not put object with retention configuration if object lock is not enabled on the bucket', done => {
         const testPutObjectRequest = new DummyRequest(
             {
                 bucketName,
@@ -1061,7 +1058,7 @@ describe('objectPut API with versioning', () => {
         versioningTestUtils.createPutObjectRequest(bucketName, objectName, data),
     );
 
-    it('should delete latest version when creating new null version ' + 'if latest version is null version', done => {
+    it('should delete latest version when creating new null version if latest version is null version', done => {
         async.series(
             [
                 callback => bucketPut(authInfo, testPutBucketRequest, log, callback),
@@ -1137,8 +1134,8 @@ describe('objectPut API with versioning', () => {
     });
 
     it(
-        'should return BadDigest error and not leave orphans in data when ' +
-            'contentMD5 and completedHash do not match',
+        'should return BadDigest error and not leave orphans ' +
+            'in data when contentMD5 and completedHash do not match',
         done => {
             const testPutObjectRequest = new DummyRequest(
                 {
