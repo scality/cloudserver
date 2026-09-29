@@ -17,6 +17,13 @@ describe('Middleware: Collect Response Headers', () => {
         assert.deepStrictEqual(headers['x-amz-meta-scal-replica'], 'true');
     });
 
+    it('should mark a replica written without the isReplica flag', () => {
+        const objectMD = { replicationInfo: { status: 'REPLICA' } };
+        const headers = collectResponseHeaders(objectMD);
+        assert.deepStrictEqual(headers['x-amz-replication-status'], 'REPLICA');
+        assert.deepStrictEqual(headers['x-amz-meta-scal-replica'], 'true');
+    });
+
     it('should default to REPLICA when isReplica is true and status is absent', () => {
         const objectMD = { replicationInfo: { isReplica: true } };
         const headers = collectResponseHeaders(objectMD);
