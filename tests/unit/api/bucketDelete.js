@@ -169,6 +169,21 @@ describe('bucketDelete API', () => {
         });
     });
 
+    it('should count the non-localized versions when checking the bucket is empty', done => {
+        const listObject = sinon.spy(metadata, 'listObject');
+        bucketPut(authInfo, testRequest, log, () => {
+            bucketDelete(authInfo, testRequest, log, () => {
+                const emptinessCheck = listObject
+                    .getCalls()
+                    .find(call => call.args[0] === bucketName && call.args[1].listingType === 'DelimiterVersions');
+                listObject.restore();
+                assert(emptinessCheck, 'the bucket versions should have been listed');
+                assert.strictEqual(emptinessCheck.args[1].hideNonLocalizedVersions, false);
+                done();
+            });
+        });
+    });
+
     it('should delete a bucket even if the bucket has ongoing mpu', done =>
         createMPU(testRequest, initiateRequest, false, done));
 

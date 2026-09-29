@@ -5,6 +5,7 @@ const { createHash } = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const {
     CreateBucketCommand,
+    DeleteBucketCommand,
     PutBucketVersioningCommand,
     PutObjectCommand,
     GetObjectCommand,
@@ -59,13 +60,13 @@ function buildMetadataBody(versionId, dataStoreName) {
 
 // the mongo-processor replicating a version, then the data mover merging it once
 // the data has been copied: same version id, the location rewritten to the local one
-function writeVersion(key, versionId, dataStoreName) {
-    if (dataStoreName === SOURCE_LOCATION) {
+function writeVersion(key, versionId, dataStoreName, bucket = TEST_BUCKET) {
+    if (dataStoreName === SOURCE_LOCATION && bucket === TEST_BUCKET) {
         replicatedVersions.push({ key, versionId });
     }
     return backbeatClient.send(
         new PutMetadataCommand({
-            Bucket: TEST_BUCKET,
+            Bucket: bucket,
             Key: key,
             VersionId: encodeVersionId(versionId),
             Body: buildMetadataBody(versionId, dataStoreName),
@@ -166,5 +167,30 @@ describeIfCleanRead('clean read: localizing a replicated version', function test
         );
         const md = JSON.parse(res.Body);
         assert.strictEqual(md.dataStoreName, SOURCE_LOCATION);
+    });
+
+    it('should not delete a bucket that only holds a replicated version', async () => {
+        const bucket = `${TEST_BUCKET}-delete`;
+        const key = 'clean-read-delete-bucket';
+        const replicatedVersionId = generateVersionId(`${process.pid}`, 'RG001');
+        await s3.send(new CreateBucketCommand({ Bucket: bucket }));
+        await s3.send(
+            new PutBucketVersioningCommand({
+                Bucket: bucket,
+                VersioningConfiguration: { Status: 'Enabled' },
+            }),
+        );
+        await writeVersion(key, replicatedVersionId, SOURCE_LOCATION, bucket);
+
+        // hidden from the clients, the version still holds the bucket
+        await assert.rejects(s3.send(new DeleteBucketCommand({ Bucket: bucket })), err => {
+            assert.strictEqual(err.name, 'BucketNotEmpty');
+            return true;
+        });
+
+        // localized, the version is visible to the S3 API, which empties the bucket
+        await writeVersion(key, replicatedVersionId, LOCAL_LOCATION, bucket);
+        await bucketUtil.empty(bucket);
+        await bucketUtil.deleteOne(bucket);
     });
 });
