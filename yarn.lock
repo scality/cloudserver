@@ -1556,10 +1556,10 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
-"@scality/arsenal@8.6.0-preview.1", "@scality/arsenal@^8.6.0-0":
-  version "8.6.0-preview.1"
-  resolved "https://registry.yarnpkg.com/@scality/arsenal/-/arsenal-8.6.0-preview.1.tgz#351314c469aac8ff133d9cdd7d0024afafce87cb"
-  integrity sha512-vKYVAusgjPxwQt/DyEtswKWyHLFElmSUX5LqWbEfP5+IaNa7872r6H6IG8BuzGNIV4tMLgFNe9y2iO5tzr1b8w==
+"@scality/arsenal@8.6.0-preview.2", "@scality/arsenal@^8.6.0-0":
+  version "8.6.0-preview.2"
+  resolved "https://registry.yarnpkg.com/@scality/arsenal/-/arsenal-8.6.0-preview.2.tgz#ee13753728ae3425c67cbd1bbd7b3867b48b3685"
+  integrity sha512-JI4wv54WvXArdE8l887bLfulGkMMcfvCJjTjEMFbACG82ZAmpplslCWONOb8euk4bcWilLXMtn3Vu+C31ha6DA==
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"
