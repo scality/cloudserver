@@ -65,7 +65,6 @@ env:
   # Configs
   ENABLE_LOCAL_CACHE: 'true'
   REPORT_TOKEN: 'report-token-1'
-  REMOTE_MANAGEMENT_DISABLE: '1'
   # https://github.com/git-lfs/git-lfs/issues/5749
   GIT_CLONE_PROTECTION_ACTIVE: 'false'
   AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE: '1'

@@ -762,6 +762,10 @@ describe('Replication object MD with CRR and cloud destinations on the same obje
         destination: 'arn:aws:s3:::aws-bucket',
     };
 
+    // awsbackend is a real location in the test config: keep it to restore it
+    const originalCrrSite = config.locationConstraints[crrSite];
+    const originalCloudSite = config.locationConstraints[cloudSite];
+
     function setupBucket(rules) {
         cleanup();
         createBucket();
@@ -787,8 +791,16 @@ describe('Replication object MD with CRR and cloud destinations on the same obje
 
     afterEach(() => {
         cleanup();
-        delete config.locationConstraints[crrSite];
-        delete config.locationConstraints[cloudSite];
+        [
+            [crrSite, originalCrrSite],
+            [cloudSite, originalCloudSite],
+        ].forEach(([site, original]) => {
+            if (original === undefined) {
+                delete config.locationConstraints[site];
+            } else {
+                config.locationConstraints[site] = original;
+            }
+        });
     });
 
     it(

@@ -165,8 +165,6 @@ const constants = {
     productName: 'APN/1.0 Scality/1.0 Scality CloudServer for Zenko',
     // location constraint delimiter
     zenkoSeparator: ':',
-    // user metadata applied on zenko objects
-    zenkoIDHeader: 'x-amz-meta-zenko-instance-id',
     bucketOwnerActions: [
         'bucketDeleteCors',
         'bucketDeleteLifecycle',
