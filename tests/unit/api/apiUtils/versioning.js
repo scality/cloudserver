@@ -1068,6 +1068,80 @@ describe('versioning helpers', () => {
                 },
             },
             {
+                description: 'Should not apply the bucket default retention',
+                objMD: {
+                    versionId: '2345678',
+                    'creation-time': now,
+                    'last-modified': now,
+                    originOp: 's3:PutObject',
+                    'x-amz-storage-class': 'cold-location',
+                    archive: {
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        archiveInfo,
+                    },
+                },
+                metadataStoreParams: {
+                    defaultRetention: {
+                        rule: { mode: 'COMPLIANCE', days: 1 },
+                    },
+                },
+                expectedRes: {
+                    creationTime: now,
+                    lastModifiedDate: now,
+                    updateMicroVersionId: true,
+                    originOp: 's3:ObjectRestore:Completed',
+                    taggingCopy: undefined,
+                    amzStorageClass: 'cold-location',
+                    archive: {
+                        archiveInfo,
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        restoreCompletedAt: new Date(now),
+                        restoreWillExpireAt: new Date(now + days * scaledMsPerDay),
+                    },
+                },
+            },
+            {
+                description: 'Should drop object lock headers',
+                objMD: {
+                    versionId: '2345678',
+                    'creation-time': now,
+                    'last-modified': now,
+                    originOp: 's3:PutObject',
+                    'x-amz-storage-class': 'cold-location',
+                    archive: {
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        archiveInfo,
+                    },
+                },
+                metadataStoreParams: {
+                    headers: {
+                        host: 'localhost',
+                        'x-amz-object-lock-mode': 'GOVERNANCE',
+                        'x-amz-object-lock-retain-until-date': new Date(now).toISOString(),
+                        'x-amz-object-lock-legal-hold': 'ON',
+                    },
+                },
+                expectedRes: {
+                    headers: { host: 'localhost' },
+                    creationTime: now,
+                    lastModifiedDate: now,
+                    updateMicroVersionId: true,
+                    originOp: 's3:ObjectRestore:Completed',
+                    taggingCopy: undefined,
+                    amzStorageClass: 'cold-location',
+                    archive: {
+                        archiveInfo,
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        restoreCompletedAt: new Date(now),
+                        restoreWillExpireAt: new Date(now + days * scaledMsPerDay),
+                    },
+                },
+            },
+            {
                 description: 'Should keep ACLs',
                 objMD: {
                     versionId: '2345678',

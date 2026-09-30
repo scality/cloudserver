@@ -299,6 +299,116 @@ describe('objectPut API', () => {
         );
     });
 
+    it('should not apply the bucket default retention when restoring an object without retention', done => {
+        const testObjLockRequest = {
+            bucketName,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            post: objectLockTestUtils.generateXml('COMPLIANCE', 30, 'Days'),
+        };
+        const archiveRestoreRequested = {
+            archiveInfo: { foo: 0, bar: 'stuff' },
+            restoreRequestedAt: new Date().toString(),
+            restoreRequestedDays: 5,
+        };
+        let versionId;
+
+        async.series(
+            [
+                next => bucketPut(authInfo, testPutBucketRequestLock, log, next),
+                next =>
+                    objectPut(authInfo, testPutObjectRequest, undefined, log, (err, headers) => {
+                        versionId = headers?.['x-amz-version-id'];
+                        next(err);
+                    }),
+                next => bucketPutObjectLock(authInfo, testObjLockRequest, log, next),
+                next => fakeMetadataArchive(bucketName, objectName, versionId, archiveRestoreRequested, next),
+                next => {
+                    const restoreRequest = new DummyRequest(
+                        {
+                            bucketName,
+                            namespace,
+                            objectKey: objectName,
+                            headers: {
+                                host: `${bucketName}.s3.amazonaws.com`,
+                                'x-scal-s3-version-id': versionId,
+                            },
+                            url: '/',
+                        },
+                        postBody,
+                    );
+                    objectPut(authInfo, restoreRequest, undefined, log, (err, headers) => {
+                        assert.ifError(err);
+                        assert.strictEqual(headers['x-amz-version-id'], versionId);
+                        next();
+                    });
+                },
+                next =>
+                    metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                        assert.ifError(err);
+                        assert(md.archive.restoreCompletedAt);
+                        assert.strictEqual(md.retentionMode, undefined);
+                        assert.strictEqual(md.retentionDate, undefined);
+                        next();
+                    }),
+            ],
+            done,
+        );
+    });
+
+    it('should ignore object lock headers when restoring an object', done => {
+        const archiveRestoreRequested = {
+            archiveInfo: { foo: 0, bar: 'stuff' },
+            restoreRequestedAt: new Date().toString(),
+            restoreRequestedDays: 5,
+        };
+        let versionId;
+
+        async.series(
+            [
+                next => bucketPut(authInfo, testPutBucketRequestLock, log, next),
+                next =>
+                    objectPut(authInfo, testPutObjectRequest, undefined, log, (err, headers) => {
+                        versionId = headers?.['x-amz-version-id'];
+                        next(err);
+                    }),
+                next => fakeMetadataArchive(bucketName, objectName, versionId, archiveRestoreRequested, next),
+                next => {
+                    const restoreRequest = new DummyRequest(
+                        {
+                            bucketName,
+                            namespace,
+                            objectKey: objectName,
+                            headers: {
+                                host: `${bucketName}.s3.amazonaws.com`,
+                                'x-scal-s3-version-id': versionId,
+                                'x-amz-object-lock-mode': 'GOVERNANCE',
+                                'x-amz-object-lock-retain-until-date': moment().add(1, 'days').toISOString(),
+                                'x-amz-object-lock-legal-hold': 'ON',
+                            },
+                            url: '/',
+                        },
+                        postBody,
+                    );
+                    objectPut(authInfo, restoreRequest, undefined, log, (err, headers) => {
+                        assert.ifError(err);
+                        assert.strictEqual(headers['x-amz-version-id'], versionId);
+                        next();
+                    });
+                },
+                next =>
+                    metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                        assert.ifError(err);
+                        assert(md.archive.restoreCompletedAt);
+                        assert.strictEqual(md.retentionMode, undefined);
+                        assert.strictEqual(md.retentionDate, undefined);
+                        assert(!md.legalHold);
+                        next();
+                    }),
+            ],
+            done,
+        );
+    });
+
     it('should successfully put an object with legal hold ON', done => {
         const request = new DummyRequest(
             {
