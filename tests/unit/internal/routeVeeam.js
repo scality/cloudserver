@@ -119,7 +119,7 @@ describe('RouteVeeam: checkBucketAndKey', () => {
             '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml',
             {
                 'X-Amz-Credential': 'a',
-                extra: 'not-allowed',
+                'extra': 'not-allowed',
             },
             'GET',
             log,

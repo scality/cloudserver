@@ -71,18 +71,18 @@ const testMd = {
     'x-amz-server-side-encryption': '',
     'x-amz-server-side-encryption-aws-kms-key-id': '',
     'x-amz-server-side-encryption-customer-algorithm': '',
-    location: null,
-    acl: {
+    'location': null,
+    'acl': {
         Canned: 'private',
         FULL_CONTROL: [],
         WRITE_ACP: [],
         READ: [],
         READ_ACP: [],
     },
-    nullVersionId: '99999999999999999999RG001  ',
-    isDeleteMarker: false,
-    versionId: '98505119639965999999RG001  ',
-    replicationInfo: {
+    'nullVersionId': '99999999999999999999RG001  ',
+    'isDeleteMarker': false,
+    'versionId': '98505119639965999999RG001  ',
+    'replicationInfo': {
         status: 'COMPLETED',
         backends: [{ site: 'zenko', status: 'PENDING' }],
         content: ['DATA', 'METADATA'],
@@ -107,19 +107,19 @@ const nonVersionedTestMd = {
     'x-amz-server-side-encryption': '',
     'x-amz-server-side-encryption-aws-kms-key-id': '',
     'x-amz-server-side-encryption-customer-algorithm': '',
-    acl: {
+    'acl': {
         Canned: 'private',
         FULL_CONTROL: [],
         WRITE_ACP: [],
         READ: [],
         READ_ACP: [],
     },
-    location: null,
-    isNull: '',
-    nullVersionId: '',
-    isDeleteMarker: false,
-    tags: {},
-    replicationInfo: {
+    'location': null,
+    'isNull': '',
+    'nullVersionId': '',
+    'isDeleteMarker': false,
+    'tags': {},
+    'replicationInfo': {
         status: '',
         backends: [],
         content: [],
@@ -130,7 +130,7 @@ const nonVersionedTestMd = {
         dataStoreVersionId: '',
         isNFS: null,
     },
-    dataStoreName: 'us-east-1',
+    'dataStoreName': 'us-east-1',
     'last-modified': '2018-12-18T01:22:15.986Z',
     'md-model-version': 3,
 };

@@ -722,12 +722,12 @@ describe('versioning helpers', () => {
             {
                 description: 'Should update archive with restore infos',
                 objMD: {
-                    versionId: '2345678',
+                    'versionId': '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    originOp: 's3:PutObject',
+                    'originOp': 's3:PutObject',
                     'x-amz-storage-class': 'cold-location',
-                    archive: {
+                    'archive': {
                         restoreRequestedDays: days,
                         restoreRequestedAt: now,
                         archiveInfo,
@@ -753,15 +753,15 @@ describe('versioning helpers', () => {
                 description: 'Should keep user mds and tags',
                 hasUserMD: true,
                 objMD: {
-                    versionId: '2345678',
+                    'versionId': '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    originOp: 's3:PutObject',
+                    'originOp': 's3:PutObject',
                     'x-amz-meta-test': 'test',
                     'x-amz-meta-test2': 'test2',
-                    tags: { testtag: 'testtag', testtag2: 'testtag2' },
+                    'tags': { testtag: 'testtag', testtag2: 'testtag2' },
                     'x-amz-storage-class': 'cold-location',
-                    archive: {
+                    'archive': {
                         restoreRequestedDays: days,
                         restoreRequestedAt: now,
                         archiveInfo,
@@ -792,11 +792,11 @@ describe('versioning helpers', () => {
                 objMD: {
                     'creation-time': now,
                     'last-modified': now,
-                    originOp: 's3:PutObject',
-                    nullVersionId: 'vnull',
-                    isNull: true,
+                    'originOp': 's3:PutObject',
+                    'nullVersionId': 'vnull',
+                    'isNull': true,
                     'x-amz-storage-class': 'cold-location',
-                    archive: {
+                    'archive': {
                         restoreRequestedDays: days,
                         restoreRequestedAt: now,
                         archiveInfo,
@@ -822,14 +822,14 @@ describe('versioning helpers', () => {
                 description: 'Should not keep x-amz-meta-scal-s3-restore-attempt user MD',
                 hasUserMD: true,
                 objMD: {
-                    versionId: '2345678',
+                    'versionId': '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    originOp: 's3:PutObject',
+                    'originOp': 's3:PutObject',
                     'x-amz-meta-test': 'test',
                     'x-amz-meta-scal-s3-restore-attempt': 14,
                     'x-amz-storage-class': 'cold-location',
-                    archive: {
+                    'archive': {
                         restoreRequestedDays: days,
                         restoreRequestedAt: now,
                         archiveInfo,
@@ -857,12 +857,12 @@ describe('versioning helpers', () => {
             {
                 description: 'Should keep replication infos',
                 objMD: {
-                    versionId: '2345678',
+                    'versionId': '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    originOp: 's3:PutObject',
+                    'originOp': 's3:PutObject',
                     'x-amz-storage-class': 'cold-location',
-                    replicationInfo: {
+                    'replicationInfo': {
                         status: 'COMPLETED',
                         backends: [
                             {
@@ -878,7 +878,7 @@ describe('versioning helpers', () => {
                         storageType: 'azure',
                         dataStoreVersionId: '',
                     },
-                    archive: {
+                    'archive': {
                         restoreRequestedDays: days,
                         restoreRequestedAt: now,
                         archiveInfo,
@@ -919,13 +919,13 @@ describe('versioning helpers', () => {
             {
                 description: 'Should keep legalHold',
                 objMD: {
-                    versionId: '2345678',
+                    'versionId': '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    originOp: 's3:PutObject',
-                    legalHold: true,
+                    'originOp': 's3:PutObject',
+                    'legalHold': true,
                     'x-amz-storage-class': 'cold-location',
-                    archive: {
+                    'archive': {
                         restoreRequestedDays: days,
                         restoreRequestedAt: now,
                         archiveInfo,
@@ -951,18 +951,18 @@ describe('versioning helpers', () => {
             {
                 description: 'Should keep the system metadata of the archived object',
                 objMD: {
-                    versionId: '2345678',
+                    'versionId': '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    originOp: 's3:PutObject',
+                    'originOp': 's3:PutObject',
                     'content-type': 'application/zip',
                     'cache-control': 'no-cache',
                     'content-disposition': 'attachment; filename="archive.zip"',
                     'content-encoding': 'gzip',
-                    expires: 'Wed, 21 Oct 2026 07:28:00 GMT',
+                    'expires': 'Wed, 21 Oct 2026 07:28:00 GMT',
                     'x-amz-website-redirect-location': '/elsewhere',
                     'x-amz-storage-class': 'cold-location',
-                    archive: {
+                    'archive': {
                         restoreRequestedDays: days,
                         restoreRequestedAt: now,
                         archiveInfo,
@@ -999,12 +999,12 @@ describe('versioning helpers', () => {
             {
                 description: 'Should drop the system metadata sent with the restore request',
                 objMD: {
-                    versionId: '2345678',
+                    'versionId': '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    originOp: 's3:PutObject',
+                    'originOp': 's3:PutObject',
                     'x-amz-storage-class': 'cold-location',
-                    archive: {
+                    'archive': {
                         restoreRequestedDays: days,
                         restoreRequestedAt: now,
                         archiveInfo,
@@ -1036,14 +1036,14 @@ describe('versioning helpers', () => {
             {
                 description: 'Should keep the object lock retention',
                 objMD: {
-                    versionId: '2345678',
+                    'versionId': '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    originOp: 's3:PutObject',
-                    retentionMode: 'GOVERNANCE',
-                    retentionDate: '2026-10-21T07:28:00.000Z',
+                    'originOp': 's3:PutObject',
+                    'retentionMode': 'GOVERNANCE',
+                    'retentionDate': '2026-10-21T07:28:00.000Z',
                     'x-amz-storage-class': 'cold-location',
-                    archive: {
+                    'archive': {
                         restoreRequestedDays: days,
                         restoreRequestedAt: now,
                         archiveInfo,
@@ -1070,12 +1070,12 @@ describe('versioning helpers', () => {
             {
                 description: 'Should not apply the bucket default retention',
                 objMD: {
-                    versionId: '2345678',
+                    'versionId': '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    originOp: 's3:PutObject',
+                    'originOp': 's3:PutObject',
                     'x-amz-storage-class': 'cold-location',
-                    archive: {
+                    'archive': {
                         restoreRequestedDays: days,
                         restoreRequestedAt: now,
                         archiveInfo,
@@ -1105,12 +1105,12 @@ describe('versioning helpers', () => {
             {
                 description: 'Should drop object lock headers',
                 objMD: {
-                    versionId: '2345678',
+                    'versionId': '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    originOp: 's3:PutObject',
+                    'originOp': 's3:PutObject',
                     'x-amz-storage-class': 'cold-location',
-                    archive: {
+                    'archive': {
                         restoreRequestedDays: days,
                         restoreRequestedAt: now,
                         archiveInfo,
@@ -1118,7 +1118,7 @@ describe('versioning helpers', () => {
                 },
                 metadataStoreParams: {
                     headers: {
-                        host: 'localhost',
+                        'host': 'localhost',
                         'x-amz-object-lock-mode': 'GOVERNANCE',
                         'x-amz-object-lock-retain-until-date': new Date(now).toISOString(),
                         'x-amz-object-lock-legal-hold': 'ON',
@@ -1144,12 +1144,12 @@ describe('versioning helpers', () => {
             {
                 description: 'Should drop ACL headers',
                 objMD: {
-                    versionId: '2345678',
+                    'versionId': '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    originOp: 's3:PutObject',
+                    'originOp': 's3:PutObject',
                     'x-amz-storage-class': 'cold-location',
-                    archive: {
+                    'archive': {
                         restoreRequestedDays: days,
                         restoreRequestedAt: now,
                         archiveInfo,
@@ -1157,7 +1157,7 @@ describe('versioning helpers', () => {
                 },
                 metadataStoreParams: {
                     headers: {
-                        host: 'localhost',
+                        'host': 'localhost',
                         'x-amz-acl': 'public-read-write',
                         'x-amz-grant-full-control': 'uri=http://acs.amazonaws.com/groups/global/AllUsers',
                         'x-amz-grant-read': 'uri=http://acs.amazonaws.com/groups/global/AllUsers',
@@ -1185,19 +1185,19 @@ describe('versioning helpers', () => {
             {
                 description: 'Should keep ACLs',
                 objMD: {
-                    versionId: '2345678',
+                    'versionId': '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    originOp: 's3:PutObject',
+                    'originOp': 's3:PutObject',
                     'x-amz-storage-class': 'cold-location',
-                    acl: {
+                    'acl': {
                         Canned: '',
                         FULL_CONTROL: ['872c04772893deae2b48365752362cd92672eb80eb3deea50d89e834a10ce185'],
                         WRITE_ACP: [],
                         READ: ['http://acs.amazonaws.com/groups/global/AllUsers'],
                         READ_ACP: [],
                     },
-                    archive: {
+                    'archive': {
                         restoreRequestedDays: days,
                         restoreRequestedAt: now,
                         archiveInfo,
@@ -1229,14 +1229,14 @@ describe('versioning helpers', () => {
             {
                 description: 'Should keep contentMD5 of the original object',
                 objMD: {
-                    versionId: '2345678',
+                    'versionId': '2345678',
                     'creation-time': now,
                     'last-modified': now,
-                    originOp: 's3:PutObject',
+                    'originOp': 's3:PutObject',
                     'x-amz-storage-class': 'cold-location',
                     'content-md5': '123456789-5',
-                    acl: {},
-                    archive: {
+                    'acl': {},
+                    'archive': {
                         restoreRequestedDays: days,
                         restoreRequestedAt: now,
                         archiveInfo,

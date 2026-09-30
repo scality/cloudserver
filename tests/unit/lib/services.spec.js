@@ -313,18 +313,18 @@ describe('services', () => {
             getOwner: () => ownerID,
         };
         const storedMetadata = {
-            key: objectKey,
-            id: uploadId,
-            eventualStorageBucket: bucketName,
-            initiator: {
+            'key': objectKey,
+            'id': uploadId,
+            'eventualStorageBucket': bucketName,
+            'initiator': {
                 ID: ownerID,
                 DisplayName: 'initiator',
             },
             'owner-id': ownerID,
             'owner-display-name': 'owner',
             'x-amz-storage-class': 'STANDARD',
-            initiated: '2026-04-23T00:00:00.000Z',
-            controllingLocationConstraint: 'us-east-1',
+            'initiated': '2026-04-23T00:00:00.000Z',
+            'controllingLocationConstraint': 'us-east-1',
         };
 
         function validateMultipart(storedMetadataOverride, cb) {

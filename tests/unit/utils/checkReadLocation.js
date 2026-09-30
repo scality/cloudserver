@@ -4,14 +4,14 @@ const { ConfigObject } = require('../../../lib/Config');
 const checkReadLocation = require('../../../lib/api/apiUtils/object/checkReadLocation');
 
 const locationConstraints = {
-    bucketmatch: {
+    'bucketmatch': {
         type: 'aws_s3',
         legacyAwsBehavior: true,
         details: {
             bucketMatch: true,
         },
     },
-    nobucketmatch: {
+    'nobucketmatch': {
         type: 'aws_s3',
         legacyAwsBehavior: true,
         details: {

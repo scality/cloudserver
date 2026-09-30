@@ -25,7 +25,7 @@ const bucketPutRequest = {
 const updateQuotaRequest = {
     bucketName,
     headers: {
-        host: `${bucketName}.s3.amazonaws.com`,
+        'host': `${bucketName}.s3.amazonaws.com`,
         'content-type': 'application/json',
     },
     post: '{"quota": 1000}',

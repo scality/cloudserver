@@ -439,7 +439,7 @@ function makeVeeamRequest(params, callback) {
                                     bucket: TEST_BUCKET,
                                     objectKey: key[0],
                                     headers: {
-                                        origin: 'http://localhost:8000',
+                                        'origin': 'http://localhost:8000',
                                         'content-length': key[1].length,
                                         'content-md5': key[2],
                                         'x-scal-canonical-id': testArn,
@@ -462,7 +462,7 @@ function makeVeeamRequest(params, callback) {
                                     bucket: TEST_BUCKET,
                                     objectKey: key[0],
                                     headers: {
-                                        origin: 'http://localhost:8000',
+                                        'origin': 'http://localhost:8000',
                                         'x-scal-canonical-id': testArn,
                                     },
                                     authCredentials: veeamAuthCredentials,

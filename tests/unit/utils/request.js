@@ -347,7 +347,7 @@ function createTestServer(proto, hostname, port, handler, callback) {
                         checkForHeaders(req.getHeaders(), {
                             'content-type': 'application/json',
                             'content-length': Buffer.byteLength(postJsonStringified),
-                            extra: 'header',
+                            'extra': 'header',
                         });
                         done();
                     },

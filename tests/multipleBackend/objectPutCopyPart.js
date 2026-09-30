@@ -86,7 +86,7 @@ function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, requestHost, cb, errorPutCopy
     };
     if (mpuLoc) {
         initiateReq.headers = {
-            host: `${bucketName}.s3.amazonaws.com`,
+            'host': `${bucketName}.s3.amazonaws.com`,
             'x-amz-meta-scal-location-constraint': `${mpuLoc}`,
         };
     }
@@ -103,7 +103,7 @@ function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, requestHost, cb, errorPutCopy
     };
     if (srcObjLoc) {
         sourceObjPutParams.headers = {
-            host: `${bucketName}.s3.amazonaws.com`,
+            'host': `${bucketName}.s3.amazonaws.com`,
             'x-amz-meta-scal-location-constraint': `${srcObjLoc}`,
         };
     }

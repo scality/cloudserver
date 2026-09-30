@@ -82,7 +82,7 @@ describe('objectGet API', () => {
         bucketName,
         namespace,
         headers: {
-            host: `${bucketName}.s3.amazonaws.com`,
+            'host': `${bucketName}.s3.amazonaws.com`,
             'x-amz-bucket-object-lock-enabled': 'true',
         },
         url: `/${bucketName}`,
@@ -264,7 +264,7 @@ describe('objectGet API', () => {
                             namespace,
                             objectKey: objectName,
                             headers: {
-                                host: `${bucketName}.s3.amazonaws.com`,
+                                'host': `${bucketName}.s3.amazonaws.com`,
                                 // Part (other than last part) must be at least 5MB
                                 'content-length': '5242880',
                             },
@@ -289,7 +289,7 @@ describe('objectGet API', () => {
                             namespace,
                             objectKey: objectName,
                             headers: {
-                                host: `${bucketName}.s3.amazonaws.com`,
+                                'host': `${bucketName}.s3.amazonaws.com`,
                                 'content-length': '12',
                             },
                             parsedContentLength: 12,
@@ -644,7 +644,7 @@ describe('objectGet API - x-amz-checksum-mode', () => {
                     objectKey: objectName,
                     headers: {
                         'x-amz-checksum-mode': 'ENABLED',
-                        range: 'bytes=0-3',
+                        'range': 'bytes=0-3',
                     },
                     url: `/${bucketName}/${objectName}`,
                     query: {},

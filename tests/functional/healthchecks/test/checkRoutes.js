@@ -164,7 +164,7 @@ describe('Healthcheck stats', () => {
                 if (err) {
                     return done(err);
                 }
-                const expectedStatsRes = { requests: totalReqs, '500s': 0, sampleDuration: 30 };
+                const expectedStatsRes = { 'requests': totalReqs, '500s': 0, 'sampleDuration': 30 };
                 assert.deepStrictEqual(JSON.parse(res), expectedStatsRes);
                 return done();
             });

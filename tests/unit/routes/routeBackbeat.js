@@ -572,7 +572,7 @@ describe('routeBackbeat', () => {
             ];
             metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
                 callback(null, bucketInfo, {
-                    location: existingLocations,
+                    'location': existingLocations,
                     'x-amz-server-side-encryption': 'AES256',
                 });
             });
@@ -640,7 +640,7 @@ describe('routeBackbeat', () => {
 
         it('should delete data when locations change', async () => {
             const existingMd = {
-                location: [
+                'location': [
                     {
                         key: 'key0',
                         dataStoreName: 'location1',
@@ -655,7 +655,7 @@ describe('routeBackbeat', () => {
 
             // New metadata has different locations
             const reqBody = {
-                location: [
+                'location': [
                     {
                         key: 'key1',
                         dataStoreName: 'location1',
@@ -688,7 +688,7 @@ describe('routeBackbeat', () => {
 
         it('should not delete data when some keys are still used', async () => {
             const existingMd = {
-                location: [
+                'location': [
                     {
                         key: 'key0',
                         dataStoreName: 'location1',
@@ -708,7 +708,7 @@ describe('routeBackbeat', () => {
 
             // New metadata has different locations
             const reqBody = {
-                location: [
+                'location': [
                     {
                         key: 'key1',
                         dataStoreName: 'location1',
@@ -745,7 +745,7 @@ describe('routeBackbeat', () => {
 
         it('should not delete data when object is archived', async () => {
             const existingMd = {
-                location: [
+                'location': [
                     {
                         key: 'key0',
                         dataStoreName: 'location1',
@@ -762,9 +762,9 @@ describe('routeBackbeat', () => {
             mockRequest = prepareDummyRequest(
                 mockRequest.headers,
                 JSON.stringify({
-                    location: undefined,
+                    'location': undefined,
                     'content-length': 100,
-                    replicationInfo: {},
+                    'replicationInfo': {},
                 }),
             );
             mockRequest.url += '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';

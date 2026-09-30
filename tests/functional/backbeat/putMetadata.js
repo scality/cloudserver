@@ -51,7 +51,7 @@ function buildMetadataBody(overrides) {
             'owner-id': CANONICAL_ID,
             'owner-display-name': 'test',
             'content-md5': OBJECT_MD5_HEX,
-            replicationInfo: {
+            'replicationInfo': {
                 status: 'REPLICA',
                 isReplica: true,
                 backends: [],
@@ -346,7 +346,7 @@ describe('putMetadata : cascade replication behavior (with replication content)'
                 Bucket: TEST_BUCKET,
                 Key: key,
                 MicroVersionId: '',
-                Body: buildMetadataBody({ 'content-length': 0, location: null }),
+                Body: buildMetadataBody({ 'content-length': 0, 'location': null }),
             }),
         );
         const { Body } = await backbeatClient.send(new GetMetadataCommand({ Bucket: TEST_BUCKET, Key: key }));

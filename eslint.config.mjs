@@ -32,7 +32,7 @@ export default [
             'import/extensions': 'off',
             'lines-around-directive': 'off',
             'no-underscore-dangle': 'off',
-            indent: 'off',
+            'indent': 'off',
             'object-curly-newline': 'off',
             'operator-linebreak': 'off',
             'function-paren-newline': 'off',

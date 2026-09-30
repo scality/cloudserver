@@ -55,7 +55,7 @@ function copyObjectRequest(headers = {}) {
         namespace,
         objectKey: 'copiedObject',
         headers: {
-            host: `${bucketName}.s3.amazonaws.com`,
+            'host': `${bucketName}.s3.amazonaws.com`,
             'x-amz-copy-source': `/${bucketName}/${objectKey}`,
             ...headers,
         },
@@ -270,7 +270,7 @@ describe('direct to cold', () => {
                 namespace,
                 objectKey,
                 headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
+                    'host': `${bucketName}.s3.amazonaws.com`,
                     'x-amz-copy-source': `/${bucketName}/${objectKey}`,
                     'x-amz-storage-class': coldLocation,
                 },

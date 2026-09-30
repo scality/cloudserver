@@ -348,8 +348,8 @@ describe('CORS headers on copy operations', () => {
                 bucketName: destBucket,
                 objectKey: 'destkey',
                 headers: {
-                    host: `${destBucket}.s3.amazonaws.com`,
-                    origin: reqOrigin,
+                    'host': `${destBucket}.s3.amazonaws.com`,
+                    'origin': reqOrigin,
                     'x-amz-copy-source': `/${srcBucket}/missing-source-key`,
                 },
                 url: `/${destBucket}/destkey`,

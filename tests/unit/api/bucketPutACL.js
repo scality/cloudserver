@@ -59,7 +59,7 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'not-a-valid-option',
             },
             url: '/?acl',
@@ -78,7 +78,7 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'public-read-write',
             },
             url: '/?acl',
@@ -99,7 +99,7 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'public-read',
             },
             url: '/?acl',
@@ -110,7 +110,7 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'authenticated-read',
             },
             url: '/?acl',
@@ -137,7 +137,7 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'private',
             },
             url: '/?acl',
@@ -148,7 +148,7 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'log-delivery-write',
             },
             url: '/?acl',
@@ -176,7 +176,7 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
                     'emailaddress="sampleaccount1@sampling.com",emailaddress="sampleaccount2@sampling.com"',
                 'x-amz-grant-read': `uri=${constants.logId}`,
@@ -206,7 +206,7 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
                     'emailaddress="sampleaccount1@sampling.com",emailaddress="sampleaccount2@sampling.com"',
                 'x-amz-grant-read': 'emailaddress="sampleaccount1@sampling.com"',
@@ -238,7 +238,7 @@ describe('putBucketACL API', () => {
                 bucketName,
                 namespace,
                 headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
+                    'host': `${bucketName}.s3.amazonaws.com`,
                     'x-amz-grant-full-control': invalidIds[idType],
                 },
                 url: '/?acl',
@@ -257,7 +257,7 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
                     'emailaddress="sampleaccount1@sampling.com",emailaddress="nonexistentEmail@sampling.com"',
             },
@@ -672,7 +672,7 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control': 'uri="http://acs.amazonaws.com/groups/global/NOTAVALIDGROUP"',
             },
             url: '/?acl',

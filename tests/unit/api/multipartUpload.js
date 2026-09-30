@@ -76,7 +76,7 @@ const bucketPutRequest = {
 const lockEnabledBucketRequest = Object.assign({}, bucketPutRequest);
 lockEnabledBucketRequest.bucketName = lockedBucket;
 lockEnabledBucketRequest.headers = {
-    host: `${lockedBucket}.s3.amazonaws.com`,
+    'host': `${lockedBucket}.s3.amazonaws.com`,
     'x-amz-bucket-object-lock-enabled': 'true',
 };
 const initiateRequest = {
@@ -95,13 +95,13 @@ retentionInitiateRequest.bucketName = lockedBucket;
 retentionInitiateRequest.headers = {
     'x-amz-object-lock-mode': 'GOVERNANCE',
     'x-amz-object-lock-retain-until-date': futureDate,
-    host: `${lockedBucket}.s3.amazonaws.com`,
+    'host': `${lockedBucket}.s3.amazonaws.com`,
 };
 const legalHoldInitiateRequest = Object.assign({}, initiateRequest);
 legalHoldInitiateRequest.bucketName = lockedBucket;
 legalHoldInitiateRequest.headers = {
     'x-amz-object-lock-legal-hold': 'ON',
-    host: `${lockedBucket}.s3.amazonaws.com`,
+    'host': `${lockedBucket}.s3.amazonaws.com`,
 };
 
 const getObjectLockInfoRequest = {
@@ -313,7 +313,7 @@ describe('Multipart Upload API', () => {
             namespace,
             objectKey,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-storage-class': 'COLD',
             },
             url: `/${objectKey}?uploads`,
@@ -550,7 +550,7 @@ describe('Multipart Upload API', () => {
                         namespace,
                         objectKey,
                         headers: {
-                            host: `${bucketName}.s3.amazonaws.com`,
+                            'host': `${bucketName}.s3.amazonaws.com`,
                             'content-length': '5368709121',
                         },
                         url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
@@ -1177,7 +1177,7 @@ describe('Multipart Upload API', () => {
                         namespace,
                         objectKey,
                         headers: {
-                            host: `${bucketName}.s3.amazonaws.com`,
+                            'host': `${bucketName}.s3.amazonaws.com`,
                             'content-length': '100',
                         },
                         parsedContentLength: 100,
@@ -1196,7 +1196,7 @@ describe('Multipart Upload API', () => {
                         namespace,
                         objectKey,
                         headers: {
-                            host: `${bucketName}.s3.amazonaws.com`,
+                            'host': `${bucketName}.s3.amazonaws.com`,
                             'content-length': '200',
                         },
                         parsedContentLength: 200,
@@ -1265,7 +1265,7 @@ describe('Multipart Upload API', () => {
                         namespace,
                         objectKey,
                         headers: {
-                            host: `${bucketName}.s3.amazonaws.com`,
+                            'host': `${bucketName}.s3.amazonaws.com`,
                             'content-length': '6000000',
                         },
                         parsedContentLength: 6000000,
@@ -1284,7 +1284,7 @@ describe('Multipart Upload API', () => {
                         namespace,
                         objectKey,
                         headers: {
-                            host: `${bucketName}.s3.amazonaws.com`,
+                            'host': `${bucketName}.s3.amazonaws.com`,
                             'content-length': '100',
                         },
                         parsedContentLength: 100,
@@ -1344,7 +1344,7 @@ describe('Multipart Upload API', () => {
             namespace,
             objectKey,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-stuff': 'I am some user metadata',
                 'x-amz-acl': 'authenticated-read',
             },
@@ -1372,7 +1372,7 @@ describe('Multipart Upload API', () => {
                         namespace,
                         objectKey,
                         headers: {
-                            host: `${bucketName}.s3.amazonaws.com`,
+                            'host': `${bucketName}.s3.amazonaws.com`,
                             'content-length': 6000000,
                         },
                         url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
@@ -1390,7 +1390,7 @@ describe('Multipart Upload API', () => {
                         namespace,
                         objectKey,
                         headers: {
-                            host: `${bucketName}.s3.amazonaws.com`,
+                            'host': `${bucketName}.s3.amazonaws.com`,
                             'content-length': 100,
                         },
                         url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
@@ -1450,7 +1450,7 @@ describe('Multipart Upload API', () => {
             namespace,
             objectKey,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-stuff': 'I am some user metadata',
                 'x-amz-grant-read': `emailAddress="${granteeEmail}"`,
             },
@@ -1478,7 +1478,7 @@ describe('Multipart Upload API', () => {
                         namespace,
                         objectKey,
                         headers: {
-                            host: `${bucketName}.s3.amazonaws.com`,
+                            'host': `${bucketName}.s3.amazonaws.com`,
                             'content-length': 6000000,
                         },
                         url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
@@ -1496,7 +1496,7 @@ describe('Multipart Upload API', () => {
                         namespace,
                         objectKey,
                         headers: {
-                            host: `${bucketName}.s3.amazonaws.com`,
+                            'host': `${bucketName}.s3.amazonaws.com`,
                             'content-length': 100,
                         },
                         url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
@@ -3423,7 +3423,7 @@ describe('objectPutPart checksum response headers', () => {
                 namespace,
                 objectKey,
                 headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
+                    'host': `${bucketName}.s3.amazonaws.com`,
                     'x-amz-checksum-sha256': sha256Value,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
@@ -4518,7 +4518,7 @@ describe('CompleteMultipartUpload per-part validation on external backends', () 
             namespace,
             objectKey,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-checksum-algorithm': algo,
                 'x-amz-checksum-type': type,
             },

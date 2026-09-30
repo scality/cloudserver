@@ -45,7 +45,7 @@ class ContinueRequestHandler {
             method: 'PUT',
             headers: {
                 'content-length': body.length,
-                Expect: this.expectHeader,
+                'Expect': this.expectHeader,
             },
         };
     }
@@ -126,8 +126,8 @@ describeSkipIfE2E('PUT public object with 100-continue header', () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             const params = {
-                Bucket: bucket,
-                Key: key,
+                'Bucket': bucket,
+                'Key': key,
                 'Content-Length': 0,
             };
             const command = new PutObjectCommand(params);

@@ -69,18 +69,18 @@ const objectList = {
                 'x-amz-server-side-encryption-aws-kms-key-id': '',
                 'x-amz-server-side-encryption-customer-algorithm': '',
                 'x-amz-website-redirect-location': '',
-                acl: {
+                'acl': {
                     Canned: 'private',
                     FULL_CONTROL: [],
                     WRITE_ACP: [],
                     READ: [],
                     READ_ACP: [],
                 },
-                key: '',
-                location: null,
-                isDeleteMarker: false,
-                tags: {},
-                replicationInfo: {
+                'key': '',
+                'location': null,
+                'isDeleteMarker': false,
+                'tags': {},
+                'replicationInfo': {
                     status: '',
                     backends: [],
                     content: [],
@@ -90,7 +90,7 @@ const objectList = {
                     storageType: '',
                     dataStoreVersionId: '',
                 },
-                dataStoreName: 'us-east-1',
+                'dataStoreName': 'us-east-1',
                 'last-modified': '2018-02-16T22:43:37.174Z',
                 'md-model-version': 3,
             }),
@@ -287,7 +287,7 @@ class MetadataMock {
             return res.end(
                 JSON.stringify({
                     'owner-id': '123',
-                    metadata: 'dogsAreGood',
+                    'metadata': 'dogsAreGood',
                 }),
             );
         } else if (mockLogURLRegex.test(req.url)) {

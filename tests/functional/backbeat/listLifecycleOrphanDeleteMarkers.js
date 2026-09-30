@@ -215,7 +215,7 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             {
                 method: 'GET',
                 bucket: testBucket,
-                queryObj: { 'list-type': 'orphan', prefix: 'unknown' },
+                queryObj: { 'list-type': 'orphan', 'prefix': 'unknown' },
                 authCredentials: credentials,
             },
             (err, response) => {
@@ -567,7 +567,7 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             {
                 method: 'GET',
                 bucket: testBucket,
-                queryObj: { 'list-type': 'orphan', 'before-date': date, 'max-keys': '1', marker: 'key0old' },
+                queryObj: { 'list-type': 'orphan', 'before-date': date, 'max-keys': '1', 'marker': 'key0old' },
                 authCredentials: credentials,
             },
             (err, response) => {
@@ -597,7 +597,7 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             {
                 method: 'GET',
                 bucket: testBucket,
-                queryObj: { 'list-type': 'orphan', 'before-date': date, 'max-keys': '1', marker: 'key1old' },
+                queryObj: { 'list-type': 'orphan', 'before-date': date, 'max-keys': '1', 'marker': 'key1old' },
                 authCredentials: credentials,
             },
             (err, response) => {
@@ -627,7 +627,7 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             {
                 method: 'GET',
                 bucket: testBucket,
-                queryObj: { 'list-type': 'orphan', 'before-date': date, 'max-keys': '1', marker: 'key2old' },
+                queryObj: { 'list-type': 'orphan', 'before-date': date, 'max-keys': '1', 'marker': 'key2old' },
                 authCredentials: credentials,
             },
             (err, response) => {

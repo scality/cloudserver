@@ -183,9 +183,9 @@ describeSkipIfNotMultiple('MultipleBackend put object', function testSuite() {
                         Key: key,
                         Metadata: {
                             'scal-location-constraint': awsLocation,
-                            mdonly: 'true',
-                            md5chksum: b64,
-                            size: body.length.toString(),
+                            'mdonly': 'true',
+                            'md5chksum': b64,
+                            'size': body.length.toString(),
                         },
                     };
                     await s3
@@ -210,9 +210,9 @@ describeSkipIfNotMultiple('MultipleBackend put object', function testSuite() {
                         Body: body,
                         Metadata: {
                             'scal-location-constraint': awsLocation,
-                            mdonly: 'true',
-                            md5chksum: b64,
-                            size: body.length.toString(),
+                            'mdonly': 'true',
+                            'md5chksum': b64,
+                            'size': body.length.toString(),
                         },
                     };
                     await s3
@@ -236,9 +236,9 @@ describeSkipIfNotMultiple('MultipleBackend put object', function testSuite() {
                         Key: key,
                         Metadata: {
                             'scal-location-constraint': awsLocation,
-                            mdonly: 'true',
-                            md5chksum: b64,
-                            size: '0',
+                            'mdonly': 'true',
+                            'md5chksum': b64,
+                            'size': '0',
                         },
                     };
                     await s3

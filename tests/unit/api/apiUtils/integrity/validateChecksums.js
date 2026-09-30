@@ -1235,7 +1235,7 @@ describe('getCopyObjectChecksumAlgorithm', () => {
     it('should ignore unrelated headers', () => {
         const result = getCopyObjectChecksumAlgorithm({
             'content-type': 'application/octet-stream',
-            host: 'example.com',
+            'host': 'example.com',
         });
         assert.strictEqual(result.error, null);
         assert.strictEqual(result.algorithm, null);
@@ -1291,10 +1291,10 @@ const sigV4Auth =
 
 describe('parseContentSHA256', () => {
     // build SigV4 header-auth headers carrying the given x-amz-content-sha256
-    const v4 = value => ({ authorization: sigV4Auth, 'x-amz-content-sha256': value });
+    const v4 = value => ({ 'authorization': sigV4Auth, 'x-amz-content-sha256': value });
 
     it('should return Skip for non-SigV4 header auth, capturing the value', () => {
-        assert.deepStrictEqual(parseContentSHA256({ authorization: 'AWS AKID:sig', 'x-amz-content-sha256': 'abc' }), {
+        assert.deepStrictEqual(parseContentSHA256({ 'authorization': 'AWS AKID:sig', 'x-amz-content-sha256': 'abc' }), {
             type: ContentSHA256Type.Skip,
             value: 'abc',
         });
@@ -1358,21 +1358,24 @@ describe('validateXAmzContentSHA256', () => {
 
     it('should return null when the hash matches the body', () => {
         assert.ifError(
-            validateXAmzContentSHA256({ authorization: sigV4Auth, 'x-amz-content-sha256': correctHex }, body),
+            validateXAmzContentSHA256({ 'authorization': sigV4Auth, 'x-amz-content-sha256': correctHex }, body),
         );
     });
 
     it('should return null for an uppercase hash that matches (case-insensitive)', () => {
         assert.ifError(
             validateXAmzContentSHA256(
-                { authorization: sigV4Auth, 'x-amz-content-sha256': correctHex.toUpperCase() },
+                { 'authorization': sigV4Auth, 'x-amz-content-sha256': correctHex.toUpperCase() },
                 body,
             ),
         );
     });
 
     it('should return ContentSHA256Mismatch with calculated/expected details on mismatch', () => {
-        const result = validateXAmzContentSHA256({ authorization: sigV4Auth, 'x-amz-content-sha256': wrongHex }, body);
+        const result = validateXAmzContentSHA256(
+            { 'authorization': sigV4Auth, 'x-amz-content-sha256': wrongHex },
+            body,
+        );
         assert.strictEqual(result.error, ChecksumError.ContentSHA256Mismatch);
         assert.strictEqual(result.details.expected, wrongHex);
         assert.strictEqual(result.details.calculated, correctHex);
@@ -1385,21 +1388,21 @@ describe('validateXAmzContentSHA256', () => {
     });
 
     it('should return ContentSHA256Invalid for a malformed value', () => {
-        const result = validateXAmzContentSHA256({ authorization: sigV4Auth, 'x-amz-content-sha256': 'xxx' }, body);
+        const result = validateXAmzContentSHA256({ 'authorization': sigV4Auth, 'x-amz-content-sha256': 'xxx' }, body);
         assert.strictEqual(result.error, ChecksumError.ContentSHA256Invalid);
         assert.strictEqual(result.details.value, 'xxx');
     });
 
     it('should return null for UNSIGNED-PAYLOAD', () => {
         assert.ifError(
-            validateXAmzContentSHA256({ authorization: sigV4Auth, 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' }, body),
+            validateXAmzContentSHA256({ 'authorization': sigV4Auth, 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' }, body),
         );
     });
 
     it('should return null for a streaming token', () => {
         assert.ifError(
             validateXAmzContentSHA256(
-                { authorization: sigV4Auth, 'x-amz-content-sha256': 'STREAMING-AWS4-HMAC-SHA256-PAYLOAD' },
+                { 'authorization': sigV4Auth, 'x-amz-content-sha256': 'STREAMING-AWS4-HMAC-SHA256-PAYLOAD' },
                 body,
             ),
         );
@@ -1407,20 +1410,23 @@ describe('validateXAmzContentSHA256', () => {
 
     it('should return null (skip) for non-SigV4 auth even with a wrong hash', () => {
         assert.ifError(
-            validateXAmzContentSHA256({ authorization: 'AWS AKID:sig', 'x-amz-content-sha256': wrongHex }, body),
+            validateXAmzContentSHA256({ 'authorization': 'AWS AKID:sig', 'x-amz-content-sha256': wrongHex }, body),
         );
     });
 
     it('should return null when the hash matches an empty body', () => {
         const emptyHex = crypto.createHash('sha256').update(Buffer.alloc(0)).digest('hex');
         assert.ifError(
-            validateXAmzContentSHA256({ authorization: sigV4Auth, 'x-amz-content-sha256': emptyHex }, Buffer.alloc(0)),
+            validateXAmzContentSHA256(
+                { 'authorization': sigV4Auth, 'x-amz-content-sha256': emptyHex },
+                Buffer.alloc(0),
+            ),
         );
     });
 
     it('should return ContentSHA256Mismatch for an empty body with a wrong hash', () => {
         const result = validateXAmzContentSHA256(
-            { authorization: sigV4Auth, 'x-amz-content-sha256': wrongHex },
+            { 'authorization': sigV4Auth, 'x-amz-content-sha256': wrongHex },
             Buffer.alloc(0),
         );
         assert.strictEqual(result.error, ChecksumError.ContentSHA256Mismatch);
@@ -1433,7 +1439,7 @@ describe('validateXAmzContentSHA256', () => {
     describe('mapped through arsenalErrorFromChecksumError', () => {
         it('should map mismatch to XAmzContentSHA256Mismatch (400)', () => {
             const result = validateXAmzContentSHA256(
-                { authorization: sigV4Auth, 'x-amz-content-sha256': wrongHex },
+                { 'authorization': sigV4Auth, 'x-amz-content-sha256': wrongHex },
                 body,
             );
             const err = arsenalErrorFromChecksumError(result);
@@ -1442,7 +1448,10 @@ describe('validateXAmzContentSHA256', () => {
         });
 
         it('should map invalid to InvalidArgument (400)', () => {
-            const result = validateXAmzContentSHA256({ authorization: sigV4Auth, 'x-amz-content-sha256': 'xxx' }, body);
+            const result = validateXAmzContentSHA256(
+                { 'authorization': sigV4Auth, 'x-amz-content-sha256': 'xxx' },
+                body,
+            );
             const err = arsenalErrorFromChecksumError(result);
             assert.strictEqual(err.message, 'InvalidArgument');
             assert.strictEqual(err.code, 400);
@@ -1466,7 +1475,7 @@ describe('validateMethodChecksumNoChunking x-amz-content-sha256', () => {
         const wrongHex = crypto.createHash('sha256').update('other').digest('hex');
         const request = {
             apiMethod: 'bucketPutCors',
-            headers: { authorization: sigV4Auth, 'x-amz-content-sha256': wrongHex },
+            headers: { 'authorization': sigV4Auth, 'x-amz-content-sha256': wrongHex },
         };
         const result = await validateMethodChecksumNoChunking(request, body, new DummyRequestLogger());
         assert.strictEqual(result.message, 'XAmzContentSHA256Mismatch');
@@ -1476,7 +1485,7 @@ describe('validateMethodChecksumNoChunking x-amz-content-sha256', () => {
     it('should accept a matching x-amz-content-sha256', async () => {
         const request = {
             apiMethod: 'bucketPutCors',
-            headers: { authorization: sigV4Auth, 'x-amz-content-sha256': correctHex, 'content-md5': correctMd5 },
+            headers: { 'authorization': sigV4Auth, 'x-amz-content-sha256': correctHex, 'content-md5': correctMd5 },
         };
         const result = await validateMethodChecksumNoChunking(request, body, new DummyRequestLogger());
         assert.ifError(result);
@@ -1676,7 +1685,7 @@ describe('validateMethodChecksumNoChunking with checksums disabled', () => {
 
     it('should still enforce x-amz-content-sha256', async () => {
         const wrongHex = crypto.createHash('sha256').update('other').digest('hex');
-        const result = await run({ authorization: sigV4Header, 'x-amz-content-sha256': wrongHex });
+        const result = await run({ 'authorization': sigV4Header, 'x-amz-content-sha256': wrongHex });
         assert.strictEqual(result.message, 'XAmzContentSHA256Mismatch');
     });
 

@@ -34,7 +34,7 @@ class HttpRequestAuthV4NoSHA256SignedHeader extends HttpRequestAuthV4 {
 
         const urlObj = new url.URL(this._url);
         const signedHeaders = {
-            host: urlObj.host,
+            'host': urlObj.host,
             'x-amz-date': this._timestamp,
         };
         const httpHeaders = Object.assign({}, this._httpParams.headers);

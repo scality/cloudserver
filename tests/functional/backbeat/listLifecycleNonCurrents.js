@@ -246,7 +246,7 @@ describe('listLifecycleNonCurrents', () => {
             {
                 method: 'GET',
                 bucket: testBucket,
-                queryObj: { 'list-type': 'noncurrent', prefix: 'unknown' },
+                queryObj: { 'list-type': 'noncurrent', 'prefix': 'unknown' },
                 authCredentials: credentials,
             },
             (err, response) => {

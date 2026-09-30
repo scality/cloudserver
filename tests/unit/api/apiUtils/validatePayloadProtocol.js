@@ -22,7 +22,7 @@ describe('validatePayloadProtocol', () => {
     });
 
     it('should return null for non-SigV4 header auth, even with an invalid value', () =>
-        assert.ifError(validatePayloadProtocol({ authorization: sigV2, 'x-amz-content-sha256': 'BAD' })));
+        assert.ifError(validatePayloadProtocol({ 'authorization': sigV2, 'x-amz-content-sha256': 'BAD' })));
 
     unsupportedSignatureChecksums.forEach(protocol => {
         it(`should return BadRequest for unsupported protocol ${protocol}`, () => {

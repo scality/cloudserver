@@ -279,7 +279,7 @@ describe('objectGetAttributes API with multipart upload', () => {
                     namespace,
                     objectKey: objectName,
                     headers: {
-                        host: `${bucketName}.s3.amazonaws.com`,
+                        'host': `${bucketName}.s3.amazonaws.com`,
                         'content-length': '5242880',
                     },
                     parsedContentLength: 5242880,

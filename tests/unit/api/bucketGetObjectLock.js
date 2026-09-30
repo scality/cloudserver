@@ -20,7 +20,7 @@ const bucketPutReq = {
 const testBucketPutReqWithObjLock = {
     bucketName,
     headers: {
-        host: `${bucketName}.s3.amazonaws.com`,
+        'host': `${bucketName}.s3.amazonaws.com`,
         'x-amz-bucket-object-lock-enabled': 'True',
     },
     url: '/',
@@ -31,7 +31,7 @@ function getObjectLockConfigRequest(bucketName, xml) {
     const request = {
         bucketName,
         headers: {
-            host: `${bucketName}.s3.amazonaws.com`,
+            'host': `${bucketName}.s3.amazonaws.com`,
             'x-amz-bucket-object-lock-enabled': 'true',
         },
         url: '/?object-lock',

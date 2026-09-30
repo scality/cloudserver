@@ -159,7 +159,7 @@ describe('bucketPut API', () => {
         url: '/',
         post: '',
         headers: {
-            host: `${bucketName}.s3.amazonaws.com`,
+            'host': `${bucketName}.s3.amazonaws.com`,
             'x-amz-bucket-object-lock-enabled': `${status}`,
         },
     });
@@ -201,7 +201,7 @@ describe('bucketPut API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control': 'uri="http://acs.amazonaws.com/groups/global/NOTAVALIDGROUP"',
             },
             url: '/',
@@ -221,7 +221,7 @@ describe('bucketPut API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'not-valid-option',
             },
             url: '/',
@@ -241,7 +241,7 @@ describe('bucketPut API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-read': 'emailaddress="fake@faking.com"',
             },
             url: '/',
@@ -261,7 +261,7 @@ describe('bucketPut API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'public-read',
             },
             url: '/',
@@ -282,7 +282,7 @@ describe('bucketPut API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
                     'emailaddress="sampleaccount1@sampling.com",emailaddress="sampleaccount2@sampling.com"',
                 'x-amz-grant-read': `uri=${constants.logId}`,
@@ -513,7 +513,7 @@ describe('bucketPut API with bucket-level encryption', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'AES256',
             },
         };
@@ -537,7 +537,7 @@ describe('bucketPut API with bucket-level encryption', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'aws:kms',
             },
         };
@@ -562,7 +562,7 @@ describe('bucketPut API with bucket-level encryption', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'aws:kms',
                 'x-amz-scal-server-side-encryption-aws-kms-key-id': keyId,
             },
@@ -591,7 +591,7 @@ describe('bucketPut API with bucket-level encryption', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'AES256',
                 'x-amz-scal-server-side-encryption-aws-kms-key-id': keyId,
             },
@@ -621,7 +621,7 @@ describe('bucketPut API with account level encryption', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'AES256',
             },
         };
@@ -646,7 +646,7 @@ describe('bucketPut API with account level encryption', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'aws:kms',
             },
         };
@@ -672,7 +672,7 @@ describe('bucketPut API with account level encryption', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'aws:kms',
                 'x-amz-scal-server-side-encryption-aws-kms-key-id': keyId,
             },
@@ -708,7 +708,7 @@ describe('bucketPut API with failed encryption service', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'AES256',
             },
         };
@@ -736,7 +736,7 @@ describe('bucketPut API with failed vault service', () => {
         const testRequestWithEncryption = {
             ...testRequest,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-scal-server-side-encryption': 'AES256',
             },
         };

@@ -352,7 +352,7 @@ describe('dataStore', () => {
         it('should still validate x-amz-content-sha256 against the body', done => {
             batchDeleteSucceeds();
             putSucceeds();
-            const request = makeStream({ authorization: sigV4Auth, 'x-amz-content-sha256': wrongHex }, 'hello world');
+            const request = makeStream({ 'authorization': sigV4Auth, 'x-amz-content-sha256': wrongHex }, 'hello world');
             dataStore({}, null, request, 0, null, {}, null, log, err => {
                 assert.strictEqual(err.message, 'XAmzContentSHA256Mismatch');
                 assert(batchDeleteStub.calledOnce);
@@ -365,7 +365,7 @@ describe('dataStore', () => {
         it('should call cb with XAmzContentSHA256Mismatch and delete stored data when the hash does not match', done => {
             batchDeleteSucceeds();
             putSucceeds();
-            const request = makeStream({ authorization: sigV4Auth, 'x-amz-content-sha256': wrongHex }, 'hello world');
+            const request = makeStream({ 'authorization': sigV4Auth, 'x-amz-content-sha256': wrongHex }, 'hello world');
             dataStore({}, null, request, 0, null, {}, defaultChecksums, log, err => {
                 assert.strictEqual(err.message, 'XAmzContentSHA256Mismatch');
                 assert(batchDeleteStub.calledOnce);
@@ -376,7 +376,7 @@ describe('dataStore', () => {
         it('should not delete stored data when the hash matches the body', done => {
             putSucceeds();
             const request = makeStream(
-                { authorization: sigV4Auth, 'x-amz-content-sha256': helloWorldHex },
+                { 'authorization': sigV4Auth, 'x-amz-content-sha256': helloWorldHex },
                 'hello world',
             );
             dataStore({}, null, request, 0, null, {}, defaultChecksums, log, err => {
@@ -389,7 +389,7 @@ describe('dataStore', () => {
         it('should validate x-amz-content-sha256 before the secondary checksum', done => {
             batchDeleteSucceeds();
             putSucceeds();
-            const request = makeStream({ authorization: sigV4Auth, 'x-amz-content-sha256': wrongHex }, 'hello world');
+            const request = makeStream({ 'authorization': sigV4Auth, 'x-amz-content-sha256': wrongHex }, 'hello world');
             // The secondary checksum also mismatches, but the content-sha256
             // error is checked first and takes precedence.
             const checksums = {
@@ -406,7 +406,7 @@ describe('dataStore', () => {
         it('should call cb with XAmzContentSHA256Mismatch when the hash mismatches and batchDelete also fails', done => {
             batchDeleteStub.callsFake((keys, a, b, log2, cb) => cb(errors.InternalError));
             putSucceeds();
-            const request = makeStream({ authorization: sigV4Auth, 'x-amz-content-sha256': wrongHex }, 'hello world');
+            const request = makeStream({ 'authorization': sigV4Auth, 'x-amz-content-sha256': wrongHex }, 'hello world');
             dataStore({}, null, request, 0, null, {}, defaultChecksums, log, err => {
                 assert.strictEqual(err.message, 'XAmzContentSHA256Mismatch');
                 done();

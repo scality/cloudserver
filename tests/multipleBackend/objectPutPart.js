@@ -75,7 +75,7 @@ function putPart(bucketLoc, mpuLoc, requestHost, cb, errorDescription) {
     };
     if (mpuLoc) {
         initiateReq.headers = {
-            host: `${bucketName}.s3.amazonaws.com`,
+            'host': `${bucketName}.s3.amazonaws.com`,
             'x-amz-meta-scal-location-constraint': `${mpuLoc}`,
         };
     }
@@ -219,7 +219,10 @@ describeSkipIfE2E('objectPutPart API with multiple backends', function testSuite
                 bucketName,
                 namespace,
                 objectKey: objectName,
-                headers: { host: `${bucketName}.s3.amazonaws.com`, 'x-amz-meta-scal-location-constraint': awsLocation },
+                headers: {
+                    'host': `${bucketName}.s3.amazonaws.com`,
+                    'x-amz-meta-scal-location-constraint': awsLocation,
+                },
                 url: `/${objectName}?partNumber=1&uploadId=${uploadId}`,
                 query: {
                     partNumber: '1',

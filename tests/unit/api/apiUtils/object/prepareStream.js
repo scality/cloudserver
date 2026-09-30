@@ -280,7 +280,7 @@ describe('prepareStream', () => {
         });
 
         it('should still validate a literal x-amz-content-sha256 payload hash', done => {
-            const request = makeRequest({ authorization: sigV4Auth, 'x-amz-content-sha256': bodyHex }, bodyData);
+            const request = makeRequest({ 'authorization': sigV4Auth, 'x-amz-content-sha256': bodyHex }, bodyData);
             const result = prepareStream(request, null, null, log, done);
             assert.strictEqual(result.primaryChecksumStream, null);
             assert.strictEqual(result.secondaryChecksumStream, null);
@@ -354,7 +354,7 @@ describe('prepareStream', () => {
 
     describe('default (literal sha256 payload hash)', () => {
         it('should return a ContentSHA256Transform for a SigV4 header-auth request with a hex value', () => {
-            const request = makeRequest({ authorization: sigV4Auth, 'x-amz-content-sha256': bodyHex });
+            const request = makeRequest({ 'authorization': sigV4Auth, 'x-amz-content-sha256': bodyHex });
             const result = prepareStream(request, null, defaultChecksums, log, () => {});
             assert.strictEqual(result.error, null);
             assert(result.stream instanceof ChecksumTransform);
@@ -362,13 +362,13 @@ describe('prepareStream', () => {
         });
 
         it('should return null contentSHA256Stream for UNSIGNED-PAYLOAD', () => {
-            const request = makeRequest({ authorization: sigV4Auth, 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
+            const request = makeRequest({ 'authorization': sigV4Auth, 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
             const result = prepareStream(request, null, defaultChecksums, log, () => {});
             assert.strictEqual(result.contentSHA256Stream, null);
         });
 
         it('should return null contentSHA256Stream for non-SigV4 (SigV2) auth even with a hex value', () => {
-            const request = makeRequest({ authorization: 'AWS AKID:sig', 'x-amz-content-sha256': bodyHex });
+            const request = makeRequest({ 'authorization': 'AWS AKID:sig', 'x-amz-content-sha256': bodyHex });
             const result = prepareStream(request, null, defaultChecksums, log, () => {});
             assert.strictEqual(result.contentSHA256Stream, null);
         });
@@ -380,7 +380,7 @@ describe('prepareStream', () => {
         });
 
         it('should accumulate the body sha256 so validateChecksum passes when the hex matches', done => {
-            const request = makeRequest({ authorization: sigV4Auth, 'x-amz-content-sha256': bodyHex }, bodyData);
+            const request = makeRequest({ 'authorization': sigV4Auth, 'x-amz-content-sha256': bodyHex }, bodyData);
             const result = prepareStream(request, null, defaultChecksums, log, done);
             result.stream.resume();
             result.stream.on('finish', () => {
@@ -391,7 +391,7 @@ describe('prepareStream', () => {
         });
 
         it('should pipe contentSHA256Stream upstream of a secondary checksum stream', done => {
-            const request = makeRequest({ authorization: sigV4Auth, 'x-amz-content-sha256': bodyHex }, bodyData);
+            const request = makeRequest({ 'authorization': sigV4Auth, 'x-amz-content-sha256': bodyHex }, bodyData);
             const checksums = {
                 primary: { algorithm: 'crc64nvme', isTrailer: false, expected: undefined },
                 secondary: { algorithm: 'crc32', isTrailer: false, expected: undefined },
@@ -409,7 +409,7 @@ describe('prepareStream', () => {
         });
 
         it('should invoke errCb only once when multiple streams error', () => {
-            const request = makeRequest({ authorization: sigV4Auth, 'x-amz-content-sha256': bodyHex });
+            const request = makeRequest({ 'authorization': sigV4Auth, 'x-amz-content-sha256': bodyHex });
             let count = 0;
             const result = prepareStream(request, null, defaultChecksums, log, () => {
                 count += 1;
@@ -465,7 +465,7 @@ describe('prepareStream with checksums disabled', () => {
 
     it('should still validate a literal x-amz-content-sha256 payload hash', done => {
         // x-amz-content-sha256 is SigV4 load-bearing and out of scope for the flag.
-        const request = makeRequest({ authorization: sigV4Auth, 'x-amz-content-sha256': bodyHex }, bodyData);
+        const request = makeRequest({ 'authorization': sigV4Auth, 'x-amz-content-sha256': bodyHex }, bodyData);
         const result = prepareStream(request, null, defaultChecksums, log, done);
         assert.strictEqual(result.primaryChecksumStream, null);
         assert(result.contentSHA256Stream instanceof ContentSHA256Transform);

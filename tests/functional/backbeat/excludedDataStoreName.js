@@ -238,7 +238,7 @@ describe('excludedDataStoreName', () => {
                             'list-type': 'current',
                             'excluded-data-store-name': location2,
                             'max-keys': '1',
-                            marker: 'key0',
+                            'marker': 'key0',
                         },
                         authCredentials: credentials,
                     },

@@ -32,7 +32,7 @@ const redirectEndpoint = conf.https ? 'https://www.google.com/' : 'http://www.go
 
 const indexDocETag = '"95a589c37a2df74b062fb4d5a6f64197"';
 const indexExpectedHeaders = {
-    etag: indexDocETag,
+    'etag': indexDocETag,
     'x-amz-meta-test': 'value',
 };
 
@@ -746,7 +746,7 @@ describe('Head request on bucket website endpoint', () => {
 
             it('should redirect 302 with trailing / on folder with index', done => {
                 const expectedHeaders = {
-                    location: '/file/',
+                    'location': '/file/',
                     'x-amz-error-code': 'Found',
                     'x-amz-error-message': 'Resource Found',
                 };

@@ -46,7 +46,7 @@ const testPutBucketRequestLock = new DummyRequest({
     bucketName,
     namespace,
     headers: {
-        host: `${bucketName}.s3.amazonaws.com`,
+        'host': `${bucketName}.s3.amazonaws.com`,
         'x-amz-bucket-object-lock-enabled': 'true',
     },
     url: '/',
@@ -329,7 +329,7 @@ describe('objectPut API', () => {
                             namespace,
                             objectKey: objectName,
                             headers: {
-                                host: `${bucketName}.s3.amazonaws.com`,
+                                'host': `${bucketName}.s3.amazonaws.com`,
                                 'x-scal-s3-version-id': versionId,
                             },
                             url: '/',
@@ -379,7 +379,7 @@ describe('objectPut API', () => {
                             namespace,
                             objectKey: objectName,
                             headers: {
-                                host: `${bucketName}.s3.amazonaws.com`,
+                                'host': `${bucketName}.s3.amazonaws.com`,
                                 'x-scal-s3-version-id': versionId,
                                 'x-amz-object-lock-mode': 'GOVERNANCE',
                                 'x-amz-object-lock-retain-until-date': moment().add(1, 'days').toISOString(),
@@ -449,7 +449,7 @@ describe('objectPut API', () => {
                             namespace,
                             objectKey: objectName,
                             headers: {
-                                host: `${bucketName}.s3.amazonaws.com`,
+                                'host': `${bucketName}.s3.amazonaws.com`,
                                 'x-scal-s3-version-id': versionId,
                                 'x-amz-acl': 'public-read-write',
                                 'x-amz-grant-full-control': 'uri=http://acs.amazonaws.com/groups/global/AllUsers',
@@ -1134,7 +1134,7 @@ describe('objectPut API', () => {
                 namespace,
                 objectKey: objectName,
                 headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
+                    'host': `${bucketName}.s3.amazonaws.com`,
                     'x-amz-checksum-sha256': sha256Value,
                 },
                 url: '/',
@@ -1912,7 +1912,7 @@ describe('objectPut with checksums disabled', () => {
                 namespace,
                 objectKey: objectName,
                 headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
+                    'host': `${bucketName}.s3.amazonaws.com`,
                     'x-amz-checksum-crc32': 'AAAAAA==',
                 },
                 url: '/',

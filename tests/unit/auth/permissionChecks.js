@@ -283,7 +283,7 @@ describe('checkObjectAcls', () => {
     };
     const mockObjectMD = {
         'owner-id': 'objectOwnerId',
-        acl: {
+        'acl': {
             Canned: '',
             FULL_CONTROL: [],
             READ: [],

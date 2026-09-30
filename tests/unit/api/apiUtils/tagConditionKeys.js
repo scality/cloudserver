@@ -38,7 +38,7 @@ const objectPutReq = new DummyRequest(
         namespace,
         objectKey,
         headers: {
-            host: `${bucketName}.s3.amazonaws.com`,
+            'host': `${bucketName}.s3.amazonaws.com`,
             'x-amz-tagging': makeTagQuery(taggingUtil.getTags()),
         },
         url: `/${bucketName}/${objectKey}`,

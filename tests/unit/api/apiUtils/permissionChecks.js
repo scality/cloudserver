@@ -804,7 +804,7 @@ describe('aclRequired field in isObjAuthorized', () => {
     function makeObjectMD(ownerId) {
         return {
             'owner-id': ownerId,
-            acl: {
+            'acl': {
                 Canned: '',
                 FULL_CONTROL: [],
                 READ: [],

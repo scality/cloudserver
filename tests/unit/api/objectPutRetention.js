@@ -82,7 +82,7 @@ const putObjRetRequestGovernanceWithHeader = {
     bucketName,
     objectKey: objectName,
     headers: {
-        host: `${bucketName}.s3.amazonaws.com`,
+        'host': `${bucketName}.s3.amazonaws.com`,
         'x-amz-bypass-governance-retention': 'true',
     },
     post: objectRetentionXmlGovernance,

@@ -31,7 +31,7 @@ describe('objectGetACL API', () => {
         bucketName,
         namespace,
         headers: {
-            host: `${bucketName}.s3.amazonaws.com`,
+            'host': `${bucketName}.s3.amazonaws.com`,
             'x-amz-acl': 'public-read-write',
         },
         url: '/',

@@ -41,7 +41,7 @@ describe('bucketGetACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'private',
             },
             url: '/?acl',
@@ -76,7 +76,7 @@ describe('bucketGetACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'public-read-write',
             },
             url: '/?acl',
@@ -121,7 +121,7 @@ describe('bucketGetACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'public-read',
             },
             url: '/?acl',
@@ -161,7 +161,7 @@ describe('bucketGetACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'authenticated-read',
             },
             url: '/?acl',
@@ -201,7 +201,7 @@ describe('bucketGetACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'log-delivery-write',
             },
             url: '/?acl',
@@ -246,7 +246,7 @@ describe('bucketGetACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
                     'emailaddress="sampleaccount1@sampling.com",emailaddress="sampleaccount2@sampling.com"',
                 'x-amz-grant-read': `uri=${constants.logId}`,
@@ -335,7 +335,7 @@ describe('bucketGetACL API', () => {
                 bucketName,
                 namespace,
                 headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
+                    'host': `${bucketName}.s3.amazonaws.com`,
                     'x-amz-grant-full-control': `uri = ${uri}`,
                     'x-amz-grant-read': `uri = ${uri}`,
                     'x-amz-grant-write': `uri = ${uri}`,
@@ -375,7 +375,7 @@ describe('bucketGetACL API', () => {
             bucketName,
             namespace,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-write': `uri = ${allAuthedUsersId} `,
                 'x-amz-grant-write-acp': `uri = ${allAuthedUsersId} `,
                 'x-amz-grant-read': `uri = ${publicId} `,

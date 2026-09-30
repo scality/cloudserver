@@ -62,7 +62,7 @@ function testChunkedPutWithBadSignature(n, alterSignatureChunkId, cb) {
             method: 'PUT',
             headers: {
                 'content-length': N_DATA_CHUNKS * DATA_CHUNK_SIZE,
-                connection: 'keep-alive',
+                'connection': 'keep-alive',
             },
             alterSignatureChunkId,
         },

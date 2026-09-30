@@ -579,7 +579,7 @@ describe('Cross Origin Resource Sharing requests', () => {
                     'even if request matches CORS rule and other access-control headers are returned',
                 async () => {
                     const headers = {
-                        Origin: allowedOrigin,
+                        'Origin': allowedOrigin,
                         'Content-Type': 'testvalue',
                     };
                     const headersOmitted = ['access-control-allow-headers'];

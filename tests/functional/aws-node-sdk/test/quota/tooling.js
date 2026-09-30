@@ -25,7 +25,7 @@ const sendRequest = async (method, host, path, body = '', config = null, signing
         query,
         body,
         headers: {
-            Host: host, // Explicitly set Host: 127.0.0.1:8000
+            'Host': host, // Explicitly set Host: 127.0.0.1:8000
             'X-Amz-Date': signingDate.toISOString().replace(/[:\-]|\.\d{3}/g, ''),
             ...headers,
         },

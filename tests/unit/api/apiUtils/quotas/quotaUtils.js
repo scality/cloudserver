@@ -893,7 +893,7 @@ describe('processBytesToWrite', () => {
 
     const hotObject = {
         'content-length': 100,
-        dataStoreName: 'eu-west-1',
+        'dataStoreName': 'eu-west-1',
     };
     const coldObject = {
         ...hotObject,
@@ -912,9 +912,9 @@ describe('processBytesToWrite', () => {
     };
     const restoredObject = {
         ...restoringObject,
-        dataStoreName: 'eu-west-1',
+        'dataStoreName': 'eu-west-1',
         'x-amz-storage-class': 'glacier',
-        archive: {
+        'archive': {
             ...restoringObject.archive,
             restoreCompletedAt: new Date(Date.now() - 3600 * 1000),
             restoreWillExpireAt: new Date(Date.now() + 23 * 3600 * 1000),

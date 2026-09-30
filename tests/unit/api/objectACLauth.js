@@ -18,7 +18,7 @@ const bucket = new BucketInfo('niftyBucket', bucketOwnerCanonicalId, 'iAmTheOwne
 const objectOwnerCanonicalId = userAuthInfo.getCanonicalID();
 const object = {
     'owner-id': objectOwnerCanonicalId,
-    acl: {
+    'acl': {
         Canned: 'private',
         FULL_CONTROL: [],
         WRITE_ACP: [],
@@ -98,7 +98,7 @@ describe('object acl authorization for objectGet and objectHead', () => {
     it('should allow access to bucket owner when object owner is alt account if bucket-owner-read ACL', () => {
         const altAcctObj = {
             'owner-id': accountToVet,
-            acl: {
+            'acl': {
                 Canned: 'private',
                 FULL_CONTROL: [],
                 WRITE_ACP: [],
@@ -120,7 +120,7 @@ describe('object acl authorization for objectGet and objectHead', () => {
     it('should allow access to bucket owner when object owner is alt account if bucket-owner-full-control ACL', () => {
         const altAcctObj = {
             'owner-id': accountToVet,
-            acl: {
+            'acl': {
                 Canned: 'private',
                 FULL_CONTROL: [],
                 WRITE_ACP: [],
@@ -227,7 +227,7 @@ describe('object authorization for objectPutACL and objectGetACL', () => {
         () => {
             const altAcctObj = {
                 'owner-id': accountToVet,
-                acl: {
+                'acl': {
                     Canned: 'private',
                     FULL_CONTROL: [],
                     WRITE_ACP: [],

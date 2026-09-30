@@ -267,7 +267,7 @@ function mpuSetup(location, key, cb) {
         bucketName,
         namespace,
         objectKey: key,
-        headers: { host: `${bucketName}.s3.amazonaws.com`, 'x-amz-meta-scal-location-constraint': location },
+        headers: { 'host': `${bucketName}.s3.amazonaws.com`, 'x-amz-meta-scal-location-constraint': location },
         url: `/${key}?uploads`,
         parsedHost: 'localhost',
         actionImplicitDenies: false,
@@ -286,7 +286,7 @@ function putObject(putBackend, objectKey, cb) {
     const putParams = Object.assign(
         {
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-scal-location-constraint': putBackend,
             },
             url: '/',
@@ -350,7 +350,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             namespace,
             objectKey,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-scal-location-constraint': `${awsLocation}`,
             },
             url: `/${objectKey}?uploads`,
@@ -373,7 +373,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             namespace,
             objectKey,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-scal-location-constraint': `${awsLocationMismatch}`,
             },
             url: `/${objectKey}?uploads`,
@@ -396,7 +396,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             namespace,
             objectKey,
             headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-scal-location-constraint': `${awsLocation}`,
                 'x-amz-tagging': tagSet,
             },
@@ -617,7 +617,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                     namespace,
                     objectKey,
                     headers: {
-                        host: `${bucketName}.s3.amazonaws.com`,
+                        'host': `${bucketName}.s3.amazonaws.com`,
                         'x-amz-meta-scal-location-constraint': awsLocation,
                     },
                     url: `/${objectKey}?uploads`,

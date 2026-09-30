@@ -23,15 +23,15 @@ const baseMd = {
     'x-amz-server-side-encryption-aws-kms-key-id': '',
     'x-amz-server-side-encryption-customer-algorithm': '',
     'x-amz-website-redirect-location': '',
-    acl: {
+    'acl': {
         Canned: 'private',
         FULL_CONTROL: [],
         WRITE_ACP: [],
         READ: [],
         READ_ACP: [],
     },
-    key: 'objectName',
-    location: [
+    'key': 'objectName',
+    'location': [
         {
             key: 1,
             size: 11,
@@ -40,9 +40,9 @@ const baseMd = {
             dataStoreETag: '1:be747eb4b75517bf6b3cf7c5fbb62f3a',
         },
     ],
-    isDeleteMarker: false,
-    tags: {},
-    replicationInfo: {
+    'isDeleteMarker': false,
+    'tags': {},
+    'replicationInfo': {
         status: '',
         backends: [],
         content: [],
@@ -53,8 +53,8 @@ const baseMd = {
         dataStoreVersionId: '',
         isNFS: null,
     },
-    dataStoreName: 'mem',
-    originOp: 's3:ObjectCreated:Put',
+    'dataStoreName': 'mem',
+    'originOp': 's3:ObjectCreated:Put',
     'last-modified': '2022-05-10T08:31:51.878Z',
     'md-model-version': 5,
     'x-amz-meta-test': 'some metadata',

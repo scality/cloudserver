@@ -33,7 +33,7 @@ function _getObjectReplicationInfo(s3config, replicationConfig, key, objectMD) {
 
 const TEST_CONFIG = {
     locationConstraints: {
-        awsbackend: {
+        'awsbackend': {
             type: 'aws_s3',
             objectId: 'awsbackend',
             legacyAwsBehavior: true,
@@ -44,7 +44,7 @@ const TEST_CONFIG = {
                 credentialsProfile: 'default',
             },
         },
-        azurebackend: {
+        'azurebackend': {
             type: 'azure',
             objectId: 'azurebackend',
             legacyAwsBehavior: true,

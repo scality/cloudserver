@@ -136,9 +136,9 @@ const constants = {
     // declare here all existing service accounts and their properties
     // (if any, otherwise an empty object)
     serviceAccountProperties: {
-        replication: {},
-        lifecycle: {},
-        gc: {},
+        'replication': {},
+        'lifecycle': {},
+        'gc': {},
         'md-ingestion': {
             canReplicate: true,
         },

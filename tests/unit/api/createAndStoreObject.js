@@ -255,7 +255,7 @@ describe('createAndStoreObject', () => {
             const archivedObjMD = {
                 'content-md5': 'abc123',
                 'content-length': 100,
-                archive: {
+                'archive': {
                     archiveInfo: { archiveID: 'archive-123' },
                 },
             };
@@ -298,8 +298,8 @@ describe('createAndStoreObject', () => {
             const archivedObjMD = {
                 'content-md5': 'abc123',
                 'content-length': 100,
-                versionId: 'v1',
-                archive: {
+                'versionId': 'v1',
+                'archive': {
                     archiveInfo: { archiveID: 'archive-123' },
                 },
             };
@@ -343,7 +343,7 @@ describe('createAndStoreObject', () => {
             const archivedObjMD = {
                 'content-md5': 'abc123',
                 'content-length': 100,
-                archive: {
+                'archive': {
                     archiveInfo: { archiveID: 'archive-123' },
                 },
             };
@@ -387,7 +387,7 @@ describe('createAndStoreObject', () => {
             const archivedObjMD = {
                 'content-md5': 'abc123',
                 'content-length': 100,
-                archive: {
+                'archive': {
                     restoreRequestedAt: new Date().toISOString(),
                 },
             };
@@ -430,15 +430,15 @@ describe('createAndStoreObject', () => {
         it('should restore object with x-scal-s3-version-id header', async () => {
             const now = Date.now();
             const archivedObjMD = {
-                key: objectKey,
-                versionId: 'v123',
+                'key': objectKey,
+                'versionId': 'v123',
                 'content-md5': 'original-hash',
                 'content-length': 100,
                 'x-amz-storage-class': 'cold-location',
-                dataStoreName: 'cold-location',
+                'dataStoreName': 'cold-location',
                 'x-amz-meta-custom': 'preserved-value',
-                tags: { tagkey: 'tagvalue' },
-                archive: {
+                'tags': { tagkey: 'tagvalue' },
+                'archive': {
                     archiveInfo: { archiveID: 'archive-123' },
                     restoreRequestedAt: new Date(now).toISOString(),
                     restoreRequestedDays: 7,
@@ -488,9 +488,9 @@ describe('createAndStoreObject', () => {
 
         it('should preserve original etag for MPU restoration with different part count', async () => {
             const archivedObjMD = {
-                versionId: 'v123',
+                'versionId': 'v123',
                 'content-md5': 'original-abc123-5', // Original had 5 parts
-                archive: {
+                'archive': {
                     archiveInfo: { archiveID: 'archive-123' },
                     restoreRequestedAt: new Date().toISOString(),
                     restoreRequestedDays: 7,
@@ -687,10 +687,10 @@ describe('createAndStoreObject', () => {
 
         it('should not preserve x-amz-meta-scal-s3-restore-attempt metadata', async () => {
             const archivedObjMD = {
-                versionId: 'v123',
+                'versionId': 'v123',
                 'x-amz-meta-custom': 'keep-this',
                 'x-amz-meta-scal-s3-restore-attempt': '3',
-                archive: {
+                'archive': {
                     archiveInfo: { archiveID: 'archive-123' },
                     restoreRequestedAt: new Date().toISOString(),
                     restoreRequestedDays: 7,
@@ -739,7 +739,7 @@ describe('createAndStoreObject', () => {
     describe('MPU scenarios', () => {
         it('should set oldReplayId when overwriting MPU object', async () => {
             const mpuObjMD = {
-                uploadId: 'mpu-upload-123',
+                'uploadId': 'mpu-upload-123',
                 'content-md5': 'abc123',
             };
 

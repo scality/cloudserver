@@ -209,7 +209,7 @@ function checkContents(contents, expectedKeyVersions) {
                 {
                     method: 'GET',
                     bucket: testBucket,
-                    queryObj: { 'list-type': 'current', prefix: 'unknown' },
+                    queryObj: { 'list-type': 'current', 'prefix': 'unknown' },
                     authCredentials: credentials,
                 },
                 (err, response) => {
@@ -496,7 +496,7 @@ function checkContents(contents, expectedKeyVersions) {
                 {
                     method: 'GET',
                     bucket: testBucket,
-                    queryObj: { 'list-type': 'current', 'before-date': date, 'max-keys': '1', marker: 'oldkey0' },
+                    queryObj: { 'list-type': 'current', 'before-date': date, 'max-keys': '1', 'marker': 'oldkey0' },
                     authCredentials: credentials,
                 },
                 (err, response) => {
@@ -528,7 +528,7 @@ function checkContents(contents, expectedKeyVersions) {
                 {
                     method: 'GET',
                     bucket: testBucket,
-                    queryObj: { 'list-type': 'current', 'before-date': date, 'max-keys': '1', marker: 'oldkey1' },
+                    queryObj: { 'list-type': 'current', 'before-date': date, 'max-keys': '1', 'marker': 'oldkey1' },
                     authCredentials: credentials,
                 },
                 (err, response) => {
@@ -696,7 +696,7 @@ describe('listLifecycleCurrents with bucket versioning enabled and maxKeys', () 
                 queryObj: {
                     'list-type': 'current',
                     'max-keys': '1',
-                    marker: 'key0',
+                    'marker': 'key0',
                 },
                 authCredentials: credentials,
             },
@@ -729,7 +729,7 @@ describe('listLifecycleCurrents with bucket versioning enabled and maxKeys', () 
                 queryObj: {
                     'list-type': 'current',
                     'max-keys': '1',
-                    marker: 'key1',
+                    'marker': 'key1',
                 },
                 authCredentials: credentials,
             },
@@ -905,7 +905,7 @@ describe('listLifecycleCurrents with bucket versioning enabled and delete object
                 queryObj: {
                     'list-type': 'current',
                     'max-keys': '1',
-                    marker: keyName0,
+                    'marker': keyName0,
                 },
                 authCredentials: credentials,
             },

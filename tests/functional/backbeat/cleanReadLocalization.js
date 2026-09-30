@@ -43,8 +43,8 @@ function buildMetadataBody(versionId, dataStoreName) {
         'owner-display-name': 'test',
         versionId,
         dataStoreName,
-        location: null,
-        replicationInfo: {
+        'location': null,
+        'replicationInfo': {
             status: 'REPLICA',
             isReplica: true,
             backends: [],
