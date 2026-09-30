@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const assert = require('assert');
+const { promisify } = require('util');
 const async = require('async');
 const { parseString } = require('xml2js');
 const { errors } = require('@scality/arsenal');
@@ -18,6 +19,9 @@ const objectPut = require('../../../lib/api/objectPut');
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
+
+const bucketPutAsync = promisify(bucketPut);
+const bucketDeleteAsync = promisify(bucketDelete);
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -169,19 +173,19 @@ describe('bucketDelete API', () => {
         });
     });
 
-    it('should count the non-localized versions when checking the bucket is empty', done => {
+    it('should count the non-localized versions when checking the bucket is empty', async () => {
         const listObject = sinon.spy(metadata, 'listObject');
-        bucketPut(authInfo, testRequest, log, () => {
-            bucketDelete(authInfo, testRequest, log, () => {
-                const emptinessCheck = listObject
-                    .getCalls()
-                    .find(call => call.args[0] === bucketName && call.args[1].listingType === 'DelimiterVersions');
-                listObject.restore();
-                assert(emptinessCheck, 'the bucket versions should have been listed');
-                assert.strictEqual(emptinessCheck.args[1].hideNonLocalizedVersions, false);
-                done();
-            });
-        });
+        try {
+            await bucketPutAsync(authInfo, testRequest, log);
+            await bucketDeleteAsync(authInfo, testRequest, log);
+            const emptinessCheck = listObject
+                .getCalls()
+                .find(call => call.args[0] === bucketName && call.args[1].listingType === 'DelimiterVersions');
+            assert(emptinessCheck, 'the bucket versions should have been listed');
+            assert.strictEqual(emptinessCheck.args[1].hideNonLocalizedVersions, false);
+        } finally {
+            listObject.restore();
+        }
     });
 
     it('should delete a bucket even if the bucket has ongoing mpu', done =>
