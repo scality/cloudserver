@@ -262,6 +262,14 @@ const constants = {
     crrCascadeBlockedLocationTypes: ['location-scality-ring-s3-v1', 'location-scality-artesca-s3-v1'],
     // Supported attributes for the GetObjectAttributes 'x-amz-optional-attributes' header.
     supportedGetObjectAttributes: new Set(['StorageClass', 'ObjectSize', 'ObjectParts', 'Checksum', 'ETag']),
+    // Error names returned in CRR conflict responses of backbeat routes. They must
+    // match the exception names of @scality/cloudserverclient, which is kept out of
+    // runtime dependencies.
+    crrConflictErrors: {
+        VersionIdCollision: 'VersionIdCollisionException',
+        StaleMicroVersionId: 'StaleMicroVersionIdException',
+        MicroVersionIdAlreadyStored: 'MicroVersionIdAlreadyStoredException',
+    },
 };
 
 module.exports = constants;
