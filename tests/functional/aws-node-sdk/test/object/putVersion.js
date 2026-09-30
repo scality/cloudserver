@@ -1159,8 +1159,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                                 // make sure data related metadatas ar not the same before and after
                                 assert.notStrictEqual(objMD['x-amz-server-side-encryption'], 'aws:kms');
                                 assert.notStrictEqual(objMD['content-length'], 99);
-                                assert.notStrictEqual(objMD['content-encoding'], 'testencoding');
-                                assert.notStrictEqual(objMD['content-type'], 'testtype');
+                                assert.strictEqual(objMD['content-encoding'], 'testencoding');
+                                assert.strictEqual(objMD['content-type'], 'testtype');
                                 // make sure we keep the same etag and add the new restored
                                 // data's etag inside x-amz-restore
                                 assert.strictEqual(objMD['content-md5'], 'testmd5');
