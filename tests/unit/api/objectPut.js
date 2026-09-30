@@ -409,6 +409,74 @@ describe('objectPut API', () => {
         );
     });
 
+    it('should ignore ACL headers when restoring an object', done => {
+        const putRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { 'x-amz-acl': 'public-read' },
+                url: `/${bucketName}/${objectName}`,
+            },
+            postBody,
+        );
+        const archiveRestoreRequested = {
+            archiveInfo: { foo: 0, bar: 'stuff' },
+            restoreRequestedAt: new Date().toString(),
+            restoreRequestedDays: 5,
+        };
+        let versionId;
+        let originalAcl;
+
+        async.series(
+            [
+                next => bucketPut(authInfo, testPutBucketRequestLock, log, next),
+                next =>
+                    objectPut(authInfo, putRequest, undefined, log, (err, headers) => {
+                        versionId = headers?.['x-amz-version-id'];
+                        next(err);
+                    }),
+                next =>
+                    metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                        originalAcl = md?.acl;
+                        next(err);
+                    }),
+                next => fakeMetadataArchive(bucketName, objectName, versionId, archiveRestoreRequested, next),
+                next => {
+                    const restoreRequest = new DummyRequest(
+                        {
+                            bucketName,
+                            namespace,
+                            objectKey: objectName,
+                            headers: {
+                                host: `${bucketName}.s3.amazonaws.com`,
+                                'x-scal-s3-version-id': versionId,
+                                'x-amz-acl': 'public-read-write',
+                                'x-amz-grant-full-control': 'uri=http://acs.amazonaws.com/groups/global/AllUsers',
+                            },
+                            url: '/',
+                        },
+                        postBody,
+                    );
+                    objectPut(authInfo, restoreRequest, undefined, log, (err, headers) => {
+                        assert.ifError(err);
+                        assert.strictEqual(headers['x-amz-version-id'], versionId);
+                        next();
+                    });
+                },
+                next =>
+                    metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                        assert.ifError(err);
+                        assert(md.archive.restoreCompletedAt);
+                        assert.strictEqual(originalAcl.Canned, 'public-read');
+                        assert.deepStrictEqual(md.acl, originalAcl);
+                        next();
+                    }),
+            ],
+            done,
+        );
+    });
+
     it('should successfully put an object with legal hold ON', done => {
         const request = new DummyRequest(
             {

@@ -1142,6 +1142,47 @@ describe('versioning helpers', () => {
                 },
             },
             {
+                description: 'Should drop ACL headers',
+                objMD: {
+                    versionId: '2345678',
+                    'creation-time': now,
+                    'last-modified': now,
+                    originOp: 's3:PutObject',
+                    'x-amz-storage-class': 'cold-location',
+                    archive: {
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        archiveInfo,
+                    },
+                },
+                metadataStoreParams: {
+                    headers: {
+                        host: 'localhost',
+                        'x-amz-acl': 'public-read-write',
+                        'x-amz-grant-full-control': 'uri=http://acs.amazonaws.com/groups/global/AllUsers',
+                        'x-amz-grant-read': 'uri=http://acs.amazonaws.com/groups/global/AllUsers',
+                        'x-amz-grant-read-acp': 'uri=http://acs.amazonaws.com/groups/global/AllUsers',
+                        'x-amz-grant-write-acp': 'uri=http://acs.amazonaws.com/groups/global/AllUsers',
+                    },
+                },
+                expectedRes: {
+                    headers: { host: 'localhost' },
+                    creationTime: now,
+                    lastModifiedDate: now,
+                    updateMicroVersionId: true,
+                    originOp: 's3:ObjectRestore:Completed',
+                    taggingCopy: undefined,
+                    amzStorageClass: 'cold-location',
+                    archive: {
+                        archiveInfo,
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        restoreCompletedAt: new Date(now),
+                        restoreWillExpireAt: new Date(now + days * scaledMsPerDay),
+                    },
+                },
+            },
+            {
                 description: 'Should keep ACLs',
                 objMD: {
                     versionId: '2345678',
