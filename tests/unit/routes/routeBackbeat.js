@@ -20,6 +20,8 @@ const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 const objectPut = require('../../../lib/api/objectPut');
 const { objectDelete } = require('../../../lib/api/objectDelete');
 const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');
+const cloudserverClient = require('@scality/cloudserverclient');
+const { crrConflictErrors } = require('../../../constants');
 
 const log = new DummyRequestLogger();
 
@@ -1652,5 +1654,17 @@ describe('routeBackbeat index add payload validation', () => {
         const err = JSON.parse(response.end.getCall(0).args[0]);
         assert.strictEqual(err.code, 'BadRequest');
         assert.strictEqual(metadata.putBucketIndexes.called, false);
+    });
+});
+
+describe('routeBackbeat CRR conflict error names', () => {
+    [
+        ['VersionIdCollision', 'VersionIdCollisionException'],
+        ['StaleMicroVersionId', 'StaleMicroVersionIdException'],
+        ['MicroVersionIdAlreadyStored', 'MicroVersionIdAlreadyStoredException'],
+    ].forEach(([key, exception]) => {
+        it(`should match cloudserverclient ${exception} name`, () => {
+            assert.strictEqual(crrConflictErrors[key], cloudserverClient[exception].name);
+        });
     });
 });
