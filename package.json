@@ -69,6 +69,7 @@
     },
     "devDependencies": {
         "@eslint/compat": "^1.2.2",
+        "@scality/cloudserverclient": "1.0.12",
         "@scality/eslint-config-scality": "scality/Guidelines#8.3.1",
         "eslint": "^9.14.0",
         "eslint-plugin-import": "^2.31.0",
