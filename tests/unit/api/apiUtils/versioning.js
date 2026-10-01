@@ -705,8 +705,12 @@ describe('versioning helpers', () => {
             contentDisposition: undefined,
             contentEncoding: undefined,
             expires: undefined,
+            headers: { 'x-amz-website-redirect-location': undefined },
             retentionMode: undefined,
             retentionDate: undefined,
+            legalHold: undefined,
+            acl: undefined,
+            replicationInfo: undefined,
         };
         let clock;
 
@@ -970,7 +974,6 @@ describe('versioning helpers', () => {
                 },
                 metadataStoreParams: {
                     contentType: 'binary/octet-stream',
-                    headers: {},
                 },
                 expectedRes: {
                     creationTime: now,
@@ -1103,7 +1106,7 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                description: 'Should drop object lock headers',
+                description: 'Should drop the restore request headers',
                 objMD: {
                     versionId: '2345678',
                     'creation-time': now,
@@ -1119,13 +1122,18 @@ describe('versioning helpers', () => {
                 metadataStoreParams: {
                     headers: {
                         host: 'localhost',
+                        'x-amz-website-redirect-location': '/elsewhere',
                         'x-amz-object-lock-mode': 'GOVERNANCE',
                         'x-amz-object-lock-retain-until-date': new Date(now).toISOString(),
                         'x-amz-object-lock-legal-hold': 'ON',
+                        'x-amz-acl': 'public-read-write',
+                        'x-amz-grant-full-control': 'uri=http://acs.amazonaws.com/groups/global/AllUsers',
+                        'x-amz-grant-read': 'uri=http://acs.amazonaws.com/groups/global/AllUsers',
+                        'x-amz-grant-read-acp': 'uri=http://acs.amazonaws.com/groups/global/AllUsers',
+                        'x-amz-grant-write-acp': 'uri=http://acs.amazonaws.com/groups/global/AllUsers',
                     },
                 },
                 expectedRes: {
-                    headers: { host: 'localhost' },
                     creationTime: now,
                     lastModifiedDate: now,
                     updateMicroVersionId: true,
@@ -1142,7 +1150,7 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                description: 'Should drop ACL headers',
+                description: 'Should not take legal hold from the restore request',
                 objMD: {
                     versionId: '2345678',
                     'creation-time': now,
@@ -1156,17 +1164,51 @@ describe('versioning helpers', () => {
                     },
                 },
                 metadataStoreParams: {
-                    headers: {
-                        host: 'localhost',
-                        'x-amz-acl': 'public-read-write',
-                        'x-amz-grant-full-control': 'uri=http://acs.amazonaws.com/groups/global/AllUsers',
-                        'x-amz-grant-read': 'uri=http://acs.amazonaws.com/groups/global/AllUsers',
-                        'x-amz-grant-read-acp': 'uri=http://acs.amazonaws.com/groups/global/AllUsers',
-                        'x-amz-grant-write-acp': 'uri=http://acs.amazonaws.com/groups/global/AllUsers',
+                    legalHold: true,
+                },
+                expectedRes: {
+                    creationTime: now,
+                    lastModifiedDate: now,
+                    updateMicroVersionId: true,
+                    originOp: 's3:ObjectRestore:Completed',
+                    taggingCopy: undefined,
+                    amzStorageClass: 'cold-location',
+                    archive: {
+                        archiveInfo,
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        restoreCompletedAt: new Date(now),
+                        restoreWillExpireAt: new Date(now + days * scaledMsPerDay),
+                    },
+                },
+            },
+            {
+                description: 'Should not take replication info from the bucket',
+                objMD: {
+                    versionId: '2345678',
+                    'creation-time': now,
+                    'last-modified': now,
+                    originOp: 's3:PutObject',
+                    'x-amz-storage-class': 'cold-location',
+                    archive: {
+                        restoreRequestedDays: days,
+                        restoreRequestedAt: now,
+                        archiveInfo,
+                    },
+                },
+                metadataStoreParams: {
+                    replicationInfo: {
+                        status: 'PENDING',
+                        backends: [{ site: 'azure-blob', status: 'PENDING', dataStoreVersionId: '' }],
+                        content: ['DATA', 'METADATA'],
+                        destination: 'arn:aws:s3:::replicate-cold',
+                        storageClass: 'azure-blob',
+                        role: 'arn:aws:iam::root:role/s3-replication-role',
+                        storageType: 'azure',
+                        dataStoreVersionId: '',
                     },
                 },
                 expectedRes: {
-                    headers: { host: 'localhost' },
                     creationTime: now,
                     lastModifiedDate: now,
                     updateMicroVersionId: true,
@@ -1273,9 +1315,12 @@ describe('versioning helpers', () => {
                 if (testCase.metadataStoreParams) {
                     Object.assign(metadataStoreParams, testCase.metadataStoreParams);
                 }
+                const requestHeaders = { ...testCase.metadataStoreParams?.headers };
                 const options = overwritingVersioning(testCase.objMD, metadataStoreParams);
                 assert.deepStrictEqual(options.versionId, testCase.objMD.versionId);
                 assert.deepStrictEqual(metadataStoreParams, { ...clearedSystemMD, ...testCase.expectedRes });
+                // request headers are shared with the request, they must not be modified
+                assert.deepStrictEqual({ ...testCase.metadataStoreParams?.headers }, requestHeaders);
 
                 if (testCase.objMD.isNull) {
                     assert.deepStrictEqual(options.extraMD.nullVersionId, 'vnull');
