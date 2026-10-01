@@ -1019,8 +1019,8 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 // make sure data related metadatas ar not the same before and after
                 assert.notStrictEqual(finalObjMD['x-amz-server-side-encryption'], 'aws:kms');
                 assert.notStrictEqual(finalObjMD['content-length'], 99);
-                assert.notStrictEqual(finalObjMD['content-encoding'], 'testencoding');
-                assert.notStrictEqual(finalObjMD['content-type'], 'testtype');
+                assert.strictEqual(finalObjMD['content-encoding'], 'testencoding');
+                assert.strictEqual(finalObjMD['content-type'], 'testtype');
                 // make sure we keep the same etag and add the new restored
                 // data's etag inside x-amz-restore
                 assert.strictEqual(finalObjMD['content-md5'], 'testmd5');
