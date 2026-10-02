@@ -6591,9 +6591,9 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#8.4.26":
-  version "8.4.26"
-  resolved "git+https://github.com/scality/Arsenal#7d29c31f1c099ee6e0ad3b60280c81cf5cc1c29e"
+"arsenal@git+https://github.com/scality/Arsenal#improvement/ARSN-652-leak-kms":
+  version "8.4.27"
+  resolved "git+https://github.com/scality/Arsenal#fe7a4476de14da3da5a57f65c847719a5c0e2078"
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"
