@@ -15,7 +15,6 @@ services:
       - REDIS_HOST=0.0.0.0
       - REDIS_PORT=6379
       - REPORT_TOKEN=report-token-1
-      - REMOTE_MANAGEMENT_DISABLE=1
       - HEALTHCHECKS_ALLOWFROM=0.0.0.0/0
       - DATA_HOST=0.0.0.0
       - METADATA_HOST=0.0.0.0

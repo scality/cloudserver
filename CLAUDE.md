@@ -70,7 +70,6 @@ yarn lint_md                       # Markdown linting
 - `mdserver.js` → Metadata server (port 9990)
 - `dataserver.js` → Data storage server (port 9991)
 - `pfsserver.js` → Passthrough filesystem server (port 9992)
-- `managementAgent.js` → WebSocket management agent (port 8010)
 
 ### Core Components
 
@@ -86,7 +85,6 @@ lib/
 ├── metadata/          # Metadata backend abstraction
 ├── routes/            # Special routes (Backbeat, metadata service, Veeam)
 ├── kms/               # Key management (file, memory, AWS, KMIP)
-├── management/        # Management API and configuration
 └── utilities/         # Logging, health checks, XML parsing
 ```
 

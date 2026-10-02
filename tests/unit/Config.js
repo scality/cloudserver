@@ -648,11 +648,6 @@ describe('Config', () => {
         });
     });
 
-    it('should have a default overlay version', () => {
-        const { config } = require('../../lib/Config');
-        assert.strictEqual(config.overlayVersion, 0);
-    });
-
     describe('parseSupportedLifecycleRules', () => {
         it('should throw when an empty array is provided', () => {
             assert.throws(() => parseSupportedLifecycleRules([]));
