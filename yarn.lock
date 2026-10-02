@@ -488,9 +488,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#7.10.67":
-  version "7.10.67"
-  resolved "git+https://github.com/scality/arsenal#4d12025b5dd95e67a3bb9e7f9e05058456b561d7"
+"arsenal@git+https://github.com/scality/arsenal#improvement/ARSN-652-leak-kms-7.10":
+  version "7.10.68"
+  resolved "git+https://github.com/scality/arsenal#931e3f1ed0ad5f09d2b770ee19895333a2662445"
   dependencies:
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
