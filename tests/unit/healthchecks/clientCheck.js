@@ -49,9 +49,9 @@ describe('clientCheck - failure detection logic', () => {
             assert.deepStrictEqual(result, {
                 'sproxyd-loc1': { code: 200, message: 'OK' },
                 'sproxyd-loc2': { code: 200, message: 'OK' },
-                metadata: { code: 200, message: 'OK' },
-                vault: { code: 200, message: 'OK' },
-                kms: { code: 200, message: 'OK' },
+                'metadata': { code: 200, message: 'OK' },
+                'vault': { code: 200, message: 'OK' },
+                'kms': { code: 200, message: 'OK' },
             });
             done();
         });
@@ -78,9 +78,9 @@ describe('clientCheck - failure detection logic', () => {
             assert.deepStrictEqual(result, {
                 'sproxyd-loc1': { error: errors.InternalError, code: 500 },
                 'sproxyd-loc2': { error: errors.InternalError, code: 500 },
-                metadata: { code: 200, message: 'OK' },
-                vault: { code: 200, message: 'OK' },
-                kms: { code: 200, message: 'OK' },
+                'metadata': { code: 200, message: 'OK' },
+                'vault': { code: 200, message: 'OK' },
+                'kms': { code: 200, message: 'OK' },
             });
             done();
         });
@@ -106,9 +106,9 @@ describe('clientCheck - failure detection logic', () => {
             assert.deepStrictEqual(result, {
                 'sproxyd-loc1': { error: errors.InternalError, code: 500 },
                 'sproxyd-loc2': { code: 200, message: 'OK' },
-                metadata: { code: 200, message: 'OK' },
-                vault: { code: 200, message: 'OK' },
-                kms: { code: 200, message: 'OK' },
+                'metadata': { code: 200, message: 'OK' },
+                'vault': { code: 200, message: 'OK' },
+                'kms': { code: 200, message: 'OK' },
             });
             done();
         });
@@ -135,9 +135,9 @@ describe('clientCheck - failure detection logic', () => {
             assert.deepStrictEqual(result, {
                 'sproxyd-loc1': { error: errors.InternalError, code: 500 },
                 'sproxyd-loc2': { error: errors.InternalError, code: 500 },
-                metadata: { error: errors.InternalError, code: 500 },
-                vault: { code: 200, message: 'OK' },
-                kms: { code: 200, message: 'OK' },
+                'metadata': { error: errors.InternalError, code: 500 },
+                'vault': { code: 200, message: 'OK' },
+                'kms': { code: 200, message: 'OK' },
             });
             done();
         });
@@ -182,7 +182,7 @@ describe('clientCheck - failure detection logic', () => {
                 assert.ifError(err);
                 assert.deepStrictEqual(result, {
                     's3-backend': { error: errors.InternalError, code: 500, external: true },
-                    metadata: { code: 200, message: 'OK' },
+                    'metadata': { code: 200, message: 'OK' },
                 });
                 done();
             });
@@ -203,7 +203,7 @@ describe('clientCheck - failure detection logic', () => {
                 assert.strictEqual(err.InternalError, true);
                 assert.deepStrictEqual(result, {
                     's3-backend': { error: errors.InternalError, code: 500, external: true },
-                    metadata: { code: 200, message: 'OK' },
+                    'metadata': { code: 200, message: 'OK' },
                 });
                 done();
             });
@@ -226,7 +226,7 @@ describe('clientCheck - failure detection logic', () => {
                 assert.deepStrictEqual(result, {
                     'sproxyd-loc1': { code: 200, message: 'OK' },
                     's3-backend': { error: errors.InternalError, code: 500, external: true },
-                    metadata: { code: 200, message: 'OK' },
+                    'metadata': { code: 200, message: 'OK' },
                 });
                 done();
             });
