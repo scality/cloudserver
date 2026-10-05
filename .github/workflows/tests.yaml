@@ -590,7 +590,13 @@ jobs:
       run: |
         sudo apt-get update && sudo apt-get install -y --fix-missing default-jdk maven
     - name: Setup CI services
-      run: docker compose --profile ceph up -d
+      run: |-
+        # The ceph image auto-detects its mon IP from the NIC with the most received bytes. On Azure runners
+        # that can be the accelerated networking interface, which has no IPv4 address, so the mon never starts.
+        # Pin the mon to the source IP of the default route instead.
+        export NETWORK_AUTO_DETECT=0
+        export MON_IP=$(ip -j -4 route get 1.1.1.1 | jq -r '.[0].prefsrc')
+        docker compose --profile ceph up -d
       working-directory: .github/docker
       env: 
         S3METADATA: mongodb
