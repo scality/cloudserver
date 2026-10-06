@@ -634,8 +634,8 @@ describe('multiObjectDelete per-key authorization results', () => {
                 const request = makeDeleteRequest(['deny/d', 'allow/d']);
                 multiObjectDelete.multiObjectDelete(userAuthInfo, request, log, (err, xml) => {
                     assert.strictEqual(err, null);
-                    assert.strictEqual(xml.includes('<Error><Key>deny/d</Key><Code>AccessDenied</Code>'), true);
-                    assert.strictEqual(xml.includes('<Deleted><Key>allow/d</Key></Deleted>'), true);
+                    assert.match(xml, /<Error><Key>deny\/d<\/Key><Code>AccessDenied<\/Code>/);
+                    assert.match(xml, /<Deleted><Key>allow\/d<\/Key><\/Deleted>/);
                     assert.strictEqual(metadata.keyMaps.get(bucketName).has('deny/d'), true);
                     assert.strictEqual(metadata.keyMaps.get(bucketName).has('allow/d'), false);
                     done();
@@ -650,8 +650,8 @@ describe('multiObjectDelete per-key authorization results', () => {
                 const request = makeDeleteRequest(['allow/e', 'deny/e']);
                 multiObjectDelete.multiObjectDelete(userAuthInfo, request, log, (err, xml) => {
                     assert.strictEqual(err, null);
-                    assert.strictEqual(xml.includes('<Deleted><Key>allow/e</Key></Deleted>'), true);
-                    assert.strictEqual(xml.includes('<Error><Key>deny/e</Key><Code>AccessDenied</Code>'), true);
+                    assert.match(xml, /<Deleted><Key>allow\/e<\/Key><\/Deleted>/);
+                    assert.match(xml, /<Error><Key>deny\/e<\/Key><Code>AccessDenied<\/Code>/);
                     assert.strictEqual(metadata.keyMaps.get(bucketName).has('allow/e'), false);
                     assert.strictEqual(metadata.keyMaps.get(bucketName).has('deny/e'), true);
                     done();
