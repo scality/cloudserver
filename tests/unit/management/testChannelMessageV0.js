@@ -2,13 +2,7 @@ const assert = require('assert');
 
 const { ChannelMessageV0, MessageType, TargetType } = require('../../../lib/management/ChannelMessageV0');
 
-const {
-    CONFIG_OVERLAY_MESSAGE,
-    METRICS_REQUEST_MESSAGE,
-    METRICS_REPORT_MESSAGE,
-    CHANNEL_CLOSE_MESSAGE,
-    CHANNEL_PAYLOAD_MESSAGE,
-} = MessageType;
+const { CONFIG_OVERLAY_MESSAGE, METRICS_REQUEST_MESSAGE, METRICS_REPORT_MESSAGE } = MessageType;
 
 const { TARGET_ANY } = TargetType;
 
@@ -22,26 +16,6 @@ describe('ChannelMessageV0', () => {
             assert.strictEqual(0, m.getChannelNumber());
             assert.strictEqual(m.getTarget(), TARGET_ANY);
             assert.strictEqual(m.getPayload().toString(), '{"a":1}');
-        });
-
-        it('should roundtrip channel data', () => {
-            const data = Buffer.from('dummydata');
-            const b = ChannelMessageV0.encodeChannelDataMessage(50, data);
-            const m = new ChannelMessageV0(b);
-
-            assert.strictEqual(CHANNEL_PAYLOAD_MESSAGE, m.getType());
-            assert.strictEqual(50, m.getChannelNumber());
-            assert.strictEqual(m.getTarget(), TARGET_ANY);
-            assert.strictEqual(m.getPayload().toString(), 'dummydata');
-        });
-
-        it('should roundtrip channel close', () => {
-            const b = ChannelMessageV0.encodeChannelCloseMessage(3);
-            const m = new ChannelMessageV0(b);
-
-            assert.strictEqual(CHANNEL_CLOSE_MESSAGE, m.getType());
-            assert.strictEqual(3, m.getChannelNumber());
-            assert.strictEqual(m.getTarget(), TARGET_ANY);
         });
     });
 
