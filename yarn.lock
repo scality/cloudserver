@@ -1559,10 +1559,10 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
-"@scality/arsenal@8.6.0-preview.4", "@scality/arsenal@^8.6.0-0":
-  version "8.6.0-preview.4"
-  resolved "https://registry.yarnpkg.com/@scality/arsenal/-/arsenal-8.6.0-preview.4.tgz#44e412b1220caa51171b8bb26e815ab1463c77d9"
-  integrity sha512-PmOSuKhKAefNxFRw3fjHdNwZ6YIgj2+Nnj8sEDLRW4dfchCRnNL0aeML8wlvb/BADcTEwcC7bntwT/vaBsVuNA==
+"@scality/arsenal@8.6.0-preview.5", "@scality/arsenal@^8.6.0-0":
+  version "8.6.0-preview.5"
+  resolved "https://registry.yarnpkg.com/@scality/arsenal/-/arsenal-8.6.0-preview.5.tgz#936e699b5ca494f23ccc2399113a6ee071f0006a"
+  integrity sha512-YfqqI8D5dvUcYVBRcC39kBA5Ikz3L8wNq9yedBdrg5/skoICGTRuHZwKECeYRagl3XN7fZReoCeY4gSsXWfbKw==
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"
@@ -1646,14 +1646,14 @@
     httpagent "github:scality/httpagent#1.1.0"
     werelogs "github:scality/werelogs#8.2.2"
 
-"@scality/scubaclient@1.2.0":
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/@scality/scubaclient/-/scubaclient-1.2.0.tgz#d3bd0342d35a9b1049d3037d642fc2ab7a771f1c"
-  integrity sha512-8pGePyYJkl6A/8K/qeNJMBnGb2d6yA+E813rZbEBHjLRpySyR/KmThMpV2Gj917N8WC8dJ4sxn9D4yjq62gL+Q==
+"@scality/scubaclient@1.2.1":
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/@scality/scubaclient/-/scubaclient-1.2.1.tgz#f593c817fcc534db65453ab1d2261ebd7f2b4f83"
+  integrity sha512-rbo7+D7Upw9x4TyCY9WamF4f8QqQNgivOotVW79kvykxzZlKVYZaprrZgKUS0ut4hvBC03XP9HI0JegAuV25mg==
   dependencies:
     "@aws-crypto/sha256-js" "^5.2.0"
     "@smithy/signature-v4" "^5.3.7"
-    axios "~1.18.1"
+    axios "~1.20.0"
 
 "@scality/utapi@github:scality/utapi#8.4.0":
   version "8.4.0"
@@ -2505,23 +2505,13 @@ aws4@^1.13.2, aws4@^1.8.0:
   resolved "https://registry.yarnpkg.com/aws4/-/aws4-1.13.2.tgz#0aa167216965ac9474ccfa83892cfb6b3e1e52ef"
   integrity sha512-lHe62zvbTB5eEABUVi/AwVh0ZKY9rMMDhmm+eeyuuUQbQ3+J+fONVQOZyj+DdrvD4BY33uYniyRJ4UJIaSKAfw==
 
-axios@^1.12.2:
+axios@^1.12.2, axios@~1.20.0:
   version "1.20.0"
   resolved "https://registry.yarnpkg.com/axios/-/axios-1.20.0.tgz#515513445aa60e71d04b6521ca6210829ccb4786"
   integrity sha512-r8aOh8j9cGKpgQAqpzrUHnSIc6a59Y3Xf/cv8sy1DrHCkZHzQGEuoq1tARk6qSyDdtQGSDgpb9kFlruzPvrgwg==
   dependencies:
     follow-redirects "^1.16.0"
     form-data "^4.0.6"
-    https-proxy-agent "^5.0.1"
-    proxy-from-env "^2.1.0"
-
-axios@~1.18.1:
-  version "1.18.1"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-1.18.1.tgz#d63f9863bcd8938815c86f9e2abd380189d96dfe"
-  integrity sha512-3nTvFlvpn9Zu/RkHUqtc7/+al4UpRW5az71ap5zccp6e8RAYEzhMTecX8Dz1wWDYrPpUoB1HAQEGEAEvUr7S9g==
-  dependencies:
-    follow-redirects "^1.16.0"
-    form-data "^4.0.5"
     https-proxy-agent "^5.0.1"
     proxy-from-env "^2.1.0"
 
@@ -4158,7 +4148,7 @@ form-data@^2.5.6, form-data@~2.3.2:
     mime-types "^2.1.35"
     safe-buffer "^5.2.1"
 
-form-data@^4.0.5, form-data@^4.0.6:
+form-data@^4.0.6:
   version "4.0.6"
   resolved "https://registry.yarnpkg.com/form-data/-/form-data-4.0.6.tgz#28e864e1b786dbebb68db1f452f9635278665827"
   integrity sha512-vKatAh4SlVfgbv+YtmhiRjhEMJsYpsG1Y2rMQtR+SVSbytsSD1YGzDIcrAJmdFec88u/+VoGmxnl+80gL1tRCQ==
@@ -4576,6 +4566,7 @@ http2-wrapper@^1.0.0-beta.5.2:
 
 "httpagent@github:scality/httpagent#1.1.1", httpagent@scality/httpagent#1.1.1:
   version "1.1.1"
+  uid "7c6ef8be1cd89b56651f4a922ea5c92d7673ee2e"
   resolved "https://codeload.github.com/scality/httpagent/tar.gz/7c6ef8be1cd89b56651f4a922ea5c92d7673ee2e"
   dependencies:
     agentkeepalive "^4.6.0"
