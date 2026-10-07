@@ -1,15 +1,19 @@
 const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
+const sinon = require('sinon');
+const { errors } = require('arsenal');
 const { parseString } = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const completeMultipartUpload
     = require('../../../lib/api/completeMultipartUpload');
+const { data } = require('../../../lib/data/wrapper');
 const DummyRequest = require('../DummyRequest');
 const initiateMultipartUpload
     = require('../../../lib/api/initiateMultipartUpload');
+const kms = require('../../../lib/kms/wrapper');
 const objectPut = require('../../../lib/api/objectPut');
 const objectGet = require('../../../lib/api/objectGet');
 const objectPutPart = require('../../../lib/api/objectPutPart');
@@ -388,6 +392,47 @@ describe('objectGet API', () => {
                         done();
                     });
                 });
+        });
+    });
+
+    describe('with an encrypted object', () => {
+        const testPutEncryptedObjectRequest = () => new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                'x-amz-server-side-encryption': 'AES256',
+                'content-length': '12',
+            },
+            parsedContentLength: 12,
+            url: `/${bucketName}/${objectName}`,
+        }, postBody);
+
+        afterEach(() => {
+            sinon.restore();
+        });
+
+        it('should return KMS error before checking data', done => {
+            const kmsError = errors.InternalError
+                .customizeDescription('KMS key is not usable');
+            async.waterfall([
+                next => bucketPut(authInfo, testPutBucketRequest, log,
+                    err => next(err)),
+                next => objectPut(authInfo, testPutEncryptedObjectRequest(),
+                    undefined, log, err => next(err)),
+            ], err => {
+                assert.ifError(err);
+                const createDecipherBundleStub = sinon
+                    .stub(kms, 'createDecipherBundle')
+                    .callsFake((sse, offset, log, cb) => cb(kmsError));
+                const dataHeadSpy = sinon.spy(data, 'head');
+                objectGet(authInfo, testGetRequest, false, log, err => {
+                    assert.strictEqual(err, kmsError);
+                    assert(createDecipherBundleStub.calledOnce);
+                    assert(dataHeadSpy.notCalled);
+                    done();
+                });
+            });
         });
     });
 });
