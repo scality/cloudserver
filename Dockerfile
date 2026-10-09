@@ -1,4 +1,4 @@
-ARG NODE_VERSION=24.21.0-bookworm-slim
+ARG NODE_VERSION=24.21.0-trixie-slim
 
 FROM node:${NODE_VERSION} AS builder
 
