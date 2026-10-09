@@ -880,19 +880,24 @@ jobs:
       - name: Copy KMIP certs
         run: cp -r ./certs /tmp/ssl-kmip
         working-directory: .github/pykmip
-      - name: Merge config.json and kmip config
+      - name: Merge config.json, kmip config and the KMSs next to it
         run: |
           jq -s '
-            .[0] * .[1]
+            .[2].kms as $nonDefaultKms | (.[0] * .[1]) | .kms += $nonDefaultKms
           ' \
             configs/base.json \
             configs/kmipFromEnv.json \
+            configs/nonDefaultKmsEntries.json \
             > config.json
         working-directory: tests/functional/sse-kms-migration
       - name: Setup CI services
         run: docker compose up -d --quiet-pull redis pykmip cloudserver-sse-before-migration
         working-directory: .github/docker
       - name: Run file KMIP tests
+        env:
+          # Functional tests need the running config to know the KMSs next to the default one
+          # absolute path to override default root config
+          S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
         run: |-
           set -ex -o pipefail;
           # the data daemon binds after 8000 and nothing in startup waits for it
