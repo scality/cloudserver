@@ -152,10 +152,7 @@ describe('objectCopy with versioning', () => {
         });
     });
 
-    // TODO: S3C-9965
-    // Skipped because the policy is not checked correctly
-    // When source bucket policy is checked destination arn is used
-    it.skip('should set bucketOwnerId if requesting account differs from dest bucket owner', done => {
+    it('should set bucketOwnerId if requesting account differs from dest bucket owner', done => {
         const authInfo2 = makeAuthInfo('accessKey2');
         const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
         const testPutSrcPolicyRequest = new DummyRequest({
@@ -785,6 +782,98 @@ describe('objectCopy source size limit', () => {
         config.bypassMaxPutObjectSize = true;
         const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
         objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+});
+
+describe('objectCopy with a bucket policy scoped to key prefixes', () => {
+    const bucketName = 'prefixpolicybucket';
+    const userAuthInfo = makeAuthInfo(canonicalID, 'user');
+    const putPolicyRequest = new DummyRequest({
+        bucketName,
+        namespace,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        url: '/',
+        socket: {},
+        post: JSON.stringify({
+            Version: '2012-10-17',
+            Statement: [
+                {
+                    Effect: 'Allow',
+                    Principal: '*',
+                    Action: ['s3:GetObject', 's3:PutObject'],
+                    Resource: `arn:aws:s3:::${bucketName}/allowed/*`,
+                },
+                {
+                    Effect: 'Deny',
+                    Principal: '*',
+                    Action: 's3:GetObject',
+                    Resource: `arn:aws:s3:::${bucketName}/forbidden/*`,
+                },
+            ],
+        }),
+    });
+
+    // An IAM user without identity policy: Vault returns an implicit deny
+    // for both the source read and the destination write
+    function _createUserCopyRequest(destKey) {
+        const request = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: destKey,
+            headers: {},
+            url: `/${bucketName}/${destKey}`,
+            socket: {},
+        });
+        request.actionImplicitDenies = { objectGet: true, objectPut: true };
+        return request;
+    }
+
+    before(done => {
+        cleanup();
+        async.series(
+            [
+                callback => bucketPut(authInfo, _createBucketPutRequest(bucketName), log, callback),
+                callback => bucketPutPolicy(authInfo, putPolicyRequest, log, callback),
+                callback =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(bucketName, 'forbidden/myfile', objData[0]),
+                        undefined,
+                        log,
+                        callback,
+                    ),
+                callback =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(bucketName, 'allowed/myfile', objData[1]),
+                        undefined,
+                        log,
+                        callback,
+                    ),
+            ],
+            done,
+        );
+    });
+
+    after(() => {
+        cleanup();
+    });
+
+    it('should deny copying a source denied by the bucket policy to an allowed destination', done => {
+        const request = _createUserCopyRequest('allowed/myfile-copy');
+        objectCopy(userAuthInfo, request, bucketName, 'forbidden/myfile', undefined, log, err => {
+            assert(err, 'expected the copy to be denied');
+            assert.strictEqual(err.is.AccessDenied, true);
+            done();
+        });
+    });
+
+    it('should allow copying a source allowed by the bucket policy to an allowed destination', done => {
+        const request = _createUserCopyRequest('allowed/myfile-copy');
+        objectCopy(userAuthInfo, request, bucketName, 'allowed/myfile', undefined, log, err => {
             assert.ifError(err);
             done();
         });
