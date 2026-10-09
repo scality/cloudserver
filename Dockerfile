@@ -39,8 +39,6 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         jq \
         tini \
-        python3-redis \
-        python3-requests \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
