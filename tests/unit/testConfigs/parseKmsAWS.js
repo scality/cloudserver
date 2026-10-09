@@ -14,23 +14,23 @@ describe('parseKmsAWS Function', () => {
 
     it('should return an empty object if no kmsAWS config is provided', () => {
         const config = {};
-        const result = configInstance._parseKmsAWS(config);
+        const result = configInstance._parseKmsAWS(config.kmsAWS);
         assert.deepStrictEqual(result, {});
     });
 
     it('should throw an error if endpoint is not defined in kmsAWS', () => {
         const config = { kmsAWS: { providerName: 'tests', ak: 'ak', sk: 'sk' } };
-        assert.throws(() => configInstance._parseKmsAWS(config), 'endpoint must be defined');
+        assert.throws(() => configInstance._parseKmsAWS(config.kmsAWS), 'endpoint must be defined');
     });
 
     it('should throw an error if ak is not defined in kmsAWS', () => {
         const config = { kmsAWS: { providerName: 'tests', endpoint: 'https://example.com', sk: 'sk' } };
-        assert.throws(() => configInstance._parseKmsAWS(config), 'ak must be defined');
+        assert.throws(() => configInstance._parseKmsAWS(config.kmsAWS), 'ak must be defined');
     });
 
     it('should throw an error if sk is not defined in kmsAWS', () => {
         const config = { kmsAWS: { providerName: 'tests', endpoint: 'https://example.com', ak: 'ak' } };
-        assert.throws(() => configInstance._parseKmsAWS(config), 'sk must be defined');
+        assert.throws(() => configInstance._parseKmsAWS(config.kmsAWS), 'sk must be defined');
     });
 
     it('should return the expected kmsAWS object when valid config is provided', () => {
@@ -42,7 +42,7 @@ describe('parseKmsAWS Function', () => {
                 sk: 'secretKey',
             },
         };
-        const result = configInstance._parseKmsAWS(config);
+        const result = configInstance._parseKmsAWS(config.kmsAWS);
         assert.deepStrictEqual(result, {
             providerName: 'tests',
             endpoint: 'https://example.com',
@@ -61,7 +61,7 @@ describe('parseKmsAWS Function', () => {
                 region: 'us-west-2',
             },
         };
-        const result = configInstance._parseKmsAWS(config);
+        const result = configInstance._parseKmsAWS(config.kmsAWS);
         assert.deepStrictEqual(result, {
             providerName: 'tests',
             endpoint: 'https://example.com',
@@ -85,7 +85,7 @@ describe('parseKmsAWS Function', () => {
                 },
             },
         };
-        const result = configInstance._parseKmsAWS(config);
+        const result = configInstance._parseKmsAWS(config.kmsAWS);
         assert.deepStrictEqual(result, {
             providerName: 'tests',
             endpoint: 'https://example.com',
@@ -128,7 +128,7 @@ describe('parseKmsAWS TLS section', () => {
             },
         };
 
-        assert.throws(() => configInstance._parseKmsAWS(config));
+        assert.throws(() => configInstance._parseKmsAWS(config.kmsAWS));
     });
 
     it('should throw an error if tls.minVersion is not a string', () => {
@@ -144,7 +144,7 @@ describe('parseKmsAWS TLS section', () => {
             },
         };
 
-        assert.throws(() => configInstance._parseKmsAWS(config), {
+        assert.throws(() => configInstance._parseKmsAWS(config.kmsAWS), {
             message: 'bad config: KMS AWS TLS minVersion must be a string',
         });
     });
@@ -162,7 +162,7 @@ describe('parseKmsAWS TLS section', () => {
             },
         };
 
-        assert.throws(() => configInstance._parseKmsAWS(config), {
+        assert.throws(() => configInstance._parseKmsAWS(config.kmsAWS), {
             message: 'bad config: KMS AWS TLS maxVersion must be a string',
         });
     });
@@ -180,7 +180,7 @@ describe('parseKmsAWS TLS section', () => {
             },
         };
 
-        assert.throws(() => configInstance._parseKmsAWS(config), {
+        assert.throws(() => configInstance._parseKmsAWS(config.kmsAWS), {
             message: 'bad config: TLS file specification must be a string',
         });
     });
@@ -196,7 +196,7 @@ describe('parseKmsAWS TLS section', () => {
             },
         };
 
-        const result = configInstance._parseKmsAWS(config);
+        const result = configInstance._parseKmsAWS(config.kmsAWS);
         assert.deepStrictEqual(result.tls, {});
     });
 
@@ -213,7 +213,7 @@ describe('parseKmsAWS TLS section', () => {
             },
         };
 
-        const result = configInstance._parseKmsAWS(config);
+        const result = configInstance._parseKmsAWS(config.kmsAWS);
 
         assert.deepStrictEqual(result.tls.ca, [mockCertifContent, mockCertifContent]);
         assert(readFileSyncStub.calledTwice);
@@ -234,7 +234,7 @@ describe('parseKmsAWS TLS section', () => {
             },
         };
 
-        const result = configInstance._parseKmsAWS(config);
+        const result = configInstance._parseKmsAWS(config.kmsAWS);
 
         assert.deepStrictEqual(result.tls.cert, mockCertifContent);
         assert(readFileSyncStub.calledOnce);
@@ -254,7 +254,7 @@ describe('parseKmsAWS TLS section', () => {
             },
         };
 
-        const result = configInstance._parseKmsAWS(config);
+        const result = configInstance._parseKmsAWS(config.kmsAWS);
 
         assert.deepStrictEqual(result.tls.key, mockCertifContent);
         assert(readFileSyncStub.calledOnce);
@@ -271,7 +271,7 @@ describe('parseKmsAWS TLS section', () => {
             },
         };
 
-        const result = configInstance._parseKmsAWS(config);
+        const result = configInstance._parseKmsAWS(config.kmsAWS);
 
         assert.strictEqual(result.tls, undefined);
         assert(readFileSyncStub.notCalled);
@@ -292,7 +292,7 @@ describe('parseKmsAWS TLS section', () => {
             },
         };
 
-        const result = configInstance._parseKmsAWS(config);
+        const result = configInstance._parseKmsAWS(config.kmsAWS);
 
         assert.deepStrictEqual(result.tls.cert, mockCertifContent);
         assert(readFileSyncStub.calledOnce);
@@ -320,7 +320,7 @@ describe('parseKmsAWS TLS section', () => {
             },
         };
 
-        const result = configInstance._parseKmsAWS(config);
+        const result = configInstance._parseKmsAWS(config.kmsAWS);
 
         assert.deepStrictEqual(result.tls.key, [mockCertifContent, mockCertifContent]);
         assert.deepStrictEqual(result.tls.cert, [mockCertifContent, mockCertifContent]);
