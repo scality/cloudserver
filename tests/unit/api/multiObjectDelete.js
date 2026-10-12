@@ -560,3 +560,103 @@ describe('multiObjectDelete checkPolicies request context', () => {
         });
     });
 });
+
+describe('multiObjectDelete per-key authorization results', () => {
+    // IAM user within the bucket owner account, so that the request
+    // goes through the checkPolicies path
+    const userAuthInfo = makeAuthInfo(canonicalID, 'testuser');
+
+    function makeDeleteRequest(keys) {
+        const post = `<Delete>${keys.map(key => `<Object><Key>${key}</Key></Object>`).join('')}</Delete>`;
+        return new DummyRequest({
+            bucketName,
+            namespace,
+            parsedHost: 'localhost',
+            headers: {
+                'content-md5': crypto.createHash('md5').update(post, 'utf8').digest('base64'),
+            },
+            post,
+            url: `/${bucketName}`,
+            socket: {
+                remoteAddress: '127.0.0.1',
+            },
+        });
+    }
+
+    function putObject(key, cb) {
+        const putRequest = new DummyRequest(
+            {
+                bucketName,
+                namespace,
+                objectKey: key,
+                headers: {},
+                url: `/${bucketName}/${key}`,
+            },
+            postBody,
+        );
+        return objectPut(authInfo, putRequest, undefined, log, cb);
+    }
+
+    beforeEach(done => {
+        cleanup();
+        sinon.stub(auth.server, 'extractParams').returns({
+            params: {
+                version: 4,
+                data: {
+                    signatureVersion: 'AWS4-HMAC-SHA256',
+                    authType: 'REST-HEADER',
+                    signatureAge: 0,
+                },
+            },
+        });
+        // Mimic a Vault user policy that only allows deleting allow/*:
+        // explicit allow on allow/*, implicit deny on everything else
+        sinon.stub(vault, 'checkPolicies').callsFake((requestContextParams, arn, log, cb) => {
+            const results = requestContextParams.parameterize.specificResource.map(entry => ({
+                isAllowed: entry.key.startsWith('allow/'),
+                isImplicit: !entry.key.startsWith('allow/'),
+                arn: `arn:aws:s3:::${bucketName}/${entry.key}`,
+                action: 'objectDelete',
+                versionId: entry.versionId,
+            }));
+            return cb(null, results);
+        });
+        bucketPut(authInfo, testBucketPutRequest, log, done);
+    });
+
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    it('should deny a denied key even when the last key of the request is allowed', done => {
+        putObject('deny/d', () =>
+            putObject('allow/d', () => {
+                const request = makeDeleteRequest(['deny/d', 'allow/d']);
+                multiObjectDelete.multiObjectDelete(userAuthInfo, request, log, (err, xml) => {
+                    assert.strictEqual(err, null);
+                    assert.match(xml, /<Error><Key>deny\/d<\/Key><Code>AccessDenied<\/Code>/);
+                    assert.match(xml, /<Deleted><Key>allow\/d<\/Key><\/Deleted>/);
+                    assert.strictEqual(metadata.keyMaps.get(bucketName).has('deny/d'), true);
+                    assert.strictEqual(metadata.keyMaps.get(bucketName).has('allow/d'), false);
+                    done();
+                });
+            }),
+        );
+    });
+
+    it('should allow an allowed key even when the last key of the request is denied', done => {
+        putObject('allow/e', () =>
+            putObject('deny/e', () => {
+                const request = makeDeleteRequest(['allow/e', 'deny/e']);
+                multiObjectDelete.multiObjectDelete(userAuthInfo, request, log, (err, xml) => {
+                    assert.strictEqual(err, null);
+                    assert.match(xml, /<Deleted><Key>allow\/e<\/Key><\/Deleted>/);
+                    assert.match(xml, /<Error><Key>deny\/e<\/Key><Code>AccessDenied<\/Code>/);
+                    assert.strictEqual(metadata.keyMaps.get(bucketName).has('allow/e'), false);
+                    assert.strictEqual(metadata.keyMaps.get(bucketName).has('deny/e'), true);
+                    done();
+                });
+            }),
+        );
+    });
+});

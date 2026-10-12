@@ -2,6 +2,7 @@ const { promisify } = require('util');
 const assert = require('assert');
 const moment = require('moment');
 const {
+    S3Client,
     CreateBucketCommand,
     PutObjectCommand,
     DeleteObjectsCommand,
@@ -9,8 +10,22 @@ const {
     PutObjectLockConfigurationCommand,
     PutObjectLegalHoldCommand,
 } = require('@aws-sdk/client-s3');
+const {
+    IAMClient,
+    CreatePolicyCommand,
+    CreateUserCommand,
+    AttachUserPolicyCommand,
+    CreateAccessKeyCommand,
+    DeleteAccessKeyCommand,
+    DetachUserPolicyCommand,
+    DeletePolicyCommand,
+    DeleteUserCommand,
+} = require('@aws-sdk/client-iam');
 
 const withV4 = require('../support/withV4');
+const getConfig = require('../support/config');
+const { v4: uuid } = require('uuid');
+const { config } = require('../../../../../lib/Config');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const checkError = require('../../lib/utility/checkError');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
@@ -324,6 +339,97 @@ describe('Multi-Object Delete Access', function access() {
             .catch(err => {
                 checkNoError(err);
             });
+    });
+});
+
+// this test needs a real vault to create the IAM user
+const isVaultScality = config.backends.auth !== 'mem';
+const describeIAM = isVaultScality ? describe : describe.skip;
+
+describeIAM('Multi-Object Delete IAM per-key authorization', function iamAuthz() {
+    this.timeout(60000);
+    const iamBucket = `mod-iam-authz-${uuid()}`;
+    const userName = iamBucket;
+    const allowedKey = `${key}1`;
+    const keys = createObjectsList(10).map(obj => obj.Key);
+    const deniedKeys = keys.filter(k => k !== allowedKey).sort();
+
+    const iamConfig = getConfig('default', { region: 'us-east-1' });
+    iamConfig.endpoint = `http://${config.vaultd?.host || 'localhost'}:8600`;
+    const iamClient = new IAMClient(iamConfig);
+
+    let bucketUtil;
+    let s3;
+    let userS3;
+    let policyArn;
+    let accessKeyId;
+
+    before(async () => {
+        bucketUtil = new BucketUtility('default', {});
+        s3 = bucketUtil.s3;
+        await s3.send(new CreateBucketCommand({ Bucket: iamBucket }));
+
+        const policyRes = await iamClient.send(
+            new CreatePolicyCommand({
+                PolicyName: iamBucket,
+                PolicyDocument: JSON.stringify({
+                    Version: '2012-10-17',
+                    Statement: [
+                        {
+                            Effect: 'Allow',
+                            Action: ['s3:DeleteObject'],
+                            Resource: [`arn:aws:s3:::${iamBucket}/${allowedKey}`],
+                        },
+                    ],
+                }),
+            }),
+        );
+        policyArn = policyRes.Policy.Arn;
+        await iamClient.send(new CreateUserCommand({ UserName: userName }));
+        await iamClient.send(new AttachUserPolicyCommand({ UserName: userName, PolicyArn: policyArn }));
+        const { AccessKey } = await iamClient.send(new CreateAccessKeyCommand({ UserName: userName }));
+        accessKeyId = AccessKey.AccessKeyId;
+        userS3 = new S3Client(
+            getConfig('default', {
+                credentials: {
+                    accessKeyId: AccessKey.AccessKeyId,
+                    secretAccessKey: AccessKey.SecretAccessKey,
+                },
+            }),
+        );
+    });
+
+    beforeEach(() =>
+        Promise.all(keys.map(Key => s3.send(new PutObjectCommand({ Bucket: iamBucket, Key, Body: Key })))),
+    );
+
+    after(async () => {
+        await iamClient.send(new DeleteAccessKeyCommand({ UserName: userName, AccessKeyId: accessKeyId }));
+        await iamClient.send(new DetachUserPolicyCommand({ UserName: userName, PolicyArn: policyArn }));
+        await iamClient.send(new DeletePolicyCommand({ PolicyArn: policyArn }));
+        await iamClient.send(new DeleteUserCommand({ UserName: userName }));
+        await bucketUtil.empty(iamBucket);
+        await s3.send(new DeleteBucketCommand({ Bucket: iamBucket }));
+    });
+
+    [
+        { order: 'last', objects: [...deniedKeys, allowedKey] },
+        { order: 'first', objects: [allowedKey, ...deniedKeys] },
+    ].forEach(({ order, objects }) => {
+        it(`should authorize each key on its own when the allowed key is ${order}`, async () => {
+            const res = await userS3.send(
+                new DeleteObjectsCommand({
+                    Bucket: iamBucket,
+                    Delete: { Objects: objects.map(Key => ({ Key })) },
+                }),
+            );
+            assert.deepStrictEqual(
+                (res.Deleted || []).map(d => d.Key),
+                [allowedKey],
+            );
+            assert.deepStrictEqual((res.Errors || []).map(e => e.Key).sort(), deniedKeys);
+            (res.Errors || []).forEach(e => assert.strictEqual(e.Code, 'AccessDenied'));
+        });
     });
 });
 
