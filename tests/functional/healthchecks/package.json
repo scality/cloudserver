@@ -10,7 +10,7 @@
     ],
     "scripts": {
         "test": "mocha -t 40000 test/ --exit",
-        "test-debug": "_mocha -t 40000 test/ --exit"
+        "test-debug": "mocha -t 40000 test/ --exit"
     },
     "author": ""
 }
