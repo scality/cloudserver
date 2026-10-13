@@ -151,7 +151,7 @@ HA deployments.
 
 - **Framework**: Mocha with Sinon for mocking
 - **Timeout**: 40000ms global
-- **Coverage**: NYC (Istanbul), 80% patch target
+- **Coverage**: c8 (V8 native coverage), 80% patch target
 - **Reporters**: mocha-multi-reporters (spec + junit XML)
 
 Run a single test file:

@@ -56,6 +56,7 @@ CMD [ "yarn", "start" ]
 ################################################################################
 FROM production AS testcoverage
 
-RUN yarn global add nyc
+# Same c8 version as the devDependency, without bringing the other dev deps
+RUN yarn global add c8@$(node -p "require('./package.json').devDependencies.c8")
 
 CMD [ "./docker-test-with-coverage.sh" ]
