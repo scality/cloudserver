@@ -1392,10 +1392,10 @@
     httpagent "github:scality/httpagent#1.1.0"
     werelogs "github:scality/werelogs#8.2.2"
 
-"@scality/scubaclient@1.2.1":
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/@scality/scubaclient/-/scubaclient-1.2.1.tgz#f593c817fcc534db65453ab1d2261ebd7f2b4f83"
-  integrity sha512-rbo7+D7Upw9x4TyCY9WamF4f8QqQNgivOotVW79kvykxzZlKVYZaprrZgKUS0ut4hvBC03XP9HI0JegAuV25mg==
+"@scality/scubaclient@1.2.2":
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/@scality/scubaclient/-/scubaclient-1.2.2.tgz#21e758a1db15b3cf72393b232b2889702d33e909"
+  integrity sha512-mi4EV+YvHLD1FOrpP72MWHswx+NMFO26KZxJElJawg1EsPoVzLoZjzpIBYVWXhuneZkSKceYcV2U/yTw5FJjMA==
   dependencies:
     "@aws-crypto/sha256-js" "^5.2.0"
     "@smithy/signature-v4" "^5.3.7"

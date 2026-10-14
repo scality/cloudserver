@@ -35,7 +35,7 @@
         "@scality/arsenal": "^8.6.0",
         "@scality/bucketclient": "scality/bucketclient#8.3.0",
         "@scality/cloudserverclient": "1.0.13",
-        "@scality/scubaclient": "1.2.1",
+        "@scality/scubaclient": "1.2.2",
         "@scality/utapi": "github:scality/utapi#8.4.1",
         "@smithy/node-http-handler": "^3.0.0",
         "async": "2.6.4",
