@@ -686,6 +686,47 @@ describe('routeBackbeat', () => {
             sinon.assert.calledWith(dataDeleteSpy, existingMd.location[0]);
         });
 
+        it('should not delete data on a CRR location when locations change', async () => {
+            const existingMd = {
+                'dataStoreName': 'location-crr-v1',
+                'location': [
+                    {
+                        key: 'key0',
+                        dataStoreName: 'location-crr-v1',
+                        size: 100,
+                    },
+                ],
+                'content-length': 100,
+            };
+            metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
+                callback(null, bucketInfo, existingMd);
+            });
+
+            // the data was pulled from the CRR location to a local one
+            const reqBody = {
+                'location': [
+                    {
+                        key: 'key1',
+                        dataStoreName: 'us-east-1',
+                        size: 100,
+                    },
+                ],
+                'content-length': 100,
+            };
+            mockRequest = preparePutMetadataRequest(reqBody);
+            mockRequest.url += '?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
+
+            sandbox
+                .stub(metadata, 'putObjectMD')
+                .callsFake((_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {}));
+
+            routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+            void (await endPromise);
+
+            assert.strictEqual(mockResponse.statusCode, 200);
+            assert.strictEqual(dataDeleteSpy.called, false);
+        });
+
         it('should not delete data when some keys are still used', async () => {
             const existingMd = {
                 'location': [
