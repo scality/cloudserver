@@ -4,9 +4,11 @@ const {
     buildAttributesXml,
 } = require('../../../../../lib/api/apiUtils/object/objectAttributes');
 const { algorithms } = require('../../../../../lib/api/apiUtils/integrity/validateChecksums');
+const { config } = require('../../../../../lib/Config');
 const { DummyRequestLogger } = require('../../../helpers');
 
 const log = new DummyRequestLogger();
+const coldLocation = 'location-dmf-v1';
 const headerName = 'x-amz-object-attributes';
 const allowedAttributes = new Set(['ETag', 'StorageClass', 'ObjectSize']);
 
@@ -89,6 +91,27 @@ describe('buildXmlAttributes', () => {
 
             assert.strictEqual(result.length, 1);
             assert.strictEqual(result[0], '<StorageClass>STANDARD</StorageClass>');
+        });
+
+        describe('with a cold location named after an AWS archive storage class', () => {
+            const archiveLocation = 'deep_archive';
+
+            before(() => {
+                config.locationConstraints[archiveLocation] = { ...config.locationConstraints[coldLocation] };
+            });
+
+            after(() => {
+                delete config.locationConstraints[archiveLocation];
+            });
+
+            it('should report an archive location with the AWS storage class name', () => {
+                const result = [];
+                const archivedMD = { ...objectMD, 'x-amz-storage-class': archiveLocation };
+                buildAttributesXml(archivedMD, userMetadata, ['StorageClass'], result, log);
+
+                assert.strictEqual(result.length, 1);
+                assert.strictEqual(result[0], '<StorageClass>DEEP_ARCHIVE</StorageClass>');
+            });
         });
 
         it('should generate ObjectSize XML', () => {

@@ -1,5 +1,8 @@
 const assert = require('assert');
 const collectResponseHeaders = require('../../../lib/utilities/collectResponseHeaders');
+const { config } = require('../../../lib/Config');
+
+const coldLocation = 'location-dmf-v1';
 
 describe('Middleware: Collect Response Headers', () => {
     it('should be able to set replication status when config is set', () => {
@@ -108,6 +111,36 @@ describe('Middleware: Collect Response Headers', () => {
         const obj = { 'x-amz-website-redirect-location': 'google.com' };
         const headers = collectResponseHeaders(obj);
         assert.strictEqual(headers['x-amz-website-redirect-location'], 'google.com');
+    });
+
+    it('should not report the STANDARD storage class', () => {
+        const headers = collectResponseHeaders({ 'x-amz-storage-class': 'STANDARD' });
+        assert.strictEqual(headers['x-amz-storage-class'], undefined);
+    });
+
+    it('should report a cold location as the storage class', () => {
+        const headers = collectResponseHeaders({ 'x-amz-storage-class': coldLocation });
+        assert.strictEqual(headers['x-amz-storage-class'], coldLocation);
+    });
+
+    describe('with a cold location named after an AWS archive storage class', () => {
+        before(() => {
+            config.locationConstraints.glacier = { ...config.locationConstraints[coldLocation] };
+        });
+
+        after(() => {
+            delete config.locationConstraints.glacier;
+        });
+
+        it('should report an archive location with the AWS storage class name', () => {
+            const headers = collectResponseHeaders({ 'x-amz-storage-class': 'glacier' });
+            assert.strictEqual(headers['x-amz-storage-class'], 'GLACIER');
+        });
+    });
+
+    it('should not report an archive location with the AWS name without a cold location of that name', () => {
+        const headers = collectResponseHeaders({ 'x-amz-storage-class': 'glacier' });
+        assert.strictEqual(headers['x-amz-storage-class'], 'glacier');
     });
 
     it('should not set flag when transition not in progress', () => {

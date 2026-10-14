@@ -1,6 +1,8 @@
 const assert = require('assert');
 const async = require('async');
+const { parseString } = require('xml2js');
 
+const { bucketGet } = require('../../../lib/api/bucketGet');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
 const objectCopy = require('../../../lib/api/objectCopy');
@@ -8,6 +10,8 @@ const objectGet = require('../../../lib/api/objectGet');
 const objectHead = require('../../../lib/api/objectHead');
 const objectRestore = require('../../../lib/api/objectRestore');
 const initiateMultipartUpload = require('../../../lib/api/initiateMultipartUpload');
+const listMultipartUploads = require('../../../lib/api/listMultipartUploads');
+const listParts = require('../../../lib/api/listParts');
 const DummyRequest = require('../DummyRequest');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const metadata = require('../metadataswitch');
@@ -96,8 +100,8 @@ function putDirectToColdObject(cb) {
     );
 }
 
-function assertDirectToCold(md) {
-    assert.strictEqual(md['x-amz-storage-class'], coldLocation);
+function assertDirectToCold(md, location = coldLocation) {
+    assert.strictEqual(md['x-amz-storage-class'], location);
     // the data itself stays in the hot location
     assert.strictEqual(md.dataStoreName, hotLocation);
     // the transition has not happened yet, so there is no archive info
@@ -503,6 +507,178 @@ describe('direct to cold', () => {
                 assert.strictEqual(statusCode, 202);
                 done();
             });
+        });
+    });
+
+    describe('with a location named after an AWS archive storage class', () => {
+        const awsStorageClass = 'GLACIER';
+        const archiveLocation = 'glacier';
+        const listObjectsRequest = {
+            bucketName,
+            namespace,
+            headers: { host: '/' },
+            url: `/${bucketName}`,
+            query: {},
+            actionImplicitDenies: false,
+        };
+
+        before(() => {
+            config.locationConstraints[archiveLocation] = { ...config.locationConstraints[coldLocation] };
+        });
+
+        after(() => {
+            delete config.locationConstraints[archiveLocation];
+        });
+
+        beforeEach(done => {
+            config.enableDirectToCold = true;
+            objectPut(authInfo, putObjectRequest({ 'x-amz-storage-class': awsStorageClass }), undefined, log, err =>
+                done(err),
+            );
+        });
+
+        it('should store the location name as the storage class of a PUT object', done => {
+            getObjectMD(objectKey, (err, md) => {
+                assert.ifError(err);
+                assertDirectToCold(md, archiveLocation);
+                done();
+            });
+        });
+
+        it('should store the location name as the storage class of a copied object', done => {
+            async.waterfall(
+                [
+                    next =>
+                        objectCopy(
+                            authInfo,
+                            copyObjectRequest({ 'x-amz-storage-class': awsStorageClass }),
+                            bucketName,
+                            objectKey,
+                            undefined,
+                            log,
+                            err => next(err),
+                        ),
+                    next => getObjectMD('copiedObject', next),
+                ],
+                (err, md) => {
+                    assert.ifError(err);
+                    assertDirectToCold(md, archiveLocation);
+                    done();
+                },
+            );
+        });
+
+        it('should store the location name as the storage class of a multipart upload', done => {
+            const mpuKey = 'mpuObject';
+            async.waterfall(
+                [
+                    next =>
+                        mpuUtils
+                            .initiateMpuP(bucketName, namespace, mpuKey, log, {
+                                'x-amz-storage-class': awsStorageClass,
+                            })
+                            .then(uploadId => next(null, uploadId), next),
+                    (uploadId, next) =>
+                        mpuUtils
+                            .uploadPartP(bucketName, namespace, mpuKey, uploadId, log)
+                            .then(() => next(null, uploadId), next),
+                    (uploadId, next) =>
+                        mpuUtils.completeMpuP(bucketName, namespace, mpuKey, uploadId, log).then(() => next(), next),
+                    next => getObjectMD(mpuKey, next),
+                ],
+                (err, md) => {
+                    assert.ifError(err);
+                    assertDirectToCold(md, archiveLocation);
+                    done();
+                },
+            );
+        });
+
+        it('should report the AWS storage class name on HeadObject', done => {
+            objectHead(authInfo, getObjectRequest(), log, (err, headers) => {
+                assert.ifError(err);
+                assert.strictEqual(headers['x-amz-storage-class'], 'GLACIER');
+                done();
+            });
+        });
+
+        it('should report the AWS storage class name on ListObjects', done => {
+            async.waterfall(
+                [
+                    next => bucketGet(authInfo, listObjectsRequest, log, (err, xml) => next(err, xml)),
+                    (xml, next) => parseString(xml, next),
+                ],
+                (err, result) => {
+                    assert.ifError(err);
+                    assert.strictEqual(result.ListBucketResult.Contents[0].StorageClass[0], 'GLACIER');
+                    done();
+                },
+            );
+        });
+
+        it('should report the AWS storage class name on ListParts', done => {
+            const mpuKey = 'mpuObject';
+            async.waterfall(
+                [
+                    next =>
+                        mpuUtils
+                            .initiateMpuP(bucketName, namespace, mpuKey, log, {
+                                'x-amz-storage-class': awsStorageClass,
+                            })
+                            .then(uploadId => next(null, uploadId), next),
+                    (uploadId, next) =>
+                        mpuUtils
+                            .uploadPartP(bucketName, namespace, mpuKey, uploadId, log)
+                            .then(() => next(null, uploadId), next),
+                    (uploadId, next) => {
+                        const listPartsRequest = {
+                            bucketName,
+                            namespace,
+                            objectKey: mpuKey,
+                            headers: { host: `${bucketName}.s3.amazonaws.com` },
+                            url: `/${mpuKey}?uploadId=${uploadId}`,
+                            query: { uploadId },
+                            actionImplicitDenies: false,
+                        };
+                        listParts(authInfo, listPartsRequest, log, (err, xml) => next(err, xml));
+                    },
+                    (xml, next) => parseString(xml, next),
+                ],
+                (err, result) => {
+                    assert.ifError(err);
+                    assert.strictEqual(result.ListPartsResult.StorageClass[0], 'GLACIER');
+                    done();
+                },
+            );
+        });
+
+        it('should report the AWS storage class name on ListMultipartUploads', done => {
+            const mpuKey = 'mpuObject';
+            const listMpuRequest = {
+                bucketName,
+                namespace,
+                headers: { host: '/' },
+                url: `/${bucketName}?uploads`,
+                query: {},
+                actionImplicitDenies: false,
+            };
+            async.waterfall(
+                [
+                    next =>
+                        mpuUtils
+                            .initiateMpuP(bucketName, namespace, mpuKey, log, {
+                                'x-amz-storage-class': awsStorageClass,
+                            })
+                            .then(() => next(), next),
+                    next => listMultipartUploads(authInfo, listMpuRequest, log, (err, xml) => next(err, xml)),
+                    (xml, next) => parseString(xml, next),
+                ],
+                (err, result) => {
+                    assert.ifError(err);
+                    assert.strictEqual(result.ListMultipartUploadsResult.Upload[0].StorageClass[0], 'GLACIER');
+                    done();
+                },
+            );
         });
     });
 });
