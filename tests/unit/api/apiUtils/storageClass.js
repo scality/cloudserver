@@ -4,6 +4,7 @@ const {
     normalizeStorageClass,
     formatStorageClass,
     isColdStorageClass,
+    supportsOnPremArchiveTier,
     validateStorageClass,
 } = require('../../../../lib/api/apiUtils/object/storageClass');
 const { config } = require('../../../../lib/Config');
@@ -138,6 +139,35 @@ describe('storage class helpers', () => {
 
         it('should not return true when no storage class is given', () => {
             assert.ok(!isColdStorageClass(undefined));
+        });
+    });
+
+    describe('supportsOnPremArchiveTier', () => {
+        afterEach(() => {
+            delete config.locationConstraints.glacier;
+        });
+
+        it('should return true with direct-to-cold and a cold glacier location', () => {
+            config.enableDirectToCold = true;
+            config.locationConstraints.glacier = { ...config.locationConstraints[coldLocation] };
+            assert.strictEqual(supportsOnPremArchiveTier(), true);
+        });
+
+        it('should return false without direct-to-cold', () => {
+            config.enableDirectToCold = false;
+            config.locationConstraints.glacier = { ...config.locationConstraints[coldLocation] };
+            assert.strictEqual(supportsOnPremArchiveTier(), false);
+        });
+
+        it('should return false without a glacier location', () => {
+            config.enableDirectToCold = true;
+            assert.strictEqual(supportsOnPremArchiveTier(), false);
+        });
+
+        it('should return false when the glacier location is not cold', () => {
+            config.enableDirectToCold = true;
+            config.locationConstraints.glacier = { ...config.locationConstraints[hotLocation] };
+            assert.strictEqual(supportsOnPremArchiveTier(), false);
         });
     });
 
