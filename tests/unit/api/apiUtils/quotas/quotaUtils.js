@@ -115,6 +115,19 @@ describe('validateQuotas (buckets)', () => {
         });
     });
 
+    ['objectCopy', 'objectPutCopyPart'].forEach(apiMethod => {
+        it(`should return errors.QuotaExceeded if quota is exceeded by a ${apiMethod} of a source version`, done => {
+            QuotaService._getLatestMetricsCallback.yields(null, { bytesTotal: BigInt(150) });
+
+            validateQuotas(request, mockBucket, {}, ['objectGetVersion'], apiMethod, 1, false, mockLog, err => {
+                assert(err, 'expected the quota to be evaluated');
+                assert.strictEqual(err.is.QuotaExceeded, true);
+                assert.strictEqual(QuotaService._getLatestMetricsCallback.callCount, 1);
+                done();
+            });
+        });
+    });
+
     it('should not return QuotaExceeded if quotas are exceeded but operation is creating a delete marker', done => {
         const result1 = {
             bytesTotal: BigInt(150),
