@@ -791,10 +791,106 @@ describe('objectCopy source size limit', () => {
     });
 });
 
+describe('objectCopy with a bucket policy scoped to key prefixes', () => {
+    const bucketName = 'prefixpolicybucket';
+    const userAuthInfo = makeAuthInfo(canonicalID, 'user');
+    const putPolicyRequest = new DummyRequest({
+        bucketName,
+        namespace,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        url: '/',
+        socket: {},
+        post: JSON.stringify({
+            Version: '2012-10-17',
+            Statement: [
+                {
+                    Effect: 'Allow',
+                    Principal: '*',
+                    Action: ['s3:GetObject', 's3:PutObject'],
+                    Resource: `arn:aws:s3:::${bucketName}/allowed/*`,
+                },
+                {
+                    Effect: 'Deny',
+                    Principal: '*',
+                    Action: 's3:GetObject',
+                    Resource: `arn:aws:s3:::${bucketName}/forbidden/*`,
+                },
+            ],
+        }),
+    });
+
+    // An IAM user without identity policy: Vault returns an implicit deny
+    // for both the source read and the destination write
+    function _createUserCopyRequest(destKey) {
+        const request = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: destKey,
+            headers: {},
+            url: `/${bucketName}/${destKey}`,
+            socket: {},
+        });
+        request.actionImplicitDenies = { objectGet: true, objectPut: true };
+        return request;
+    }
+
+    before(done => {
+        cleanup();
+        async.series(
+            [
+                callback => bucketPut(authInfo, _createBucketPutRequest(bucketName), log, callback),
+                callback => bucketPutPolicy(authInfo, putPolicyRequest, log, callback),
+                callback =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(bucketName, 'forbidden/myfile', objData[0]),
+                        undefined,
+                        log,
+                        callback,
+                    ),
+                callback =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(bucketName, 'allowed/myfile', objData[1]),
+                        undefined,
+                        log,
+                        callback,
+                    ),
+            ],
+            done,
+        );
+    });
+
+    after(() => {
+        cleanup();
+    });
+
+    it('should deny copying a source denied by the bucket policy to an allowed destination', done => {
+        const request = _createUserCopyRequest('allowed/myfile-copy');
+        objectCopy(userAuthInfo, request, bucketName, 'forbidden/myfile', undefined, log, err => {
+            assert(err, 'expected the copy to be denied');
+            assert.strictEqual(err.is.AccessDenied, true);
+            done();
+        });
+    });
+
+    it('should allow copying a source allowed by the bucket policy to an allowed destination', done => {
+        const request = _createUserCopyRequest('allowed/myfile-copy');
+        objectCopy(userAuthInfo, request, bucketName, 'allowed/myfile', undefined, log, err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+});
+
 describe('objectCopy of a specific source version', () => {
     const ownBucketName = 'ownversionbucket';
     const policyBucketName = 'policyversionbucket';
+    const sharedBucketName = 'sharedversionbucket';
+    const otherBucketName = 'otherversionbucket';
+    const otherAuthInfo = makeAuthInfo('accessKey2');
     const userAuthInfo = makeAuthInfo(canonicalID, 'user');
+    const otherUserAuthInfo = makeAuthInfo('accessKey2', 'user');
     const enableRequest = versioningTestUtils.createBucketPutVersioningReq(policyBucketName, 'Enabled');
     // The version IDs of the policy bucket source, as the client sees them
     const versionIds = [];
@@ -867,6 +963,21 @@ describe('objectCopy of a specific source version', () => {
                         log,
                         callback,
                     ),
+                callback => bucketPut(authInfo, _createBucketPutRequest(sharedBucketName), log, callback),
+                callback => _putObject(sharedBucketName, objData[0], callback),
+                callback =>
+                    bucketPutPolicy(
+                        authInfo,
+                        _createPutPolicyRequest(sharedBucketName, {
+                            Effect: 'Allow',
+                            Principal: '*',
+                            Action: ['s3:GetObject', 's3:GetObjectVersion'],
+                            Resource: `arn:aws:s3:::${sharedBucketName}/*`,
+                        }),
+                        log,
+                        callback,
+                    ),
+                callback => bucketPut(otherAuthInfo, _createBucketPutRequest(otherBucketName), log, callback),
             ],
             done,
         );
@@ -906,6 +1017,23 @@ describe('objectCopy of a specific source version', () => {
     it('should allow copying the latest version when the bucket policy denies s3:GetObjectVersion', done => {
         const request = _createUserCopyRequest(policyBucketName, { objectGet: false, objectPut: false });
         objectCopy(userAuthInfo, request, policyBucketName, 'secret', undefined, log, err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+
+    it('should deny a cross-account null version copy when IAM does not allow reading the source version', done => {
+        const request = _createUserCopyRequest(otherBucketName, { objectGetVersion: true, objectPut: false });
+        objectCopy(otherUserAuthInfo, request, sharedBucketName, 'secret', 'null', log, err => {
+            assert(err, 'expected the copy to be denied');
+            assert.strictEqual(err.is.AccessDenied, true);
+            done();
+        });
+    });
+
+    it('should allow a cross-account null version copy when IAM allows reading the source version', done => {
+        const request = _createUserCopyRequest(otherBucketName, { objectGetVersion: false, objectPut: false });
+        objectCopy(otherUserAuthInfo, request, sharedBucketName, 'secret', 'null', log, err => {
             assert.ifError(err);
             done();
         });
