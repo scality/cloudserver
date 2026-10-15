@@ -202,7 +202,8 @@ const constants = {
     allowedUtapiEventFilterFields: ['operationId', 'location', 'account', 'user', 'bucket'],
     arrayOfAllowed: ['objectPutTagging', 'objectPutLegalHold', 'objectPutRetention'],
     allowedUtapiEventFilterStates: ['allow', 'deny'],
-    allowedRestoreObjectRequestTierValues: ['Standard'],
+    // All tiers are accepted but restored the same way: the tier is not used
+    allowedRestoreObjectRequestTierValues: ['Standard', 'Bulk', 'Expedited'],
     // Only STANDARD class is supported, but keep the option to override supported values for now.
     // This should be removed in CLDSRV-639.
     validStorageClasses: process.env.VALID_STORAGE_CLASSES?.split(',') || ['STANDARD'],
