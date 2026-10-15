@@ -81,7 +81,6 @@ function run_before_migration() {
 function run_latest_images() {
   export CLOUDSERVER_IMAGE=$CLOUDSERVER_IMAGE_ORIGINAL
   export VAULT_IMAGE=$VAULT_IMAGE_ORIGINAL
-  export S3KMS=$kmsProvider # S3
   export KMS_BACKEND=$([[ "$kmsProvider" == "aws" ]] && echo "aws") # vault only aws is supported
 
   cd tests/functional/sse-kms-migration
@@ -110,14 +109,12 @@ function run_latest_images() {
 function run_migration() {
   echo ==== RUN MIGRATION ====
   cd ../..
-  export S3KMS=$kmsProvider # S3
   export KMS_BACKEND=$([[ "$kmsProvider" == "aws" ]] && echo "aws") # vault only aws is supported
   yarn run ft_sse_migration | tee /tmp/artifacts/$JOB_NAME/migration.log
 }
 
 function run_after_migration() {
   sleep 1
-  export S3KMS=$kmsProvider # S3
   export KMS_BACKEND=$([[ "$kmsProvider" == "aws" ]] && echo "aws") # vault only aws is supported
   yarn run ft_sse_arn | tee /tmp/artifacts/$JOB_NAME/arnPrefix.log
 }

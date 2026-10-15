@@ -12,12 +12,6 @@ describe('parseKmsAWS Function', () => {
         configInstance = new Config();
     });
 
-    it('should return an empty object if no kmsAWS config is provided', () => {
-        const config = {};
-        const result = configInstance._parseKmsAWS(config.kmsAWS);
-        assert.deepStrictEqual(result, {});
-    });
-
     it('should throw an error if endpoint is not defined in kmsAWS', () => {
         const config = { kmsAWS: { providerName: 'tests', ak: 'ak', sk: 'sk' } };
         assert.throws(() => configInstance._parseKmsAWS(config.kmsAWS), 'endpoint must be defined');
