@@ -152,10 +152,7 @@ describe('objectCopy with versioning', () => {
         });
     });
 
-    // TODO: S3C-9965
-    // Skipped because the policy is not checked correctly
-    // When source bucket policy is checked destination arn is used
-    it.skip('should set bucketOwnerId if requesting account differs from dest bucket owner', done => {
+    it('should set bucketOwnerId if requesting account differs from dest bucket owner', done => {
         const authInfo2 = makeAuthInfo('accessKey2');
         const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
         const testPutSrcPolicyRequest = new DummyRequest({
