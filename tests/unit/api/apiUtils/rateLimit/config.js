@@ -439,7 +439,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.limit" must be larger than or equal to 0/,
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.limit" must be greater than or equal to 0/,
             );
         });
 
@@ -514,7 +514,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.burstCapacity" must be larger than or equal to 0/,
+                /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.burstCapacity" must be greater than or equal to 0/,
             );
         });
 
@@ -599,7 +599,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"bucket.defaultBurstCapacity" must be larger than or equal to 0/,
+                /rateLimiting configuration is invalid.*"bucket.defaultBurstCapacity" must be greater than or equal to 0/,
             );
         });
 
@@ -739,7 +739,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"error.statusCode" must be larger than or equal to 400/,
+                /rateLimiting configuration is invalid.*"error.statusCode" must be greater than or equal to 400/,
             );
         });
 
@@ -1061,7 +1061,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
-                /rateLimiting configuration is invalid.*"account.defaultConfig.requestsPerSecond.burstCapacity" must be larger than or equal to 0/,
+                /rateLimiting configuration is invalid.*"account.defaultConfig.requestsPerSecond.burstCapacity" must be greater than or equal to 0/,
             );
         });
 

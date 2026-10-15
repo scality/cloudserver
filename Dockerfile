@@ -1,4 +1,4 @@
-ARG NODE_VERSION=24.21.0-bookworm-slim
+ARG NODE_VERSION=24.21.0-trixie-slim
 
 FROM node:${NODE_VERSION} AS builder
 
@@ -39,8 +39,6 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         jq \
         tini \
-        python3-redis \
-        python3-requests \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
@@ -58,6 +56,7 @@ CMD [ "yarn", "start" ]
 ################################################################################
 FROM production AS testcoverage
 
-RUN yarn global add nyc
+# Same c8 version as the devDependency, without bringing the other dev deps
+RUN yarn global add c8@$(node -p "require('./package.json').devDependencies.c8")
 
 CMD [ "./docker-test-with-coverage.sh" ]

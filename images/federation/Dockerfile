@@ -7,6 +7,8 @@ FROM ghcr.io/scality/cloudserver:${CLOUDSERVER_VERSION}
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
       supervisor \
+      python3-redis \
+      python3-requests \
     && rm -rf /var/lib/apt/lists/*
 
 # Prepare runtime environment

@@ -1,0 +1,6 @@
+{
+    "all": true,
+    "include": ["bin/**/*.js", "lib/**/*.js"],
+    "exclude": ["tests/**/*.js"],
+    "temp-directory": "./coverage/tmp"
+}
