@@ -880,6 +880,118 @@ describe('objectCopy with a bucket policy scoped to key prefixes', () => {
     });
 });
 
+describe('objectCopy with a bucket policy on the source version ID', () => {
+    const bucketName = 'versionidpolicybucket';
+    const sourceKey = 'doc';
+    const userAuthInfo = makeAuthInfo(canonicalID, 'user');
+    const enableRequest = versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
+    // The version IDs as the client sees them
+    const versionIds = [];
+
+    // An IAM user without identity policy: Vault returns an implicit deny
+    // for both the source read and the destination write
+    function _createUserCopyRequest(copySourceVersionId) {
+        const request = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: 'doc-copy',
+            headers: {},
+            url: `/${bucketName}/doc-copy`,
+            query: {},
+            socket: {},
+        });
+        request.actionImplicitDenies = { objectGet: true, objectGetVersion: true, objectPut: true };
+        request.copySourceVersionId = copySourceVersionId;
+        return request;
+    }
+
+    function _putObject(body, callback) {
+        objectPut(
+            authInfo,
+            versioningTestUtils.createPutObjectRequest(bucketName, sourceKey, body),
+            undefined,
+            log,
+            (err, resHeaders) => {
+                if (err) {
+                    return callback(err);
+                }
+                versionIds.push(resHeaders['x-amz-version-id']);
+                return callback();
+            },
+        );
+    }
+
+    // PutBucketPolicy does not accept s3:VersionId as a condition key, but a
+    // stored policy can still carry it, so it is written directly
+    function _setBucketPolicy(callback) {
+        const bucketArn = `arn:aws:s3:::${bucketName}`;
+        const policy = {
+            Version: '2012-10-17',
+            Statement: [
+                {
+                    Effect: 'Allow',
+                    Principal: '*',
+                    Action: ['s3:GetObject', 's3:GetObjectVersion', 's3:PutObject'],
+                    Resource: `${bucketArn}/*`,
+                },
+                {
+                    Effect: 'Deny',
+                    Principal: '*',
+                    Action: ['s3:GetObject', 's3:GetObjectVersion'],
+                    Resource: `${bucketArn}/*`,
+                    Condition: {
+                        StringEquals: { 's3:VersionId': versionIds[0] },
+                    },
+                },
+            ],
+        };
+        metadata.getBucket(bucketName, log, (err, bucket) => {
+            if (err) {
+                return callback(err);
+            }
+            bucket.setBucketPolicy(policy);
+            return metadata.updateBucket(bucketName, bucket, log, callback);
+        });
+    }
+
+    before(done => {
+        cleanup();
+        async.series(
+            [
+                callback => bucketPut(authInfo, _createBucketPutRequest(bucketName), log, callback),
+                callback => bucketPutVersioning(authInfo, enableRequest, log, callback),
+                callback => _putObject(objData[0], callback),
+                callback => _putObject(objData[1], callback),
+                callback => _setBucketPolicy(callback),
+            ],
+            done,
+        );
+    });
+
+    after(() => {
+        cleanup();
+    });
+
+    it('should deny copying the version denied by the bucket policy', done => {
+        const request = _createUserCopyRequest(versionIds[0]);
+        const sourceVersionId = versioning.VersionID.decode(versionIds[0]);
+        objectCopy(userAuthInfo, request, bucketName, sourceKey, sourceVersionId, log, err => {
+            assert(err, 'expected the copy to be denied');
+            assert.strictEqual(err.is.AccessDenied, true);
+            done();
+        });
+    });
+
+    it('should allow copying a version not denied by the bucket policy', done => {
+        const request = _createUserCopyRequest(versionIds[1]);
+        const sourceVersionId = versioning.VersionID.decode(versionIds[1]);
+        objectCopy(userAuthInfo, request, bucketName, sourceKey, sourceVersionId, log, err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+});
+
 describe('objectCopy of a specific source version', () => {
     const ownBucketName = 'ownversionbucket';
     const policyBucketName = 'policyversionbucket';
