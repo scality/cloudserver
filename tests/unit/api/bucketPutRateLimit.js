@@ -120,6 +120,19 @@ describe('bucketPutRateLimit API', () => {
         });
     });
 
+    it('should return InvalidArgument error if RequestsPerSecond is less than number of nodes', done => {
+        config.rateLimiting.nodes = 3;
+        bucketPut(regularAuthInfo, bucketPutReq, log, err => {
+            assert.ifError(err);
+            const putRequest = getRateLimitPutRequest(bucketName, { RequestsPerSecond: 2 });
+            bucketPutRateLimit(rateLimitServiceAuthInfo, putRequest, log, err => {
+                assert.strictEqual(err.is.InvalidArgument, true);
+                assert.match(err.description, /must be >= nodes \(3\)/);
+                done();
+            });
+        });
+    });
+
     it('should return InvalidArgument error if request body is invalid JSON', done => {
         bucketPut(regularAuthInfo, bucketPutReq, log, err => {
             assert.ifError(err);
@@ -203,6 +216,23 @@ describe('bucketPutRateLimit API success cases', () => {
                         assert.strictEqual(configData.RequestsPerSecond.Limit, 200);
                         done();
                     });
+                });
+            });
+        });
+    });
+
+    it('should accept RequestsPerSecond equal to number of nodes regardless of worker count', done => {
+        config.rateLimiting.nodes = 3;
+        sandbox.stub(config, 'clusters').value(10);
+        bucketPut(regularAuthInfo, bucketPutReq, log, err => {
+            assert.ifError(err);
+            const putRequest = getRateLimitPutRequest(bucketName, { RequestsPerSecond: 3 });
+            bucketPutRateLimit(rateLimitServiceAuthInfo, putRequest, log, err => {
+                assert.ifError(err);
+                metadata.getBucket(bucketName, log, (err, bucket) => {
+                    assert.ifError(err);
+                    assert.strictEqual(bucket.getRateLimitConfiguration().getData().RequestsPerSecond.Limit, 3);
+                    done();
                 });
             });
         });
