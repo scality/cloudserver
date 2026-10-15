@@ -144,16 +144,14 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
         }
     });
 
-    describe('validation against node and worker count', () => {
-        const nodes = config.rateLimiting?.nodes || 1;
-        const workers = config.clusters || 1;
-        const minLimit = nodes * workers;
-        const skipIfSingleNode = nodes === 1 ? it.skip : it;
+    describe('validation against node count', () => {
+        const minLimit = config.rateLimiting?.nodes || 1;
+        const skipIfSingleNode = minLimit === 1 ? it.skip : it;
 
         // Test requires multiple nodes to pass
-        // With only 1 node and 1 worker the minLimit is 1.
+        // With only 1 node the minLimit is 1.
         // This leaves no invalid values to test as 0 is also a valid setting (unlimited)
-        skipIfSingleNode('should reject limits less than (nodes x workers)', async () => {
+        skipIfSingleNode('should reject limits less than number of nodes', async () => {
             let error;
             try {
                 const invalidConfig = { RequestsPerSecond: minLimit - 1 };
@@ -171,7 +169,7 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
             }
         });
 
-        it('should accept limits equal to (nodes x workers)', async () => {
+        it('should accept limits equal to number of nodes', async () => {
             try {
                 const validConfig = { RequestsPerSecond: minLimit };
                 await sendRateLimitRequest(
@@ -188,7 +186,7 @@ skipIfRateLimitDisabled('Test put bucket rate limit', () => {
             }
         });
 
-        it('should accept limits greater than (nodes x workers)', async () => {
+        it('should accept limits greater than number of nodes', async () => {
             try {
                 const validConfig = { RequestsPerSecond: minLimit + 1000 };
                 await sendRateLimitRequest(
