@@ -75,6 +75,14 @@ const testSystem = `<?xmlversion="1.0"encoding="UTF-8"?>
 
 const testSystemMd5 = crypto.createHash('md5').update(testSystem, 'utf-8').digest('hex');
 
+// The served system.xml reports the archive tier capability of the deployment, which
+// the server under test does not support (no direct-to-cold)
+const systemOut = testSystem.replace(
+    '<IAMSTS>true</IAMSTS>\n',
+    '<IAMSTS>true</IAMSTS>\n          <EnableOnPremArchiveTier>false</EnableOnPremArchiveTier>\n',
+);
+const systemOutMd5 = crypto.createHash('md5').update(systemOut, 'utf-8').digest('hex');
+
 const invalidTestSystem = `<?xmlversion="1.0"encoding="UTF-8"?>
     <SystemInfo>
        <ProtocolVersion>"1.0"</ProtocolVersion>
@@ -237,6 +245,38 @@ function makeVeeamRequest(params, callback) {
                 ));
         });
 
+        it('PUT system.xml should reject EnableOnPremArchiveTier when not supported', done => {
+            // The server under test has no direct-to-cold, so the archive tier cannot be enabled
+            const systemWithArchiveTier = testSystem.replace(
+                '<IAMSTS>true</IAMSTS>\n',
+                '<IAMSTS>true</IAMSTS>\n          <EnableOnPremArchiveTier>true</EnableOnPremArchiveTier>\n',
+            );
+            const systemWithArchiveTierMd5 = crypto
+                .createHash('md5')
+                .update(systemWithArchiveTier, 'utf-8')
+                .digest('hex');
+            makeVeeamRequest(
+                {
+                    method: 'PUT',
+                    bucket: TEST_BUCKET,
+                    objectKey: '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml',
+                    headers: {
+                        'content-length': systemWithArchiveTier.length,
+                        'content-md5': systemWithArchiveTierMd5,
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: veeamAuthCredentials,
+                    requestBody: systemWithArchiveTier,
+                },
+                err => {
+                    assert.strictEqual(err.statusCode, 400);
+                    assert.strictEqual(err.code, 'InvalidRequest');
+                    assert.match(err.message, /EnableOnPremArchiveTier is not supported/);
+                    return done();
+                },
+            );
+        });
+
         [
             ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', testSystem, testSystemMd5],
             ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
@@ -367,8 +407,10 @@ function makeVeeamRequest(params, callback) {
         });
 
         [
-            ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', testSystem, testSystemMd5],
-            ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
+            ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', testSystem, testSystemMd5, systemOut],
+            // archive tier explicitly disabled: reported as is
+            ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', systemOut, systemOutMd5, systemOut],
+            ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5, testCapacity],
         ].forEach(key => {
             it(`GET ${key[0]} should return the expected XML file`, done => {
                 scuba.incrementBytesForBucket(TEST_BUCKET, 0);
@@ -412,7 +454,7 @@ function makeVeeamRequest(params, callback) {
                                         return done(err);
                                     }
                                     assert.strictEqual(response.statusCode, 200);
-                                    assert.strictEqual(response.body.replaceAll(' ', ''), key[1].replaceAll(' ', ''));
+                                    assert.strictEqual(response.body.replaceAll(' ', ''), key[3].replaceAll(' ', ''));
                                     return next();
                                 },
                             ),
@@ -426,8 +468,8 @@ function makeVeeamRequest(params, callback) {
         });
 
         [
-            ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', testSystem, testSystemMd5],
-            ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
+            ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', testSystem, testSystemMd5, systemOut],
+            ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5, testCapacity],
         ].forEach(key => {
             it(`GET ${key[0]} should return the expected XML file for cors requests`, done => {
                 async.waterfall(
@@ -472,7 +514,7 @@ function makeVeeamRequest(params, callback) {
                                         return done(err);
                                     }
                                     assert.strictEqual(response.statusCode, 200);
-                                    assert.strictEqual(response.body.replaceAll(' ', ''), key[1].replaceAll(' ', ''));
+                                    assert.strictEqual(response.body.replaceAll(' ', ''), key[3].replaceAll(' ', ''));
                                     return next();
                                 },
                             ),
@@ -627,7 +669,7 @@ function makeVeeamRequest(params, callback) {
                                     200,
                                     'system.xml should always return 200 even when scuba is down',
                                 );
-                                assert.strictEqual(response.body.replaceAll(' ', ''), testSystem.replaceAll(' ', ''));
+                                assert.strictEqual(response.body.replaceAll(' ', ''), systemOut.replaceAll(' ', ''));
                                 return next();
                             },
                         ),
@@ -662,8 +704,8 @@ function makeVeeamRequest(params, callback) {
         });
 
         [
-            ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', testSystem, testSystemMd5],
-            ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
+            ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', testSystem, testSystemMd5, systemOut],
+            ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5, testCapacity],
         ].forEach(key => {
             it(`DELETE ${key[0]} should delete the XML file`, done => {
                 async.waterfall(
@@ -706,7 +748,7 @@ function makeVeeamRequest(params, callback) {
                                         return done(err);
                                     }
                                     assert.strictEqual(response.statusCode, 200);
-                                    assert.strictEqual(response.body.replaceAll(' ', ''), key[1].replaceAll(' ', ''));
+                                    assert.strictEqual(response.body.replaceAll(' ', ''), key[3].replaceAll(' ', ''));
                                     return next();
                                 },
                             ),

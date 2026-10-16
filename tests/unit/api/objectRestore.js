@@ -93,23 +93,23 @@ describe('restoreObject API', () => {
         });
     });
 
-    it("should return NotImplemented error when object restore Tier is 'Bulk'", done => {
-        mdColdHelper.putBucketMock(bucketName, null, () => {
-            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchivedObjectMD(), () => {
-                objectRestore(authInfo, objectRestoreRequest(objectRestoreXmlBulkTier), log, err => {
-                    assert.strictEqual(err.is.NotImplemented, true);
-                    done();
-                });
-            });
-        });
-    });
-
-    it("should return NotImplemented error when object restore Tier is 'Expedited'", done => {
-        mdColdHelper.putBucketMock(bucketName, null, () => {
-            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchivedObjectMD(), () => {
-                objectRestore(authInfo, objectRestoreRequest(objectRestoreXmlExpeditedTier), log, err => {
-                    assert.strictEqual(err.is.NotImplemented, true);
-                    done();
+    [
+        ['Bulk', objectRestoreXmlBulkTier],
+        ['Expedited', objectRestoreXmlExpeditedTier],
+    ].forEach(([tier, xml]) => {
+        it(`should accept a restore with the '${tier}' Tier`, done => {
+            mdColdHelper.putBucketMock(bucketName, null, () => {
+                mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchivedObjectMD(), () => {
+                    objectRestore(authInfo, objectRestoreRequest(xml), log, (err, statusCode) => {
+                        assert.ifError(err);
+                        assert.strictEqual(statusCode, 202);
+                        metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                            assert.ifError(err);
+                            // the tier is accepted but not acted upon: the restore is a regular one
+                            assert.strictEqual(md.archive.restoreRequestedDays, restoreDays);
+                            done();
+                        });
+                    });
                 });
             });
         });

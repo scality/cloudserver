@@ -133,24 +133,40 @@ describe('buildVeeamFileData', () => {
         },
     };
 
-    const bucketMdWithSystem = {
+    // Built per test: buildVeeamFileData adjusts the stored SystemInfo in place
+    const createBucketMdWithSystem = (protocolCapabilities = {}) => ({
         ...bucketMd,
         _capabilities: {
             VeeamSOSApi: {
                 SystemInfo: {
                     ProtocolVersion: '1.0',
                     ModelName: 'ARTESCA',
+                    ProtocolCapabilities: {
+                        CapacityInfo: true,
+                        UploadSessions: true,
+                        IAMSTS: false,
+                        ...protocolCapabilities,
+                    },
                     LastModified: '2024-01-01T00:00:00.000Z',
                 },
             },
         },
-    };
+    });
 
     const createRequest = objectKey => ({
         bucketName: 'test-bucket',
         objectKey,
         headers: { host: 'test-bucket.s3.amazonaws.com' },
     });
+
+    let originalEnableDirectToCold;
+
+    const setArchiveTierSupported = supported => {
+        config.enableDirectToCold = supported;
+        if (supported) {
+            config.locationConstraints.glacier = { ...config.locationConstraints['location-dmf-v1'] };
+        }
+    };
 
     beforeEach(() => {
         log = new DummyRequestLogger();
@@ -159,10 +175,13 @@ describe('buildVeeamFileData', () => {
 
         metadataStub = sinon.stub(metadata, 'getBucket');
         utilizationStub = sinon.stub(UtilizationService, 'getUtilizationMetrics');
+        originalEnableDirectToCold = config.enableDirectToCold;
     });
 
     afterEach(() => {
         sinon.restore();
+        config.enableDirectToCold = originalEnableDirectToCold;
+        delete config.locationConstraints.glacier;
     });
 
     it('should reject with InternalError when metadata.getBucket fails', async () => {
@@ -226,6 +245,7 @@ describe('buildVeeamFileData', () => {
     });
 
     it('should build system.xml without calling UtilizationService', async () => {
+        const bucketMdWithSystem = createBucketMdWithSystem();
         metadataStub.callsArgWith(2, null, bucketMdWithSystem);
         const before = Date.now();
 
@@ -237,6 +257,49 @@ describe('buildVeeamFileData', () => {
         assert(result.xmlContent.includes('SystemInfo'));
         assert(result.xmlContent.includes('ARTESCA'));
         assert(Buffer.isBuffer(result.dataBuffer));
+    });
+
+    describe('system.xml EnableOnPremArchiveTier', () => {
+        const buildSystemXML = async protocolCapabilities => {
+            const bucketMdWithSystem = createBucketMdWithSystem(protocolCapabilities);
+            metadataStub.callsArgWith(2, null, bucketMdWithSystem);
+            const result = await buildVeeamFileData(createRequest(systemObjectKey), bucketMdWithSystem, log);
+            return result.xmlContent;
+        };
+
+        it('should report false when not stored and not supported', async () => {
+            setArchiveTierSupported(false);
+            assert.match(await buildSystemXML(), /<EnableOnPremArchiveTier>false<\/EnableOnPremArchiveTier>/);
+        });
+
+        it('should report true when not stored and supported', async () => {
+            setArchiveTierSupported(true);
+            assert.match(await buildSystemXML(), /<EnableOnPremArchiveTier>true<\/EnableOnPremArchiveTier>/);
+        });
+
+        it('should report true when stored true and supported', async () => {
+            setArchiveTierSupported(true);
+            assert.match(
+                await buildSystemXML({ EnableOnPremArchiveTier: true }),
+                /<EnableOnPremArchiveTier>true<\/EnableOnPremArchiveTier>/,
+            );
+        });
+
+        it('should report false when stored true but not supported', async () => {
+            setArchiveTierSupported(false);
+            assert.match(
+                await buildSystemXML({ EnableOnPremArchiveTier: true }),
+                /<EnableOnPremArchiveTier>false<\/EnableOnPremArchiveTier>/,
+            );
+        });
+
+        it('should report false when stored false but supported', async () => {
+            setArchiveTierSupported(true);
+            assert.match(
+                await buildSystemXML({ EnableOnPremArchiveTier: false }),
+                /<EnableOnPremArchiveTier>false<\/EnableOnPremArchiveTier>/,
+            );
+        });
     });
 
     it('should not overwrite Used when it is already set', async () => {
