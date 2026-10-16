@@ -1,7 +1,16 @@
-const { S3Client, PutObjectCommand, CopyObjectCommand, CreateMultipartUploadCommand } = require('@aws-sdk/client-s3');
+const {
+    S3Client,
+    PutObjectCommand,
+    CopyObjectCommand,
+    CreateMultipartUploadCommand,
+    PutBucketEncryptionCommand,
+} = require('@aws-sdk/client-s3');
 const { v4: uuidv4 } = require('uuid');
+const { promisify } = require('util');
 const config = require('../config.json');
 const { auth } = require('@scality/arsenal');
+const { KmsType, isValidProtocol, makeScalityArnPrefix } = require('@scality/arsenal/build/lib/network/KMSInterface');
+const { config: serverConfig } = require('../../../lib/Config');
 const http = require('http');
 const https = require('https');
 const assert = require('assert');
@@ -202,5 +211,67 @@ describe('KMIP backed server-side encryption', () => {
                 done();
             },
         );
+    });
+});
+
+describe('KMIP backed server-side encryption with other KMSs configured', () => {
+    const createBucket = promisify(_createBucket);
+    const nonDefaultKeyArns = serverConfig.kms
+        .filter(entry => !entry.default)
+        .map(({ protocol, providerName }) => {
+            const type = isValidProtocol(KmsType.internal, protocol) ? KmsType.internal : KmsType.external;
+            return `${makeScalityArnPrefix(type, protocol, providerName)}${'ab'.repeat(32)}`;
+        });
+    let bucketName;
+
+    function assertInvalidArgument(err) {
+        assert.strictEqual(err.name, 'InvalidArgument');
+        assert.strictEqual(err.$metadata.httpStatusCode, 400);
+        return true;
+    }
+
+    before(() => {
+        assert(nonDefaultKeyArns.length > 0, 'the server config must have KMSs next to the default one');
+    });
+
+    beforeEach(async () => {
+        bucketName = uuidv4();
+        await createBucket(bucketName, false);
+    });
+
+    nonDefaultKeyArns.forEach(keyArn => {
+        it(`should refuse PutObject with key ${keyArn}`, () =>
+            assert.rejects(
+                s3.send(
+                    new PutObjectCommand({
+                        Bucket: bucketName,
+                        Key: uuidv4(),
+                        Body: 'I am the best content ever',
+                        ServerSideEncryption: 'aws:kms',
+                        SSEKMSKeyId: keyArn,
+                    }),
+                ),
+                assertInvalidArgument,
+            ));
+
+        it(`should refuse PutBucketEncryption with key ${keyArn}`, () =>
+            assert.rejects(
+                s3.send(
+                    new PutBucketEncryptionCommand({
+                        Bucket: bucketName,
+                        ServerSideEncryptionConfiguration: {
+                            Rules: [
+                                {
+                                    ApplyServerSideEncryptionByDefault: {
+                                        SSEAlgorithm: 'aws:kms',
+                                        KMSMasterKeyID: keyArn,
+                                    },
+                                },
+                            ],
+                        },
+                    }),
+                ),
+                assertInvalidArgument,
+            ));
     });
 });

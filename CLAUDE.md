@@ -126,15 +126,26 @@ HA deployments.
 | `mem` (default) | -    | In-memory accounts from `conf/authdata.json` |
 | `vault`         | 8500 | External Vault IAM service (vaultd)          |
 
-### KMS Backends (`S3KMS`)
+### KMS Backends (`kms` in `config.json`, or `S3KMS`)
 
-| Backend          | Description                  |
-| ---------------- | ---------------------------- |
-| `file` (default) | Local file-based key storage |
-| `mem`            | In-memory (testing only)     |
-| `kmip`           | External KMIP server         |
-| `aws`            | AWS KMS                      |
-| `scality`        | Scality KMS                  |
+KMSs are configured as a `kms` array in `config.json`. Each entry has a
+`protocol`, a unique `providerName`, the settings of that protocol, and exactly
+one entry has `"default": true`. The KMS of the default entry is used.
+
+| Protocol  | Description                                            |
+| --------- | ------------------------------------------------------ |
+| `file`    | Local file-based key storage (`providerName: scality`) |
+| `kmip`    | External KMIP server or cluster                        |
+| `aws_kms` | AWS KMS                                                |
+| `scality` | SafeNet KeySecure                                      |
+
+Without a `kms` array, `S3KMS` (or `S3BACKEND`) selects a KMS without
+settings: `file` (default), `mem` (testing only) or `scality`, which uses the
+`file` KMS unless the SafeNet client module `scality-kms` is installed. With a
+`kms` array, `S3KMS` is ignored and `S3BACKEND` only sets the other backends.
+
+The `S3KMIP_*` variables apply to the default entry when it is a `kmip` entry:
+its own settings override them, and it can take its host from `S3KMIP_HOSTS`.
 
 ### Path Configuration
 

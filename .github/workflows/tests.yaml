@@ -860,7 +860,10 @@ jobs:
       PYKMIP_IMAGE: ghcr.io/${{ github.repository }}/pykmip:${{ github.sha }}
       MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
-      S3KMS: kmip
+      COMPOSE_FILE: docker-compose.yaml:docker-compose.sse.yaml
+      # Never started here, but compose needs it to load the sse-migration profile in cleanup
+      VAULT_IMAGE: ghcr.io/scality/vault:7.70.32
+      # The kmip entry of the config has no transport, these complete it
       S3KMIP_PORT: 5696
       S3KMIP_HOSTS: pykmip.local
       S3KMIP_COMPOUND_CREATE: false
@@ -877,10 +880,24 @@ jobs:
       - name: Copy KMIP certs
         run: cp -r ./certs /tmp/ssl-kmip
         working-directory: .github/pykmip
+      - name: Merge config.json, kmip config and the KMSs next to it
+        run: |
+          jq -s '
+            .[2].kms as $nonDefaultKms | (.[0] * .[1]) | .kms += $nonDefaultKms
+          ' \
+            configs/base.json \
+            configs/kmipFromEnv.json \
+            configs/nonDefaultKmsEntries.json \
+            > config.json
+        working-directory: tests/functional/sse-kms-migration
       - name: Setup CI services
-        run: docker compose --profile pykmip up -d
+        run: docker compose up -d --quiet-pull redis pykmip cloudserver-sse-before-migration
         working-directory: .github/docker
       - name: Run file KMIP tests
+        env:
+          # Functional tests need the running config to know the KMSs next to the default one
+          # absolute path to override default root config
+          S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
         run: |-
           set -ex -o pipefail;
           # the data daemon binds after 8000 and nothing in startup waits for it
@@ -891,7 +908,7 @@ jobs:
       - name: Cleanup and upload coverage
         uses: ./.github/actions/cleanup-and-coverage
         with:
-          profiles: pykmip
+          profiles: pykmip sse-migration
           codecov-token: ${{ secrets.CODECOV_TOKEN }}
         if: always()
       - name: Upload test results to Codecov
@@ -922,7 +939,6 @@ jobs:
       PYKMIP_IMAGE: ghcr.io/${{ github.repository }}/pykmip:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
       COMPOSE_FILE: docker-compose.yaml:docker-compose.sse.yaml
-      S3KMS: kmip
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -959,7 +975,6 @@ jobs:
           # yarn run does a cd into the test folder
           # absolute path to override default root config
           S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
-          S3KMS: kmip
           S3_END_TO_END: true # to use the default credentials profile and not vault profile
         run: |-
           set -ex -o pipefail;
@@ -1105,7 +1120,6 @@ jobs:
           docker compose up -d --quiet-pull ${{ matrix.kms.container }} vault-sse-migration cloudserver-sse-migration
         working-directory: .github/docker
         env:
-          S3KMS: ${{ matrix.kms.provider }} # S3
           KMS_BACKEND: ${{ matrix.kms.provider == 'aws' && 'aws' || '' }} # vault only supports aws
       - name: Wait for services kms vault and s3
         run: |-
@@ -1126,7 +1140,6 @@ jobs:
           # KMS provider and sseMigration
           # absolute path to override default root config
           S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
-          S3KMS: ${{ matrix.kms.provider }}
         run: yarn run ft_sse_migration | tee /tmp/artifacts/${{ env.JOB_NAME }}/migration.log
       - name: Run SSE arnPrefix tests
         shell: bash # for pipefail
@@ -1135,7 +1148,6 @@ jobs:
           # KMS provider and sseMigration
           # absolute path to override default root config
           S3_CONFIG_FILE: ${{ github.workspace }}/tests/functional/sse-kms-migration/config.json
-          S3KMS: ${{ matrix.kms.provider }}
         run: yarn run ft_sse_arn | tee /tmp/artifacts/${{ env.JOB_NAME }}/arnPrefix.log
       - name: Print docker compose logs
         run: |-
