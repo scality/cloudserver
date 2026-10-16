@@ -150,6 +150,29 @@ describe('prepareRequestContexts', () => {
         assert.strictEqual(results[2].getAction(), 'scality:GetObjectArchiveInfo');
     });
 
+    // The API checks the authorization results by API method, so the request
+    // contexts must carry the API methods it checks, not only the right actions
+    [
+        { apiMethod: 'objectCopy', destApiMethod: 'objectPut' },
+        { apiMethod: 'objectPutCopyPart', destApiMethod: 'objectPutPart' },
+    ].forEach(({ apiMethod, destApiMethod }) => {
+        it(`should authorize the destination of ${apiMethod} as ${destApiMethod}`, () => {
+            const request = makeRequest({});
+            const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject);
+
+            assert.deepStrictEqual(results.map(rc => rc._apiMethod), ['objectGet', destApiMethod]);
+            assert.deepStrictEqual(results.map(rc => rc.getAction()), ['s3:GetObject', 's3:PutObject']);
+        });
+
+        it(`should authorize a specific source version of ${apiMethod} as objectGetVersion`, () => {
+            const request = makeRequest({});
+            const results = prepareRequestContexts(apiMethod, request, sourceBucket, sourceObject, sourceVersionId);
+
+            assert.deepStrictEqual(results.map(rc => rc._apiMethod), ['objectGetVersion', destApiMethod]);
+            assert.strictEqual(results[0].getQuery().versionId, sourceVersionId);
+        });
+    });
+
     it('should return s3:PutObjectRetention with header x-amz-object-lock-mode', () => {
         const apiMethod = 'objectPut';
         const request = makeRequest({
