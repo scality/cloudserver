@@ -1,14 +1,6 @@
 {
     "kms": [
         {
-            "protocol": "aws_kms",
-            "providerName": "unused",
-            "region": "us-east-1",
-            "endpoint": "http://127.0.0.1:1",
-            "ak": "456",
-            "sk": "123"
-        },
-        {
             "protocol": "file",
             "providerName": "scality"
         }
