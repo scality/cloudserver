@@ -14,6 +14,7 @@ const { v4: uuidv4 } = require('uuid');
 const { promisify } = require('util');
 const config = require('../config.json');
 const { auth } = require('@scality/arsenal');
+const { KmsAWSClient } = require('@scality/arsenal').network;
 const {
     KmsType,
     KmsProtocol,
@@ -21,6 +22,7 @@ const {
     getKeyIdFromArn,
 } = require('@scality/arsenal/build/lib/network/KMSInterface');
 const { config: serverConfig } = require('../../../lib/Config');
+const { DummyRequestLogger } = require('../../unit/helpers');
 const http = require('http');
 const https = require('https');
 const assert = require('assert');
@@ -245,6 +247,14 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
             return `${makeScalityArnPrefix(KmsType.internal, entry.protocol, entry.providerName)}${crypto
                 .randomBytes(32)
                 .toString('hex')}`;
+        }
+        if (entry.protocol === KmsProtocol.aws_kms) {
+            const client = new KmsAWSClient({ kmsAWS: entry.settings });
+            return new Promise((resolve, reject) =>
+                client.createBucketKey('multiKmsTestBucket', new DummyRequestLogger(), (err, keyId, keyArn) =>
+                    err ? reject(err) : resolve(keyArn),
+                ),
+            );
         }
         throw new Error(`no key creation for the ${entry.protocol} KMS ${entry.providerName}`);
     }
