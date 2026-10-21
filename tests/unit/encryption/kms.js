@@ -48,6 +48,37 @@ describe('KMS unit tests', () => {
         });
     });
 
+    describe('with a key of a KMS that is not configured', () => {
+        const keyArn = 'arn:scality:kms:external:kmip:unconfigured:key/1';
+
+        function assertRefusedNamingOnlyTheKey(err) {
+            assert.strictEqual(err.is.InvalidArgument, true);
+            assert.strictEqual(
+                err.description,
+                `KMS Scality KeyArn "${keyArn}" doesn't match any configured providers`,
+            );
+        }
+
+        it('should refuse it on bucket encryption', done => {
+            const sseConfig = parseBucketEncryptionHeaders({
+                'x-amz-scal-server-side-encryption': 'aws:kms',
+                'x-amz-scal-server-side-encryption-aws-kms-key-id': keyArn,
+            });
+            KMS.bucketLevelEncryption(dummyBucket, sseConfig, log, err => {
+                assertRefusedNamingOnlyTheKey(err);
+                done();
+            });
+        });
+
+        it('should refuse it on object encryption', done => {
+            const sseInfo = { algorithm: 'aws:kms', cryptoScheme: 1, mandatory: true, masterKeyId: keyArn };
+            KMS.createCipherBundle(sseInfo, log, err => {
+                assertRefusedNamingOnlyTheKey(err);
+                done();
+            });
+        });
+    });
+
     it(
         'should not construct a sse info object if ' +
             'x-amz-scal-server-side-encryption header contains invalid algorithm option',

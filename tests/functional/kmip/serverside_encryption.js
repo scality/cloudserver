@@ -412,10 +412,16 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
     describe('with a key of a KMS that is not configured', () => {
         const keyArn = `${makeScalityArnPrefix(KmsType.external, KmsProtocol.kmip, 'unconfigured')}1`;
 
+        function assertRefusedNamingOnlyTheKey(err) {
+            assertInvalidArgument(err);
+            assert.strictEqual(err.message, `KMS Scality KeyArn "${keyArn}" doesn't match any configured providers`);
+            return true;
+        }
+
         it('should refuse PutObject', () =>
-            assert.rejects(putObject(bucketName, objectName, keyArn), assertInvalidArgument));
+            assert.rejects(putObject(bucketName, objectName, keyArn), assertRefusedNamingOnlyTheKey));
 
         it('should refuse PutBucketEncryption on a bucket without a bucket key', () =>
-            assert.rejects(putBucketEncryption(bucketName, keyArn), assertInvalidArgument));
+            assert.rejects(putBucketEncryption(bucketName, keyArn), assertRefusedNamingOnlyTheKey));
     });
 });
