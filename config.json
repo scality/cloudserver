@@ -138,16 +138,6 @@
     ],
     "defaultEncryptionKeyPerAccount": true,
     "kmsHideScalityArn": false,
-    "kmsAWS": {
-        "providerName": "aws",
-        "region": "us-east-1",
-        "endpoint": "http://127.0.0.1:8080",
-        "ak": "tbd",
-        "sk": "tbd"
-    },
-    "kmip": {
-        "providerName": "thales"
-    },
     "apiBodySizeLimits": {
         "multiObjectDelete": 2097152,
         "bucketPutPolicy": 20480

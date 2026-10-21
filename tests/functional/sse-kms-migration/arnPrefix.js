@@ -660,17 +660,18 @@ describe('KMS error', () => {
                     'does not exist in this region, or you are not allowed to access\\.',
             ),
     };
-    if (helpers.config.backends.kms === 'kmip') {
+    const kmsProtocol = helpers.config.getDefaultKms().protocol;
+    if (kmsProtocol === 'kmip') {
         expected = expectedKMIP;
-    } else if (helpers.config.backends.kms === 'aws') {
+    } else if (kmsProtocol === 'aws_kms') {
         expected = expectedAWS;
     } else {
-        throw new Error(`Unsupported KMS backend: ${helpers.config.backends.kms}`);
+        throw new Error(`Unsupported KMS backend: ${kmsProtocol}`);
     }
 
     function assertKmsError(action, keyId) {
         return err => {
-            if (helpers.config.backends.kms === 'aws' && action === 'Decrypt') {
+            if (kmsProtocol === 'aws_kms' && action === 'Decrypt') {
                 assert.strictEqual(err.name, expectedLocalKms.code);
                 assert.match(err.message, expectedLocalKms.msg(action, keyId));
                 return true;

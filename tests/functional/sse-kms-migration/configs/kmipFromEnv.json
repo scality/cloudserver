@@ -1,0 +1,9 @@
+{
+    "kms": [
+        {
+            "protocol": "kmip",
+            "providerName": "thales",
+            "default": true
+        }
+    ]
+}

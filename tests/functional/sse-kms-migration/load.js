@@ -12,7 +12,7 @@ const BUCKET_NUMBER = 10;
 const OBJECT_NUMBER = 200;
 const TOTAL_OBJECTS = BUCKET_NUMBER * OBJECT_NUMBER;
 
-const KMS_NODES = helpers.config.kmip.transport.length;
+const KMS_NODES = helpers.config.getDefaultKms().settings.transport.length;
 const TOTAL_OBJECTS_PER_NODE = Math.floor(TOTAL_OBJECTS / KMS_NODES);
 
 /**
