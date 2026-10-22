@@ -1305,10 +1305,10 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
-"@scality/arsenal@^8.6.0", "@scality/arsenal@^8.6.0-0":
-  version "8.6.0"
-  resolved "https://registry.yarnpkg.com/@scality/arsenal/-/arsenal-8.6.0.tgz#7d8422893a6f498894e04509cb07f1bcb224e5ab"
-  integrity sha512-RxYMTZf23vd4P1lQEm/H7Jy0yIFZ+2/uFqpp7tLD4lj8iu6Lj8MsF+KxWfB3QLvwVKx9QPsMqSe06QaOPwqh4Q==
+"@scality/arsenal@^8.6.0", "@scality/arsenal@^8.6.1":
+  version "8.6.1"
+  resolved "https://registry.yarnpkg.com/@scality/arsenal/-/arsenal-8.6.1.tgz#f2db3ec8184646282872850d1cce3c16870f053c"
+  integrity sha512-EwKYj0htAbDvDmu4h3EeIG1RwwxGCRvUixQN8NHx9bJIHS5qucQLvNCQ45BNR0q4MDIza3fyE6Xn7DF5hxBBUQ==
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"
@@ -1406,7 +1406,7 @@
   resolved "https://codeload.github.com/scality/utapi/tar.gz/0977b6b64d04683182da572be7f0aee524d98cf4"
   dependencies:
     "@aws-sdk/client-iam" "^3.975.0"
-    "@scality/arsenal" "^8.6.0-0"
+    "@scality/arsenal" "^8.6.0"
     "@scality/bucketclient" scality/bucketclient#8.3.0
     "@senx/warp10" "1.0.14"
     async "^3.2.6"
@@ -4111,9 +4111,8 @@ http2-wrapper@^1.0.0-beta.5.2:
   dependencies:
     agentkeepalive "^4.5.0"
 
-"httpagent@github:scality/httpagent#1.1.1", httpagent@scality/httpagent#1.1.1:
+"httpagent@github:scality/httpagent#1.1.1":
   version "1.1.1"
-  uid "7c6ef8be1cd89b56651f4a922ea5c92d7673ee2e"
   resolved "https://codeload.github.com/scality/httpagent/tar.gz/7c6ef8be1cd89b56651f4a922ea5c92d7673ee2e"
   dependencies:
     agentkeepalive "^4.6.0"
@@ -7180,7 +7179,7 @@ webidl-conversions@^7.0.0:
     fast-safe-stringify "^2.1.1"
     safe-json-stringify "^1.2.0"
 
-werelogs@scality/werelogs#8.2.5, "werelogs@scality/werelogs#semver:^8.2.4":
+"werelogs@github:scality/werelogs#8.2.5", werelogs@scality/werelogs#8.2.5, "werelogs@scality/werelogs#semver:^8.2.4":
   version "8.2.5"
   resolved "https://codeload.github.com/scality/werelogs/tar.gz/41188826d661227f98ebaaeda7df5e5862809bc7"
   dependencies:
