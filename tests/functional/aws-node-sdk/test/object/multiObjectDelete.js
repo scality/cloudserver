@@ -210,221 +210,212 @@ describe('Multi-Object Delete Error Responses', () => {
     });
 });
 
-describe('Multi-Object Delete Access', function access() {
+describe('Delete Multi Object', function access() {
     this.timeout(360000);
     let bucketUtil;
     let s3;
-
-    before(() => {
-        const createObjects = [];
-        bucketUtil = new BucketUtility('default', {
-            signatureVersion: 'v4',
-        });
-        s3 = bucketUtil.s3;
-        return s3.createBucket({ Bucket: bucketName }).promise()
-        .catch(err => {
-            process.stdout.write(`Error creating bucket: ${err}\n`);
-            throw err;
-        })
-        .then(() => {
-            for (let i = 1; i < 501; i++) {
-                createObjects.push(s3.putObject({
-                    Bucket: bucketName,
-                    Key: `${key}${i}`,
-                    Body: 'somebody',
-                }).promise());
-            }
-            return Promise.all(createObjects)
-            .catch(err => {
-                process.stdout.write(`Error creating objects: ${err}\n`);
-                throw err;
-            });
-        });
-    });
-
-    after(() => s3.deleteBucket({ Bucket: bucketName }).promise());
-
-    it('should return access denied error for each object where no acl ' +
-        'permission', () => {
-        const objects = createObjectsList(500);
-        const errorList = createObjectsList(500);
-        errorList.forEach(obj => {
-            const item = obj;
-            item.Code = 'AccessDenied';
-            item.Message = 'Access Denied';
-        });
-        return otherAccountS3.deleteObjects({
-            Bucket: bucketName,
-            Delete: {
-                Objects: objects,
-                Quiet: false,
-            },
-        }).promise().then(res => {
-            assert.strictEqual(res.Deleted.length, 0);
-            assert.deepStrictEqual(sortList(res.Errors), sortList(errorList));
-            assert.strictEqual(res.Errors.length, 500);
-        }).catch(err => {
-            checkNoError(err);
-        });
-    });
-
-
-    it('should batch delete objects where requester has permission', () => {
-        const objects = createObjectsList(500);
-        return s3.deleteObjects({
-            Bucket: bucketName,
-            Delete: {
-                Objects: objects,
-                Quiet: false,
-            },
-        }).promise().then(res => {
-            assert.strictEqual(res.Deleted.length, 500);
-            assert.strictEqual(res.Errors.length, 0);
-        }).catch(err => {
-            checkNoError(err);
-        });
-    });
-});
-
-describe('Multi-Object Delete with Object Lock', () => {
-    let bucketUtil;
-    let s3;
     const versionIds = [];
-
-    before(() => {
-        const createObjects = [];
-        bucketUtil = new BucketUtility('default', {
-            signatureVersion: 'v4',
-        });
-        s3 = bucketUtil.s3;
-        return s3.createBucket({
-            Bucket: bucketName,
-            ObjectLockEnabledForBucket: true,
-        }).promise()
-        .then(() => s3.putObjectLockConfiguration({
-            Bucket: bucketName,
-            ObjectLockConfiguration: {
-                ObjectLockEnabled: 'Enabled',
-                Rule: {
-                    DefaultRetention: {
-                        Days: 1,
-                        Mode: 'GOVERNANCE',
-                    },
-                },
-            },
-        }).promise())
-        .catch(err => {
-            process.stdout.write(`Error creating bucket: ${err}\n`);
-            throw err;
-        })
-        .then(() => {
-            for (let i = 1; i < 6; i++) {
-                createObjects.push(s3.putObject({
+    const parameters = [
+        { bucketMode: 'GOVERNANCE', ObjectLock: true, ratainDate: moment().add(5, 'days').toISOString() },
+        { bucketMode: 'COMPLIANCE', ObjectLock: true, ratainDate: moment().add(5, 'days').toISOString() },
+        { bucketMode: 'GOVERNANCE', ObjectLock: false, ratainDate: moment().add(5, 'days').toISOString() },
+        { bucketMode: 'COMPLIANCE', ObjectLock: false, ratainDate: moment().add(5, 'days').toISOString() },
+    ];
+    parameters.forEach(response => {
+        before(() => {
+            const createObjects = [];
+            bucketUtil = new BucketUtility('default', {
+                signatureVersion: 'v4',
+            });
+            s3 = bucketUtil.s3;
+            return s3.createBucket({
+                Bucket: bucketName,
+                ObjectLockEnabledForBucket: response.ObjectLock,
+            }).promise()
+            .then(() => {
+                process.stdout.write('putting object lock configuration\n');
+                return response.ObjectLock ? s3.putObjectLockConfiguration({
                     Bucket: bucketName,
-                    Key: `${key}${i}`,
-                    Body: 'somebody',
-                }).promise());
-            }
-            return Promise.all(createObjects)
-            .then(res => {
-                res.forEach(r => {
-                    versionIds.push(r.VersionId);
-                });
+                    ObjectLockConfiguration: {
+                        ObjectLockEnabled: 'Enabled',
+                        Rule: {
+                            DefaultRetention: {
+                                Days: parseInt(response.ratainDate, 0),
+                                Mode: response.bucketMode,
+                            },
+                        },
+                    },
+                }).promise() : true;
             })
             .catch(err => {
-                process.stdout.write(`Error creating objects: ${err}\n`);
+                process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
+            })
+            .then(() => {
+                for (let i = 1; i < 6; i++) {
+                    createObjects.push(s3.putObject({
+                        Bucket: bucketName,
+                        Key: `${key}${i}`,
+                        Body: 'somebody',
+                    }).promise());
+                }
+                return Promise.all(createObjects)
+                .then(res => {
+                    res.forEach(r => {
+                        versionIds.push(r.VersionId);
+                    });
+                })
+                .catch(err => {
+                    process.stdout.write(`Error creating objects: ${err}\n`);
+                    throw err;
+                });
             });
         });
-    });
 
-    after(() => s3.deleteBucket({ Bucket: bucketName }).promise());
+        after(() => s3.deleteBucket({ Bucket: bucketName }).promise());
 
-    it('should not delete locked objects', () => {
-        const objects = createObjectsList(5, versionIds);
-        return s3.deleteObjects({
-            Bucket: bucketName,
-            Delete: {
-                Objects: objects,
-                Quiet: false,
-            },
-        }).promise().then(res => {
-            assert.strictEqual(res.Errors.length, 5);
-            res.Errors.forEach(err => assert.strictEqual(err.Code, 'AccessDenied'));
-        });
-    });
-
-    it('should not delete locked objects with GOVERNANCE ' +
-        'retention mode and bypass header when object is legal hold enabled', () => {
-        const objects = createObjectsList(5, versionIds);
-        const putObjectLegalHolds = [];
-        for (let i = 1; i < 6; i++) {
-            putObjectLegalHolds.push(s3.putObjectLegalHold({
+        it(`delete objects in ${response.bucketMode}`, () => {
+            const objects = createObjectsList(5, versionIds);
+            return s3.deleteObjects({
                 Bucket: bucketName,
-                Key: `${key}${i}`,
-                LegalHold: {
-                    Status: 'ON',
+                Delete: {
+                    Objects: objects,
+                    Quiet: false,
                 },
-            }).promise());
-        }
-        return Promise.all(putObjectLegalHolds)
+            }).promise().then(res => {
+                assert.strictEqual(res.Errors.length, 5);
+                res.Errors.forEach(err => assert.strictEqual(err.Code, 'AccessDenied'));
+            });
+        });
+
+        it('should not delete locked objects', () => {
+            const objects = createObjectsList(5, versionIds);
+            return s3.deleteObjects({
+                Bucket: bucketName,
+                Delete: {
+                    Objects: objects,
+                    Quiet: false,
+                },
+            }).promise().then(res => {
+                assert.strictEqual(res.Errors.length, 5);
+                res.Errors.forEach(err => assert.strictEqual(err.Code, 'AccessDenied'));
+            });
+        });
+
+        it(`should not delete locked objects with ${response.bucketMode} ` +
+            'retention mode and bypass header when object is legal hold enabled', () => {
+            const objects = createObjectsList(5, versionIds);
+            const putObjectLegalHolds = [];
+            for (let i = 1; i < 6; i++) {
+                putObjectLegalHolds.push(s3.putObjectLegalHold({
+                    Bucket: bucketName,
+                    Key: `${key}${i}`,
+                    LegalHold: {
+                        Status: 'ON',
+                    },
+                }).promise());
+            }
+            return Promise.all(putObjectLegalHolds)
+                .then(() => s3.deleteObjects({
+                    Bucket: bucketName,
+                    Delete: {
+                        Objects: objects,
+                        Quiet: false,
+                    },
+                    BypassGovernanceRetention: true,
+                }).promise()).then(res => {
+                    assert.strictEqual(res.Errors.length, 5);
+                    res.Errors.forEach(err => assert.strictEqual(err.Code, 'AccessDenied'));
+                });
+        });
+
+        it('should delete locked objects after retention period has expired', () => {
+            const objects = createObjectsList(5, versionIds);
+            const objectsCopy = JSON.parse(JSON.stringify(objects));
+            for (let i = 0; i < objectsCopy.length; i++) {
+                objectsCopy[i].key = objectsCopy[i].Key;
+                objectsCopy[i].versionId = objectsCopy[i].VersionId;
+                objectsCopy[i].bucket = bucketName;
+                delete objectsCopy[i].Key;
+                delete objectsCopy[i].VersionId;
+            }
+            const newRetention = {
+                mode: response.bucketMode,
+                date: moment().subtract(10, 'days').toISOString(),
+            };
+            return changeLockPromise(objectsCopy, newRetention)
             .then(() => s3.deleteObjects({
                 Bucket: bucketName,
                 Delete: {
                     Objects: objects,
                     Quiet: false,
                 },
-                BypassGovernanceRetention: true,
             }).promise()).then(res => {
-                assert.strictEqual(res.Errors.length, 5);
-                res.Errors.forEach(err => assert.strictEqual(err.Code, 'AccessDenied'));
+                assert.strictEqual(res.Deleted.length, 5);
+                assert.strictEqual(res.Errors.length, 0);
+            }).catch(err => {
+                checkNoError(err);
             });
-    });
-
-    it('should delete locked objects after retention period has expired', () => {
-        const objects = createObjectsList(5, versionIds);
-        const objectsCopy = JSON.parse(JSON.stringify(objects));
-        for (let i = 0; i < objectsCopy.length; i++) {
-            objectsCopy[i].key = objectsCopy[i].Key;
-            objectsCopy[i].versionId = objectsCopy[i].VersionId;
-            objectsCopy[i].bucket = bucketName;
-            delete objectsCopy[i].Key;
-            delete objectsCopy[i].VersionId;
-        }
-        const newRetention = {
-            mode: 'GOVERNANCE',
-            date: moment().subtract(10, 'days').toISOString(),
-        };
-        return changeLockPromise(objectsCopy, newRetention)
-        .then(() => s3.deleteObjects({
-            Bucket: bucketName,
-            Delete: {
-                Objects: objects,
-                Quiet: false,
-            },
-        }).promise()).then(res => {
-            assert.strictEqual(res.Deleted.length, 5);
-            assert.strictEqual(res.Errors.length, 0);
-        }).catch(err => {
-            checkNoError(err);
         });
-    });
 
-    it('should delete locked objects with GOVERNANCE ' +
-        'retention mode and bypass header', () => {
-        const objects = createObjectsList(5, versionIds);
-        return s3.deleteObjects({
-            Bucket: bucketName,
-            Delete: {
-                Objects: objects,
-                Quiet: false,
-            },
-            BypassGovernanceRetention: true,
-        }).promise().then(res => {
-            assert.strictEqual(res.Deleted.length, 5);
-            assert.strictEqual(res.Errors.length, 0);
-        }).catch(err => {
-            checkNoError(err);
+        it(`should delete locked objects with ${response.bucketMode} ` +
+            'retention mode and bypass header', () => {
+            const objects = createObjectsList(5, versionIds);
+            return s3.deleteObjects({
+                Bucket: bucketName,
+                Delete: {
+                    Objects: objects,
+                    Quiet: false,
+                },
+                BypassGovernanceRetention: true,
+            }).promise().then(res => {
+                assert.strictEqual(res.Deleted.length, 5);
+                assert.strictEqual(res.Errors.length, 0);
+            }).catch(err => {
+                checkNoError(err);
+            });
+        });
+
+        it('should return access denied error for each object where no acl ' +
+            'permission', () => {
+            const objects = createObjectsList(500);
+            const errorList = createObjectsList(500);
+            errorList.forEach(obj => {
+                const item = obj;
+                item.Code = 'AccessDenied';
+                item.Message = 'Access Denied';
+            });
+            return otherAccountS3.deleteObjects({
+                Bucket: bucketName,
+                Delete: {
+                    Objects: objects,
+                    Quiet: false,
+                },
+            }).promise().then(res => {
+                assert.strictEqual(res.Deleted.length, 0);
+                assert.deepStrictEqual(sortList(res.Errors), sortList(errorList));
+                assert.strictEqual(res.Errors.length, 500);
+            }).catch(err => {
+                checkNoError(err);
+            });
+        });
+
+
+        it('should batch delete objects where requester has permission', () => {
+            const objects = createObjectsList(500);
+            return s3.deleteObjects({
+                Bucket: bucketName,
+                Delete: {
+                    Objects: objects,
+                    Quiet: false,
+                },
+            }).promise().then(res => {
+                assert.strictEqual(res.Deleted.length, 500);
+                assert.strictEqual(res.Errors.length, 0);
+            }).catch(err => {
+                checkNoError(err);
+            });
         });
     });
 });
+

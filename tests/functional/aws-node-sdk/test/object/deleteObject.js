@@ -99,165 +99,37 @@ describe('DELETE object', () => {
             const bucketName = 'testdeleteobjectlockbucket';
             let versionIdOne;
             let versionIdTwo;
-            const retainDate = moment().add(10, 'days').toISOString();
-            before(() => {
-                process.stdout.write('creating bucket\n');
-                return s3.createBucket({
-                    Bucket: bucketName,
-                    ObjectLockEnabledForBucket: true,
-                }).promise()
-                .catch(err => {
-                    process.stdout.write(`Error creating bucket ${err}\n`);
-                    throw err;
-                })
-                .then(() => {
-                    process.stdout.write('putting object\n');
-                    return s3.putObject({
+            [
+                { bucketMode: 'GOVERNANCE', ratainDate: moment().add(5, 'days').toISOString(), putObjectLock: false },
+                { bucketMode: 'COMPLIANCE', ratainDate: moment().add(5, 'days').toISOString(), putObjectLock: false },
+                { bucketMode: 'GOVERNANCE', ratainDate: moment().add(90, 'days').toISOString(), putObjectLock: true },
+                { bucketMode: 'COMPLIANCE', ratainDate: moment().add(90, 'days').toISOString(), putObjectLock: true },
+            ].forEach((response) => {
+                before(() => {
+                    process.stdout.write('creating bucket\n');
+                    return s3.createBucket({
                         Bucket: bucketName,
-                        Key: objectName,
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write('Error putting object');
-                    throw err;
-                })
-                .then(res => {
-                    versionIdOne = res.VersionId;
-                    process.stdout.write('putting object retention\n');
-                    return s3.putObjectRetention({
-                        Bucket: bucketName,
-                        Key: objectName,
-                        Retention: {
-                            Mode: 'GOVERNANCE',
-                            RetainUntilDate: retainDate,
-                        },
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write('Err putting object retention\n');
-                    throw err;
-                })
-                .then(() => {
-                    process.stdout.write('putting object\n');
-                    return s3.putObject({
-                        Bucket: bucketName,
-                        Key: objectNameTwo,
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write(('Err putting second object\n'));
-                    throw err;
-                })
-                .then(res => {
-                    versionIdTwo = res.VersionId;
-                    process.stdout.write('putting object legal hold\n');
-                    return s3.putObjectLegalHold({
-                        Bucket: bucketName,
-                        Key: objectNameTwo,
-                        LegalHold: {
-                            Status: 'ON',
-                        },
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write('Err putting object legal hold\n');
-                    throw err;
-                });
-            });
-
-            after(() => {
-                process.stdout.write('Emptying bucket\n');
-                return bucketUtil.empty(bucketName)
-                .then(() => {
-                    process.stdout.write('Deleting bucket\n');
-                    return bucketUtil.deleteOne(bucketName);
-                })
-                .catch(err => {
-                    process.stdout.write('Error in after\n');
-                    throw err;
-                });
-            });
-
-            it('should put delete marker if no version id specified', done => {
-                s3.deleteObject({
-                    Bucket: bucketName,
-                    Key: objectName,
-                }, err => {
-                    assert.ifError(err);
-                    done();
-                });
-            });
-
-            it('should not delete object version locked with object ' +
-            'retention', done => {
-                s3.deleteObject({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    VersionId: versionIdOne,
-                }, err => {
-                    assert.strictEqual(err.code, 'AccessDenied');
-                    done();
-                });
-            });
-
-            it('should delete locked object version with GOVERNANCE ' +
-            'retention mode and correct header', done => {
-                s3.deleteObject({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    VersionId: versionIdOne,
-                    BypassGovernanceRetention: true,
-                }, err => {
-                    assert.ifError(err);
-                    done();
-                });
-            });
-
-            it('should not delete object locked with legal hold', done => {
-                s3.deleteObject({
-                    Bucket: bucketName,
-                    Key: objectNameTwo,
-                    VersionId: versionIdTwo,
-                }, err => {
-                    assert.strictEqual(err.code, 'AccessDenied');
-                    changeObjectLock(
-                        [{
-                            bucket: bucketName,
-                            key: objectNameTwo,
-                            versionId: versionIdTwo,
-                        }], '', done);
-                });
-            });
-        });
-
-        describe('with object lock and legal hold', () => {
-            const bucketName = 'testdeletelocklegalholdbucket';
-            const objectName = 'key';
-            let versionId;
-            before(() => {
-                process.stdout.write('creating bucket\n');
-                return s3.createBucket({
-                    Bucket: bucketName,
-                    ObjectLockEnabledForBucket: true,
-                }).promise()
+                        ObjectLockEnabledForBucket: true,
+                    }).promise()
                     .catch(err => {
                         process.stdout.write(`Error creating bucket ${err}\n`);
                         throw err;
                     })
                     .then(() => {
                         process.stdout.write('putting object lock configuration\n');
-                        return s3.putObjectLockConfiguration({
-                            Bucket: bucketName,
-                            ObjectLockConfiguration: {
-                                ObjectLockEnabled: 'Enabled',
-                                Rule: {
-                                    DefaultRetention: {
-                                        Mode: 'GOVERNANCE',
-                                        Days: 1,
+                        return response.putObjectLock ?
+                            s3.putObjectLockConfiguration({
+                                Bucket: bucketName,
+                                ObjectLockConfiguration: {
+                                    ObjectLockEnabled: 'Enabled',
+                                    Rule: {
+                                        DefaultRetention: {
+                                            Mode: response.bucketMode,
+                                            Days: parseInt(response.ratainDate, 0),
+                                        },
                                     },
                                 },
-                            },
-                        }).promise();
+                            }).promise() : true;
                     })
                     .catch(err => {
                         process.stdout.write('Error putting object lock configuration\n');
@@ -275,11 +147,40 @@ describe('DELETE object', () => {
                         throw err;
                     })
                     .then(res => {
-                        versionId = res.VersionId;
+                        versionIdOne = res.VersionId;
+                        process.stdout.write('putting object retention\n');
+                        return !response.putObjectLock ?
+                                s3.putObjectRetention({
+                                    Bucket: bucketName,
+                                    Key: objectName,
+                                    Retention: {
+                                        Mode: response.bucketMode,
+                                        RetainUntilDate: response.ratainDate,
+                                    },
+                                }).promise()
+                            : true;
+                    })
+                    .catch(err => {
+                        process.stdout.write('Err putting object retention\n');
+                        throw err;
+                    })
+                    .then(() => {
+                        process.stdout.write('putting object\n');
+                        return s3.putObject({
+                            Bucket: bucketName,
+                            Key: objectNameTwo,
+                        }).promise();
+                    })
+                    .catch(err => {
+                        process.stdout.write(('Err putting second object\n'));
+                        throw err;
+                    })
+                    .then(res => {
+                        versionIdTwo = res.VersionId;
                         process.stdout.write('putting object legal hold\n');
                         return s3.putObjectLegalHold({
                             Bucket: bucketName,
-                            Key: objectName,
+                            Key: objectNameTwo,
                             LegalHold: {
                                 Status: 'ON',
                             },
@@ -289,11 +190,11 @@ describe('DELETE object', () => {
                         process.stdout.write('Err putting object legal hold\n');
                         throw err;
                     });
-            });
+                });
 
-            after(() => {
-                process.stdout.write('Emptying bucket\n');
-                return bucketUtil.empty(bucketName)
+                after(() => {
+                    process.stdout.write('Emptying bucket\n');
+                    return bucketUtil.empty(bucketName)
                     .then(() => {
                         process.stdout.write('Deleting bucket\n');
                         return bucketUtil.deleteOne(bucketName);
@@ -302,25 +203,87 @@ describe('DELETE object', () => {
                         process.stdout.write('Error in after\n');
                         throw err;
                     });
-            });
+                });
 
-            it('should not delete locked object version with GOVERNANCE ' +
-                'retention mode and bypass header when object is legal-hold enabled', done =>
-                     s3.deleteObject({
-                         Bucket: bucketName,
-                         Key: objectName,
-                         VersionId: versionId,
-                         BypassGovernanceRetention: true,
-                     }, err => {
-                         assert.strictEqual(err.code, 'AccessDenied');
-                         changeObjectLock(
-                             [{
-                                 bucket: bucketName,
-                                 key: objectName,
-                                 versionId,
-                             }], '', done);
-                     }
-                ));
+                it('should put delete marker if no version id specified', done => {
+                    s3.deleteObject({
+                        Bucket: bucketName,
+                        Key: objectName,
+                    }, err => {
+                        assert.ifError(err);
+                        done();
+                    });
+                });
+
+                it('should not delete object version locked with object ' +
+                'retention', done => {
+                    s3.deleteObject({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        VersionId: versionIdOne,
+                    }, err => {
+                        assert.strictEqual(err.code, 'AccessDenied');
+                        done();
+                    });
+                });
+
+                it(`should delete locked object version with ${response.bucketMode} ` +
+                'retention mode and correct header', done => {
+                    s3.deleteObject({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        VersionId: versionIdOne,
+                        BypassGovernanceRetention: true,
+                    }, err => {
+                        assert.ifError(err);
+                        done();
+                    });
+                });
+
+                it('should not delete object locked with legal hold', done => {
+                    s3.deleteObject({
+                        Bucket: bucketName,
+                        Key: objectNameTwo,
+                        VersionId: versionIdTwo,
+                    }, err => {
+                        assert.strictEqual(err.code, 'AccessDenied');
+                        changeObjectLock(
+                            [{
+                                bucket: bucketName,
+                                key: objectNameTwo,
+                                versionId: versionIdTwo,
+                            }], '', done);
+                    });
+                });
+
+                it(`should not delete locked object version with ${response.bucketMode} ` +
+                    'retention mode and bypass header when object is legal-hold enabled', done =>
+                         s3.deleteObject({
+                             Bucket: bucketName,
+                             Key: objectName,
+                             VersionId: versionIdOne,
+                             BypassGovernanceRetention: true,
+                         }, err => {
+                             assert.strictEqual(err.code, 'AccessDenied');
+                             changeObjectLock(
+                                 [{
+                                     bucket: bucketName,
+                                     key: objectName,
+                                     versionIdOne,
+                                 }], '', done);
+                         }
+                    ));
+
+                it(`should delete object in ${response.bucketMode} mode`, () => {
+                    s3.deleteObject({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        VersionId: versionIdOne,
+                    }, err => {
+                        assert.ifError(err);
+                    });
+                });
+            });
         });
     });
 });
