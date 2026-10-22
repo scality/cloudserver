@@ -2,9 +2,10 @@
     "kms": [
         {
             "protocol": "aws_kms",
-            "providerName": "unused",
+            "providerName": "local",
+            "noAwsArn": true,
             "region": "us-east-1",
-            "endpoint": "http://127.0.0.1:1",
+            "endpoint": "http://0:8080",
             "ak": "456",
             "sk": "123"
         },

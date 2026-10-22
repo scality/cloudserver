@@ -891,7 +891,7 @@ jobs:
             > config.json
         working-directory: tests/functional/sse-kms-migration
       - name: Setup CI services
-        run: docker compose up -d --quiet-pull redis pykmip cloudserver-sse-before-migration
+        run: docker compose up -d --quiet-pull redis pykmip localkms cloudserver-sse-before-migration
         working-directory: .github/docker
       - name: Run file KMIP tests
         env:
@@ -904,11 +904,12 @@ jobs:
           bash wait_for_local_port.bash 9991 120
           bash wait_for_local_port.bash 8000 40
           bash wait_for_local_port.bash 5696 40
+          bash wait_for_local_port.bash 8080 40
           yarn run ft_kmip | tee /tmp/artifacts/${{ github.job }}/tests.log
       - name: Cleanup and upload coverage
         uses: ./.github/actions/cleanup-and-coverage
         with:
-          profiles: pykmip sse-migration
+          profiles: pykmip localkms sse-migration
           codecov-token: ${{ secrets.CODECOV_TOKEN }}
         if: always()
       - name: Upload test results to Codecov
