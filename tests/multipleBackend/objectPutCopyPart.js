@@ -29,7 +29,7 @@ const body = Buffer.from('I am a body', 'utf8');
 
 const memLocation = 'scality-internal-mem';
 const fileLocation = 'scality-internal-file';
-const awsBucket = 'multitester555';
+const awsBucket = 'cloudserver-ci-aws-backend-test-bucket';
 const awsLocation = 'awsbackend';
 const awsLocation2 = 'awsbackend2';
 const awsLocationMismatch = 'awsbackendmismatch';
