@@ -397,6 +397,36 @@ describe('objectGet API', () => {
         });
     });
 
+    it('should get the data retrieval info of an unencrypted object ' +
+    'with 10000 parts', done => {
+        // This test is for upfront KMS decryption, with async 2.5, eachLimit
+        // recurses on synchronous callbacks and overflows the stack.
+        // Skipping unencrypted parts before calling eachLimit fixes this issue
+        const locationCount = 10000;
+        async.waterfall([
+            next => bucketPut(authInfo, testPutBucketRequest, log,
+                err => next(err)),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log,
+                err => next(err)),
+            next => metadata.getObjectMD(bucketName, objectName, {}, log,
+                next),
+            (objMD, next) => {
+                const location = objMD.location[0];
+                // eslint-disable-next-line no-param-reassign
+                objMD.location = Array.from({ length: locationCount },
+                    (_, i) => Object.assign({}, location,
+                        { start: i * location.size }));
+                metadata.putObjectMD(bucketName, objectName, objMD, {}, log,
+                    err => next(err));
+            },
+            next => objectGet(authInfo, testGetRequest, false, log, next),
+        ], (err, dataGetInfo) => {
+            assert.ifError(err);
+            assert.strictEqual(dataGetInfo.length, locationCount);
+            done();
+        });
+    });
+
     describe('with an encrypted object', () => {
         const testPutEncryptedObjectRequest = () => new DummyRequest({
             bucketName,
