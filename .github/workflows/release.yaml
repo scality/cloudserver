@@ -16,6 +16,21 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      # Epic copy: refuse a non-epic tag before any image is pushed.
+      - name: Refuse a tag that is not an epic tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.inputs.tag }}
+        run: |
+          if ! [[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+-bnaas\.[0-9]+$ ]]; then
+            echo "::error::$TAG is not an X.Y.Z-bnaas.N epic tag"
+            exit 1
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --silent 2>/dev/null; then
+            echo "::error::Tag $TAG already exists"
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -78,15 +93,14 @@ jobs:
           cache-from: type=gha,scope=federation
           cache-to: type=gha,mode=max,scope=federation
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      # Epic copy: create the tag only, with no GitHub release.
+      - name: Create the tag
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          name: Release ${{ github.event.inputs.tag }}
-          tag_name: ${{ github.event.inputs.tag }}
-          generate_release_notes: true
-          target_commitish: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.inputs.tag }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA"
 
   trigger-kms-release:
     runs-on: ubuntu-latest
@@ -100,12 +114,48 @@ jobs:
           app-id: ${{ vars.ACTIONS_APP_ID }}
           private-key: ${{ secrets.ACTIONS_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
+          repositories: scality-kms
+          permission-contents: read
 
-      - name: Trigger scality-kms release workflow
+      # Epic copy: build scality-kms here instead of starting a scality-kms
+      # release, which would create a GitHub release in scality-kms. The
+      # image holds the proprietary SafeNet library and this repository is
+      # public, so the clone keeps no token and the build log stays quiet.
+      - name: Checkout scality-kms
+        id: kms-checkout
+        uses: actions/checkout@v4
+        with:
+          repository: scality/scality-kms
+          ref: main
+          token: ${{ steps.app-token.outputs.token }}
+          path: scality-kms
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+
+      - name: Build and push scality-kms image
+        uses: docker/build-push-action@v5
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          gh workflow run release.yaml \
-            --repo scality/scality-kms \
-            --ref main \
-            --field cloudserver-version=${{ github.event.inputs.tag }}
+          BUILDKIT_PROGRESS: quiet
+          DOCKER_BUILD_SUMMARY: false
+          DOCKER_BUILD_RECORD_UPLOAD: false
+        with:
+          push: true
+          context: scality-kms
+          provenance: false
+          build-args: |
+            CLOUDSERVER_TAG=${{ github.event.inputs.tag }}-federation
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/scality-kms:${{ github.event.inputs.tag }}-federation
+          labels: |
+            git.repository=${{ github.repository }}
+            git.commit-sha=${{ github.sha }}
+            scality-kms.commit-sha=${{ steps.kms-checkout.outputs.commit }}
