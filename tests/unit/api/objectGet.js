@@ -439,13 +439,18 @@ describe('objectGet API', () => {
             parsedContentLength: 12,
             url: `/${bucketName}/${objectName}`,
         }, postBody);
+        // fresh request: objectGet sets kmsDecipherLocations on it
+        let getRequest;
 
-        beforeEach(done => async.series([
-            next => bucketPut(authInfo, testPutBucketRequest, log,
-                err => next(err)),
-            next => objectPut(authInfo, testPutEncryptedObjectRequest(),
-                undefined, log, err => next(err)),
-        ], done));
+        beforeEach(done => {
+            getRequest = Object.assign({}, testGetRequest);
+            async.series([
+                next => bucketPut(authInfo, testPutBucketRequest, log,
+                    err => next(err)),
+                next => objectPut(authInfo, testPutEncryptedObjectRequest(),
+                    undefined, log, err => next(err)),
+            ], done);
+        });
 
         afterEach(() => {
             sinon.restore();
@@ -458,7 +463,7 @@ describe('objectGet API', () => {
                 .stub(kms, 'createDecipherBundle')
                 .callsFake((sse, offset, log, cb) => cb(kmsError));
             const dataHeadSpy = sinon.spy(data, 'head');
-            objectGet(authInfo, testGetRequest, false, log, err => {
+            objectGet(authInfo, getRequest, false, log, err => {
                 assert.strictEqual(err, kmsError);
                 assert(createDecipherStub.calledOnce);
                 assert(dataHeadSpy.notCalled);
@@ -511,13 +516,17 @@ describe('objectGet API', () => {
                 `when ${envName} is ${envValue}`, done => {
                     const objectGetWithEnv = requireWithEnv(objectGetPath,
                         { [envName]: envValue });
-                    objectGetWithEnv(authInfo, testGetRequest, false,
+                    objectGetWithEnv(authInfo, getRequest, false,
                         log, (err, locations) => {
                             assert.ifError(err);
                             assert.strictEqual(
                                 createDecipherStub.callCount, locationCount);
                             assert.strictEqual(maxInFlight, expectedLimit);
                             assert(locations.every(l => l.decipherStream));
+                            assert.strictEqual(
+                                getRequest.kmsDecipherLocations.length,
+                                locations.length
+                            );
                             done();
                         });
                 });
@@ -527,14 +536,51 @@ describe('objectGet API', () => {
                 done => {
                     const objectGetWithEnv = requireWithEnv(objectGetPath,
                         { [envName]: '0' });
-                    objectGetWithEnv(authInfo, testGetRequest, false, log,
+                    objectGetWithEnv(authInfo, getRequest, false, log,
                         (err, locations) => {
                             assert.ifError(err);
                             assert(createDecipherStub.notCalled);
                             assert(locations.every(l => !l.decipherStream));
+                            assert.strictEqual(getRequest.kmsDecipherLocations,
+                                undefined);
                             done();
                         });
                 });
+
+            it('should return the first KMS error and destroy decipher ' +
+            'streams of KMS calls still in flight', done => {
+                const kmsError = errors.InternalError
+                    .customizeDescription('KMS key is not usable');
+                const deciphers = [];
+                createDecipherStub.callsFake((sse, offset, log, cb) => {
+                    if (createDecipherStub.callCount === 3) {
+                        return setImmediate(cb, kmsError);
+                    }
+                    const decipher = { destroy: sinon.spy() };
+                    deciphers.push(decipher);
+                    return setImmediate(cb, null, { decipher });
+                });
+                objectGet(authInfo, getRequest, false, log, err => {
+                    assert.strictEqual(err, kmsError);
+                    // once the KMS calls still in flight returned
+                    setImmediate(() => {
+                        const attached = getRequest.kmsDecipherLocations
+                            .filter(l => l.decipherStream);
+                        const destroyed = deciphers
+                            .filter(d => d.destroy.calledOnce);
+                        // first batch of 100 and the 2 calls started when 1 and 2
+                        // returned, none started after the error
+                        assert.strictEqual(createDecipherStub.callCount, 102);
+                        // calls 1 and 2 returned before the async error: attached,
+                        // destroyed later by destroyDecipherStreamsOnError
+                        assert.strictEqual(attached.length, 2);
+                        // in flight at the error: calls 4 to 100 and the 2 calls
+                        // started when 1 and 2 returned, destroyed and not attached
+                        assert.strictEqual(destroyed.length, 99);
+                        done();
+                    });
+                });
+            });
         });
     });
 });
