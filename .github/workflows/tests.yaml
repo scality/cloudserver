@@ -272,6 +272,14 @@ jobs:
           cache-from: type=gha,scope=federation
           cache-to: type=gha,mode=max,scope=federation
 
+      # Federation runs the container as the host user, not as the image user
+      - name: Check the federation image entry point is readable by another uid
+        run: >-
+          docker run --rm --user 490:490 --entrypoint bash
+          ghcr.io/${{ github.repository }}:${{ github.sha }}-federation
+          -c 'cd /home/scality/s3 && [[ -r index.js ]] ||
+          { echo "index.js not readable by uid $(id -u)"; exit 1; }'
+
       - name: Build and push pykmip image
         uses: docker/build-push-action@v5
         with:

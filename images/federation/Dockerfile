@@ -19,7 +19,10 @@ ENV HOME_DIR="/home/${USER}" \
     DATA_DIR="/data" \
     SUP_RUN_DIR="/var/run/supervisor"
 
-RUN mv /home/node ${HOME_DIR} && usermod --login ${USER} --shell /bin/bash -d ${HOME_DIR} node
+# Federation runs the container as the host user, not as ${USER}, so the home
+# dir must stay traversable (the trixie node image creates /home/node as 700)
+RUN mv /home/node ${HOME_DIR} && chmod 755 ${HOME_DIR} && \
+    usermod --login ${USER} --shell /bin/bash -d ${HOME_DIR} node
 RUN mkdir ${LOG_DIR} && chown ${USER} ${LOG_DIR} && \
     mkdir ${CONF_DIR} && chown ${USER} ${CONF_DIR} && \
     mkdir ${DATA_DIR} && chown ${USER} ${DATA_DIR} && \
