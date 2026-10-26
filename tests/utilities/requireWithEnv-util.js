@@ -23,7 +23,6 @@ function requireWithEnv(modulePath, env) {
     });
     delete require.cache[resolvedPath];
     try {
-        // eslint-disable-next-line global-require, import/no-dynamic-require
         return require(resolvedPath);
     } finally {
         Object.keys(previousEnv).forEach(name => setEnv(name, previousEnv[name]));
