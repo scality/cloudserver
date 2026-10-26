@@ -69,7 +69,7 @@ env:
   GIT_CLONE_PROTECTION_ACTIVE: 'false'
 jobs:
   linting-coverage:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -125,7 +125,7 @@ jobs:
       if: always()
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -164,7 +164,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=pykmip
 
   build-federation-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -191,7 +191,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=federation
 
   multiple-backend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build
     env:
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
@@ -228,7 +228,7 @@ jobs:
       if: always()
 
   file-ft-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build
     env:
       S3BACKEND: file
@@ -267,7 +267,7 @@ jobs:
       if: always()
 
   utapi-v2-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build
     env:
       ENABLE_UTAPI_V2: t
@@ -302,7 +302,7 @@ jobs:
       if: always()
 
   kmip-ft-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build
     env:
       S3BACKEND: file
