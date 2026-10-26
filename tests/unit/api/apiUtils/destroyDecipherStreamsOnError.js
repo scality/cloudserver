@@ -2,8 +2,7 @@ const assert = require('assert');
 const { EventEmitter } = require('events');
 const sinon = require('sinon');
 
-const destroyDecipherStreamsOnError =
-    require('../../../../lib/api/apiUtils/object/destroyDecipherStreamsOnError');
+const destroyDecipherStreamsOnError = require('../../../../lib/api/apiUtils/object/destroyDecipherStreamsOnError');
 
 describe('destroyDecipherStreamsOnError', () => {
     let locations;
@@ -23,10 +22,10 @@ describe('destroyDecipherStreamsOnError', () => {
         response.writableFinished = false;
     });
 
-    const assertDestroyed = destroyed => locations
-        .filter(location => location.decipherStream)
-        .forEach(location => assert.strictEqual(
-            location.decipherStream.destroy.calledOnce, destroyed));
+    const assertDestroyed = destroyed =>
+        locations
+            .filter(location => location.decipherStream)
+            .forEach(location => assert.strictEqual(location.decipherStream.destroy.calledOnce, destroyed));
 
     it('should do nothing without decipher locations', () => {
         destroyDecipherStreamsOnError(new Error(), {}, response);
@@ -39,16 +38,14 @@ describe('destroyDecipherStreamsOnError', () => {
         assert.strictEqual(response.listenerCount('close'), 0);
     });
 
-    it('should destroy decipher streams if the response is already closed',
-        () => {
-            response.isclosed = true;
-            destroyDecipherStreamsOnError(null, request, response);
-            assertDestroyed(true);
-            assert.strictEqual(response.listenerCount('close'), 0);
-        });
+    it('should destroy decipher streams if the response is already closed', () => {
+        response.isclosed = true;
+        destroyDecipherStreamsOnError(null, request, response);
+        assertDestroyed(true);
+        assert.strictEqual(response.listenerCount('close'), 0);
+    });
 
-    it('should not destroy decipher streams once a successful response ' +
-    'is fully sent', () => {
+    it('should not destroy decipher streams once a successful response is fully sent', () => {
         // Because they are fully consumed by the response
         destroyDecipherStreamsOnError(null, request, response);
         assertDestroyed(false);
@@ -57,8 +54,7 @@ describe('destroyDecipherStreamsOnError', () => {
         assertDestroyed(false);
     });
 
-    it('should destroy decipher streams if the response is closed before ' +
-    'being fully sent', () => {
+    it('should destroy decipher streams if the response is closed before being fully sent', () => {
         destroyDecipherStreamsOnError(null, request, response);
         response.emit('close');
         assertDestroyed(true);
