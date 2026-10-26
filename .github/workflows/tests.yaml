@@ -755,7 +755,7 @@ jobs:
       if: always()
 
   kmip-cluster-ft-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build
     env:
       S3BACKEND: file
@@ -845,7 +845,7 @@ jobs:
       }}${{
         matrix.opts.globalEncryptionEnabled && '-global' || ''
       }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build
     env:
       S3BACKEND: file
