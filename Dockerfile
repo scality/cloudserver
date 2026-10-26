@@ -1,4 +1,4 @@
-ARG NODE_VERSION=24.21.0-trixie-slim
+ARG NODE_VERSION=24.22.1-trixie-slim
 
 FROM node:${NODE_VERSION} AS builder
 
