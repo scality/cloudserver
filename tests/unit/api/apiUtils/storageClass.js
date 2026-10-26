@@ -11,7 +11,7 @@ const { config } = require('../../../../lib/Config');
 
 const coldLocation = 'location-dmf-v1';
 const hotLocation = 'us-east-1';
-const archiveLocations = ['glacier', 'deep_archive'];
+const archiveLocations = ['glacier', 'deep-archive'];
 
 describe('storage class helpers', () => {
     let originalEnableDirectToCold;
@@ -40,7 +40,7 @@ describe('storage class helpers', () => {
 
             [
                 ['GLACIER', 'glacier'],
-                ['DEEP_ARCHIVE', 'deep_archive'],
+                ['DEEP_ARCHIVE', 'deep-archive'],
             ].forEach(([awsName, location]) => {
                 it(`should map ${awsName} to the ${location} location`, () => {
                     assert.strictEqual(normalizeStorageClass(awsName), location);
@@ -68,6 +68,20 @@ describe('storage class helpers', () => {
                 assert.strictEqual(normalizeStorageClass('GLACIER'), 'GLACIER');
             });
         });
+
+        describe('with a deep_archive location', () => {
+            beforeEach(() => {
+                config.locationConstraints['deep_archive'] = { ...config.locationConstraints[coldLocation] };
+            });
+
+            afterEach(() => {
+                delete config.locationConstraints['deep_archive'];
+            });
+
+            it('should not map DEEP_ARCHIVE to the deep_archive location', () => {
+                assert.strictEqual(normalizeStorageClass('DEEP_ARCHIVE'), 'DEEP_ARCHIVE');
+            });
+        });
     });
 
     describe('formatStorageClass', () => {
@@ -86,7 +100,7 @@ describe('storage class helpers', () => {
 
             [
                 ['glacier', 'GLACIER'],
-                ['deep_archive', 'DEEP_ARCHIVE'],
+                ['deep-archive', 'DEEP_ARCHIVE'],
             ].forEach(([location, awsName]) => {
                 it(`should report the ${location} location as ${awsName}`, () => {
                     assert.strictEqual(formatStorageClass(location), awsName);
