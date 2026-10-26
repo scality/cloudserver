@@ -14,10 +14,12 @@ const DummyRequest = require('../DummyRequest');
 const initiateMultipartUpload
     = require('../../../lib/api/initiateMultipartUpload');
 const kms = require('../../../lib/kms/wrapper');
+const metadata = require('../../../lib/metadata/wrapper');
 const objectPut = require('../../../lib/api/objectPut');
 const objectGet = require('../../../lib/api/objectGet');
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const changeObjectLock = require('../../utilities/objectLock-util');
+const requireWithEnv = require('../../utilities/requireWithEnv-util');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -395,6 +397,36 @@ describe('objectGet API', () => {
         });
     });
 
+    it('should get the data retrieval info of an unencrypted object ' +
+    'with 10000 parts', done => {
+        // This test is for upfront KMS decryption, with async 2.5, eachLimit
+        // recurses on synchronous callbacks and overflows the stack.
+        // Skipping unencrypted parts before calling eachLimit fixes this issue
+        const locationCount = 10000;
+        async.waterfall([
+            next => bucketPut(authInfo, testPutBucketRequest, log,
+                err => next(err)),
+            next => objectPut(authInfo, testPutObjectRequest, undefined, log,
+                err => next(err)),
+            next => metadata.getObjectMD(bucketName, objectName, {}, log,
+                next),
+            (objMD, next) => {
+                const location = objMD.location[0];
+                // eslint-disable-next-line no-param-reassign
+                objMD.location = Array.from({ length: locationCount },
+                    (_, i) => Object.assign({}, location,
+                        { start: i * location.size }));
+                metadata.putObjectMD(bucketName, objectName, objMD, {}, log,
+                    err => next(err));
+            },
+            next => objectGet(authInfo, testGetRequest, false, log, next),
+        ], (err, dataGetInfo) => {
+            assert.ifError(err);
+            assert.strictEqual(dataGetInfo.length, locationCount);
+            done();
+        });
+    });
+
     describe('with an encrypted object', () => {
         const testPutEncryptedObjectRequest = () => new DummyRequest({
             bucketName,
@@ -407,6 +439,18 @@ describe('objectGet API', () => {
             parsedContentLength: 12,
             url: `/${bucketName}/${objectName}`,
         }, postBody);
+        // fresh request: objectGet sets kmsDecipherLocations on it
+        let getRequest;
+
+        beforeEach(done => {
+            getRequest = Object.assign({}, testGetRequest);
+            async.series([
+                next => bucketPut(authInfo, testPutBucketRequest, log,
+                    err => next(err)),
+                next => objectPut(authInfo, testPutEncryptedObjectRequest(),
+                    undefined, log, err => next(err)),
+            ], done);
+        });
 
         afterEach(() => {
             sinon.restore();
@@ -415,22 +459,126 @@ describe('objectGet API', () => {
         it('should return KMS error before checking data', done => {
             const kmsError = errors.InternalError
                 .customizeDescription('KMS key is not usable');
-            async.waterfall([
-                next => bucketPut(authInfo, testPutBucketRequest, log,
-                    err => next(err)),
-                next => objectPut(authInfo, testPutEncryptedObjectRequest(),
-                    undefined, log, err => next(err)),
-            ], err => {
-                assert.ifError(err);
-                const createDecipherBundleStub = sinon
+            const createDecipherStub = sinon
+                .stub(kms, 'createDecipherBundle')
+                .callsFake((sse, offset, log, cb) => cb(kmsError));
+            const dataHeadSpy = sinon.spy(data, 'head');
+            objectGet(authInfo, getRequest, false, log, err => {
+                assert.strictEqual(err, kmsError);
+                assert(createDecipherStub.calledOnce);
+                assert(dataHeadSpy.notCalled);
+                done();
+            });
+        });
+
+        describe('with many parts', () => {
+            const locationCount = 150;
+            const envName = 'GET_OBJECT_MAX_PARALLEL_KMS_DECRYPT';
+            const objectGetPath = require.resolve('../../../lib/api/objectGet');
+            let maxInFlight;
+            let createDecipherStub;
+
+            beforeEach(done => {
+                let inFlight = 0;
+                maxInFlight = 0;
+                createDecipherStub = sinon
                     .stub(kms, 'createDecipherBundle')
-                    .callsFake((sse, offset, log, cb) => cb(kmsError));
-                const dataHeadSpy = sinon.spy(data, 'head');
-                objectGet(authInfo, testGetRequest, false, log, err => {
+                    .callsFake((sse, offset, log, cb) => {
+                        inFlight += 1;
+                        maxInFlight = Math.max(maxInFlight, inFlight);
+                        setImmediate(() => {
+                            inFlight -= 1;
+                            cb(null, { decipher: {} });
+                        });
+                    });
+                metadata.getObjectMD(bucketName, objectName, {}, log,
+                    (err, objMD) => {
+                        assert.ifError(err);
+                        const location = objMD.location[0];
+                        // eslint-disable-next-line no-param-reassign
+                        objMD.location = Array.from({ length: locationCount },
+                            (_, i) => Object.assign({}, location,
+                                { start: i * location.size }));
+                        metadata.putObjectMD(bucketName, objectName, objMD, {},
+                            log, err => done(err));
+                    });
+            });
+
+            [
+                [undefined, 100],
+                ['-1', 100],
+                ['abc', 100],
+                ['7', 7],
+                ['1', 1],
+                ['150', 150],
+            ].forEach(([envValue, expectedLimit]) => {
+                it(`should limit concurrent KMS calls to ${expectedLimit} ` +
+                `when ${envName} is ${envValue}`, done => {
+                    const objectGetWithEnv = requireWithEnv(objectGetPath,
+                        { [envName]: envValue });
+                    objectGetWithEnv(authInfo, getRequest, false,
+                        log, (err, locations) => {
+                            assert.ifError(err);
+                            assert.strictEqual(
+                                createDecipherStub.callCount, locationCount);
+                            assert.strictEqual(maxInFlight, expectedLimit);
+                            assert(locations.every(l => l.decipherStream));
+                            assert.strictEqual(
+                                getRequest.kmsDecipherLocations.length,
+                                locations.length
+                            );
+                            done();
+                        });
+                });
+            });
+
+            it(`should not call KMS before streaming when ${envName} is 0`,
+                done => {
+                    const objectGetWithEnv = requireWithEnv(objectGetPath,
+                        { [envName]: '0' });
+                    objectGetWithEnv(authInfo, getRequest, false, log,
+                        (err, locations) => {
+                            assert.ifError(err);
+                            assert(createDecipherStub.notCalled);
+                            assert(locations.every(l => !l.decipherStream));
+                            assert.strictEqual(getRequest.kmsDecipherLocations,
+                                undefined);
+                            done();
+                        });
+                });
+
+            it('should return the first KMS error and destroy decipher ' +
+            'streams of KMS calls still in flight', done => {
+                const kmsError = errors.InternalError
+                    .customizeDescription('KMS key is not usable');
+                const deciphers = [];
+                createDecipherStub.callsFake((sse, offset, log, cb) => {
+                    if (createDecipherStub.callCount === 3) {
+                        return setImmediate(cb, kmsError);
+                    }
+                    const decipher = { destroy: sinon.spy() };
+                    deciphers.push(decipher);
+                    return setImmediate(cb, null, { decipher });
+                });
+                objectGet(authInfo, getRequest, false, log, err => {
                     assert.strictEqual(err, kmsError);
-                    assert(createDecipherBundleStub.calledOnce);
-                    assert(dataHeadSpy.notCalled);
-                    done();
+                    // once the KMS calls still in flight returned
+                    setImmediate(() => {
+                        const attached = getRequest.kmsDecipherLocations
+                            .filter(l => l.decipherStream);
+                        const destroyed = deciphers
+                            .filter(d => d.destroy.calledOnce);
+                        // first batch of 100 and the 2 calls started when 1 and 2
+                        // returned, none started after the error
+                        assert.strictEqual(createDecipherStub.callCount, 102);
+                        // calls 1 and 2 returned before the async error: attached,
+                        // destroyed later by destroyDecipherStreamsOnError
+                        assert.strictEqual(attached.length, 2);
+                        // in flight at the error: calls 4 to 100 and the 2 calls
+                        // started when 1 and 2 returned, destroyed and not attached
+                        assert.strictEqual(destroyed.length, 99);
+                        done();
+                    });
                 });
             });
         });
