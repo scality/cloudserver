@@ -4,6 +4,7 @@ const {
     CopyObjectCommand,
     CreateMultipartUploadCommand,
     PutBucketEncryptionCommand,
+    GetBucketEncryptionCommand,
     GetObjectCommand,
     UploadPartCommand,
     UploadPartCopyCommand,
@@ -19,6 +20,7 @@ const { KmsType, KmsProtocol, makeScalityArnPrefix } = require('@scality/arsenal
 const { config: serverConfig } = require('../../../lib/Config');
 const { DummyRequestLogger } = require('../../unit/helpers');
 const { getExpectedKeyId } = require('../../utilities/kmsKeyId-util');
+const kms = require('../../../lib/kms/wrapper');
 const http = require('http');
 const https = require('https');
 const assert = require('assert');
@@ -237,6 +239,14 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
         return true;
     }
 
+    function createBucketKeyArn(client) {
+        return new Promise((resolve, reject) =>
+            client.createBucketKey('multiKmsTestBucket', new DummyRequestLogger(), (err, keyId, keyArn) =>
+                err ? reject(err) : resolve(keyArn),
+            ),
+        );
+    }
+
     async function createKeyArn(entry) {
         if (entry.protocol === KmsProtocol.file) {
             // The file KMS uses the key ID itself as the master key
@@ -245,12 +255,7 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
                 .toString('hex')}`;
         }
         if (entry.protocol === KmsProtocol.aws_kms) {
-            const client = new KmsAWSClient({ kmsAWS: entry.settings });
-            return new Promise((resolve, reject) =>
-                client.createBucketKey('multiKmsTestBucket', new DummyRequestLogger(), (err, keyId, keyArn) =>
-                    err ? reject(err) : resolve(keyArn),
-                ),
-            );
+            return createBucketKeyArn(new KmsAWSClient({ kmsAWS: entry.settings }));
         }
         throw new Error(`no key creation for the ${entry.protocol} KMS ${entry.providerName}`);
     }
@@ -259,6 +264,31 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
         const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
         assert.strictEqual(await res.Body.transformToString(), body);
         assert.strictEqual(res.SSEKMSKeyId, getExpectedKeyId(keyArn));
+    }
+
+    async function assertPutObjectEncryptsWith(keyArn) {
+        const { SSEKMSKeyId } = await putObject(bucketName, objectName, keyArn);
+        assert.strictEqual(SSEKMSKeyId, getExpectedKeyId(keyArn));
+        await assertEncryptedWith(bucketName, objectName, keyArn);
+    }
+
+    async function assertBucketEncryptionEncryptsWith(keyArn) {
+        await putBucketEncryption(bucketName, keyArn);
+        assert.strictEqual(await getBucketEncryptionKeyId(bucketName), getExpectedKeyId(keyArn));
+        await putObject(bucketName, objectName);
+        await assertEncryptedWith(bucketName, objectName, keyArn);
+    }
+
+    async function assertReturnedKeyIdEncryptsWith(keyArn) {
+        await putObject(bucketName, objectName, keyArn);
+        const { SSEKMSKeyId } = await s3.send(new GetObjectCommand({ Bucket: bucketName, Key: objectName }));
+        await putObject(bucketName, `${objectName}2`, SSEKMSKeyId);
+        await assertEncryptedWith(bucketName, `${objectName}2`, keyArn);
+    }
+
+    async function getBucketEncryptionKeyId(bucket) {
+        const res = await s3.send(new GetBucketEncryptionCommand({ Bucket: bucket }));
+        return res.ServerSideEncryptionConfiguration.Rules[0].ApplyServerSideEncryptionByDefault.KMSMasterKeyID;
     }
 
     function putObject(bucket, key, keyArn) {
@@ -305,16 +335,14 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
                 keyArn = await createKeyArn(entry);
             });
 
-            it('should encrypt PutObject with the key and decrypt the object on GET', async () => {
-                await putObject(bucketName, objectName, keyArn);
-                await assertEncryptedWith(bucketName, objectName, keyArn);
-            });
+            it('should encrypt PutObject with the key and decrypt the object on GET', () =>
+                assertPutObjectEncryptsWith(keyArn));
 
-            it('should encrypt with the key set by PutBucketEncryption', async () => {
-                await putBucketEncryption(bucketName, keyArn);
-                await putObject(bucketName, objectName);
-                await assertEncryptedWith(bucketName, objectName, keyArn);
-            });
+            it('should encrypt with the key ID returned on GET when it is sent back', () =>
+                assertReturnedKeyIdEncryptsWith(keyArn));
+
+            it('should encrypt with the key set by PutBucketEncryption', () =>
+                assertBucketEncryptionEncryptsWith(keyArn));
 
             it('should encrypt with the key set on CreateBucket', async () => {
                 const encryptedBucketName = `${bucketName}2`;
@@ -327,7 +355,7 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
             });
 
             it('should encrypt a multipart upload with the key', async () => {
-                const { UploadId } = await s3.send(
+                const { UploadId, SSEKMSKeyId } = await s3.send(
                     new CreateMultipartUploadCommand({
                         Bucket: bucketName,
                         Key: objectName,
@@ -335,7 +363,8 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
                         SSEKMSKeyId: keyArn,
                     }),
                 );
-                const { ETag } = await s3.send(
+                assert.strictEqual(SSEKMSKeyId, getExpectedKeyId(keyArn));
+                const part = await s3.send(
                     new UploadPartCommand({
                         Bucket: bucketName,
                         Key: objectName,
@@ -344,14 +373,16 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
                         Body: body,
                     }),
                 );
-                await s3.send(
+                assert.strictEqual(part.SSEKMSKeyId, getExpectedKeyId(keyArn));
+                const complete = await s3.send(
                     new CompleteMultipartUploadCommand({
                         Bucket: bucketName,
                         Key: objectName,
                         UploadId,
-                        MultipartUpload: { Parts: [{ ETag, PartNumber: 1 }] },
+                        MultipartUpload: { Parts: [{ ETag: part.ETag, PartNumber: 1 }] },
                     }),
                 );
+                assert.strictEqual(complete.SSEKMSKeyId, getExpectedKeyId(keyArn));
                 await assertEncryptedWith(bucketName, objectName, keyArn);
             });
 
@@ -359,7 +390,7 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
                 const sourceBucketName = `${bucketName}2`;
                 await createBucket(sourceBucketName, true);
                 await putObject(sourceBucketName, objectName);
-                await s3.send(
+                const { SSEKMSKeyId } = await s3.send(
                     new CopyObjectCommand({
                         Bucket: bucketName,
                         Key: objectName,
@@ -368,6 +399,7 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
                         SSEKMSKeyId: keyArn,
                     }),
                 );
+                assert.strictEqual(SSEKMSKeyId, getExpectedKeyId(keyArn));
                 await assertEncryptedWith(bucketName, objectName, keyArn);
             });
 
@@ -402,6 +434,22 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
                 assert.strictEqual(await res.Body.transformToString(), body);
             });
         });
+    });
+
+    describe('with a key of the default KMS', () => {
+        let keyArn;
+
+        before(async () => {
+            keyArn = await createBucketKeyArn(kms.client);
+        });
+
+        it('should encrypt PutObject with the key and decrypt the object on GET', () =>
+            assertPutObjectEncryptsWith(keyArn));
+
+        it('should encrypt with the key ID returned on GET when it is sent back', () =>
+            assertReturnedKeyIdEncryptsWith(keyArn));
+
+        it('should encrypt with the key set by PutBucketEncryption', () => assertBucketEncryptionEncryptsWith(keyArn));
     });
 
     describe('with a key of a KMS that is not configured', () => {
