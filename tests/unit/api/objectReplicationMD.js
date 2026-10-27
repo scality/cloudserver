@@ -367,6 +367,7 @@ describe('Replication object MD without bucket replication config', () => {
             config.locationConstraints['zenko'] = {
                 ...config.locationConstraints['zenko'],
                 type: '',
+                isCRR: true,
             };
 
             async.series([
