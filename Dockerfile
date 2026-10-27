@@ -1,4 +1,4 @@
-ARG NODE_VERSION=16.20.2-bookworm-slim
+ARG NODE_VERSION=lts-bullseye-slim
 
 FROM node:${NODE_VERSION} AS builder
 
