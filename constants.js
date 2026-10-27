@@ -207,9 +207,13 @@ const constants = {
     // Only STANDARD class is supported, but keep the option to override supported values for now.
     // This should be removed in CLDSRV-639.
     validStorageClasses: process.env.VALID_STORAGE_CLASSES?.split(',') || ['STANDARD'],
-    // AWS archive storage classes, mapped to a cold location of the same (lower case) name:
+    // Cold locations named after the AWS archive storage classes, mapped to the AWS name:
     // standard S3 clients (AWS CLI, Veeam...) only accept the official storage class names.
-    awsArchiveStorageClasses: new Map(['GLACIER', 'DEEP_ARCHIVE'].map(name => [name.toLowerCase(), name])),
+    // Location names must match `^[a-z][a-z0-9-]+$` (management API), hence the hyphen.
+    awsArchiveStorageClasses: new Map([
+        ['glacier', 'GLACIER'],
+        ['deep-archive', 'DEEP_ARCHIVE'],
+    ]),
     lifecycleListing: {
         CURRENT_TYPE: 'current',
         NON_CURRENT_TYPE: 'noncurrent',

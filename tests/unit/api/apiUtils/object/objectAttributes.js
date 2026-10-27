@@ -94,7 +94,7 @@ describe('buildXmlAttributes', () => {
         });
 
         describe('with a cold location named after an AWS archive storage class', () => {
-            const archiveLocation = 'deep_archive';
+            const archiveLocation = 'deep-archive';
 
             before(() => {
                 config.locationConstraints[archiveLocation] = { ...config.locationConstraints[coldLocation] };
