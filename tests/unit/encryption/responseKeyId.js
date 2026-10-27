@@ -93,8 +93,15 @@ describe('KMS getResponseKeyId', () => {
             assert.strictEqual(getResponseKeyId(key, false, defaultBackend, defaultBackend), key);
         });
 
-        it('should return a key stored without arn prefix as stored with SSE migration', () => {
-            assert.strictEqual(getResponseKeyId('abcd', false, defaultBackend, sseMigrationBackend), 'abcd');
+        it('should return a key stored without arn prefix as is without SSE migration', () => {
+            assert.strictEqual(getResponseKeyId('abcd', false, defaultBackend, defaultBackend), 'abcd');
+        });
+
+        it('should add the SSE-migration KMS arn prefix to a key stored without arn prefix', () => {
+            assert.strictEqual(
+                getResponseKeyId('abcd', false, defaultBackend, sseMigrationBackend),
+                `${sseMigrationBackend.arnPrefix}abcd`,
+            );
         });
     });
 });

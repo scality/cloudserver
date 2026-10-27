@@ -8,17 +8,14 @@ const {
 
 /**
  * Key ID returned in responses for a stored key: with kmsHideScalityArn, only keys
- * of the default KMS lose their arn prefix, and a key stored without prefix belongs
- * to the SSE-migration KMS when it is set
+ * of the default KMS lose their arn prefix, and a key stored without prefix gets the
+ * arn prefix of the SSE-migration KMS when it is set
  * @param {string} key - KeyId or KeyArn as stored in metadata
  * @returns {string} expected KeyId or KeyArn
  */
 function getExpectedKeyId(key) {
-    if (!config.kmsHideScalityArn) {
-        return key;
-    }
     if (isScalityKmsArn(key)) {
-        return key.startsWith(kms.arnPrefix) ? getKeyIdFromArn(key) : key;
+        return config.kmsHideScalityArn && key.startsWith(kms.arnPrefix) ? getKeyIdFromArn(key) : key;
     }
     if (config.sseMigration) {
         const { previousKeyType, previousKeyProtocol, previousKeyProvider } = config.sseMigration;
