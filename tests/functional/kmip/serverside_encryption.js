@@ -15,14 +15,10 @@ const { promisify } = require('util');
 const config = require('../config.json');
 const { auth } = require('@scality/arsenal');
 const { KmsAWSClient } = require('@scality/arsenal').network;
-const {
-    KmsType,
-    KmsProtocol,
-    makeScalityArnPrefix,
-    getKeyIdFromArn,
-} = require('@scality/arsenal/build/lib/network/KMSInterface');
+const { KmsType, KmsProtocol, makeScalityArnPrefix } = require('@scality/arsenal/build/lib/network/KMSInterface');
 const { config: serverConfig } = require('../../../lib/Config');
 const { DummyRequestLogger } = require('../../unit/helpers');
+const { getExpectedKeyId } = require('../../utilities/kmsKeyId-util');
 const http = require('http');
 const https = require('https');
 const assert = require('assert');
@@ -262,8 +258,7 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
     async function assertEncryptedWith(bucket, key, keyArn) {
         const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
         assert.strictEqual(await res.Body.transformToString(), body);
-        const expectedKeyId = serverConfig.kmsHideScalityArn ? getKeyIdFromArn(keyArn) : keyArn;
-        assert.strictEqual(res.SSEKMSKeyId, expectedKeyId);
+        assert.strictEqual(res.SSEKMSKeyId, getExpectedKeyId(keyArn));
     }
 
     function putObject(bucket, key, keyArn) {
