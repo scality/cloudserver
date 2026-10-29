@@ -2,7 +2,8 @@ const assert = require('assert');
 const async = require('async');
 const sinon = require('sinon');
 const { parseString } = require('xml2js');
-const { storage } = require('arsenal');
+const { auth, storage } = require('arsenal');
+const api = require('../../../lib/api/api');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
 const objectPutCopyPart = require('../../../lib/api/objectPutCopyPart');
@@ -151,6 +152,91 @@ describe('objectCopyPart', () => {
                 sinon.match.any,
                 sinon.match.any
             );
+            done();
+        });
+    });
+});
+
+describe('objectCopyPart through api.callApiMethod', () => {
+    const userAuthInfo = makeAuthInfo(canonicalID, 'user');
+    const objData = Buffer.from('foo', 'utf8');
+    const sandbox = sinon.createSandbox();
+    let uploadId;
+
+    // Vault returns one result per request context, keyed by its API method
+    function stubDoAuth(deniedAction) {
+        sandbox.stub(auth, 'server').value({
+            doAuth: (req, reqLog, cb, awsService, requestContexts) => cb(null, userAuthInfo,
+                requestContexts.map(rc => {
+                    const denied = rc.getAction() === deniedAction;
+                    return { isAllowed: !denied, isImplicit: denied, action: rc._apiMethod };
+                })),
+        });
+    }
+
+    function _createCopyPartApiRequest() {
+        return new DummyRequest({
+            bucketName: destBucketName,
+            namespace,
+            objectKey,
+            headers: {
+                'host': `${destBucketName}.s3.amazonaws.com`,
+                'x-amz-copy-source': `${sourceBucketName}/${objectKey}`,
+            },
+            url: `/${objectKey}?partNumber=1&uploadId=${uploadId}`,
+            query: {
+                partNumber: '1',
+                uploadId,
+            },
+        });
+    }
+
+    before(done => {
+        cleanup();
+        async.waterfall([
+            callback => bucketPut(authInfo, _createBucketPutRequest(destBucketName), log,
+                err => callback(err)),
+            callback => bucketPut(authInfo, _createBucketPutRequest(sourceBucketName), log,
+                err => callback(err)),
+            callback => objectPut(authInfo,
+                versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData),
+                undefined, log, err => callback(err)),
+            callback => objectPut(authInfo,
+                versioningTestUtils.createPutObjectRequest(destBucketName, objectKey, objData),
+                undefined, log, err => callback(err)),
+            callback => initiateMultipartUpload(userAuthInfo, _createInitiateRequest(destBucketName),
+                log, (err, res) => callback(err, res)),
+        ], (err, res) => {
+            if (err) {
+                return done(err);
+            }
+            return parseString(res, (err, json) => {
+                uploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                return done(err);
+            });
+        });
+    });
+
+    afterEach(() => {
+        sandbox.restore();
+    });
+
+    after(() => {
+        cleanup();
+    });
+
+    it('should copy the part when IAM allows every action', done => {
+        stubDoAuth(null);
+        api.callApiMethod('objectPutCopyPart', _createCopyPartApiRequest(), {}, log, err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+
+    it('should deny the copy into an existing key when IAM denies s3:PutObject', done => {
+        stubDoAuth('s3:PutObject');
+        api.callApiMethod('objectPutCopyPart', _createCopyPartApiRequest(), {}, log, err => {
+            assert(err && err.is.AccessDenied, `expected AccessDenied, got ${err}`);
             done();
         });
     });
