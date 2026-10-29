@@ -593,7 +593,7 @@ describe('objectCopyPart through api.callApiMethod', () => {
             namespace,
             objectKey,
             headers: {
-                host: `${destBucketName}.s3.amazonaws.com`,
+                'host': `${destBucketName}.s3.amazonaws.com`,
                 'x-amz-copy-source': `${sourceBucketName}/${objectKey}`,
             },
             url: `/${objectKey}?partNumber=1&uploadId=${uploadId}`,
