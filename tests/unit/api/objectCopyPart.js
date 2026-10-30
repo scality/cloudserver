@@ -288,23 +288,30 @@ describe('objectCopyPart of a specific source version', () => {
 
     before(done => {
         cleanup();
-        async.waterfall([
-            callback => bucketPut(authInfo, _createBucketPutRequest(bucketName), log,
-                err => callback(err)),
-            callback => objectPut(authInfo,
-                versioningTestUtils.createPutObjectRequest(bucketName, sourceKey, Buffer.from('foo', 'utf8')),
-                undefined, log, err => callback(err)),
-            callback => initiateMultipartUpload(userAuthInfo, initiateUserRequest,
-                log, (err, res) => callback(err, res)),
-        ], (err, res) => {
-            if (err) {
-                return done(err);
-            }
-            return parseString(res, (err, json) => {
-                uploadId = json.InitiateMultipartUploadResult.UploadId[0];
-                return done(err);
-            });
-        });
+        async.waterfall(
+            [
+                callback => bucketPut(authInfo, _createBucketPutRequest(bucketName), log, err => callback(err)),
+                callback =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(bucketName, sourceKey, Buffer.from('foo', 'utf8')),
+                        undefined,
+                        log,
+                        err => callback(err),
+                    ),
+                callback =>
+                    initiateMultipartUpload(userAuthInfo, initiateUserRequest, log, (err, res) => callback(err, res)),
+            ],
+            (err, res) => {
+                if (err) {
+                    return done(err);
+                }
+                return parseString(res, (err, json) => {
+                    uploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                    return done(err);
+                });
+            },
+        );
     });
 
     after(() => {
