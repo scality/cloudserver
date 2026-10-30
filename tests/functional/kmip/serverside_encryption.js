@@ -425,3 +425,30 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
             assert.rejects(putBucketEncryption(bucketName, keyArn), assertRefusedNamingOnlyTheKey));
     });
 });
+
+describe('KMS health in the deep health check', () => {
+    function getDeepHealthcheck() {
+        return new Promise((resolve, reject) => {
+            const req = http.get({ host: config.ipAddress, port: serverConfig.metricsPort, path: '/ready' }, res => {
+                let body = '';
+                res.on('data', chunk => {
+                    body += chunk;
+                });
+                res.on('end', () => resolve({ statusCode: res.statusCode, body: JSON.parse(body) }));
+            });
+            req.on('error', reject);
+        });
+    }
+
+    it('should report every configured KMS, keyed by provider name', async () => {
+        const { statusCode, body } = await getDeepHealthcheck();
+
+        assert.strictEqual(statusCode, 200);
+        serverConfig.kms.forEach(({ protocol, providerName }) => {
+            const { lastChecked, ...health } = body[providerName];
+            assert.deepStrictEqual(health, { code: 200, message: 'OK' }, `KMS ${providerName}`);
+            // A KMS whose client has no health check reports OK without being checked; today only the KMIP client has one
+            assert.strictEqual(lastChecked !== undefined, protocol === KmsProtocol.kmip, `KMS ${providerName}`);
+        });
+    });
+});
