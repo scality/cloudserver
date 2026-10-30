@@ -1,15 +1,9 @@
 const assert = require('assert');
 const sinon = require('sinon');
 
-const { ConfigObject: Config } = require('../../../lib/Config');
 const logger = require('../../../lib/utilities/logger');
 const { createClients } = require('../../../lib/kms/wrapper');
-
-function parseKmsEntries(kms) {
-    const config = new Config();
-    config._parseKms({ kms });
-    return config.kms;
-}
+const { kmsTestEntries, parseKmsEntries } = require('../helpers');
 
 describe('KMS createClients', () => {
     afterEach(() => {
@@ -17,22 +11,7 @@ describe('KMS createClients', () => {
     });
 
     it('should build a client for every entry, keyed by its backend', () => {
-        const entries = parseKmsEntries([
-            {
-                protocol: 'kmip',
-                providerName: 'thales',
-                default: true,
-                transport: { tls: { host: 'kmip.example.com' } },
-            },
-            {
-                protocol: 'aws_kms',
-                providerName: 'acme',
-                endpoint: 'https://kms.example.com',
-                ak: 'accessKey',
-                sk: 'secretKey',
-            },
-            { protocol: 'file', providerName: 'scality' },
-        ]);
+        const entries = parseKmsEntries([kmsTestEntries.kmip, kmsTestEntries.awsKms, kmsTestEntries.file]);
 
         const { clientInstances, defaultInstance } = createClients(entries);
 

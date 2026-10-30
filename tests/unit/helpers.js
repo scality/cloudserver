@@ -5,6 +5,7 @@ const { storage } = require('@scality/arsenal');
 const AuthInfo = require('@scality/arsenal').auth.AuthInfo;
 const { RequestContext } = require('@scality/arsenal').policies;
 const constants = require('../../constants');
+const { ConfigObject } = require('../../lib/Config');
 const DummyRequest = require('./DummyRequest');
 
 const { metadata } = storage.metadata.inMemory.metadata;
@@ -508,6 +509,36 @@ function createRequestContext(apiMethod, request) {
     );
 }
 
+/** Entries of the `kms` config of config.json, one per KMS protocol */
+const kmsTestEntries = {
+    kmip: {
+        protocol: 'kmip',
+        providerName: 'thales',
+        default: true,
+        transport: { tls: { host: 'kmip.example.com' } },
+    },
+    otherKmip: { protocol: 'kmip', providerName: 'hytrust', transport: { tls: { host: 'kmip2.example.com' } } },
+    awsKms: {
+        protocol: 'aws_kms',
+        providerName: 'acme',
+        endpoint: 'https://kms.example.com',
+        ak: 'accessKey',
+        sk: 'secretKey',
+    },
+    file: { protocol: 'file', providerName: 'scality' },
+};
+
+/**
+ * Parse entries of the `kms` config, as the server does at start-up.
+ * @param {object[]} kms - entries of the `kms` array of config.json
+ * @returns {object[]} parsed entries, to pass to createClients
+ */
+function parseKmsEntries(kms) {
+    const config = new ConfigObject();
+    config._parseKms({ kms });
+    return config.kms;
+}
+
 module.exports = {
     testsRangeOnEmptyFile,
     makeid,
@@ -524,4 +555,6 @@ module.exports = {
     TaggingConfigTester,
     AccessControlPolicy,
     createRequestContext,
+    kmsTestEntries,
+    parseKmsEntries,
 };

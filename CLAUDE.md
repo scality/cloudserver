@@ -132,7 +132,8 @@ KMSs are configured as a `kms` array in `config.json`. Each entry has a
 `protocol`, a unique `providerName`, the settings of that protocol, and exactly
 one entry has `"default": true`. Keys are created in the default KMS, and each
 key is sent to the KMS its ARN names. A key ID without ARN in a request goes to
-the default KMS.
+the default KMS. The deep health check has one entry per KMS, keyed by its
+`providerName`; a failing KMS never fails start-up or readiness.
 
 | Protocol  | Description                                            |
 | --------- | ------------------------------------------------------ |
