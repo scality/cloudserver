@@ -2038,3 +2038,124 @@ describe('objectCopy with checksums disabled', () => {
         });
     });
 });
+
+describe('objectCopy of a specific source version', () => {
+    const ownBucketName = 'ownversionbucket';
+    const policyBucketName = 'policyversionbucket';
+    const userAuthInfo = makeAuthInfo(canonicalID, 'user');
+    const enableRequest = versioningTestUtils.createBucketPutVersioningReq(policyBucketName, 'Enabled');
+    // The version IDs of the policy bucket source, as the client sees them
+    const versionIds = [];
+
+    function _createPutPolicyRequest(bucketName, statement) {
+        return new DummyRequest({
+            bucketName,
+            namespace,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            url: '/',
+            socket: {},
+            post: JSON.stringify({
+                Version: '2012-10-17',
+                Statement: [statement],
+            }),
+        });
+    }
+
+    function _createUserCopyRequest(bucketName, actionImplicitDenies) {
+        const request = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: 'copy',
+            headers: {},
+            url: `/${bucketName}/copy`,
+            query: {},
+            socket: {},
+        });
+        request.actionImplicitDenies = actionImplicitDenies;
+        return request;
+    }
+
+    function _putObject(bucketName, body, callback) {
+        objectPut(
+            authInfo,
+            versioningTestUtils.createPutObjectRequest(bucketName, 'secret', body),
+            undefined,
+            log,
+            (err, resHeaders) => callback(err, resHeaders),
+        );
+    }
+
+    before(done => {
+        cleanup();
+        async.series(
+            [
+                callback => bucketPut(authInfo, _createBucketPutRequest(ownBucketName), log, callback),
+                callback => _putObject(ownBucketName, objData[0], callback),
+                callback => bucketPut(authInfo, _createBucketPutRequest(policyBucketName), log, callback),
+                callback => bucketPutVersioning(authInfo, enableRequest, log, callback),
+                callback =>
+                    _putObject(policyBucketName, objData[0], (err, resHeaders) => {
+                        versionIds.push(resHeaders?.['x-amz-version-id']);
+                        callback(err);
+                    }),
+                callback =>
+                    _putObject(policyBucketName, objData[1], (err, resHeaders) => {
+                        versionIds.push(resHeaders?.['x-amz-version-id']);
+                        callback(err);
+                    }),
+                callback =>
+                    bucketPutPolicy(
+                        authInfo,
+                        _createPutPolicyRequest(policyBucketName, {
+                            Effect: 'Deny',
+                            Principal: '*',
+                            Action: 's3:GetObjectVersion',
+                            Resource: `arn:aws:s3:::${policyBucketName}/*`,
+                        }),
+                        log,
+                        callback,
+                    ),
+            ],
+            done,
+        );
+    });
+
+    after(() => {
+        cleanup();
+    });
+
+    it('should deny a null version copy when IAM does not allow reading the source version', done => {
+        const request = _createUserCopyRequest(ownBucketName, { objectGetVersion: true, objectPut: false });
+        objectCopy(userAuthInfo, request, ownBucketName, 'secret', 'null', log, err => {
+            assert(err, 'expected the copy to be denied');
+            assert.strictEqual(err.is.AccessDenied, true);
+            done();
+        });
+    });
+
+    it('should allow a null version copy when IAM allows reading the source version', done => {
+        const request = _createUserCopyRequest(ownBucketName, { objectGetVersion: false, objectPut: false });
+        objectCopy(userAuthInfo, request, ownBucketName, 'secret', 'null', log, err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+
+    it('should deny copying a version when the bucket policy denies s3:GetObjectVersion', done => {
+        const request = _createUserCopyRequest(policyBucketName, { objectGetVersion: false, objectPut: false });
+        const sourceVersionId = versioning.VersionID.decode(versionIds[0]);
+        objectCopy(userAuthInfo, request, policyBucketName, 'secret', sourceVersionId, log, err => {
+            assert(err, 'expected the copy to be denied');
+            assert.strictEqual(err.is.AccessDenied, true);
+            done();
+        });
+    });
+
+    it('should allow copying the latest version when the bucket policy denies s3:GetObjectVersion', done => {
+        const request = _createUserCopyRequest(policyBucketName, { objectGet: false, objectPut: false });
+        objectCopy(userAuthInfo, request, policyBucketName, 'secret', undefined, log, err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+});
