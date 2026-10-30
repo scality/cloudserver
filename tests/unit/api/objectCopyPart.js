@@ -2,10 +2,11 @@ const assert = require('assert');
 const async = require('async');
 const sinon = require('sinon');
 const { parseString } = require('xml2js');
-const { auth, storage } = require('arsenal');
+const { auth, storage, versioning } = require('arsenal');
 const api = require('../../../lib/api/api');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');
+const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 const objectPut = require('../../../lib/api/objectPut');
 const objectPutCopyPart = require('../../../lib/api/objectPutCopyPart');
 const initiateMultipartUpload = require('../../../lib/api/initiateMultipartUpload');
@@ -353,6 +354,141 @@ describe('objectCopyPart with a bucket policy scoped to key prefixes', () => {
     it('should allow copying a part from a source allowed by the bucket policy', done => {
         objectPutCopyPart(userAuthInfo, _createUserCopyPartRequest(), bucketName, 'allowed/myfile',
             undefined, log, err => {
+                assert.ifError(err);
+                done();
+            });
+    });
+});
+
+describe('objectCopyPart with a bucket policy on the source version ID', () => {
+    const bucketName = 'versionidpolicybucket';
+    const sourceKey = 'doc';
+    const destKey = 'mpu-copy';
+    const userAuthInfo = makeAuthInfo(canonicalID, 'user');
+    const enableRequest = versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
+    const initiateUserRequest = new DummyRequest({
+        bucketName,
+        namespace,
+        objectKey: destKey,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        url: `/${destKey}?uploads`,
+        query: {},
+        socket: {},
+    });
+    // The version IDs as the client sees them
+    const versionIds = [];
+    let uploadId;
+
+    // An IAM user without identity policy: Vault returns an implicit deny
+    // for both the source read and the destination write
+    function _createUserCopyPartRequest(copySourceVersionId) {
+        const request = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: destKey,
+            headers: {},
+            url: `/${bucketName}/${destKey}?partNumber=1`,
+            query: {
+                partNumber: 1,
+                uploadId,
+            },
+            socket: {},
+        });
+        request.actionImplicitDenies = { objectGet: true, objectGetVersion: true, objectPut: true };
+        request.copySourceVersionId = copySourceVersionId;
+        return request;
+    }
+
+    function _putObject(body, callback) {
+        objectPut(
+            authInfo,
+            versioningTestUtils.createPutObjectRequest(bucketName, sourceKey, Buffer.from(body, 'utf8')),
+            undefined,
+            log,
+            (err, resHeaders) => {
+                if (err) {
+                    return callback(err);
+                }
+                versionIds.push(resHeaders['x-amz-version-id']);
+                return callback();
+            },
+        );
+    }
+
+    // PutBucketPolicy does not accept s3:VersionId as a condition key, but a
+    // stored policy can still carry it, so it is written directly
+    function _setBucketPolicy(callback) {
+        const bucketArn = `arn:aws:s3:::${bucketName}`;
+        const policy = {
+            Version: '2012-10-17',
+            Statement: [
+                {
+                    Effect: 'Allow',
+                    Principal: '*',
+                    Action: ['s3:GetObject', 's3:GetObjectVersion', 's3:PutObject'],
+                    Resource: `${bucketArn}/*`,
+                },
+                {
+                    Effect: 'Deny',
+                    Principal: '*',
+                    Action: ['s3:GetObject', 's3:GetObjectVersion'],
+                    Resource: `${bucketArn}/*`,
+                    Condition: {
+                        StringEquals: { 's3:VersionId': versionIds[0] },
+                    },
+                },
+            ],
+        };
+        metadataswitch.getBucket(bucketName, log, (err, bucket) => {
+            if (err) {
+                return callback(err);
+            }
+            bucket.setBucketPolicy(policy);
+            return metadataswitch.updateBucket(bucketName, bucket, log, callback);
+        });
+    }
+
+    before(done => {
+        cleanup();
+        async.waterfall([
+            callback => bucketPut(authInfo, _createBucketPutRequest(bucketName), log,
+                err => callback(err)),
+            callback => bucketPutVersioning(authInfo, enableRequest, log,
+                err => callback(err)),
+            callback => _putObject('foo', callback),
+            callback => _putObject('bar', callback),
+            callback => _setBucketPolicy(err => callback(err)),
+            callback => initiateMultipartUpload(userAuthInfo, initiateUserRequest,
+                log, (err, res) => callback(err, res)),
+        ], (err, res) => {
+            if (err) {
+                return done(err);
+            }
+            return parseString(res, (err, json) => {
+                uploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                return done(err);
+            });
+        });
+    });
+
+    after(() => {
+        cleanup();
+    });
+
+    it('should deny copying a part from the version denied by the bucket policy', done => {
+        const sourceVersionId = versioning.VersionID.decode(versionIds[0]);
+        objectPutCopyPart(userAuthInfo, _createUserCopyPartRequest(versionIds[0]), bucketName, sourceKey,
+            sourceVersionId, log, err => {
+                assert(err, 'expected the part copy to be denied');
+                assert.strictEqual(err.is.AccessDenied, true);
+                done();
+            });
+    });
+
+    it('should allow copying a part from a version not denied by the bucket policy', done => {
+        const sourceVersionId = versioning.VersionID.decode(versionIds[1]);
+        objectPutCopyPart(userAuthInfo, _createUserCopyPartRequest(versionIds[1]), bucketName, sourceKey,
+            sourceVersionId, log, err => {
                 assert.ifError(err);
                 done();
             });

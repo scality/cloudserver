@@ -1,5 +1,6 @@
 const assert = require('assert');
 const { BucketInfo, BucketPolicy } = require('arsenal').models;
+const { VersionID } = require('arsenal').versioning;
 const AuthInfo = require('arsenal').auth.AuthInfo;
 const constants = require('../../../constants');
 const { isBucketAuthorized, isObjAuthorized, validatePolicyResource }
@@ -561,6 +562,9 @@ describe('bucket policy authorization', () => {
     describe('bucket policy evaluated against a policy target', () => {
         const userAuthInfo = makeAuthInfo(accessKey, 'user');
         const bucketArn = `arn:aws:s3:::${bucket.getName()}`;
+        // A copy source version ID as the client sends it
+        const protectedVersionId = VersionID.encode(VersionID.generateVersionId('0', ''));
+        const otherVersionId = VersionID.encode(VersionID.generateVersionId('0', ''));
         const prefixPolicy = {
             Version: '2012-10-17',
             Statement: [
@@ -575,6 +579,26 @@ describe('bucket policy authorization', () => {
                     Principal: '*',
                     Action: 's3:GetObject',
                     Resource: `${bucketArn}/forbidden/*`,
+                },
+            ],
+        };
+        const versionIdPolicy = {
+            Version: '2012-10-17',
+            Statement: [
+                {
+                    Effect: 'Allow',
+                    Principal: '*',
+                    Action: 's3:GetObject',
+                    Resource: `${bucketArn}/*`,
+                },
+                {
+                    Effect: 'Deny',
+                    Principal: '*',
+                    Action: 's3:GetObject',
+                    Resource: `${bucketArn}/*`,
+                    Condition: {
+                        StringEquals: { 's3:VersionId': protectedVersionId },
+                    },
                 },
             ],
         };
@@ -633,6 +657,22 @@ describe('bucket policy authorization', () => {
             const allowed = isObjAuthorized(bucket, object, 'objectGetVersion', bucketOwnerCanonicalId,
                 userAuthInfo, log, makeCopyRequest(), { objectGetVersion: false }, false,
                 { bucketName: bucket.getName(), objectKey: 'forbidden/myfile' });
+            assert.strictEqual(allowed, true);
+        });
+
+        it('should evaluate s3:VersionId against the target version', () => {
+            setPolicy(versionIdPolicy);
+            const allowed = isObjAuthorized(bucket, object, 'objectGet', bucketOwnerCanonicalId,
+                userAuthInfo, log, makeCopyRequest(), { objectGet: true }, false,
+                { bucketName: bucket.getName(), objectKey: 'allowed/myfile', versionId: protectedVersionId });
+            assert.strictEqual(allowed, false);
+        });
+
+        it('should allow objectGet when the target version does not match a Deny condition', () => {
+            setPolicy(versionIdPolicy);
+            const allowed = isObjAuthorized(bucket, object, 'objectGet', bucketOwnerCanonicalId,
+                userAuthInfo, log, makeCopyRequest(), { objectGet: true }, false,
+                { bucketName: bucket.getName(), objectKey: 'allowed/myfile', versionId: otherVersionId });
             assert.strictEqual(allowed, true);
         });
     });
