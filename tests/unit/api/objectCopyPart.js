@@ -667,3 +667,86 @@ describe('objectCopyPart through api.callApiMethod', () => {
         });
     });
 });
+
+describe('objectCopyPart of a specific source version', () => {
+    const bucketName = 'ownversionbucket';
+    const sourceKey = 'secret';
+    const destKey = 'mpu-copy';
+    const userAuthInfo = makeAuthInfo(canonicalID, 'user');
+    const initiateUserRequest = new DummyRequest({
+        bucketName,
+        namespace,
+        objectKey: destKey,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        url: `/${destKey}?uploads`,
+        query: {},
+        socket: {},
+    });
+    let uploadId;
+
+    function _createUserCopyPartRequest(actionImplicitDenies) {
+        const request = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: destKey,
+            headers: {},
+            url: `/${bucketName}/${destKey}?partNumber=1`,
+            query: {
+                partNumber: 1,
+                uploadId,
+            },
+            socket: {},
+        });
+        request.actionImplicitDenies = actionImplicitDenies;
+        return request;
+    }
+
+    before(done => {
+        cleanup();
+        async.waterfall(
+            [
+                callback => bucketPut(authInfo, _createBucketPutRequest(bucketName), log, err => callback(err)),
+                callback =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(bucketName, sourceKey, Buffer.from('foo', 'utf8')),
+                        undefined,
+                        log,
+                        err => callback(err),
+                    ),
+                callback =>
+                    initiateMultipartUpload(userAuthInfo, initiateUserRequest, log, (err, res) => callback(err, res)),
+            ],
+            (err, res) => {
+                if (err) {
+                    return done(err);
+                }
+                return parseString(res, (err, json) => {
+                    uploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                    return done(err);
+                });
+            },
+        );
+    });
+
+    after(() => {
+        cleanup();
+    });
+
+    it('should deny a null version part copy when IAM does not allow reading the source version', done => {
+        const request = _createUserCopyPartRequest({ objectGetVersion: true, objectPut: false });
+        objectPutCopyPart(userAuthInfo, request, bucketName, sourceKey, 'null', log, err => {
+            assert(err, 'expected the part copy to be denied');
+            assert.strictEqual(err.is.AccessDenied, true);
+            done();
+        });
+    });
+
+    it('should allow a null version part copy when IAM allows reading the source version', done => {
+        const request = _createUserCopyPartRequest({ objectGetVersion: false, objectPut: false });
+        objectPutCopyPart(userAuthInfo, request, bucketName, sourceKey, 'null', log, err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+});
