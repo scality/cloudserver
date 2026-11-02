@@ -3,11 +3,12 @@ const sinon = require('sinon');
 const { errors } = require('@scality/arsenal');
 
 const { clientCheck } = require('../../../lib/utilities/healthcheckHandler');
-const { DummyRequestLogger } = require('../helpers');
+const { DummyRequestLogger, kmsTestEntries, parseKmsEntries } = require('../helpers');
 const { data } = require('../../../lib/data/wrapper');
 const metadata = require('../../../lib/metadata/wrapper');
 const vault = require('../../../lib/auth/vault');
 const kms = require('../../../lib/kms/wrapper');
+const logger = require('../../../lib/utilities/logger');
 
 const log = new DummyRequestLogger();
 
@@ -283,5 +284,36 @@ describe('clientCheck - failure detection logic', () => {
                 });
             },
         );
+    });
+
+    describe('KMS failures', () => {
+        let kmsInstances;
+
+        beforeEach(() => {
+            const { clientInstances } = kms.createClients(
+                parseKmsEntries([kmsTestEntries.kmip, kmsTestEntries.otherKmip]),
+            );
+            kmsInstances = Object.values(clientInstances);
+            kmsInstances.forEach(instance =>
+                sinon.stub(instance.client, 'healthcheck').callsFake((log, cb) => cb(errors.InternalError)),
+            );
+            sinon.stub(logger, 'warn');
+            dataStub.callsFake((log, cb) => cb(null, { 'sproxyd-loc1': { code: 200, message: 'OK' } }));
+            metadataStub.callsFake((log, cb) => cb(null, { metadata: { code: 200, message: 'OK' } }));
+            vaultStub.callsFake((log, cb) => cb(null, { vault: { code: 200, message: 'OK' } }));
+            kmsStub.callsFake((log, cb) => kms.checkKmsHealthByProvider(kmsInstances, log, cb));
+        });
+
+        [false, true].forEach(flightCheckOnStartUp => {
+            it(`should not fail when every KMS fails (flightCheckOnStartUp=${flightCheckOnStartUp})`, done => {
+                clientCheck(flightCheckOnStartUp, log, (err, result) => {
+                    assert.ifError(err);
+                    assert.strictEqual(result.thales.code, 500);
+                    assert.strictEqual(result.hytrust.code, 500);
+                    assert.strictEqual(result['sproxyd-loc1'].code, 200);
+                    done();
+                });
+            });
+        });
     });
 });

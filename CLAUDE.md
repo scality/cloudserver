@@ -135,6 +135,8 @@ key is sent to the KMS its ARN names. A key ID without ARN in a request goes to
 the default KMS. With `kmsHideScalityArn` (on by default), responses return key
 IDs without ARN only for keys of the default KMS, so a returned key ID names the
 same key when sent back.
+The deep health check has one entry per KMS, keyed by its
+`providerName`; a failing KMS never fails start-up or readiness.
 
 | Protocol  | Description                                            |
 | --------- | ------------------------------------------------------ |
