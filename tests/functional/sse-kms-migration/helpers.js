@@ -30,12 +30,8 @@ const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const metadata = require('../../../lib/metadata/wrapper');
 const log = new DummyRequestLogger();
 const { config } = require('../../../lib/Config');
-const { getKeyIdFromArn } = require('@scality/arsenal/build/lib/network/KMSInterface');
+const { getExpectedKeyId } = require('../../utilities/kmsKeyId-util');
 const { ArsenalError } = require('@scality/arsenal/build/lib/errors');
-
-function getKey(key) {
-    return config.kmsHideScalityArn ? getKeyIdFromArn(key) : key;
-}
 
 // For Integration use default profile, in cloudserver use vault profile
 const credsProfile = process.env.S3_END_TO_END === 'true' ? 'default' : 'vault';
@@ -219,7 +215,7 @@ async function cleanup(Bucket) {
 
 module.exports = {
     config,
-    getKey,
+    getKey: getExpectedKeyId,
     credsProfile,
     s3,
     s3Client,

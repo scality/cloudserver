@@ -15,6 +15,13 @@ const fileKmsPrefix = filekms.backend.arnPrefix;
 const fileArnPrefix = { arnPrefix: fileKmsPrefix };
 const SCAL_KMS_ARN_REG = new RegExp(`^${SCAL_KMS_ARN}`);
 
+// The bucket key is still stored without arn prefix: GetBucketEncryption does not migrate it
+async function assertNotMigratedBucketKeyId(Bucket, KMSMasterKeyID) {
+    const { configuredMasterKeyId } = (await helpers.MD.getBucket(Bucket, log)).getServerSideEncryption();
+    assert.doesNotMatch(configuredMasterKeyId, SCAL_KMS_ARN_REG);
+    assert.strictEqual(KMSMasterKeyID, helpers.getKey(configuredMasterKeyId));
+}
+
 async function assertObjectSSE(
     { Bucket, Key, VersionId, Body },
     { obj, objConf },
@@ -91,13 +98,13 @@ describe('SSE KMS migration', () => {
             const bktSSE = await helpers.getBucketSSE(bkt.name);
             assert.strictEqual(bktSSE.SSEAlgorithm, bktConf.algo);
             if (bktSSE.KMSMasterKeyID) {
-                assert.doesNotMatch(bktSSE.KMSMasterKeyID, SCAL_KMS_ARN_REG);
+                await assertNotMigratedBucketKeyId(bkt.name, bktSSE.KMSMasterKeyID);
             }
 
             const vbktSSE = await helpers.getBucketSSE(bkt.vname);
             assert.strictEqual(vbktSSE.SSEAlgorithm, bktConf.algo);
             if (vbktSSE.KMSMasterKeyID) {
-                assert.doesNotMatch(vbktSSE.KMSMasterKeyID, SCAL_KMS_ARN_REG);
+                await assertNotMigratedBucketKeyId(bkt.vname, vbktSSE.KMSMasterKeyID);
             }
         }
 
@@ -137,7 +144,7 @@ describe('SSE KMS migration', () => {
         const { SSEAlgorithm, KMSMasterKeyID } =
             copySSE.ServerSideEncryptionConfiguration.Rules[0].ApplyServerSideEncryptionByDefault;
         assert.strictEqual(SSEAlgorithm, 'aws:kms');
-        assert.doesNotMatch(KMSMasterKeyID, SCAL_KMS_ARN_REG);
+        await assertNotMigratedBucketKeyId(copyBkt, KMSMasterKeyID);
 
         // Check buckets and object are ready and not yet migrated
         await Promise.all(scenarios.testCases.map(async bktConf => this.checkInitBucket(bktConf)));
@@ -274,6 +281,10 @@ describe('SSE KMS migration', () => {
                         const MPUBucketName = `${mpuBucketPrefix}${bkt.name}`;
                         const longMPUIdentifier = `overview${splitter}${mpuKey}${splitter}${uploadId}`;
                         const mpuOverviewMDSSE = await helpers.getObjectMDSSE(MPUBucketName, longMPUIdentifier);
+                        // MPU responses return the overview key as a key ID
+                        if (mpuOverviewMDSSE.SSEKMSKeyId) {
+                            mpuOverviewMDSSE.SSEKMSKeyId = helpers.getKey(mpuOverviewMDSSE.SSEKMSKeyId);
+                        }
 
                         const existingParts = await helpers.s3.listParts({
                             Bucket: bkt.name,

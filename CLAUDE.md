@@ -132,7 +132,9 @@ KMSs are configured as a `kms` array in `config.json`. Each entry has a
 `protocol`, a unique `providerName`, the settings of that protocol, and exactly
 one entry has `"default": true`. Keys are created in the default KMS, and each
 key is sent to the KMS its ARN names. A key ID without ARN in a request goes to
-the default KMS.
+the default KMS. With `kmsHideScalityArn` (on by default), responses return key
+IDs without ARN only for keys of the default KMS, so a returned key ID names the
+same key when sent back.
 
 | Protocol  | Description                                            |
 | --------- | ------------------------------------------------------ |

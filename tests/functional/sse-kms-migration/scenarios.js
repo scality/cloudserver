@@ -137,7 +137,7 @@ async function getBucketSSE(bktName, log, algo, masterKeyArn, testCase) {
         if (testCase === 'migration') {
             // ensure key is old format
             assert.doesNotMatch(sseMD.configuredMasterKeyId, SCAL_KMS_ARN_REG);
-            assert.doesNotMatch(sseS3.KMSMasterKeyID, SCAL_KMS_ARN_REG);
+            assert.strictEqual(sseS3.KMSMasterKeyID, helpers.getKey(sseMD.configuredMasterKeyId));
         } else {
             assert.strictEqual(sseMD.configuredMasterKeyId, masterKeyArn);
             assert.strictEqual(sseS3.KMSMasterKeyID, helpers.getKey(masterKeyArn));

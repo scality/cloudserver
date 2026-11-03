@@ -1,6 +1,7 @@
 const assert = require('assert');
 const collectResponseHeaders = require('../../../lib/utilities/collectResponseHeaders');
 const { config } = require('../../../lib/Config');
+const kms = require('../../../lib/kms/wrapper');
 
 const coldLocation = 'location-dmf-v1';
 
@@ -155,5 +156,36 @@ describe('Middleware: Collect Response Headers', () => {
         const headers = collectResponseHeaders(obj);
         assert.strictEqual(headers['x-amz-scal-transition-in-progress'], undefined);
         assert.strictEqual(headers['x-amz-meta-scal-s3-transition-in-progress'], true);
+    });
+
+    describe('with kmsHideScalityArn', () => {
+        const kmsKeyIdHeader = 'x-amz-server-side-encryption-aws-kms-key-id';
+        let kmsHideScalityArn;
+
+        before(() => {
+            kmsHideScalityArn = config.kmsHideScalityArn;
+            config.kmsHideScalityArn = true;
+        });
+
+        after(() => {
+            config.kmsHideScalityArn = kmsHideScalityArn;
+        });
+
+        it('should return the key ID of a key in the default KMS without arn prefix', () => {
+            const headers = collectResponseHeaders({
+                'x-amz-server-side-encryption': 'aws:kms',
+                [kmsKeyIdHeader]: `${kms.arnPrefix}abcd`,
+            });
+            assert.strictEqual(headers[kmsKeyIdHeader], 'abcd');
+        });
+
+        it('should return the arn of a key in another KMS', () => {
+            const keyArn = 'arn:scality:kms:external:kmip:thales2:key/54';
+            const headers = collectResponseHeaders({
+                'x-amz-server-side-encryption': 'aws:kms',
+                [kmsKeyIdHeader]: keyArn,
+            });
+            assert.strictEqual(headers[kmsKeyIdHeader], keyArn);
+        });
     });
 });
