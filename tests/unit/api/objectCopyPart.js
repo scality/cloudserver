@@ -312,28 +312,47 @@ describe('objectCopyPart with a bucket policy scoped to key prefixes', () => {
 
     before(done => {
         cleanup();
-        async.waterfall([
-            callback => bucketPut(authInfo, _createBucketPutRequest(bucketName), log,
-                err => callback(err)),
-            callback => bucketPutPolicy(authInfo, putPolicyRequest, log,
-                err => callback(err)),
-            callback => objectPut(authInfo,
-                versioningTestUtils.createPutObjectRequest(bucketName, 'forbidden/myfile', Buffer.from('foo', 'utf8')),
-                undefined, log, err => callback(err)),
-            callback => objectPut(authInfo,
-                versioningTestUtils.createPutObjectRequest(bucketName, 'allowed/myfile', Buffer.from('bar', 'utf8')),
-                undefined, log, err => callback(err)),
-            callback => initiateMultipartUpload(userAuthInfo, initiateUserRequest,
-                log, (err, res) => callback(err, res)),
-        ], (err, res) => {
-            if (err) {
-                return done(err);
-            }
-            return parseString(res, (err, json) => {
-                uploadId = json.InitiateMultipartUploadResult.UploadId[0];
-                return done(err);
-            });
-        });
+        async.waterfall(
+            [
+                callback => bucketPut(authInfo, _createBucketPutRequest(bucketName), log, err => callback(err)),
+                callback => bucketPutPolicy(authInfo, putPolicyRequest, log, err => callback(err)),
+                callback =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(
+                            bucketName,
+                            'forbidden/myfile',
+                            Buffer.from('foo', 'utf8'),
+                        ),
+                        undefined,
+                        log,
+                        err => callback(err),
+                    ),
+                callback =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(
+                            bucketName,
+                            'allowed/myfile',
+                            Buffer.from('bar', 'utf8'),
+                        ),
+                        undefined,
+                        log,
+                        err => callback(err),
+                    ),
+                callback =>
+                    initiateMultipartUpload(userAuthInfo, initiateUserRequest, log, (err, res) => callback(err, res)),
+            ],
+            (err, res) => {
+                if (err) {
+                    return done(err);
+                }
+                return parseString(res, (err, json) => {
+                    uploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                    return done(err);
+                });
+            },
+        );
     });
 
     after(() => {
@@ -343,22 +362,20 @@ describe('objectCopyPart with a bucket policy scoped to key prefixes', () => {
     // IAM allows reading the source, so the bucket policy Deny is what denies it
     it('should deny copying a part from a source denied by the bucket policy', done => {
         const request = _createUserCopyPartRequest({ objectGet: false, objectPutPart: true });
-        objectPutCopyPart(userAuthInfo, request, bucketName, 'forbidden/myfile',
-            undefined, log, err => {
-                assert(err, 'expected the part copy to be denied');
-                assert.strictEqual(err.is.AccessDenied, true);
-                done();
-            });
+        objectPutCopyPart(userAuthInfo, request, bucketName, 'forbidden/myfile', undefined, log, err => {
+            assert(err, 'expected the part copy to be denied');
+            assert.strictEqual(err.is.AccessDenied, true);
+            done();
+        });
     });
 
     // IAM allows nothing, so the bucket policy Allow is what allows it
     it('should allow copying a part from a source allowed by the bucket policy', done => {
         const request = _createUserCopyPartRequest({ objectGet: true, objectPutPart: true });
-        objectPutCopyPart(userAuthInfo, request, bucketName, 'allowed/myfile',
-            undefined, log, err => {
-                assert.ifError(err);
-                done();
-            });
+        objectPutCopyPart(userAuthInfo, request, bucketName, 'allowed/myfile', undefined, log, err => {
+            assert.ifError(err);
+            done();
+        });
     });
 });
 
