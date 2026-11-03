@@ -5,6 +5,7 @@ const { parseString } = require('xml2js');
 const { auth, storage } = require('arsenal');
 const api = require('../../../lib/api/api');
 const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');
 const objectPut = require('../../../lib/api/objectPut');
 const objectPutCopyPart = require('../../../lib/api/objectPutCopyPart');
 const initiateMultipartUpload = require('../../../lib/api/initiateMultipartUpload');
@@ -663,6 +664,131 @@ describe('objectCopyPart through api.callApiMethod', () => {
         stubDoAuth('s3:PutObject');
         api.callApiMethod('objectPutCopyPart', _createCopyPartApiRequest(), {}, log, err => {
             assert(err && err.is.AccessDenied, `expected AccessDenied, got ${err}`);
+            done();
+        });
+    });
+});
+
+describe('objectCopyPart with a bucket policy scoped to key prefixes', () => {
+    const bucketName = 'prefixpolicybucket';
+    const destKey = 'allowed/mpu-copy';
+    const userAuthInfo = makeAuthInfo(canonicalID, 'user');
+    const putPolicyRequest = new DummyRequest({
+        bucketName,
+        namespace,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        url: '/',
+        socket: {},
+        post: JSON.stringify({
+            Version: '2012-10-17',
+            Statement: [
+                {
+                    Effect: 'Allow',
+                    Principal: '*',
+                    Action: ['s3:GetObject', 's3:PutObject'],
+                    Resource: `arn:aws:s3:::${bucketName}/allowed/*`,
+                },
+                {
+                    Effect: 'Deny',
+                    Principal: '*',
+                    Action: 's3:GetObject',
+                    Resource: `arn:aws:s3:::${bucketName}/forbidden/*`,
+                },
+            ],
+        }),
+    });
+    const initiateUserRequest = new DummyRequest({
+        bucketName,
+        namespace,
+        objectKey: destKey,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        url: `/${destKey}?uploads`,
+        socket: {},
+    });
+    let uploadId;
+
+    // An IAM user, with the given implicit denies returned by Vault
+    function _createUserCopyPartRequest(actionImplicitDenies) {
+        const request = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: destKey,
+            headers: {},
+            url: `/${bucketName}/${destKey}?partNumber=1`,
+            query: {
+                partNumber: 1,
+                uploadId,
+            },
+            socket: {},
+        });
+        request.actionImplicitDenies = actionImplicitDenies;
+        return request;
+    }
+
+    before(done => {
+        cleanup();
+        async.waterfall(
+            [
+                callback => bucketPut(authInfo, _createBucketPutRequest(bucketName), log, err => callback(err)),
+                callback => bucketPutPolicy(authInfo, putPolicyRequest, log, err => callback(err)),
+                callback =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(
+                            bucketName,
+                            'forbidden/myfile',
+                            Buffer.from('foo', 'utf8'),
+                        ),
+                        undefined,
+                        log,
+                        err => callback(err),
+                    ),
+                callback =>
+                    objectPut(
+                        authInfo,
+                        versioningTestUtils.createPutObjectRequest(
+                            bucketName,
+                            'allowed/myfile',
+                            Buffer.from('bar', 'utf8'),
+                        ),
+                        undefined,
+                        log,
+                        err => callback(err),
+                    ),
+                callback =>
+                    initiateMultipartUpload(userAuthInfo, initiateUserRequest, log, (err, res) => callback(err, res)),
+            ],
+            (err, res) => {
+                if (err) {
+                    return done(err);
+                }
+                return parseString(res, (err, json) => {
+                    uploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                    return done(err);
+                });
+            },
+        );
+    });
+
+    after(() => {
+        cleanup();
+    });
+
+    // IAM allows reading the source, so the bucket policy Deny is what denies it
+    it('should deny copying a part from a source denied by the bucket policy', done => {
+        const request = _createUserCopyPartRequest({ objectGet: false, objectPutPart: true });
+        objectPutCopyPart(userAuthInfo, request, bucketName, 'forbidden/myfile', undefined, log, err => {
+            assert(err, 'expected the part copy to be denied');
+            assert.strictEqual(err.is.AccessDenied, true);
+            done();
+        });
+    });
+
+    // IAM allows nothing, so the bucket policy Allow is what allows it
+    it('should allow copying a part from a source allowed by the bucket policy', done => {
+        const request = _createUserCopyPartRequest({ objectGet: true, objectPutPart: true });
+        objectPutCopyPart(userAuthInfo, request, bucketName, 'allowed/myfile', undefined, log, err => {
+            assert.ifError(err);
             done();
         });
     });
