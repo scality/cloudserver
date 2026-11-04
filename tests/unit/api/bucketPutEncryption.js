@@ -237,6 +237,30 @@ describe('bucketPutEncryption API', () => {
             });
         });
 
+        it('should refuse a KMSMasterKeyID of a KMS that is not configured and keep the config', done => {
+            const post = templateSSEConfig({ algorithm: 'AES256' });
+            bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
+                assert.ifError(err);
+                return getSSEConfig(bucketName, log, (err, sseInfo) => {
+                    assert.ifError(err);
+                    const keyId = 'arn:scality:kms:external:kmip:unconfigured:key/1';
+                    const newConf = templateSSEConfig({ algorithm: 'aws:kms', keyId });
+                    return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log, err => {
+                        assert.strictEqual(err?.message, 'InvalidArgument');
+                        assert.strictEqual(
+                            err.description,
+                            `KMS Scality KeyArn "${keyId}" doesn't match any configured providers`,
+                        );
+                        return getSSEConfig(bucketName, log, (err, unchangedSSEInfo) => {
+                            assert.ifError(err);
+                            assert.deepStrictEqual(unchangedSSEInfo, sseInfo);
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+
         it('should update SSEAlgorithm to AES256', done => {
             const post = templateSSEConfig({ algorithm: 'aws:kms' });
             bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {

@@ -272,11 +272,11 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
         await assertEncryptedWith(bucketName, objectName, keyArn);
     }
 
-    async function assertBucketEncryptionEncryptsWith(keyArn) {
-        await putBucketEncryption(bucketName, keyArn);
-        assert.strictEqual(await getBucketEncryptionKeyId(bucketName), getExpectedKeyId(keyArn));
-        await putObject(bucketName, objectName);
-        await assertEncryptedWith(bucketName, objectName, keyArn);
+    async function assertBucketEncryptionEncryptsWith(keyArn, bucket = bucketName) {
+        await putBucketEncryption(bucket, keyArn);
+        assert.strictEqual(await getBucketEncryptionKeyId(bucket), getExpectedKeyId(keyArn));
+        await putObject(bucket, objectName);
+        await assertEncryptedWith(bucket, objectName, keyArn);
     }
 
     async function assertReturnedKeyIdEncryptsWith(keyArn) {
@@ -343,6 +343,12 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
 
             it('should encrypt with the key set by PutBucketEncryption', () =>
                 assertBucketEncryptionEncryptsWith(keyArn));
+
+            it('should encrypt with the key set by PutBucketEncryption on a bucket with a bucket key', async () => {
+                const encryptedBucketName = `${bucketName}2`;
+                await createBucket(encryptedBucketName, true);
+                await assertBucketEncryptionEncryptsWith(keyArn, encryptedBucketName);
+            });
 
             it('should encrypt with the key set on CreateBucket', async () => {
                 const encryptedBucketName = `${bucketName}2`;
@@ -466,5 +472,11 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
 
         it('should refuse PutBucketEncryption on a bucket without a bucket key', () =>
             assert.rejects(putBucketEncryption(bucketName, keyArn), assertRefusedNamingOnlyTheKey));
+
+        it('should refuse PutBucketEncryption on a bucket with a bucket key', async () => {
+            const encryptedBucketName = `${bucketName}2`;
+            await createBucket(encryptedBucketName, true);
+            await assert.rejects(putBucketEncryption(encryptedBucketName, keyArn), assertRefusedNamingOnlyTheKey);
+        });
     });
 });
