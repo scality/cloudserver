@@ -1,12 +1,18 @@
 const assert = require('assert');
 const async = require('async');
+const crypto = require('crypto');
 const { storage, versioning } = require('arsenal');
 const sinon = require('sinon');
+const { parseString } = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');
+const completeMultipartUpload = require('../../../lib/api/completeMultipartUpload');
+const initiateMultipartUpload = require('../../../lib/api/initiateMultipartUpload');
 const objectPut = require('../../../lib/api/objectPut');
+const objectPutPart = require('../../../lib/api/objectPutPart');
+const objectPutCopyPart = require('../../../lib/api/objectPutCopyPart');
 const objectCopy = require('../../../lib/api/objectCopy');
 const objectGet = require('../../../lib/api/objectGet');
 const kms = require('../../../lib/kms/wrapper');
@@ -1469,9 +1475,10 @@ describe('objectCopy self-copy with SSE', () => {
         'x-amz-meta-updated': 'true',
     };
 
-    // Asserts the object data was rewritten: new locations, all encrypted,
-    // the old locations gone from the data store, and the original bytes read back.
-    function assertDataRewritten(locationsBefore, done) {
+    // Asserts the object data was rewritten: new locations, encrypted except
+    // when the copy writes the data unencrypted (`encrypted` is false), the old
+    // locations gone from the data store, and the original bytes read back.
+    function assertDataRewritten(locationsBefore, done, { expectedBody = plaintext, encrypted = true } = {}) {
         return getLocations((err, locationsAfter) => {
             assert.ifError(err);
             assert.notDeepStrictEqual(
@@ -1479,13 +1486,17 @@ describe('objectCopy self-copy with SSE', () => {
                 locationsBefore.map(loc => loc.key),
             );
             locationsAfter.forEach(loc => {
-                assert(loc.cipheredDataKey, 'new data location must be encrypted');
-                assert.notDeepStrictEqual(ds[loc.key].value, plaintext);
+                if (encrypted) {
+                    assert(loc.cipheredDataKey, 'new data location must be encrypted');
+                    assert.notDeepStrictEqual(ds[loc.key].value, plaintext);
+                } else {
+                    assert.strictEqual(loc.cipheredDataKey, undefined);
+                }
             });
             locationsBefore.forEach(loc => assert.strictEqual(ds[loc.key], undefined));
             return getBody((err, body) => {
                 assert.ifError(err);
-                assert.deepStrictEqual(body, plaintext);
+                assert.deepStrictEqual(body, expectedBody);
                 done();
             });
         });
@@ -1504,6 +1515,107 @@ describe('objectCopy self-copy with SSE', () => {
             });
         });
     }
+
+    function updateObjectMD(update, cb) {
+        return metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
+            if (err) {
+                return cb(err);
+            }
+            update(md);
+            return metadata.putObjectMD(destBucketName, objectKey, md, {}, log, err => cb(err, md.location));
+        });
+    }
+
+    // The in-memory metadata returns the stored object itself: copy it to
+    // compare before and after.
+    function getObjectMD(cb) {
+        return metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) =>
+            cb(err, md && JSON.parse(JSON.stringify(md))),
+        );
+    }
+
+    function recordKeyOnLocations(md, keyArn) {
+        md.location.forEach(location => {
+            /* eslint-disable no-param-reassign */
+            location.masterKeyId = keyArn;
+            location.algorithm = 'aws:kms';
+            /* eslint-enable no-param-reassign */
+        });
+    }
+
+    // Puts the object encrypted under dataMasterKey, then sets
+    // metadataMasterKey as the master key in the object metadata and records
+    // recordedMasterKey on every location, as a metadata-only self-copy does.
+    // A plain put records no key on the locations. With metadataMasterKey
+    // other than dataMasterKey, the metadata does not name the key of the
+    // data. Self-copies made before CLDSRV-910 left objects in this state:
+    // they changed the master key without rewriting the data. The code no
+    // longer produces it.
+    function putObjectWithKeys({ dataMasterKey, metadataMasterKey, recordedMasterKey }, cb) {
+        return putObject(kmsHeaders(dataMasterKey), err => {
+            if (err) {
+                return cb(err);
+            }
+            return updateObjectMD(md => {
+                // eslint-disable-next-line no-param-reassign
+                md['x-amz-server-side-encryption-aws-kms-key-id'] = metadataMasterKey;
+                recordKeyOnLocations(md, recordedMasterKey);
+            }, cb);
+        });
+    }
+
+    function createKeys(count, cb) {
+        return async.timesSeries(count, (n, next) => createKey(next), cb);
+    }
+
+    function initiateMpu(key, headers, cb) {
+        const request = new DummyRequest({
+            bucketName: destBucketName,
+            namespace,
+            objectKey: key,
+            headers: { host: `${destBucketName}.s3.amazonaws.com`, ...headers },
+            url: `/${key}?uploads`,
+        });
+        return initiateMultipartUpload(authInfo, request, log, (err, xml) => {
+            if (err) {
+                return cb(err);
+            }
+            return parseString(xml, (err, json) => cb(err, json && json.InitiateMultipartUploadResult.UploadId[0]));
+        });
+    }
+
+    function partRequest(key, uploadId, partNumber, body) {
+        return new DummyRequest(
+            {
+                bucketName: destBucketName,
+                namespace,
+                objectKey: key,
+                headers: { host: `${destBucketName}.s3.amazonaws.com` },
+                url: `/${key}?partNumber=${partNumber}&uploadId=${uploadId}`,
+                query: { partNumber, uploadId },
+            },
+            body,
+        );
+    }
+
+    function completeMpu(key, uploadId, partETags, cb) {
+        const parts = partETags
+            .map((eTag, i) => `<Part><PartNumber>${i + 1}</PartNumber><ETag>"${eTag}"</ETag></Part>`)
+            .join('');
+        const request = {
+            bucketName: destBucketName,
+            namespace,
+            objectKey: key,
+            parsedHost: 's3.amazonaws.com',
+            url: `/${key}?uploadId=${uploadId}`,
+            headers: { host: `${destBucketName}.s3.amazonaws.com` },
+            query: { uploadId },
+            post: `<CompleteMultipartUpload>${parts}</CompleteMultipartUpload>`,
+        };
+        return completeMultipartUpload(authInfo, request, log, err => cb(err));
+    }
+
+    const md5 = body => crypto.createHash('md5').update(body).digest('hex');
 
     beforeEach(done => {
         cleanup();
@@ -1680,6 +1792,366 @@ describe('objectCopy self-copy with SSE', () => {
                 assertDataKept(locationsBefore, done);
             },
         );
+    });
+
+    describe('which master key decrypts the data', () => {
+        // The test first sets up an object that a self-copy must refuse. Runs
+        // the self-copy, and asserts it failed and changed neither the metadata
+        // nor the data store.
+        function selfCopyLeavesObjectUnchanged(headers, cb) {
+            return getObjectMD((err, mdBefore) => {
+                if (err) {
+                    return cb(err);
+                }
+                const dataStoreSize = ds.length;
+                return selfCopy(headers, copyErr => {
+                    assert(copyErr, 'the copy must fail');
+                    assert.strictEqual(ds.length, dataStoreSize);
+                    mdBefore.location.forEach(loc => assert(ds[loc.key], 'original data must stay in the data store'));
+                    return getObjectMD((err, mdAfter) => {
+                        assert.ifError(err);
+                        assert.deepStrictEqual(mdAfter, mdBefore);
+                        cb(null, copyErr);
+                    });
+                });
+            });
+        }
+
+        it('should copy only the metadata when the copy asks for the key the data is encrypted under', done => {
+            async.waterfall(
+                [
+                    next => createKeys(2, next),
+                    // The data is encrypted under dataMasterKey, but the
+                    // metadata names metadataMasterKey.
+                    // Self-copies made before CLDSRV-910 left objects in this state.
+                    ([dataMasterKey, metadataMasterKey], next) =>
+                        putObjectWithKeys(
+                            { dataMasterKey, metadataMasterKey, recordedMasterKey: dataMasterKey },
+                            (err, locationsBefore) => next(err, dataMasterKey, locationsBefore),
+                        ),
+                    // The copy asks for dataMasterKey, which repairs the object.
+                    (dataMasterKey, locationsBefore, next) =>
+                        selfCopy(kmsHeaders(dataMasterKey), err => next(err, dataMasterKey, locationsBefore)),
+                    (dataMasterKey, locationsBefore, next) =>
+                        getObjectMD((err, md) => next(err, dataMasterKey, md, locationsBefore)),
+                ],
+                (err, dataMasterKey, md, locationsBefore) => {
+                    assert.ifError(err);
+                    // The metadata names dataMasterKey again, and the data was
+                    // not rewritten.
+                    assert.strictEqual(md['x-amz-server-side-encryption-aws-kms-key-id'], dataMasterKey);
+                    assertDataKept(locationsBefore, done);
+                },
+            );
+        });
+
+        it('should decrypt the data with the key its locations record when re-encrypting it', done => {
+            async.waterfall(
+                [
+                    next => createKeys(3, next),
+                    // The data is encrypted under dataMasterKey, which its
+                    // locations record, but the metadata names
+                    // metadataMasterKey.
+                    // Self-copies made before CLDSRV-910 left objects in this state.
+                    ([dataMasterKey, metadataMasterKey, destMasterKey], next) =>
+                        putObjectWithKeys(
+                            { dataMasterKey, metadataMasterKey, recordedMasterKey: dataMasterKey },
+                            (err, locationsBefore) => next(err, destMasterKey, locationsBefore),
+                        ),
+                    // The copy asks for a third key, so the data is rewritten.
+                    (destMasterKey, locationsBefore, next) =>
+                        selfCopy(kmsHeaders(destMasterKey), err => next(err, locationsBefore)),
+                ],
+                (err, locationsBefore) => {
+                    assert.ifError(err);
+                    // The original bytes read back: the copy decrypted the data
+                    // with dataMasterKey, not metadataMasterKey.
+                    assertDataRewritten(locationsBefore, done);
+                },
+            );
+        });
+
+        it('should keep the data when a copy asks for its master key after a copy removed the encryption', done => {
+            async.waterfall(
+                [
+                    next => createKeys(2, next),
+                    // The data is encrypted under dataMasterKey, but the
+                    // metadata names metadataMasterKey.
+                    // Self-copies made before CLDSRV-910 left objects in this state.
+                    ([dataMasterKey, metadataMasterKey], next) =>
+                        putObjectWithKeys({ dataMasterKey, metadataMasterKey, recordedMasterKey: dataMasterKey }, err =>
+                            next(err, dataMasterKey),
+                        ),
+                    // A copy without SSE removes the encryption from the
+                    // metadata, but the data stays encrypted.
+                    (dataMasterKey, next) => selfCopy(replaceMetadataHeaders, err => next(err, dataMasterKey)),
+                    (dataMasterKey, next) =>
+                        getLocations((err, locationsBefore) => next(err, dataMasterKey, locationsBefore)),
+                    // The copy asks for dataMasterKey: the data is already
+                    // under it, so only the metadata changes.
+                    (dataMasterKey, locationsBefore, next) =>
+                        selfCopy(kmsHeaders(dataMasterKey), err => next(err, locationsBefore)),
+                ],
+                (err, locationsBefore) => {
+                    assert.ifError(err);
+                    assertDataKept(locationsBefore, done);
+                },
+            );
+        });
+
+        it('should refuse the copy when no key decrypts the data', done => {
+            async.waterfall(
+                [
+                    next => createKeys(3, next),
+                    // The data is encrypted under dataMasterKey, but neither
+                    // the metadata nor the locations name it.
+                    // Self-copies made before CLDSRV-910 left objects in this state.
+                    ([dataMasterKey, metadataMasterKey, destMasterKey], next) =>
+                        putObjectWithKeys(
+                            { dataMasterKey, metadataMasterKey, recordedMasterKey: metadataMasterKey },
+                            err => next(err, destMasterKey),
+                        ),
+                    // The copy tries metadataMasterKey and destMasterKey, and
+                    // neither decrypts the data.
+                    (destMasterKey, next) => selfCopyLeavesObjectUnchanged(kmsHeaders(destMasterKey), next),
+                ],
+                (err, copyErr) => {
+                    assert.ifError(err);
+                    assert(copyErr.is.InternalError, `expected InternalError, got ${copyErr}`);
+                    done();
+                },
+            );
+        });
+
+        it('should refuse the copy when the encrypted data has no recorded MD5', done => {
+            async.waterfall(
+                [
+                    next => createKeys(2, next),
+                    // The locations record the key, so the copy checks which
+                    // key decrypts the data before rewriting it.
+                    ([dataMasterKey, destMasterKey], next) =>
+                        putObjectWithKeys(
+                            { dataMasterKey, metadataMasterKey: dataMasterKey, recordedMasterKey: dataMasterKey },
+                            err => next(err, destMasterKey),
+                        ),
+                    // Without an MD5 to compare with, the check cannot pass.
+                    (destMasterKey, next) =>
+                        updateObjectMD(
+                            // eslint-disable-next-line no-param-reassign
+                            md => md.location.forEach(location => delete location.dataStoreETag),
+                            err => next(err, destMasterKey),
+                        ),
+                    (destMasterKey, next) => selfCopyLeavesObjectUnchanged(kmsHeaders(destMasterKey), next),
+                ],
+                (err, copyErr) => {
+                    assert.ifError(err);
+                    assert(copyErr.is.InternalError, `expected InternalError, got ${copyErr}`);
+                    done();
+                },
+            );
+        });
+
+        it('should return the KMS error of the metadata master key when no other key decrypts the data', done => {
+            const kmsError = new Error('KMS unavailable');
+            async.waterfall(
+                [
+                    next => createKeys(2, next),
+                    ([dataMasterKey, destMasterKey], next) =>
+                        putObjectWithKeys(
+                            { dataMasterKey, metadataMasterKey: dataMasterKey, recordedMasterKey: dataMasterKey },
+                            err => next(err, dataMasterKey, destMasterKey),
+                        ),
+                    // The KMS fails for dataMasterKey, the key the metadata
+                    // and the locations name, and destMasterKey does not
+                    // decrypt the data.
+                    (dataMasterKey, destMasterKey, next) => {
+                        const createDecipherBundle = kms.createDecipherBundle;
+                        sinon
+                            .stub(kms, 'createDecipherBundle')
+                            .callsFake((sse, offset, log, cb) =>
+                                kms.isSameMasterKey(sse.masterKeyId, dataMasterKey, log)
+                                    ? cb(kmsError)
+                                    : createDecipherBundle.call(kms, sse, offset, log, cb),
+                            );
+                        return selfCopyLeavesObjectUnchanged(kmsHeaders(destMasterKey), next);
+                    },
+                ],
+                (err, copyErr) => {
+                    assert.ifError(err);
+                    assert.strictEqual(copyErr, kmsError);
+                    done();
+                },
+            );
+        });
+
+        it('should rewrite the data without reading it first when its locations record no key', done => {
+            async.waterfall(
+                [
+                    next => createKeys(2, next),
+                    // A plain put records no key on the locations.
+                    ([dataMasterKey, destMasterKey], next) =>
+                        putObject(kmsHeaders(dataMasterKey), err => next(err, destMasterKey)),
+                    (destMasterKey, next) =>
+                        getLocations((err, locationsBefore) => next(err, destMasterKey, locationsBefore)),
+                    (destMasterKey, locationsBefore, next) => {
+                        const dataGetSpy = sinon.spy(data, 'get');
+                        return selfCopy(kmsHeaders(destMasterKey), err =>
+                            next(err, dataGetSpy.callCount, locationsBefore),
+                        );
+                    },
+                ],
+                (err, dataReads, locationsBefore) => {
+                    assert.ifError(err);
+                    // Only the read of the rewrite: no check before it.
+                    assert.strictEqual(dataReads, 1);
+                    assertDataRewritten(locationsBefore, done);
+                },
+            );
+        });
+
+        it('should encrypt plaintext data recorded as encrypted', done => {
+            async.waterfall(
+                [
+                    next => createKey(next),
+                    (keyArn, next) => putObject({}, err => next(err, keyArn)),
+                    // Self-copies made before CLDSRV-910 left objects in this
+                    // state: one that asked for encryption marked the
+                    // plaintext data as encrypted without rewriting it, and a
+                    // later one recorded the key on the locations.
+                    (keyArn, next) =>
+                        updateObjectMD(
+                            md => {
+                                /* eslint-disable no-param-reassign */
+                                md['x-amz-server-side-encryption'] = 'aws:kms';
+                                md['x-amz-server-side-encryption-aws-kms-key-id'] = keyArn;
+                                /* eslint-enable no-param-reassign */
+                                recordKeyOnLocations(md, keyArn);
+                            },
+                            (err, locationsBefore) => next(err, keyArn, locationsBefore),
+                        ),
+                    (keyArn, locationsBefore, next) => selfCopy(kmsHeaders(keyArn), err => next(err, locationsBefore)),
+                ],
+                (err, locationsBefore) => {
+                    assert.ifError(err);
+                    assertDataRewritten(locationsBefore, done);
+                },
+            );
+        });
+
+        it('should check every location of a part copied from several locations', done => {
+            const sourceKey = 'mpusource';
+            const partBodies = [Buffer.alloc(constants.minimumAllowedPartSize, 'a'), Buffer.from('last part')];
+            const body = Buffer.concat(partBodies);
+            let keys;
+            async.waterfall(
+                [
+                    next => createKeys(2, next),
+                    // A source of two parts, copied as one part: the object
+                    // has one part over two locations, and both carry the MD5
+                    // of the whole part.
+                    (created, next) => {
+                        keys = created;
+                        return initiateMpu(sourceKey, kmsHeaders(keys[0]), next);
+                    },
+                    (uploadId, next) =>
+                        async.timesSeries(
+                            partBodies.length,
+                            (i, partDone) =>
+                                objectPutPart(
+                                    authInfo,
+                                    partRequest(sourceKey, uploadId, i + 1, partBodies[i]),
+                                    undefined,
+                                    log,
+                                    err => partDone(err),
+                                ),
+                            err => next(err, uploadId),
+                        ),
+                    (uploadId, next) => completeMpu(sourceKey, uploadId, partBodies.map(md5), next),
+                    next => initiateMpu(objectKey, kmsHeaders(keys[0]), next),
+                    (uploadId, next) =>
+                        objectPutCopyPart(
+                            authInfo,
+                            partRequest(objectKey, uploadId, 1),
+                            destBucketName,
+                            sourceKey,
+                            undefined,
+                            log,
+                            err => next(err, uploadId),
+                        ),
+                    (uploadId, next) => completeMpu(objectKey, uploadId, [md5(body)], next),
+                    // A metadata-only self-copy records the key on the
+                    // locations, so the next copy checks it.
+                    next => selfCopy({ ...kmsHeaders(keys[0]), ...replaceMetadataHeaders }, next),
+                    next => getLocations(next),
+                    (locationsBefore, next) => {
+                        assert.strictEqual(locationsBefore.length, 2);
+                        assert.strictEqual(locationsBefore[0].dataStoreETag, locationsBefore[1].dataStoreETag);
+                        assert(locationsBefore[0].masterKeyId);
+                        // The check finds the key only if it reads both
+                        // locations to compute the MD5 of the part.
+                        return selfCopy(kmsHeaders(keys[1]), err => next(err, locationsBefore));
+                    },
+                ],
+                (err, locationsBefore) => {
+                    assert.ifError(err);
+                    assertDataRewritten(locationsBefore, done, { expectedBody: body });
+                },
+            );
+        });
+
+        const otherLocationHeaders = {
+            'x-amz-metadata-directive': 'REPLACE',
+            'x-amz-meta-scal-location-constraint': 'us-east-2',
+        };
+
+        it('should decrypt the data with the key its locations record when the copy changes location', done => {
+            async.waterfall(
+                [
+                    next => createKeys(2, next),
+                    // The data is encrypted under dataMasterKey, which its
+                    // locations record, but the metadata names
+                    // metadataMasterKey.
+                    // Self-copies made before CLDSRV-910 left objects in this state.
+                    ([dataMasterKey, metadataMasterKey], next) =>
+                        putObjectWithKeys(
+                            { dataMasterKey, metadataMasterKey, recordedMasterKey: dataMasterKey },
+                            (err, locationsBefore) => next(err, metadataMasterKey, locationsBefore),
+                        ),
+                    // The copy keeps metadataMasterKey but moves the object to
+                    // another location, so the data is rewritten.
+                    (metadataMasterKey, locationsBefore, next) =>
+                        selfCopy({ ...kmsHeaders(metadataMasterKey), ...otherLocationHeaders }, err =>
+                            next(err, locationsBefore),
+                        ),
+                ],
+                (err, locationsBefore) => {
+                    assert.ifError(err);
+                    assertDataRewritten(locationsBefore, done);
+                },
+            );
+        });
+
+        it('should decrypt with the key its locations record when an unencrypted copy changes location', done => {
+            async.waterfall(
+                [
+                    next => createKeys(2, next),
+                    // The data is encrypted under dataMasterKey, which its
+                    // locations record, but the metadata names
+                    // metadataMasterKey.
+                    // Self-copies made before CLDSRV-910 left objects in this state.
+                    ([dataMasterKey, metadataMasterKey], next) =>
+                        putObjectWithKeys({ dataMasterKey, metadataMasterKey, recordedMasterKey: dataMasterKey }, next),
+                    // The copy has no SSE headers and the bucket no default
+                    // encryption: the data is rewritten unencrypted to
+                    // another location.
+                    (locationsBefore, next) => selfCopy(otherLocationHeaders, err => next(err, locationsBefore)),
+                ],
+                (err, locationsBefore) => {
+                    assert.ifError(err);
+                    assertDataRewritten(locationsBefore, done, { encrypted: false });
+                },
+            );
+        });
     });
 });
 
