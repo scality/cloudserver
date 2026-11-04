@@ -1,12 +1,18 @@
 const assert = require('assert');
 const async = require('async');
+const crypto = require('crypto');
 const { storage, versioning } = require('arsenal');
 const sinon = require('sinon');
+const { parseString } = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');
+const completeMultipartUpload = require('../../../lib/api/completeMultipartUpload');
+const initiateMultipartUpload = require('../../../lib/api/initiateMultipartUpload');
 const objectPut = require('../../../lib/api/objectPut');
+const objectPutPart = require('../../../lib/api/objectPutPart');
+const objectPutCopyPart = require('../../../lib/api/objectPutCopyPart');
 const objectCopy = require('../../../lib/api/objectCopy');
 const objectGet = require('../../../lib/api/objectGet');
 const kms = require('../../../lib/kms/wrapper');
@@ -1352,9 +1358,10 @@ describe('objectCopy self-copy with SSE', () => {
         'x-amz-meta-updated': 'true',
     };
 
-    // Asserts the object data was rewritten: new locations, all encrypted,
-    // the old locations gone from the data store, and the original bytes read back.
-    function assertDataRewritten(locationsBefore, done) {
+    // Asserts the object data was rewritten: new locations, encrypted unless
+    // the copy is not, the old locations gone from the data store, and the
+    // original bytes read back.
+    function assertDataRewritten(locationsBefore, done, { expectedBody = plaintext, encrypted = true } = {}) {
         return getLocations((err, locationsAfter) => {
             assert.ifError(err);
             assert.notDeepStrictEqual(
@@ -1362,13 +1369,17 @@ describe('objectCopy self-copy with SSE', () => {
                 locationsBefore.map(loc => loc.key),
             );
             locationsAfter.forEach(loc => {
-                assert(loc.cipheredDataKey, 'new data location must be encrypted');
-                assert.notDeepStrictEqual(ds[loc.key].value, plaintext);
+                if (encrypted) {
+                    assert(loc.cipheredDataKey, 'new data location must be encrypted');
+                    assert.notDeepStrictEqual(ds[loc.key].value, plaintext);
+                } else {
+                    assert.strictEqual(loc.cipheredDataKey, undefined);
+                }
             });
             locationsBefore.forEach(loc => assert.strictEqual(ds[loc.key], undefined));
             return getBody((err, body) => {
                 assert.ifError(err);
-                assert.deepStrictEqual(body, plaintext);
+                assert.deepStrictEqual(body, expectedBody);
                 done();
             });
         });
@@ -1387,6 +1398,108 @@ describe('objectCopy self-copy with SSE', () => {
             });
         });
     }
+
+    function updateObjectMD(update, cb) {
+        return metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
+            if (err) {
+                return cb(err);
+            }
+            update(md);
+            return metadata.putObjectMD(destBucketName, objectKey, md, {}, log, err => cb(err, md.location));
+        });
+    }
+
+    // The in-memory metadata returns the stored object itself: copy it to
+    // compare before and after.
+    function snapshotObjectMD(cb) {
+        return metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) =>
+            cb(err, md && JSON.parse(JSON.stringify(md))),
+        );
+    }
+
+    function recordKeyOnLocations(md, keyArn) {
+        md.location.forEach(location => {
+            /* eslint-disable no-param-reassign */
+            location.masterKeyId = keyArn;
+            location.algorithm = 'aws:kms';
+            /* eslint-enable no-param-reassign */
+        });
+    }
+
+    // Puts the object under dataKey, then sets metadataKey as the master key in
+    // the object metadata and recordedKey on every location: the state left by
+    // self-copies that did not rewrite the data, one of them to another key.
+    function putObjectWithKeys({ dataKey, metadataKey, recordedKey }, cb) {
+        return putObject(kmsHeaders(dataKey), err => {
+            if (err) {
+                return cb(err);
+            }
+            return updateObjectMD(md => {
+                // eslint-disable-next-line no-param-reassign
+                md['x-amz-server-side-encryption-aws-kms-key-id'] = metadataKey;
+                recordKeyOnLocations(md, recordedKey);
+            }, cb);
+        });
+    }
+
+    function createKeys(count, cb) {
+        return async.timesSeries(count, (n, next) => createKey(next), cb);
+    }
+
+    function getObjectKeyId(cb) {
+        return metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) =>
+            cb(err, md && md['x-amz-server-side-encryption-aws-kms-key-id']),
+        );
+    }
+
+    function initiateMpu(key, headers, cb) {
+        const request = new DummyRequest({
+            bucketName: destBucketName,
+            namespace,
+            objectKey: key,
+            headers: { host: `${destBucketName}.s3.amazonaws.com`, ...headers },
+            url: `/${key}?uploads`,
+        });
+        return initiateMultipartUpload(authInfo, request, log, (err, xml) => {
+            if (err) {
+                return cb(err);
+            }
+            return parseString(xml, (err, json) => cb(err, json && json.InitiateMultipartUploadResult.UploadId[0]));
+        });
+    }
+
+    function partRequest(key, uploadId, partNumber, body) {
+        return new DummyRequest(
+            {
+                bucketName: destBucketName,
+                namespace,
+                objectKey: key,
+                headers: { host: `${destBucketName}.s3.amazonaws.com` },
+                url: `/${key}?partNumber=${partNumber}&uploadId=${uploadId}`,
+                query: { partNumber, uploadId },
+            },
+            body,
+        );
+    }
+
+    function completeMpu(key, uploadId, partETags, cb) {
+        const parts = partETags
+            .map((eTag, i) => `<Part><PartNumber>${i + 1}</PartNumber><ETag>"${eTag}"</ETag></Part>`)
+            .join('');
+        const request = {
+            bucketName: destBucketName,
+            namespace,
+            objectKey: key,
+            parsedHost: 's3.amazonaws.com',
+            url: `/${key}?uploadId=${uploadId}`,
+            headers: { host: `${destBucketName}.s3.amazonaws.com` },
+            query: { uploadId },
+            post: `<CompleteMultipartUpload>${parts}</CompleteMultipartUpload>`,
+        };
+        return completeMultipartUpload(authInfo, request, log, err => cb(err));
+    }
+
+    const md5 = body => crypto.createHash('md5').update(body).digest('hex');
 
     beforeEach(done => {
         cleanup();
@@ -1563,6 +1676,278 @@ describe('objectCopy self-copy with SSE', () => {
                 assertDataKept(locationsBefore, done);
             },
         );
+    });
+
+    describe('when the master key in the object metadata may not be the key of the data', () => {
+        // Runs a self-copy expected to fail, and asserts it changed
+        // neither the metadata nor the data store.
+        function selfCopyLeavesObjectUnchanged(headers, cb) {
+            return snapshotObjectMD((err, mdBefore) => {
+                if (err) {
+                    return cb(err);
+                }
+                const dataStoreSize = ds.length;
+                return selfCopy(headers, copyErr => {
+                    assert(copyErr, 'the copy must fail');
+                    assert.strictEqual(ds.length, dataStoreSize);
+                    mdBefore.location.forEach(loc => assert(ds[loc.key], 'original data must stay in the data store'));
+                    return snapshotObjectMD((err, mdAfter) => {
+                        assert.ifError(err);
+                        assert.deepStrictEqual(mdAfter, mdBefore);
+                        cb(null, copyErr);
+                    });
+                });
+            });
+        }
+
+        it('should copy only the metadata when the copy names the key of the data', done => {
+            async.waterfall(
+                [
+                    next => createKeys(2, next),
+                    ([dataKey, metadataKey], next) =>
+                        putObjectWithKeys({ dataKey, metadataKey, recordedKey: dataKey }, (err, locationsBefore) =>
+                            next(err, dataKey, locationsBefore),
+                        ),
+                    (dataKey, locationsBefore, next) =>
+                        selfCopy(kmsHeaders(dataKey), err => next(err, dataKey, locationsBefore)),
+                    (dataKey, locationsBefore, next) =>
+                        getObjectKeyId((err, keyId) => next(err, dataKey, keyId, locationsBefore)),
+                ],
+                (err, dataKey, keyId, locationsBefore) => {
+                    assert.ifError(err);
+                    assert.strictEqual(keyId, dataKey);
+                    assertDataKept(locationsBefore, done);
+                },
+            );
+        });
+
+        it('should re-encrypt the data with the key recorded on its locations', done => {
+            async.waterfall(
+                [
+                    next => createKeys(3, next),
+                    ([dataKey, metadataKey, destKey], next) =>
+                        putObjectWithKeys({ dataKey, metadataKey, recordedKey: dataKey }, (err, locationsBefore) =>
+                            next(err, destKey, locationsBefore),
+                        ),
+                    (destKey, locationsBefore, next) =>
+                        selfCopy(kmsHeaders(destKey), err => next(err, locationsBefore)),
+                ],
+                (err, locationsBefore) => {
+                    assert.ifError(err);
+                    assertDataRewritten(locationsBefore, done);
+                },
+            );
+        });
+
+        it('should refuse the copy when no key decrypts the data', done => {
+            async.waterfall(
+                [
+                    next => createKeys(3, next),
+                    ([dataKey, metadataKey, destKey], next) =>
+                        putObjectWithKeys({ dataKey, metadataKey, recordedKey: metadataKey }, err =>
+                            next(err, destKey),
+                        ),
+                    (destKey, next) => selfCopyLeavesObjectUnchanged(kmsHeaders(destKey), next),
+                ],
+                (err, copyErr) => {
+                    assert.ifError(err);
+                    assert(copyErr.is.InternalError, `expected InternalError, got ${copyErr}`);
+                    done();
+                },
+            );
+        });
+
+        it('should refuse the copy when the encrypted data has no recorded MD5', done => {
+            async.waterfall(
+                [
+                    next => createKeys(2, next),
+                    ([dataKey, destKey], next) =>
+                        putObjectWithKeys({ dataKey, metadataKey: dataKey, recordedKey: dataKey }, err =>
+                            next(err, destKey),
+                        ),
+                    (destKey, next) =>
+                        updateObjectMD(
+                            // eslint-disable-next-line no-param-reassign
+                            md => md.location.forEach(location => delete location.dataStoreETag),
+                            err => next(err, destKey),
+                        ),
+                    (destKey, next) => selfCopyLeavesObjectUnchanged(kmsHeaders(destKey), next),
+                ],
+                (err, copyErr) => {
+                    assert.ifError(err);
+                    assert(copyErr.is.InternalError, `expected InternalError, got ${copyErr}`);
+                    done();
+                },
+            );
+        });
+
+        it('should return the read error of the metadata master key when no other key decrypts the data', done => {
+            const kmsError = new Error('KMS unavailable');
+            async.waterfall(
+                [
+                    next => createKeys(2, next),
+                    ([dataKey, destKey], next) =>
+                        putObjectWithKeys({ dataKey, metadataKey: dataKey, recordedKey: dataKey }, err =>
+                            next(err, dataKey, destKey),
+                        ),
+                    (dataKey, destKey, next) => {
+                        const createDecipherBundle = kms.createDecipherBundle;
+                        sinon
+                            .stub(kms, 'createDecipherBundle')
+                            .callsFake((sse, offset, log, cb) =>
+                                kms.isSameMasterKey(sse.masterKeyId, dataKey, log)
+                                    ? cb(kmsError)
+                                    : createDecipherBundle.call(kms, sse, offset, log, cb),
+                            );
+                        return selfCopyLeavesObjectUnchanged(kmsHeaders(destKey), next);
+                    },
+                ],
+                (err, copyErr) => {
+                    assert.ifError(err);
+                    assert.strictEqual(copyErr, kmsError);
+                    done();
+                },
+            );
+        });
+
+        it('should rewrite the data without reading it first when its locations record no key', done => {
+            async.waterfall(
+                [
+                    next => createKeys(2, next),
+                    ([dataKey, destKey], next) => putObject(kmsHeaders(dataKey), err => next(err, destKey)),
+                    (destKey, next) => getLocations((err, locationsBefore) => next(err, destKey, locationsBefore)),
+                    (destKey, locationsBefore, next) => {
+                        const dataGetSpy = sinon.spy(data, 'get');
+                        return selfCopy(kmsHeaders(destKey), err => next(err, dataGetSpy.callCount, locationsBefore));
+                    },
+                ],
+                (err, dataReads, locationsBefore) => {
+                    assert.ifError(err);
+                    assert.strictEqual(dataReads, 1);
+                    assertDataRewritten(locationsBefore, done);
+                },
+            );
+        });
+
+        it('should encrypt plaintext data recorded as encrypted', done => {
+            async.waterfall(
+                [
+                    next => createKey(next),
+                    (keyArn, next) => putObject({}, err => next(err, keyArn)),
+                    (keyArn, next) =>
+                        updateObjectMD(
+                            md => {
+                                /* eslint-disable no-param-reassign */
+                                md['x-amz-server-side-encryption'] = 'aws:kms';
+                                md['x-amz-server-side-encryption-aws-kms-key-id'] = keyArn;
+                                /* eslint-enable no-param-reassign */
+                                recordKeyOnLocations(md, keyArn);
+                            },
+                            (err, locationsBefore) => next(err, keyArn, locationsBefore),
+                        ),
+                    (keyArn, locationsBefore, next) => selfCopy(kmsHeaders(keyArn), err => next(err, locationsBefore)),
+                ],
+                (err, locationsBefore) => {
+                    assert.ifError(err);
+                    assertDataRewritten(locationsBefore, done);
+                },
+            );
+        });
+
+        it('should check every location of a part copied from several locations', done => {
+            const sourceKey = 'mpusource';
+            const partBodies = [Buffer.alloc(constants.minimumAllowedPartSize, 'a'), Buffer.from('last part')];
+            const body = Buffer.concat(partBodies);
+            let keys;
+            async.waterfall(
+                [
+                    next => createKeys(2, next),
+                    (created, next) => {
+                        keys = created;
+                        return initiateMpu(sourceKey, kmsHeaders(keys[0]), next);
+                    },
+                    (uploadId, next) =>
+                        async.timesSeries(
+                            partBodies.length,
+                            (i, partDone) =>
+                                objectPutPart(
+                                    authInfo,
+                                    partRequest(sourceKey, uploadId, i + 1, partBodies[i]),
+                                    undefined,
+                                    log,
+                                    err => partDone(err),
+                                ),
+                            err => next(err, uploadId),
+                        ),
+                    (uploadId, next) => completeMpu(sourceKey, uploadId, partBodies.map(md5), next),
+                    next => initiateMpu(objectKey, kmsHeaders(keys[0]), next),
+                    (uploadId, next) =>
+                        objectPutCopyPart(
+                            authInfo,
+                            partRequest(objectKey, uploadId, 1),
+                            destBucketName,
+                            sourceKey,
+                            undefined,
+                            log,
+                            err => next(err, uploadId),
+                        ),
+                    (uploadId, next) => completeMpu(objectKey, uploadId, [md5(body)], next),
+                    // records the key on the locations
+                    next => selfCopy({ ...kmsHeaders(keys[0]), ...replaceMetadataHeaders }, next),
+                    next => getLocations(next),
+                    (locationsBefore, next) => {
+                        assert.strictEqual(locationsBefore.length, 2);
+                        assert.strictEqual(locationsBefore[0].dataStoreETag, locationsBefore[1].dataStoreETag);
+                        assert(locationsBefore[0].masterKeyId);
+                        return selfCopy(kmsHeaders(keys[1]), err => next(err, locationsBefore));
+                    },
+                ],
+                (err, locationsBefore) => {
+                    assert.ifError(err);
+                    assertDataRewritten(locationsBefore, done, { expectedBody: body });
+                },
+            );
+        });
+
+        const otherLocationHeaders = {
+            'x-amz-metadata-directive': 'REPLACE',
+            'x-amz-meta-scal-location-constraint': 'us-east-2',
+        };
+
+        it('should rewrite the data with the recorded key when the copy changes location', done => {
+            async.waterfall(
+                [
+                    next => createKeys(2, next),
+                    ([dataKey, metadataKey], next) =>
+                        putObjectWithKeys({ dataKey, metadataKey, recordedKey: dataKey }, (err, locationsBefore) =>
+                            next(err, metadataKey, locationsBefore),
+                        ),
+                    (metadataKey, locationsBefore, next) =>
+                        selfCopy({ ...kmsHeaders(metadataKey), ...otherLocationHeaders }, err =>
+                            next(err, locationsBefore),
+                        ),
+                ],
+                (err, locationsBefore) => {
+                    assert.ifError(err);
+                    assertDataRewritten(locationsBefore, done);
+                },
+            );
+        });
+
+        it('should decrypt the data with the recorded key when an unencrypted copy changes location', done => {
+            async.waterfall(
+                [
+                    next => createKeys(2, next),
+                    ([dataKey, metadataKey], next) =>
+                        putObjectWithKeys({ dataKey, metadataKey, recordedKey: dataKey }, next),
+                    (locationsBefore, next) => selfCopy(otherLocationHeaders, err => next(err, locationsBefore)),
+                ],
+                (err, locationsBefore) => {
+                    assert.ifError(err);
+                    assertDataRewritten(locationsBefore, done, { encrypted: false });
+                },
+            );
+        });
     });
 });
 
