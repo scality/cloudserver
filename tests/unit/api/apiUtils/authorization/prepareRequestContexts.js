@@ -257,8 +257,7 @@ describe('prepareRequestContexts', () => {
     it('should return s3:DeleteObject for objectDelete method', () => {
         const apiMethod = 'objectDelete';
         const request = makeRequest();
-        const results = prepareRequestContexts(apiMethod, request, sourceBucket,
-            sourceObject, sourceVersionId);
+        const results = prepareRequestContexts(apiMethod, request);
 
         assert.strictEqual(results.length, 1);
         assert.strictEqual(results[0].getAction(), 's3:DeleteObject');
@@ -269,8 +268,7 @@ describe('prepareRequestContexts', () => {
         const request = makeRequest({}, {
             versionId: 'vid1',
         });
-        const results = prepareRequestContexts(apiMethod, request, sourceBucket,
-            sourceObject, sourceVersionId);
+        const results = prepareRequestContexts(apiMethod, request);
 
         assert.strictEqual(results.length, 1);
         assert.strictEqual(results[0].getAction(), 's3:DeleteObjectVersion');
@@ -285,8 +283,7 @@ describe('prepareRequestContexts', () => {
         }, {
             versionId: 'vid1',
         });
-        const results = prepareRequestContexts(apiMethod, request, sourceBucket,
-            sourceObject, sourceVersionId);
+        const results = prepareRequestContexts(apiMethod, request);
 
         assert.strictEqual(results.length, 2);
         const expectedAction1 = 's3:DeleteObjectVersion';
@@ -303,8 +300,7 @@ describe('prepareRequestContexts', () => {
         const request = makeRequest({
             'x-amz-bypass-governance-retention': 'true',
         });
-        const results = prepareRequestContexts(apiMethod, request, sourceBucket,
-            sourceObject, sourceVersionId);
+        const results = prepareRequestContexts(apiMethod, request);
 
         assert.strictEqual(results.length, 1);
         const expectedAction = 's3:DeleteObject';
