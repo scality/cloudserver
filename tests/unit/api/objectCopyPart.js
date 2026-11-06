@@ -469,25 +469,26 @@ describe('objectCopyPart with a bucket policy on the source version ID', () => {
 
     before(done => {
         cleanup();
-        async.waterfall([
-            callback => bucketPut(authInfo, _createBucketPutRequest(bucketName), log,
-                err => callback(err)),
-            callback => bucketPutVersioning(authInfo, enableRequest, log,
-                err => callback(err)),
-            callback => _putObject('foo', callback),
-            callback => _putObject('bar', callback),
-            callback => _setBucketPolicy(err => callback(err)),
-            callback => initiateMultipartUpload(userAuthInfo, initiateUserRequest,
-                log, (err, res) => callback(err, res)),
-        ], (err, res) => {
-            if (err) {
-                return done(err);
-            }
-            return parseString(res, (err, json) => {
-                uploadId = json.InitiateMultipartUploadResult.UploadId[0];
-                return done(err);
-            });
-        });
+        async.waterfall(
+            [
+                callback => bucketPut(authInfo, _createBucketPutRequest(bucketName), log, err => callback(err)),
+                callback => bucketPutVersioning(authInfo, enableRequest, log, err => callback(err)),
+                callback => _putObject('foo', callback),
+                callback => _putObject('bar', callback),
+                callback => _setBucketPolicy(err => callback(err)),
+                callback =>
+                    initiateMultipartUpload(userAuthInfo, initiateUserRequest, log, (err, res) => callback(err, res)),
+            ],
+            (err, res) => {
+                if (err) {
+                    return done(err);
+                }
+                return parseString(res, (err, json) => {
+                    uploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                    return done(err);
+                });
+            },
+        );
     });
 
     after(() => {
@@ -495,20 +496,34 @@ describe('objectCopyPart with a bucket policy on the source version ID', () => {
     });
 
     it('should deny copying a part from the version denied by the bucket policy', done => {
-        objectPutCopyPart(userAuthInfo, _createUserCopyPartRequest(), bucketName, sourceKey,
-            versionIds[0], log, err => {
+        objectPutCopyPart(
+            userAuthInfo,
+            _createUserCopyPartRequest(),
+            bucketName,
+            sourceKey,
+            versionIds[0],
+            log,
+            err => {
                 assert(err, 'expected the part copy to be denied');
                 assert.strictEqual(err.is.AccessDenied, true);
                 done();
-            });
+            },
+        );
     });
 
     it('should allow copying a part from a version not denied by the bucket policy', done => {
-        objectPutCopyPart(userAuthInfo, _createUserCopyPartRequest(), bucketName, sourceKey,
-            versionIds[1], log, err => {
+        objectPutCopyPart(
+            userAuthInfo,
+            _createUserCopyPartRequest(),
+            bucketName,
+            sourceKey,
+            versionIds[1],
+            log,
+            err => {
                 assert.ifError(err);
                 done();
-            });
+            },
+        );
     });
 });
 

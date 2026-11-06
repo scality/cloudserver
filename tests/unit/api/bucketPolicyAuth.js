@@ -688,17 +688,35 @@ describe('bucket policy authorization', () => {
 
         it('should evaluate s3:VersionId against the target version', () => {
             setPolicy(versionIdPolicy);
-            const allowed = isObjAuthorized(bucket, object, 'objectGet', bucketOwnerCanonicalId,
-                userAuthInfo, log, makeCopyRequest(), { objectGet: true }, false,
-                { bucketName: bucket.getName(), objectKey: 'allowed/myfile', versionId: protectedVersionId });
+            const allowed = isObjAuthorized(
+                bucket,
+                object,
+                'objectGet',
+                bucketOwnerCanonicalId,
+                userAuthInfo,
+                log,
+                makeCopyRequest(),
+                { objectGet: true },
+                false,
+                { bucketName: bucket.getName(), objectKey: 'allowed/myfile', versionId: protectedVersionId },
+            );
             assert.strictEqual(allowed, false);
         });
 
         it('should allow objectGet when the target version does not match a Deny condition', () => {
             setPolicy(versionIdPolicy);
-            const allowed = isObjAuthorized(bucket, object, 'objectGet', bucketOwnerCanonicalId,
-                userAuthInfo, log, makeCopyRequest(), { objectGet: true }, false,
-                { bucketName: bucket.getName(), objectKey: 'allowed/myfile', versionId: otherVersionId });
+            const allowed = isObjAuthorized(
+                bucket,
+                object,
+                'objectGet',
+                bucketOwnerCanonicalId,
+                userAuthInfo,
+                log,
+                makeCopyRequest(),
+                { objectGet: true },
+                false,
+                { bucketName: bucket.getName(), objectKey: 'allowed/myfile', versionId: otherVersionId },
+            );
             assert.strictEqual(allowed, true);
         });
     });
