@@ -507,4 +507,61 @@ describe('prepareRequestContexts', () => {
             });
         });
     });
+
+    describe('bucket notification destinations', () => {
+        const accountid = '123456789012';
+        const destinationName = 'my-destination';
+
+        [
+            ['notificationDestinationCreate', 'scality:CreateBucketNotificationDestination'],
+            ['notificationDestinationUpdate', 'scality:UpdateBucketNotificationDestination'],
+            ['notificationDestinationGet', 'scality:GetBucketNotificationDestination'],
+            ['notificationDestinationDelete', 'scality:DeleteBucketNotificationDestination'],
+        ].forEach(([apiMethod, expectedAction]) => {
+            it(`should return one bucketnotif context on the named destination for ${apiMethod}`, () => {
+                const request = makeRequest({}, { name: destinationName });
+                const results = prepareRequestContexts(apiMethod, request);
+
+                assert.strictEqual(results.length, 1);
+                assert.strictEqual(results[0].getAwsService(), 'bucketnotif');
+                assert.strictEqual(results[0].getAction(), expectedAction);
+                results[0].setRequesterInfo({ accountid });
+                assert.strictEqual(
+                    results[0].getResource(),
+                    `arn:scality:bucketnotif::${accountid}:${destinationName}`,
+                );
+            });
+        });
+
+        it('should return one bucketnotif context on every destination for notificationDestinationList', () => {
+            const request = makeRequest({}, {});
+            const results = prepareRequestContexts('notificationDestinationList', request);
+
+            assert.strictEqual(results.length, 1);
+            assert.strictEqual(results[0].getAwsService(), 'bucketnotif');
+            assert.strictEqual(results[0].getAction(), 'scality:ListBucketNotificationDestinations');
+            results[0].setRequesterInfo({ accountid });
+            assert.strictEqual(results[0].getResource(), `arn:scality:bucketnotif::${accountid}:*`);
+        });
+
+        it('should authorize notificationDestinationList on every destination even with a name', () => {
+            const request = makeRequest({}, { name: destinationName });
+            const results = prepareRequestContexts('notificationDestinationList', request);
+
+            assert.strictEqual(results.length, 1);
+            results[0].setRequesterInfo({ accountid });
+            assert.strictEqual(results[0].getResource(), `arn:scality:bucketnotif::${accountid}:*`);
+        });
+
+        it('should keep the s3 bucket context of an S3 method that has a name query parameter', () => {
+            const request = makeRequest({}, { name: destinationName });
+            request.bucketName = 'my-bucket';
+            const results = prepareRequestContexts('bucketGet', request);
+
+            assert.strictEqual(results.length, 1);
+            assert.strictEqual(results[0].getAwsService(), 's3');
+            assert.strictEqual(results[0].getAction(), 's3:ListBucket');
+            assert.strictEqual(results[0].getResource(), 'arn:aws:s3:::my-bucket');
+        });
+    });
 });

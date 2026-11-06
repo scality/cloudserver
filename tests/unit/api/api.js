@@ -398,4 +398,86 @@ describe('api.callApiMethod', () => {
             });
         });
     });
+
+    describe('implicit deny from Vault', () => {
+        // Resolve with the error that callApiMethod returns, so that a failed
+        // assertion fails the test at once instead of in the API callback.
+        function callApi(method) {
+            return new Promise(resolve => api.callApiMethod(method, request, response, log, resolve));
+        }
+
+        function denyImplicitly() {
+            authServer.doAuth.callsArgWith(
+                2,
+                null,
+                new AuthInfo({}),
+                [{ isAllowed: false, isImplicit: true }],
+                null,
+                {},
+            );
+        }
+
+        [
+            'notificationDestinationCreate',
+            'notificationDestinationUpdate',
+            'notificationDestinationGet',
+            'notificationDestinationDelete',
+            'notificationDestinationList',
+        ].forEach(method => {
+            describe(method, () => {
+                let handler;
+                let existingHandler;
+
+                beforeEach(() => {
+                    // No handler exists yet for these methods: add a stub for the
+                    // test, and put back whatever was there afterwards.
+                    existingHandler = api[method];
+                    handler = sandbox.stub().callsFake((userInfo, _request, _log, cb) => cb());
+                    api[method] = handler;
+                    request.query = method === 'notificationDestinationList' ? {} : { name: 'my-destination' };
+                });
+
+                afterEach(() => {
+                    if (existingHandler === undefined) {
+                        delete api[method];
+                    } else {
+                        api[method] = existingHandler;
+                    }
+                });
+
+                it('should return AccessDenied, since no bucket policy or ACL can allow it', async () => {
+                    denyImplicitly();
+                    const err = await callApi(method);
+                    assert.strictEqual(err?.message, 'AccessDenied');
+                    assert.strictEqual(handler.called, false);
+                });
+
+                it('should call the handler when Vault allows it', async () => {
+                    const err = await callApi(method);
+                    assert.ifError(err);
+                    assert.strictEqual(handler.calledOnce, true);
+                    assert.strictEqual(authServer.doAuth.firstCall.args[3], 's3');
+                    assert.strictEqual(authServer.doAuth.firstCall.args[4][0].getAwsService(), 'bucketnotif');
+                });
+            });
+        });
+
+        ['bucketPut', 'serviceGet'].forEach(method => {
+            it(`should still return AccessDenied for ${method}`, async () => {
+                const handler = sandbox.stub(api, method).callsFake((userInfo, _request, _log, cb) => cb());
+                denyImplicitly();
+                const err = await callApi(method);
+                assert.strictEqual(err?.message, 'AccessDenied');
+                assert.strictEqual(handler.called, false);
+            });
+        });
+
+        it('should still let an S3 bucket method reach its handler, for its bucket policy and ACL', async () => {
+            const handler = sandbox.stub(api, 'bucketGet').callsFake((userInfo, _request, _log, cb) => cb());
+            denyImplicitly();
+            const err = await callApi('bucketGet');
+            assert.ifError(err);
+            assert.strictEqual(handler.calledOnce, true);
+        });
+    });
 });
