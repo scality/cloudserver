@@ -899,7 +899,11 @@ jobs:
             > config.json
         working-directory: tests/functional/sse-kms-migration
       - name: Setup CI services
-        run: docker compose up -d --quiet-pull redis pykmip localkms cloudserver-sse-before-migration
+        # The KMS that never answers must listen before cloudserver checks every KMS at start-up
+        run: |
+          docker compose up -d --quiet-pull silent-kmip
+          bash ../../wait_for_local_port.bash 5697 40
+          docker compose up -d --quiet-pull redis pykmip localkms cloudserver-sse-before-migration
         working-directory: .github/docker
       - name: Run file KMIP tests
         env:

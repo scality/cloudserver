@@ -85,6 +85,14 @@ services:
       - ../pykmip/certs:/ssl
       - ../pykmip/policy.json:/etc/pykmip/policies/policy.json
       - ../pykmip/server.conf:/etc/pykmip/server.conf
+  # A KMS that accepts connections and never answers
+  silent-kmip:
+    network_mode: host
+    profiles: ['pykmip']
+    image: ${CLOUDSERVER_IMAGE}
+    # node does not stop on SIGTERM as PID 1
+    init: true
+    entrypoint: ['node', '-e', "require('net').createServer(() => {}).listen(5697)"]
   localkms:
     network_mode: host
     profiles: ['localkms']
