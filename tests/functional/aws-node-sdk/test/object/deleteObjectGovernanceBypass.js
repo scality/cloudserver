@@ -1,28 +1,23 @@
 const assert = require('assert');
-const {
-    CreateBucketCommand,
-    PutObjectCommand,
-    PutObjectRetentionCommand,
-    DeleteObjectCommand,
-    HeadObjectCommand,
-    PutBucketPolicyCommand,
-    DeleteBucketPolicyCommand,
-} = require('@aws-sdk/client-s3');
+const { Credentials, IAM, S3 } = require('aws-sdk');
 const { v4: uuid } = require('uuid');
 
 const BucketUtility = require('../../lib/utility/bucket-util');
-const { makeIamClient, createUserWithPolicy } = require('../../lib/utility/iam-util');
+const getConfig = require('../support/config');
 const { config } = require('../../../../../lib/Config');
 
 // this test needs a real vault to create IAM users
 const isVaultScality = config.backends.auth !== 'mem';
+const vaultHost = config.vaultd?.host || 'localhost';
 
 const describeWithVault = isVaultScality ? describe : describe.skip;
 
 describeWithVault('DeleteObject of a GOVERNANCE-locked version by an IAM user', () => {
     const bucketName = `delete-governance-bypass-${uuid()}`;
     const bucketUtil = new BucketUtility('default');
-    const iamClient = makeIamClient('default');
+    const iamConfig = getConfig('default', { region: 'us-east-1' });
+    iamConfig.endpoint = `http://${vaultHost}:8600`; // define outside of getConfig for Integration
+    const iamClient = new IAM(iamConfig);
     const users = [];
 
     const allowDelete = {
@@ -45,20 +40,20 @@ describeWithVault('DeleteObject of a GOVERNANCE-locked version by an IAM user', 
     const allowBypassInBucketPolicy = { ...allowBypass, Principal: '*', Action: 's3:Bypass*' };
 
     async function putVersion(key) {
-        const { VersionId } = await bucketUtil.s3.send(
-            new PutObjectCommand({
+        const { VersionId } = await bucketUtil.s3
+            .putObject({
                 Bucket: bucketName,
                 Key: key,
                 Body: 'content',
-            }),
-        );
+            })
+            .promise();
         return VersionId;
     }
 
     async function putLockedVersion(key) {
         const versionId = await putVersion(key);
-        await bucketUtil.s3.send(
-            new PutObjectRetentionCommand({
+        await bucketUtil.s3
+            .putObjectRetention({
                 Bucket: bucketName,
                 Key: key,
                 VersionId: versionId,
@@ -66,64 +61,85 @@ describeWithVault('DeleteObject of a GOVERNANCE-locked version by an IAM user', 
                     Mode: 'GOVERNANCE',
                     RetainUntilDate: new Date(Date.now() + 24 * 3600 * 1000),
                 },
-            }),
-        );
+            })
+            .promise();
         return versionId;
     }
 
+    // Creates an IAM user with one managed policy and returns its S3 client
     async function createUser(statements) {
-        const user = await createUserWithPolicy(iamClient, statements);
-        users.push(user);
-        return user.s3Client;
-    }
-
-    function putBucketPolicy(statement) {
-        return bucketUtil.s3.send(
-            new PutBucketPolicyCommand({
-                Bucket: bucketName,
-                Policy: JSON.stringify({ Version: '2012-10-17', Statement: [statement] }),
+        const name = `test-user-${uuid()}`;
+        const { Policy } = await iamClient
+            .createPolicy({
+                PolicyName: name,
+                PolicyDocument: JSON.stringify({ Version: '2012-10-17', Statement: statements }),
+            })
+            .promise();
+        await iamClient.createUser({ UserName: name }).promise();
+        await iamClient.attachUserPolicy({ UserName: name, PolicyArn: Policy.Arn }).promise();
+        const { AccessKey } = await iamClient.createAccessKey({ UserName: name }).promise();
+        users.push({ name, policyArn: Policy.Arn, accessKeyId: AccessKey.AccessKeyId });
+        return new S3(
+            getConfig('default', {
+                credentials: new Credentials(AccessKey.AccessKeyId, AccessKey.SecretAccessKey),
             }),
         );
     }
 
+    async function deleteUser({ name, policyArn, accessKeyId }) {
+        await iamClient.deleteAccessKey({ UserName: name, AccessKeyId: accessKeyId }).promise();
+        await iamClient.detachUserPolicy({ UserName: name, PolicyArn: policyArn }).promise();
+        await iamClient.deletePolicy({ PolicyArn: policyArn }).promise();
+        await iamClient.deleteUser({ UserName: name }).promise();
+    }
+
+    function putBucketPolicy(statement) {
+        return bucketUtil.s3
+            .putBucketPolicy({
+                Bucket: bucketName,
+                Policy: JSON.stringify({ Version: '2012-10-17', Statement: [statement] }),
+            })
+            .promise();
+    }
+
     function deleteBucketPolicy() {
-        return bucketUtil.s3.send(new DeleteBucketPolicyCommand({ Bucket: bucketName }));
+        return bucketUtil.s3.deleteBucketPolicy({ Bucket: bucketName }).promise();
     }
 
     function deleteWithBypass(s3Client, key, versionId) {
-        return s3Client.send(
-            new DeleteObjectCommand({
+        return s3Client
+            .deleteObject({
                 Bucket: bucketName,
                 Key: key,
                 VersionId: versionId,
                 BypassGovernanceRetention: true,
-            }),
-        );
+            })
+            .promise();
     }
 
     function headVersion(key, versionId) {
-        return bucketUtil.s3.send(
-            new HeadObjectCommand({
+        return bucketUtil.s3
+            .headObject({
                 Bucket: bucketName,
                 Key: key,
                 VersionId: versionId,
-            }),
-        );
+            })
+            .promise();
     }
 
     before(async () => {
-        await bucketUtil.s3.send(
-            new CreateBucketCommand({
+        await bucketUtil.s3
+            .createBucket({
                 Bucket: bucketName,
                 ObjectLockEnabledForBucket: true,
-            }),
-        );
+            })
+            .promise();
     });
 
     after(async () => {
         await bucketUtil.empty(bucketName, true);
         await bucketUtil.deleteOne(bucketName);
-        await Promise.all(users.map(user => user.deleteUser()));
+        await Promise.all(users.map(deleteUser));
     });
 
     it('should deny the bypass header to a user without s3:BypassGovernanceRetention', async () => {
@@ -131,7 +147,7 @@ describeWithVault('DeleteObject of a GOVERNANCE-locked version by an IAM user', 
         const versionId = await putLockedVersion(key);
         const s3Client = await createUser([allowDeleteVersion]);
 
-        await assert.rejects(deleteWithBypass(s3Client, key, versionId), { name: 'AccessDenied' });
+        await assert.rejects(deleteWithBypass(s3Client, key, versionId), { code: 'AccessDenied' });
         await headVersion(key, versionId);
     });
 
@@ -140,7 +156,7 @@ describeWithVault('DeleteObject of a GOVERNANCE-locked version by an IAM user', 
         const versionId = await putVersion(key);
         const s3Client = await createUser([allowDeleteVersion]);
 
-        await assert.rejects(deleteWithBypass(s3Client, key, versionId), { name: 'AccessDenied' });
+        await assert.rejects(deleteWithBypass(s3Client, key, versionId), { code: 'AccessDenied' });
         await headVersion(key, versionId);
     });
 
@@ -159,7 +175,7 @@ describeWithVault('DeleteObject of a GOVERNANCE-locked version by an IAM user', 
         const versionId = await putLockedVersion(key);
         const s3Client = await createUser([allowDeleteVersion, { ...allowBypass, Effect: 'Deny' }]);
 
-        await assert.rejects(deleteWithBypass(s3Client, key, versionId), { name: 'AccessDenied' });
+        await assert.rejects(deleteWithBypass(s3Client, key, versionId), { code: 'AccessDenied' });
         await headVersion(key, versionId);
     });
 
@@ -170,7 +186,7 @@ describeWithVault('DeleteObject of a GOVERNANCE-locked version by an IAM user', 
         await putBucketPolicy({ ...allowBypassInBucketPolicy, Effect: 'Deny' });
 
         try {
-            await assert.rejects(deleteWithBypass(s3Client, key, versionId), { name: 'AccessDenied' });
+            await assert.rejects(deleteWithBypass(s3Client, key, versionId), { code: 'AccessDenied' });
         } finally {
             await deleteBucketPolicy();
         }
@@ -183,7 +199,7 @@ describeWithVault('DeleteObject of a GOVERNANCE-locked version by an IAM user', 
         const s3Client = await createUser([allowDeleteVersion, allowBypass]);
 
         await deleteWithBypass(s3Client, key, versionId);
-        await assert.rejects(headVersion(key, versionId), err => err.$metadata.httpStatusCode === 404);
+        await assert.rejects(headVersion(key, versionId), { statusCode: 404 });
     });
 
     it('should delete the version for a user allowed s3:BypassGovernanceRetention by the bucket policy', async () => {
@@ -197,6 +213,6 @@ describeWithVault('DeleteObject of a GOVERNANCE-locked version by an IAM user', 
         } finally {
             await deleteBucketPolicy();
         }
-        await assert.rejects(headVersion(key, versionId), err => err.$metadata.httpStatusCode === 404);
+        await assert.rejects(headVersion(key, versionId), { statusCode: 404 });
     });
 });
