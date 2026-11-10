@@ -47,6 +47,7 @@ services:
       - QUOTA_ENABLE_INFLIGHTS
       - S3_VERSION_ID_ENCODING_TYPE
       - S3_INTEGRITY_CHECKS_ENABLED
+      - S3_NOTIFICATION_DESTINATION_API_ENABLED
       - S3_SERVER_ACCESS_LOGS_MODE=ENABLED
       - S3_ENABLE_SERVER_ACCESS_LOGS=true
       - RATE_LIMIT_SERVICE_USER_ARN=arn:aws:iam::123456789013:root
@@ -105,7 +106,7 @@ services:
     volumes:
       - /tmp/artifacts/${JOB_NAME}/sproxyd:/logs
   vault:
-    image: ghcr.io/scality/vault:7.89.0
+    image: ghcr.io/scality/vault:c72d9f0824047c7f09f0b94dea64d1f22a6720ad
     profiles: ['vault']
     user: root
     command: sh -c "chmod 400 tests/utils/keyfile && yarn start > /artifacts/vault.log 2> /artifacts/vault-stderr.log"
