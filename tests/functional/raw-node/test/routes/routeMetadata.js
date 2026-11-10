@@ -12,6 +12,7 @@ const { makeRequest } = require('../../utils/makeRequest');
 const MetadataMock = require('../../utils/MetadataMock');
 const { getCredentials } = require('../../../aws-node-sdk/test/support/credentials');
 const BucketUtility = require('../../../aws-node-sdk/lib/utility/bucket-util');
+const { accountResourcesBucket } = require('../../../../../constants');
 const metadataMock = new MetadataMock();
 
 const ipAddress = process.env.IP ? process.env.IP : 'localhost';
@@ -83,7 +84,9 @@ describe('metadata routes with metadata', () => {
                 assert.strictEqual(res.statusCode, 200);
                 assert(res.body);
                 const expectedArray = [bucket1, 'users..bucket', bucket2];
-                const responseArray = JSON.parse(res.body);
+                // In CI, the destination records share this metadata cluster.
+                // Thus their bucket appears after a destination test runs.
+                const responseArray = JSON.parse(res.body).filter(name => name !== accountResourcesBucket);
 
                 expectedArray.sort();
                 responseArray.sort();

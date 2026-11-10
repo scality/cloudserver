@@ -1,6 +1,7 @@
 const sinon = require('sinon');
 const { errors, auth } = require('@scality/arsenal');
 const api = require('../../../lib/api/api');
+const constants = require('../../../constants');
 const { config } = require('../../../lib/Config');
 const rateLimitCache = require('../../../lib/api/apiUtils/rateLimit/cache');
 const recordStore = require('../../../lib/api/apiUtils/notificationDestination/recordStore');
@@ -575,6 +576,23 @@ describe('api.callApiMethod', () => {
                     assert.strictEqual(api[method].calledOnce, true);
                 });
 
+                it(`should answer AccessDenied to an anonymous ${method} before its handler`, async () => {
+                    authServer.doAuth.callsArgWith(
+                        2,
+                        null,
+                        new AuthInfo({ canonicalID: constants.publicId }),
+                        // an anonymous request gets no authorization results
+                        undefined,
+                        null,
+                        undefined,
+                    );
+                    request.query = method === 'notificationDestinationList' ? {} : { name: 'my-destination' };
+                    const err = await callApi(method);
+                    assert.strictEqual(err?.message, 'AccessDenied');
+                    assert.strictEqual(authServer.doAuth.calledOnce, true);
+                    assert.strictEqual(api[method].called, false);
+                });
+
                 it(`should answer NotImplemented to ${method} while it has no handler`, async () => {
                     delete api[method];
                     request.query = method === 'notificationDestinationList' ? {} : { name: 'my-destination' };
@@ -589,6 +607,21 @@ describe('api.callApiMethod', () => {
                 const err = await callApi('bucketGet');
                 assert.ifError(err);
                 assert.strictEqual(authServer.doAuth.calledOnce, true);
+                assert.strictEqual(handler.calledOnce, true);
+            });
+
+            it('should let an anonymous bucket method through', async () => {
+                authServer.doAuth.callsArgWith(
+                    2,
+                    null,
+                    new AuthInfo({ canonicalID: constants.publicId }),
+                    undefined,
+                    null,
+                    undefined,
+                );
+                const handler = sandbox.stub(api, 'bucketGet').callsFake((userInfo, _request, _log, cb) => cb());
+                const err = await callApi('bucketGet');
+                assert.ifError(err);
                 assert.strictEqual(handler.calledOnce, true);
             });
 
