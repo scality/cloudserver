@@ -455,6 +455,109 @@ describeOn('GetNotificationDestination', () => {
     });
 });
 
+describeOn('ListNotificationDestinations', () => {
+    const listDestinations = (queryObj, credentials) => destinationRequest('GET', queryObj, undefined, credentials);
+    const listedNames = body =>
+        [...body.matchAll(/<NotificationDestination><Name>([^<]*)<\/Name>/g)].map(match => match[1]);
+    // The other tests of this file create names of their own in the same
+    // account and never delete them. Thus the names here share one prefix
+    // that no other test uses, and each page starts after that prefix. Each
+    // test gets a prefix and destinations of its own.
+    const lisa = getCredentials('lisa');
+    const lisaCredentials = { accessKey: lisa.accessKeyId, secretKey: lisa.secretAccessKey };
+    let prefix;
+    let names;
+    let lisaName;
+
+    beforeEach(async () => {
+        prefix = testName('zz-list');
+        names = ['a', 'b', 'c'].map(suffix => `${prefix}-${suffix}`);
+        lisaName = `${prefix}-lisa`;
+        assert.notStrictEqual(lisaCredentials.accessKey, authCredentials.accessKey, 'a second account is needed');
+        for (const name of [names[2], names[0], names[1]]) {
+            assert.ifError((await createDestination(name, saslSslBody)).err);
+        }
+        assert.ifError((await createDestination(lisaName, saslSslBody, lisaCredentials)).err);
+    });
+
+    it('should page through three names with max-items 2, NextMarker then marker', async () => {
+        const first = await listDestinations({ 'max-items': '2', 'marker': `${prefix}-` });
+        assert.ifError(first.err);
+        assert.strictEqual(first.res.statusCode, 200);
+        assert.match(
+            first.res.body,
+            /^<\?xml version="1\.0" encoding="UTF-8"\?><ListNotificationDestinationsResult><IsTruncated>true<\/IsTruncated><NextMarker>/,
+        );
+        assert.doesNotMatch(first.res.body, /xmlns/);
+        assert.deepStrictEqual(listedNames(first.res.body), names.slice(0, 2));
+        assert.deepStrictEqual(elementValues(first.res.body, 'NextMarker'), [names[1]]);
+
+        const second = await listDestinations({ 'max-items': '2', 'marker': names[1] });
+        assert.ifError(second.err);
+        const listed = listedNames(second.res.body);
+        assert.strictEqual(listed[0], names[2]);
+        assert.deepStrictEqual(
+            listed.filter(name => name.startsWith(prefix)),
+            [names[2]],
+        );
+        // A name that sorts after these may exist. NextMarker follows IsTruncated.
+        const [isTruncated] = elementValues(second.res.body, 'IsTruncated');
+        assert.deepStrictEqual(
+            elementValues(second.res.body, 'NextMarker'),
+            isTruncated === 'true' ? [listed[listed.length - 1]] : [],
+        );
+    });
+
+    it('should answer each entry as Get does, with no secret', async () => {
+        const { err, res } = await listDestinations({ 'max-items': '1', 'marker': `${prefix}-` });
+        assert.ifError(err);
+        const got = await getDestination(names[0]);
+        assert.ifError(got.err);
+        const entry = got.res.body.replace('<?xml version="1.0" encoding="UTF-8"?>', '');
+        assert.match(res.body, new RegExp(escapeRegExp(entry)));
+        assert.doesNotMatch(res.body, /<Sasl>|<Tls>|<Username>|<Password>|secret/);
+    });
+
+    it('should answer IsTruncated false and no entry after the last name', async () => {
+        // No name of at most 128 characters sorts after 128 z.
+        const { err, res } = await listDestinations({ marker: 'z'.repeat(128) });
+        assert.ifError(err);
+        assert.strictEqual(
+            res.body,
+            '<?xml version="1.0" encoding="UTF-8"?>' +
+                '<ListNotificationDestinationsResult><IsTruncated>false</IsTruncated>' +
+                '</ListNotificationDestinationsResult>',
+        );
+    });
+
+    it('should never list the destinations of another account', async () => {
+        const mine = await listDestinations({ 'max-items': '1000', 'marker': `${prefix}-` });
+        assert.ifError(mine.err);
+        const myNames = listedNames(mine.res.body);
+        assert(!myNames.includes(lisaName), mine.res.body);
+        assert(myNames.includes(names[0]));
+
+        const theirs = await listDestinations({ 'max-items': '1000', 'marker': `${prefix}-` }, lisaCredentials);
+        assert.ifError(theirs.err);
+        assert.deepStrictEqual(
+            listedNames(theirs.res.body).filter(name => name.startsWith(prefix)),
+            [lisaName],
+        );
+        const [lisaAccountId] = elementValues(theirs.res.body, 'AccountId');
+        assert.notStrictEqual(lisaAccountId, elementValues(mine.res.body, 'AccountId')[0]);
+    });
+
+    ['0', '1001', 'abc', '2.5', '', '+5'].forEach(maxItems => {
+        it(`should answer InvalidArgument to max-items '${maxItems}'`, async () => {
+            assertError(await listDestinations({ 'max-items': maxItems }), 'InvalidArgument', 400);
+        });
+    });
+
+    it('should answer AccessDenied to an anonymous request', async () => {
+        assertError(await listDestinations({}, null), 'AccessDenied', 403);
+    });
+});
+
 describeIam('CreateNotificationDestination by an IAM user', () => {
     const iamClient = makeIamClient();
     const userName = uniqueName('destination-no-policy');
@@ -504,5 +607,58 @@ describeIam('GetNotificationDestination by an IAM user', () => {
 
     it('should answer AccessDenied to another destination', async () => {
         assertError(await getDestination(otherName, credentials), 'AccessDenied', 403);
+    });
+});
+
+describeIam('ListNotificationDestinations by an IAM user', () => {
+    const iamClient = makeIamClient();
+    // List is authorized on every destination of the account. A policy on
+    // the account wildcard allows it. A policy on one destination does not.
+    const userNames = {
+        wildcard: uniqueName('destination-list-all'),
+        one: uniqueName('destination-list-one'),
+    };
+    let listedName;
+    let credentials;
+
+    beforeEach(async () => {
+        listedName = testName('list-iam');
+        const destinationArn = await createDestinationArn(listedName);
+        const resources = {
+            wildcard: destinationArn.replace(/[^:]*$/, '*'),
+            one: destinationArn,
+        };
+        credentials = {};
+        for (const [kind, userName] of Object.entries(userNames)) {
+            credentials[kind] = await createIamCaller(iamClient, userName, {
+                action: 'scality:ListBucketNotificationDestinations',
+                resource: resources[kind],
+            });
+        }
+    });
+
+    afterEach(async () => {
+        for (const userName of Object.values(userNames)) {
+            await removeIamCaller(iamClient, userName);
+        }
+    });
+
+    const listAs = kind =>
+        destinationRequest(
+            'GET',
+            { 'max-items': '1', 'marker': listedName.slice(0, -1) },
+            undefined,
+            credentials[kind],
+        );
+
+    it('should list for a user allowed on every destination of the account', async () => {
+        const { err, res } = await listAs('wildcard');
+        assert.ifError(err);
+        assert.strictEqual(res.statusCode, 200);
+        assert.deepStrictEqual(elementValues(res.body, 'Name'), [listedName]);
+    });
+
+    it('should answer AccessDenied to a user allowed on one destination only', async () => {
+        assertError(await listAs('one'), 'AccessDenied', 403);
     });
 });
