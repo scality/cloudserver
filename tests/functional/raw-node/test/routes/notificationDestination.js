@@ -229,6 +229,7 @@ function destinationRequest(method, queryObj, requestBody, credentials = authCre
 
 const createDestination = (name, body, credentials) => destinationRequest('PUT', { name }, body, credentials);
 const getDestination = (name, credentials) => destinationRequest('GET', { name }, undefined, credentials);
+const updateDestination = (name, body, credentials) => destinationRequest('POST', { name }, body, credentials);
 
 const escapeRegExp = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -558,6 +559,68 @@ describeOn('ListNotificationDestinations', () => {
     });
 });
 
+describeOn('UpdateNotificationDestination', () => {
+    const newBody = saslSslBody
+        .replace(
+            /<Brokers>.*<\/Brokers>/,
+            '<Brokers><Broker>broker7.example.com:9094</Broker><Broker>broker8.example.com:9094</Broker></Brokers>',
+        )
+        .replace('bucket-events', 'updated-events');
+
+    it('should replace the destination, keep CreatedAt, and answer 200 with no body', async () => {
+        const name = uniqueName('update');
+        assert.ifError((await createDestination(name, saslSslBody)).err);
+        const created = await getDestination(name);
+        assert.ifError(created.err);
+        const [createdAt] = elementValues(created.res.body, 'CreatedAt');
+        // UpdatedAt is to the millisecond. Let a few milliseconds pass, so
+        // that UpdatedAt changes.
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const { err, res } = await updateDestination(name, newBody);
+        assert.ifError(err);
+        assert.strictEqual(res.statusCode, 200);
+        assert.strictEqual(res.body, '');
+
+        const got = await getDestination(name);
+        assert.ifError(got.err);
+        assert.deepStrictEqual(elementValues(got.res.body, 'Broker'), [
+            'broker7.example.com:9094',
+            'broker8.example.com:9094',
+        ]);
+        assert.deepStrictEqual(elementValues(got.res.body, 'Topic'), ['updated-events']);
+        assert.deepStrictEqual(elementValues(got.res.body, 'CreatedAt'), [createdAt]);
+        const [updatedAt] = elementValues(got.res.body, 'UpdatedAt');
+        assert.match(updatedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+        assert(Date.parse(updatedAt) > Date.parse(createdAt), `${updatedAt} is not after ${createdAt}`);
+    });
+
+    it('should answer NoSuchDestination to an unknown name', async () => {
+        assertError(await updateDestination(uniqueName('unknown'), newBody), 'NoSuchDestination', 404);
+    });
+
+    it('should answer InvalidDestination to an invalid body, and keep the destination', async () => {
+        const name = uniqueName('update-invalid');
+        assert.ifError((await createDestination(name, saslSslBody)).err);
+        const original = await getDestination(name);
+        assert.ifError(original.err);
+        const body = newBody.replace('broker7.example.com:9094', 'broker7.example.com:0');
+        assert.notStrictEqual(body, newBody);
+        assertError(await updateDestination(name, body), 'InvalidDestination', 400);
+        const got = await getDestination(name);
+        assert.ifError(got.err);
+        assert.strictEqual(got.res.body, original.res.body);
+    });
+
+    it('should answer InvalidDestination to a name outside the grammar', async () => {
+        assertError(await updateDestination('bad/name', newBody), 'InvalidDestination', 400);
+    });
+
+    it('should answer AccessDenied to an anonymous request', async () => {
+        assertError(await updateDestination(uniqueName('anonymous'), newBody, null), 'AccessDenied', 403);
+    });
+});
+
 describeIam('CreateNotificationDestination by an IAM user', () => {
     const iamClient = makeIamClient();
     const userName = uniqueName('destination-no-policy');
@@ -660,5 +723,71 @@ describeIam('ListNotificationDestinations by an IAM user', () => {
 
     it('should answer AccessDenied to a user allowed on one destination only', async () => {
         assertError(await listAs('one'), 'AccessDenied', 403);
+    });
+});
+
+describeIam('UpdateNotificationDestination by an IAM user', () => {
+    const iamClient = makeIamClient();
+    const userName = uniqueName('destination-update-no-policy');
+    let name;
+    let credentials;
+
+    beforeEach(async () => {
+        name = testName('update-denied');
+        assert.ifError((await createDestination(name, saslSslBody)).err);
+        credentials = await createIamCaller(iamClient, userName);
+    });
+
+    afterEach(async () => {
+        await removeIamCaller(iamClient, userName);
+    });
+
+    it('should answer AccessDenied to a user with no policy, and keep the destination', async () => {
+        const body = saslSslBody.replace('bucket-events', 'denied-events');
+        assertError(await updateDestination(name, body, credentials), 'AccessDenied', 403);
+        const got = await getDestination(name);
+        assert.ifError(got.err);
+        assert.deepStrictEqual(elementValues(got.res.body, 'Topic'), ['bucket-events']);
+    });
+});
+
+describeIam('UpdateNotificationDestination by an IAM user allowed on one destination', () => {
+    const iamClient = makeIamClient();
+    const userName = uniqueName('destination-update-one');
+    let allowedName;
+    let otherName;
+    let credentials;
+
+    beforeEach(async () => {
+        allowedName = testName('update-allowed');
+        otherName = testName('update-other');
+        const allowedArn = await createDestinationArn(allowedName);
+        assert.ifError((await createDestination(otherName, saslSslBody)).err);
+        credentials = await createIamCaller(iamClient, userName, {
+            action: 'scality:UpdateBucketNotificationDestination',
+            resource: allowedArn,
+        });
+    });
+
+    afterEach(async () => {
+        await removeIamCaller(iamClient, userName);
+    });
+
+    const newBody = saslSslBody.replace('bucket-events', 'allowed-events');
+
+    it('should update the destination that the policy names', async () => {
+        const { err, res } = await updateDestination(allowedName, newBody, credentials);
+        assert.ifError(err);
+        assert.strictEqual(res.statusCode, 200);
+        const got = await getDestination(allowedName);
+        assert.ifError(got.err);
+        assert.deepStrictEqual(elementValues(got.res.body, 'Topic'), ['allowed-events']);
+    });
+
+    it('should answer AccessDenied to another destination, and keep it', async () => {
+        assertError(await updateDestination(otherName, newBody, credentials), 'AccessDenied', 403);
+        const got = await getDestination(otherName);
+        assert.ifError(got.err);
+        assert.deepStrictEqual(elementValues(got.res.body, 'Topic'), ['bucket-events']);
     });
 });
