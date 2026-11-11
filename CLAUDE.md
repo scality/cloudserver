@@ -138,6 +138,9 @@ same key when sent back. The deep health check has one entry per KMS, keyed by
 `kms:` and its `providerName`; a failing KMS never fails start-up or readiness.
 Each attempt of a request to a `kmip` or `aws_kms` KMS fails after
 `requestTimeoutMs` of its entry, 5000 by default.
+Each attempt is recorded in the `s3_cloudserver_kms_request_duration_seconds`
+histogram, labelled by `provider`, `operation` and `outcome` (`success`,
+`error` or `timeout`).
 
 | Protocol  | Description                                            |
 | --------- | ------------------------------------------------------ |

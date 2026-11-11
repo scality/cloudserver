@@ -1352,9 +1352,9 @@
   optionalDependencies:
     ioctl "^2.0.2"
 
-"@scality/arsenal@git+https://github.com/scality/Arsenal#574ed2041c4a963e0c30a73e64c21d3807e5c0c9":
+"@scality/arsenal@git+https://github.com/scality/Arsenal#a801054141fc6165064ce9f799f390de6002c088":
   version "8.6.3"
-  resolved "git+https://github.com/scality/Arsenal#574ed2041c4a963e0c30a73e64c21d3807e5c0c9"
+  resolved "git+https://github.com/scality/Arsenal#a801054141fc6165064ce9f799f390de6002c088"
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"

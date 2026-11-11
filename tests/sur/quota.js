@@ -1,6 +1,6 @@
 const async = require('async');
 const assert = require('assert');
-const http = require('http');
+const util = require('util');
 const getConfig = require('../functional/aws-node-sdk/test/support/config');
 const { Scuba: MockScuba, inflightFlushFrequencyMS } = require('../utilities/mock/Scuba');
 const sendRequest = require('../functional/aws-node-sdk/test/quota/tooling').sendRequest;
@@ -8,6 +8,7 @@ const memCredentials = require('../functional/aws-node-sdk/lib/json/mem_credenti
 const metadata = require('../../lib/metadata/wrapper');
 const { fakeMetadataArchive } = require('../functional/aws-node-sdk/test/utils/init');
 const { config: s3Config } = require('../../lib/Config');
+const { getMetrics: getCloudserverMetrics, parseMetric } = require('../utilities/metrics-util');
 const {
     S3Client,
     PutObjectCommand,
@@ -31,25 +32,10 @@ let s3Client = null;
 const quota = { quota: 1000 };
 const retrievalCountMetric = 's3_cloudserver_quota_metrics_retrieval_duration_seconds_count';
 
-function getMetrics(cb) {
-    return http
-        .get({ host: '127.0.0.1', path: '/metrics', port: s3Config.metricsPort }, res => {
-            const body = [];
-            res.on('data', chunk => body.push(chunk));
-            res.on('end', () => cb(null, body.join('')));
-        })
-        .on('error', cb);
-}
+const getMetrics = util.callbackify(() => getCloudserverMetrics('127.0.0.1', s3Config.metricsPort));
 
 function parseMetricCount(metrics, name, labels) {
-    const line = metrics
-        .split('\n')
-        .find(
-            l =>
-                l.startsWith(`${name}{`) &&
-                Object.entries(labels).every(([key, value]) => l.includes(`${key}="${value}"`)),
-        );
-    return line ? parseInt(line.slice(line.indexOf('} ') + 2), 10) : 0;
+    return parseInt(parseMetric(metrics, name, labels) ?? 0, 10);
 }
 
 function wait(timeoutMs, cb) {

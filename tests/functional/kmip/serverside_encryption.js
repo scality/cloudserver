@@ -20,6 +20,7 @@ const { KmsType, KmsProtocol, makeScalityArnPrefix } = require('@scality/arsenal
 const { config: serverConfig } = require('../../../lib/Config');
 const { DummyRequestLogger } = require('../../unit/helpers');
 const { getExpectedKeyId } = require('../../utilities/kmsKeyId-util');
+const { getMetrics, parseMetric } = require('../../utilities/metrics-util');
 const kms = require('../../../lib/kms/wrapper');
 const http = require('http');
 const https = require('https');
@@ -84,7 +85,11 @@ function _createBucket(name, encrypt, done) {
     return _createBucketWithHeaders(name, headers, done);
 }
 
-function _buildS3() {
+/**
+ * @param {object} [options] - S3 client options, such as `maxAttempts`
+ * @returns {S3Client} a client of the server under test
+ */
+function _buildS3(options) {
     const { transport, ipAddress, accessKey, secretKey } = config;
     const agent = transport === 'https' ? new https.Agent({ keepAlive: false }) : new http.Agent({ keepAlive: false });
 
@@ -100,6 +105,7 @@ function _buildS3() {
             httpAgent: transport === 'http' ? agent : undefined,
             httpsAgent: transport === 'https' ? agent : undefined,
         },
+        ...options,
     });
 }
 const s3 = _buildS3();
@@ -483,6 +489,102 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
                 assert.match(err.message, /ETIMEDOUT/);
                 return true;
             }));
+    });
+
+    describe('KMS request metrics', () => {
+        const defaultProviderName = serverConfig.kms.find(entry => entry.default).providerName;
+        const awsKmsEntry = nonDefaultEntries.find(entry => entry.protocol === KmsProtocol.aws_kms);
+        let kmipKeyArn;
+        let awsKmsKeyArn;
+
+        before(async () => {
+            kmipKeyArn = await createBucketKeyArn(kms.client);
+            awsKmsKeyArn = await createKeyArn(awsKmsEntry);
+        });
+
+        /**
+         * @param {object} labels - `{ provider, operation, outcome }`
+         * @returns {Promise<{ count: number, sum: number }>} the count of the KMS requests
+         * with these labels and the sum of their durations in seconds, from one scrape
+         */
+        async function getKmsRequestMetrics({ provider, operation, outcome }) {
+            const metrics = await getMetrics(config.ipAddress);
+            // in the order the labels are printed
+            const labels = { provider, operation, outcome };
+            const read = suffix =>
+                parseFloat(parseMetric(metrics, `s3_cloudserver_kms_request_duration_seconds_${suffix}`, labels) ?? 0);
+            return { count: read('count'), sum: read('sum') };
+        }
+
+        /**
+         * Assert that an action sends one request to a KMS, counted with these labels
+         * @param {object} labels - `{ provider, operation, outcome }`
+         * @param {function} action - returns a promise
+         * @returns {Promise<number>} the duration of the request in seconds
+         */
+        async function assertCountsOneRequest(labels, action) {
+            const before = await getKmsRequestMetrics(labels);
+            await action();
+            const after = await getKmsRequestMetrics(labels);
+            assert.strictEqual(after.count, before.count + 1, JSON.stringify(labels));
+            return after.sum - before.sum;
+        }
+
+        async function getObjectBody() {
+            const res = await s3.send(new GetObjectCommand({ Bucket: bucketName, Key: objectName }));
+            return res.Body.transformToString();
+        }
+
+        it('should count the requests a KMIP KMS answers as successes, by operation', async () => {
+            const labels = { provider: defaultProviderName, outcome: 'success' };
+            await assertCountsOneRequest({ ...labels, operation: 'Encrypt' }, () =>
+                putObject(bucketName, objectName, kmipKeyArn),
+            );
+            await assertCountsOneRequest({ ...labels, operation: 'Decrypt' }, getObjectBody);
+        });
+
+        it('should count the requests an AWS KMS answers as successes, by operation', async () => {
+            const labels = { provider: awsKmsEntry.providerName, outcome: 'success' };
+            await assertCountsOneRequest({ ...labels, operation: 'GenerateDataKey' }, () =>
+                putObject(bucketName, objectName, awsKmsKeyArn),
+            );
+            await assertCountsOneRequest({ ...labels, operation: 'Decrypt' }, getObjectBody);
+        });
+
+        it('should count a request the KMS fails as an error', () =>
+            assertCountsOneRequest({ provider: defaultProviderName, operation: 'Encrypt', outcome: 'error' }, () =>
+                assert.rejects(putObject(bucketName, objectName, `${kms.arnPrefix}${uuidv4()}`)),
+            ));
+
+        it('should count a request over the time limit of the KMS as a timeout, with its duration', async () => {
+            // the S3 client would send the PutObject again on the internal error
+            const s3SingleAttempt = _buildS3({ maxAttempts: 1 });
+            const keyArn = `${makeScalityArnPrefix(KmsType.external, KmsProtocol.kmip, silentKmsProviderName)}1`;
+            const { requestTimeoutMs } = serverConfig.kms.find(entry => entry.providerName === silentKmsProviderName)
+                .settings.transport;
+
+            const durationSeconds = await assertCountsOneRequest(
+                { provider: silentKmsProviderName, operation: 'Encrypt', outcome: 'timeout' },
+                () =>
+                    assert.rejects(
+                        s3SingleAttempt.send(
+                            new PutObjectCommand({
+                                Bucket: bucketName,
+                                Key: objectName,
+                                Body: body,
+                                ServerSideEncryption: 'aws:kms',
+                                SSEKMSKeyId: keyArn,
+                            }),
+                        ),
+                    ),
+            );
+
+            assert.ok(
+                // the timer can fire 1 ms early
+                durationSeconds >= (requestTimeoutMs - 1) / 1000 && durationSeconds < (2 * requestTimeoutMs) / 1000,
+                `The request should take about ${requestTimeoutMs} ms, took ${durationSeconds} s`,
+            );
+        });
     });
 });
 

@@ -2,6 +2,7 @@
 
 const http = require('http');
 const assert = require('assert');
+const { getMetrics: getCloudserverMetrics, parseMetric } = require('../../utilities/metrics-util');
 
 describe('Monitoring - getting metrics', () => {
     const conf = require('../config.json');
@@ -23,26 +24,8 @@ describe('Monitoring - getting metrics', () => {
         );
     }
 
-    async function getMetrics() {
-        return new Promise(resolve => {
-            http.get({ host: conf.ipAddress, path: '/metrics', port: 8002 }, res => {
-                assert.strictEqual(res.statusCode, 200);
-
-                const body = [];
-                res.on('data', chunk => {
-                    body.push(chunk);
-                });
-                res.on('end', () => resolve(body.join('')));
-            });
-        });
-    }
-
-    function parseMetric(metrics, name, labels) {
-        const labelsString = Object.entries(labels)
-            .map(e => `${e[0]}="${e[1]}"`)
-            .join(',');
-        const metric = metrics.match(new RegExp(`^${name}{${labelsString}} (.*)$`, 'm'));
-        return metric ? metric[1] : null;
+    function getMetrics() {
+        return getCloudserverMetrics(conf.ipAddress);
     }
 
     function parseDuration(metrics, labels) {
