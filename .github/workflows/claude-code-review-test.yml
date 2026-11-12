@@ -1,0 +1,277 @@
+# Copy of scality/workflows claude-code-review.yml@v2, plus a step that prints
+# the review's permission denials. Test only, do not merge.
+name: Claude Code Review
+
+on:
+  workflow_call:
+    inputs:
+      skip_label:
+        type: string
+        description: "If this label is set on the PR, the review will be skipped"
+        default: "skip-claude-review"
+      model:
+        type: string
+        description: Claude model to use for the review
+        default: claude-opus-5-5
+      plugins:
+        type: string
+        description: Comma-separated list of skills to use from the agent hub (e.g. scality-skills@scality-agent-hub)
+        default: scality-skills@scality-agent-hub
+      plugin_marketplaces:
+        type: string
+        description: |
+          Marketplace to pull plugin from. Defaults to agent-hub, but possible to use another repo
+          or branch of the marketplace to pull the skills from (e.g. main):
+            https://github.com/scality/agent-hub.git#<my-branch>
+          Especially useful for testing a new version of a skill before it's merged to the default branch.
+        default: https://github.com/scality/agent-hub.git#main
+      summary-mode:
+        type: string
+        description: >
+          How the review output should be posted:
+          - check: post as a check run (requires checks: write permission)
+          - comment: post as a PR comment
+          - auto: check if allowed, otherwise post as a comment
+        default: auto
+      allowed-tools:
+        type: string
+        description: >
+          Space-separated list of allowed tools for the review. By default, a set of safe tools is allowed, but you can customize this list to enable or disable specific tools based on your needs and risk tolerance.
+          NOTE: should not be needed if the skill already indicates the appropriate allowed tools. Keeping default value for compatibility.
+        default: >-
+          "Read"
+          "Bash(git diff *)"
+          "Bash(git log *)"
+          "Bash(git show *)"
+          "Bash(gh repo view *)"
+          "Bash(gh pr view *)"
+          "Bash(gh pr diff *)"
+          "Bash(gh pr checks *)"
+          "Bash(gh pr comment *)"
+          "Bash(gh api *repos/*/pulls/*/comments*)"
+          "Bash(gh api *issues/*/comments*)"
+          "Bash(gh api *repos/*/check-runs*)"
+      anthropic_federation_rule_id:
+        type: string
+        required: false
+        default: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+        description: Anthropic federation rule ID (fdrl_...). Defaults to the ANTHROPIC_FEDERATION_RULE_ID org variable
+      anthropic_organization_id:
+        type: string
+        required: false
+        default: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+        description: Anthropic organization ID (UUID from Console → Settings → Organization). Defaults to the ANTHROPIC_ORGANIZATION_ID org variable
+      anthropic_service_account_id:
+        type: string
+        required: false
+        default: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+        description: Anthropic service account ID (svac_...). Defaults to the ANTHROPIC_SERVICE_ACCOUNT_ID org variable
+      anthropic_workspace_id:
+        type: string
+        required: false
+        default: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
+        description: Anthropic workspace ID (wrkspc_...). Defaults to the ANTHROPIC_WORKSPACE_ID org variable
+      cost_report_repo:
+        type: string
+        required: false
+        default: "cost-center-review"
+        description: Repository (in the same org) where monthly cost reports are written
+    secrets:
+      # Deprecated: unused since the migration to Anthropic WIF, kept so callers passing them keep working
+      GCP_WORKLOAD_IDENTITY_PROVIDER:
+        required: false
+        description: Deprecated, unused
+      GCP_SERVICE_ACCOUNT:
+        required: false
+        description: Deprecated, unused
+      ANTHROPIC_VERTEX_PROJECT_ID:
+        required: false
+        description: Deprecated, unused
+      CLOUD_ML_REGION:
+        required: false
+        description: Deprecated, unused
+      ACTIONS_APP_PRIVATE_KEY:
+        required: false
+        description: Private key of the GitHub App used to check out marketplace repositories
+
+jobs:
+  claude-review:
+    if: ${{ !contains(github.event.pull_request.labels.*.name, inputs.skip_label) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15  # adds cost protection
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+      id-token: write  # OIDC token for the workload identity federation to the Anthropic API
+
+    steps:
+      - name: Refuse to run on pull_request_target
+        if: github.event_name == 'pull_request_target'
+        run: |
+          echo "::error title=Unsupported event::claude-code-review must not run on pull_request_target: the job token has write permissions and the review reads untrusted PR content. Trigger it on pull_request."
+          exit 1
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Identify marketplaces needing local checkout
+        id: marketplaces
+        uses: actions/github-script@v7
+        env:
+          PLUGIN_MARKETPLACES: ${{ inputs.plugin_marketplaces }}
+          PLUGINS: ${{ inputs.plugins }}
+          HAS_APP_KEY: ${{ secrets.ACTIONS_APP_PRIVATE_KEY != '' }}
+        with:
+          script: |
+            const hasAppKey = process.env.HAS_APP_KEY === 'true';
+            core.setOutput('has_app_key', String(hasAppKey));
+            if (!hasAppKey) {
+              core.warning('ACTIONS_APP_PRIVATE_KEY secret is not set; skipping plugin marketplaces, plugins and cost reporting.');
+              core.setOutput('checkouts', '[]');
+              core.setOutput('repositories', '');
+              core.setOutput('marketplaces', '');
+              core.setOutput('plugins', '');
+              return;
+            }
+
+            // Entries using `<url>#<ref>` syntax are not supported natively by
+            // the claude-code plugin loader. Extract them so we can clone the
+            // repo locally and substitute the entry with the local path.
+            const entryPattern = /^(?:https?:\/\/github\.com\/)?([^/#]+)\/([^/#]+?)(?:\.git)?#(.+)$/;
+            const checkouts = [];
+            const marketplaces = (process.env.PLUGIN_MARKETPLACES || '').split(/[,\n]/).map(entry => {
+                const m = entry.trim().match(entryPattern);
+                if (!m) {
+                  return entry;
+                }
+
+              const [, owner, repo, ref] = m;
+              const path = `.marketplaces/${owner}-${repo}`;
+              checkouts.push({ repository: `${owner}/${repo}`, repo, ref, path });
+
+              return `./${path}`;
+            });
+
+            core.setOutput('checkouts', JSON.stringify(checkouts));
+            core.setOutput('repositories', checkouts.map(c => c.repo).join('\n'));
+            core.setOutput('marketplaces', marketplaces.join('\n'));
+            core.setOutput('plugins', process.env.PLUGINS || '');
+
+      - name: Get token for marketplace repositories
+        if: steps.marketplaces.outputs.repositories != ''
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.ACTIONS_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ steps.marketplaces.outputs.repositories }}
+
+      - name: Checkout marketplace repositories
+        if: steps.marketplaces.outputs.repositories != ''
+        env:
+          CHECKOUTS: ${{ steps.marketplaces.outputs.checkouts }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          jq -r '.[] | [.repository, .ref, .path] | @tsv' <<< "$CHECKOUTS" | while IFS=$'\t' read -r repo ref path; do
+            git clone --depth 1 --branch "$ref" "https://x-access-token:${GH_TOKEN}@github.com/${repo}.git" "$path"
+
+            # remove token from git config
+            git -C "$path" remote remove origin
+          done
+
+      - name: Run Claude Code Review
+        id: claude-review
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        with:
+          # Use the job token instead of the action's OIDC -> GitHub App token exchange:
+          # api.anthropic.com refuses `checks: write` in that exchange (401 permission_not_allowed).
+          # The job already holds `checks: write` (see permissions above).
+          github_token: ${{ github.token }}
+          anthropic_federation_rule_id: ${{ inputs.anthropic_federation_rule_id }}
+          anthropic_organization_id: ${{ inputs.anthropic_organization_id }}
+          anthropic_service_account_id: ${{ inputs.anthropic_service_account_id }}
+          anthropic_workspace_id: ${{ inputs.anthropic_workspace_id }}
+          prompt: "/review-pr REPO: ${{ github.repository }} PR_NUMBER: ${{ github.event.pull_request.number }}"
+          claude_args: |
+            --allowedTools ${{ inputs.allowed-tools }}
+            --model "${{ inputs.model }}"
+          plugin_marketplaces: ${{ steps.marketplaces.outputs.marketplaces }}
+          plugins: ${{ steps.marketplaces.outputs.plugins }}
+        env:
+          ANTHROPIC_USER_ID: ${{ github.repository }}
+          PUBLISH_MODE: ${{ inputs.summary-mode }}
+
+      - name: Show permission denials
+        if: always()
+        continue-on-error: true
+        env:
+          EXECUTION_FILE: ${{ steps.claude-review.outputs.execution_file }}
+        run: |
+          jq '[.[] | select(.type == "result")] | last | .permission_denials // "no permission_denials field, result keys: \(keys)"' "$EXECUTION_FILE"
+
+      - name: Get token for cost reporting
+        id: cost-token
+        if: always() && steps.marketplaces.outputs.has_app_key == 'true'
+        continue-on-error: true
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.ACTIONS_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ inputs.cost_report_repo }}
+
+      - name: Record cost in central report
+        if: always() && steps.cost-token.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ steps.cost-token.outputs.token }}
+          EXECUTION_FILE: ${{ steps.claude-review.outputs.execution_file }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number || 0 }}
+          MODEL: ${{ inputs.model }}
+          COST_REPORT_REPO: ${{ github.repository_owner }}/${{ inputs.cost_report_repo }}
+        run: |
+          # No execution file means Claude did not run (e.g. workflow validation skip)
+          if [ -z "$EXECUTION_FILE" ] || [ ! -f "$EXECUTION_FILE" ]; then
+            echo "No execution file, skipping cost report"
+            exit 0
+          fi
+          # The execution file is an array of SDK messages; the cost is on the final "result" message
+          cost=$(jq -r '[.[] | select(.type == "result")] | last | .total_cost_usd // 0' "$EXECUTION_FILE")
+          month=$(date -u +%Y-%m)
+          file_path="cost-reports/cost-data-${month}.json"
+          now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+          for attempt in 1 2 3; do
+            api_response=$(gh api "repos/${COST_REPORT_REPO}/contents/${file_path}" 2>/dev/null || echo '{}')
+            sha=$(echo "$api_response" | jq -r '.sha // empty')
+            current_content=$(echo "$api_response" | jq -r '.content // ""' | tr -d '\n' | base64 --decode 2>/dev/null || true)
+            # One entry per repo, accumulated over the month; costs rounded to the cent
+            encoded_content=$(printf '%s' "${current_content:-{\}}" | jq -S \
+              --arg repo "$REPO" \
+              --arg date "$now" \
+              --arg model "$MODEL" \
+              --argjson cost "${cost:-0}" \
+              '.[$repo] |= {
+                total_cost_usd: ((((.total_cost_usd // 0) + $cost) * 100 | round) / 100),
+                runs: ((.runs // 0) + 1),
+                last_run: $date,
+                model: $model
+              }' | base64 -w 0)
+
+            put_args=(-X PUT \
+              -f "message=chore: claude review cost ${REPO} PR#${PR_NUMBER}" \
+              -f "content=${encoded_content}")
+            [ -n "$sha" ] && put_args+=(-f "sha=${sha}")
+
+            if error=$(gh api "repos/${COST_REPORT_REPO}/contents/${file_path}" "${put_args[@]}" 2>&1 > /dev/null); then
+              echo "Cost recorded: $(jq -n --argjson c "$cost" '($c * 100 | round) / 100') USD for ${REPO}"
+              exit 0
+            fi
+            echo "Attempt $attempt failed: ${error}"
+            sleep $((attempt * 3))
+          done
+          echo "::warning::Could not record cost in ${COST_REPORT_REPO}: ${error}"
