@@ -13,18 +13,22 @@ export default [
 
         languageOptions: {
             ecmaVersion: 2021,
-            sourceType: 'script',
         },
 
         rules: {
             'no-useless-escape': 'off',
             'max-len': 'off',
-            'no-redeclare': ['error', { builtinGlobals: false }],
             'no-useless-assignment': 'off',
             'no-unassigned-vars': 'off',
             'preserve-caught-error': 'off',
             'promise/prefer-await-to-then': 'warn',
             'n/callback-return': 'warn',
+        },
+    },
+    {
+        files: ['**/*.js'],
+        languageOptions: {
+            sourceType: 'commonjs',
         },
     },
     mocha(['tests/**/*.js']),
