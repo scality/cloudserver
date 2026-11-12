@@ -53,9 +53,8 @@ describe('objectHead API', () => {
     });
 
     it(
-        'should return NotModified if request header ' +
-            'includes "if-modified-since" and object ' +
-            'not modified since specified time',
+        'should return NotModified if request header includes ' +
+            '"if-modified-since" and object not modified since specified time',
         done => {
             const testGetRequest = {
                 bucketName,

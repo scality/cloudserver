@@ -28,9 +28,8 @@ describe('Initiate MPU', () => {
         afterEach(async () => await bucketUtil.deleteOne(bucket));
 
         it(
-            'should return InvalidRedirectLocation if initiate MPU ' +
-                'with x-amz-website-redirect-location header that does not start ' +
-                "with 'http://', 'https://' or '/'",
+            'should return InvalidRedirectLocation if initiate MPU with x-amz-website-redirect-location ' +
+                "header that does not start with 'http://', 'https://' or '/'",
             async () => {
                 const params = {
                     Bucket: bucket,

@@ -383,9 +383,8 @@ describeSkipIfNotMultiple('AWS backend get object with versioning', function tes
         });
 
         it(
-            'should get correct data from aws backend using version IDs ' +
-                'after putting null versions, putting versions, putting more null ' +
-                'versions and then putting more versions',
+            'should get correct data from aws backend using version IDs after putting null ' +
+                'versions, putting versions, putting more null versions and then putting more versions',
             done => {
                 const key = `somekey-${genUniqID()}`;
                 const data = [...Array(16).keys()].map(i => i.toString());

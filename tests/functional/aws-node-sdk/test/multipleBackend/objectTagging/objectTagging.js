@@ -327,9 +327,8 @@ describeSkipIfNotMultiple('Object tagging with multiple backends', function test
             });
 
             it(
-                'should not return error putting tags to correct object ' +
-                    'version in AWS, even if a delete marker was created directly ' +
-                    'on AWS before tags are put',
+                'should not return error putting tags to correct object version in AWS, ' +
+                    'even if a delete marker was created directly on AWS before tags are put',
                 done => {
                     const key = `somekey-${genUniqID()}`;
                     const params = Object.assign(

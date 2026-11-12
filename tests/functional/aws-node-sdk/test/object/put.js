@@ -115,9 +115,8 @@ describe('PUT object', () => {
         });
 
         it(
-            'should return InvalidRequest error if putting object with ' +
-                'object lock retention date and mode when object lock is not ' +
-                'enabled on the bucket',
+            'should return InvalidRequest error if putting object with object lock ' +
+                'retention date and mode when object lock is not enabled on the bucket',
             done => {
                 const date = new Date(2050, 10, 10);
                 const params = {
@@ -153,9 +152,8 @@ describe('PUT object', () => {
         });
 
         it(
-            'should return InvalidRedirectLocation if putting object ' +
-                'with x-amz-website-redirect-location header that does not start ' +
-                "with 'http://', 'https://' or '/'",
+            'should return InvalidRedirectLocation if putting object with ' +
+                "x-amz-website-redirect-location header that does not start with 'http://', 'https://' or '/'",
             done => {
                 const params = { Bucket: bucket, Key: 'key', WebsiteRedirectLocation: 'google.com' };
                 s3.send(new PutObjectCommand(params))

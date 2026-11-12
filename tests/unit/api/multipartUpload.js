@@ -3701,9 +3701,8 @@ describe('validatePerPartChecksums', () => {
                     // or part number in the wording.
                     assert.strictEqual(
                         err.description,
-                        'One or more of the specified parts could not be ' +
-                            'found.  The part may not have been uploaded, or ' +
-                            "the specified entity tag may not match the part's entity tag.",
+                        'One or more of the specified parts could not be found.  The part may not have ' +
+                            "been uploaded, or the specified entity tag may not match the part's entity tag.",
                     );
                 });
 
@@ -3741,9 +3740,8 @@ describe('validatePerPartChecksums', () => {
             makeStoredPart(2, { algorithm: 'crc64nvme', value: d2 }),
         ];
         const invalidPartMessage =
-            'One or more of the specified parts could not be ' +
-            'found.  The part may not have been uploaded, or ' +
-            "the specified entity tag may not match the part's entity tag.";
+            'One or more of the specified parts could not be found.  The part may not have ' +
+            "been uploaded, or the specified entity tag may not match the part's entity tag.";
 
         it('should accept when no parts include a checksum field', () => {
             const jsonList = { Part: [makeJsonPart(1, 'etag1'), makeJsonPart(2, 'etag2')] };

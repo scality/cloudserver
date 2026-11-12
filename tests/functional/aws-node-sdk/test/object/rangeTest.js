@@ -194,9 +194,8 @@ describe('aws-node-sdk range tests', () => {
             it('should get a range that spans both parts of an object', () => checkRanges('5242875-5242884', fileSize));
 
             it(
-                'should get a range from the second part of an object and ' +
-                    'include the end if the range requested goes beyond the ' +
-                    'actual object end',
+                'should get a range from the second part of an object and include ' +
+                    'the end if the range requested goes beyond the actual object end',
                 () => checkRanges('10485750-10485790', fileSize),
             );
         }));

@@ -315,9 +315,8 @@ describeSkipIfNotMultiple(
             });
 
             it(
-                'versioning not configured: deleting existing object should ' +
-                    'not return version id or x-amz-delete-marker: true but should ' +
-                    'create a delete marker in aws ',
+                'versioning not configured: deleting existing object should not return version ' +
+                    'id or x-amz-delete-marker: true but should create a delete marker in aws ',
                 done => {
                     const key = `somekey-${genUniqID()}`;
                     async.waterfall(
@@ -357,9 +356,8 @@ describeSkipIfNotMultiple(
             // delete marker with the version id "null", which overwrites an
             // existing null version in s3 metadata.
             it(
-                'versioning suspended: creating a delete marker will overwrite an ' +
-                    'existing null version that is the latest version in s3 metadata,' +
-                    ' but the data of the first null version will remain in AWS',
+                'versioning suspended: creating a delete marker will overwrite an existing null version that is ' +
+                    'the latest version in s3 metadata, but the data of the first null version will remain in AWS',
                 function itF(done) {
                     const key = `somekey-${genUniqID()}`;
                     async.waterfall(
@@ -397,9 +395,8 @@ describeSkipIfNotMultiple(
             // delete marker with the version id "null" which is supposed to
             // overwrite any existing null version.
             it(
-                'versioning suspended: creating a delete marker will overwrite an ' +
-                    'existing null version that is not the latest version in s3 metadata,' +
-                    ' but the data of the first null version will remain in AWS',
+                'versioning suspended: creating a delete marker will overwrite an existing null version that is ' +
+                    'not the latest version in s3 metadata, but the data of the first null version will remain in AWS',
                 function itF(done) {
                     const key = `somekey-${genUniqID()}`;
                     const data = [undefined, 'data1'];
@@ -706,9 +703,8 @@ describeSkipIfNotMultiple(
             });
 
             it(
-                'versioning not configured: deleting non-existing object should ' +
-                    'not return version id or x-amz-delete-marker: true nor create a ' +
-                    'delete marker in aws ',
+                'versioning not configured: deleting non-existing object should not return ' +
+                    'version id or x-amz-delete-marker: true nor create a delete marker in aws ',
                 done => {
                     const key = `somekey-${genUniqID()}`;
                     async.waterfall(

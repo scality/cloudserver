@@ -174,8 +174,7 @@ describe('s3curl put delete buckets', () => {
 
         it(
             'should return 409 error in new regions and 200 in us-east-1 ' +
-                '(legacyAWSBehvior) when try to put a bucket with a name ' +
-                'already being used',
+                '(legacyAWSBehvior) when try to put a bucket with a name already being used',
             done => {
                 provideRawOutput(['--createBucket', '--', bucketPath, '-v'], httpCode => {
                     assert(httpCode === '200 OK' || httpCode === '409 CONFLICT');

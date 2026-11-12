@@ -1068,9 +1068,8 @@ describe('Object Part Copy', () => {
             );
 
             it(
-                'should allow an account with read permission on the ' +
-                    'source object and write permission on the destination ' +
-                    'bucket to upload part copy the object',
+                'should allow an account with read permission on the source object and ' +
+                    'write permission on the destination bucket to upload part copy the object',
                 () =>
                     s3
                         .send(

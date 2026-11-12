@@ -82,9 +82,8 @@ describe('bucket authorization for bucketGet, bucketHead, objectGet, and objectH
         },
         {
             it:
-                'should not allow request on the bucket (bucketGet, bucketHead)' +
-                ' but should allow request on the object (objectGet, objectHead)' +
-                ' to public user if authenticated-read  ACL',
+                'should not allow request on the bucket (bucketGet, bucketHead) but should allow ' +
+                'request on the object (objectGet, objectHead) to public user if authenticated-read  ACL',
             canned: 'authenticated-read',
             id: constants.publicId,
             response: falseArrayBucketTrueArrayObject,
@@ -99,9 +98,8 @@ describe('bucket authorization for bucketGet, bucketHead, objectGet, and objectH
         },
         {
             it:
-                'should not allow request on the bucket (bucketGet, bucketHead)' +
-                ' but should allow request on the object (objectGet, objectHead)' +
-                ' to public user if private canned ACL',
+                'should not allow request on the bucket (bucketGet, bucketHead) but should allow ' +
+                'request on the object (objectGet, objectHead) to public user if private canned ACL',
             canned: '',
             id: accountToVet,
             response: falseArrayBucketTrueArrayObject,
@@ -109,9 +107,8 @@ describe('bucket authorization for bucketGet, bucketHead, objectGet, and objectH
         },
         {
             it:
-                'should not allow request on the bucket (bucketGet, bucketHead)' +
-                ' but should allow request on the object (objectGet, objectHead)' +
-                ' to just any user if private canned ACL',
+                'should not allow request on the bucket (bucketGet, bucketHead) but should allow ' +
+                'request on the object (objectGet, objectHead) to just any user if private canned ACL',
             canned: '',
             id: accountToVet,
             response: falseArrayBucketTrueArrayObject,

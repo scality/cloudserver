@@ -244,9 +244,8 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         },
         {
             it:
-                'should get a range from the second part of an object put by ' +
-                'multipart upload and include the end even if the range ' +
-                'requested goes beyond the actual object end',
+                'should get a range from the second part of an object put by multipart upload and ' +
+                'include the end even if the range requested goes beyond the actual object end',
             // End is actually 10485759 since size is 10485760
             range: 'bytes=10485750-10485790',
             contentLength: 10,

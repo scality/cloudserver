@@ -392,9 +392,8 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
         });
 
         it(
-            'versioning not configured: if copy object to a ' +
-                'pre-existing object on AWS backend, metadata should be overwritten ' +
-                'but data of  previous version in AWS should not be deleted',
+            'versioning not configured: if copy object to a pre-existing object on AWS backend, ' +
+                'metadata should be overwritten but data of  previous version in AWS should not be deleted',
             function itF(done) {
                 const destKey = `destkey-${genUniqID()}`;
                 const testParams = {

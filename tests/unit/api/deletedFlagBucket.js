@@ -125,9 +125,8 @@ describe('deleted flag bucket handling', () => {
     );
 
     it(
-        'putBucket request should return error if ' +
-            'different account sends put bucket request for bucket with ' +
-            'deleted flag',
+        'putBucket request should return error if different account ' +
+            'sends put bucket request for bucket with deleted flag',
         done => {
             bucketPut(otherAccountAuthInfo, baseTestRequest, log, err => {
                 assert.strictEqual(err.is.BucketAlreadyExists, true);

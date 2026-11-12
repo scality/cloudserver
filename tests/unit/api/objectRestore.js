@@ -116,9 +116,8 @@ describe('restoreObject API', () => {
     });
 
     it(
-        'should return Accepted and update objectMD ' +
-            'while restoring an object from cold storage ' +
-            "and the object doesn't have a restored copy in bucket",
+        'should return Accepted and update objectMD while restoring an object ' +
+            "from cold storage and the object doesn't have a restored copy in bucket",
         done => {
             const testStartTime = new Date(Date.now());
             mdColdHelper.putBucketMock(bucketName, null, () => {
@@ -139,9 +138,8 @@ describe('restoreObject API', () => {
     );
 
     it(
-        'should update the expiry time and return OK ' +
-            'while restoring an object from cold storage ' +
-            'and the object have a restored copy in bucket',
+        'should update the expiry time and return OK while restoring an object ' +
+            'from cold storage and the object have a restored copy in bucket',
         done => {
             const testStartTime = new Date(Date.now());
             mdColdHelper.putBucketMock(bucketName, null, () => {

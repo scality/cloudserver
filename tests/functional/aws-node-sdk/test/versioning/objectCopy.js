@@ -177,9 +177,8 @@ describe('Object Version Copy', () => {
         }
 
         it(
-            'should copy an object from a source bucket to a different ' +
-                'destination bucket and copy the tag set if no tagging directive ' +
-                'header provided',
+            'should copy an object from a source bucket to a different destination ' +
+                'bucket and copy the tag set if no tagging directive header provided',
             async () => {
                 await s3.send(
                     new CopyObjectCommand({ Bucket: destBucketName, Key: destObjName, CopySource: copySource }),
@@ -284,9 +283,8 @@ describe('Object Version Copy', () => {
         );
 
         it(
-            'should also copy additional headers (CacheControl, ' +
-                'ContentDisposition, ContentEncoding, Expires) when copying an ' +
-                'object from a source bucket to a different destination bucket',
+            'should also copy additional headers (CacheControl, ContentDisposition, ContentEncoding, ' +
+                'Expires) when copying an object from a source bucket to a different destination bucket',
             async () => {
                 await s3.send(
                     new CopyObjectCommand({ Bucket: destBucketName, Key: destObjName, CopySource: copySource }),
@@ -392,9 +390,8 @@ describe('Object Version Copy', () => {
         );
 
         it(
-            'should copy an object and the metadata if copy ' +
-                'included as metadata directive header (and ignore any new ' +
-                'metadata sent with copy request)',
+            'should copy an object and the metadata if copy included as metadata ' +
+                'directive header (and ignore any new metadata sent with copy request)',
             async () => {
                 await s3.send(
                     new CopyObjectCommand({
@@ -411,9 +408,8 @@ describe('Object Version Copy', () => {
         );
 
         it(
-            'should copy an object and its additional headers if copy ' +
-                'included as metadata directive header (and ignore any new ' +
-                'headers sent with copy request)',
+            'should copy an object and its additional headers if copy included as ' +
+                'metadata directive header (and ignore any new headers sent with copy request)',
             async () => {
                 await s3.send(
                     new CopyObjectCommand({
@@ -784,9 +780,8 @@ describe('Object Version Copy', () => {
             );
 
             it(
-                'should allow an account with read permission on the ' +
-                    'source object and write permission on the destination ' +
-                    'bucket to copy the object',
+                'should allow an account with read permission on the source object ' +
+                    'and write permission on the destination bucket to copy the object',
                 async () => {
                     await s3.send(
                         new PutObjectAclCommand({

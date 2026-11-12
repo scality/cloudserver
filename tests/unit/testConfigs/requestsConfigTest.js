@@ -19,8 +19,7 @@ describe('requestsConfigAssert', () => {
     });
     it(
         'should not throw an error if requests config via proxy is true, ' +
-            'trustedProxyCIDRs & extractClientIPFromHeader & ' +
-            'extractProtocolFromHeader are set',
+            'trustedProxyCIDRs & extractClientIPFromHeader & extractProtocolFromHeader are set',
         () => {
             assert.doesNotThrow(() => {
                 requestsConfigAssert({
@@ -52,9 +51,8 @@ describe('requestsConfigAssert', () => {
                     extractProtocolFromHeader: 'x-forwarded-proto',
                 });
             },
-            '/config: invalid requests configuration. ' +
-                'trustedProxyCIDRs must be set if viaProxy is set to true ' +
-                'and must be an array/',
+            '/config: invalid requests configuration. trustedProxyCIDRs ' +
+                'must be set if viaProxy is set to true and must be an array/',
         );
     });
     it('should throw an error if requests.trustedProxyCIDRs array is empty', () => {
@@ -67,9 +65,8 @@ describe('requestsConfigAssert', () => {
                     extractProtocolFromHeader: 'x-forwarded-proto',
                 });
             },
-            '/config: invalid requests configuration. ' +
-                'trustedProxyCIDRs must be set if viaProxy is set to true ' +
-                'and must be an array/',
+            '/config: invalid requests configuration. trustedProxyCIDRs ' +
+                'must be set if viaProxy is set to true and must be an array/',
         );
     });
     it('should throw an error if requests.extractClientIPFromHeader is not a string', () => {
@@ -82,9 +79,8 @@ describe('requestsConfigAssert', () => {
                     extractProtocolFromHeader: 'x-forwarded-proto',
                 });
             },
-            '/config: invalid requests configuration. ' +
-                'extractClientIPFromHeader must be set if viaProxy is ' +
-                'set to true and must be a string/',
+            '/config: invalid requests configuration. extractClientIPFromHeader ' +
+                'must be set if viaProxy is set to true and must be a string/',
         );
     });
     it('should throw an error if requests.extractProtocolFromHeader is not a string', () => {
@@ -97,9 +93,8 @@ describe('requestsConfigAssert', () => {
                     extractProtocolFromHeader: 1,
                 });
             },
-            '/config: invalid requests configuration. ' +
-                'extractProtocolFromHeader must be set if viaProxy is ' +
-                'set to true and must be a string/',
+            '/config: invalid requests configuration. extractProtocolFromHeader ' +
+                'must be set if viaProxy is set to true and must be a string/',
         );
     });
     it('should throw an error if requests.extractClientIPFromHeader is empty', () => {
@@ -112,9 +107,8 @@ describe('requestsConfigAssert', () => {
                     extractProtocolFromHeader: 'x-forwarded-proto',
                 });
             },
-            '/config: invalid requests configuration. ' +
-                'extractClientIPFromHeader must be set if viaProxy is ' +
-                'set to true and must be a string/',
+            '/config: invalid requests configuration. extractClientIPFromHeader ' +
+                'must be set if viaProxy is set to true and must be a string/',
         );
     });
     it('should throw an error if requests.extractProtocolFromHeader is empty', () => {
@@ -127,9 +121,8 @@ describe('requestsConfigAssert', () => {
                     extractProtocolFromHeader: '',
                 });
             },
-            '/config: invalid requests configuration. ' +
-                'extractProtocolFromHeader must be set if viaProxy is ' +
-                'set to true and must be a string/',
+            '/config: invalid requests configuration. extractProtocolFromHeader ' +
+                'must be set if viaProxy is set to true and must be a string/',
         );
     });
     it('should lowercase the extractClientIPFromHeader and extractProtocolFromHeader values', () => {

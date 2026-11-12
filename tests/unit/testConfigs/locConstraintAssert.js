@@ -201,9 +201,8 @@ describe('locationConstraintAssert', () => {
                     'azurefaketest': locationConstraint,
                 });
             },
-            '/bad location constraint: "azurefaketest" ' +
-                'azureStorageEndpoint must be set in locationConfig ' +
-                'or environment variable/',
+            '/bad location constraint: "azurefaketest" azureStorageEndpoint ' +
+                'must be set in locationConfig or environment variable/',
         );
     });
 
@@ -222,9 +221,8 @@ describe('locationConstraintAssert', () => {
                     'azurefaketest': locationConstraint,
                 });
             },
-            '/bad location constraint: "azurefaketest" ' +
-                'azureStorageAccountName must be set in locationConfig ' +
-                'or environment variable/',
+            '/bad location constraint: "azurefaketest" azureStorageAccountName ' +
+                'must be set in locationConfig or environment variable/',
         );
     });
 
@@ -259,9 +257,8 @@ describe('locationConstraintAssert', () => {
                     'azurefaketest': locationConstraint,
                 });
             },
-            '/bad location constraint: "azurefaketest" ' +
-                'azureStorageAccessKey must be set in locationConfig ' +
-                'or environment variable/',
+            '/bad location constraint: "azurefaketest" azureStorageAccessKey ' +
+                'must be set in locationConfig or environment variable/',
         );
     });
 

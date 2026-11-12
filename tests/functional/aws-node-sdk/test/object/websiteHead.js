@@ -562,9 +562,8 @@ describe('Head request on bucket website endpoint', () => {
             afterEach(() => s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: 'redirect/index.html' })));
 
             it(
-                'should redirect to "redirect" object if key prefix is equal ' +
-                    'to "about/" and there is a 403 error satisfying the ' +
-                    'condition in the redirect rule',
+                'should redirect to "redirect" object if key prefix is equal to "about/" ' +
+                    'and there is a 403 error satisfying the condition in the redirect rule',
                 done => {
                     const expectedHeaders = {
                         location: `${endpoint}/redirect/`,

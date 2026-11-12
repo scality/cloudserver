@@ -196,9 +196,8 @@ describe('Object Copy', () => {
         }
 
         it(
-            'should copy an object from a source bucket to a different ' +
-                'destination bucket and copy the metadata if no metadata directive ' +
-                'header provided',
+            'should copy an object from a source bucket to a different destination ' +
+                'bucket and copy the metadata if no metadata directive header provided',
             async () => {
                 const res = await s3.send(
                     new CopyObjectCommand({
@@ -212,9 +211,8 @@ describe('Object Copy', () => {
         );
 
         it(
-            'should copy an object from a source bucket to a different ' +
-                'destination bucket and copy the tag set if no tagging directive' +
-                'header provided',
+            'should copy an object from a source bucket to a different destination ' +
+                'bucket and copy the tag set if no tagging directiveheader provided',
             done => {
                 s3.send(
                     new CopyObjectCommand({
@@ -268,9 +266,8 @@ describe('Object Copy', () => {
         });
 
         it(
-            'should copy an object from a source bucket to a different ' +
-                'destination bucket and copy the tag set if COPY tagging ' +
-                'directive header provided',
+            'should copy an object from a source bucket to a different destination ' +
+                'bucket and copy the tag set if COPY tagging directive header provided',
             done => {
                 s3.send(
                     new CopyObjectCommand({
@@ -343,9 +340,8 @@ describe('Object Copy', () => {
         );
 
         it(
-            'should copy an object from a source to the same destination ' +
-                'return no tag if REPLACE tagging directive header provided but ' +
-                '"x-amz-tagging" header is not specified',
+            'should copy an object from a source to the same destination return no tag if REPLACE ' +
+                'tagging directive header provided but "x-amz-tagging" header is not specified',
             done => {
                 s3.send(
                     new CopyObjectCommand({
@@ -366,9 +362,8 @@ describe('Object Copy', () => {
         );
 
         it(
-            'should copy an object from a source to the same destination ' +
-                'return no tag if COPY tagging directive header but provided from ' +
-                'an empty object',
+            'should copy an object from a source to the same destination return no ' +
+                'tag if COPY tagging directive header but provided from an empty object',
             done => {
                 s3.send(new PutObjectCommand({ Bucket: sourceBucketName, Key: 'emptyobject' })).then(() => {
                     s3.send(
@@ -441,9 +436,8 @@ describe('Object Copy', () => {
         });
 
         it(
-            'should also copy additional headers (CacheControl, ' +
-                'ContentDisposition, ContentEncoding, Expires) when copying an ' +
-                'object from a source bucket to a different destination bucket',
+            'should also copy additional headers (CacheControl, ContentDisposition, ContentEncoding, ' +
+                'Expires) when copying an object from a source bucket to a different destination bucket',
             done => {
                 s3.send(
                     new CopyObjectCommand({
@@ -567,9 +561,8 @@ describe('Object Copy', () => {
         });
 
         it(
-            'should copy an object and replace ContentType if replace ' +
-                'included as a metadata directive header, and new ContentType is ' +
-                'provided',
+            'should copy an object and replace ContentType if replace included ' +
+                'as a metadata directive header, and new ContentType is provided',
             async () => {
                 await s3.send(
                     new CopyObjectCommand({
@@ -586,9 +579,8 @@ describe('Object Copy', () => {
         );
 
         it(
-            'should copy an object and keep ContentType if replace ' +
-                'included as a metadata directive header, but no new ContentType ' +
-                'is provided',
+            'should copy an object and keep ContentType if replace included as ' +
+                'a metadata directive header, but no new ContentType is provided',
             done => {
                 s3.send(
                     new CopyObjectCommand({
@@ -651,9 +643,8 @@ describe('Object Copy', () => {
         );
 
         it(
-            'should copy an object and the metadata if copy ' +
-                'included as metadata directive header (and ignore any new ' +
-                'metadata sent with copy request)',
+            'should copy an object and the metadata if copy included as metadata ' +
+                'directive header (and ignore any new metadata sent with copy request)',
             done => {
                 s3.send(
                     new CopyObjectCommand({
@@ -683,9 +674,8 @@ describe('Object Copy', () => {
         );
 
         it(
-            'should copy an object and its additional headers if copy ' +
-                'included as metadata directive header (and ignore any new ' +
-                'headers sent with copy request)',
+            'should copy an object and its additional headers if copy included as ' +
+                'metadata directive header (and ignore any new headers sent with copy request)',
             done => {
                 s3.send(
                     new CopyObjectCommand({
@@ -978,8 +968,7 @@ describe('Object Copy', () => {
 
         it(
             'should copy an object and default the acl on the new object ' +
-                'to private even if the copied object had a ' +
-                'different acl',
+                'to private even if the copied object had a different acl',
             done => {
                 s3.send(
                     new PutObjectAclCommand({
@@ -1227,9 +1216,8 @@ describe('Object Copy', () => {
             );
 
             it(
-                'should allow an account with read permission on the ' +
-                    'source object and write permission on the destination ' +
-                    'bucket to copy the object',
+                'should allow an account with read permission on the source object ' +
+                    'and write permission on the destination bucket to copy the object',
                 () =>
                     s3
                         .send(
@@ -2101,9 +2089,8 @@ describe('Object Copy checksum behavior', () => {
             } catch (err) {
                 checkError(err, 'InvalidRequest', 400);
                 const expected =
-                    'Checksum algorithm provided is unsupported. ' +
-                    'Please try again with any of the valid types: ' +
-                    '[CRC32, CRC32C, CRC64NVME, SHA1, SHA256]';
+                    'Checksum algorithm provided is unsupported. Please try again with ' +
+                    'any of the valid types: [CRC32, CRC32C, CRC64NVME, SHA1, SHA256]';
                 assert.strictEqual(err.message, expected);
             }
         });
