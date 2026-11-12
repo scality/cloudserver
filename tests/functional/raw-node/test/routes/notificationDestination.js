@@ -228,11 +228,33 @@ function destinationRequest(method, queryObj, requestBody, credentials = authCre
 }
 
 const createDestination = (name, body, credentials) => destinationRequest('PUT', { name }, body, credentials);
+const getDestination = (name, credentials) => destinationRequest('GET', { name }, undefined, credentials);
+
+const escapeRegExp = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// The text of each element of that name in an XML body.
+function elementValues(body, element) {
+    return [...body.matchAll(new RegExp(`<${element}>([^<]*)</${element}>`, 'g'))].map(match => match[1]);
+}
 
 function assertError({ err, res }, code, statusCode) {
     assert(err, `expected ${code}, got ${res?.statusCode}`);
     assert.strictEqual(err.code, code);
     assert.strictEqual(res?.statusCode, statusCode);
+}
+
+// A destination name that no other test of the run uses. Thus an IAM test
+// creates destinations of its own and reads none that another test left.
+let nameSequence = 0;
+const testName = prefix => uniqueName(`${prefix}-${++nameSequence}`);
+
+// Create a destination of the test account, and return its Arn: the Arn
+// that Get answers is the resource that a policy names.
+async function createDestinationArn(name) {
+    assert.ifError((await createDestination(name, saslSslBody)).err);
+    const { err, res } = await getDestination(name);
+    assert.ifError(err);
+    return elementValues(res.body, 'Arn')[0];
 }
 
 describeOff('notification destination calls with the API off', () => {
@@ -344,6 +366,95 @@ describeOn('CreateNotificationDestination', () => {
     });
 });
 
+describeOn('GetNotificationDestination', () => {
+    // Strings that only a secret field holds, so that finding one in a body
+    // means a secret leaked.
+    const secrets = {
+        password: 'sentinel-pass-3e8d',
+        clientKey: 'sentinel-key-3e8d',
+        clientKeyPassword: 'sentinel-keypass-3e8d',
+    };
+    const brokers = ['broker2.example.com:9093', 'broker1.example.com:9094'];
+    const connection =
+        '<Connection>' +
+        `<Brokers>${brokers.map(broker => `<Broker>${broker}</Broker>`).join('')}</Brokers>` +
+        '<Topic>bucket-events</Topic><RequiredAcks>1</RequiredAcks><CompressionType>lz4</CompressionType>' +
+        '</Connection>';
+    const bodies = {
+        // eslint-disable-next-line camelcase
+        sasl_ssl:
+            `<NotificationDestination><Type>kafka</Type>${connection}` +
+            '<Auth><Type>sasl_ssl</Type>' +
+            `<Sasl><Mechanism>SCRAM-SHA-256</Mechanism><Username>events</Username><Password>${secrets.password}</Password></Sasl>` +
+            '<Tls><CaCertificate>ca-cert</CaCertificate></Tls>' +
+            '</Auth></NotificationDestination>',
+        mtls:
+            `<NotificationDestination><Type>kafka</Type>${connection}` +
+            '<Auth><Type>mtls</Type><Tls><ClientCertificate>client-cert</ClientCertificate>' +
+            `<ClientKey>${secrets.clientKey}</ClientKey><ClientKeyPassword>${secrets.clientKeyPassword}</ClientKeyPassword>` +
+            '</Tls></Auth></NotificationDestination>',
+    };
+
+    Object.keys(bodies).forEach(authType => {
+        it(`should answer every field of a ${authType} destination, and no secret`, async () => {
+            const name = uniqueName(`get-${authType}`);
+            const created = await createDestination(name, bodies[authType]);
+            assert.ifError(created.err);
+            const { err, res } = await getDestination(name);
+            assert.ifError(err);
+            assert.strictEqual(res.statusCode, 200);
+            const { body } = res;
+            assert.match(body, /^<\?xml version="1\.0" encoding="UTF-8"\?><NotificationDestination>/);
+            assert.deepStrictEqual(elementValues(body, 'Name'), [name]);
+            const [accountId] = elementValues(body, 'AccountId');
+            assert.match(accountId, /^[0-9]{12}$/);
+            assert.deepStrictEqual(elementValues(body, 'Arn'), [`arn:scality:bucketnotif::${accountId}:${name}`]);
+            assert.match(
+                body,
+                new RegExp(
+                    escapeRegExp(`<Type>kafka</Type>${connection}<Auth><Type>${authType}</Type></Auth><CreatedAt>`),
+                ),
+            );
+            Object.values(secrets).forEach(secret => assert.doesNotMatch(body, new RegExp(secret)));
+            assert.doesNotMatch(body, /<Sasl>|<Tls>|<Username>|<Password>|<ClientKey>|client-cert|ca-cert/);
+        });
+    });
+
+    it('should answer the brokers in the order they were created', async () => {
+        const name = uniqueName('get-brokers');
+        assert.ifError((await createDestination(name, bodies.mtls)).err);
+        const { err, res } = await getDestination(name);
+        assert.ifError(err);
+        assert.deepStrictEqual(elementValues(res.body, 'Broker'), brokers);
+    });
+
+    it('should answer CreatedAt and UpdatedAt in ISO 8601 UTC, to the millisecond', async () => {
+        const name = uniqueName('get-times');
+        const before = Date.now();
+        assert.ifError((await createDestination(name, bodies.mtls)).err);
+        const { err, res } = await getDestination(name);
+        assert.ifError(err);
+        const [createdAt] = elementValues(res.body, 'CreatedAt');
+        const [updatedAt] = elementValues(res.body, 'UpdatedAt');
+        assert.match(createdAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+        assert.strictEqual(updatedAt, createdAt);
+        assert(Date.parse(createdAt) >= before, `${createdAt} is before the Create`);
+        assert(Date.parse(createdAt) <= Date.now(), `${createdAt} is after the Get`);
+    });
+
+    it('should answer NoSuchDestination to an unknown name', async () => {
+        assertError(await getDestination(uniqueName('unknown')), 'NoSuchDestination', 404);
+    });
+
+    it('should answer InvalidDestination to a name outside the grammar', async () => {
+        assertError(await getDestination('bad/name'), 'InvalidDestination', 400);
+    });
+
+    it('should answer AccessDenied to an anonymous request', async () => {
+        assertError(await getDestination(uniqueName('anonymous'), null), 'AccessDenied', 403);
+    });
+});
+
 describeIam('CreateNotificationDestination by an IAM user', () => {
     const iamClient = makeIamClient();
     const userName = uniqueName('destination-no-policy');
@@ -359,5 +470,39 @@ describeIam('CreateNotificationDestination by an IAM user', () => {
 
     it('should answer AccessDenied to a user with no policy', async () => {
         assertError(await createDestination(uniqueName('denied'), saslSslBody, credentials), 'AccessDenied', 403);
+    });
+});
+
+describeIam('GetNotificationDestination by an IAM user', () => {
+    const iamClient = makeIamClient();
+    const userName = uniqueName('destination-get-one');
+    let allowedName;
+    let otherName;
+    let credentials;
+
+    beforeEach(async () => {
+        allowedName = testName('get-allowed');
+        otherName = testName('get-other');
+        const allowedArn = await createDestinationArn(allowedName);
+        assert.ifError((await createDestination(otherName, saslSslBody)).err);
+        credentials = await createIamCaller(iamClient, userName, {
+            action: 'scality:GetBucketNotificationDestination',
+            resource: allowedArn,
+        });
+    });
+
+    afterEach(async () => {
+        await removeIamCaller(iamClient, userName);
+    });
+
+    it('should read the destination that the policy names', async () => {
+        const { err, res } = await getDestination(allowedName, credentials);
+        assert.ifError(err);
+        assert.strictEqual(res.statusCode, 200);
+        assert.deepStrictEqual(elementValues(res.body, 'Name'), [allowedName]);
+    });
+
+    it('should answer AccessDenied to another destination', async () => {
+        assertError(await getDestination(otherName, credentials), 'AccessDenied', 403);
     });
 });
