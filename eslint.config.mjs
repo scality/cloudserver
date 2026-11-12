@@ -11,10 +11,6 @@ export default [
             n,
         },
 
-        languageOptions: {
-            ecmaVersion: 2021,
-        },
-
         rules: {
             'no-useless-escape': 'off',
             'max-len': 'off',
