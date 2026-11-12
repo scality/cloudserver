@@ -213,6 +213,21 @@ jobs:
         run: |
           jq '[.[] | select(.type == "result")] | last | .permission_denials // "no permission_denials field, result keys: \(keys)"' "$EXECUTION_FILE"
 
+      - name: Show the review's Bash commands
+        if: always()
+        continue-on-error: true
+        env:
+          EXECUTION_FILE: ${{ steps.claude-review.outputs.execution_file }}
+        run: |
+          jq -r '
+            ([.[] | select(.type == "user") | .message.content[]? | select(.type == "tool_result")
+              | {key: .tool_use_id, value: {is_error, text: (.content | if type == "array" then map(.text? // "") | join("") else tostring end)}}]
+              | from_entries) as $results
+            | .[] | select(.type == "assistant") | .message.content[]? | select(.type == "tool_use" and .name == "Bash")
+            | "$ \(.input.command[0:400])",
+              (if (.input.command | test("publish-summary")) then "  -> is_error=\($results[.id].is_error) \($results[.id].text[0:800])" else empty end)
+          ' "$EXECUTION_FILE"
+
       - name: Get token for cost reporting
         id: cost-token
         if: always() && steps.marketplaces.outputs.has_app_key == 'true'
