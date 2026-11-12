@@ -208,8 +208,8 @@ const saslSslBody =
     '</Auth>' +
     '</NotificationDestination>';
 
-// No Delete exists yet to remove what a run creates, so each run uses names
-// of its own.
+// Each run uses names of its own. Thus runs that share a server, or a run
+// that stopped before its clean-up, never meet each other's names.
 const runId = crypto.randomBytes(4).toString('hex');
 const uniqueName = prefix => `${prefix}-${runId}`;
 
@@ -227,9 +227,44 @@ function destinationRequest(method, queryObj, requestBody, credentials = authCre
     );
 }
 
-const createDestination = (name, body, credentials) => destinationRequest('PUT', { name }, body, credentials);
 const getDestination = (name, credentials) => destinationRequest('GET', { name }, undefined, credentials);
 const updateDestination = (name, body, credentials) => destinationRequest('POST', { name }, body, credentials);
+const deleteDestination = (name, credentials) => destinationRequest('DELETE', { name }, undefined, credentials);
+
+// Every destination that a Create made, with the credentials of its
+// account. Thus each test deletes what it created when it ends.
+let createdDestinations = [];
+
+async function createDestination(name, body, credentials) {
+    const result = await destinationRequest('PUT', { name }, body, credentials);
+    if (!result.err && result.res.statusCode === 200) {
+        createdDestinations.push({ name, credentials });
+    }
+    return result;
+}
+
+// Delete what the test created, with no throw, so that the other clean-up
+// steps of the test still run. A test may have deleted some already, so
+// NoSuchDestination is fine. Keep any other answer for the check of the
+// root after hook below.
+const cleanUpFailures = [];
+
+async function deleteCreatedDestinations() {
+    const created = createdDestinations;
+    createdDestinations = [];
+    for (const { name, credentials } of created) {
+        const { err, res } = await deleteDestination(name, credentials);
+        if (err && err.code !== 'NoSuchDestination') {
+            cleanUpFailures.push(`${name}: ${err.code} ${res?.statusCode}`);
+        }
+    }
+}
+
+// This after hook is at the top level, so Mocha runs it on its root suite:
+// once, after the whole run, not at the end of this file.
+after(() => {
+    assert.deepStrictEqual(cleanUpFailures, [], 'some destinations could not be deleted');
+});
 
 const escapeRegExp = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -273,6 +308,8 @@ describeOff('notification destination calls with the API off', () => {
 });
 
 describeOn('CreateNotificationDestination', () => {
+    afterEach(deleteCreatedDestinations);
+
     it('should create a destination and answer 200 with no body', async () => {
         const mtlsBody = saslSslBody.replace(
             /<Auth>.*<\/Auth>/,
@@ -368,6 +405,8 @@ describeOn('CreateNotificationDestination', () => {
 });
 
 describeOn('GetNotificationDestination', () => {
+    afterEach(deleteCreatedDestinations);
+
     // Strings that only a secret field holds, so that finding one in a body
     // means a secret leaked.
     const secrets = {
@@ -461,14 +500,16 @@ describeOn('ListNotificationDestinations', () => {
     const listedNames = body =>
         [...body.matchAll(/<NotificationDestination><Name>([^<]*)<\/Name>/g)].map(match => match[1]);
     // The other tests of this file create names of their own in the same
-    // account and never delete them. Thus the names here share one prefix
-    // that no other test uses, and each page starts after that prefix. Each
-    // test gets a prefix and destinations of its own.
+    // account, and another run may share the server. Thus the names here
+    // share one prefix that no other test uses, and each page starts after
+    // that prefix. Each test gets a prefix and destinations of its own.
     const lisa = getCredentials('lisa');
     const lisaCredentials = { accessKey: lisa.accessKeyId, secretKey: lisa.secretAccessKey };
     let prefix;
     let names;
     let lisaName;
+
+    afterEach(deleteCreatedDestinations);
 
     beforeEach(async () => {
         prefix = testName('zz-list');
@@ -560,6 +601,8 @@ describeOn('ListNotificationDestinations', () => {
 });
 
 describeOn('UpdateNotificationDestination', () => {
+    afterEach(deleteCreatedDestinations);
+
     const newBody = saslSslBody
         .replace(
             /<Brokers>.*<\/Brokers>/,
@@ -621,6 +664,109 @@ describeOn('UpdateNotificationDestination', () => {
     });
 });
 
+describeOn('DeleteNotificationDestination', () => {
+    afterEach(deleteCreatedDestinations);
+
+    const listDestinations = queryObj => destinationRequest('GET', queryObj);
+    const listedNames = body =>
+        [...body.matchAll(/<NotificationDestination><Name>([^<]*)<\/Name>/g)].map(match => match[1]);
+
+    it('should delete the destination and answer 204 with no body, then Get answers 404', async () => {
+        const name = uniqueName('delete');
+        assert.ifError((await createDestination(name, saslSslBody)).err);
+        const { err, res } = await deleteDestination(name);
+        assert.ifError(err);
+        assert.strictEqual(res.statusCode, 204);
+        assert.strictEqual(res.body, '');
+        assertError(await getDestination(name), 'NoSuchDestination', 404);
+    });
+
+    it('should answer NoSuchDestination to an unknown name', async () => {
+        assertError(await deleteDestination(uniqueName('unknown')), 'NoSuchDestination', 404);
+    });
+
+    it('should answer NoSuchDestination to a second Delete of the name', async () => {
+        const name = uniqueName('delete-twice');
+        assert.ifError((await createDestination(name, saslSslBody)).err);
+        assert.ifError((await deleteDestination(name)).err);
+        assertError(await deleteDestination(name), 'NoSuchDestination', 404);
+    });
+
+    it('should let the name be created again after a Delete', async () => {
+        const name = uniqueName('delete-again');
+        assert.ifError((await createDestination(name, saslSslBody)).err);
+        assert.ifError((await deleteDestination(name)).err);
+        const body = saslSslBody.replace('bucket-events', 'again-events');
+        assert.notStrictEqual(body, saslSslBody);
+        const { err, res } = await createDestination(name, body);
+        assert.ifError(err);
+        assert.strictEqual(res.statusCode, 200);
+        const got = await getDestination(name);
+        assert.ifError(got.err);
+        assert.deepStrictEqual(elementValues(got.res.body, 'Topic'), ['again-events']);
+    });
+
+    it('should no longer list the name after a Delete', async () => {
+        // A prefix of its own, so that the other names of the account never
+        // show in the page.
+        const prefix = uniqueName('zz-delete-list');
+        const [kept, deleted] = [`${prefix}-a`, `${prefix}-b`];
+        assert.ifError((await createDestination(kept, saslSslBody)).err);
+        assert.ifError((await createDestination(deleted, saslSslBody)).err);
+        const page = async () => {
+            const { err, res } = await listDestinations({ 'max-items': '1000', 'marker': `${prefix}-` });
+            assert.ifError(err);
+            return listedNames(res.body).filter(name => name.startsWith(prefix));
+        };
+        assert.deepStrictEqual(await page(), [kept, deleted]);
+        assert.ifError((await deleteDestination(deleted)).err);
+        assert.deepStrictEqual(await page(), [kept]);
+    });
+
+    it('should answer InvalidDestination to a name outside the grammar', async () => {
+        assertError(await deleteDestination('bad/name'), 'InvalidDestination', 400);
+    });
+
+    it('should answer AccessDenied to an anonymous request, and keep the destination', async () => {
+        const name = uniqueName('delete-anonymous');
+        assert.ifError((await createDestination(name, saslSslBody)).err);
+        assertError(await deleteDestination(name, null), 'AccessDenied', 403);
+        assert.ifError((await getDestination(name)).err);
+    });
+});
+
+// Create and Update by a user with no policy have blocks of their own.
+describeIam('Get, List and Delete by an IAM user with no policy', () => {
+    const iamClient = makeIamClient();
+    const userName = uniqueName('destination-all-no-policy');
+    let name;
+    let credentials;
+
+    beforeEach(async () => {
+        name = testName('no-policy');
+        assert.ifError((await createDestination(name, saslSslBody)).err);
+        credentials = await createIamCaller(iamClient, userName);
+    });
+
+    afterEach(async () => {
+        await deleteCreatedDestinations();
+        await removeIamCaller(iamClient, userName);
+    });
+
+    [
+        ['GetNotificationDestination', () => getDestination(name, credentials)],
+        ['ListNotificationDestinations', () => destinationRequest('GET', {}, undefined, credentials)],
+        ['DeleteNotificationDestination', () => deleteDestination(name, credentials)],
+    ].forEach(([operation, call]) => {
+        it(`should answer AccessDenied to ${operation}, and keep the destination`, async () => {
+            assertError(await call(), 'AccessDenied', 403);
+            const got = await getDestination(name);
+            assert.ifError(got.err);
+            assert.deepStrictEqual(elementValues(got.res.body, 'Topic'), ['bucket-events']);
+        });
+    });
+});
+
 describeIam('CreateNotificationDestination by an IAM user', () => {
     const iamClient = makeIamClient();
     const userName = uniqueName('destination-no-policy');
@@ -631,6 +777,7 @@ describeIam('CreateNotificationDestination by an IAM user', () => {
     });
 
     afterEach(async () => {
+        await deleteCreatedDestinations();
         await removeIamCaller(iamClient, userName);
     });
 
@@ -658,6 +805,7 @@ describeIam('GetNotificationDestination by an IAM user', () => {
     });
 
     afterEach(async () => {
+        await deleteCreatedDestinations();
         await removeIamCaller(iamClient, userName);
     });
 
@@ -701,6 +849,7 @@ describeIam('ListNotificationDestinations by an IAM user', () => {
     });
 
     afterEach(async () => {
+        await deleteCreatedDestinations();
         for (const userName of Object.values(userNames)) {
             await removeIamCaller(iamClient, userName);
         }
@@ -739,6 +888,7 @@ describeIam('UpdateNotificationDestination by an IAM user', () => {
     });
 
     afterEach(async () => {
+        await deleteCreatedDestinations();
         await removeIamCaller(iamClient, userName);
     });
 
@@ -770,6 +920,7 @@ describeIam('UpdateNotificationDestination by an IAM user allowed on one destina
     });
 
     afterEach(async () => {
+        await deleteCreatedDestinations();
         await removeIamCaller(iamClient, userName);
     });
 
@@ -789,5 +940,41 @@ describeIam('UpdateNotificationDestination by an IAM user allowed on one destina
         const got = await getDestination(otherName);
         assert.ifError(got.err);
         assert.deepStrictEqual(elementValues(got.res.body, 'Topic'), ['bucket-events']);
+    });
+});
+
+describeIam('DeleteNotificationDestination by an IAM user allowed on one destination', () => {
+    const iamClient = makeIamClient();
+    const userName = uniqueName('destination-delete-one');
+    let allowedName;
+    let otherName;
+    let credentials;
+
+    beforeEach(async () => {
+        allowedName = testName('delete-allowed');
+        otherName = testName('delete-other');
+        const allowedArn = await createDestinationArn(allowedName);
+        assert.ifError((await createDestination(otherName, saslSslBody)).err);
+        credentials = await createIamCaller(iamClient, userName, {
+            action: 'scality:DeleteBucketNotificationDestination',
+            resource: allowedArn,
+        });
+    });
+
+    afterEach(async () => {
+        await deleteCreatedDestinations();
+        await removeIamCaller(iamClient, userName);
+    });
+
+    it('should delete the destination that the policy names', async () => {
+        const { err, res } = await deleteDestination(allowedName, credentials);
+        assert.ifError(err);
+        assert.strictEqual(res.statusCode, 204);
+        assertError(await getDestination(allowedName), 'NoSuchDestination', 404);
+    });
+
+    it('should answer AccessDenied to another destination, and keep it', async () => {
+        assertError(await deleteDestination(otherName, credentials), 'AccessDenied', 403);
+        assert.ifError((await getDestination(otherName)).err);
     });
 });
