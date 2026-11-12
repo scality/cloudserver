@@ -3869,9 +3869,8 @@ describe('backbeat routes', () => {
                 },
             );
             it(
-                `${test.method} ${test.resourceType} should respond with ` +
-                    '403 Forbidden if the account does not match the ' +
-                    'backbeat user',
+                `${test.method} ${test.resourceType} should respond with 403 ` +
+                    'Forbidden if the account does not match the backbeat user',
                 done => {
                     makeBackbeatRequest(
                         {

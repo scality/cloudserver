@@ -108,9 +108,8 @@ describe('Preflight CORS request with existing bucket', () => {
 
         methods.forEach(method => {
             it(
-                'should respond with 200 and access control headers to ' +
-                    'OPTIONS request from allowed origin and allowed method ' +
-                    `"${method}"`,
+                'should respond with 200 and access control headers to OPTIONS ' +
+                    `request from allowed origin and allowed method "${method}"`,
                 done => {
                     const headers = {
                         'Origin': allowedOrigin,

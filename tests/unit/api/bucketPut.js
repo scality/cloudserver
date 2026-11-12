@@ -101,9 +101,8 @@ describe('checkLocationConstraint function', () => {
             ? `${testCheck.expectedError} error`
             : 'the appropriate location constraint';
         it(
-            `with data backend: "${testCheck.data}", ` +
-                `location: "${testCheck.locationSent}",` +
-                ` and host: "${testCheck.parsedHost}", should return ${returnText} `,
+            `with data backend: "${testCheck.data}", location: "${testCheck.locationSent}", ` +
+                `and host: "${testCheck.parsedHost}", should return ${returnText} `,
             done => {
                 config.backends.data = testCheck.data;
                 request.parsedHost = testCheck.parsedHost;
@@ -415,9 +414,8 @@ describe('bucketPut API', () => {
                 assert.strictEqual(err.is.InvalidLocationConstraint, true);
                 assert.strictEqual(
                     err.description,
-                    'value of the location you are ' +
-                        `attempting to set - ${newLCKey} - is not listed in the ` +
-                        'locationConstraint config',
+                    'value of the location you are attempting to set - ' +
+                        `${newLCKey} - is not listed in the locationConstraint config`,
                 );
                 done();
             }));

@@ -170,10 +170,9 @@ const results = [
 describe('Testing Config.js function: ', () => {
     results.forEach(result => {
         it(
-            `should return ${result.boolExpected} if source location ` +
-                `constraint === ${result.sourceLocationConstraintName} ` +
-                'and destination location constraint ===' +
-                ` ${result.destLocationConstraintName} and ${result.description}`,
+            `should return ${result.boolExpected} if source location constraint === ` +
+                `${result.sourceLocationConstraintName} and destination location constraint ` +
+                `=== ${result.destLocationConstraintName} and ${result.description}`,
             done => {
                 const isCopy = utils.externalBackendCopy(
                     config,

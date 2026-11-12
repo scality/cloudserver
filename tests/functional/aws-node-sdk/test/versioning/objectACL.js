@@ -99,8 +99,7 @@ class _Utils {
             assert.strictEqual(
                 data.VersionId,
                 expected.versionId,
-                `expected version id '${expected.versionId}' in ` +
-                    `putacl res headers, got '${data.VersionId}' instead`,
+                `expected version id '${expected.versionId}' in putacl res headers, got '${data.VersionId}' instead`,
             );
         } catch (err) {
             if (expected.error) {

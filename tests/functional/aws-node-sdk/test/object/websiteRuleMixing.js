@@ -202,9 +202,8 @@ describe('User visits bucket website endpoint and requests resource that has x-a
         afterEach(async () => await bucketUtil.empty(bucket));
 
         it(
-            `should redirect to ${redirectEndpoint} since error 403 ` +
-                'occurred instead of x-amz-website-redirect-location header ' +
-                'location on GET request',
+            `should redirect to ${redirectEndpoint} since error 403 occurred instead ` +
+                'of x-amz-website-redirect-location header location on GET request',
             done => {
                 WebsiteConfigTester.checkHTML(
                     {
@@ -219,9 +218,8 @@ describe('User visits bucket website endpoint and requests resource that has x-a
         );
 
         it(
-            `should redirect to ${redirectEndpoint} since error 403 ` +
-                'occurred instead of x-amz-website-redirect-location header ' +
-                'location on HEAD request',
+            `should redirect to ${redirectEndpoint} since error 403 occurred instead ` +
+                'of x-amz-website-redirect-location header location on HEAD request',
             done => {
                 WebsiteConfigTester.checkHTML(
                     {
@@ -316,9 +314,8 @@ describe('User visits bucket website endpoint and requests resource that has x-a
         afterEach(async () => await bucketUtil.empty(bucket));
 
         it(
-            `should redirect GET request to ${redirectEndpoint}about/ ` +
-                'instead of about/ key x-amz-website-redirect-location ' +
-                'header location',
+            `should redirect GET request to ${redirectEndpoint}about/ instead ` +
+                'of about/ key x-amz-website-redirect-location header location',
             done => {
                 WebsiteConfigTester.checkHTML(
                     {
