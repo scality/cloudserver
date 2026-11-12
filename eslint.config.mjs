@@ -14,7 +14,6 @@ export default [
         rules: {
             'no-useless-escape': 'off',
             'max-len': 'off',
-            'preserve-caught-error': 'off',
             'promise/prefer-await-to-then': 'warn',
             'n/callback-return': 'warn',
         },

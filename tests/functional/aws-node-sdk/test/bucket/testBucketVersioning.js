@@ -113,7 +113,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         try {
             await s3.send(new PutBucketVersioningCommand(params));
         } catch (error) {
-            throw new Error(`Expected success but got failure: ${error.message}`);
+            throw new Error(`Expected success but got failure: ${error.message}`, { cause: error });
         }
     });
 
@@ -123,7 +123,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
             const response = await s3.send(new GetBucketVersioningCommand(params));
             assert.strictEqual(response.$metadata.httpStatusCode, 200);
         } catch (error) {
-            throw new Error(`Expected success but got failure: ${error.message}`);
+            throw new Error(`Expected success but got failure: ${error.message}`, { cause: error });
         }
     });
 

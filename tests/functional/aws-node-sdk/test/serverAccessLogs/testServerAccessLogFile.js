@@ -102,7 +102,10 @@ async function waitForAction(filePath, action, maxRetries, delayMs) {
             } catch (err) {
                 // FIXME(CLDSRV-800): readFileSync may read partial lines making JSON.parse fail, so we need to retry.
                 if (attempt == maxRetries) {
-                    throw new Error(`Failed to read log entries from ${filePath} after ${maxRetries} attempts: ${err}`);
+                    throw new Error(
+                        `Failed to read log entries from ${filePath} after ${maxRetries} attempts: ${err}`,
+                        { cause: err },
+                    );
                 }
             }
         }

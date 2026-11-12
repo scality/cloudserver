@@ -236,7 +236,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     if (err.message === 'Expected InvalidArgument error') {
                         throw err;
                     }
-                    throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+                    throw new Error(`Expected success got error ${JSON.stringify(err)}`, { cause: err });
                 }
             });
 
@@ -277,7 +277,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     if (err.message === 'Expected NoSuchVersion error') {
                         throw err;
                     }
-                    throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+                    throw new Error(`Expected success got error ${JSON.stringify(err)}`, { cause: err });
                 }
             });
 
@@ -297,7 +297,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     if (err.message === 'Expected InvalidObjectState error') {
                         throw err;
                     }
-                    throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+                    throw new Error(`Expected success got error ${JSON.stringify(err)}`, { cause: err });
                 }
             });
 
@@ -329,7 +329,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     if (err.message === 'Expected MethodNotAllowed error') {
                         throw err;
                     }
-                    throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+                    throw new Error(`Expected success got error ${JSON.stringify(err)}`, { cause: err });
                 }
             });
         });
@@ -374,7 +374,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
 
                     assert.deepStrictEqual(objMDAfter, objMDBefore);
                 } catch (err) {
-                    throw new Error(`Expected success got error ${JSON.stringify(err)}`);
+                    throw new Error(`Expected success got error ${JSON.stringify(err)}`, { cause: err });
                 }
             });
 

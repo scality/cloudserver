@@ -102,7 +102,7 @@ async function uploadParts(bytes, uploadId) {
                 );
                 return res;
             } catch (error) {
-                throw new Error(`Error uploading part ${part}: ${error.message}`);
+                throw new Error(`Error uploading part ${part}: ${error.message}`, { cause: error });
             }
         }),
     );

@@ -88,7 +88,7 @@ const sendRequest = async (method, host, path, body = '', config = null, signing
     try {
         response = await (nodeFetch.default || nodeFetch)(url, options);
     } catch (error) {
-        throw new Error(`HTTP request failed: ${error.message}`);
+        throw new Error(`HTTP request failed: ${error.message}`, { cause: error });
     }
     const text = await response.text();
 
