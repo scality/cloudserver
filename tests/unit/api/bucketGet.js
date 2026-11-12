@@ -23,7 +23,7 @@ const prefix = 'sub';
 const objectName1 = `${prefix}${delimiter}objectName1`;
 const objectName2 = `${prefix}${delimiter}objectName2`;
 const objectName3 = 'invalidURI~~~b';
-const objectName4 = `${objectName1}&><"\'`;
+const objectName4 = `${objectName1}&><"'`;
 const testPutBucketRequest = new DummyRequest(
     {
         bucketName,
