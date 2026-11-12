@@ -4,10 +4,6 @@ name: tests
 on:
   workflow_dispatch:
 
-  push:
-    branches-ignore:
-      - 'q/*/**'
-
 env:
   # Secrets
   azurebackend_AZURE_STORAGE_ACCESS_KEY: >-

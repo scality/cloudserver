@@ -18,6 +18,9 @@ jobs:
   review:
     if: github.event_name != 'pull_request_target' && github.actor != 'dependabot[bot]'
     uses: scality/workflows/.github/workflows/claude-code-review.yml@v2
+    with:
+      plugin_marketplaces: https://github.com/scality/agent-hub.git#improvement/PTFE-3551-update-review-skill
+      allowed-tools: '"Read"'
     secrets: inherit
 
   review-dependency-bump:
