@@ -87,8 +87,8 @@ if (process.env.GITHUB_STEP_SUMMARY) {
         [
             '## Async/Await Migration Progress',
             '',
-            `| Metric | Count |`,
-            `|--------|-------|`,
+            '| Metric | Count |',
+            '|--------|-------|',
             `| Total functions | ${totalFunctions} |`,
             `| Async functions | ${asyncFunctions} (${asyncFunctionPercent}%) |`,
             `| Callback-style functions | ${callbackFunctions} |`,

@@ -78,10 +78,10 @@ project.addSourceFilesAtPaths(filesToCheck);
 const violations = [];
 
 for (const sourceFile of project.getSourceFiles()) {
-    const filePath = sourceFile.getFilePath().replace(process.cwd() + '/', '');
+    const filePath = sourceFile.getFilePath().replace(`${process.cwd()  }/`, '');
     const addedLines = getAddedLineNumbers(filePath);
 
-    if (addedLines.size === 0) continue;
+    if (addedLines.size === 0) {continue;}
 
     const functions = [
         ...sourceFile.getDescendantsOfKind(SyntaxKind.FunctionDeclaration),
@@ -91,10 +91,10 @@ for (const sourceFile of project.getSourceFiles()) {
     ];
 
     for (const fn of functions) {
-        if (fn.isAsync()) continue;
+        if (fn.isAsync()) {continue;}
 
         const startLine = fn.getStartLineNumber();
-        if (!addedLines.has(startLine)) continue;
+        if (!addedLines.has(startLine)) {continue;}
 
         const params = fn.getParameters();
         const lastParam = params[params.length - 1];
