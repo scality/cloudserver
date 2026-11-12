@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { policies } = require('@scality/arsenal');
 
 const constants = {
     /*
@@ -239,6 +240,11 @@ const constants = {
     // Session name of the backbeat lifecycle assumed role session.
     backbeatLifecycleSessionName: 'backbeat-lifecycle',
     actionsToConsiderAsObjectPut: ['initiateMultipartUpload', 'objectPutPart', 'completeMultipartUpload'],
+    // API methods on bucket notification destinations, read from the Arsenal
+    // map of their actions so that the two never drift apart: they are
+    // authorized on the bucketnotif service, with the destination name as
+    // resource.
+    notificationDestinationApiMethods: new Set(Object.keys(policies.actionMaps.actionMapBucketNotif)),
     // if requester is not bucket owner, bucket policy actions should be denied with
     // MethodNotAllowed error
     onlyOwnerAllowed: [
