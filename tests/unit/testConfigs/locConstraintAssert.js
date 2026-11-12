@@ -199,7 +199,7 @@ describe('locationConstraintAssert', () => {
                 'us-east-1': usEast1,
                 'azurefaketest': locationConstraint,
             });
-        }, '/bad location constraint: "azurefaketest" azureStorageEndpoint ' + 'must be set in locationConfig or environment variable/');
+        }, '/bad location constraint: "azurefaketest" azureStorageEndpoint must be set in locationConfig or environment variable/');
     });
 
     it('should throw error if type is azure and azureStorageAccountName is not specified', () => {
@@ -215,7 +215,7 @@ describe('locationConstraintAssert', () => {
                 'us-east-1': usEast1,
                 'azurefaketest': locationConstraint,
             });
-        }, '/bad location constraint: "azurefaketest" azureStorageAccountName ' + 'must be set in locationConfig or environment variable/');
+        }, '/bad location constraint: "azurefaketest" azureStorageAccountName must be set in locationConfig or environment variable/');
     });
 
     it('should throw error if type is azure and azureStorageAccountName is invalid value', () => {
@@ -247,7 +247,7 @@ describe('locationConstraintAssert', () => {
                 'us-east-1': usEast1,
                 'azurefaketest': locationConstraint,
             });
-        }, '/bad location constraint: "azurefaketest" azureStorageAccessKey ' + 'must be set in locationConfig or environment variable/');
+        }, '/bad location constraint: "azurefaketest" azureStorageAccessKey must be set in locationConfig or environment variable/');
     });
 
     it('should throw error if type is azure and azureStorageAccessKey is not a valid base64 string', () => {
