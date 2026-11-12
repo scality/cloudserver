@@ -209,7 +209,7 @@ utils.waitForVersioningBeforePut = async (s3, bucket, callback) => {
 
     const waitForVersioning = (async () => {
         for (let attempt = 1; attempt <= MAX_VERSIONING_CHECKS; attempt++) {
-            let versioningEnabled = false;
+            let versioningEnabled;
             try {
                 const versioningResult = await s3.send(
                     new GetBucketVersioningCommand({
