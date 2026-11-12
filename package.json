@@ -141,7 +141,7 @@
         "ft_kmip_cluster": "cd tests/functional/sse-kms-migration && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 300000 load.js --exit",
         "ft_sse_cleanup": "cd tests/functional/sse-kms-migration && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 10000 cleanup.js --exit",
         "ft_sse_before_migration": "cd tests/functional/sse-kms-migration && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 10000 cleanup.js beforeMigration.js --exit",
-        "ft_sse_migration": "cd tests/functional/sse-kms-migration && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 10000 migration.js --exit",
+        "ft_sse_migration": "cd tests/functional/sse-kms-migration && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 10000 migration.js internalBucketKeys.js --exit",
         "ft_sse_arn": "cd tests/functional/sse-kms-migration && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 10000 cleanup.js arnPrefix.js --exit",
         "lint": "eslint $(git ls-files '*.js')",
         "lint_md": "mdlint $(git ls-files '*.md')",
