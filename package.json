@@ -155,8 +155,6 @@
         "postcover": "c8 report --reports-dir ./coverage/test --reporter=lcov",
         "count-async": "node .github/scripts/count-async-functions.mjs",
         "check-diff-async": "node .github/scripts/check-diff-async.mjs",
-        "prettier": "prettier",
-        "prettier:check": "prettier --check .",
-        "prettier:write": "prettier --write ."
+        "prettier:check": "prettier --check ."
     }
 }
