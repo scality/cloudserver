@@ -354,7 +354,7 @@ describe('versioned put and get object acl ::', () => {
             });
 
             it(
-                'should not create version putting ACL on a' +
+                'should not create version putting ACL on a ' +
                     'version-enabled bucket where no version id is specified',
                 async () => {
                     const params = { Bucket: bucket, Key: key, ACL: 'public-read' };

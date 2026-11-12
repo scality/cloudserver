@@ -34,8 +34,8 @@ describe('validate search where clause', () => {
             searchParams:
                 '`x-amz-meta-dog`="labrador" ' +
                 'AND `x-amz-meta-age`="5" ' +
-                'AND `content-length`="10"' +
-                'OR isDeleteMarker="true"' +
+                'AND `content-length`="10" ' +
+                'OR isDeleteMarker="true" ' +
                 'AND `x-amz-meta-whatever`="ok"',
             result: undefined,
         },
@@ -91,7 +91,7 @@ describe('validate search where clause', () => {
             searchParams:
                 '`x-amz-meta-dog`="labrador" ' +
                 'AND `x-amz-meta-age`="5" ' +
-                'OR madeUp="something"' +
+                'OR madeUp="something" ' +
                 'OR `x-amz-meta-whatever`="ok"',
             result: errorInstances.InvalidArgument.customizeDescription(
                 'Search param contains unknown attribute: madeUp',

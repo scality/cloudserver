@@ -390,7 +390,7 @@ describe('prepareRequestContexts', () => {
         );
 
         it(
-            `should return s3:PutObjectVersion request context action for ${apiMethod} method` +
+            `should return s3:PutObjectVersion request context action for ${apiMethod} method ` +
                 'with empty x-scal-s3-version-id header',
             () => {
                 const request = makeRequest({

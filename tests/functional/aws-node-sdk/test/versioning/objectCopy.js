@@ -543,7 +543,7 @@ describe('Object Version Copy', () => {
 
         // skipping test as object level encryption is not implemented yet
         it.skip(
-            'should copy an object and change the server side encryption' +
+            'should copy an object and change the server side encryption ' +
                 'option if server side encryption header provided',
             async () => {
                 await s3.send(

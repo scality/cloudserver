@@ -41,7 +41,7 @@ describe('Requests to ip endpoint not in config', () => {
         // localhost which is in config. Once integration is using
         // different machines we can update this.
         itSkipIfE2E(
-            'should show us-east-1 as bucket location sinceIP address ' +
+            'should show us-east-1 as bucket location since IP address ' +
                 'endpoint was not in config thereby defaulting to us-east-1',
             async () => {
                 const res = await s3.send(new GetBucketLocationCommand({ Bucket: bucket }));

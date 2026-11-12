@@ -1808,7 +1808,7 @@ describe('backbeat routes', () => {
         });
 
         it(
-            'should update null version if versioning suspended and null version has a version id and' +
+            'should update null version if versioning suspended and null version has a version id and ' +
                 'put object afterward',
             done => {
                 let objMD;
@@ -1965,7 +1965,7 @@ describe('backbeat routes', () => {
         );
 
         it(
-            'should update null version if versioning suspended and null version has a version id and' +
+            'should update null version if versioning suspended and null version has a version id and ' +
                 'put version afterward',
             done => {
                 let objMD;

@@ -212,7 +212,7 @@ describe('Object Copy', () => {
 
         it(
             'should copy an object from a source bucket to a different destination ' +
-                'bucket and copy the tag set if no tagging directiveheader provided',
+                'bucket and copy the tag set if no tagging directive header provided',
             done => {
                 s3.send(
                     new CopyObjectCommand({
@@ -884,7 +884,7 @@ describe('Object Copy', () => {
 
         // skipping test as object level encryption is not implemented yet
         it.skip(
-            'should copy an object and change the server side encryption' +
+            'should copy an object and change the server side encryption ' +
                 'option if server side encryption header provided',
             done => {
                 s3.send(

@@ -155,7 +155,7 @@ describeSkipIfNotMultiple('AWS backend complete mpu with versioning', function t
 
         it(
             'versioning not configured: if complete mpu on already-existing object, metadata ' +
-                'should be overwritten but data of previous versionin AWS should not be deleted',
+                'should be overwritten but data of previous version in AWS should not be deleted',
             function itF(done) {
                 const key = `somekey-${genUniqID()}`;
                 async.waterfall(
