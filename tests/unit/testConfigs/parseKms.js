@@ -82,6 +82,7 @@ describe('parseKms Function', () => {
             assert.strictEqual(entry.settings.transport.tls.host, 'kmip.example.com');
             assert.strictEqual(entry.settings.transport.tls.port, 5696);
             assert.strictEqual(entry.settings.transport.pipelineDepth, 8);
+            assert.strictEqual(entry.settings.transport.requestTimeoutMs, 5000);
             assert.deepStrictEqual(entry.settings.client, {
                 compoundCreateActivate: false,
                 bucketNameAttributeName: '',
@@ -111,7 +112,29 @@ describe('parseKms Function', () => {
                 endpoint: 'https://kms.example.com',
                 ak: 'accessKey',
                 sk: 'secretKey',
+                requestTimeoutMs: 5000,
             });
+        });
+
+        it('should apply the requestTimeoutMs of a kmip entry to every transport of its cluster', () => {
+            configInstance._parseKms({
+                kms: [
+                    {
+                        ...kmipEntry,
+                        requestTimeoutMs: 2000,
+                        transport: [{ tls: { host: 'kmip1' } }, { tls: { host: 'kmip2' } }],
+                    },
+                ],
+            });
+            assert.deepStrictEqual(
+                configInstance.kms[0].settings.transport.map(transport => transport.requestTimeoutMs),
+                [2000, 2000],
+            );
+        });
+
+        it('should apply the requestTimeoutMs of an aws_kms entry', () => {
+            configInstance._parseKms({ kms: [{ ...awsEntry, default: true, requestTimeoutMs: 2000 }] });
+            assert.strictEqual(configInstance.kms[0].settings.requestTimeoutMs, 2000);
         });
 
         it('should parse a file entry', () => {
@@ -216,6 +239,24 @@ describe('parseKms Function', () => {
                 () => configInstance._parseKms({ kms: [{ ...fileEntry, providerName: 'local', default: true }] }),
                 /file kms entry providerName must be "scality"/,
             );
+        });
+
+        [0, '2000'].forEach(requestTimeoutMs => {
+            it(`should reject requestTimeoutMs ${JSON.stringify(requestTimeoutMs)}`, () => {
+                assert.throws(
+                    () => configInstance._parseKms({ kms: [{ ...kmipEntry, requestTimeoutMs }] }),
+                    /kms entry requestTimeoutMs must be a positive integer/,
+                );
+            });
+        });
+
+        [{ ...fileEntry, default: true }, safeNetEntry].forEach(entry => {
+            it(`should reject requestTimeoutMs on a ${entry.protocol} entry`, () => {
+                assert.throws(
+                    () => configInstance._parseKms({ kms: [{ ...entry, requestTimeoutMs: 2000 }] }),
+                    /requestTimeoutMs is only for kmip and aws_kms kms entries/,
+                );
+            });
         });
 
         it('should reject a default that is not a boolean', () => {
@@ -342,6 +383,7 @@ describe('parseKms Function', () => {
             assert.strictEqual(settings.transport.tls.host, 'kmip.example.com');
             assert.strictEqual(settings.transport.tls.port, '5697');
             assert.strictEqual(settings.transport.pipelineDepth, '4');
+            assert.strictEqual(settings.transport.requestTimeoutMs, 5000);
             assert.deepStrictEqual(settings.client, {
                 compoundCreateActivate: true,
                 bucketNameAttributeName: 'bucket',

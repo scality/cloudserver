@@ -32,7 +32,7 @@
         "@opentelemetry/instrumentation-http": "~0.222.0",
         "@opentelemetry/instrumentation-ioredis": "~0.70.0",
         "@opentelemetry/instrumentation-mongodb": "~0.75.0",
-        "@scality/arsenal": "^8.6.1",
+        "@scality/arsenal": "git+https://github.com/scality/Arsenal#574ed2041c4a963e0c30a73e64c21d3807e5c0c9",
         "@scality/bucketclient": "scality/bucketclient#8.3.0",
         "@scality/cloudserverclient": "1.0.13",
         "@scality/scubaclient": "1.2.2",

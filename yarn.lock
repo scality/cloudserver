@@ -1305,7 +1305,7 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
-"@scality/arsenal@^8.6.0", "@scality/arsenal@^8.6.1":
+"@scality/arsenal@^8.6.0":
   version "8.6.1"
   resolved "https://registry.yarnpkg.com/@scality/arsenal/-/arsenal-8.6.1.tgz#f2db3ec8184646282872850d1cce3c16870f053c"
   integrity sha512-EwKYj0htAbDvDmu4h3EeIG1RwwxGCRvUixQN8NHx9bJIHS5qucQLvNCQ45BNR0q4MDIza3fyE6Xn7DF5hxBBUQ==
@@ -1324,6 +1324,52 @@
     "@opentelemetry/sdk-trace-base" "^2.12.0"
     "@scality/hdclient" "^1.3.2"
     "@smithy/node-http-handler" "^4.3.0"
+    "@smithy/protocol-http" "^5.3.5"
+    JSONStream "^1.3.5"
+    agentkeepalive "^4.6.0"
+    ajv "6.15.0"
+    async "~2.6.4"
+    base-x "3.0.11"
+    base62 "^2.0.2"
+    classic-level "^3.0.0"
+    debug "^4.4.3"
+    fcntl "github:scality/node-fcntl#0.3.1"
+    httpagent scality/httpagent#1.1.1
+    https-proxy-agent "^7.0.6"
+    ioredis "^5.8.1"
+    ipaddr.js "^2.2.0"
+    joi "^18.0.1"
+    mongodb "^6.20.0"
+    prom-client "^15.1.3"
+    simple-glob "^0.2.0"
+    socket.io "^4.8.0"
+    socket.io-client "^4.8.0"
+    sproxydclient "github:scality/sproxydclient#8.2.3"
+    utf8 "^3.0.0"
+    uuid "^11.1.0"
+    werelogs scality/werelogs#8.2.5
+    xml2js "^0.6.2"
+  optionalDependencies:
+    ioctl "^2.0.2"
+
+"@scality/arsenal@git+https://github.com/scality/Arsenal#574ed2041c4a963e0c30a73e64c21d3807e5c0c9":
+  version "8.6.3"
+  resolved "git+https://github.com/scality/Arsenal#574ed2041c4a963e0c30a73e64c21d3807e5c0c9"
+  dependencies:
+    "@aws-sdk/client-kms" "^3.975.0"
+    "@aws-sdk/client-s3" "^3.975.0"
+    "@aws-sdk/credential-providers" "^3.975.0"
+    "@aws-sdk/lib-storage" "^3.975.0"
+    "@azure/identity" "^4.13.0"
+    "@azure/storage-blob" "^12.31.0"
+    "@js-sdsl/ordered-set" "^4.4.2"
+    "@opentelemetry/api" "^1.9.1"
+    "@opentelemetry/exporter-trace-otlp-http" "^0.223.0"
+    "@opentelemetry/resources" "^2.12.0"
+    "@opentelemetry/sdk-node" "^0.223.0"
+    "@opentelemetry/sdk-trace-base" "^2.12.0"
+    "@scality/hdclient" "^1.3.2"
+    "@smithy/node-http-handler" "^4.4.0"
     "@smithy/protocol-http" "^5.3.5"
     JSONStream "^1.3.5"
     agentkeepalive "^4.6.0"
@@ -1575,7 +1621,7 @@
     "@smithy/types" "^3.7.2"
     tslib "^2.6.2"
 
-"@smithy/node-http-handler@^4.12.1", "@smithy/node-http-handler@^4.3.0":
+"@smithy/node-http-handler@^4.12.1", "@smithy/node-http-handler@^4.3.0", "@smithy/node-http-handler@^4.4.0":
   version "4.13.0"
   resolved "https://registry.yarnpkg.com/@smithy/node-http-handler/-/node-http-handler-4.13.0.tgz#cc26fbea5572a482b35cb43ca55c0d182e4eff70"
   integrity sha512-/GGcPoNJ2nzGytdAanpbx7mpp9Coa8LP+/Rpmbktr8YeLuIXs9B0SEz+X3AeonHdyzOIFJdKbN7jOZ+Tj+pMGw==
@@ -4102,7 +4148,7 @@ http2-wrapper@^1.0.0-beta.5.2:
 "httpagent@git+https://github.com/scality/httpagent#1.1.1":
   version "1.1.1"
   uid "7c6ef8be1cd89b56651f4a922ea5c92d7673ee2e"
-  resolved "git+https://github.com/scality/httpagent#7c6ef8be1cd89b56651f4a922ea5c92d7673ee2e"
+  resolved "https://codeload.github.com/scality/httpagent/tar.gz/7c6ef8be1cd89b56651f4a922ea5c92d7673ee2e"
   dependencies:
     agentkeepalive "^4.6.0"
 

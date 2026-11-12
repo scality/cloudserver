@@ -12,6 +12,12 @@
         {
             "protocol": "file",
             "providerName": "scality"
+        },
+        {
+            "protocol": "kmip",
+            "providerName": "silent",
+            "requestTimeoutMs": 1000,
+            "transport": { "tls": { "host": "127.0.0.1", "port": 5697 } }
         }
     ]
 }
