@@ -129,7 +129,7 @@ describe('validateReplicationConfig function', () => {
         },
     );
 
-    it('should validate configuration when bucket location is transient and preferred read location is specified', () => {
+    it('should validate configuration when bucket location is transient and preferred read is set', () => {
         const withPreferredRead = {
             role: 'arn:aws:iam::account-id:role/src-resource,arn:aws:iam::account-id:role/dest-resource',
             destination: 'arn:aws:s3:::destination-bucket',

@@ -197,7 +197,7 @@ describe('Get object tagging with versioning', () => {
             );
         });
 
-        it('should return 404 NoSuchKey getting tag without version id if version specified is a delete marker', done => {
+        it('should return 404 NoSuchKey getting tag without version id if latest is a delete marker', done => {
             async.waterfall(
                 [
                     next =>

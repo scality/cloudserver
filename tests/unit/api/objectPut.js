@@ -143,7 +143,7 @@ describe('objectPut API', () => {
         });
     });
 
-    it('should return error if the upload size exceeds the maximum allowed upload size for a single PUT request', done => {
+    it('should return error if the upload size exceeds the maximum size of a single PUT request', done => {
         testPutObjectRequest.parsedContentLength = maximumAllowedUploadSize + 1;
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log, err => {

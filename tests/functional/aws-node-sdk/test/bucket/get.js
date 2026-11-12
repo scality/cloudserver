@@ -917,7 +917,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                     await bucketUtil.s3.send(new DeleteBucketPolicyCommand({ Bucket: bucketName })).catch(() => {});
                 });
 
-                it('should allow when the bucket policy supplies scality:ListBucketOptionalObjectAttributes that IAM lacks', async () => {
+                it('should allow ListBucketOptionalObjectAttributes granted only by the bucket policy', async () => {
                     await bucketUtil.s3.send(
                         new PutBucketPolicyCommand({
                             Bucket: bucketName,

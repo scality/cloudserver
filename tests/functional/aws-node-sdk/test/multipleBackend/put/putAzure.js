@@ -108,7 +108,7 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', function descri
                     });
             });
 
-            it('should put an object to Azure, with no object location header, based on bucket location', function it(done) {
+            it('should put an object to Azure, without location header, based on bucket location', function it(done) {
                 const params = {
                     Bucket: azureContainerName,
                     Key: this.test.keyName,
@@ -225,7 +225,7 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', function descri
                     });
             });
 
-            it('should put two objects to Azure with same key, and newest object should be returned', function itF(done) {
+            it('should put two objects to Azure with the same key, and return the newest', function itF(done) {
                 const params = {
                     Bucket: azureContainerName,
                     Key: this.test.keyName,
@@ -254,7 +254,7 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', function descri
                 );
             });
 
-            it('should put objects with same key to Azure then file, and object should only be present in file', function itF(done) {
+            it('should put the same key to Azure then file, and keep the object in file only', function itF(done) {
                 const params = {
                     Bucket: azureContainerName,
                     Key: this.test.keyName,
@@ -305,7 +305,7 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', function descri
                 );
             });
 
-            it('should put objects with same key to file then Azure, and object should only be present on Azure', function itF(done) {
+            it('should put the same key to file then Azure, and keep the object on Azure only', function itF(done) {
                 const params = {
                     Bucket: azureContainerName,
                     Key: this.test.keyName,

@@ -226,7 +226,7 @@ describe('checksum stored in object metadata after PutObject', () => {
         );
     });
 
-    it('should store crc32 checksum in metadata when no explicit checksum header is provided (AWS SDK default)', done => {
+    it('should store crc32 checksum in metadata when no checksum header is provided (AWS SDK default)', done => {
         makeMetadataRequest(
             {
                 method: 'GET',

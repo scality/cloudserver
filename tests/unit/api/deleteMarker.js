@@ -130,7 +130,7 @@ describe('delete marker creation', () => {
         });
     }
 
-    it('should create a delete marker if versioning enabled and deleting object without specifying version id', done => {
+    it('should create a delete marker if versioning enabled and deleting object without version id', done => {
         objectDelete(authInfo, testDeleteRequest, log, (err, delResHeaders) => {
             if (err) {
                 return done(err);

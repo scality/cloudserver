@@ -101,7 +101,7 @@ describe('streaming V4 signature with bad chunk signature', () => {
 
     before(done => createBucket(bucketUtil, done));
     after(done => cleanupBucket(bucketUtil, done));
-    it('Cloudserver should be robust against bad signature in streaming payload', function badSignatureInStreamingPayload(cb) {
+    it('should be robust against bad signature in streaming payload', function badSignatureInStreamingPayload(cb) {
         this.timeout(120000);
         async.timesLimit(
             N_PUTS,

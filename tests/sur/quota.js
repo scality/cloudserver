@@ -1159,7 +1159,7 @@ function multiObjectDelete(bucket, keys, size, callback) {
         );
     });
 
-    it('should only evaluate quota and not update inflights for PutObject with the x-scal-s3-version-id header', done => {
+    it('should only evaluate quota, not update inflights, for PutObject with x-scal-s3-version-id header', done => {
         const bucket = 'quota-test-bucket13';
         const key = 'quota-test-object';
         const size = 100;

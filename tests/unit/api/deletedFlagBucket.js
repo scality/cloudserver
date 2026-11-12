@@ -366,21 +366,21 @@ describe('deleted flag bucket handling', () => {
         });
     });
 
-    it('bucketGetACL request on bucket with delete flag should return NoSuchBucket error and complete deletion', done => {
+    it('bucketGetACL on bucket with delete flag should return NoSuchBucket error and complete deletion', done => {
         bucketGetACL(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             confirmDeleted(done);
         });
     });
 
-    it('bucketGetCors request on bucket with delete flag should return NoSuchBucket error and complete deletion', done => {
+    it('bucketGetCors on bucket with delete flag should return NoSuchBucket error and complete deletion', done => {
         bucketGetCors(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             confirmDeleted(done);
         });
     });
 
-    it('bucketPutCors request on bucket with delete flag should return NoSuchBucket error and complete deletion', done => {
+    it('bucketPutCors on bucket with delete flag should return NoSuchBucket error and complete deletion', done => {
         const bucketPutCorsRequest = createAlteredRequest({}, 'headers', baseTestRequest, baseTestRequest.headers);
         bucketPutCorsRequest.post =
             '<CORSConfiguration><CORSRule>' +
@@ -511,21 +511,21 @@ describe('deleted flag bucket handling', () => {
         });
     });
 
-    it('objectGetACL request on bucket with deleted flag should return NoSuchBucket error and complete deletion', done => {
+    it('objectGetACL on bucket with deleted flag should return NoSuchBucket error and complete deletion', done => {
         objectGetACL(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             confirmDeleted(done);
         });
     });
 
-    it('objectHead request on bucket with deleted flag should return NoSuchBucket error and complete deletion', done => {
+    it('objectHead on bucket with deleted flag should return NoSuchBucket error and complete deletion', done => {
         objectHead(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             confirmDeleted(done);
         });
     });
 
-    it('objectPutACL request on bucket with deleted flag should return NoSuchBucket error and complete deletion', done => {
+    it('objectPutACL on bucket with deleted flag should return NoSuchBucket error and complete deletion', done => {
         objectPutACL(authInfo, baseTestRequest, log, err => {
             assert.strictEqual(err.is.NoSuchBucket, true);
             confirmDeleted(done);

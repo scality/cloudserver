@@ -28,7 +28,7 @@ const hostname = process.env.S3_END_TO_END
 const endpoint = process.env.AWS_ON_AIR ? `${transport}://${hostname}` : `${transport}://${hostname}:8000`;
 const redirectEndpoint = conf.https ? 'https://www.google.com/' : 'http://www.google.com/';
 
-describe('User visits bucket website endpoint and requests resource that has x-amz-website-redirect-location header ::', () => {
+describe('User requests a website resource that has an x-amz-website-redirect-location header ::', () => {
     beforeEach(async () => await s3.send(new CreateBucketCommand({ Bucket: bucket })));
 
     afterEach(async () => await s3.send(new DeleteBucketCommand({ Bucket: bucket })));

@@ -329,7 +329,7 @@ describeSkipIfE2E('ObjectCopyPutPart API with multiple backends', function testS
     );
 
     // FIXME: does not pass, see CLDSRV-442
-    it.skip('should return error 403 AccessDenied copying part to a different AWS location without object READ access', done => {
+    it.skip('should return 403 AccessDenied copying part to another AWS location without READ access', done => {
         copyPutPart(null, awsLocation, awsLocation2, 'localhost', done, errors.AccessDenied);
     });
 

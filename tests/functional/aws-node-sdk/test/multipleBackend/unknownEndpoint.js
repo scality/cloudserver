@@ -32,7 +32,7 @@ describe('Requests to ip endpoint not in config', () => {
             await bucketUtil.deleteOne(bucket);
         });
 
-        it('should accept put bucket request to IP address endpoint that is not in config using path style', async () => {
+        it('should accept put bucket request to IP address endpoint not in config using path style', async () => {
             await s3.send(new CreateBucketCommand({ Bucket: bucket }));
         });
 
@@ -58,7 +58,7 @@ describe('Requests to ip endpoint not in config', () => {
             },
         );
 
-        it('should accept get object request to IP address endpoint that is not in config using path style', async () => {
+        it('should accept get object request to IP address endpoint not in config using path style', async () => {
             const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
             assert.strictEqual(res.ETag, expectedETag);
         });

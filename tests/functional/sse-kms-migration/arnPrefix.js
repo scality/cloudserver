@@ -147,7 +147,7 @@ describe('SSE KMS arnPrefix', () => {
                     it('GetBucketEncryption should return ServerSideEncryptionConfigurationNotFoundError', async () =>
                         await scenarios.tests.getBucketSSEError(bkt.name));
                     if (!bktConf.deleteSSE) {
-                        it('should have non mandatory SSE in bucket MD as test init put an object with AES256', async () =>
+                        it('should have non mandatory SSE in bucket MD as test init put an AES256 object', async () =>
                             await scenarios.tests.getBucketNonMandatorySSE(bkt.name, log, 'after'));
                     }
                 }

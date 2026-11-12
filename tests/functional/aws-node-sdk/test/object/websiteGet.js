@@ -313,7 +313,7 @@ describe('User visits bucket website endpoint', () => {
             });
         });
 
-        describe.skip('redirect all requests to https://www.google.com since https protocol set in website config', () => {
+        describe.skip('redirect all requests to https://www.google.com since website config sets https', () => {
             // Note: these tests will all redirect to https even if
             // conf does not have https since protocol in website config
             // specifies https

@@ -84,7 +84,7 @@ describe('More MPU tests', () => {
         });
 
         testsOrder.forEach(testOrder => {
-            it(`should complete MPU by concatenating the parts in the following order: ${testOrder.values}`, async function itF() {
+            it(`should concatenate the MPU parts in order: ${testOrder.values}`, async function itF() {
                 try {
                     await s3.send(
                         new CompleteMultipartUploadCommand({

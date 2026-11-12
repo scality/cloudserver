@@ -317,7 +317,7 @@ describe('Object Version Copy', () => {
             await successCopyCheck(null, res, newMetadata, sourceBucketName, sourceObjName);
         });
 
-        it('should copy an object and replace the metadata if replace included as metadata directive header', async () => {
+        it('should copy an object and replace the metadata if the metadata directive is replace', async () => {
             const res = await s3.send(
                 new CopyObjectCommand({
                     Bucket: destBucketName,
@@ -559,7 +559,7 @@ describe('Object Version Copy', () => {
             },
         );
 
-        it('should return Not Implemented error for obj. encryption using customer-provided encryption keys', async () => {
+        it('should return Not Implemented error for obj. encryption using customer-provided keys', async () => {
             const params = {
                 Bucket: destBucketName,
                 Key: 'key',
@@ -742,7 +742,7 @@ describe('Object Version Copy', () => {
                 await otherAccountBucketUtility.deleteOne(otherAccountBucket);
             });
 
-            it('should not allow an account without read permission on the source object to copy the object', async () => {
+            it('should not allow an account without read permission on the source object to copy it', async () => {
                 try {
                     await otherAccountS3.send(
                         new CopyObjectCommand({
@@ -866,7 +866,7 @@ describe('Object Version Copy', () => {
             }
         });
 
-        it('If-None-Match: returns NotModified when one of ETags match, without double quotes around ETag', async () => {
+        it('If-None-Match: returns NotModified when one of the ETags matches, unquoted', async () => {
             try {
                 await requestCopy({ CopySourceIfNoneMatch: `non-matching,${etagTrim}` });
                 assert.fail('Expected error');

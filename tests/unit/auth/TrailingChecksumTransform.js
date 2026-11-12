@@ -261,7 +261,7 @@ describe('TrailingChecksumTransform class', () => {
 
     describe('TrailingChecksumTransform trailer parsing and emitting', () => {
         describe('happy path', () => {
-            it('should forward data and emit trailer name and value for single chunk with data and trailer', async () => {
+            it('should forward data and emit trailer name and value for one chunk with data and trailer', async () => {
                 const input = '5\r\nhello\r\n0\r\nx-amz-checksum-crc32:AAAAAA==\r\n';
                 const { data, trailers } = await runTransform([input]);
                 assert.strictEqual(data.toString(), 'hello');
@@ -270,7 +270,7 @@ describe('TrailingChecksumTransform class', () => {
                 assert.strictEqual(trailers[0].value, 'AAAAAA==');
             });
 
-            it('should forward all data and emit trailer once for multiple data chunks followed by trailer', async () => {
+            it('should forward all data and emit trailer once for several data chunks then trailer', async () => {
                 const input = '5\r\nhello\r\n5\r\nworld\r\n0\r\nx-amz-checksum-sha256:AAAAAA==\r\n';
                 const { data, trailers } = await runTransform([input]);
                 assert.strictEqual(data.toString(), 'helloworld');
@@ -401,7 +401,7 @@ describe('TrailingChecksumTransform class', () => {
                 assert.deepStrictEqual(err, errors.IncompleteBody);
             });
 
-            it('should return IncompleteBody error when stream ends after zero-chunk with partial trailer content', async () => {
+            it('should return IncompleteBody when stream ends after zero-chunk with partial trailer', async () => {
                 // zero-chunk received, trailer starts but no \r\n terminator
                 const err = await expectError(['0\r\nx-amz-checksum-crc32:AAAAAA==']);
                 assert.deepStrictEqual(err, errors.IncompleteBody);
@@ -419,18 +419,18 @@ describe('TrailingChecksumTransform class', () => {
                 assert.deepStrictEqual(err, errors.IncompleteBody);
             });
 
-            it('should return IncompleteBody when stream ends in READ_CHUNK_DATA_CR (all data read, no trailing CR)', async () => {
+            it('should return IncompleteBody when stream ends in READ_CHUNK_DATA_CR (no trailing CR)', async () => {
                 // exactly 5 bytes of data — state is READ_CHUNK_DATA_CR when stream ends
                 const err = await expectError(['5\r\nhello']);
                 assert.deepStrictEqual(err, errors.IncompleteBody);
             });
 
-            it('should return IncompleteBody when stream ends in READ_CHUNK_DATA_LF (trailing CR seen, no LF)', async () => {
+            it('should return IncompleteBody when stream ends in READ_CHUNK_DATA_LF (no LF)', async () => {
                 const err = await expectError(['5\r\nhello\r']);
                 assert.deepStrictEqual(err, errors.IncompleteBody);
             });
 
-            it('should return IncompleteBody when stream ends in READ_TRAILER_CHECKSUM_LF (trailing CR seen, no LF)', async () => {
+            it('should return IncompleteBody when stream ends in READ_TRAILER_CHECKSUM_LF (no LF)', async () => {
                 const err = await expectError(['0\r\nx-amz-checksum-crc32:AAAAAA==\r']);
                 assert.deepStrictEqual(err, errors.IncompleteBody);
             });
@@ -467,7 +467,7 @@ describe('TrailingChecksumTransform class', () => {
                 assert.deepStrictEqual(err, errors.IncompleteBody);
             });
 
-            it('should return IncompleteBody error for trailer line with colon at position 0 (empty name)', async () => {
+            it('should return IncompleteBody error for trailer line with colon at position 0 (no name)', async () => {
                 const err = await expectError(['0\r\n:value\r\n']);
                 assert.deepStrictEqual(err, errors.IncompleteBody);
             });

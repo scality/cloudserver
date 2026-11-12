@@ -208,7 +208,7 @@ describe('get behavior on versioning-enabled bucket', () => {
                 assert.strictEqual(data.VersionId, putVersionId);
             });
 
-            it('should return NoSuchKey if get object without version and latest version is a delete marker', async () => {
+            it('should return NoSuchKey getting object without version if latest is a delete marker', async () => {
                 try {
                     await s3.send(
                         new GetObjectCommand({

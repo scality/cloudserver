@@ -193,7 +193,7 @@ describe('s3curl put delete buckets', () => {
             );
         });
 
-        it('should not be able to put a bucket with xml that does not conform to s3 docs for locationConstraint', done => {
+        it('should not be able to put a bucket with xml not conforming to s3 docs for locationConstraint', done => {
             provideRawOutput(
                 ['--createBucket', '--', '--data', '<Hello>a</Hello>', bucketPath, '-v'],
                 (httpCode, rawOutput) => {

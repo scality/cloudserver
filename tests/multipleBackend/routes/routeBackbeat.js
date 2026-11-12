@@ -4167,7 +4167,7 @@ describe('backbeat routes', () => {
             );
         });
 
-        it('should put tags if the source is Azure and tags are provided when completing the multipart upload', done => {
+        it('should put tags if the source is Azure and tags are given when completing the multipart upload', done => {
             const containerName = getAzureContainerName(azureLocation);
             const blob = uuidv4();
             const multipleBackendPath = `/_/backbeat/multiplebackenddata/${containerName}/${blob}`;

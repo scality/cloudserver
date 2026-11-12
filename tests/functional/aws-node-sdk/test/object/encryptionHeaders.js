@@ -263,7 +263,7 @@ describe('per object encryption headers', () => {
                                         assert.strictEqual(
                                             putResp.ServerSideEncryption,
                                             existing.algo,
-                                            'PutObject response should include ServerSideEncryption from bucket default',
+                                            'PutObject response should have the bucket default ServerSideEncryption',
                                         );
                                     }
                                     return getSSEConfig(s3, bucket, object, (error, sseConfig) => {

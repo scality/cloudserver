@@ -133,7 +133,7 @@ describe('Preflight CORS request with existing bucket', () => {
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 'AccessForbidden', headersResponse: null }, done);
         });
-        it('should respond AccessForbidden to OPTIONS request with not allowed Access-Control-Request-Headers', done => {
+        it('should respond AccessForbidden to OPTIONS request with disallowed Access-Control-Request-Headers', done => {
             const headers = {
                 'Origin': 'http://www.forbiddenwebsite.com',
                 'Access-Control-Request-Method': 'GET',
@@ -183,7 +183,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 methodRequest({ method: 'OPTIONS', bucket, headers, code: 200, headersResponse }, done);
             },
         );
-        it('should respond AccessForbidden to OPTIONS request with allowed method but not from allowed origin', done => {
+        it('should respond AccessForbidden to OPTIONS request with allowed method but disallowed origin', done => {
             const headers = {
                 'Origin': 'http://www.forbiddenwebsite.com',
                 'Access-Control-Request-Method': 'GET',

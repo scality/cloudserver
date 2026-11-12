@@ -547,7 +547,7 @@ describe('Object Copy', () => {
             await successCopyCheck(null, res.CopyObjectResult, newMetadata, sourceBucketName, sourceObjName);
         });
 
-        it('should copy an object and replace the metadata if replace included as metadata directive header', async () => {
+        it('should copy an object and replace the metadata if the metadata directive is replace', async () => {
             const res = await s3.send(
                 new CopyObjectCommand({
                     Bucket: destBucketName,
@@ -1307,7 +1307,7 @@ describe('Object Copy', () => {
             });
         });
 
-        it('If-None-Match: returns PreconditionFailed when one of ETags match, with double quotes around ETag', done => {
+        it('If-None-Match: returns PreconditionFailed when one of the ETags matches, quoted', done => {
             requestCopy(
                 {
                     CopySourceIfNoneMatch: `non-matching,${etag}`,
@@ -1326,7 +1326,7 @@ describe('Object Copy', () => {
             });
         });
 
-        it('If-None-Match: returns PreconditionFailed when one of ETags match, without double quotes around ETag', done => {
+        it('If-None-Match: returns PreconditionFailed when one of the ETags matches, unquoted', done => {
             requestCopy(
                 {
                     CopySourceIfNoneMatch: `non-matching,${etagTrim}`,

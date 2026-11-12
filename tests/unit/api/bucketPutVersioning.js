@@ -97,7 +97,7 @@ describe('bucketPutVersioning API', () => {
                 output: { Status: 'Enabled' },
             },
             {
-                msg: 'should successfully suspend versioning on location constraint with supportsVersioning set to true',
+                msg: 'should suspend versioning on location constraint with supportsVersioning set to true',
                 input: xmlSuspendVersioning,
                 output: { Status: 'Suspended' },
             },

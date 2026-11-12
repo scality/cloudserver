@@ -357,7 +357,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy: Azure', function testSui
             });
         });
 
-        it('should copy an object from Azure to mem with "REPLACE" directive and no location constraint md', function itFn(done) {
+        it('should copy an object from Azure to mem with REPLACE directive and no location md', function itFn(done) {
             putSourceObj(this.test.key, azureLocation, null, bucket, () => {
                 const copyParams = {
                     Bucket: bucket,
@@ -385,7 +385,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy: Azure', function testSui
             });
         });
 
-        it('should copy an object from mem to Azure with "REPLACE" directive and no location constraint md', function itFn(done) {
+        it('should copy an object from mem to Azure with REPLACE directive and no location md', function itFn(done) {
             putSourceObj(this.test.key, null, null, bucket, () => {
                 const copyParams = {
                     Bucket: bucketAzure,
@@ -506,7 +506,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy: Azure', function testSui
             });
         });
 
-        it('should copy an object on Azure to a different Azure account without source object READ access', function itFn(done) {
+        it('should copy an Azure object to another Azure account without source READ access', function itFn(done) {
             putSourceObj(this.test.key, azureLocation2, null, bucket, () => {
                 const copyParams = {
                     Bucket: bucket,
@@ -535,7 +535,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy: Azure', function testSui
             });
         });
 
-        it('should copy a 5MB object on Azure to a different Azure account without source object READ access', function itFn(done) {
+        it('should copy a 5MB Azure object to another Azure account without source READ access', function itFn(done) {
             putSourceObj(this.test.key, azureLocation2, { big: true }, bucket, () => {
                 const copyParams = {
                     Bucket: bucket,

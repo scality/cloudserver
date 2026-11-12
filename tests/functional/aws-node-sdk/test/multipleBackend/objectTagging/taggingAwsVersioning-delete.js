@@ -58,7 +58,7 @@ describeSkipIfNotMultiple('AWS backend object delete tagging with versioning ', 
             });
         });
 
-        it('versioning not configured: should delete a tag set on the latest version if no version is specified', done => {
+        it('versioning not configured: should delete a tag set on the latest version if none specified', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall(
                 [
@@ -247,7 +247,7 @@ describeSkipIfNotMultiple('AWS backend object delete tagging with versioning ', 
             );
         });
 
-        it('versioning suspended then enabled: should delete a tag set on a specific version (null) if specified', done => {
+        it('versioning suspended then enabled: should delete a tag set on a specific version (null)', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall(
                 [

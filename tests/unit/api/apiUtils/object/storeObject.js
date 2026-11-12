@@ -206,7 +206,7 @@ describe('dataStore', () => {
             });
         });
 
-        it('should wait for finish before validating when checksumedStream is not yet writableFinished after data.put', done => {
+        it('should wait for finish to validate if checksumedStream is not writableFinished after data.put', done => {
             let capturedStream;
             putStub.callsFake((cipher, stream, size, ctx, backend, log2, cb) => {
                 capturedStream = stream;
@@ -232,7 +232,7 @@ describe('dataStore', () => {
             });
         });
 
-        it('should delete stored data and call cb with the error when checksumedStream emits error after data.put', done => {
+        it('should delete stored data and call cb with the error if checksumedStream errors after data.put', done => {
             batchDeleteSucceeds();
             let capturedStream;
             putStub.callsFake((cipher, stream, size, ctx, backend, log2, cb) => {
@@ -362,7 +362,7 @@ describe('dataStore', () => {
     });
 
     describe('x-amz-content-sha256 body validation', () => {
-        it('should call cb with XAmzContentSHA256Mismatch and delete stored data when the hash does not match', done => {
+        it('should call cb with XAmzContentSHA256Mismatch and delete stored data when the hash mismatches', done => {
             batchDeleteSucceeds();
             putSucceeds();
             const request = makeStream({ 'authorization': sigV4Auth, 'x-amz-content-sha256': wrongHex }, 'hello world');
@@ -403,7 +403,7 @@ describe('dataStore', () => {
             });
         });
 
-        it('should call cb with XAmzContentSHA256Mismatch when the hash mismatches and batchDelete also fails', done => {
+        it('should call cb with XAmzContentSHA256Mismatch when the hash mismatches and batchDelete fails', done => {
             batchDeleteStub.callsFake((keys, a, b, log2, cb) => cb(errors.InternalError));
             putSucceeds();
             const request = makeStream({ 'authorization': sigV4Auth, 'x-amz-content-sha256': wrongHex }, 'hello world');
@@ -512,7 +512,7 @@ describe('dataStore', () => {
             });
         });
 
-        it('should call cb with stream error when checksumedStream errors after data.put and batchDelete also fails', done => {
+        it('should call cb with stream error if checksumedStream errors after data.put and batchDelete fails', done => {
             batchDeleteStub.callsFake((keys, a, b, log2, cb) => cb(errors.BadRequest));
             let capturedStream;
             putStub.callsFake((cipher, stream, size, ctx, backend, log2, cb) => {

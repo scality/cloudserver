@@ -44,7 +44,7 @@ describe('PUT object', () => {
             await bucketUtil.deleteOne(bucket);
         });
 
-        it('should return Not Implemented error for obj. encryption using customer-provided encryption keys', async () => {
+        it('should return Not Implemented error for obj. encryption using customer-provided keys', async () => {
             const params = {
                 Bucket: bucket,
                 Key: 'key',

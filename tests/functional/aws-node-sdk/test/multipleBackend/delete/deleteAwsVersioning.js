@@ -533,7 +533,7 @@ describeSkipIfNotMultiple(
                 },
             );
 
-            it('multiple delete markers: should get NoSuchObject if only one of the delete markers is deleted', done => {
+            it('multiple delete markers: should get NoSuchObject if only one delete marker is deleted', done => {
                 const key = `somekey-${genUniqID()}`;
                 async.waterfall(
                     [
@@ -584,7 +584,7 @@ describeSkipIfNotMultiple(
                 );
             });
 
-            it('should delete the correct version even if other versions or delete markers put directly on aws', done => {
+            it('should delete the correct version even if other versions or delete markers are put on aws', done => {
                 const key = `somekey-${genUniqID()}`;
                 async.waterfall(
                     [
@@ -630,7 +630,7 @@ describeSkipIfNotMultiple(
                 );
             });
 
-            it('should not return an error deleting a version that was already deleted directly from AWS backend', done => {
+            it('should not return an error deleting a version already deleted directly from AWS backend', done => {
                 const key = `somekey-${genUniqID()}`;
                 async.waterfall(
                     [

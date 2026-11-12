@@ -183,7 +183,7 @@ describe('put and get object with versioning', function testSuite() {
                 eTags.length = 0;
             });
 
-            it('should get null (latest) version in versioning enabled bucket when version id is not specified', async () => {
+            it('should get null (latest) version in versioning enabled bucket when no version id given', async () => {
                 const res = await s3.send(
                     new GetObjectCommand({
                         Bucket: bucket,
@@ -447,7 +447,7 @@ describe('put and get object with versioning', function testSuite() {
                 eTags.length = 0;
             });
 
-            it('should get null version (latest) in versioning suspended bucket without specifying version id', async () => {
+            it('should get null version (latest) in versioning suspended bucket without version id', async () => {
                 const res = await s3.send(
                     new GetObjectCommand({
                         Bucket: bucket,

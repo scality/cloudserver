@@ -469,12 +469,12 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
             await assert.rejects(putObject(bucket, objectName), assertRefusedNamingOnlyTheKey);
         }
 
-        it('should store the key of PutBucketEncryption on a bucket without a bucket key, and refuse writes', async () => {
+        it('should store the PutBucketEncryption key on a bucket without a bucket key, and refuse writes', async () => {
             await putBucketEncryption(bucketName, keyArn);
             await assertStoredAndRefusedOnWrite(bucketName);
         });
 
-        it('should store the key of PutBucketEncryption on a bucket with a bucket key, and refuse writes', async () => {
+        it('should store the PutBucketEncryption key on a bucket with a bucket key, and refuse writes', async () => {
             const encryptedBucketName = `${bucketName}2`;
             await createBucket(encryptedBucketName, true);
             await putBucketEncryption(encryptedBucketName, keyArn);

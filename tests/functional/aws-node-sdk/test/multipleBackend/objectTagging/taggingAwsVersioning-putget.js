@@ -59,7 +59,7 @@ describeSkipIfNotMultiple('AWS backend object put/get tagging with versioning', 
             });
         });
 
-        it('versioning not configured: should put/get a tag set on the latest version if no version is specified', done => {
+        it('versioning not configured: should put/get a tag set on the latest version if none specified', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall(
                 [
@@ -236,7 +236,7 @@ describeSkipIfNotMultiple('AWS backend object put/get tagging with versioning', 
             );
         });
 
-        it('versioning enabled: should put/get a tag set on a specific version that is not the latest version', done => {
+        it('versioning enabled: should put/get a tag set on a specific version that is not the latest', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall(
                 [

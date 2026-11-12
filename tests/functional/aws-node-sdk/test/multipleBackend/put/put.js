@@ -381,7 +381,7 @@ describeSkipIfNotMultiple('MultipleBackend put object', function testSuite() {
                     await awsGetCheck(key, bigS3MD5, bigAWSMD5, awsLocation);
                 });
 
-                it('should put objects with same key to AWS then file, and object should only be present in file', async () => {
+                it('should put the same key to AWS then file, and keep the object in file only', async () => {
                     const key = `somekey-${genUniqID()}`;
                     const params = {
                         Bucket: bucket,
@@ -411,7 +411,7 @@ describeSkipIfNotMultiple('MultipleBackend put object', function testSuite() {
                     return await getAwsError(key, 'NoSuchKey');
                 });
 
-                it('should put objects with same key to file then AWS, and object should only be present on AWS', async () => {
+                it('should put the same key to file then AWS, and keep the object on AWS only', async () => {
                     const key = `somekey-${genUniqID()}`;
                     const params = {
                         Bucket: bucket,

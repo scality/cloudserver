@@ -306,7 +306,7 @@ describe('Object Part Copy with Versioning', () => {
                 },
             );
 
-            it('copy part with specific version id should return InvalidRequest if that id is a delete marker', done => {
+            it('copy part with specific version id should return InvalidRequest if it is a delete marker', done => {
                 async.waterfall(
                     [
                         next =>
@@ -404,7 +404,7 @@ describe('Object Part Copy with Versioning', () => {
                     .catch(done);
             });
 
-            it('copy part with specific version "null" should return copy source version id "null" if it exists', done => {
+            it('copy part with specific version "null" should return copy source version id "null" if found', done => {
                 s3.send(
                     new UploadPartCopyCommand({
                         Bucket: destBucket,

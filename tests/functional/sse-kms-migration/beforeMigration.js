@@ -519,7 +519,7 @@ describe('SSE KMS before migration', () => {
         }),
     );
 
-    it('should prepare encrypted MPU and copy parts from every buckets and objects matrice without completion', async () => {
+    it('should prepare encrypted MPU and copy parts from every bucket and object without completion', async () => {
         await helpers.s3.putBucketEncryption({
             Bucket: mpuCopyBkt,
             // AES256 because input key is broken for now

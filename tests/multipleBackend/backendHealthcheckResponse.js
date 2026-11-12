@@ -81,7 +81,7 @@ describe('Healthcheck response', function describeHealthcheck() {
             await azureClient.getContainerClient(containerName).deleteIfExists();
         });
 
-        it("should create an azure location's container if it is missing and the check is a flightCheckOnStartUp", done => {
+        it('should create a missing azure location container when the check is a flightCheckOnStartUp', done => {
             clientCheck(true, log, (err, results) => {
                 const azureLocationNonExistContainerError = results[azureLocationNonExistContainer].error;
                 if (err) {

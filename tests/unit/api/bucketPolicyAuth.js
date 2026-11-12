@@ -312,7 +312,7 @@ describe('bucket policy authorization', () => {
             });
         });
 
-        it('should deny access to non-bucket owner if two statements apply to principal but one denies access', function itFn(done) {
+        it('should deny non-bucket owner if two statements apply to the principal and one denies', function itFn(done) {
             const newPolicy = this.test.basePolicy;
             newPolicy.Statement[1] = {
                 Effect: 'Deny',
@@ -417,7 +417,7 @@ describe('bucket policy authorization', () => {
             });
         });
 
-        it('should allow access to non-object owner for objectHead action with s3:GetObject permission', function itFn(done) {
+        it('should allow non-object owner for objectHead action with s3:GetObject permission', function itFn(done) {
             const newPolicy = this.test.basePolicy;
             newPolicy.Statement[0].Action = ['s3:GetObject'];
             bucket.setBucketPolicy(newPolicy);
@@ -425,7 +425,7 @@ describe('bucket policy authorization', () => {
             assert.equal(allowed, true);
             done();
         });
-        it('should deny access to non-object owner for objectHead action without s3:GetObject permission', function itFn(done) {
+        it('should deny non-object owner for objectHead action without s3:GetObject permission', function itFn(done) {
             const newPolicy = this.test.basePolicy;
             newPolicy.Statement[0].Action = ['s3:PutObject'];
             bucket.setBucketPolicy(newPolicy);
@@ -464,7 +464,7 @@ describe('bucket policy authorization', () => {
             );
         });
 
-        it('should deny access to non-object owner if two statements apply to principal but one denies access', function itFn(done) {
+        it('should deny non-object owner if two statements apply to the principal and one denies', function itFn(done) {
             const newPolicy = this.test.basePolicy;
             newPolicy.Statement[1] = {
                 Effect: 'Deny',

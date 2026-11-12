@@ -242,7 +242,7 @@ describe('stress test for bucket API', function describe() {
         metadata.createBucket(bucketName, bucket, log, done);
     });
 
-    it(`should put ${numKeys} keys into bucket and retrieve bucket list in under ${maxMilliseconds} milliseconds`, done => {
+    it(`should put ${numKeys} keys into bucket and list them in under ${maxMilliseconds} milliseconds`, done => {
         const data = {};
         const keys = [];
 

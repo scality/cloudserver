@@ -350,7 +350,7 @@ describeSkipIfNotMultiple('Put Copy Part to AZURE', function describeF() {
                 );
             });
 
-            it('should copy small part from Azure location with bucketMatch=false to MPU with Azure location', function ifF(done) {
+            it('should copy small part from Azure location with bucketMatch=false to Azure MPU', function ifF(done) {
                 const params = {
                     Bucket: azureContainerName,
                     CopySource: `${azureContainerName}/${this.test.keyNameNormalAzureMismatch}`,

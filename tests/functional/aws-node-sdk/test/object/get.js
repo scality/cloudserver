@@ -311,7 +311,7 @@ describe('GET object', () => {
                 });
         });
 
-        describe('Additional headers: [Cache-Control, Content-Disposition, Content-Encoding, Expires, Accept-Ranges]', () => {
+        describe('Cache-Control, Content-Disposition, Content-Encoding, Expires, Accept-Ranges headers', () => {
             describe('if specified in put object request', () => {
                 before(async () => {
                     const params = {
@@ -550,7 +550,7 @@ describe('GET object', () => {
                 });
             });
 
-            it('If-None-Match: returns NotModified when one of ETags match, without double quotes around ETag', done => {
+            it('If-None-Match: returns NotModified when one of the ETags matches, unquoted', done => {
                 requestGet(
                     {
                         IfNoneMatch: `non-matching,${etagTrim}`,

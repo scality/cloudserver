@@ -138,7 +138,7 @@ class _Utils {
 function _testBehaviorVersioningEnabledOrSuspended(utils, versionIds) {
     const s3 = utils.s3;
 
-    it('should return 405 MethodNotAllowed putting acl without version id if latest version is a delete marker', async () => {
+    it('should return 405 MethodNotAllowed putting acl without version id if latest is a delete marker', async () => {
         const aclParams = {
             Bucket: bucket,
             Key: key,
@@ -158,7 +158,7 @@ function _testBehaviorVersioningEnabledOrSuspended(utils, versionIds) {
         }
     });
 
-    it('should return 405 MethodNotAllowed putting acl with version id if version specified is a delete marker', async () => {
+    it('should return 405 MethodNotAllowed putting acl with the version id of a delete marker', async () => {
         const aclParams = {
             Bucket: bucket,
             Key: key,
@@ -198,7 +198,7 @@ function _testBehaviorVersioningEnabledOrSuspended(utils, versionIds) {
         }
     });
 
-    it('should return 405 MethodNotAllowed getting acl with version id if version specified is a delete marker', async () => {
+    it('should return 405 MethodNotAllowed getting acl with the version id of a delete marker', async () => {
         const latestVersion = versionIds[versionIds.length - 1];
         const aclParams = {
             Bucket: bucket,

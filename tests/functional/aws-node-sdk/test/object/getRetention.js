@@ -131,7 +131,7 @@ describe('GET object retention', () => {
             }
         });
 
-        it('should return InvalidRequest error getting retention to object in bucket with no object lock enabled', async () => {
+        it('should return InvalidRequest getting retention of an object in a bucket without object lock', async () => {
             try {
                 await s3.send(
                     new GetObjectRetentionCommand({

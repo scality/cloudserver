@@ -90,7 +90,7 @@ describe('PUT bucket website', () => {
             _testPutBucketWebsite(config, 400, 'InvalidRequest', done);
         });
 
-        it('should return MalformedXML if Redirect HttpRedirectCode is a string that does not contains a number', done => {
+        it('should return MalformedXML if Redirect HttpRedirectCode is a string without a number', done => {
             const config = new WebsiteConfigTester('index.html');
             config.addRoutingRule({ HttpRedirectCode: 'notvalidhttpcode' });
             _testPutBucketWebsite(config, 400, 'MalformedXML', done);

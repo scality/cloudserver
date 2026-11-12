@@ -99,7 +99,7 @@ describe('PUT object retention', () => {
             }
         });
 
-        it('should return InvalidRequest error putting retention to object in bucket with no object lock enabled', async () => {
+        it('should return InvalidRequest putting retention on an object in a bucket without object lock', async () => {
             try {
                 await s3.send(
                     new PutObjectRetentionCommand({

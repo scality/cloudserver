@@ -341,7 +341,7 @@ describe('objectDelete API', () => {
             });
         });
 
-        it("should return error if request includes 'if-unmodified-since' header and object has been modified", done => {
+        it("should return error if 'if-unmodified-since' header is set and object has been modified", done => {
             const testDeleteRequest = new DummyRequest({
                 bucketName,
                 namespace,
@@ -372,7 +372,7 @@ describe('objectDelete API', () => {
             });
         });
 
-        it("should return error if request includes 'if-modified-since' header and object has not been modified", done => {
+        it("should return error if 'if-modified-since' header is set and object has not been modified", done => {
             const testDeleteRequest = new DummyRequest({
                 bucketName,
                 namespace,
