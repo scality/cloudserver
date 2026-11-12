@@ -69,10 +69,9 @@ for (const sourceFile of project.getSourceFiles()) {
 
 const asyncFunctionPercent = totalFunctions > 0 ? ((asyncFunctions / totalFunctions) * 100).toFixed(1) : '0.0';
 
-const migrationPercent =
-    asyncFunctions + callbackFunctions > 0
-        ? ((asyncFunctions / (asyncFunctions + callbackFunctions)) * 100).toFixed(1)
-        : '0.0';
+const migratableFunctions = asyncFunctions + callbackFunctions;
+const migrationPercent = migratableFunctions > 0 ? ((asyncFunctions / migratableFunctions) * 100).toFixed(1) : '0.0';
+const migrationTrend = `${asyncFunctions}/${migratableFunctions} (${migrationPercent}%)`;
 
 console.log('=== Async/Await Migration Progress ===');
 console.log(`Total functions:      ${totalFunctions}`);
@@ -80,7 +79,7 @@ console.log(`Async functions:      ${asyncFunctions} (${asyncFunctionPercent}%)`
 console.log(`Callback functions:   ${callbackFunctions}`);
 console.log(`Remaining .then():    ${thenChains}`);
 console.log('');
-console.log(`Migration (trend):    ${asyncFunctions}/${asyncFunctions + callbackFunctions} (${migrationPercent}%)`);
+console.log(`Migration (trend):    ${migrationTrend}`);
 
 if (process.env.GITHUB_STEP_SUMMARY) {
     appendFileSync(
@@ -94,7 +93,7 @@ if (process.env.GITHUB_STEP_SUMMARY) {
             `| Async functions | ${asyncFunctions} (${asyncFunctionPercent}%) |`,
             `| Callback-style functions | ${callbackFunctions} |`,
             `| Remaining \`.then()\` chains | ${thenChains} |`,
-            `| Migration trend (async / (async + callback)) | ${asyncFunctions}/${asyncFunctions + callbackFunctions} (${migrationPercent}%) |`,
+            `| Migration trend (async / (async + callback)) | ${migrationTrend} |`,
             '',
         ].join('\n'),
     );
