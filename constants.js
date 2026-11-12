@@ -33,6 +33,12 @@ const constants = {
     oldSplitter: 'splitterfornow',
     usersBucket: 'users..bucket',
     oldUsersBucket: 'namespaceusersbucket',
+    // The bucket of the records that an account owns outside its buckets,
+    // such as its bucket notification destinations.
+    accountResourcesBucket: 'internal..accountResources',
+    // The tag of the bucket notification destination keys in that bucket:
+    // <accountId><splitter><tag><splitter><name>
+    notificationDestinationKeyTag: 'bn-dest',
     // MPU Bucket Prefix is used to create the name of the shadow
     // bucket used for multipart uploads.  There is one shadow mpu
     // bucket per bucket and its name is the mpuBucketPrefix followed

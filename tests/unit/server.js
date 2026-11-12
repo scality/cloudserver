@@ -10,6 +10,7 @@ const logger = require('../../lib/utilities/logger');
 const { config: defaultConfig } = require('../../lib/Config');
 const tracing = require('@scality/arsenal/build/lib/tracing');
 const { S3Server } = require('../../lib/server');
+const recordStore = require('../../lib/api/apiUtils/notificationDestination/recordStore');
 
 describe('S3Server', () => {
     let server;
@@ -198,6 +199,8 @@ describe('S3Server', () => {
                         process.env[envVar] = envValue;
                     }
                     config.notificationDestinationApi = { enabled: true, bucketd: null };
+                    // the flag also starts the record store: keep it out of this test
+                    sinon.stub(recordStore, 'start');
                     const info = sinon.spy(logger, 'info');
                     const warn = sinon.spy(logger, 'warn');
 
@@ -225,6 +228,30 @@ describe('S3Server', () => {
                 assert.strictEqual(destinationLines(info).length, 0);
                 assert.strictEqual(destinationLines(warn).length, 0);
             });
+        });
+
+        it('should start the destination record store when the flag is on', async () => {
+            const start = sinon.stub(recordStore, 'start');
+            config.notificationDestinationApi = { enabled: true, bucketd: null };
+
+            server.initiateStartup(log);
+
+            await waitReady();
+
+            assert.strictEqual(start.calledOnce, true);
+            // bucketclient sends the request uids of the logger it is given
+            assert.strictEqual(typeof start.firstCall.args[0].getSerializedUids, 'function');
+        });
+
+        it('should not start the destination record store when the flag is off', async () => {
+            const start = sinon.stub(recordStore, 'start');
+            config.notificationDestinationApi = { enabled: false, bucketd: null };
+
+            server.initiateStartup(log);
+
+            await waitReady();
+
+            assert.strictEqual(start.called, false);
         });
     });
 
