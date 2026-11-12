@@ -17,6 +17,12 @@ export default [
         },
     },
     {
+        files: ['.github/scripts/**'],
+        rules: {
+            'no-console': 'off',
+        },
+    },
+    {
         files: ['**/*.js'],
         languageOptions: {
             sourceType: 'commonjs',
