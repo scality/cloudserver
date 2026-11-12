@@ -12,7 +12,6 @@ export default [
         },
 
         rules: {
-            'max-len': 'off',
             'promise/prefer-await-to-then': 'warn',
             'n/callback-return': 'warn',
         },

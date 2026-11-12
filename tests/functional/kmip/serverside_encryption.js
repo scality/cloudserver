@@ -513,7 +513,8 @@ describe('KMS health in the deep health check', () => {
         serverConfig.kms.forEach(({ protocol, providerName }) => {
             const { lastChecked, ...health } = body[`kms:${providerName}`];
             assert.deepStrictEqual(health, { code: 200, message: 'OK' }, `KMS ${providerName}`);
-            // A KMS whose client has no health check reports OK without being checked; today only the KMIP client has one
+            // A KMS whose client has no health check reports OK without being checked;
+            // today only the KMIP client has one
             assert.strictEqual(lastChecked !== undefined, protocol === KmsProtocol.kmip, `KMS ${providerName}`);
         });
     });

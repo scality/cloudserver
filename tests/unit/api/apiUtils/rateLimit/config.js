@@ -404,6 +404,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
+                // eslint-disable-next-line max-len
                 /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond" must be of type object/,
             );
         });
@@ -439,6 +440,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
+                // eslint-disable-next-line max-len
                 /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.limit" must be greater than or equal to 0/,
             );
         });
@@ -514,6 +516,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
+                // eslint-disable-next-line max-len
                 /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.burstCapacity" must be greater than or equal to 0/,
             );
         });
@@ -550,6 +553,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
+                // eslint-disable-next-line max-len
                 /rateLimiting configuration is invalid.*"bucket.defaultConfig.requestsPerSecond.burstCapacity" must be a number/,
             );
         });
@@ -599,6 +603,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
+                // eslint-disable-next-line max-len
                 /rateLimiting configuration is invalid.*"bucket.defaultBurstCapacity" must be greater than or equal to 0/,
             );
         });
@@ -1061,6 +1066,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
+                // eslint-disable-next-line max-len
                 /rateLimiting configuration is invalid.*"account.defaultConfig.requestsPerSecond.burstCapacity" must be greater than or equal to 0/,
             );
         });
@@ -1097,6 +1103,7 @@ describe('parseRateLimitConfig', () => {
 
             assert.throws(
                 () => parseRateLimitConfig(config),
+                // eslint-disable-next-line max-len
                 /rateLimiting configuration is invalid.*"account.defaultConfig.requestsPerSecond.burstCapacity" must be a number/,
             );
         });

@@ -915,7 +915,8 @@ describe('User visits bucket website endpoint', () => {
                             ),
                         (data, next) =>
                             s3.putObject(Object.assign({}, object, { Key: 'original_key_file/index.html' }), next),
-                        (data, next) => s3.putObject(Object.assign({}, object, { Key: 'file/index.html' }), next), // the redirect 302
+                        // the redirect 302
+                        (data, next) => s3.putObject(Object.assign({}, object, { Key: 'file/index.html' }), next),
                         (data, next) =>
                             s3.putObject(Object.assign({}, object, { Key: 'no_access_file/index.html' }), next),
                     ],

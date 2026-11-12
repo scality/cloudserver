@@ -64,7 +64,8 @@ describe('getBucketLocation API', () => {
                     assert.strictEqual(err, null, `Unexpected ${err} getting location constraint`);
                     const xml =
                         '<?xml version="1.0" encoding="UTF-8"?>\n' +
-                        `<LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/">${location}</LocationConstraint>`;
+                        '<LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+                        `${location}</LocationConstraint>`;
                     assert.deepStrictEqual(res, xml);
                     return done();
                 });

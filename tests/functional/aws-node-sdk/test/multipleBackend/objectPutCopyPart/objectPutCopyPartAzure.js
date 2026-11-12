@@ -704,7 +704,8 @@ describeSkipIfNotMultiple('Put Copy Part to AZURE with large object', function d
         });
         describe('Basic test with large object: ', () => {
             beforeEach(function beF(done) {
-                this.currentTest.keyNameOneHundredAndFiveMbAzure = `onehundredandfivembazure${uniqName(keyObjectAzure)}`;
+                const largeKeyName = `onehundredandfivembazure${uniqName(keyObjectAzure)}`;
+                this.currentTest.keyNameOneHundredAndFiveMbAzure = largeKeyName;
                 this.currentTest.mpuKeyNameAzure = `mpukeyname${uniqName(keyObjectAzure)}`;
 
                 const params = {
