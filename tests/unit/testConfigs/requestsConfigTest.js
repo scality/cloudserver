@@ -42,88 +42,64 @@ describe('requestsConfigAssert', () => {
         }, '/config: invalid requests configuration. viaProxy must be a boolean/');
     });
     it('should throw an error if requests.trustedProxyCIDRs is not an array', () => {
-        assert.throws(
-            () => {
-                requestsConfigAssert({
-                    viaProxy: true,
-                    trustedProxyCIDRs: 1,
-                    extractClientIPFromHeader: 'x-forwarded-for',
-                    extractProtocolFromHeader: 'x-forwarded-proto',
-                });
-            },
-            '/config: invalid requests configuration. trustedProxyCIDRs ' +
-                'must be set if viaProxy is set to true and must be an array/',
-        );
+        assert.throws(() => {
+            requestsConfigAssert({
+                viaProxy: true,
+                trustedProxyCIDRs: 1,
+                extractClientIPFromHeader: 'x-forwarded-for',
+                extractProtocolFromHeader: 'x-forwarded-proto',
+            });
+        }, '/config: invalid requests configuration. trustedProxyCIDRs ' + 'must be set if viaProxy is set to true and must be an array/');
     });
     it('should throw an error if requests.trustedProxyCIDRs array is empty', () => {
-        assert.throws(
-            () => {
-                requestsConfigAssert({
-                    viaProxy: true,
-                    trustedProxyCIDRs: [],
-                    extractClientIPFromHeader: 'x-forwarded-for',
-                    extractProtocolFromHeader: 'x-forwarded-proto',
-                });
-            },
-            '/config: invalid requests configuration. trustedProxyCIDRs ' +
-                'must be set if viaProxy is set to true and must be an array/',
-        );
+        assert.throws(() => {
+            requestsConfigAssert({
+                viaProxy: true,
+                trustedProxyCIDRs: [],
+                extractClientIPFromHeader: 'x-forwarded-for',
+                extractProtocolFromHeader: 'x-forwarded-proto',
+            });
+        }, '/config: invalid requests configuration. trustedProxyCIDRs ' + 'must be set if viaProxy is set to true and must be an array/');
     });
     it('should throw an error if requests.extractClientIPFromHeader is not a string', () => {
-        assert.throws(
-            () => {
-                requestsConfigAssert({
-                    viaProxy: true,
-                    trustedProxyCIDRs: [],
-                    extractClientIPFromHeader: 1,
-                    extractProtocolFromHeader: 'x-forwarded-proto',
-                });
-            },
-            '/config: invalid requests configuration. extractClientIPFromHeader ' +
-                'must be set if viaProxy is set to true and must be a string/',
-        );
+        assert.throws(() => {
+            requestsConfigAssert({
+                viaProxy: true,
+                trustedProxyCIDRs: [],
+                extractClientIPFromHeader: 1,
+                extractProtocolFromHeader: 'x-forwarded-proto',
+            });
+        }, '/config: invalid requests configuration. extractClientIPFromHeader ' + 'must be set if viaProxy is set to true and must be a string/');
     });
     it('should throw an error if requests.extractProtocolFromHeader is not a string', () => {
-        assert.throws(
-            () => {
-                requestsConfigAssert({
-                    viaProxy: true,
-                    trustedProxyCIDRs: [],
-                    extractClientIPFromHeader: 'x-forwarded-for',
-                    extractProtocolFromHeader: 1,
-                });
-            },
-            '/config: invalid requests configuration. extractProtocolFromHeader ' +
-                'must be set if viaProxy is set to true and must be a string/',
-        );
+        assert.throws(() => {
+            requestsConfigAssert({
+                viaProxy: true,
+                trustedProxyCIDRs: [],
+                extractClientIPFromHeader: 'x-forwarded-for',
+                extractProtocolFromHeader: 1,
+            });
+        }, '/config: invalid requests configuration. extractProtocolFromHeader ' + 'must be set if viaProxy is set to true and must be a string/');
     });
     it('should throw an error if requests.extractClientIPFromHeader is empty', () => {
-        assert.throws(
-            () => {
-                requestsConfigAssert({
-                    viaProxy: true,
-                    trustedProxyCIDRs: [],
-                    extractClientIPFromHeader: '',
-                    extractProtocolFromHeader: 'x-forwarded-proto',
-                });
-            },
-            '/config: invalid requests configuration. extractClientIPFromHeader ' +
-                'must be set if viaProxy is set to true and must be a string/',
-        );
+        assert.throws(() => {
+            requestsConfigAssert({
+                viaProxy: true,
+                trustedProxyCIDRs: [],
+                extractClientIPFromHeader: '',
+                extractProtocolFromHeader: 'x-forwarded-proto',
+            });
+        }, '/config: invalid requests configuration. extractClientIPFromHeader ' + 'must be set if viaProxy is set to true and must be a string/');
     });
     it('should throw an error if requests.extractProtocolFromHeader is empty', () => {
-        assert.throws(
-            () => {
-                requestsConfigAssert({
-                    viaProxy: true,
-                    trustedProxyCIDRs: [],
-                    extractClientIPFromHeader: 'x-forwarded-for',
-                    extractProtocolFromHeader: '',
-                });
-            },
-            '/config: invalid requests configuration. extractProtocolFromHeader ' +
-                'must be set if viaProxy is set to true and must be a string/',
-        );
+        assert.throws(() => {
+            requestsConfigAssert({
+                viaProxy: true,
+                trustedProxyCIDRs: [],
+                extractClientIPFromHeader: 'x-forwarded-for',
+                extractProtocolFromHeader: '',
+            });
+        }, '/config: invalid requests configuration. extractProtocolFromHeader ' + 'must be set if viaProxy is set to true and must be a string/');
     });
     it('should lowercase the extractClientIPFromHeader and extractProtocolFromHeader values', () => {
         const config = {

@@ -92,14 +92,12 @@ describe('bucketPutVersioning API', () => {
 
         const tests = [
             {
-                msg:
-                    'should successfully enable versioning on location constraint with supportsVersioning set to true',
+                msg: 'should successfully enable versioning on location constraint with supportsVersioning set to true',
                 input: xmlEnableVersioning,
                 output: { Status: 'Enabled' },
             },
             {
-                msg:
-                    'should successfully suspend versioning on location constraint with supportsVersioning set to true',
+                msg: 'should successfully suspend versioning on location constraint with supportsVersioning set to true',
                 input: xmlSuspendVersioning,
                 output: { Status: 'Suspended' },
             },
