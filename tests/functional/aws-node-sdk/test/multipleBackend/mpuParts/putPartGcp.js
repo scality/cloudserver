@@ -342,7 +342,7 @@ describeSkipIfNotMultiple(
                 bucketUtil = new BucketUtility('default', sigCfg);
                 s3 = bucketUtil.s3;
             });
-            describe('with bucket location header', () => {
+            describe('with bucket location header and bucketMatch set to false', () => {
                 beforeEach(function beforeEachFn(done) {
                     async.waterfall(
                         [

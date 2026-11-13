@@ -351,7 +351,7 @@ describe('validateMethodChecksumNoChunking', () => {
         });
     });
 
-    describe('when checksum mismatches', () => {
+    describe('when checksum is malformed', () => {
         Object.keys(checksumedMethods).forEach(method => {
             it(`should return InvalidDigest error for ${method} when checksum mismatch`, async () => {
                 const body = 'Hello, World!';

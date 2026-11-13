@@ -119,7 +119,7 @@ describe('aws-node-sdk test bucket versioning listing', function testSuite() {
         );
     });
 
-    it('should list all latest versions', async () => {
+    it('should list all latest versions except those with a delete marker', async () => {
         const params = { Bucket: bucket, MaxKeys: 1000, Delimiter: '/' };
         const data = await s3.send(new ListObjectsCommand(params));
         const keys = data.Contents.map(entry => entry.Key);

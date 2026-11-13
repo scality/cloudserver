@@ -77,7 +77,7 @@ describe('putObjectLegalHold API', () => {
         });
         afterEach(cleanup);
 
-        it("should update object's metadata with legal hold status", done => {
+        it("should update object's metadata with legal hold status ON", done => {
             objectPutLegalHold(authInfo, putLegalHoldReq('ON'), log, err => {
                 assert.ifError(err);
                 return metadata.getObjectMD(bucketName, objectName, {}, log, (err, objMD) => {
@@ -88,7 +88,7 @@ describe('putObjectLegalHold API', () => {
             });
         });
 
-        it("should update object's metadata with legal hold status", done => {
+        it("should update object's metadata with legal hold status OFF", done => {
             objectPutLegalHold(authInfo, putLegalHoldReq('OFF'), log, err => {
                 assert.ifError(err);
                 return metadata.getObjectMD(bucketName, objectName, {}, log, (err, objMD) => {

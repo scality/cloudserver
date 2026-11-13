@@ -496,7 +496,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
             });
         });
 
-        describe.skip('with NoncurrentVersionTransitions', () => {
+        describe.skip('with NoncurrentVersionExpiration', () => {
             function getParams(noncurrentVersionTransition) {
                 return {
                     Bucket: bucket,

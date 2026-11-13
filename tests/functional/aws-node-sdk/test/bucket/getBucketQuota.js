@@ -51,7 +51,7 @@ describe('Test get bucket quota', () => {
         }
     });
 
-    it('should return no such bucket error', async () => {
+    it('should return no such bucket error for another nonexistent bucket', async () => {
         try {
             await sendRequest('GET', '127.0.0.1:8000', '/test/?quota=true');
         } catch (err) {

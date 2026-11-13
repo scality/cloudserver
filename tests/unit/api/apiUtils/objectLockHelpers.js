@@ -90,7 +90,7 @@ describe('objectLockHelpers: validateHeaders', () => {
         assert.strictEqual(objectLockValidationError, null);
     });
 
-    it('should pass with valid legal hold header', () => {
+    it('should pass with valid legal hold header ON', () => {
         const headers = {
             'x-amz-object-lock-legal-hold': 'ON',
         };
@@ -98,7 +98,7 @@ describe('objectLockHelpers: validateHeaders', () => {
         assert.strictEqual(objectLockValidationError, null);
     });
 
-    it('should pass with valid legal hold header', () => {
+    it('should pass with valid legal hold header OFF', () => {
         const headers = {
             'x-amz-object-lock-legal-hold': 'OFF',
         };

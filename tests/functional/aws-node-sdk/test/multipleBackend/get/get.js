@@ -416,7 +416,7 @@ describe('Multiple backend get object', function testSuite() {
                     });
             });
 
-            it('should get an object from AWS', done => {
+            it('should get an object from AWS with bucketMatch set to false', done => {
                 const command = new GetObjectCommand({ Bucket: bucket, Key: mismatchObject });
                 s3.send(command)
                     .then(res => {

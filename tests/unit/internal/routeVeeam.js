@@ -188,7 +188,7 @@ describe('RouteVeeam: checkBucketAndKey', () => {
     });
 });
 
-describe('RouteVeeam: checkBucketAndKey', () => {
+describe('RouteVeeam: checkUnsupportedRoutes', () => {
     [
         [undefined, undefined, undefined, log],
         ['PATCH', undefined, undefined, log],

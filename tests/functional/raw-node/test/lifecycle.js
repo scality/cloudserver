@@ -69,7 +69,7 @@ describe('api tests', () => {
         );
     });
 
-    it('should accept a lifecycle policy with a date at midnight', done => {
+    it('should accept a lifecycle policy with a date at midnight without timezone', done => {
         makeS3Request(
             {
                 method: 'PUT',
@@ -86,7 +86,7 @@ describe('api tests', () => {
         );
     });
 
-    it('should accept a lifecycle policy with a date at midnight', done => {
+    it('should accept a lifecycle policy with a date at midnight UTC given with an offset', done => {
         makeS3Request(
             {
                 method: 'PUT',
@@ -138,7 +138,7 @@ describe('api tests', () => {
         );
     });
 
-    it('should reject a lifecycle policy with a date not at midnight', done => {
+    it('should reject a lifecycle policy with a date at midnight plus milliseconds', done => {
         makeS3Request(
             {
                 method: 'PUT',

@@ -71,7 +71,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
             });
     });
 
-    it('should retrieve an empty versioning configuration', async () => {
+    it('should retrieve an empty versioning configuration after rejecting one w/o "Status"', async () => {
         const params = { Bucket: bucket };
         const { $metadata, ...data } = await s3.send(new GetBucketVersioningCommand(params));
         assert.strictEqual($metadata?.httpStatusCode, 200);
@@ -97,7 +97,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
             });
     });
 
-    it('should retrieve an empty versioning configuration', async () => {
+    it('should retrieve an empty versioning configuration after rejecting an invalid one', async () => {
         const params = { Bucket: bucket };
         const { $metadata, ...data } = await s3.send(new GetBucketVersioningCommand(params));
         assert.strictEqual($metadata?.httpStatusCode, 200);
@@ -176,7 +176,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         );
     });
 
-    it('should accept valid versioning configuration', async () => {
+    it('should accept suspended versioning configuration', async () => {
         const params = {
             Bucket: bucket,
             VersioningConfiguration: {
@@ -186,7 +186,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         await s3.send(new PutBucketVersioningCommand(params));
     });
 
-    it('should retrieve the valid versioning configuration', async () => {
+    it('should retrieve the suspended versioning configuration', async () => {
         const params = { Bucket: bucket };
         const data = await s3.send(new GetBucketVersioningCommand(params));
         assert.deepStrictEqual(data.Status, 'Suspended');

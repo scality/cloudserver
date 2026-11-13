@@ -61,7 +61,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         }
     });
 
-    it('should retrieve an empty versioning configuration', async () => {
+    it('should retrieve an empty versioning configuration after rejecting one w/o "Status"', async () => {
         const params = { Bucket: bucket };
         const data = await s3.send(new GetBucketVersioningCommand(params));
         assert.strictEqual(data.$metadata.httpStatusCode, 200);
@@ -150,7 +150,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         await replicationAccountS3.send(new PutBucketVersioningCommand(params));
     });
 
-    it('should retrieve the valid versioning configuration', async () => {
+    it('should retrieve the versioning configuration set by the replication user', async () => {
         const params = { Bucket: bucket };
         const data = await s3.send(new GetBucketVersioningCommand(params));
         assert.deepStrictEqual(data.Status, 'Enabled');

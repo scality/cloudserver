@@ -359,7 +359,7 @@ describe('aws-node-sdk test delete object', () => {
             await s3.send(new PutBucketVersioningCommand(params));
         });
 
-        it('delete non existent object should create a delete marker', async () => {
+        it('delete non existent object should create a delete marker (versioning suspended)', async () => {
             const res = await s3.send(
                 new DeleteObjectCommand({
                     Bucket: bucket,
@@ -408,7 +408,7 @@ describe('aws-node-sdk test delete object', () => {
             await s3.send(new PutBucketVersioningCommand(params));
         });
 
-        it('should get the null version', done => {
+        it('should return MethodNotAllowed getting the null version (a delete marker)', done => {
             s3.send(
                 new GetObjectCommand({
                     Bucket: bucket,
@@ -439,7 +439,7 @@ describe('aws-node-sdk test delete object', () => {
             versionIds.push(res.VersionId);
         });
 
-        it('suspending versioning', async () => {
+        it('suspending versioning again', async () => {
             const params = {
                 Bucket: bucket,
                 VersioningConfiguration: {
@@ -460,7 +460,7 @@ describe('aws-node-sdk test delete object', () => {
             assert.strictEqual(res.VersionId, undefined);
         });
 
-        it('enabling versioning', async () => {
+        it('enabling versioning again', async () => {
             const params = {
                 Bucket: bucket,
                 VersioningConfiguration: {
@@ -470,7 +470,7 @@ describe('aws-node-sdk test delete object', () => {
             await s3.send(new PutBucketVersioningCommand(params));
         });
 
-        it('should get the null version', async () => {
+        it('should get the null version as the latest version', async () => {
             const res = await s3.send(
                 new GetObjectCommand({
                     Bucket: bucket,
@@ -492,7 +492,7 @@ describe('aws-node-sdk test delete object', () => {
             versionIds.push(res.VersionId);
         });
 
-        it('should get the null version', async () => {
+        it('should get the null version by version id after adding a delete marker', async () => {
             const res = await s3.send(
                 new GetObjectCommand({
                     Bucket: bucket,
@@ -504,7 +504,7 @@ describe('aws-node-sdk test delete object', () => {
             assert.strictEqual(body, 'test-null-version');
         });
 
-        it('should add a delete marker', async () => {
+        it('should add a second delete marker with a new version id', async () => {
             const res = await s3.send(
                 new DeleteObjectCommand({
                     Bucket: bucket,

@@ -819,7 +819,7 @@ describeSkipIfNotMultiple(
                 },
             );
 
-            it('versioning suspended: should delete a specific version in AWS backend successfully', done => {
+            it('multi-delete, versioning suspended: should delete a specific version in AWS backend', done => {
                 const key = `somekey-${Date.now()}`;
                 async.waterfall(
                     [
@@ -839,7 +839,7 @@ describeSkipIfNotMultiple(
                 );
             });
 
-            it('versioning enabled: should delete a specific version in AWS backend successfully', done => {
+            it('multi-delete, versioning enabled: should delete a specific version in AWS backend', done => {
                 const key = `somekey-${Date.now()}`;
                 async.waterfall(
                     [

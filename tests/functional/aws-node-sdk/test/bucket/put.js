@@ -255,12 +255,13 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                     .then(() => done())
                     .catch(done);
             }
-            it('should create bucket without error', done => _testObjectLockEnabled('bucket-with-object-lock', done));
+            it('should create bucket with object lock enabled', done =>
+                _testObjectLockEnabled('bucket-with-object-lock', done));
 
             it('should create bucket with versioning enabled by default', done =>
                 _testVersioning('bucket-with-object-lock', done));
 
-            it('should create bucket without error', done =>
+            it('should create bucket with object lock disabled', done =>
                 _testObjectLockDisabled('bucket-without-object-lock', done));
         });
 

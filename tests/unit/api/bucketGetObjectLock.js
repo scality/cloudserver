@@ -65,7 +65,7 @@ function getObjectLockXml(mode, type, time) {
     return xmlStr;
 }
 
-describe('bucketGetObjectLock API', () => {
+describe('bucketGetObjectLock API on a bucket without object lock', () => {
     before(done => bucketPut(authInfo, bucketPutReq, log, done));
     after(cleanup);
 
@@ -78,7 +78,7 @@ describe('bucketGetObjectLock API', () => {
     });
 });
 
-describe('bucketGetObjectLock API', () => {
+describe('bucketGetObjectLock API on a bucket with object lock enabled', () => {
     before(cleanup);
     beforeEach(done => bucketPut(authInfo, testBucketPutReqWithObjLock, log, done));
     afterEach(cleanup);
