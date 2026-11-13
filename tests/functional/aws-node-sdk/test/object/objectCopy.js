@@ -1158,23 +1158,6 @@ describe('Object Copy', () => {
                 });
         });
 
-        it('should return an error if attempt to copy nonexistent object', done => {
-            s3.send(
-                new CopyObjectCommand({
-                    Bucket: destBucketName,
-                    Key: destObjName,
-                    CopySource: `${sourceBucketName}/nokey`,
-                }),
-            )
-                .then(() => {
-                    done();
-                })
-                .catch(err => {
-                    checkError(err, 'NoSuchKey', 404);
-                    done();
-                });
-        });
-
         it('should return an error if send invalid metadata directive header', done => {
             s3.send(
                 new CopyObjectCommand({

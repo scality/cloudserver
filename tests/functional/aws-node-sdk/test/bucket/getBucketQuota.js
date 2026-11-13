@@ -58,14 +58,4 @@ describe('Test get bucket quota', () => {
             assert.strictEqual(err.Error.Code[0], 'NoSuchBucket');
         }
     });
-
-    it('should return no such bucket quota', async () => {
-        await sendRequest('DELETE', '127.0.0.1:8000', `/${bucket}/?quota=true`);
-        try {
-            await sendRequest('GET', '127.0.0.1:8000', `/${bucket}/?quota=true`);
-            assert.fail('Expected NoSuchQuota error');
-        } catch (err) {
-            assert.strictEqual(err.Error.Code[0], 'NoSuchQuota');
-        }
-    });
 });

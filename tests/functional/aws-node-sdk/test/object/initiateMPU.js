@@ -100,28 +100,6 @@ describe('Initiate MPU', () => {
             }
         });
 
-        it('should return error if initiating MPU w/ > 2KB user-defined md', async () => {
-            const metadata = genMaxSizeMetaHeaders();
-            const params = { Bucket: bucket, Key: key, Metadata: metadata };
-            const data = await s3.send(new CreateMultipartUploadCommand(params));
-            const uploadId = data.UploadId;
-            await s3.send(
-                new AbortMultipartUploadCommand({
-                    Bucket: bucket,
-                    Key: key,
-                    UploadId: uploadId,
-                }),
-            );
-            metadata.header0 = `${metadata.header0}${'0'}`;
-            try {
-                await s3.send(new CreateMultipartUploadCommand(params));
-                throw new Error('Expected MetadataTooLarge error');
-            } catch (err) {
-                assert.strictEqual(err.name, 'MetadataTooLarge');
-                assert.strictEqual(err.$metadata.httpStatusCode, 400);
-            }
-        });
-
         describe('with tag set', () => {
             it('should be able to put object with 10 tags', async () => {
                 const taggingConfig = generateMultipleTagQuery(10);

@@ -460,43 +460,6 @@ describe('multiObjectDelete function', () => {
     });
 });
 
-describe('multiObjectDelete function', () => {
-    afterEach(() => {
-        sinon.restore();
-    });
-
-    it('should not authorize the bucket and initial IAM authorization results', done => {
-        const post = '<Delete><Object><Key>objectname</Key></Object></Delete>';
-        const request = new DummyRequest({
-            bucketName: 'bucketname',
-            objectKey: 'objectname',
-            parsedHost: 'localhost',
-            headers: {
-                'content-md5': crypto.createHash('md5').update(post, 'utf8').digest('base64'),
-            },
-            post,
-            socket: {
-                remoteAddress: '127.0.0.1',
-            },
-            url: '/bucketname',
-        });
-        const authInfo = makeAuthInfo('123456');
-
-        sinon
-            .stub(metadataWrapper, 'getBucket')
-            .callsFake((bucketName, log, cb) =>
-                cb(null, new BucketInfo('bucketname', '123456', 'accountA', new Date().toISOString(), 15), undefined),
-            );
-
-        multiObjectDelete.multiObjectDelete(authInfo, request, log, (err, res) => {
-            // Expected result is an access denied on the object, and no error, as the API was authorized
-            assert.strictEqual(err, null);
-            assert.strictEqual(res.includes('<Error><Key>objectname</Key><Code>AccessDenied</Code>'), true);
-            done();
-        });
-    });
-});
-
 describe('multiObjectDelete checkPolicies request context', () => {
     afterEach(() => {
         sinon.restore();

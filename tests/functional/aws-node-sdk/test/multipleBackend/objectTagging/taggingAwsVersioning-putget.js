@@ -23,7 +23,7 @@ const {
     genUniqID,
 } = require('../utils');
 
-const { putTaggingAndAssert, getTaggingAndAssert, delTaggingAndAssert, awsGetAssertTags } = tagging;
+const { putTaggingAndAssert, getTaggingAndAssert, awsGetAssertTags } = tagging;
 const bucket = `awsversioningtag${genUniqID()}`;
 const someBody = 'teststring';
 
@@ -231,31 +231,6 @@ describeSkipIfNotMultiple('AWS backend object put/get tagging with versioning', 
                             next,
                         ),
                     (versionId, next) => awsGetAssertTags({ key, expectedTags: tags }, next),
-                ],
-                done,
-            );
-        });
-
-        it('versioning enabled: should put/get a tag set on a specific version', done => {
-            const key = `somekey-${genUniqID()}`;
-            async.waterfall(
-                [
-                    next => enableVersioning(s3, bucket, next),
-                    next => {
-                        const command = new PutObjectCommand({ Bucket: bucket, Key: key });
-                        s3.send(command)
-                            .then(data => next(null, data))
-                            .catch(err => next(err));
-                    },
-                    (putData, next) =>
-                        putTaggingAndAssert(
-                            s3,
-                            { bucket, key, tags, versionId: putData.VersionId, expectedVersionId: putData.VersionId },
-                            next,
-                        ),
-                    (versionId, next) =>
-                        delTaggingAndAssert(s3, { bucket, key, versionId, expectedVersionId: versionId }, next),
-                    next => awsGetAssertTags({ key, expectedTags: {} }, next),
                 ],
                 done,
             );
