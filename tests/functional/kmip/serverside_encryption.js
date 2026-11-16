@@ -464,8 +464,31 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
         it('should refuse PutObject', () =>
             assert.rejects(putObject(bucketName, objectName, keyArn), assertRefusedNamingOnlyTheKey));
 
-        it('should refuse PutBucketEncryption on a bucket without a bucket key', () =>
-            assert.rejects(putBucketEncryption(bucketName, keyArn), assertRefusedNamingOnlyTheKey));
+        async function assertStoredAndRefusedOnWrite(bucket) {
+            assert.strictEqual(await getBucketEncryptionKeyId(bucket), keyArn);
+            await assert.rejects(putObject(bucket, objectName), assertRefusedNamingOnlyTheKey);
+        }
+
+        it('should store the key of PutBucketEncryption on a bucket without a bucket key, and refuse writes', async () => {
+            await putBucketEncryption(bucketName, keyArn);
+            await assertStoredAndRefusedOnWrite(bucketName);
+        });
+
+        it('should store the key of PutBucketEncryption on a bucket with a bucket key, and refuse writes', async () => {
+            const encryptedBucketName = `${bucketName}2`;
+            await createBucket(encryptedBucketName, true);
+            await putBucketEncryption(encryptedBucketName, keyArn);
+            await assertStoredAndRefusedOnWrite(encryptedBucketName);
+        });
+
+        it('should store the key set on CreateBucket, and refuse writes', async () => {
+            const encryptedBucketName = `${bucketName}2`;
+            await createBucketWithHeaders(encryptedBucketName, {
+                'x-amz-scal-server-side-encryption': 'aws:kms',
+                'x-amz-scal-server-side-encryption-aws-kms-key-id': keyArn,
+            });
+            await assertStoredAndRefusedOnWrite(encryptedBucketName);
+        });
     });
 });
 

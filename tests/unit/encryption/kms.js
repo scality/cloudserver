@@ -59,13 +59,14 @@ describe('KMS unit tests', () => {
             );
         }
 
-        it('should refuse it on bucket encryption', done => {
+        it('should store it on bucket encryption', done => {
             const sseConfig = parseBucketEncryptionHeaders({
                 'x-amz-scal-server-side-encryption': 'aws:kms',
                 'x-amz-scal-server-side-encryption-aws-kms-key-id': keyArn,
             });
-            KMS.bucketLevelEncryption(dummyBucket, sseConfig, log, err => {
-                assertRefusedNamingOnlyTheKey(err);
+            KMS.bucketLevelEncryption(dummyBucket, sseConfig, log, (err, sseInfo) => {
+                assert.ifError(err);
+                assert.strictEqual(sseInfo.configuredMasterKeyId, keyArn);
                 done();
             });
         });

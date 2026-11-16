@@ -20,6 +20,7 @@ const bucketPutRequest = {
     actionImplicitDenies: false,
 };
 const arnPrefix = inMemory.backend.arnPrefix;
+const unconfiguredKeyArn = 'arn:scality:kms:external:kmip:unconfigured:key/1';
 
 describe('bucketPutEncryption API', () => {
     let createBucketKeySpy;
@@ -154,6 +155,24 @@ describe('bucketPutEncryption API', () => {
                 });
             });
         });
+
+        it('should store a KMSMasterKeyID of a KMS that is not configured', done => {
+            const post = templateSSEConfig({ algorithm: 'aws:kms', keyId: unconfiguredKeyArn });
+            bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
+                assert.ifError(err);
+                sinon.assert.notCalled(createBucketKeySpy);
+                return getSSEConfig(bucketName, log, (err, sseInfo) => {
+                    assert.ifError(err);
+                    assert.deepStrictEqual(sseInfo, {
+                        mandatory: true,
+                        algorithm: 'aws:kms',
+                        cryptoScheme: 1,
+                        configuredMasterKeyId: unconfiguredKeyArn,
+                    });
+                    done();
+                });
+            });
+        });
     });
 
     describe('test overwriting an existing config', () => {
@@ -229,6 +248,33 @@ describe('bucketPutEncryption API', () => {
                                 cryptoScheme: 1,
                                 masterKeyId,
                                 configuredMasterKeyId: `${arnPrefix}12345`,
+                            });
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+
+        it('should store a KMSMasterKeyID of a KMS that is not configured over a config with a bucket key', done => {
+            const post = templateSSEConfig({ algorithm: 'AES256' });
+            bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
+                assert.ifError(err);
+                return getSSEConfig(bucketName, log, (err, sseInfo) => {
+                    assert.ifError(err);
+                    const { masterKeyId } = sseInfo;
+                    const newConf = templateSSEConfig({ algorithm: 'aws:kms', keyId: unconfiguredKeyArn });
+                    return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log, err => {
+                        assert.ifError(err);
+                        sinon.assert.calledOnce(createBucketKeySpy);
+                        return getSSEConfig(bucketName, log, (err, updatedSSEInfo) => {
+                            assert.ifError(err);
+                            assert.deepStrictEqual(updatedSSEInfo, {
+                                mandatory: true,
+                                algorithm: 'aws:kms',
+                                cryptoScheme: 1,
+                                masterKeyId,
+                                configuredMasterKeyId: unconfiguredKeyArn,
                             });
                             done();
                         });
