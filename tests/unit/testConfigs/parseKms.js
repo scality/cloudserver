@@ -12,6 +12,14 @@ const kmipEntry = {
     transport: { tls: { host: 'kmip.example.com', port: 5696 } },
 };
 
+function kmipCluster(retries) {
+    return {
+        ...kmipEntry,
+        transport: [{ tls: { host: 'kmip1' } }, { tls: { host: 'kmip2' } }, { tls: { host: 'kmip3' } }],
+        retries,
+    };
+}
+
 const awsEntry = {
     protocol: 'aws_kms',
     providerName: 'acme',
@@ -100,6 +108,16 @@ describe('parseKms Function', () => {
                 ['kmip1', 'kmip2'],
             );
             assert.strictEqual(settings.retries, 1);
+        });
+
+        it('should use the configured kmip cluster retries', () => {
+            configInstance._parseKms({ kms: [kmipCluster(1)] });
+            assert.strictEqual(configInstance.kms[0].settings.retries, 1);
+        });
+
+        it('should use kmip cluster retries configured to 0', () => {
+            configInstance._parseKms({ kms: [kmipCluster(0)] });
+            assert.strictEqual(configInstance.kms[0].settings.retries, 0);
         });
 
         it('should parse an aws_kms entry', () => {
@@ -256,6 +274,13 @@ describe('parseKms Function', () => {
             assert.throws(
                 () => configInstance._parseKms({ kms: [{ ...kmipEntry, transport }] }),
                 /KMIP transport must define tls.host/,
+            );
+        });
+
+        it('should reject kmip cluster retries above the number of hosts - 1', () => {
+            assert.throws(
+                () => configInstance._parseKms({ kms: [kmipCluster(3)] }),
+                /KMIP Cluster retries must be lower or equal to the number of hosts - 1/,
             );
         });
 
