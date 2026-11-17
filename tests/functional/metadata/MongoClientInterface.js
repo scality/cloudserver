@@ -83,7 +83,7 @@ runIfMongo('MongoClientInterface', () => {
                     return cb(errors.NoSuchKey);
                 }
                 if (doc.value.tags) {
-                    // eslint-disable-next-line
+                    // eslint-disable-next-line no-param-reassign
                     doc.value.tags = unescapeJSON(doc.value.tags);
                 }
                 return cb(null, doc.value);

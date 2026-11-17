@@ -55,8 +55,7 @@ describe('Skip scan cases tests', () => {
             const putObjectPromise = async () => {
                 const o = {};
                 o.Bucket = Bucket;
-                // eslint-disable-next-line
-                o.Key = String.fromCharCode(65 + n / x) + '/' + (n % x);
+                o.Key = `${String.fromCharCode(65 + n / x)}/${n % x}`;
                 o.Body = '';
                 await s3.send(new PutObjectCommand(o));
             };

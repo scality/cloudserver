@@ -116,7 +116,7 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
                 // call to delete data is async so wait 20 ms to check
                 // that data deleted
                 setTimeout(() => {
-                    // eslint-disable-next-line
+                    // eslint-disable-next-line no-sparse-arrays
                     assert.deepStrictEqual(ds, [, , ,]);
                     done();
                 }, 20);
