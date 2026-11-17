@@ -184,7 +184,11 @@ S3BACKEND=mem yarn mocha --grep "pattern" tests/unit --recursive --exit
 
 ## Code Style
 
-- ESLint with `@scality/eslint-config-scality`
-- `mocha/no-exclusive-tests: error` - Never commit `.only()` tests
-- Many formatting rules disabled for legacy compatibility
-- ECMAScript 2021, CommonJS modules (`sourceType: "script"`)
+- ESLint 10 with the flat config of `@scality/eslint-config-scality` 8.4, which
+  assumes Prettier, and its `mocha()` helper for `tests/**/*.js`
+- `mocha/no-exclusive-tests` and `mocha/no-identical-title` are errors: never
+  commit `.only()` tests or duplicate test titles
+- Prettier owns formatting (shared config, 120 columns) and CI runs
+  `prettier --check .` on the whole repository; ESLint still checks `max-len`
+  (120) for what Prettier can't wrap (strings, comments, test titles)
+- Latest ECMAScript syntax; `.js` files are CommonJS (`sourceType: "commonjs"`)
