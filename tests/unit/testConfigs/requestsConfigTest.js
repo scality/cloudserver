@@ -74,7 +74,7 @@ describe('requestsConfigAssert', () => {
         assert.throws(() => {
             requestsConfigAssert({
                 viaProxy: true,
-                trustedProxyCIDRs: [],
+                trustedProxyCIDRs: ['192.168.100.0/22'],
                 extractClientIPFromHeader: 1,
                 extractProtocolFromHeader: 'x-forwarded-proto',
             });
@@ -87,7 +87,7 @@ describe('requestsConfigAssert', () => {
         assert.throws(() => {
             requestsConfigAssert({
                 viaProxy: true,
-                trustedProxyCIDRs: [],
+                trustedProxyCIDRs: ['192.168.100.0/22'],
                 extractClientIPFromHeader: 'x-forwarded-for',
                 extractProtocolFromHeader: 1,
             });
@@ -100,7 +100,7 @@ describe('requestsConfigAssert', () => {
         assert.throws(() => {
             requestsConfigAssert({
                 viaProxy: true,
-                trustedProxyCIDRs: [],
+                trustedProxyCIDRs: ['192.168.100.0/22'],
                 extractClientIPFromHeader: '',
                 extractProtocolFromHeader: 'x-forwarded-proto',
             });
@@ -113,7 +113,7 @@ describe('requestsConfigAssert', () => {
         assert.throws(() => {
             requestsConfigAssert({
                 viaProxy: true,
-                trustedProxyCIDRs: [],
+                trustedProxyCIDRs: ['192.168.100.0/22'],
                 extractClientIPFromHeader: 'x-forwarded-for',
                 extractProtocolFromHeader: '',
             });
