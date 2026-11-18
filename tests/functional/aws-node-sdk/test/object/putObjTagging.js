@@ -254,37 +254,33 @@ describe('PUT object taggings', () => {
             },
         );
 
-        it(
-            'should return 403 AccessDenied putting tag to an object ' +
-                ' in a bucket created with a different account',
-            async () => {
-                await s3.send(
-                    new PutBucketAclCommand({
-                        Bucket: bucketName,
-                        ACL: 'public-read-write',
-                    }),
-                );
+        it('should return 403 AccessDenied putting tag to an object in a bucket of another account', async () => {
+            await s3.send(
+                new PutBucketAclCommand({
+                    Bucket: bucketName,
+                    ACL: 'public-read-write',
+                }),
+            );
+            await otherAccountS3.send(
+                new PutObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectNameAcl,
+                }),
+            );
+
+            try {
                 await otherAccountS3.send(
-                    new PutObjectCommand({
+                    new PutObjectTaggingCommand({
                         Bucket: bucketName,
                         Key: objectNameAcl,
+                        Tagging: taggingConfig,
                     }),
                 );
-
-                try {
-                    await otherAccountS3.send(
-                        new PutObjectTaggingCommand({
-                            Bucket: bucketName,
-                            Key: objectNameAcl,
-                            Tagging: taggingConfig,
-                        }),
-                    );
-                    throw new Error('Expected AccessDenied error');
-                } catch (err) {
-                    checkError(err, 'AccessDenied', 403);
-                }
-            },
-        );
+                throw new Error('Expected AccessDenied error');
+            } catch (err) {
+                checkError(err, 'AccessDenied', 403);
+            }
+        });
 
         it('should put tag to an object in a bucket created with same account', async () => {
             await s3.send(
