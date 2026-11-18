@@ -2,6 +2,7 @@ const assert = require('assert');
 const crypto = require('crypto');
 const {
     IAMClient,
+    GetUserCommand,
     CreateUserCommand,
     CreateAccessKeyCommand,
     CreatePolicyCommand,
@@ -14,6 +15,7 @@ const {
     ListAttachedUserPoliciesCommand,
     ListPoliciesCommand,
 } = require('@aws-sdk/client-iam');
+const { models } = require('@scality/arsenal');
 
 const { makeRequest, makeS3Request } = require('../../utils/makeRequest');
 const { getCredentials } = require('../../../aws-node-sdk/test/support/credentials');
@@ -236,7 +238,8 @@ const deleteDestination = (name, credentials) => destinationRequest('DELETE', { 
 // list keeps each Create that got no 4xx answer: a 200, a 5xx or no
 // answer. A 5xx or a lost answer can follow a write that landed. The list
 // keeps no anonymous Create. An anonymous Create writes nothing, and its
-// clean-up Delete would answer AccessDenied.
+// clean-up Delete would answer AccessDenied. createAsUser keeps each Create
+// of its IAM user, with the account credentials, also one that answers 403.
 let createdDestinations = [];
 
 async function createDestination(name, body, credentials) {
@@ -833,6 +836,62 @@ describeIam('CreateNotificationDestination by an IAM user', () => {
 
     it('should answer AccessDenied to a user with no policy', async () => {
         assertError(await createDestination(uniqueName('denied'), saslSslBody, credentials), 'AccessDenied', 403);
+    });
+});
+
+describeIam('CreateNotificationDestination by an IAM user allowed on one destination', () => {
+    const iamClient = makeIamClient();
+    const userName = uniqueName('destination-create-one');
+    let allowedName;
+    let accountId;
+    let credentials;
+
+    beforeEach(async () => {
+        allowedName = testName('create-allowed');
+        // A destination of the account gives the account ID, and the Arn
+        // that the policy of the user names. Vault then gives the account ID
+        // of the user, so that CloudServer does not give both sides of the
+        // check.
+        const accountArn = await createDestinationArn(testName('create-account'));
+        accountId = accountArn.split(':')[4];
+        assert.match(accountId, /^[0-9]{12}$/);
+        credentials = await createIamCaller(iamClient, userName, {
+            action: 'scality:CreateBucketNotificationDestination',
+            resource: accountArn.replace(/[^:]*$/, allowedName),
+        });
+        const { User } = await iamClient.send(new GetUserCommand({ UserName: userName }));
+        assert.strictEqual(models.ARN.createFromString(User.Arn).getAccountId(), accountId);
+    });
+
+    afterEach(async () => {
+        await deleteCreatedDestinations();
+        await removeIamCaller(iamClient, userName);
+    });
+
+    // The user can only create. Thus the account deletes what the user
+    // creates. Record the name before the Create, so that the account also
+    // deletes a name whose Create got no answer.
+    const createAsUser = name => {
+        createdDestinations.push({ name, credentials: authCredentials });
+        return destinationRequest('PUT', { name }, saslSslBody, credentials);
+    };
+
+    it('should create the destination that the policy names, in the account of the user', async () => {
+        const created = await createAsUser(allowedName);
+        assert.ifError(created.err);
+        assert.strictEqual(created.res.statusCode, 200);
+        const { err, res } = await getDestination(allowedName);
+        assert.ifError(err);
+        assert.deepStrictEqual(elementValues(res.body, 'AccountId'), [accountId]);
+        assert.deepStrictEqual(elementValues(res.body, 'Arn'), [
+            `arn:scality:bucketnotif::${accountId}:${allowedName}`,
+        ]);
+    });
+
+    it('should answer AccessDenied to another name, and create nothing', async () => {
+        const otherName = testName('create-other');
+        assertError(await createAsUser(otherName), 'AccessDenied', 403);
+        assertError(await getDestination(otherName), 'NoSuchDestination', 404);
     });
 });
 
