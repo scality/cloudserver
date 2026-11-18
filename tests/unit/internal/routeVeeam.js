@@ -13,7 +13,7 @@ describe('RouteVeeam: checkBucketAndKey', () => {
         [null, 'objectKey', null, 'PATCH', log],
         [null, 'objectKey', null, 'TRACE', log],
     ].forEach(test => {
-        it(`should return MethodNotAllowed for ${test[2]}`, () => {
+        it(`should return MethodNotAllowed for ${test[3]}`, () => {
             assert.strictEqual(routeVeeam.checkBucketAndKey(...test).is.MethodNotAllowed, true);
         });
     });
@@ -60,7 +60,7 @@ describe('RouteVeeam: checkBucketAndKey', () => {
 
     [
         ['test', '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', null, 'GET', log],
-        ['test', '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', null, 'GET', log],
+        ['test', '.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', null, 'GET', log],
     ].forEach(test => {
         it(`should return success for "${test[1]}" object name`, () => {
             assert.strictEqual(routeVeeam.checkBucketAndKey(...test), undefined);
@@ -196,7 +196,7 @@ describe('RouteVeeam: checkUnsupportedRoutes', () => {
         ['GET', undefined, undefined, log],
         ['DELETE', undefined, undefined, log],
     ].forEach(test => {
-        it(`should return InvalidArgument for "${test[0]}"`, () => {
+        it(`should return MethodNotAllowed for "${test[0]}"`, () => {
             assert.strictEqual(routeVeeam.checkUnsupportedRoutes(...test).error.is.MethodNotAllowed, true);
         });
     });
