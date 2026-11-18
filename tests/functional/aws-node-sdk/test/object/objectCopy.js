@@ -1022,9 +1022,7 @@ describe('Object Copy', () => {
                         CopySource: `${sourceBucketName}/${sourceObjName}`,
                     }),
                 )
-                    .then(() => {
-                        done();
-                    })
+                    .then(() => done(new Error('Expected InvalidRequest error')))
                     .catch(err => {
                         checkError(err, 'InvalidRequest', 400);
                         done();
@@ -1040,9 +1038,7 @@ describe('Object Copy', () => {
                     CopySource: `nobucket453234/${sourceObjName}`,
                 }),
             )
-                .then(() => {
-                    done();
-                })
+                .then(() => done(new Error('Expected NoSuchBucket error')))
                 .catch(err => {
                     checkError(err, 'NoSuchBucket', 404);
                     done();
@@ -1058,9 +1054,7 @@ describe('Object Copy', () => {
                     WebsiteRedirectLocation: 'google.com',
                 }),
             )
-                .then(() => {
-                    done();
-                })
+                .then(() => done(new Error('Expected InvalidRedirectLocation error')))
                 .catch(err => {
                     checkError(err, 'InvalidRedirectLocation', 400);
                     done();
@@ -1079,9 +1073,7 @@ describe('Object Copy', () => {
                         ObjectLockLegalHoldStatus: 'ON',
                     }),
                 )
-                    .then(() => {
-                        done();
-                    })
+                    .then(() => done(new Error('Expected InvalidRequest error')))
                     .catch(err => {
                         checkError(err, 'InvalidRequest', 400);
                         done();
@@ -1103,9 +1095,7 @@ describe('Object Copy', () => {
                         ObjectLockRetainUntilDate: mockDate,
                     }),
                 )
-                    .then(() => {
-                        done();
-                    })
+                    .then(() => done(new Error('Expected InvalidRequest error')))
                     .catch(err => {
                         checkError(err, 'InvalidRequest', 400);
                         done();
@@ -1121,9 +1111,7 @@ describe('Object Copy', () => {
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                 }),
             )
-                .then(() => {
-                    done();
-                })
+                .then(() => done(new Error('Expected NoSuchBucket error')))
                 .catch(err => {
                     checkError(err, 'NoSuchBucket', 404);
                     done();
@@ -1138,9 +1126,7 @@ describe('Object Copy', () => {
                     CopySource: `${sourceBucketName}/nokey`,
                 }),
             )
-                .then(() => {
-                    done();
-                })
+                .then(() => done(new Error('Expected NoSuchKey error')))
                 .catch(err => {
                     checkError(err, 'NoSuchKey', 404);
                     done();
@@ -1156,9 +1142,7 @@ describe('Object Copy', () => {
                     MetadataDirective: 'copyHalf',
                 }),
             )
-                .then(() => {
-                    done();
-                })
+                .then(() => done(new Error('Expected InvalidArgument error')))
                 .catch(err => {
                     checkError(err, 'InvalidArgument', 400);
                     done();
@@ -1185,9 +1169,7 @@ describe('Object Copy', () => {
                             CopySource: `${sourceBucketName}/${sourceObjName}`,
                         }),
                     )
-                    .then(() => {
-                        done();
-                    })
+                    .then(() => done(new Error('Expected AccessDenied error')))
                     .catch(err => {
                         checkError(err, 'AccessDenied', 403);
                         done();
