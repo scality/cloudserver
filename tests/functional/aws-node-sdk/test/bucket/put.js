@@ -213,25 +213,22 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                     .catch(done);
             }
 
-            function _testObjectLockDisabled(name, done) {
-                bucketUtil.s3
-                    .send(
-                        new CreateBucketCommand({
-                            Bucket: name,
-                            ObjectLockEnabledForBucket: false,
-                        }),
-                    )
-                    .then(res => {
-                        assert(res.Location, 'No Location in response');
-                        assert.strictEqual(res.Location, `/${name}`, 'Wrong Location header');
-                        return bucketUtil.s3.send(new GetObjectLockConfigurationCommand({ Bucket: name }));
-                    })
-                    .catch(err => {
-                        assert.strictEqual(err.name, 'ObjectLockConfigurationNotFoundError');
-                        return bucketUtil.deleteOne(name);
-                    })
-                    .then(() => done())
-                    .catch(done);
+            async function _testObjectLockDisabled(name) {
+                const res = await bucketUtil.s3.send(
+                    new CreateBucketCommand({
+                        Bucket: name,
+                        ObjectLockEnabledForBucket: false,
+                    }),
+                );
+                try {
+                    assert(res.Location, 'No Location in response');
+                    assert.strictEqual(res.Location, `/${name}`, 'Wrong Location header');
+                    await assert.rejects(bucketUtil.s3.send(new GetObjectLockConfigurationCommand({ Bucket: name })), {
+                        name: 'ObjectLockConfigurationNotFoundError',
+                    });
+                } finally {
+                    await bucketUtil.deleteOne(name);
+                }
             }
 
             function _testVersioning(name, done) {
@@ -261,8 +258,8 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             it('should create bucket with versioning enabled by default', done =>
                 _testVersioning('bucket-with-object-lock', done));
 
-            it('should create bucket with object lock disabled', done =>
-                _testObjectLockDisabled('bucket-without-object-lock', done));
+            it('should create bucket with object lock disabled', () =>
+                _testObjectLockDisabled('bucket-without-object-lock'));
         });
 
         Object.keys(locationConstraints).forEach(location => {
