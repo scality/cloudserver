@@ -147,37 +147,33 @@ describe('DELETE object taggings', () => {
             },
         );
 
-        it(
-            'should return 403 AccessDenied deleting tag set to an object ' +
-                ' in a bucket created with a different account',
-            async () => {
-                await s3.send(
-                    new PutBucketAclCommand({
-                        Bucket: bucketName,
-                        ACL: 'public-read-write',
-                    }),
-                );
+        it('should return 403 AccessDenied deleting tag set to an object in a bucket of another account', async () => {
+            await s3.send(
+                new PutBucketAclCommand({
+                    Bucket: bucketName,
+                    ACL: 'public-read-write',
+                }),
+            );
 
+            await otherAccountS3.send(
+                new PutObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectNameAcl,
+                }),
+            );
+
+            try {
                 await otherAccountS3.send(
-                    new PutObjectCommand({
+                    new DeleteObjectTaggingCommand({
                         Bucket: bucketName,
                         Key: objectNameAcl,
                     }),
                 );
-
-                try {
-                    await otherAccountS3.send(
-                        new DeleteObjectTaggingCommand({
-                            Bucket: bucketName,
-                            Key: objectNameAcl,
-                        }),
-                    );
-                    assert.fail('Expected AccessDenied error');
-                } catch (err) {
-                    _checkError(err, 'AccessDenied', 403);
-                }
-            },
-        );
+                assert.fail('Expected AccessDenied error');
+            } catch (err) {
+                _checkError(err, 'AccessDenied', 403);
+            }
+        });
 
         it(
             'should delete tag set to an object in a bucket created with ' +

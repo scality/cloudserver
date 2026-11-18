@@ -100,7 +100,7 @@ describe('Put object tagging with versioning', () => {
 
         it(
             'should not create version putting object tags on a ' +
-                ' version-enabled bucket where no version id is specified ',
+                'version-enabled bucket where no version id is specified',
             done => {
                 async.waterfall(
                     [
