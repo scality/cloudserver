@@ -53,6 +53,11 @@
             "host": "localhost:6000"
         }
     ],
+    "notificationDestinationApi": {
+        "bucketd": {
+            "bootstrap": ["localhost:9000"]
+        }
+    },
     "enableVeeamRoute": false,
     "serverAccessLogs": {
         "mode": "ENABLED",

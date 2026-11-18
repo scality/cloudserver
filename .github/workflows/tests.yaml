@@ -510,6 +510,9 @@ jobs:
       ENABLE_NULL_VERSION_COMPAT_MODE: '${{ matrix.enable-null-compat }}'
       JOB_NAME: ${{ matrix.job-name }}
       S3_SERVER_ACCESS_LOGS_MODE: ENABLED
+      # The server and the tests read this flag. The destination API runs on
+      # the file backend with no bucketd list.
+      S3_NOTIFICATION_DESTINATION_API_ENABLED: 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -642,6 +645,8 @@ jobs:
       S3_END_TO_END: true
       S3_TESTVAL_OWNERCANONICALID: 79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be
       S3_SERVER_ACCESS_LOGS_MODE: ENABLED
+      # The server and the tests read this flag.
+      S3_NOTIFICATION_DESTINATION_API_ENABLED: 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -668,6 +673,10 @@ jobs:
       - name: Modify md-config.json for vformat
         run: |
           sed -i 's/\("METADATA_NEW_BUCKETS_VFORMAT":\s*\)"[^"]*"/\1"${{ matrix.vformat }}"/' .github/docker/md-config.json
+      # config.s3c.json points the destination record store at the S3
+      # metadata cluster (notificationDestinationApi.bucketd.bootstrap). This
+      # sharing is temporary, until the destination records get a metadata
+      # cluster of their own.
       - name: Copy S3C config
         run: cp .github/docker/config.s3c.json tests/functional/sse-kms-migration/config.json
       - name: Setup CI services
