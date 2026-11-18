@@ -14,17 +14,17 @@ describe('parseKmsAWS Function', () => {
 
     it('should throw an error if endpoint is not defined in kmsAWS', () => {
         const config = { kmsAWS: { providerName: 'tests', ak: 'ak', sk: 'sk' } };
-        assert.throws(() => configInstance._parseKmsAWS(config.kmsAWS), 'endpoint must be defined');
+        assert.throws(() => configInstance._parseKmsAWS(config.kmsAWS), /endpoint must be defined/);
     });
 
     it('should throw an error if ak is not defined in kmsAWS', () => {
         const config = { kmsAWS: { providerName: 'tests', endpoint: 'https://example.com', sk: 'sk' } };
-        assert.throws(() => configInstance._parseKmsAWS(config.kmsAWS), 'ak must be defined');
+        assert.throws(() => configInstance._parseKmsAWS(config.kmsAWS), /ak must be defined/);
     });
 
     it('should throw an error if sk is not defined in kmsAWS', () => {
         const config = { kmsAWS: { providerName: 'tests', endpoint: 'https://example.com', ak: 'ak' } };
-        assert.throws(() => configInstance._parseKmsAWS(config.kmsAWS), 'sk must be defined');
+        assert.throws(() => configInstance._parseKmsAWS(config.kmsAWS), /sk must be defined/);
     });
 
     it('should return the expected kmsAWS object when valid config is provided', () => {
