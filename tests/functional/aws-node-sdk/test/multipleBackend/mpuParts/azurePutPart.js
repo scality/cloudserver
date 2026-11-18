@@ -82,7 +82,7 @@ describeSkipIfNotMultiple('MultipleBackend put part to AZURE', function describe
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
         });
-        describe('with bucket location header', () => {
+        describe('with object location constraint', () => {
             beforeEach(function beforeEachFn(done) {
                 async.waterfall(
                     [
@@ -452,7 +452,7 @@ describeSkipIfNotMultiple(
                 bucketUtil = new BucketUtility('default', sigCfg);
                 s3 = bucketUtil.s3;
             });
-            describe('with bucket location header and bucketMatch set to false', () => {
+            describe('with object location constraint and bucketMatch set to false', () => {
                 beforeEach(function beforeEachFn(done) {
                     async.waterfall(
                         [
