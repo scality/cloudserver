@@ -88,10 +88,13 @@ describe('locationConstraintAssert', () => {
     });
 
     it('should throw error if details is not an object', () => {
-        const locationConstraint = new LocationConstraint('scality', 'locId', false, 42);
+        const usEast1 = new LocationConstraint(undefined, 'locId1');
+        const locationConstraint = new LocationConstraint('scality', 'locId2');
+        // the constructor merges details into defaults: set a non-object after it
+        locationConstraint.details = 42;
         assert.throws(
             () => {
-                locationConstraintAssert({ 'scality-east': locationConstraint });
+                locationConstraintAssert({ 'us-east-1': usEast1, 'scality-east': locationConstraint });
             },
             /bad config: locationConstraints[region].details is / + /mandatory and must be an object/,
         );
@@ -140,7 +143,7 @@ describe('locationConstraintAssert', () => {
     });
 
     it('should throw error if us-east-1 not specified', () => {
-        const locationConstraint = new LocationConstraint();
+        const locationConstraint = new LocationConstraint(undefined, 'locId1');
         assert.throws(() => {
             locationConstraintAssert({ 'not-us-east-1': locationConstraint });
         }, '/bad locationConfig: must include us-east-1 as a locationConstraint/');
