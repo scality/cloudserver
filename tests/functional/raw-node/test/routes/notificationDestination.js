@@ -108,7 +108,7 @@ async function cleanUpStep(what, step) {
     try {
         await step();
     } catch (err) {
-        if (err.name !== 'NoSuchEntity') {
+        if (err.name !== 'NoSuchEntityException') {
             process.stderr.write(`IAM clean-up: could not ${what}: ${err.name}: ${err.message}\n`);
         }
     }
