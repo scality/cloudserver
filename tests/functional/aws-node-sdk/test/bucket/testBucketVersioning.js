@@ -117,14 +117,10 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         }
     });
 
-    it('should retrieve the valid versioning configuration', async () => {
-        const params = { Bucket: bucket };
-        try {
-            const response = await s3.send(new GetBucketVersioningCommand(params));
-            assert.strictEqual(response.$metadata.httpStatusCode, 200);
-        } catch (error) {
-            throw new Error(`Expected success but got failure: ${error.message}`, { cause: error });
-        }
+    it('should retrieve the versioning configuration set with MFA Delete disabled', async () => {
+        const response = await s3.send(new GetBucketVersioningCommand({ Bucket: bucket }));
+        assert.strictEqual(response.Status, 'Enabled');
+        assert.strictEqual(response.MFADelete, 'Disabled');
     });
 
     it('should accept valid versioning configuration', async () => {
