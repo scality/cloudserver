@@ -86,7 +86,7 @@ describe('Delete object tagging with versioning', () => {
 
         it(
             'should not create version deleting object tags on a ' +
-                ' version-enabled bucket where no version id is specified ',
+                'version-enabled bucket where no version id is specified',
             async () => {
                 await s3.send(
                     new PutBucketVersioningCommand({
