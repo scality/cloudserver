@@ -505,6 +505,80 @@ describe('routeBackbeat', () => {
             assert.strictEqual(mockResponse.statusCode, 409);
         });
 
+        describe('metadata update of a replica in a bucket that replicates further', () => {
+            // bucket0 replicates to site2, so a replica written in it has a next hop.
+            const bucketInfoWithNextHop = {
+                ...bucketInfo,
+                getReplicationConfiguration: () => ({
+                    role: 'arn:aws:iam::123456789012:role/src,arn:aws:iam::123456789012:role/dst',
+                    destination: 'arn:aws:s3:::bucket1',
+                    rules: [{ id: 'r0', enabled: true, prefix: '', storageClass: 'site2' }],
+                }),
+                isNFS: () => false,
+            };
+            let putObjectMDStub;
+
+            // We send the tag t=1 for key0, like backbeat does when a tag is set on
+            // the source object. microVersionId is the one of the source object.
+            // When it is undefined we send no x-scal-micro-version-id header, like
+            // a backbeat older than 9.5.0.
+            function prepareTagUpdate(microVersionId) {
+                const req = preparePutMetadataRequest({
+                    replicationInfo: { status: 'REPLICA' },
+                    tags: { t: '1' },
+                    microVersionId,
+                });
+                req.headers['x-scal-replication-content'] = 'METADATA';
+                if (microVersionId) {
+                    req.headers['x-scal-micro-version-id'] = versioning.VersionID.encode(microVersionId);
+                }
+                req.url = '/_/backbeat/metadata/bucket0/key0?versionId=aIXVkw5Tw2Pd00000000001I4j3QKsvf';
+                return req;
+            }
+
+            beforeEach(() => {
+                // key0 is already in bucket0, without the tag.
+                metadataUtils.standardMetadataValidateBucketAndObj.callsFake((_params, _denies, _log, callback) => {
+                    callback(null, bucketInfoWithNextHop, { tags: {} });
+                });
+                putObjectMDStub = sandbox
+                    .stub(metadata, 'putObjectMD')
+                    .callsFake((_bucketName, _objectKey, _omVal, _options, _logParam, cb) => cb(null, {}));
+            });
+
+            it('should store the update and replicate it further when it has a microVersionId', async () => {
+                mockRequest = prepareTagUpdate(versioning.VersionID.generateVersionId('test', 'RG001'));
+
+                routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+                void (await endPromise);
+
+                assert.strictEqual(mockResponse.statusCode, 200);
+                sinon.assert.calledOnce(putObjectMDStub);
+                const omVal = putObjectMDStub.firstCall.args[2];
+                assert.deepStrictEqual(omVal.tags, { t: '1' });
+                assert.strictEqual(omVal.replicationInfo.status, 'PENDING');
+                assert.deepStrictEqual(
+                    omVal.replicationInfo.backends.map(backend => backend.site),
+                    ['site2'],
+                );
+            });
+
+            it('should store the update and not replicate it further when it has no microVersionId', async () => {
+                mockRequest = prepareTagUpdate(undefined);
+
+                routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+                void (await endPromise);
+
+                assert.strictEqual(mockResponse.statusCode, 200);
+                sinon.assert.calledOnce(putObjectMDStub);
+                const omVal = putObjectMDStub.firstCall.args[2];
+                assert.deepStrictEqual(omVal.tags, { t: '1' });
+                assert.strictEqual(omVal.replicationInfo.status, '');
+                assert.deepStrictEqual(omVal.replicationInfo.backends, []);
+                assert.strictEqual(omVal.replicationInfo.isReplica, true);
+            });
+        });
+
         it('should handle error when putting metadata', async () => {
             const putObjectMDStub = sandbox.stub(metadata, 'putObjectMD');
             putObjectMDStub.onCall(0).callsFake((bucketName, objectKey, omVal, options, logParam, cb) => {
