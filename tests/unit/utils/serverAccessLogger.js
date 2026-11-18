@@ -119,6 +119,24 @@ describe('serverAccessLogger utility functions', () => {
     });
 
     describe('getOperation', () => {
+        [
+            ['notificationDestinationCreate', 'PUT', 'REST.PUT.NOTIFICATION_DESTINATION'],
+            ['notificationDestinationUpdate', 'POST', 'REST.POST.NOTIFICATION_DESTINATION'],
+            ['notificationDestinationGet', 'GET', 'REST.GET.NOTIFICATION_DESTINATION'],
+            ['notificationDestinationDelete', 'DELETE', 'REST.DELETE.NOTIFICATION_DESTINATION'],
+            ['notificationDestinationList', 'GET', 'REST.GET.NOTIFICATION_DESTINATIONS'],
+        ].forEach(([apiMethod, method, operation]) => {
+            it(`should return ${operation} for ${apiMethod}, with no warning`, () => {
+                const emitWarning = sinon.stub(process, 'emitWarning');
+                try {
+                    assert.strictEqual(getOperation({ method, apiMethod }), operation);
+                    assert.strictEqual(emitWarning.called, false);
+                } finally {
+                    emitWarning.restore();
+                }
+            });
+        });
+
         it('should return REST.GET.OBJECT for objectGet', () => {
             const req = { method: 'GET', apiMethod: 'objectGet' };
             const result = getOperation(req);

@@ -136,6 +136,9 @@
             "host": "localhost:6000"
         }
     ],
+    "notificationDestinationApi": {
+        "enabled": false
+    },
     "defaultEncryptionKeyPerAccount": true,
     "kmsHideScalityArn": false,
     "kmsAWS": {

@@ -399,7 +399,26 @@ describe('api.callApiMethod', () => {
         });
     });
 
+    // Set the destination API flag for each test of the enclosing describe.
+    // After each test, restore whatever was there before.
+    function useDestinationApiFlag(enabled) {
+        let saved;
+        beforeEach(() => {
+            saved = config.notificationDestinationApi;
+            config.notificationDestinationApi = { enabled, bucketd: null };
+        });
+        afterEach(() => {
+            if (saved === undefined) {
+                delete config.notificationDestinationApi;
+            } else {
+                config.notificationDestinationApi = saved;
+            }
+        });
+    }
+
     describe('implicit deny from Vault', () => {
+        useDestinationApiFlag(true);
+
         // Resolve with the error that callApiMethod returns, so that a failed
         // assertion fails the test at once instead of in the API callback.
         function callApi(method) {
@@ -478,6 +497,95 @@ describe('api.callApiMethod', () => {
             const err = await callApi('bucketGet');
             assert.ifError(err);
             assert.strictEqual(handler.calledOnce, true);
+        });
+    });
+
+    describe('destination API flag', () => {
+        function callApi(method) {
+            return new Promise(resolve => api.callApiMethod(method, request, response, log, resolve));
+        }
+
+        const destinationMethods = [
+            'notificationDestinationCreate',
+            'notificationDestinationUpdate',
+            'notificationDestinationGet',
+            'notificationDestinationDelete',
+            'notificationDestinationList',
+        ];
+
+        let stubbed;
+
+        // No handler exists yet for these methods. Add a stub for the test.
+        // After the test, restore whatever was there before.
+        beforeEach(() => {
+            stubbed = {};
+            destinationMethods.forEach(method => {
+                stubbed[method] = { existing: api[method] };
+                api[method] = sandbox.stub().callsFake((userInfo, _request, _log, cb) => cb());
+            });
+        });
+
+        afterEach(() => {
+            destinationMethods.forEach(method => {
+                if (stubbed[method].existing === undefined) {
+                    delete api[method];
+                } else {
+                    api[method] = stubbed[method].existing;
+                }
+            });
+        });
+
+        describe('when off', () => {
+            useDestinationApiFlag(false);
+
+            destinationMethods.forEach(method => {
+                it(`should answer a plain NotImplemented to ${method} without asking Vault`, async () => {
+                    request.query = method === 'notificationDestinationList' ? {} : { name: 'my-destination' };
+                    const err = await callApi(method);
+                    assert.strictEqual(err?.message, 'NotImplemented');
+                    assert.strictEqual(err.description, errors.NotImplemented.description);
+                    assert.strictEqual(authServer.doAuth.called, false);
+                    assert.strictEqual(api[method].called, false);
+                });
+            });
+
+            it('should let a bucket method through', async () => {
+                const handler = sandbox.stub(api, 'bucketGet').callsFake((userInfo, _request, _log, cb) => cb());
+                const err = await callApi('bucketGet');
+                assert.ifError(err);
+                assert.strictEqual(authServer.doAuth.calledOnce, true);
+                assert.strictEqual(handler.calledOnce, true);
+            });
+        });
+
+        describe('when on', () => {
+            useDestinationApiFlag(true);
+
+            destinationMethods.forEach(method => {
+                it(`should send ${method} to Vault and its handler`, async () => {
+                    request.query = method === 'notificationDestinationList' ? {} : { name: 'my-destination' };
+                    const err = await callApi(method);
+                    assert.ifError(err);
+                    assert.strictEqual(authServer.doAuth.calledOnce, true);
+                    assert.strictEqual(api[method].calledOnce, true);
+                });
+
+                it(`should answer NotImplemented to ${method} while it has no handler`, async () => {
+                    delete api[method];
+                    request.query = method === 'notificationDestinationList' ? {} : { name: 'my-destination' };
+                    const err = await callApi(method);
+                    assert.strictEqual(err?.message, 'NotImplemented');
+                    assert.strictEqual(authServer.doAuth.called, false);
+                });
+            });
+
+            it('should let a bucket method through', async () => {
+                const handler = sandbox.stub(api, 'bucketGet').callsFake((userInfo, _request, _log, cb) => cb());
+                const err = await callApi('bucketGet');
+                assert.ifError(err);
+                assert.strictEqual(authServer.doAuth.calledOnce, true);
+                assert.strictEqual(handler.calledOnce, true);
+            });
         });
     });
 });

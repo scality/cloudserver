@@ -167,6 +167,65 @@ describe('S3Server', () => {
             assert(startServerStub.calledWith(wrapperFor(server.internalRouteRequest), 9000));
             assert(startServerStub.calledWith(wrapperFor(server.routeAdminRequest), 8002));
         });
+
+        describe('destination API startup log', () => {
+            const envVar = 'S3_NOTIFICATION_DESTINATION_API_ENABLED';
+            const onMessage = 'bucket notification destination API on';
+            let savedEnv;
+
+            beforeEach(() => {
+                savedEnv = process.env[envVar];
+                delete process.env[envVar];
+            });
+
+            afterEach(() => {
+                if (savedEnv === undefined) {
+                    delete process.env[envVar];
+                } else {
+                    process.env[envVar] = savedEnv;
+                }
+            });
+
+            const destinationLines = spy =>
+                spy.getCalls().filter(call => /notification destination/.test(call.args[0]));
+
+            [
+                ['config.json', undefined],
+                [envVar, 'true'],
+            ].forEach(([from, envValue]) => {
+                it(`should log one line from ${from} when the flag is on`, async () => {
+                    if (envValue !== undefined) {
+                        process.env[envVar] = envValue;
+                    }
+                    config.notificationDestinationApi = { enabled: true, bucketd: null };
+                    const info = sinon.spy(logger, 'info');
+                    const warn = sinon.spy(logger, 'warn');
+
+                    server.initiateStartup(log);
+
+                    await waitReady();
+
+                    const lines = destinationLines(info);
+                    assert.strictEqual(lines.length, 1);
+                    assert.strictEqual(lines[0].args[0], onMessage);
+                    assert.deepStrictEqual(lines[0].args[1], { from });
+                    assert.strictEqual(destinationLines(warn).length, 0);
+                });
+            });
+
+            it('should log no destination line when the flag is off', async () => {
+                config.notificationDestinationApi = { enabled: false, bucketd: null };
+                const info = sinon.spy(logger, 'info');
+                const warn = sinon.spy(logger, 'warn');
+
+                server.initiateStartup(log);
+
+                await waitReady();
+
+                assert.strictEqual(destinationLines(info).length, 0);
+                assert.strictEqual(destinationLines(warn).length, 0);
+            });
+        });
     });
 
     describe('internalRouteRequest', () => {
