@@ -3,6 +3,7 @@ const { errors, auth } = require('@scality/arsenal');
 const api = require('../../../lib/api/api');
 const { config } = require('../../../lib/Config');
 const rateLimitCache = require('../../../lib/api/apiUtils/rateLimit/cache');
+const recordStore = require('../../../lib/api/apiUtils/notificationDestination/recordStore');
 const DummyRequest = require('../DummyRequest');
 const { default: AuthInfo } = require('@scality/arsenal/build/lib/auth/AuthInfo');
 const assert = require('assert');
@@ -400,12 +401,16 @@ describe('api.callApiMethod', () => {
     });
 
     // Set the destination API flag for each test of the enclosing describe.
-    // After each test, restore whatever was there before.
+    // After each test, restore whatever was there before. When the flag is
+    // on, the record store is ready.
     function useDestinationApiFlag(enabled) {
         let saved;
         beforeEach(() => {
             saved = config.notificationDestinationApi;
             config.notificationDestinationApi = { enabled, bucketd: null };
+            if (enabled) {
+                sandbox.stub(recordStore, 'state').returns('ready');
+            }
         });
         afterEach(() => {
             if (saved === undefined) {
@@ -585,6 +590,54 @@ describe('api.callApiMethod', () => {
                 assert.ifError(err);
                 assert.strictEqual(authServer.doAuth.calledOnce, true);
                 assert.strictEqual(handler.calledOnce, true);
+            });
+
+            describe('while the record store has not read its marker', () => {
+                beforeEach(() => {
+                    recordStore.state.returns('starting');
+                });
+
+                destinationMethods.forEach(method => {
+                    it(`should answer ServiceUnavailable to ${method} without asking Vault`, async () => {
+                        request.query = method === 'notificationDestinationList' ? {} : { name: 'my-destination' };
+                        const err = await callApi(method);
+                        assert.strictEqual(err?.message, 'ServiceUnavailable');
+                        assert.strictEqual(authServer.doAuth.called, false);
+                        assert.strictEqual(api[method].called, false);
+                    });
+                });
+
+                it('should let a bucket method through', async () => {
+                    const handler = sandbox.stub(api, 'bucketGet').callsFake((userInfo, _request, _log, cb) => cb());
+                    const err = await callApi('bucketGet');
+                    assert.ifError(err);
+                    assert.strictEqual(authServer.doAuth.calledOnce, true);
+                    assert.strictEqual(handler.calledOnce, true);
+                });
+            });
+
+            describe('when the record store marker holds an unknown format', () => {
+                beforeEach(() => {
+                    recordStore.state.returns('unknownFormat');
+                });
+
+                destinationMethods.forEach(method => {
+                    it(`should answer NotImplemented to ${method} without asking Vault`, async () => {
+                        request.query = method === 'notificationDestinationList' ? {} : { name: 'my-destination' };
+                        const err = await callApi(method);
+                        assert.strictEqual(err?.message, 'NotImplemented');
+                        assert.strictEqual(authServer.doAuth.called, false);
+                        assert.strictEqual(api[method].called, false);
+                    });
+                });
+
+                it('should let a bucket method through', async () => {
+                    const handler = sandbox.stub(api, 'bucketGet').callsFake((userInfo, _request, _log, cb) => cb());
+                    const err = await callApi('bucketGet');
+                    assert.ifError(err);
+                    assert.strictEqual(authServer.doAuth.calledOnce, true);
+                    assert.strictEqual(handler.calledOnce, true);
+                });
             });
         });
     });
