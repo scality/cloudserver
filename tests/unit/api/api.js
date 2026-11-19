@@ -454,8 +454,8 @@ describe('api.callApiMethod', () => {
                 let existingHandler;
 
                 beforeEach(() => {
-                    // No handler exists yet for these methods: add a stub for the
-                    // test, and put back whatever was there afterwards.
+                    // Stub the handler for the test. After the test, restore
+                    // whatever was there before.
                     existingHandler = api[method];
                     handler = sandbox.stub().callsFake((userInfo, _request, _log, cb) => cb());
                     api[method] = handler;
@@ -506,6 +506,14 @@ describe('api.callApiMethod', () => {
         });
     });
 
+    // callApiHandler calls the handler of each destination method of Arsenal
+    // with no check that it exists. Thus a new method needs its handler.
+    it('should have a handler for each destination method', () => {
+        constants.notificationDestinationApiMethods.forEach(method =>
+            assert.strictEqual(typeof api[method], 'function', method),
+        );
+    });
+
     describe('destination API flag', () => {
         function callApi(method) {
             return new Promise(resolve => api.callApiMethod(method, request, response, log, resolve));
@@ -521,8 +529,8 @@ describe('api.callApiMethod', () => {
 
         let stubbed;
 
-        // No handler exists yet for these methods. Add a stub for the test.
-        // After the test, restore whatever was there before.
+        // Stub each handler for the test. After the test, restore whatever
+        // was there before.
         beforeEach(() => {
             stubbed = {};
             destinationMethods.forEach(method => {
@@ -591,14 +599,6 @@ describe('api.callApiMethod', () => {
                     assert.strictEqual(err?.message, 'AccessDenied');
                     assert.strictEqual(authServer.doAuth.calledOnce, true);
                     assert.strictEqual(api[method].called, false);
-                });
-
-                it(`should answer NotImplemented to ${method} while it has no handler`, async () => {
-                    delete api[method];
-                    request.query = method === 'notificationDestinationList' ? {} : { name: 'my-destination' };
-                    const err = await callApi(method);
-                    assert.strictEqual(err?.message, 'NotImplemented');
-                    assert.strictEqual(authServer.doAuth.called, false);
                 });
             });
 
