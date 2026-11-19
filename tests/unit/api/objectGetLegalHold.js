@@ -1,4 +1,5 @@
 const assert = require('assert');
+const async = require('async');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
@@ -6,6 +7,7 @@ const objectPutLegalHold = require('../../../lib/api/objectPutLegalHold');
 const objectGetLegalHold = require('../../../lib/api/objectGetLegalHold');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
+const metadata = require('../metadataswitch');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
@@ -49,6 +51,17 @@ const getObjectLegalHoldRequest = {
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     actionImplicitDenies: false,
 };
+
+// Simulates a bucket holding object lock state while not being lock-enabled (e.g. DR site)
+function disableBucketObjectLock(cb) {
+    metadata.getBucket(bucketName, log, (err, bucket) => {
+        if (err) {
+            return cb(err);
+        }
+        bucket.setObjectLockEnabled(false);
+        return metadata.updateBucket(bucketName, bucket, log, cb);
+    });
+}
 
 describe('getObjectLegalHold API', () => {
     before(cleanup);
@@ -103,6 +116,25 @@ describe('getObjectLegalHold API', () => {
                     assert.strictEqual(xml, expectedXml);
                     done();
                 });
+            });
+        });
+
+        ['ON', 'OFF'].forEach(status => {
+            it(`should get an object's legal hold status when ${status} on a bucket without object lock`, done => {
+                async.series(
+                    [
+                        next => objectPutLegalHold(authInfo, putObjectLegalHoldRequest(status), log, next),
+                        next => disableBucketObjectLock(next),
+                    ],
+                    err => {
+                        assert.ifError(err);
+                        objectGetLegalHold(authInfo, getObjectLegalHoldRequest, log, (err, xml) => {
+                            assert.ifError(err);
+                            assert.strictEqual(xml, objectLegalHoldXml(status));
+                            done();
+                        });
+                    },
+                );
             });
         });
 

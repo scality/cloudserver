@@ -1,4 +1,5 @@
 const assert = require('assert');
+const async = require('async');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
@@ -6,6 +7,7 @@ const objectPutRetention = require('../../../lib/api/objectPutRetention');
 const objectGetRetention = require('../../../lib/api/objectGetRetention');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
+const metadata = require('../metadataswitch');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
@@ -57,6 +59,17 @@ const getObjRetRequest = {
     actionImplicitDenies: false,
 };
 
+// Simulates a bucket holding object lock state while not being lock-enabled (e.g. DR site)
+function disableBucketObjectLock(cb) {
+    metadata.getBucket(bucketName, log, (err, bucket) => {
+        if (err) {
+            return cb(err);
+        }
+        bucket.setObjectLockEnabled(false);
+        return metadata.updateBucket(bucketName, bucket, log, cb);
+    });
+}
+
 describe('getObjectRetention API', () => {
     before(cleanup);
 
@@ -106,6 +119,23 @@ describe('getObjectRetention API', () => {
                     done();
                 });
             });
+        });
+
+        it("should get an object's retention info when object lock is not enabled on the bucket", done => {
+            async.series(
+                [
+                    next => objectPutRetention(authInfo, putObjRetRequest, log, next),
+                    next => disableBucketObjectLock(next),
+                ],
+                err => {
+                    assert.ifError(err);
+                    objectGetRetention(authInfo, getObjRetRequest, log, (err, xml) => {
+                        assert.ifError(err);
+                        assert.strictEqual(xml, objectRetentionXml);
+                        done();
+                    });
+                },
+            );
         });
     });
 });
