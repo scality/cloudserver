@@ -54,6 +54,7 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
         isVersioningEnabled: () => false,
         getVersioningConfiguration: () => null,
         getQuota: () => 0,
+        isObjectLockEnabled: () => false,
     };
 
     beforeEach(done => {
@@ -275,6 +276,50 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
                 return done();
             },
         );
+    });
+
+    [
+        { desc: 'under legal hold', lockMD: { legalHold: true } },
+        {
+            desc: 'under compliance retention',
+            lockMD: {
+                retentionMode: 'COMPLIANCE',
+                retentionDate: new Date(Date.now() + 3600 * 1000).toISOString(),
+            },
+        },
+    ].forEach(({ desc, lockMD }) => {
+        it(`should not delete a version ${desc} when the bucket is not object-lock enabled`, done => {
+            // Lock state written below the API, e.g. by DR replication
+            Object.assign(metadata.keyMaps.get(bucketName).get(objectKey1), lockMD);
+
+            getObjMetadataAndDelete(
+                authInfo,
+                'foo',
+                request,
+                bucketName,
+                bucket,
+                true,
+                [],
+                [{ key: objectKey1, versionId: 'null' }, { key: objectKey2 }],
+                log,
+                (err, quietSetting, errorResults, numOfObjects, successfullyDeleted) => {
+                    assert.ifError(err);
+                    assert.deepStrictEqual(errorResults, [
+                        {
+                            entry: { key: objectKey1, versionId: 'null' },
+                            error: errors.AccessDenied,
+                            objectLocked: true,
+                        },
+                    ]);
+                    assert.deepStrictEqual(
+                        successfullyDeleted.map(d => d.entry.key),
+                        [objectKey2],
+                    );
+                    assert.strictEqual(metadata.keyMaps.get(bucketName).has(objectKey1), true);
+                    done();
+                },
+            );
+        });
     });
 
     it('should pass overheadField to metadata', done => {
