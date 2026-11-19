@@ -2,10 +2,10 @@ const assert = require('assert');
 const sinon = require('sinon');
 const { errors, storage, models } = require('@scality/arsenal');
 
-const { config } = require('../../../../../lib/Config');
 const constants = require('../../../../../constants');
 const recordStore = require('../../../../../lib/api/apiUtils/notificationDestination/recordStore');
-const { cleanup, DummyRequestLogger } = require('../../../helpers');
+const { DummyRequestLogger } = require('../../../helpers');
+const { useMemRecordStore } = require('../../../utils/notificationDestinationHelpers');
 
 const { metadata } = storage.metadata.inMemory.metadata;
 const { MetadataWrapper } = storage.metadata;
@@ -36,22 +36,14 @@ const call = (fn, ...args) => new Promise(resolve => fn(...args, (err, res) => r
 
 describe('notification destination record store', () => {
     const log = new DummyRequestLogger();
-    let savedBackend;
+    let restoreRecordStore;
 
-    // The store builds its client from the metadata backend of the config.
-    // These tests read the in-memory store, so each test runs on mem,
-    // whatever S3BACKEND says. stop() drops the client, so that each test
-    // builds a client of its own.
     beforeEach(() => {
-        savedBackend = config.backends.metadata;
-        config.backends.metadata = 'mem';
-        recordStore.stop();
-        cleanup();
+        restoreRecordStore = useMemRecordStore();
     });
 
     afterEach(() => {
-        recordStore.stop();
-        config.backends.metadata = savedBackend;
+        restoreRecordStore();
         sinon.restore();
     });
 
