@@ -38,6 +38,18 @@ function makeRequest(method, name, post) {
     };
 }
 
+// A List request, with its query parameters, as the route gives it to
+// the handler.
+function listRequest(params = {}) {
+    return {
+        method: 'GET',
+        url: '/?notification-destination',
+        query: { 'notification-destination': '', ...params },
+        headers: { host: 's3.amazonaws.com' },
+        actionImplicitDenies: false,
+    };
+}
+
 // Resolve with the callback arguments, so that a failed assertion fails the
 // test at once instead of in a metadata callback.
 function call(handler, authInfo, request, log) {
@@ -84,6 +96,7 @@ module.exports = {
     makeIdentity,
     userAuthInfo,
     makeRequest,
+    listRequest,
     call,
     seed,
     storedRecord,

@@ -13,6 +13,7 @@ const {
     otherAuthInfo,
     userAuthInfo,
     makeRequest,
+    listRequest,
     call,
     useMemRecordStore,
 } = require('../utils/notificationDestinationHelpers');
@@ -37,16 +38,6 @@ const saslSslBody =
     `<Tls><CaCertificate>${secrets[2]}</CaCertificate></Tls>` +
     '</Auth>' +
     '</NotificationDestination>';
-
-function listRequest(params = {}) {
-    return {
-        method: 'GET',
-        url: '/?notification-destination',
-        query: { 'notification-destination': '', ...params },
-        headers: { host: 's3.amazonaws.com' },
-        actionImplicitDenies: false,
-    };
-}
 
 const list = (authInfo, params, log) => call(notificationDestinationList, authInfo, listRequest(params), log);
 
