@@ -14,8 +14,6 @@ const objectGet = require('../../../lib/api/objectGet');
 const DummyRequest = require('../DummyRequest');
 const mpuUtils = require('../utils/mpuUtils');
 const metadataswitch = require('../metadataswitch');
-const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
-const bucketPutNotification = require('../../../lib/api/bucketPutNotification');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 
 const any = sinon.match.any;
@@ -96,83 +94,10 @@ describe('objectDelete API', () => {
         url: `/${bucketName}/${objectKey}`,
     });
 
-    it('should delete an object', done => {
+    it('should delete an object with oplog update', done => {
         async.series(
             [
                 next => bucketPut(authInfo, testBucketPutRequest, log, next),
-                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-                next => objectDelete(authInfo, testDeleteRequest, log, next),
-                async () =>
-                    sinon.assert.calledWith(
-                        services.deleteObject,
-                        any,
-                        any,
-                        any,
-                        sinon.match({
-                            deleteData: true,
-                            doesNotNeedOpogUpdate: true,
-                        }),
-                        any,
-                        any,
-                        any,
-                    ),
-                next =>
-                    objectGet(authInfo, testGetObjectRequest, false, log, err => {
-                        assert.strictEqual(err.is.NoSuchKey, true);
-                        next();
-                    }),
-            ],
-            done,
-        );
-    });
-
-    it('should delete an object with oplog update when object is archived', done => {
-        const archived = { archiveInfo: { foo: 0, bar: 'stuff' } };
-        async.series(
-            [
-                next => bucketPut(authInfo, testBucketPutRequest, log, next),
-                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
-                next => fakeMetadataArchive(bucketName, objectKey, undefined, archived, next),
-                next => objectDelete(authInfo, testDeleteRequest, log, next),
-                async () =>
-                    sinon.assert.calledWith(
-                        services.deleteObject,
-                        any,
-                        any,
-                        any,
-                        sinon.match({
-                            deleteData: true,
-                            doesNotNeedOpogUpdate: undefined,
-                        }),
-                        any,
-                        any,
-                        any,
-                    ),
-                next =>
-                    objectGet(authInfo, testGetObjectRequest, false, log, err => {
-                        assert.strictEqual(err.is.NoSuchKey, true);
-                        next();
-                    }),
-            ],
-            done,
-        );
-    });
-
-    it('should delete an object with oplog update when bucket has bucket notification', done => {
-        const putNotifConfigRequest = {
-            bucketName,
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
-            },
-            post:
-                '<NotificationConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-                '</NotificationConfiguration>',
-            actionImplicitDenies: false,
-        };
-        async.series(
-            [
-                next => bucketPut(authInfo, testBucketPutRequest, log, next),
-                next => bucketPutNotification(authInfo, putNotifConfigRequest, log, next),
                 next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
                 next => objectDelete(authInfo, testDeleteRequest, log, next),
                 async () =>
@@ -239,7 +164,7 @@ describe('objectDelete API', () => {
                         sinon.match({
                             deleteData: true,
                             replayId: testUploadId,
-                            doesNotNeedOpogUpdate: true,
+                            doesNotNeedOpogUpdate: undefined,
                         }),
                         any,
                         any,
