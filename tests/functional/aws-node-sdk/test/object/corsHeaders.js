@@ -434,10 +434,13 @@ describe('Cross Origin Resource Sharing requests', () => {
             );
 
             apiMethods.forEach(method => {
-                it(`should respond to ${method.description} with CORS headers (access-control-allow-origin, 
-                    access-control-allow-methods, access-control-allow-credentials and vary)`, async () => {
-                    await _checkHeaders(method.action, method.params, allowedOrigin, expectedHeaders);
-                });
+                it(
+                    `should respond to ${method.description} with CORS headers (access-control-allow-origin, ` +
+                        'access-control-allow-methods, access-control-allow-credentials and vary)',
+                    async () => {
+                        await _checkHeaders(method.action, method.params, allowedOrigin, expectedHeaders);
+                    },
+                );
             });
         });
 
