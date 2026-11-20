@@ -14,7 +14,13 @@ const {
     ListAccessKeysCommand,
     ListAttachedUserPoliciesCommand,
     ListPoliciesCommand,
+    CreateRoleCommand,
+    AttachRolePolicyCommand,
+    DetachRolePolicyCommand,
+    DeleteRoleCommand,
+    ListAttachedRolePoliciesCommand,
 } = require('@aws-sdk/client-iam');
+const { STSClient, AssumeRoleCommand } = require('@aws-sdk/client-sts');
 const { models } = require('@scality/arsenal');
 
 const { makeRequest, makeS3Request } = require('../../utils/makeRequest');
@@ -93,6 +99,15 @@ const describeIam = destinationApiOn && config.backends.auth !== 'mem' ? describ
 // tests/functional/scripts/ensureServiceUser.js.
 function iamEndpoint() {
     return process.env.IAM_ENDPOINT || `http://${config.vaultd?.host || 'localhost'}:8600`;
+}
+
+// The STS endpoint of the same Vault as the IAM endpoint, on the port that
+// tests/functional/aws-node-sdk/test/bucket/bucketPolicyBypassPort.js uses.
+// Thus the role and its session come from one Vault.
+function stsEndpoint() {
+    const url = new URL(iamEndpoint());
+    url.port = '8650';
+    return url.origin;
 }
 
 function makeIamClient() {
@@ -194,6 +209,101 @@ async function createIamCaller(iamClient, userName, allow) {
     }
     const { AccessKey } = await iamClient.send(new CreateAccessKeyCommand({ UserName: userName }));
     return { accessKey: AccessKey.AccessKeyId, secretKey: AccessKey.SecretAccessKey };
+}
+
+/**
+ * Remove the role and the IAM user that createRoleCaller makes, or what a
+ * setup that stopped halfway left of them: the policies of the role, the
+ * role, then the user. Each step lists what exists.
+ * @param {IAMClient} iamClient - the IAM client of Vault
+ * @param {string} roleName - the name of the role
+ * @param {string} userName - the name of the IAM user that assumes the role
+ * @return {Promise<undefined>} - resolves once every step ran
+ */
+async function removeRoleCaller(iamClient, roleName, userName) {
+    let attached = [];
+    await cleanUpStep(`list the policies of the role ${roleName}`, async () => {
+        const res = await iamClient.send(new ListAttachedRolePoliciesCommand({ RoleName: roleName }));
+        attached = res.AttachedPolicies || [];
+    });
+    for (const { PolicyArn } of attached) {
+        await cleanUpStep(`detach the policy ${PolicyArn}`, () =>
+            iamClient.send(new DetachRolePolicyCommand({ RoleName: roleName, PolicyArn })),
+        );
+    }
+    // A setup can stop after it creates the policy and before it attaches it.
+    // Thus look for the policy by its name too.
+    const named = [];
+    await cleanUpStep(`list the policy of the role ${roleName}`, async () => {
+        let marker;
+        do {
+            const res = await iamClient.send(new ListPoliciesCommand({ Scope: 'Local', Marker: marker }));
+            named.push(...(res.Policies || []).filter(policy => policy.PolicyName === policyNameOf(roleName)));
+            marker = res.IsTruncated ? res.Marker : undefined;
+        } while (marker);
+    });
+    const policyArns = new Set([...attached.map(policy => policy.PolicyArn), ...named.map(policy => policy.Arn)]);
+    for (const policyArn of policyArns) {
+        await cleanUpStep(`delete the policy ${policyArn}`, () =>
+            iamClient.send(new DeletePolicyCommand({ PolicyArn: policyArn })),
+        );
+    }
+    await cleanUpStep(`delete the role ${roleName}`, () =>
+        iamClient.send(new DeleteRoleCommand({ RoleName: roleName })),
+    );
+    await removeIamCaller(iamClient, userName);
+}
+
+/**
+ * Create a role of the test account with a policy that allows one action on
+ * one resource, and an IAM user that may assume it. Vault lets no account
+ * assume a role, so the user assumes it. Any leftover of the role or of the
+ * user goes first.
+ * @param {IAMClient} iamClient - the IAM client of Vault
+ * @param {string} roleName - the name of the role
+ * @param {string} userName - the name of the IAM user that assumes the role
+ * @param {object} allow - { action, resource } of the policy of the role
+ * @return {Promise<object>} - the temporary credentials of a session of the
+ * role, which sign its requests, and the Arn of the session
+ */
+async function createRoleCaller(iamClient, roleName, userName, allow) {
+    await removeRoleCaller(iamClient, roleName, userName);
+    const { Role } = await iamClient.send(
+        new CreateRoleCommand({
+            RoleName: roleName,
+            AssumeRolePolicyDocument: JSON.stringify({
+                Version: '2012-10-17',
+                Statement: [{ Effect: 'Allow', Principal: '*', Action: 'sts:AssumeRole' }],
+            }),
+        }),
+    );
+    const { Policy } = await iamClient.send(
+        new CreatePolicyCommand({
+            PolicyName: policyNameOf(roleName),
+            PolicyDocument: JSON.stringify({
+                Version: '2012-10-17',
+                Statement: [{ Effect: 'Allow', Action: [allow.action], Resource: [allow.resource] }],
+            }),
+        }),
+    );
+    await iamClient.send(new AttachRolePolicyCommand({ RoleName: roleName, PolicyArn: Policy.Arn }));
+    // In the same account, Vault checks only the trust policy, which names
+    // any principal. Thus the user needs no policy.
+    const user = await createIamCaller(iamClient, userName);
+    const stsConfig = getConfig('default', {
+        region: 'us-east-1',
+        credentials: { accessKeyId: user.accessKey, secretAccessKey: user.secretKey },
+    });
+    stsConfig.endpoint = stsEndpoint();
+    const { Credentials, AssumedRoleUser } = await new STSClient(stsConfig).send(
+        new AssumeRoleCommand({ RoleArn: Role.Arn, RoleSessionName: uniqueName('destination-session') }),
+    );
+    return {
+        accessKey: Credentials.AccessKeyId,
+        secretKey: Credentials.SecretAccessKey,
+        sessionToken: Credentials.SessionToken,
+        arn: AssumedRoleUser.Arn,
+    };
 }
 
 const saslSslBody =
@@ -891,6 +1001,67 @@ describeIam('CreateNotificationDestination by an IAM user allowed on one destina
     it('should answer AccessDenied to another name, and create nothing', async () => {
         const otherName = testName('create-other');
         assertError(await createAsUser(otherName), 'AccessDenied', 403);
+        assertError(await getDestination(otherName), 'NoSuchDestination', 404);
+    });
+});
+
+describeIam('CreateNotificationDestination by an assumed role allowed on one destination', () => {
+    const iamClient = makeIamClient();
+    const roleName = uniqueName('destination-create-role');
+    const userName = uniqueName('destination-role-user');
+    let allowedName;
+    let accountId;
+    let credentials;
+
+    beforeEach(async () => {
+        allowedName = testName('role-allowed');
+        // A destination of the account gives the account ID, and the Arn
+        // that the policy of the role names. Vault then gives the account ID
+        // of the session, so that CloudServer does not give both sides of
+        // the check.
+        const accountArn = await createDestinationArn(testName('role-account'));
+        accountId = accountArn.split(':')[4];
+        assert.match(accountId, /^[0-9]{12}$/);
+        credentials = await createRoleCaller(iamClient, roleName, userName, {
+            action: 'scality:CreateBucketNotificationDestination',
+            resource: accountArn.replace(/[^:]*$/, allowedName),
+        });
+        assert(credentials.sessionToken, 'AssumeRole gave no session token');
+        assert.strictEqual(models.ARN.createFromString(credentials.arn).getAccountId(), accountId);
+    });
+
+    afterEach(async () => {
+        await deleteCreatedDestinations();
+        await removeRoleCaller(iamClient, roleName, userName);
+    });
+
+    // The role can only create. Thus the account deletes what the role
+    // creates. Record the name before the Create, so that the account also
+    // deletes a name whose Create got no answer.
+    const createAsRole = name => {
+        createdDestinations.push({ name, credentials: authCredentials });
+        return destinationRequest('PUT', { name }, saslSslBody, credentials);
+    };
+
+    it('should create the destination that the policy names, in the account of the role', async () => {
+        const created = await createAsRole(allowedName);
+        assert.ifError(created.err);
+        assert.strictEqual(created.res.statusCode, 200);
+        const { err, res } = await getDestination(allowedName);
+        assert.ifError(err);
+        assert.deepStrictEqual(elementValues(res.body, 'AccountId'), [accountId]);
+        assert.deepStrictEqual(elementValues(res.body, 'Arn'), [
+            `arn:scality:bucketnotif::${accountId}:${allowedName}`,
+        ]);
+    });
+
+    it('should answer AccessDenied to another name, and create nothing', async () => {
+        // Vault also answers AccessDenied to a session token that it cannot
+        // read. Thus the session first proves that it signs a request that
+        // the policy of the role allows.
+        assert.ifError((await createAsRole(allowedName)).err);
+        const otherName = testName('role-other');
+        assertError(await createAsRole(otherName), 'AccessDenied', 403);
         assertError(await getDestination(otherName), 'NoSuchDestination', 404);
     });
 });

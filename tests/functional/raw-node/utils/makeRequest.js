@@ -63,6 +63,8 @@ function _decodeURI(uri) {
  * @param {object} [params.authCredentials] - authentication credentials
  * @param {string} params.authCredentials.accessKey - access key
  * @param {string} params.authCredentials.secretKey - secret key
+ * @param {string} [params.authCredentials.sessionToken] - session token of
+ *   temporary credentials, sent and signed as x-amz-security-token
  * @param {boolean} params.GCP - flag to setup for GCP request
  * @param {string} [params.requestBody] - request body contents
  * @param {string} [params.urlForSignature] - the url to use when signing the
@@ -163,7 +165,7 @@ function makeRequest(params, callback) {
             authCredentials.secretKey,
             's3',
             undefined,
-            undefined,
+            authCredentials.sessionToken,
             requestBody || '',
         );
     }
@@ -186,6 +188,8 @@ function makeRequest(params, callback) {
  * @param {object} [params.authCredentials] - authentication credentials
  * @param {object} params.authCredentials.accessKey - access key
  * @param {object} params.authCredentials.secretKey - secret key
+ * @param {string} [params.authCredentials.sessionToken] - session token of
+ *   temporary credentials
  * @param {function} callback - with error and response parameters
  * @return {undefined} - and call callback
  */
