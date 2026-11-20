@@ -38,4 +38,16 @@ describe('parseKmsKmip Function', () => {
             /KMIP Cluster retries must be lower or equal to the number of hosts - 1/,
         );
     });
+
+    it('should accept a providerName with separators', () => {
+        configInstance._parseKmsKmip({ kmip: { providerName: 'thales-preprod' } });
+        assert.strictEqual(configInstance.kmip.providerName, 'thales-preprod');
+    });
+
+    it('should reject a providerName ending with a separator', () => {
+        assert.throws(
+            () => configInstance._parseKmsKmip({ kmip: { providerName: 'thales-' } }),
+            /kmip\.providerName must contain only lowercase letters, digits, '-' and '_'/,
+        );
+    });
 });
