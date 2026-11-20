@@ -12,7 +12,7 @@ yarn install
 yarn dev
 ```
 
-This will start the developement server, watching for changes and restarting
+This will start the development server, watching for changes and restarting
 as needed.
 
 ### Formatting

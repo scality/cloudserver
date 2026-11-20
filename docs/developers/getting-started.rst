@@ -39,7 +39,7 @@ Openstack Swift                               x
 ================= ========== ============ ===========
 
 .. important:: Should you want to request for a new backend to be
-               supported, please do so by opening a `Github issue`_,
+               supported, please do so by opening a `GitHub issue`_,
                and filling out the "Feature Request" section of our
                template.
 
@@ -47,7 +47,7 @@ To add support for a new backend support to CloudServer official
 repository, please follow these steps:
 
 - familiarize yourself with our `Contributing Guidelines`_
-- open a `Github issue`_ and fill out Feature Request form, and
+- open a `GitHub issue`_ and fill out Feature Request form, and
   specify you would like to contribute it yourself;
 - wait for our core team to get back to you with an answer on whether
   we are interested in taking that contribution in (and hence
