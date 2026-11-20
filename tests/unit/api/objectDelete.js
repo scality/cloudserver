@@ -7,7 +7,7 @@ const services = require('../../../lib/services');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutACL = require('../../../lib/api/bucketPutACL');
 const constants = require('../../../constants');
-const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils } = require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils, replicationTestUtils } = require('../helpers');
 const objectPut = require('../../../lib/api/objectPut');
 const { objectDelete, objectDeleteInternal } = require('../../../lib/api/objectDelete');
 const objectGet = require('../../../lib/api/objectGet');
@@ -17,6 +17,7 @@ const metadataswitch = require('../metadataswitch');
 const { fakeMetadataArchive } = require('../../functional/aws-node-sdk/test/utils/init');
 const bucketPutNotification = require('../../../lib/api/bucketPutNotification');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
+const bucketPutReplication = require('../../../lib/api/bucketPutReplication');
 
 const any = sinon.match.any;
 const originalDeleteObject = services.deleteObject;
@@ -299,6 +300,35 @@ describe('objectDelete API', () => {
                 });
             });
         });
+    });
+
+    it('should delete an object in an NFS bucket with replication', done => {
+        const testNFSBucketPutRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            headers: { 'x-scal-nfs-enabled': 'true' },
+            url: `/${bucketName}`,
+        });
+        async.series(
+            [
+                next => bucketPut(authInfo, testNFSBucketPutRequest, log, next),
+                next =>
+                    bucketPutReplication(
+                        authInfo,
+                        replicationTestUtils.createBucketPutReplicationReq(bucketName),
+                        log,
+                        next,
+                    ),
+                next => objectPut(authInfo, testPutObjectRequest, undefined, log, next),
+                next => objectDelete(authInfo, testDeleteRequest, log, next),
+                next =>
+                    objectGet(authInfo, testGetObjectRequest, false, log, err => {
+                        assert.strictEqual(err.is.NoSuchKey, true);
+                        next();
+                    }),
+            ],
+            done,
+        );
     });
 
     it('should log when expiration is trying to delete a master version', done => {
