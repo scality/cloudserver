@@ -6,7 +6,7 @@ const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 const bucketPutReplication = require('../../../lib/api/bucketPutReplication');
 
-const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo, replicationTestUtils } = require('../helpers');
 const metadata = require('../../../lib/metadata/wrapper');
 
 const xmlEnableVersioning =
@@ -29,19 +29,6 @@ const locConstraintNonVersioned =
     '<LocationConstraint>withoutversioning</LocationConstraint>' +
     '</CreateBucketConfiguration>';
 
-const xmlReplicationConfiguration =
-    '<ReplicationConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    '<Role>arn:aws:iam::account-id:role/src-resource</Role>' +
-    '<Rule>' +
-    '<Prefix></Prefix>' +
-    '<Status>Enabled</Status>' +
-    '<Destination>' +
-    '<Bucket>arn:aws:s3:::destination-bucket</Bucket>' +
-    '<StorageClass>us-east-2</StorageClass>' +
-    '</Destination>' +
-    '</Rule>' +
-    '</ReplicationConfiguration>';
-
 const externalVersioningErrorMessage =
     'We do not currently support putting a versioned object to a location-constraint of type Azure or GCP.';
 
@@ -54,16 +41,6 @@ function _getPutBucketRequest(xml) {
         bucketName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
-    };
-    request.post = xml;
-    return request;
-}
-
-function _putReplicationRequest(xml) {
-    const request = {
-        bucketName,
-        headers: { host: `${bucketName}.s3.amazonaws.com` },
-        url: '/?replication',
     };
     request.post = xml;
     return request;
@@ -126,7 +103,7 @@ describe('bucketPutVersioning API', () => {
                     },
                     // Put the replication config on the bucket.
                     next => {
-                        const request = _putReplicationRequest(xmlReplicationConfiguration);
+                        const request = replicationTestUtils.createBucketPutReplicationReq(bucketName);
                         bucketPutReplication(authInfo, request, log, next);
                     },
                     // Attempt to suspend versioning.
