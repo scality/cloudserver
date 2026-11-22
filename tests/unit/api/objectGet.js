@@ -769,6 +769,53 @@ describe('objectGet API - x-amz-checksum-mode', () => {
         );
     });
 
+    ['enabled', 'Enabled', 'eNaBlEd'].forEach(mode => {
+        it(`should return x-amz-checksum-sha256 and x-amz-checksum-type when mode is ${mode}`, done => {
+            const md = new ObjectMD(mdColdHelper.baseMd).setChecksum(
+                new ObjectMDChecksum('sha256', expectedDigests.sha256, 'FULL_OBJECT'),
+            );
+            mdColdHelper.putBucketMock(bucketName, null, () =>
+                mdColdHelper.putObjectMock(bucketName, objectName, md, () => {
+                    const req = {
+                        bucketName,
+                        namespace,
+                        objectKey: objectName,
+                        headers: { 'x-amz-checksum-mode': mode },
+                        url: `/${bucketName}/${objectName}`,
+                        query: {},
+                    };
+                    objectGet(authInfo, req, false, log, (err, _locator, headers) => {
+                        assert.ifError(err);
+                        assert.strictEqual(headers['x-amz-checksum-sha256'], expectedDigests.sha256);
+                        assert.strictEqual(headers['x-amz-checksum-type'], 'FULL_OBJECT');
+                        done();
+                    });
+                }),
+            );
+        });
+    });
+
+    it('should not return checksum headers when mode is enabled in lower case but object has no checksum', done => {
+        mdColdHelper.putBucketMock(bucketName, null, () =>
+            mdColdHelper.putObjectMock(bucketName, objectName, undefined, () => {
+                const req = {
+                    bucketName,
+                    namespace,
+                    objectKey: objectName,
+                    headers: { 'x-amz-checksum-mode': 'enabled' },
+                    url: `/${bucketName}/${objectName}`,
+                    query: {},
+                };
+                objectGet(authInfo, req, false, log, (err, _locator, headers) => {
+                    assert.ifError(err);
+                    checksumAlgorithms.forEach(({ header }) => assert.strictEqual(headers[header], undefined));
+                    assert.strictEqual(headers['x-amz-checksum-type'], undefined);
+                    done();
+                });
+            }),
+        );
+    });
+
     it('should not return checksum headers when x-amz-checksum-mode is not set', done => {
         const md = new ObjectMD(mdColdHelper.baseMd).setChecksum(
             new ObjectMDChecksum('sha256', expectedDigests.sha256, 'FULL_OBJECT'),
@@ -793,18 +840,20 @@ describe('objectGet API - x-amz-checksum-mode', () => {
         );
     });
 
-    it('should return InvalidArgument when x-amz-checksum-mode is not ENABLED', done => {
-        const req = {
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: { 'x-amz-checksum-mode': 'DISABLED' },
-            url: `/${bucketName}/${objectName}`,
-            query: {},
-        };
-        objectGet(authInfo, req, false, log, err => {
-            assert.strictEqual(err.is.InvalidArgument, true);
-            done();
+    ['DISABLED', 'disabled', 'foo', 'true', '', 'ENABLED, enabled'].forEach(mode => {
+        it(`should return InvalidArgument when x-amz-checksum-mode is ${JSON.stringify(mode)}`, done => {
+            const req = {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { 'x-amz-checksum-mode': mode },
+                url: `/${bucketName}/${objectName}`,
+                query: {},
+            };
+            objectGet(authInfo, req, false, log, err => {
+                assert.strictEqual(err.is.InvalidArgument, true);
+                done();
+            });
         });
     });
 
@@ -857,5 +906,72 @@ describe('objectGet API - x-amz-checksum-mode', () => {
                 });
             }),
         );
+    });
+
+    it('should not return checksum headers when mode is enabled in lower case and Range header is set', done => {
+        const md = new ObjectMD(mdColdHelper.baseMd).setChecksum(
+            new ObjectMDChecksum('sha256', expectedDigests.sha256, 'FULL_OBJECT'),
+        );
+        mdColdHelper.putBucketMock(bucketName, null, () =>
+            mdColdHelper.putObjectMock(bucketName, objectName, md, () => {
+                const headers = { 'x-amz-checksum-mode': 'enabled' };
+                headers.range = 'bytes=0-3';
+                const req = {
+                    bucketName,
+                    namespace,
+                    objectKey: objectName,
+                    headers,
+                    url: `/${bucketName}/${objectName}`,
+                    query: {},
+                };
+                objectGet(authInfo, req, false, log, (err, _locator, resHeaders) => {
+                    assert.ifError(err);
+                    checksumAlgorithms.forEach(({ header }) => assert.strictEqual(resHeaders[header], undefined));
+                    assert.strictEqual(resHeaders['x-amz-checksum-type'], undefined);
+                    done();
+                });
+            }),
+        );
+    });
+
+    it('should not return checksum headers when mode is enabled in lower case and partNumber is set', done => {
+        const md = new ObjectMD(mdColdHelper.baseMd).setChecksum(
+            new ObjectMDChecksum('sha256', expectedDigests.sha256, 'FULL_OBJECT'),
+        );
+        mdColdHelper.putBucketMock(bucketName, null, () =>
+            mdColdHelper.putObjectMock(bucketName, objectName, md, () => {
+                const req = {
+                    bucketName,
+                    namespace,
+                    objectKey: objectName,
+                    headers: { 'x-amz-checksum-mode': 'enabled' },
+                    url: `/${bucketName}/${objectName}`,
+                    query: { partNumber: '1' },
+                };
+                objectGet(authInfo, req, false, log, (err, _locator, headers) => {
+                    assert.ifError(err);
+                    checksumAlgorithms.forEach(({ header }) => assert.strictEqual(headers[header], undefined));
+                    assert.strictEqual(headers['x-amz-checksum-type'], undefined);
+                    done();
+                });
+            }),
+        );
+    });
+
+    it('should return NoSuchKey when mode is enabled in lower case and the object does not exist', done => {
+        mdColdHelper.putBucketMock(bucketName, null, () => {
+            const req = {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { 'x-amz-checksum-mode': 'enabled' },
+                url: `/${bucketName}/${objectName}`,
+                query: {},
+            };
+            objectGet(authInfo, req, false, log, err => {
+                assert.strictEqual(err.is.NoSuchKey, true);
+                done();
+            });
+        });
     });
 });

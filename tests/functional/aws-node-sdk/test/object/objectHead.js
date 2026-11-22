@@ -717,6 +717,29 @@ describe('HEAD object checksum mode', () => {
                 ),
             );
         });
+
+        ['enabled', 'Enabled'].forEach(mode => {
+            it(`should return ChecksumCRC32 and ChecksumType when ChecksumMode is ${mode}`, async () => {
+                await s3.send(
+                    new PutObjectCommand({
+                        Bucket: checksumBucket,
+                        Key: checksumKey,
+                        Body: body,
+                        ChecksumAlgorithm: 'CRC32',
+                    }),
+                );
+
+                const headRes = await s3.send(
+                    new HeadObjectCommand({
+                        Bucket: checksumBucket,
+                        Key: checksumKey,
+                        ChecksumMode: mode,
+                    }),
+                );
+                assert.strictEqual(headRes.ChecksumCRC32, expectedDigests.crc32);
+                assert.strictEqual(headRes.ChecksumType, 'FULL_OBJECT');
+            });
+        });
     });
 });
 
