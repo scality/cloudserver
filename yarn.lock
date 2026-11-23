@@ -5838,9 +5838,9 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#8.5.19":
-  version "8.5.19"
-  resolved "git+https://github.com/scality/arsenal#095a90700472a0be8f8ea672fb019592ba2c62ef"
+"arsenal@git+https://github.com/scality/arsenal#8.5.21":
+  version "8.5.21"
+  resolved "git+https://github.com/scality/arsenal#e97d115accaaf15d8f61cc025d07ef887db951a9"
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"
