@@ -1314,10 +1314,10 @@
   resolved "https://registry.yarnpkg.com/@protobufjs/utf8/-/utf8-1.1.2.tgz#78d476333d85d5b1c792e257bca74ba080da49a4"
   integrity sha512-b1UQwcEZ4yCnMCD8DAL1VlbvBJE9/IX4FTIp7BG1xYpf29SLazLSrqUkj4w7Y5y7cCVP6E5tcqqcI0xemPkHug==
 
-"@scality/arsenal@^8.6.0", "@scality/arsenal@^8.6.3":
-  version "8.6.3"
-  resolved "https://registry.yarnpkg.com/@scality/arsenal/-/arsenal-8.6.3.tgz#49d729706318c5e271b7ccae4ea2233af66df64a"
-  integrity sha512-If/jbSrx1dP93Va/9AE+OGqrAeaqfDt+6+ETeT3Wd2N3I3tbNa9J4ic4EQMwf8ndehnWX7imMfm7ZaWVW5oNwA==
+"@scality/arsenal@^8.6.0", "@scality/arsenal@^8.6.4":
+  version "8.6.4"
+  resolved "https://registry.yarnpkg.com/@scality/arsenal/-/arsenal-8.6.4.tgz#f1ebb196835f103a613632c42b6ba3ba8ca13008"
+  integrity sha512-tAFQ8Xq7ukRR64Y+JGKTpX+3AfcdDK6Q1RC7Np8couFElhn0OpRz7p6mP7MgmMeUfC4J4d/5S8/DG2BFNVPINQ==
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"
@@ -1332,7 +1332,7 @@
     "@opentelemetry/sdk-node" "^0.223.0"
     "@opentelemetry/sdk-trace-base" "^2.12.0"
     "@scality/hdclient" "^1.3.2"
-    "@smithy/node-http-handler" "^4.3.0"
+    "@smithy/node-http-handler" "^4.4.0"
     "@smithy/protocol-http" "^5.3.5"
     JSONStream "^1.3.5"
     agentkeepalive "^4.6.0"
@@ -1585,7 +1585,7 @@
     "@smithy/types" "^3.7.2"
     tslib "^2.6.2"
 
-"@smithy/node-http-handler@^4.12.1", "@smithy/node-http-handler@^4.3.0":
+"@smithy/node-http-handler@^4.12.1", "@smithy/node-http-handler@^4.4.0":
   version "4.13.0"
   resolved "https://registry.yarnpkg.com/@smithy/node-http-handler/-/node-http-handler-4.13.0.tgz#cc26fbea5572a482b35cb43ca55c0d182e4eff70"
   integrity sha512-/GGcPoNJ2nzGytdAanpbx7mpp9Coa8LP+/Rpmbktr8YeLuIXs9B0SEz+X3AeonHdyzOIFJdKbN7jOZ+Tj+pMGw==
